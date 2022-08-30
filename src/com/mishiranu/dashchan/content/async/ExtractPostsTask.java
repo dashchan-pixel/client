@@ -5,6 +5,7 @@ import android.os.CancellationSignal;
 import android.os.OperationCanceledException;
 import chan.content.Chan;
 import chan.content.ChanConfiguration;
+import chan.content.model.Vote;
 import chan.text.ParseException;
 import com.mishiranu.dashchan.content.database.CommonDatabase;
 import com.mishiranu.dashchan.content.database.PagesDatabase;

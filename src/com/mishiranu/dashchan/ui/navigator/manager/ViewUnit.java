@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.SystemClock;
@@ -370,6 +371,16 @@ public class ViewUnit {
 		colorScheme.apply(postItem.getFullNameSpans());
 		holder.name.setText(makeHighlightedText(demandSet.highlightText, name));
 		holder.date.setText(postItem.getDateTime(postDateFormatter));
+
+		if (postItem.isShowVotes()) {
+			holder.like.setText(Integer.toString(postItem.getLikes()));
+			holder.like.setTextColor(Color.GREEN);
+			holder.dislike.setText(Integer.toString(postItem.getDislikes()));
+			holder.dislike.setTextColor(Color.RED);
+		} else {
+			holder.like.setVisibility(View.GONE);
+			holder.dislike.setVisibility(View.GONE);
+		}
 
 		String subject = postItem.getSubject();
 		CharSequence comment = configurationSet.repliesToPost != null
@@ -1167,6 +1178,8 @@ public class ViewUnit {
 		public final TextView name;
 		public final TextView index;
 		public final TextView date;
+		public final TextView like;
+		public final TextView dislike;
 		public final ViewGroup attachments;
 		public final AttachmentView thumbnail;
 		public final TextView attachmentInfo;
@@ -1204,6 +1217,8 @@ public class ViewUnit {
 			name = itemView.findViewById(R.id.name);
 			index = itemView.findViewById(R.id.index);
 			date = itemView.findViewById(R.id.date);
+			like = itemView.findViewById(R.id.like);
+			dislike = itemView.findViewById(R.id.dislike);
 			fillStateImages(head, head.indexOfChild(number) + 1, stateImages, PostState.POST_ITEM_STATES, 0, 0, 0);
 			attachments = itemView.findViewById(R.id.attachments);
 			thumbnail = itemView.findViewById(R.id.thumbnail);

@@ -693,6 +693,24 @@ public class PostItem implements AttachmentItem.Master, ChanMarkup.MarkupExtra, 
 		return hideReason;
 	}
 
+	public int getLikes() {
+		if (post.vote != null)
+			return post.vote.like;
+		return 0;
+	}
+
+	public int getDislikes() {
+		if (post.vote != null)
+			return post.vote.dislike;
+		return 0;
+	}
+
+	public boolean isShowVotes() {
+		if (post.vote != null)
+			return post.vote.showVotes;
+		return false;
+	}
+
 	public void setHidden(HideState hideState, String hideReason) {
 		this.hideState = hideState;
 		this.hideReason = hideReason;

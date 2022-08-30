@@ -31,39 +31,54 @@
 
 			<TextView
 				android:id="@+id/index"
+				style="@style/Widget.HeaderText"
 				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				style="@style/Widget.HeaderText" />
+				android:layout_height="wrap_content" />
 
 			<TextView
 				android:id="@+id/name"
+				style="@style/Widget.HeaderText"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:singleLine="true" />
+
+			<TextView
+				android:id="@+id/like"
 				style="@style/Widget.HeaderText"
-				android:singleLine="true"
-				android:ellipsize="end" />
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="0" />
+
+			<TextView
+				android:id="@+id/dislike"
+				style="@style/Widget.HeaderText"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="0" />
 
 			<TextView
 				android:id="@+id/number"
+				style="@style/Widget.HeaderText"
 				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				style="@style/Widget.HeaderText" />
+				android:layout_height="wrap_content" />
 
 			<TextView
 				android:id="@+id/date"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
 				style="@style/Widget.HeaderText"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:ellipsize="none"
 				android:singleLine="true"
-				android:ellipsize="end" />
+				android:textColor="#FFFFFF" />
 
 			<TextView
 				android:id="@+id/attachment_info"
+				style="@style/Widget.HeaderText"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				style="@style/Widget.HeaderText"
-				android:singleLine="true"
-				android:ellipsize="end" />
+				android:ellipsize="end"
+				android:singleLine="true" />
 
 		</com.mishiranu.dashchan.widget.LinebreakLayout>
 
@@ -78,7 +93,9 @@
 		android:paddingRight="10dp"
 		android:paddingBottom="4dp"
 		android:horizontalSpacing="6dp"
-		android:verticalSpacing="10dp" />
+		android:verticalSpacing="10dp" >
+
+	</com.mishiranu.dashchan.widget.CarryLayout>
 
 	<com.mishiranu.dashchan.widget.CommentTextView
 		android:id="@+id/comment"
