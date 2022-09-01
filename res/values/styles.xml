@@ -44,6 +44,9 @@
 		<item name="iconPostUserPost">@drawable/ic_action_important_light_edited</item>
 		<item name="iconPostWarned">@drawable/ic_action_warning_light_edited</item>
 
+		<item name="iconVoteLike">@drawable/ic_action_vote_like_light</item>
+		<item name="iconVoteDislike">@drawable/ic_action_vote_dislike_light</item>
+
 		<item name="iconAttachmentAudio">@drawable/ic_action_audio_dark</item>
 		<item name="iconAttachmentFile">@drawable/ic_action_attachment_dark</item>
 		<item name="iconAttachmentMultiple">@drawable/ic_action_full_screen_dark</item>
@@ -100,6 +103,9 @@
 		<item name="iconPostSticky">@drawable/ic_action_make_available_offline_dark_edited</item>
 		<item name="iconPostUserPost">@drawable/ic_action_important_dark_edited</item>
 		<item name="iconPostWarned">@drawable/ic_action_warning_dark_edited</item>
+
+		<item name="iconVoteLike">@drawable/ic_action_vote_like_dark</item>
+		<item name="iconVoteDislike">@drawable/ic_action_vote_dislike_dark</item>
 
 		<item name="iconAttachmentAudio">@drawable/ic_action_audio_dark</item>
 		<item name="iconAttachmentFile">@drawable/ic_action_attachment_dark</item>
@@ -225,6 +231,22 @@
 
 		<item name="android:textSize">12sp</item>
 		<item name="android:textColor">?attr/colorTextMeta</item>
+		<item name="android:tag">theme.textColor=meta</item>
+
+	</style>
+
+	<style name="Widget.VoteTextLike" parent="@android:style/Widget.TextView">
+
+		<item name="android:textSize">12sp</item>
+		<item name="android:textColor">@color/color_vote_like</item>
+		<item name="android:tag">theme.textColor=meta</item>
+
+	</style>
+
+	<style name="Widget.VoteTextDislike" parent="@android:style/Widget.TextView">
+
+		<item name="android:textSize">12sp</item>
+		<item name="android:textColor">@color/color_vote_red</item>
 		<item name="android:tag">theme.textColor=meta</item>
 
 	</style>

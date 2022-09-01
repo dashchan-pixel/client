@@ -64,6 +64,9 @@
 	<attr name="iconPostSticky" format="reference" />
 	<attr name="iconPostWarned" format="reference" />
 
+	<attr name="iconVoteLike" format="reference" />
+	<attr name="iconVoteDislike" format="reference" />
+
 	<attr name="iconAttachmentAudio" format="reference" />
 	<attr name="iconAttachmentFile" format="reference" />
 	<attr name="iconAttachmentMultiple" format="reference" />

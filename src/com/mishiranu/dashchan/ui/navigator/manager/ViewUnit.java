@@ -10,7 +10,9 @@ import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.SystemClock;
 import android.text.Layout;
 import android.text.SpannableString;
@@ -26,6 +28,8 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -173,6 +177,7 @@ public class ViewUnit {
 		((LinearLayoutManager) recyclerView.getLayoutManager()).setRecycleChildrenOnDetach(true);
 	}
 
+	@RequiresApi(api = Build.VERSION_CODES.M)
 	public RecyclerView.ViewHolder createView(ViewGroup parent, ViewType viewType) {
 		switch (viewType) {
 			case THREAD: {
@@ -373,13 +378,19 @@ public class ViewUnit {
 		holder.date.setText(postItem.getDateTime(postDateFormatter));
 
 		if (postItem.isShowVotes()) {
-			holder.like.setText(Integer.toString(postItem.getLikes()));
-			holder.like.setTextColor(Color.GREEN);
-			holder.dislike.setText(Integer.toString(postItem.getDislikes()));
-			holder.dislike.setTextColor(Color.RED);
+			holder.likeText.setText(Integer.toString(postItem.getLikes()));
+			holder.likeText.setVisibility(View.VISIBLE);
+			holder.likeImage.setVisibility(View.VISIBLE);
+			holder.dislikeText.setText(Integer.toString(postItem.getDislikes()));
+			holder.dislikeText.setVisibility(View.VISIBLE);
+			holder.dislikeImage.setVisibility(View.VISIBLE);
+			holder.voting.setVisibility(View.VISIBLE);
 		} else {
-			holder.like.setVisibility(View.GONE);
-			holder.dislike.setVisibility(View.GONE);
+			holder.likeText.setVisibility(View.GONE);
+			holder.likeImage.setVisibility(View.GONE);
+			holder.dislikeText.setVisibility(View.GONE);
+			holder.dislikeImage.setVisibility(View.GONE);
+			holder.voting.setVisibility(View.GONE);
 		}
 
 		String subject = postItem.getSubject();
@@ -965,6 +976,64 @@ public class ViewUnit {
 		}
 	}
 
+	@RequiresApi(api = Build.VERSION_CODES.M)
+	private static void fillVoting(ViewGroup parent, ImageView[] images, TextView[] text, float topDp, float startDp, float endDp) {
+
+		float density = ResourceUtils.obtainDensity(parent);
+		int size = (int) (12f * density + 0.5f);
+		int top = (int) (topDp * density + 0.5f);
+		int start = (int) (startDp * density + 0.5f);
+		int end = (int) (endDp * density + 0.5f);
+		boolean rtl = ViewCompat.getLayoutDirection(parent) == ViewCompat.LAYOUT_DIRECTION_RTL;
+		int left = rtl ? end : start;
+		int right = rtl ? start : end;
+
+		TypedArray typedArray = parent.getContext().obtainStyledAttributes(new int[]{R.attr.iconVoteLike, R.attr.iconVoteDislike});
+
+		ImageView likeImageView = new ImageView(parent.getContext());
+		images[0] = likeImageView;
+		likeImageView.setImageDrawable(typedArray.getDrawable(0));
+		parent.addView(likeImageView, 0, new ViewGroup.LayoutParams(size, size));
+		ViewGroup.LayoutParams layoutParamsLike = likeImageView.getLayoutParams();
+		if (layoutParamsLike instanceof ViewGroup.MarginLayoutParams) {
+			ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) layoutParamsLike;
+			marginLayoutParams.topMargin = top;
+			marginLayoutParams.leftMargin = left;
+			marginLayoutParams.rightMargin = right;
+		}
+
+		TextView likeTextView = new TextView(parent.getContext());
+		text[0] = likeTextView;
+		likeTextView.setTextAppearance(R.style.Widget_VoteTextLike);
+		parent.addView(likeTextView,1, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+		ImageView dislikeImageView = new ImageView(parent.getContext());
+		images[1] = dislikeImageView;
+		dislikeImageView.setImageDrawable(typedArray.getDrawable(1));
+		parent.addView(dislikeImageView,2,  new ViewGroup.LayoutParams(size, size));
+		ViewGroup.LayoutParams layoutParamsDislike = dislikeImageView.getLayoutParams();
+		if (layoutParamsDislike instanceof ViewGroup.MarginLayoutParams) {
+			ViewGroup.MarginLayoutParams marginLayoutParams = (ViewGroup.MarginLayoutParams) layoutParamsDislike;
+			marginLayoutParams.topMargin = top;
+			marginLayoutParams.leftMargin = left;
+			marginLayoutParams.rightMargin = right;
+		}
+
+		TextView dislikeTextView = new TextView(parent.getContext());
+		text[1] = dislikeTextView;
+		dislikeTextView.setTextAppearance(R.style.Widget_VoteTextDislike);
+		parent.addView(dislikeTextView,3, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+		typedArray.recycle();
+
+		if (C.API_LOLLIPOP) {
+			ColorStateList likeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(likeImageView.getContext()).meta);
+			likeImageView.setImageTintList(likeTintList);
+			ColorStateList dislikeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(dislikeImageView.getContext()).meta);
+			dislikeImageView.setImageTintList(dislikeTintList);
+		}
+	}
+
 	private static class Lazy<T> {
 		public interface Provider<T> {
 			T createLazy();
@@ -1174,12 +1243,11 @@ public class ViewUnit {
 		public final Dimensions dimensions;
 		public final PostLinearLayout layout;
 		public final LinebreakLayout head;
+		public final LinebreakLayout voting;
 		public final TextView number;
 		public final TextView name;
 		public final TextView index;
 		public final TextView date;
-		public final TextView like;
-		public final TextView dislike;
 		public final ViewGroup attachments;
 		public final AttachmentView thumbnail;
 		public final TextView attachmentInfo;
@@ -1190,6 +1258,13 @@ public class ViewUnit {
 		public final TextView bottomBarReplies;
 		public final TextView bottomBarExpand;
 		public final TextView bottomBarOpenThread;
+
+		public final ImageView[] votingImages = new ImageView[2];
+		public final TextView[] votingText = new TextView[2];
+		public final ImageView likeImage;
+		public final ImageView dislikeImage;
+		public final TextView likeText;
+		public final TextView dislikeText;
 
 		public ArrayList<AttachmentHolder> attachmentHolders;
 		public int attachmentViewCount = 1;
@@ -1206,6 +1281,7 @@ public class ViewUnit {
 		public NewPostAnimation newPostAnimation;
 		public long lastCommentClick;
 
+		@RequiresApi(api = Build.VERSION_CODES.M)
 		public PostViewHolder(ViewGroup parent, UiManager uiManager, Lazy<Dimensions> dimensions) {
 			super(LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_post, parent, false));
 
@@ -1213,13 +1289,17 @@ public class ViewUnit {
 			layout.addOnAttachStateChangeListener(this);
 			ViewUtils.setSelectableItemBackground(layout);
 			head = itemView.findViewById(R.id.head);
+			voting = itemView.findViewById(R.id.voting);
 			number = itemView.findViewById(R.id.number);
 			name = itemView.findViewById(R.id.name);
 			index = itemView.findViewById(R.id.index);
 			date = itemView.findViewById(R.id.date);
-			like = itemView.findViewById(R.id.like);
-			dislike = itemView.findViewById(R.id.dislike);
 			fillStateImages(head, head.indexOfChild(number) + 1, stateImages, PostState.POST_ITEM_STATES, 0, 0, 0);
+			fillVoting(voting, votingImages, votingText, 0, 0, 0);
+			likeImage = votingImages[0];
+			dislikeImage = votingImages[1];
+			likeText = votingText[0];
+			dislikeText = votingText[1];
 			attachments = itemView.findViewById(R.id.attachments);
 			thumbnail = itemView.findViewById(R.id.thumbnail);
 			attachmentInfo = itemView.findViewById(R.id.attachment_info);

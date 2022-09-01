@@ -44,20 +44,6 @@
 				android:singleLine="true" />
 
 			<TextView
-				android:id="@+id/like"
-				style="@style/Widget.HeaderText"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:text="0" />
-
-			<TextView
-				android:id="@+id/dislike"
-				style="@style/Widget.HeaderText"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:text="0" />
-
-			<TextView
 				android:id="@+id/number"
 				style="@style/Widget.HeaderText"
 				android:layout_width="wrap_content"
@@ -96,6 +82,19 @@
 		android:verticalSpacing="10dp" >
 
 	</com.mishiranu.dashchan.widget.CarryLayout>
+
+
+	<com.mishiranu.dashchan.widget.LinebreakLayout
+		android:id="@+id/voting"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:horizontalSpacing="4dp"
+		android:paddingLeft="10dp"
+		android:paddingTop="4dp"
+		android:paddingRight="10dp"
+		android:paddingBottom="4dp">
+
+	</com.mishiranu.dashchan.widget.LinebreakLayout>
 
 	<com.mishiranu.dashchan.widget.CommentTextView
 		android:id="@+id/comment"
