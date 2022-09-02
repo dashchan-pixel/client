@@ -534,5 +534,8 @@
 	<string name="you_cant_delete_too_old_posts">You can\'t delete too old posts</string>
 	<string name="you_cant_send_too_often">You can\'t send too often</string>
 	<string name="you_need_to_attach_a_file">You need to attach a file</string>
+	<string name="vote_like">Like</string>
+	<string name="vote_dislike">RRRAGE!!!</string>
+	<string name="vote_posting_prohibited">You have already voted</string>
 
 </resources>

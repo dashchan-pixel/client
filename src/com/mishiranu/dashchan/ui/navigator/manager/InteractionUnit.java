@@ -370,6 +370,12 @@ public class InteractionUnit {
 			dialogMenu.addMore(R.string.hide,
 					() -> showPostHideDialog(configurationSet.fragmentManager, postItem));
 		}
+		if (board.allowVotes) {
+			dialogMenu.add(R.string.vote_like, () -> uiManager.dialog().performSendVotePost(configurationSet.fragmentManager, chan.name,
+					postItem.getBoardName(), postItem.getThreadNumber(), postItem.getPostNumber(), true));
+			dialogMenu.add(R.string.vote_dislike, () -> uiManager.dialog().performSendVotePost(configurationSet.fragmentManager, chan.name,
+					postItem.getBoardName(), postItem.getThreadNumber(), postItem.getPostNumber(), false));
+		}
 		AlertDialog dialog = dialogMenu.create();
 		uiManager.dialog().handlePostContextMenu(configurationSet, postItem.getPostNumber(), true, dialog);
 		dialog.setOnDismissListener(d -> uiManager.dialog().handlePostContextMenu(configurationSet,

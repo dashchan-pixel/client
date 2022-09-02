@@ -335,6 +335,12 @@ public final class Post implements Comparable<Post> {
 	}
 
 	@Public
+	public Post setVote(int likes, int dislikes) {
+		builder.vote = new Vote(likes, dislikes);
+		return this;
+	}
+
+	@Public
 	@Override
 	public int compareTo(Post another) {
 		return builder.builder.number.compareTo(another.builder.builder.number);
@@ -348,6 +354,7 @@ public final class Post implements Comparable<Post> {
 		public String parentPostNumber;
 		public Attachment[] attachments;
 		public Icon[] icons;
+		public Vote vote;
 	}
 
 	public com.mishiranu.dashchan.content.model.Post build() {
@@ -381,6 +388,13 @@ public final class Post implements Comparable<Post> {
 						builder.builder.icons.add(postIcon);
 					}
 				}
+			}
+		}
+		if (builder.vote != null) {
+			com.mishiranu.dashchan.content.model.Post.Vote postVote =
+					com.mishiranu.dashchan.content.model.Post.Vote.createExternal(builder.vote.getLikes(), builder.vote.getDislikes());
+			if (postVote != null) {
+				builder.builder.vote = postVote;
 			}
 		}
 		return builder.builder.build(false);

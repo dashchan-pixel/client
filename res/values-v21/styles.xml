@@ -127,6 +127,9 @@
 		<item name="iconPostUserPost">@drawable/ic_star_c20</item>
 		<item name="iconPostWarned">@drawable/ic_warning</item>
 
+		<item name="iconVoteLike">@drawable/ic_vote_like</item>
+		<item name="iconVoteDislike">@drawable/ic_vote_dislike</item>
+
 		<item name="iconAttachmentAudio">@drawable/ic_headset</item>
 		<item name="iconAttachmentFile">@drawable/ic_insert_drive_file</item>
 		<item name="iconAttachmentMultiple">@drawable/ic_fullscreen</item>
@@ -197,6 +200,9 @@
 		<item name="iconPostSticky">@drawable/ic_custom_post_pin</item>
 		<item name="iconPostUserPost">@drawable/ic_star_c20</item>
 		<item name="iconPostWarned">@drawable/ic_warning</item>
+
+		<item name="iconVoteLike">@drawable/ic_vote_like</item>
+		<item name="iconVoteDislike">@drawable/ic_vote_dislike</item>
 
 		<item name="iconAttachmentAudio">@drawable/ic_headset</item>
 		<item name="iconAttachmentFile">@drawable/ic_insert_drive_file</item>
