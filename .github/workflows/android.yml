@@ -12,6 +12,7 @@ env:
   RELEASE_SIGN_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
   RELEASE_SIGN_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
   RELEASE_SIGNER_NAME: ${{ secrets.SIGNER_NAME }}
+  ANDROID_SDK_ROOT: ${ANDROID_SDK_ROOT}
 
 jobs:
   build:
@@ -39,12 +40,6 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
-    - name: Check some data
-      run: |-
-        sudo echo ${ANDROID_SDK_ROOT}
-        sudo ls
-        sudo ls ${ANDROID_SDK_ROOT}
       
     - name: Build with Gradle
       run: ./gradlew :assembleRelease
