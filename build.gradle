@@ -111,7 +111,7 @@ android {
 				packageTask.doLast {
 					def args = ['sign', '--in', file.path, '--out', file.path]
 					args += ['--v4-signing-enabled', 'false']
-					args += ['--ks', storeFile.path, '--ks-pass', "pass:$storePassword"]
+					args += ['--ks', storeFile, '--ks-pass', "pass:$storePassword"]
 					if (keyAlias != null && keyPassword != null) {
 						args += ['--ks-key-alias', keyAlias, '--key-pass', "pass:$keyPassword"]
 					}
