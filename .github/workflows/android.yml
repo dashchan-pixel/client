@@ -12,7 +12,6 @@ env:
   RELEASE_SIGN_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
   RELEASE_SIGN_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
   RELEASE_SIGNER_NAME: ${{ secrets.SIGNER_NAME }}
-  ANDROID_SDK_ROOT: ${{ ANDROID_SDK_ROOT }}
 
 jobs:
   build:
@@ -42,7 +41,7 @@ jobs:
       run: chmod +x gradlew
       
     - name: Build with Gradle
-      run: ./gradlew :assembleRelease
+      run: ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} ./gradlew :assembleRelease
 
       
     - name: Upload APK
