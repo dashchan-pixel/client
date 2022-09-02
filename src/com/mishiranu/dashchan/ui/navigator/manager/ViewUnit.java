@@ -378,18 +378,18 @@ public class ViewUnit {
 		holder.date.setText(postItem.getDateTime(postDateFormatter));
 
 		if (postItem.isShowVotes()) {
-			holder.likeText.setText(Integer.toString(postItem.getLikes()));
-			holder.likeText.setVisibility(View.VISIBLE);
-			holder.likeImage.setVisibility(View.VISIBLE);
-			holder.dislikeText.setText(Integer.toString(postItem.getDislikes()));
-			holder.dislikeText.setVisibility(View.VISIBLE);
-			holder.dislikeImage.setVisibility(View.VISIBLE);
+			holder.votingState.likeText.setText(Integer.toString(postItem.getLikes()));
+			holder.votingState.likeText.setVisibility(View.VISIBLE);
+			holder.votingState.likeImage.setVisibility(View.VISIBLE);
+			holder.votingState.dislikeText.setText(Integer.toString(postItem.getDislikes()));
+			holder.votingState.dislikeText.setVisibility(View.VISIBLE);
+			holder.votingState.dislikeImage.setVisibility(View.VISIBLE);
 			holder.voting.setVisibility(View.VISIBLE);
 		} else {
-			holder.likeText.setVisibility(View.GONE);
-			holder.likeImage.setVisibility(View.GONE);
-			holder.dislikeText.setVisibility(View.GONE);
-			holder.dislikeImage.setVisibility(View.GONE);
+			holder.votingState.likeText.setVisibility(View.GONE);
+			holder.votingState.likeImage.setVisibility(View.GONE);
+			holder.votingState.dislikeText.setVisibility(View.GONE);
+			holder.votingState.dislikeImage.setVisibility(View.GONE);
 			holder.voting.setVisibility(View.GONE);
 		}
 
@@ -977,7 +977,7 @@ public class ViewUnit {
 	}
 
 	@RequiresApi(api = Build.VERSION_CODES.M)
-	private static void fillVoting(ViewGroup parent, ImageView[] images, TextView[] text, float topDp, float startDp, float endDp) {
+	private static void fillVoting(ViewGroup parent, VoteState voteState, float topDp, float startDp, float endDp) {
 
 		float density = ResourceUtils.obtainDensity(parent);
 		int size = (int) (12f * density + 0.5f);
@@ -991,7 +991,7 @@ public class ViewUnit {
 		TypedArray typedArray = parent.getContext().obtainStyledAttributes(new int[]{R.attr.iconVoteLike, R.attr.iconVoteDislike});
 
 		ImageView likeImageView = new ImageView(parent.getContext());
-		images[0] = likeImageView;
+		voteState.votingImages[0] = likeImageView;
 		likeImageView.setImageDrawable(typedArray.getDrawable(0));
 		parent.addView(likeImageView, 0, new ViewGroup.LayoutParams(size, size));
 		ViewGroup.LayoutParams layoutParamsLike = likeImageView.getLayoutParams();
@@ -1003,12 +1003,12 @@ public class ViewUnit {
 		}
 
 		TextView likeTextView = new TextView(parent.getContext());
-		text[0] = likeTextView;
+		voteState.votingText[0] = likeTextView;
 		likeTextView.setTextAppearance(R.style.Widget_VoteTextLike);
 		parent.addView(likeTextView,1, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 		ImageView dislikeImageView = new ImageView(parent.getContext());
-		images[1] = dislikeImageView;
+		voteState.votingImages[1] = dislikeImageView;
 		dislikeImageView.setImageDrawable(typedArray.getDrawable(1));
 		parent.addView(dislikeImageView,2,  new ViewGroup.LayoutParams(size, size));
 		ViewGroup.LayoutParams layoutParamsDislike = dislikeImageView.getLayoutParams();
@@ -1020,7 +1020,7 @@ public class ViewUnit {
 		}
 
 		TextView dislikeTextView = new TextView(parent.getContext());
-		text[1] = dislikeTextView;
+		voteState.votingText[1] = dislikeTextView;
 		dislikeTextView.setTextAppearance(R.style.Widget_VoteTextDislike);
 		parent.addView(dislikeTextView,3, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -1224,6 +1224,24 @@ public class ViewUnit {
 		}
 	}
 
+	private static final class VoteState {
+
+		public final ImageView[] votingImages = new ImageView[2];
+		public final TextView[] votingText = new TextView[2];
+		public ImageView likeImage;
+		public ImageView dislikeImage;
+		public TextView likeText;
+		public TextView dislikeText;
+
+		public void bindArrayToView() {
+			likeImage = votingImages[0];
+			dislikeImage = votingImages[1];
+			likeText = votingText[0];
+			dislikeText = votingText[1];
+		}
+
+	}
+
 	private static class PostViewHolder extends BasePostViewHolder implements
 			Lazy.Provider<PostViewHolder.Dimensions>, CommentTextView.RecyclerKeeper.Holder,
 			View.OnAttachStateChangeListener, CommentTextView.LimitListener,
@@ -1258,13 +1276,7 @@ public class ViewUnit {
 		public final TextView bottomBarReplies;
 		public final TextView bottomBarExpand;
 		public final TextView bottomBarOpenThread;
-
-		public final ImageView[] votingImages = new ImageView[2];
-		public final TextView[] votingText = new TextView[2];
-		public final ImageView likeImage;
-		public final ImageView dislikeImage;
-		public final TextView likeText;
-		public final TextView dislikeText;
+		public final VoteState votingState = new VoteState();
 
 		public ArrayList<AttachmentHolder> attachmentHolders;
 		public int attachmentViewCount = 1;
@@ -1295,11 +1307,8 @@ public class ViewUnit {
 			index = itemView.findViewById(R.id.index);
 			date = itemView.findViewById(R.id.date);
 			fillStateImages(head, head.indexOfChild(number) + 1, stateImages, PostState.POST_ITEM_STATES, 0, 0, 0);
-			fillVoting(voting, votingImages, votingText, 0, 0, 0);
-			likeImage = votingImages[0];
-			dislikeImage = votingImages[1];
-			likeText = votingText[0];
-			dislikeText = votingText[1];
+			fillVoting(voting, votingState, 0, 0, 0);
+			votingState.bindArrayToView();
 			attachments = itemView.findViewById(R.id.attachments);
 			thumbnail = itemView.findViewById(R.id.thumbnail);
 			attachmentInfo = itemView.findViewById(R.id.attachment_info);
