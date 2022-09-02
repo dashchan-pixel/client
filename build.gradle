@@ -85,8 +85,7 @@ android {
 	} catch (IOException ignored) {
 		// Ignore
 	}
-	def key_file = System.getenv("KEYSTORE_FILENAME")
-	storeFile file(key_file != null ? key_file : "keystore/dashchan.keystore")
+	def storeFile = System.getenv("KEYSTORE_FILENAME")
 	def storePassword = System.getenv("KEYSTORE_PASSWORD")
 	def keyAlias = System.getenv("RELEASE_SIGN_KEY_ALIAS")
 	def keyPassword = System.getenv("RELEASE_SIGN_KEY_PASSWORD")
