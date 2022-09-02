@@ -27,6 +27,9 @@ jobs:
         distribution: 'temurin'
         cache: gradle
         
+    - name: Install NDK
+      run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;21.4.7075529" --sdk_root=${ANDROID_SDK_ROOT}
+        
     - name: Checkout keystore
       uses: actions/checkout@v3
       with:
