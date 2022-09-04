@@ -36,6 +36,10 @@ jobs:
         repository: ${{ secrets.KEYSTORE_DASHCHAN_REPO }}
         token: ${{ secrets.KEYSTORE_ACCESS_TOKEN }}
         path: keystore
+        
+    - name: Debug
+      run: |-
+        sudo ls ${ANDROID_SDK_ROOT}/build-tools/30.0.2/lib/
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
