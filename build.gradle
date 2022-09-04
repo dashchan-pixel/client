@@ -91,10 +91,9 @@ android {
 	def keyPassword = System.getenv("RELEASE_SIGN_KEY_PASSWORD")
 	def signerName = System.getenv("RELEASE_SIGNER_NAME")
 	def sdkDirectory = System.getenv("ANDROID_SDK_ROOT")
-	System.out.printLn("Debug: SDK dir=" + sdkDirectory)
 
 	if (storeFile != null && storePassword != null) {
-		def apksigner = new File(sdkDirectory, "build-tools/$buildToolsVersion/lib/apksigner.jar")
+		def apksigner = new File("$sdkDirectory/build-tools/$buildToolsVersion/lib/apksigner.jar")
 		buildTypes.all { signingConfig null }
 		applicationVariants.all { variant ->
 			if (variant.outputs.size() != 1) {
