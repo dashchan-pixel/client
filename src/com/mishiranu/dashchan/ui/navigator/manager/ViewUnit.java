@@ -1355,7 +1355,7 @@ public class ViewUnit {
 			this.dimensions = dimensions.get(this);
 			thumbnail.setDrawTouching(true);
 			ViewGroup.LayoutParams thumbnailLayoutParams = thumbnail.getLayoutParams();
-			float thumbnailsScale = Preferences.getThumbnailsScale();
+			float thumbnailsScale = Preferences.getThumbnailsScale() * 1.5f;
 			if (thumbnailsScale != 1f) {
 				thumbnailLayoutParams.width = (int) (this.dimensions.thumbnailWidth * thumbnailsScale);
 				thumbnailLayoutParams.height = thumbnailLayoutParams.width;
