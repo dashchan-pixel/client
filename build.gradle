@@ -29,7 +29,7 @@ android {
 
 	defaultConfig {
 		versionCode 1044
-		versionName '3.1.4-experemental-1.0'
+		versionName '3.1.4-experimental-1.0'
 
 		minSdkVersion 16
 		targetSdkVersion 30
@@ -45,10 +45,10 @@ android {
 
 		buildConfigField 'String', 'VERSION_DATE', '"' + versions[0].date + '"'
 		buildConfigField 'String', 'URI_UPDATES', '"//raw.githubusercontent.com/' +
-				'Mishiranu/Dashchan/master/update/data.json"'
+				'TrixiEther/DashchanFork/experemental/update/data.json"'
 		buildConfigField 'String', 'URI_THEMES', '"//raw.githubusercontent.com/' +
-				'Mishiranu/Dashchan/master/update/themes.json"'
-		buildConfigField 'String', 'GITHUB_URI_METADATA', '"//github.com/Mishiranu/Dashchan"'
+				'TrixiEther/DashchanFork/experemental/update/themes.json"'
+		buildConfigField 'String', 'GITHUB_URI_METADATA', '"//github.com/TrixiEther/DashchanFork"'
 		buildConfigField 'String', 'GITHUB_PATH_METADATA', '"metadata"'
 	}
 
