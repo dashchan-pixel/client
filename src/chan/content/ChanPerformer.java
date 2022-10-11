@@ -190,6 +190,12 @@ public class ChanPerformer implements Chan.Linked {
 		throw new UnsupportedOperationException();
 	}
 
+	@Extendable
+	protected SendVotePostResult onSendVotePost(SendVotePostData data) throws HttpException, ApiException,
+			InvalidResponseException {
+		throw new UnsupportedOperationException();
+	}
+
 	@SuppressWarnings("RedundantThrows")
 	@Extendable
 	protected SendAddToArchiveResult onSendAddToArchive(SendAddToArchiveData data) throws HttpException, ApiException,
@@ -1175,9 +1181,40 @@ public class ChanPerformer implements Chan.Linked {
 	}
 
 	@Public
+	public static class SendVotePostData implements HttpRequest.Preset {
+		@Public public final String boardName;
+		@Public public final String threadNumber;
+		@Public public final String postNumber;
+		@Public public final boolean isLike;
+		@Public public final String type;
+		@Public public final List<String> options;
+		public final HttpHolder holder;
+
+		public SendVotePostData(String boardName, String threadNumber, String postNumber, boolean isLike, String type,
+								   List<String> options, String comment, HttpHolder holder) {
+			this.boardName = boardName;
+			this.threadNumber = threadNumber;
+			this.postNumber = postNumber;
+			this.isLike = isLike;
+			this.type = type;
+			this.options = options != null ? Collections.unmodifiableList(options) : null;
+			this.holder = holder;
+		}
+
+		@Override
+		public HttpHolder getHolder() {return holder;}
+	}
+
+	@Public
 	public static final class SendReportPostsResult {
 		@Public
 		public SendReportPostsResult() {}
+	}
+
+	@Public
+	public static final class SendVotePostResult {
+		@Public
+		public SendVotePostResult() {}
 	}
 
 	@Public
@@ -1480,6 +1517,18 @@ public class ChanPerformer implements Chan.Linked {
 			PerformerContext context = performer.enterContext();
 			try {
 				return performer.onSendReportPosts(data);
+			} catch (LinkageError | RuntimeException e) {
+				throw new ExtensionException(e);
+			} finally {
+				performer.exitContext(context);
+			}
+		}
+
+		public SendVotePostResult onSendVotePost(SendVotePostData data) throws ExtensionException,
+				HttpException, ApiException, InvalidResponseException {
+			PerformerContext context = performer.enterContext();
+			try {
+				return performer.onSendVotePost(data);
 			} catch (LinkageError | RuntimeException e) {
 				throw new ExtensionException(e);
 			} finally {

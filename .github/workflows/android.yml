@@ -1,0 +1,56 @@
+name: Dashchan-Experemental build
+
+on:
+  push:
+    branches: [ "experemental" ]
+  pull_request:
+    branches: [ "experemental" ]
+    
+env:
+  KEYSTORE_FILENAME: ${{ secrets.KEYSTORE_FILENAME }}
+  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+  RELEASE_SIGN_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+  RELEASE_SIGN_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+  RELEASE_SIGNER_NAME: ${{ secrets.SIGNER_NAME }}
+
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Install NDK
+      run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;21.4.7075529" --sdk_root=${ANDROID_SDK_ROOT}
+        
+    - name: Checkout keystore
+      uses: actions/checkout@v3
+      with:
+        repository: ${{ secrets.KEYSTORE_DASHCHAN_REPO }}
+        token: ${{ secrets.KEYSTORE_ACCESS_TOKEN }}
+        path: keystore
+        
+    - name: Debug
+      run: |-
+        sudo ls ${ANDROID_SDK_ROOT}/build-tools/30.0.2/lib/
+        sudo ls
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build with Gradle
+      run: ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} ./gradlew :assembleRelease
+
+      
+    - name: Upload APK
+      uses: actions/upload-artifact@v2
+      with:
+        name: Dashchan-Experemental.apk
+        path: build/outputs/apk/release/DashchanFork-release.apk

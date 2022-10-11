@@ -28,8 +28,8 @@ android {
 	ndkVersion '21.4.7075529'
 
 	defaultConfig {
-		versionCode 1043
-		versionName '3.1.4'
+		versionCode 1044
+		versionName '3.1.4-experimental-1.0'
 
 		minSdkVersion 16
 		targetSdkVersion 30
@@ -45,10 +45,10 @@ android {
 
 		buildConfigField 'String', 'VERSION_DATE', '"' + versions[0].date + '"'
 		buildConfigField 'String', 'URI_UPDATES', '"//raw.githubusercontent.com/' +
-				'Mishiranu/Dashchan/master/update/data.json"'
+				'TrixiEther/DashchanFork/experemental/update/data.json"'
 		buildConfigField 'String', 'URI_THEMES', '"//raw.githubusercontent.com/' +
-				'Mishiranu/Dashchan/master/update/themes.json"'
-		buildConfigField 'String', 'GITHUB_URI_METADATA', '"//github.com/Mishiranu/Dashchan"'
+				'TrixiEther/DashchanFork/experemental/update/themes.json"'
+		buildConfigField 'String', 'GITHUB_URI_METADATA', '"//github.com/TrixiEther/DashchanFork"'
 		buildConfigField 'String', 'GITHUB_PATH_METADATA', '"metadata"'
 	}
 
@@ -85,14 +85,15 @@ android {
 	} catch (IOException ignored) {
 		// Ignore
 	}
-	def storeFile = keystoreProperties['store.file'].with { it != null ? file(it) : null }
-	def storePassword = keystoreProperties['store.password']
-	def keyAlias = keystoreProperties['key.alias']
-	def keyPassword = keystoreProperties['key.password']
-	def signerName = keystoreProperties['signer.name']
+	def storeFile = System.getenv("KEYSTORE_FILENAME")
+	def storePassword = System.getenv("KEYSTORE_PASSWORD")
+	def keyAlias = System.getenv("RELEASE_SIGN_KEY_ALIAS")
+	def keyPassword = System.getenv("RELEASE_SIGN_KEY_PASSWORD")
+	def signerName = System.getenv("RELEASE_SIGNER_NAME")
+	def sdkDirectory = System.getenv("ANDROID_SDK_ROOT")
 
-	if (storeFile != null && storeFile.exists() && storePassword != null) {
-		def apksigner = new File(sdkDirectory, "build-tools/$buildToolsVersion/lib/apksigner.jar")
+	if (storeFile != null && storePassword != null) {
+		def apksigner = new File("$sdkDirectory/build-tools/$buildToolsVersion/lib/apksigner.jar")
 		buildTypes.all { signingConfig null }
 		applicationVariants.all { variant ->
 			if (variant.outputs.size() != 1) {
@@ -111,7 +112,7 @@ android {
 				packageTask.doLast {
 					def args = ['sign', '--in', file.path, '--out', file.path]
 					args += ['--v4-signing-enabled', 'false']
-					args += ['--ks', storeFile.path, '--ks-pass', "pass:$storePassword"]
+					args += ['--ks', storeFile, '--ks-pass', "pass:$storePassword"]
 					if (keyAlias != null && keyPassword != null) {
 						args += ['--ks-key-alias', keyAlias, '--key-pass', "pass:$keyPassword"]
 					}

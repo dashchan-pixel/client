@@ -1417,6 +1417,21 @@ public class DialogUnit {
 				chanName, boardName, threadNumber, threadTitle, posts);
 	}
 
+	public void performSendVotePost(FragmentManager fragmentManager, String chanName, String boardName, String threadNumber, PostNumber postNumber, boolean isLike) {
+		Chan chan = Chan.get(chanName);
+		ChanConfiguration.Voting voting = chan.configuration.safe().obtainVoting(boardName);
+		if (voting == null) {
+			return;
+		}
+		SendMultifunctionalTask.State state = new SendMultifunctionalTask.State(SendMultifunctionalTask
+				.Operation.VOTE, chanName, boardName, threadNumber, null, null, false);
+		state.postNumbers = new ArrayList<>();
+		state.postNumbers.add(postNumber);
+		state.like = isLike;
+		state.dislike = !isLike;
+		startMultifunctionalProcess(fragmentManager, state, null, null, null);
+	}
+
 	private static void performSendArchiveThread(Context context, FragmentManager fragmentManager,
 			String chanName, String boardName, String threadNumber, String threadTitle, Collection<Post> posts) {
 		Chan chan = Chan.get(chanName);
@@ -1658,7 +1673,8 @@ public class DialogUnit {
 					provider.dismiss();
 					switch (state.operation) {
 						case DELETE:
-						case REPORT: {
+						case REPORT:
+						case VOTE: {
 							ClickableToast.show(R.string.request_has_been_sent_successfully);
 							break;
 						}

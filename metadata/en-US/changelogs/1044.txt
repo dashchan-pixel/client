@@ -1,0 +1,1 @@
+* Added support for voting like on some boards, for example 2ch.hk/news/ (only works with updated extension)

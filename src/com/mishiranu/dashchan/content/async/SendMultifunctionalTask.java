@@ -30,7 +30,7 @@ public class SendMultifunctionalTask extends HttpHolderTask<Void, Boolean> {
 	private String archiveThreadNumber;
 	private ErrorItem errorItem;
 
-	public enum Operation {DELETE, REPORT, ARCHIVE}
+	public enum Operation {DELETE, REPORT, ARCHIVE, VOTE}
 
 	public interface Callback {
 		void onSendSuccess(String archiveBoardName, String archiveThreadNumber);
@@ -48,6 +48,8 @@ public class SendMultifunctionalTask extends HttpHolderTask<Void, Boolean> {
 		public List<Pair<String, String>> types;
 		public List<Pair<String, String>> options;
 
+		public boolean like;
+		public boolean dislike;
 		public boolean commentField;
 
 		public List<PostNumber> postNumbers;
@@ -110,6 +112,12 @@ public class SendMultifunctionalTask extends HttpHolderTask<Void, Boolean> {
 					chan.performer.safe().onSendReportPosts(new ChanPerformer
 							.SendReportPostsData(state.boardName, state.threadNumber,
 							createPostNumberList(state.postNumbers), type, options, text, holder));
+					break;
+				}
+				case VOTE: {
+					chan.performer.safe().onSendVotePost(new ChanPerformer
+							.SendVotePostData(state.boardName, state.threadNumber,
+							state.postNumbers.get(0).toString(), state.like, type, options, text, holder));
 					break;
 				}
 				case ARCHIVE: {

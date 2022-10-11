@@ -119,6 +119,22 @@ public final class Post implements Comparable<Post> {
 		}
 	}
 
+	public static final class Vote {
+		public final int like;
+		public final int dislike;
+		public final boolean showVotes;
+
+		private Vote(int likes, int dislikes) {
+			this.like = likes;
+			this.dislike = dislikes;
+			this.showVotes = true;
+		}
+
+		public static Vote createExternal(int likes, int dislikes) {
+			return new Vote(likes, dislikes);
+		}
+	}
+
 	private interface Flags {
 		int SAGE = 0x00000001;
 		int STICKY = 0x00000002;
@@ -146,11 +162,12 @@ public final class Post implements Comparable<Post> {
 	public final String email;
 	public final List<Attachment> attachments;
 	public final List<Icon> icons;
+	public final Vote vote;
 
 	private Post(PostNumber number, boolean deleted, int flags, long timestamp,
 			String subject, String comment, String commentMarkup,
 			String name, String identifier, String tripcode, String capcode, String email,
-			List<Attachment> attachments, List<Icon> icons) {
+			List<Attachment> attachments, List<Icon> icons, Vote vote) {
 		this.number = number;
 		this.deleted = deleted;
 		this.flags = flags;
@@ -165,6 +182,7 @@ public final class Post implements Comparable<Post> {
 		this.email = email;
 		this.attachments = attachments;
 		this.icons = icons;
+		this.vote = vote;
 	}
 
 	public boolean isSage() {
@@ -329,6 +347,15 @@ public final class Post implements Comparable<Post> {
 			}
 			writer.endArray();
 		}
+		if (vote != null) {
+			writer.name("vote");
+			writer.startObject();
+			writer.name("like");
+			writer.value(vote.like);
+			writer.name("dislike");
+			writer.value(vote.dislike);
+			writer.endObject();
+		}
 		writer.endObject();
 	}
 
@@ -346,6 +373,7 @@ public final class Post implements Comparable<Post> {
 		String email = "";
 		List<Attachment> attachments = Collections.emptyList();
 		List<Icon> icons = Collections.emptyList();
+		Vote vote = null;
 		reader.startObject();
 		while (!reader.endStruct()) {
 			switch (reader.nextName()) {
@@ -504,6 +532,29 @@ public final class Post implements Comparable<Post> {
 					}
 					break;
 				}
+				case "vote": {
+					int like = 0;
+					int dislike = 0;
+					reader.startObject();
+					while (!reader.endStruct()) {
+						switch (reader.nextName()) {
+							case "like": {
+								like = reader.nextInt();
+								break;
+							}
+							case "dislike": {
+								dislike = reader.nextInt();
+								break;
+							}
+							default: {
+								reader.skip();
+								break;
+							}
+						}
+					}
+					vote = new Vote(like, dislike);
+					break;
+				}
 				default: {
 					reader.skip();
 					break;
@@ -511,7 +562,7 @@ public final class Post implements Comparable<Post> {
 			}
 		}
 		return new Post(number, deleted, flags, timestamp, subject, comment, commentMarkup,
-				name, identifier, tripcode, capcode, email, attachments, icons);
+				name, identifier, tripcode, capcode, email, attachments, icons, vote);
 	}
 
 	public static final class Builder {
@@ -528,6 +579,7 @@ public final class Post implements Comparable<Post> {
 		public String email;
 		public List<Attachment> attachments;
 		public List<Icon> icons;
+		public Vote vote;
 
 		public boolean isSage() {
 			return FlagUtils.get(flags, Flags.SAGE);
@@ -609,6 +661,10 @@ public final class Post implements Comparable<Post> {
 			flags = FlagUtils.set(flags, Flags.BUMP_LIMIT_REACHED, bumpLimitReached);
 		}
 
+		public void setLikes(int likes) {
+
+		}
+
 		public Post build(boolean deleted) {
 			PostNumber number = this.number;
 			if (number == null) {
@@ -623,6 +679,7 @@ public final class Post implements Comparable<Post> {
 			String capcode = StringUtils.emptyIfNull(this.capcode);
 			String email = StringUtils.emptyIfNull(this.email);
 			List<Attachment> attachments = this.attachments;
+			Vote vote = this.vote;
 			if (attachments == null) {
 				attachments = Collections.emptyList();
 			}
@@ -631,7 +688,7 @@ public final class Post implements Comparable<Post> {
 				icons = Collections.emptyList();
 			}
 			return new Post(number, deleted, flags, timestamp, subject, comment, commentMarkup,
-					name, identifier, tripcode, capcode, email, attachments, icons);
+					name, identifier, tripcode, capcode, email, attachments, icons, vote);
 		}
 	}
 }
