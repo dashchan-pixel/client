@@ -7,14 +7,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.DocumentsContract;
 import android.util.Pair;
+
 import androidx.annotation.RequiresApi;
-import chan.annotation.Public;
+
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.content.CacheManager;
 import com.mishiranu.dashchan.content.FileProvider;
 import com.mishiranu.dashchan.content.MainApplication;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.util.MimeTypes;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,7 +27,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
+
+import chan.annotation.Public;
 
 @Public
 public abstract class DataFile {
@@ -313,32 +316,36 @@ public abstract class DataFile {
 				DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_MIME_TYPE,
 				DocumentsContract.Document.COLUMN_LAST_MODIFIED};
 
-		private static Object findChildDocumentUriOrExtra(Uri documentUri, String displayName, ChildExtra childExtra) {
+
+		private static Object findChildDocumentUriOrExtra(Uri parentDocumentUri, String childDocumentDisplayName, ChildExtra childExtra) {
+			String parentDocumentId = DocumentsContract.getDocumentId(parentDocumentUri);
+			String childDocumentId = parentDocumentId + "/" + childDocumentDisplayName;
+			Uri childUri = DocumentsContract.buildDocumentUriUsingTree(parentDocumentUri, childDocumentId);
 			String[] projection = childExtra != null ? PROJECTION_CHILD_EXTRA : PROJECTION_CHILD_SIMPLE;
-			Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(documentUri,
-					DocumentsContract.getDocumentId(documentUri));
-			try (Cursor cursor = getContentResolver().query(childrenUri, projection, null, null, null)) {
+
+			// try to open a document, if the document doesn't exists IllegalArgumentException will be thrown
+			try (Cursor cursor = getContentResolver().query(childUri, projection, null, null, null)) {
 				if (cursor == null) {
 					return null;
 				}
-				boolean loading = cursor.getExtras().getBoolean(DocumentsContract.EXTRA_LOADING);
-				boolean error = cursor.getExtras().getBoolean(DocumentsContract.EXTRA_ERROR);
-				while (cursor.moveToNext()) {
-					if (displayName.toLowerCase(Locale.getDefault()).equals(StringUtils
-							.emptyIfNull(cursor.getString(1)).toLowerCase(Locale.getDefault()))) {
-						Uri childDocumentUri = DocumentsContract
-								.buildDocumentUriUsingTree(documentUri, cursor.getString(0));
-						if (childExtra != null) {
-							childExtra.isDirectory = DocumentsContract.Document.MIME_TYPE_DIR
-									.equals(cursor.getString(2));
-							childExtra.lastModified = cursor.getLong(3);
-						}
-						return childDocumentUri;
-					}
+
+				if (cursor.getCount() != 1) {
+					boolean loading = cursor.getExtras().getBoolean(DocumentsContract.EXTRA_LOADING);
+					boolean error = cursor.getExtras().getBoolean(DocumentsContract.EXTRA_ERROR);
+					return loading ? CursorExtra.LOADING : error ? CursorExtra.ERROR : null;
 				}
-				return loading ? CursorExtra.LOADING : error ? CursorExtra.ERROR : null;
-			} catch (SecurityException e) {
-				e.printStackTrace();
+
+				cursor.moveToFirst();
+				if (childExtra != null) {
+					childExtra.isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(cursor.getString(2));
+					childExtra.lastModified = cursor.getLong(3);
+				}
+
+				return childUri;
+			} catch (Exception e) {
+				if (!(e instanceof IllegalArgumentException)) {
+					e.printStackTrace();
+				}
 				return null;
 			}
 		}
