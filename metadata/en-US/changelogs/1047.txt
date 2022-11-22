@@ -1,0 +1,1 @@
+* Fix app freezes while downloading when download folder contains many files
