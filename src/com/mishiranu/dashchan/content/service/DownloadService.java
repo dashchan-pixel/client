@@ -20,12 +20,9 @@ import android.os.SystemClock;
 import android.service.notification.StatusBarNotification;
 import android.util.DisplayMetrics;
 import android.util.Pair;
+
 import androidx.core.app.NotificationCompat;
-import chan.content.Chan;
-import chan.content.ChanManager;
-import chan.util.CommonUtils;
-import chan.util.DataFile;
-import chan.util.StringUtils;
+
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.CacheManager;
@@ -45,6 +42,7 @@ import com.mishiranu.dashchan.util.MimeTypes;
 import com.mishiranu.dashchan.util.WeakObservable;
 import com.mishiranu.dashchan.widget.ClickableToast;
 import com.mishiranu.dashchan.widget.ThemeEngine;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -66,6 +64,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import chan.content.Chan;
+import chan.content.ChanManager;
+import chan.util.CommonUtils;
+import chan.util.DataFile;
+import chan.util.StringUtils;
 
 public class DownloadService extends BaseService implements ReadFileTask.Callback {
 	private static final Executor SINGLE_THREAD_EXECUTOR = Executors.newSingleThreadExecutor();
@@ -103,6 +107,9 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	private int progressMax;
 	private long lastUpdate;
 
+	private DataFile activeTaskDataFile = null;
+	private DataFile lastSuccessTaskDataFile = null;
+
 	private static File getSavedDownloadRetryFile() {
 		return CacheManager.getInstance().getInternalCacheFile("saved-download-retry");
 	}
@@ -115,7 +122,6 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	@Override
 	public void onCreate() {
 		super.onCreate();
-
 		notificationsWorker = new Thread(notificationsRunnable, "DownloadServiceNotificationThread");
 		notificationsWorker.start();
 		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -185,6 +191,10 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private void cleanup() {
+		if (activeTask != null) {
+			activeTask.second.cancel();
+			activeTask = null;
+		}
 		cleanupRequests();
 		for (TaskData taskData : queuedTasks.values()) {
 			if (taskData.input != null) {
@@ -194,12 +204,11 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		queuedTasks.clear();
 		successTasks.clear();
 		errorTasks.clear();
-		if (activeTask != null) {
-			activeTask.second.cancel();
-			activeTask = null;
-		}
-		// Should also stop foreground and remove notification
+		notificationsQueue.clear();
+		activeTaskDataFile = null;
+		lastSuccessTaskDataFile = null;
 		refreshNotification(NotificationUpdate.SYNC);
+		startStopForeground(false, null);
 		wakeLock.release();
 		for (Callback callback : callbacks) {
 			callback.requestHandleRequest();
@@ -214,18 +223,6 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	private static String getTargetPathKey(DataFile.Target target, String path, String name) {
 		String fullPath = !StringUtils.isEmpty(path) ? path + "/" + name : name;
 		return getTargetPathKey(target, fullPath);
-	}
-
-	private DataFile getDataFile(TaskData taskData) {
-		String key = getTargetPathKey(taskData.target, StringUtils.emptyIfNull(taskData.path));
-		DataFile file = cachedDirectories.get(key);
-		if (file == null) {
-			file = DataFile.obtain(taskData.target, taskData.path);
-			if (file.exists()) {
-				cachedDirectories.put(key, file);
-			}
-		}
-		return file.getChild(taskData.name);
 	}
 
 	private boolean hasStoragePermission() {
@@ -245,34 +242,57 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 	}
 
-	private void startNextTask() {
-		if (activeTask == null && !queuedTasks.isEmpty()) {
-			Iterator<TaskData> iterator = queuedTasks.values().iterator();
-			TaskData taskData = iterator.next();
-			iterator.remove();
-			if (taskData.input != null) {
-				boolean success = false;
-				try (InputStream input = taskData.input;
-						OutputStream output = getDataFile(taskData).openOutputStream()) {
-					IOUtils.copyStream(input, output);
-					success = true;
-				} catch (IOException e) {
-					e.printStackTrace();
+	private void handleRequests() {
+		if (primaryRequest != null || !directRequests.isEmpty()) {
+			if (!hasStoragePermission()) {
+				for (Callback callback : callbacks) {
+					callback.requestPermission();
 				}
-				onFinishDownloadingInternal(success, new TaskData(taskData.chanName, taskData.overwrite,
-						null, taskData.target, taskData.path, taskData.name, taskData.allowWrite));
 			} else {
-				Chan chan = Chan.getPreferred(taskData.chanName, taskData.uri);
-				ReadFileTask readFileTask = ReadFileTask.createShared(this, chan,
-						taskData.uri, getDataFile(taskData), taskData.overwrite,
-						taskData.checkSha256, taskData.checkFingerprints);
-				activeTask = new Pair<>(taskData, readFileTask);
-				readFileTask.execute(SINGLE_THREAD_EXECUTOR);
+				handlePrimaryRequest();
+				enqueueTasksFromRequests();
+				startNextTask();
 			}
-		} else {
-			cachedDirectories.clear();
+		}
+		for (Callback callback : callbacks) {
+			callback.requestHandleRequest();
+		}
+		refreshNotification(NotificationUpdate.SYNC);
+	}
+
+	private void handlePrimaryRequest() {
+		if (primaryRequest instanceof ChoiceRequest) {
+			ChoiceRequest choiceRequest = (ChoiceRequest) primaryRequest;
+			if (!choiceRequest.shouldHandle) {
+				DirectRequest directRequest = choiceRequest.complete(null, Preferences.isDownloadDetailName(),
+						Preferences.isDownloadOriginalName());
+				primaryRequest = null;
+				handlePrimaryDirectRequest(directRequest);
+			}
 		}
 	}
+
+	private void enqueueTasksFromRequests() {
+		for (DirectRequest directRequest : directRequests) {
+			if (directRequest.input != null) {
+				if (directRequest.downloadItems.size() != 1) {
+					throw new IllegalStateException();
+				}
+				DownloadItem downloadItem = directRequest.downloadItems.get(0);
+				enqueue(new TaskData(downloadItem.chanName, directRequest.overwrite, directRequest.input,
+						directRequest.target, directRequest.path, downloadItem.name, directRequest.allowWrite));
+
+			} else {
+				for (DownloadItem downloadItem : directRequest.downloadItems) {
+					enqueue(new TaskData(downloadItem.chanName, directRequest.overwrite, downloadItem.uri,
+							downloadItem.checkSha256, downloadItem.checkFingerprints, directRequest.target,
+							directRequest.path, downloadItem.name, directRequest.allowWrite));
+				}
+			}
+		}
+		directRequests.clear();
+	}
+
 
 	private void enqueue(TaskData taskData) {
 		String key = taskData.getKey();
@@ -289,52 +309,57 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		queuedTasks.put(key, taskData);
 	}
 
-	private void handleRequests() {
-		if (primaryRequest != null || !directRequests.isEmpty()) {
-			if (!hasStoragePermission()) {
-				for (Callback callback : callbacks) {
-					callback.requestPermission();
-				}
-			} else {
-				if (primaryRequest instanceof ChoiceRequest) {
-					ChoiceRequest choiceRequest = (ChoiceRequest) primaryRequest;
-					if (!choiceRequest.shouldHandle) {
-						DirectRequest directRequest = choiceRequest.complete(null, Preferences.isDownloadDetailName(),
-								Preferences.isDownloadOriginalName());
-						primaryRequest = null;
-						handlePrimaryDirectRequest(directRequest);
+	private void startNextTask() {
+		if (activeTask == null && !queuedTasks.isEmpty()) {
+			SINGLE_THREAD_EXECUTOR.execute(() -> {
+				Iterator<TaskData> iterator = queuedTasks.values().iterator();
+				TaskData taskData = iterator.next();
+				DataFile taskDataFile = getDataFile(taskData);
+				activeTaskDataFile = taskDataFile;
+				iterator.remove();
+				if (taskData.input != null) {
+					boolean success = false;
+					try (InputStream input = taskData.input; OutputStream output = taskDataFile.openOutputStream()) {
+						IOUtils.copyStream(input, output);
+						success = true;
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
+					boolean finalSuccess = success;
+					ConcurrentUtils.HANDLER.post(() -> onFinishDownloadingInternal(finalSuccess, new TaskData(taskData.chanName, taskData.overwrite,
+							null, taskData.target, taskData.path, taskData.name, taskData.allowWrite)));
+				} else {
+					Chan chan = Chan.getPreferred(taskData.chanName, taskData.uri);
+					ReadFileTask readFileTask = ReadFileTask.createShared(this, chan,
+							taskData.uri, taskDataFile, taskData.overwrite,
+							taskData.checkSha256, taskData.checkFingerprints);
+					activeTask = new Pair<>(taskData, readFileTask);
+					readFileTask.execute(SINGLE_THREAD_EXECUTOR);
 				}
-				for (DirectRequest directRequest : directRequests) {
-					if (directRequest.input != null) {
-						if (directRequest.downloadItems.size() != 1) {
-							throw new IllegalStateException();
-						}
-						DownloadItem downloadItem = directRequest.downloadItems.get(0);
-						enqueue(new TaskData(downloadItem.chanName, directRequest.overwrite, directRequest.input,
-								directRequest.target, directRequest.path, downloadItem.name, directRequest.allowWrite));
-					} else {
-						for (DownloadItem downloadItem : directRequest.downloadItems) {
-							enqueue(new TaskData(downloadItem.chanName, directRequest.overwrite, downloadItem.uri,
-									downloadItem.checkSha256, downloadItem.checkFingerprints, directRequest.target,
-									directRequest.path, downloadItem.name, directRequest.allowWrite));
-						}
-					}
+			});
+		} else {
+			cachedDirectories.clear();
+		}
+	}
+
+	private DataFile getDataFile(TaskData taskData) {
+			String key = getTargetPathKey(taskData.target, StringUtils.emptyIfNull(taskData.path));
+			DataFile file = cachedDirectories.get(key);
+			if (file == null) {
+				file = DataFile.obtain(taskData.target, taskData.path);
+				if (file.exists()) {
+					cachedDirectories.put(key, file);
 				}
-				directRequests.clear();
-				startNextTask();
 			}
-		}
-		for (Callback callback : callbacks) {
-			callback.requestHandleRequest();
-		}
-		refreshNotification(NotificationUpdate.SYNC);
+		return file.getChild(taskData.name);
 	}
 
 	private static class PrepareTask<T> extends ExecutorTask<Void, T> {
 		public interface Task<T> {
 			void cleanup();
+
 			T run() throws InterruptedException;
+
 			void onResult(T result);
 		}
 
@@ -368,7 +393,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private ReplaceRequest createReplaceRequest(DirectRequest directRequest,
-			HashSet<String> activeKeys) throws InterruptedException {
+												HashSet<String> activeKeys) throws InterruptedException {
 		int queued = 0;
 		int exists = 0;
 		DataFile lastExistingFile = null;
@@ -431,7 +456,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private DirectRequest createDirectRequestKeepAll(ReplaceRequest replaceRequest,
-			HashSet<String> activeKeys) throws InterruptedException {
+													 HashSet<String> activeKeys) throws InterruptedException {
 		HashSet<String> keys = new HashSet<>();
 		DataFile.Target target = replaceRequest.directRequest.target;
 		String path = replaceRequest.directRequest.path;
@@ -676,7 +701,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 
 		public void downloadDirect(DataFile.Target target, String path, boolean overwrite,
-				List<DownloadItem> downloadItems) {
+								   List<DownloadItem> downloadItems) {
 			directRequests.add(new DirectRequest(target, path, overwrite, downloadItems, null, false));
 			handleRequestsOrAccumulate();
 		}
@@ -688,19 +713,19 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 
 		public void downloadStorage(Uri uri, String fileName, String originalName,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+									String chanName, String boardName, String threadNumber, String threadTitle) {
 			downloadStorage(new RequestItem(uri, fileName, originalName),
 					chanName, boardName, threadNumber, threadTitle);
 		}
 
 		public void downloadStorage(RequestItem requestItem,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+									String chanName, String boardName, String threadNumber, String threadTitle) {
 			downloadStorage(Collections.singletonList(requestItem), false,
 					chanName, boardName, threadNumber, threadTitle);
 		}
 
 		public void downloadStorage(List<RequestItem> requestItems, boolean multiple,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+									String chanName, String boardName, String threadNumber, String threadTitle) {
 			boolean modifyingAllowed = false;
 			boolean hasOriginalNames = false;
 			for (RequestItem requestItem : requestItems) {
@@ -719,7 +744,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 
 		public void downloadStorage(InputStream input, String chanName, String boardName, String threadNumber,
-				String threadTitle, String fileName, boolean allowDialog, boolean allowWrite) {
+									String threadTitle, String fileName, boolean allowDialog, boolean allowWrite) {
 			primaryRequest = new StreamRequest(Preferences.getDownloadSubdirMode().isEnabled(false) && allowDialog,
 					allowWrite, input, fileName, chanName, boardName, threadNumber, threadTitle);
 			handleRequestsOrAccumulate();
@@ -760,9 +785,9 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final CountDownLatch syncLatch;
 
 		private NotificationData(Type type, boolean allowHeadsUp,
-				int queuedTasks, int successTasks, int errorTasks, boolean allowRetry,
-				boolean hasNotFromCache, DataFile lastSuccessFile, boolean allowWrite,
-				String activeName, int progress, int progressMax, boolean updateImageOnly, CountDownLatch syncLatch) {
+								 int queuedTasks, int successTasks, int errorTasks, boolean allowRetry,
+								 boolean hasNotFromCache, DataFile lastSuccessFile, boolean allowWrite,
+								 String activeName, int progress, int progressMax, boolean updateImageOnly, CountDownLatch syncLatch) {
 			this.type = type;
 			this.allowHeadsUp = allowHeadsUp;
 			this.queuedTasks = queuedTasks;
@@ -780,8 +805,8 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 
 		public static NotificationData updateData(Type type, boolean allowHeadsUp,
-				int queuedTasks, int successTasks, int errorTasks, boolean allowRetry, boolean hasExternal,
-				DataFile lastSuccessFile, boolean allowWrite, String activeName, int progress, int progressMax) {
+												  int queuedTasks, int successTasks, int errorTasks, boolean allowRetry, boolean hasExternal,
+												  DataFile lastSuccessFile, boolean allowWrite, String activeName, int progress, int progressMax) {
 			return new NotificationData(type, allowHeadsUp, queuedTasks, successTasks, errorTasks,
 					allowRetry, hasExternal, lastSuccessFile, allowWrite,
 					activeName, progress, progressMax, false, null);
@@ -841,8 +866,8 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final boolean allowWrite;
 
 		private TaskData(String chanName, boolean finishedFromCache, boolean overwrite,
-				InputStream input, Uri uri, byte[] checkSha256, ChanManager.Fingerprints checkFingerprints,
-				DataFile.Target target, String path, String name, boolean allowWrite) {
+						 InputStream input, Uri uri, byte[] checkSha256, ChanManager.Fingerprints checkFingerprints,
+						 DataFile.Target target, String path, String name, boolean allowWrite) {
 			this.chanName = chanName;
 			this.finishedFromCache = finishedFromCache;
 			this.overwrite = overwrite;
@@ -857,13 +882,13 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 
 		public TaskData(String chanName, boolean overwrite,
-				InputStream input, DataFile.Target target, String path, String name, boolean allowWrite) {
+						InputStream input, DataFile.Target target, String path, String name, boolean allowWrite) {
 			this(chanName, true, overwrite, input, null, null, null, target, path, name, allowWrite);
 		}
 
 		public TaskData(String chanName, boolean overwrite,
-				Uri from, byte[] checkSha256, ChanManager.Fingerprints checkFingerprints,
-				DataFile.Target target, String path, String name, boolean allowWrite) {
+						Uri from, byte[] checkSha256, ChanManager.Fingerprints checkFingerprints,
+						DataFile.Target target, String path, String name, boolean allowWrite) {
 			this(chanName, false, overwrite, null, from, checkSha256, checkFingerprints,
 					target, path, name, allowWrite);
 		}
@@ -1083,15 +1108,15 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	private enum NotificationUpdate {NORMAL, HEADS_UP, SYNC}
 
 	private void refreshNotification(NotificationUpdate notificationUpdate) {
-		boolean hasTask = activeTask != null;
+		boolean hasActiveTask = activeTask != null;
 		boolean hasResults = !queuedTasks.isEmpty() || !successTasks.isEmpty() || !errorTasks.isEmpty();
 		boolean hasRequests = primaryRequest != null || !directRequests.isEmpty();
-		boolean needForegroundOrNotification = hasTask || hasResults || hasRequests;
+		boolean needForegroundOrNotification = hasActiveTask || hasResults || hasRequests;
 		if (needForegroundOrNotification) {
 			boolean allowRetry = false;
 			boolean hasNotFromCache = false;
 			TaskData lastSuccessFileTaskData = null;
-			if (hasTask || !hasRequests) {
+			if (hasActiveTask || !hasRequests) {
 				for (TaskData taskData : successTasks.values()) {
 					if (!taskData.finishedFromCache) {
 						hasNotFromCache = true;
@@ -1109,18 +1134,21 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 					}
 				}
 			}
-			DataFile lastSuccessFile = lastSuccessFileTaskData != null ? getDataFile(lastSuccessFileTaskData) : null;
+
 			boolean allowWrite = lastSuccessFileTaskData != null && lastSuccessFileTaskData.allowWrite;
-			NotificationData.Type type = hasTask ? NotificationData.Type.PROGRESS : hasRequests
-					? NotificationData.Type.REQUEST : NotificationData.Type.RESULT;
+
+			NotificationData.Type type = hasActiveTask ? NotificationData.Type.PROGRESS : hasRequests
+						? NotificationData.Type.REQUEST : NotificationData.Type.RESULT;
+
 			boolean allowHeadsUp = type == NotificationData.Type.RESULT &&
 					notificationUpdate == NotificationUpdate.HEADS_UP;
-			String activeName = hasTask ? activeTask.second.getFileName() : null;
+			String activeName = hasActiveTask ? activeTask.second.getFileName() : null;
+
 			notificationsQueue.add(NotificationData.updateData(type, allowHeadsUp,
 					queuedTasks.size(), successTasks.size(), errorTasks.size(), allowRetry, hasNotFromCache,
-					lastSuccessFile, allowWrite, activeName, progress, progressMax));
+					lastSuccessTaskDataFile, allowWrite, activeName, progress, progressMax));
 		}
-		if (hasTask) {
+		if (hasActiveTask) {
 			wakeLock.acquire();
 		} else {
 			wakeLock.acquire(15000);
@@ -1154,16 +1182,19 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private void onFinishDownloadingInternal(boolean success, TaskData taskData) {
+		File file = activeTaskDataFile.getFileOrUri().first;
+
 		if (success) {
-			File file = getDataFile(taskData).getFileOrUri().first;
 			if (file != null) {
 				scanFileLegacy(file, null);
 			}
 		}
+
 		for (Callback callback : callbacks) {
 			callback.onFinishDownloading(success, taskData.target, taskData.path, taskData.name);
 		}
 		if (success) {
+			lastSuccessTaskDataFile = activeTaskDataFile;
 			successTasks.put(taskData.getKey(), taskData);
 		} else {
 			errorTasks.put(taskData.getKey(), taskData);
@@ -1171,14 +1202,16 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		if (!queuedTasks.isEmpty()) {
 			if (success && taskData.target.isExternal()) {
 				// Update image explicitly, because task type won't be changed
-				notificationsQueue.add(NotificationData.updateImageOnly(getDataFile(taskData), taskData.allowWrite));
+				notificationsQueue.add(NotificationData.updateImageOnly(lastSuccessTaskDataFile, taskData.allowWrite));
 			}
 			startNextTask();
 		} else {
 			cachedDirectories.clear();
+			activeTaskDataFile = null;
 			refreshNotification(NotificationUpdate.HEADS_UP);
 		}
 	}
+
 
 	@Override
 	public void onUpdateProgress(long progress, long progressMax) {
@@ -1223,7 +1256,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private static String getFileNameWithChanBoardThreadData(String fileName,
-			String chanName, String boardName, String threadNumber) {
+															 String chanName, String boardName, String threadNumber) {
 		String extension = StringUtils.getFileExtension(fileName);
 		fileName = fileName.substring(0, fileName.length() - extension.length() - 1);
 		StringBuilder builder = new StringBuilder();
@@ -1246,7 +1279,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	}
 
 	private static String getDesiredFileName(Uri uri, String fileName, String originalName, boolean detailName,
-			String chanName, String boardName, String threadNumber) {
+											 String chanName, String boardName, String threadNumber) {
 		if (isFileNameModifyingAllowed(chanName, uri)) {
 			if (!StringUtils.isEmpty(originalName) && Preferences.isDownloadOriginalName()) {
 				fileName = originalName;
@@ -1278,7 +1311,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public Object state;
 
 		protected ChoiceRequest(boolean shouldHandle, boolean allowWrite,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+								String chanName, String boardName, String threadNumber, String threadTitle) {
 			this.shouldHandle = shouldHandle;
 			this.allowWrite = allowWrite;
 			this.chanName = chanName;
@@ -1301,7 +1334,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final boolean allowWrite;
 
 		private DirectRequest(DataFile.Target target, String path, boolean overwrite,
-				List<DownloadItem> downloadItems, InputStream input, boolean allowWrite) {
+							  List<DownloadItem> downloadItems, InputStream input, boolean allowWrite) {
 			this.target = target;
 			this.path = path;
 			this.overwrite = overwrite;
@@ -1330,7 +1363,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public Object state;
 
 		private ReplaceRequest(DirectRequest directRequest, List<DownloadItem> availableItems,
-				DataFile lastExistingFile, int queued, int exists) {
+							   DataFile lastExistingFile, int queued, int exists) {
 			this.directRequest = directRequest;
 			this.availableItems = availableItems;
 			this.lastExistingFile = lastExistingFile;
@@ -1364,8 +1397,8 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final boolean allowOriginalName;
 
 		private UriRequest(boolean shouldHandle, List<RequestItem> items,
-				boolean allowDetailName, boolean allowOriginalName,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+						   boolean allowDetailName, boolean allowOriginalName,
+						   String chanName, String boardName, String threadNumber, String threadTitle) {
 			super(shouldHandle, false, chanName, boardName, threadNumber, threadTitle);
 			this.items = items;
 			this.allowDetailName = allowDetailName;
@@ -1399,7 +1432,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final String fileName;
 
 		private StreamRequest(boolean shouldHandle, boolean allowWrite, InputStream input, String fileName,
-				String chanName, String boardName, String threadNumber, String threadTitle) {
+							  String chanName, String boardName, String threadNumber, String threadTitle) {
 			super(shouldHandle, allowWrite, chanName, boardName, threadNumber, threadTitle);
 			this.input = input;
 			this.fileName = fileName;
@@ -1452,7 +1485,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		public final ChanManager.Fingerprints checkFingerprints;
 
 		public DownloadItem(String chanName, Uri uri, String name,
-				byte[] checkSha256, ChanManager.Fingerprints checkFingerprints) {
+							byte[] checkSha256, ChanManager.Fingerprints checkFingerprints) {
 			this.chanName = chanName;
 			this.uri = uri;
 			this.name = name;
