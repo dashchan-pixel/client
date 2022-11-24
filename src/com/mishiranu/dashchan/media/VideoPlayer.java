@@ -14,6 +14,9 @@ import android.util.Pair;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+
+import com.mishiranu.dashchan.content.Preferences;
+
 import chan.content.ChanManager;
 import chan.util.StringUtils;
 import dalvik.system.PathClassLoader;
@@ -160,7 +163,7 @@ public class VideoPlayer {
 				}
 			}
 			if (initData != null) {
-				holder.init(initData.pointer, new NativeBridge(this), seekAnyFrame);
+				holder.init(initData.pointer, new NativeBridge(this), seekAnyFrame, Preferences.isVideoMultithreadedDecoding());
 				synchronized (this) {
 					this.initData = null;
 					if (consumed) {
@@ -682,7 +685,7 @@ public class VideoPlayer {
 
 	private interface HolderInterface {
 		long preInit(int fd);
-		void init(long pointer, Object nativeBridge, boolean seekAnyFrame);
+		void init(long pointer, Object nativeBridge, boolean seekAnyFrame, boolean videoMultithreadedDecoding);
 		void destroy(long pointer, boolean initOnly);
 
 		int getErrorCode(long pointer);
@@ -726,7 +729,7 @@ public class VideoPlayer {
 		}
 
 		@Override public native long preInit(int fd);
-		@Override public native void init(long pointer, Object nativeBridge, boolean seekAnyFrame);
+		@Override public native void init(long pointer, Object nativeBridge, boolean seekAnyFrame, boolean videoMultithreadedDecoding);
 		@Override public native void destroy(long pointer, boolean initOnly);
 
 		@Override public native int getErrorCode(long pointer);

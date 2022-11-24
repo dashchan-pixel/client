@@ -1306,6 +1306,13 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_VIDEO_SEEK_ANY_FRAME, DEFAULT_VIDEO_SEEK_ANY_FRAME);
 	}
 
+	public static final String KEY_VIDEO_MULTITHREADED_DECODING = "video_multithreaded_decoding";
+	public static final boolean DEFAULT_VIDEO_MULTITHREADED_DECODING = false;
+
+	public static boolean isVideoMultithreadedDecoding(){
+		return PREFERENCES.getBoolean(KEY_VIDEO_MULTITHREADED_DECODING, DEFAULT_VIDEO_MULTITHREADED_DECODING);
+	}
+
 	public static final String KEY_WATCHER_REFRESH_INTERVAL = "watcher_refresh_interval";
 	public static final int DISABLED_WATCHER_REFRESH_INTERVAL = 0;
 	public static final int MIN_WATCHER_REFRESH_INTERVAL = 15;

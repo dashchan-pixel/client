@@ -1222,7 +1222,8 @@ jlong preInit(UNUSED JNIEnv * env, jint fd) {
 	return (jlong) (long) player;
 }
 
-void init(JNIEnv * env, jlong pointer, jobject nativeBridge, jboolean seekAnyFrame) {
+void init(JNIEnv * env, jlong pointer, jobject nativeBridge, jboolean seekAnyFrame,
+		  jboolean videoMultithreadedDecoding) {
 	Player * player = POINTER_CAST(pointer);
 	player->meta.seekAnyFrame = !!seekAnyFrame;
 	player->bridge.native = (*env)->NewGlobalRef(env, nativeBridge);
@@ -1293,6 +1294,18 @@ void init(JNIEnv * env, jlong pointer, jobject nativeBridge, jboolean seekAnyFra
 	}
 	if (videoCodec) {
 		AVCodecContext * videoContext = avcodec_alloc_context3(videoCodec);
+		if (videoMultithreadedDecoding) {
+			int blacklistedCodec = strcmp(videoCodec->name, "vp9") == 0; // image artifacts when use multithreading with this codec
+			if (!blacklistedCodec) {
+				videoContext->thread_count = 0;
+				if (videoCodec->capabilities & AV_CODEC_CAP_FRAME_THREADS)
+					videoContext->thread_type = FF_THREAD_FRAME;
+				else if (videoCodec->capabilities & AV_CODEC_CAP_SLICE_THREADS)
+					videoContext->thread_type = FF_THREAD_SLICE;
+				else
+					videoContext->thread_count = 1;
+			}
+		}
 		if (avcodec_parameters_to_context(videoContext, videoStream->codecpar) ||
 				avcodec_open2(videoContext, videoCodec, NULL) < 0) {
 			avcodec_free_context(&videoContext);

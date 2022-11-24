@@ -420,6 +420,8 @@
 	<string name="secure_connection__summary">Use HTTPS protocol</string>
 	<string name="seek_any_frame">Seek any frame</string>
 	<string name="seek_any_frame__summary">Increases accuracy but lowers performance</string>
+	<string name="video_multithreaded_decoding">Multithreaded video decoding</string>
+	<string name="video_multithreaded_decoding__summary">May improve performance</string>
 	<string name="select">Select</string>
 	<string name="select_all">Select all</string>
 	<string name="select_where_to_save">Select where to save</string>

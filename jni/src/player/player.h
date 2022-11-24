@@ -4,7 +4,7 @@
 #include <jni.h>
 
 jlong preInit(JNIEnv *, jint);
-void init(JNIEnv *, jlong, jobject, jboolean);
+void init(JNIEnv *, jlong, jobject, jboolean, jboolean);
 void destroy(JNIEnv *, jlong, jboolean);
 
 jint getErrorCode(jlong);
