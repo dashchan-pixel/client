@@ -24,7 +24,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -47,6 +49,7 @@ import java.util.UUID;
 public class ClickableToast implements LifecycleObserver {
 	private static final int Y_OFFSET;
 	private static final int LAYOUT_ID;
+	private static final int TOAST_HORIZONTAL_PADDING;
 
 	private static final int TIMEOUT = 3500;
 
@@ -54,6 +57,7 @@ public class ClickableToast implements LifecycleObserver {
 		Resources resources = Resources.getSystem();
 		Y_OFFSET = resources.getDimensionPixelSize(resources.getIdentifier("toast_y_offset", "dimen", "android"));
 		LAYOUT_ID = resources.getIdentifier("transient_notification", "layout", "android");
+		TOAST_HORIZONTAL_PADDING = (int) (24 * ResourceUtils.obtainDensity(resources));
 	}
 
 	private final ComponentActivity activity;
@@ -176,20 +180,9 @@ public class ClickableToast implements LifecycleObserver {
 		View toast2 = inflater.inflate(LAYOUT_ID, null);
 		TextView message1 = toast1.findViewById(android.R.id.message);
 		TextView message2 = toast2.findViewById(android.R.id.message);
-		Drawable backgroundDrawable = toast1.getBackground();
-		View backgroundView = toast1;
-		if (backgroundDrawable == null) {
-			View view = message1;
-			while (view != null) {
-				backgroundDrawable = view.getBackground();
-				if (backgroundDrawable != null) {
-					backgroundView = view;
-					break;
-				}
-				view = (View) view.getParent();
-			}
-		}
-
+		Drawable backgroundDrawable = ResourcesCompat.getDrawable(activity.getResources(), R.drawable.clickable_toast_background, activity.getTheme());
+		TextViewCompat.setTextAppearance(message1, R.style.ClickableToastTextAppearance);
+		TextViewCompat.setTextAppearance(message2, R.style.ClickableToastTextAppearance);
 		// Make long text to avoid minimum widths
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < 100; i++) {
@@ -213,7 +206,7 @@ public class ClickableToast implements LifecycleObserver {
 		View measureView = message1;
 		while (true) {
 			View parent = (View) measureView.getParent();
-			if (parent == null || backgroundDrawable != null && measureView == backgroundView) {
+			if (parent == null || backgroundDrawable != null && measureView == toast1) {
 				break;
 			}
 			totalPadding.left += measureView.getLeft();
@@ -358,6 +351,7 @@ public class ClickableToast implements LifecycleObserver {
 		boolean success = false;
 		try {
 			currentContainer = new FrameLayout(activity);
+			currentContainer.setPadding(TOAST_HORIZONTAL_PADDING,0,TOAST_HORIZONTAL_PADDING,0);
 			currentContainer.addView(container, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
 					FrameLayout.LayoutParams.WRAP_CONTENT));
 			windowManager.addView(currentContainer, createLayoutParams(type));
