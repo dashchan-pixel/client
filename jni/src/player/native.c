@@ -7,8 +7,8 @@ jlong JCALL(preInit)(JNIEnv * env, UNUSED jobject this, jint fd) {
 	return preInit(env, fd);
 }
 
-void JCALL(init)(JNIEnv * env, UNUSED jobject this, jlong pointer, jobject nativeBridge, jboolean seekAnyFrame) {
-	init(env, pointer, nativeBridge, seekAnyFrame);
+void JCALL(init)(JNIEnv * env, UNUSED jobject this, jlong pointer, jobject nativeBridge, jboolean seekAnyFrame , jboolean videoMultithreadedDecoding) {
+	init(env, pointer, nativeBridge, seekAnyFrame, videoMultithreadedDecoding);
 }
 
 void JCALL(destroy)(JNIEnv * env, UNUSED jobject this, jlong pointer, jboolean initOnly) {

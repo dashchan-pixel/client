@@ -438,6 +438,8 @@
 	<string name="secure_connection__summary">Использовать протокол HTTPS</string>
 	<string name="seek_any_frame">Перемотка к любому кадру</string>
 	<string name="seek_any_frame__summary">Повышенная точность при меньшей производительности</string>
+	<string name="video_multithreaded_decoding">Многопоточное декодирование видео</string>
+	<string name="video_multithreaded_decoding__summary">Может улучшить производительность</string>
 	<string name="select">Выделить</string>
 	<string name="select_all">Выделить всё</string>
 	<string name="select_where_to_save">Выберите путь сохранения</string>
