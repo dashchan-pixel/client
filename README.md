@@ -12,7 +12,14 @@ Android client for imageboards.
 * Configurable themes
 * Fullscreen layout
 
-Read the [project wiki](https://github.com/Mishiranu/Dashchan/wiki) for further information.
+## Changes in DashchanFork:
+
+* Added support for voting like on some boards, for example 2ch.hk/news/ (only works with updated extension)
+* Added the ability to hide threads with a swipe (activated in the settings)
+* Fix app freezes while downloading when download folder contains many files
+* Reworked ClickableToast, may fix display on some Android systems
+* Google Search now uses Google Lens
+* Added the ability to activate multi-threaded playback for videos (may improve performance)
 
 ## Screenshots
 
