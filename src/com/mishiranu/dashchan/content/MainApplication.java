@@ -91,8 +91,7 @@ public class MainApplication extends Application {
 				.setContentOnUpdateNotAvailable("No update available...")
 				.setButtonUpdate("Update now?")
 				.setButtonDismiss("Later")
-				.setButtonDoNotShowAgain("Never")
-				.setGitHubUserAndRepo("TrixiEther","DashchanFork");
+				.setButtonDoNotShowAgain("Never");
 		appUpdater.start();
 
 	}
