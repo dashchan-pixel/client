@@ -29,7 +29,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.ComponentActivity;
 import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.BlendModeColorFilterCompat;
+import androidx.core.graphics.BlendModeCompat;
 import androidx.core.graphics.BlendModeColorFilterCompat;
 import androidx.core.graphics.BlendModeCompat;
 import androidx.core.view.ViewCompat;
@@ -206,7 +207,7 @@ public class ClickableToast implements LifecycleObserver {
 				view = (View) view.getParent();
 			}
 		}
-		int clickableToastBackgroundColor = ResourcesCompat.getColor(activity.getResources(), R.color.background_clickable_toast, activity.getTheme());
+		int clickableToastBackgroundColor = ResourceUtils.getColor(activity, R.attr.colorClickableToastBackground);
 		ColorFilter clickableToastBackgroundColorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(clickableToastBackgroundColor, BlendModeCompat.SRC_IN);
 		backgroundDrawable.setColorFilter(clickableToastBackgroundColorFilter);
 		// Make long text to avoid minimum widths

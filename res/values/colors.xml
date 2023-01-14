@@ -41,7 +41,10 @@
 	<color name="color_vote_like">#027305</color>
 	<color name="color_vote_red">#ff0000</color>
 
-	<color name="background_clickable_toast">#323232</color>
-	<color name="color_text_clickable_toast">#ffffff</color>
+	<color name="background_clickable_toast_light">#323232</color>
+	<color name="color_text_clickable_toast_light">#ffffff</color>
+
+	<color name="background_clickable_toast_dark">@color/background_clickable_toast_light</color>
+	<color name="color_text_clickable_toast_dark">@color/color_text_clickable_toast_light</color>
 
 </resources>
