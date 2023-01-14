@@ -281,7 +281,7 @@
 	<style name="ClickableToastTextAppearance">
 
 		<item name="android:textSize">14sp</item>
-		<item name="android:textColor">#ffffff</item>
+		<item name="android:textColor">@color/color_text_clickable_toast</item>
 
 	</style>
 

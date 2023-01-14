@@ -41,4 +41,7 @@
 	<color name="color_vote_like">#027305</color>
 	<color name="color_vote_red">#ff0000</color>
 
+	<color name="background_clickable_toast">#323232</color>
+	<color name="color_text_clickable_toast">#ffffff</color>
+
 </resources>
