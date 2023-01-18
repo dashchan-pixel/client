@@ -1427,7 +1427,9 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				boolean isUserPost = configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
+				boolean isUserPost = Preferences.isShowMyPosts() &&
+						Preferences.isHighlightUserPosts() &&
+						configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
 				if (isUserPost) {
 					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
 				} else {
