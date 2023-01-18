@@ -9,6 +9,7 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -20,6 +21,7 @@ import android.text.SpannableStringBuilder;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.TypefaceSpan;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -1283,6 +1285,7 @@ public class ViewUnit {
 		public ArrayList<ImageView> badgeImages;
 		public final ImageView[] stateImages = new ImageView[PostState.POST_ITEM_STATES.size()];
 		public final int highlightBackgroundColor;
+		public final int highlightUserPostBackgroundColor;
 
 		public final UiManager.ThumbnailClickListener thumbnailClickListener;
 		public final UiManager.ThumbnailLongClickListener thumbnailLongClickListener;
@@ -1320,6 +1323,7 @@ public class ViewUnit {
 			bottomBarExpand = itemView.findViewById(R.id.bottom_bar_expand);
 			bottomBarOpenThread = itemView.findViewById(R.id.bottom_bar_open_thread);
 			highlightBackgroundColor = ThemeEngine.getColorScheme(itemView.getContext()).highlightBackgroundColor;
+			highlightUserPostBackgroundColor = ThemeEngine.getColorScheme(itemView.getContext()).highlightUserPostBackgroundColor;
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
 			thumbnailLongClickListener = uiManager.interaction().createThumbnailLongClickListener();
@@ -1423,7 +1427,12 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				layout.setSecondaryBackground(null);
+				boolean isUserPost = configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
+				if (isUserPost) {
+					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
+				} else {
+					layout.setSecondaryBackground(null);
+				}
 			}
 		}
 
