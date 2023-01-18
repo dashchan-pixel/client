@@ -1318,8 +1318,11 @@ public class ViewUnit {
 			bottomBarReplies = itemView.findViewById(R.id.bottom_bar_replies);
 			bottomBarExpand = itemView.findViewById(R.id.bottom_bar_expand);
 			bottomBarOpenThread = itemView.findViewById(R.id.bottom_bar_open_thread);
-			highlightBackgroundColor = ThemeEngine.getColorScheme(itemView.getContext()).highlightBackgroundColor;
-			highlightUserPostBackgroundColor = ThemeEngine.getColorScheme(itemView.getContext()).highlightUserPostBackgroundColor;
+
+    ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
+    highlightBackgroundColor = colorScheme.highlightBackgroundColor;
+    highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
+    
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
 			thumbnailLongClickListener = uiManager.interaction().createThumbnailLongClickListener();
