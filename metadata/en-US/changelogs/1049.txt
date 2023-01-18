@@ -1,3 +1,3 @@
-* Reworked ClickableToast, may fix display on some Android systems
-* Google Search now uses Google Lens
-* Added the ability to activate multi-threaded playback for videos (may improve performance)
+* ClickableToast design fix
+* Fixed bug when selecting "Show thumbnails of all images" media content was smaller
+* Added feature "Highlight my posts", which changes the background color for user posts
