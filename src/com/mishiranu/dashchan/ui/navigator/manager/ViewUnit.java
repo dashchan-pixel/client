@@ -1321,9 +1321,9 @@ public class ViewUnit {
 			bottomBarExpand = itemView.findViewById(R.id.bottom_bar_expand);
 			bottomBarOpenThread = itemView.findViewById(R.id.bottom_bar_open_thread);
 
-    ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
-    highlightBackgroundColor = colorScheme.highlightBackgroundColor;
-    highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
+    		ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
+    		highlightBackgroundColor = colorScheme.highlightBackgroundColor;
+    		highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
     
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
@@ -1428,10 +1428,9 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				boolean highlightUserPost = Preferences.isShowMyPosts() &&
-						Preferences.isHighlightUserPosts() &&
+				boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
 						configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
-				if (isUserPost) {
+				if (highlightUserPost) {
 					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
 				} else {
 					layout.setSecondaryBackground(null);

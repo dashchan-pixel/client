@@ -1,0 +1,3 @@
+* Reworked ClickableToast, may fix display on some Android systems
+* Google Search now uses Google Lens
+* Added the ability to activate multi-threaded playback for videos (may improve performance)
