@@ -40,6 +40,8 @@ public class InterfaceFragment extends PreferenceFragment {
 				R.string.crop_thumbnails, R.string.crop_thumbnails__summary);
 		addCheck(true, Preferences.KEY_ACTIVE_SCROLLBAR, Preferences.DEFAULT_ACTIVE_SCROLLBAR,
 				R.string.active_scrollbar, 0);
+		addCheck(true, Preferences.KEY_HIGHLIGHT_USER_POSTS, Preferences.DEFAULT_HIGHLIGHT_USER_POSTS,
+				R.string.highlight_user_posts, 0);
 		addCheck(true, Preferences.KEY_SCROLL_THREAD_GALLERY, Preferences.DEFAULT_SCROLL_THREAD_GALLERY,
 				R.string.scroll_thread_when_scrolling_gallery, 0);
 		addButton(R.string.themes, 0).setOnClickListener(p -> ((FragmentHandler) requireActivity())

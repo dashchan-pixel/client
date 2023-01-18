@@ -4,6 +4,7 @@
 	<string name="about">О программе</string>
 	<string name="action_on_playback_completion">Действие при завершении воспроизведения</string>
 	<string name="active_scrollbar">Активная полоса прокрутки</string>
+	<string name="highlight_user_posts">Подсвечивать мои посты</string>
 	<string name="add_theme">Добавить тему</string>
 	<string name="add_thread_on_reply">Добавлять тред при ответе</string>
 	<string name="add_to_bottom__imperfective">Добавлять в конец</string>

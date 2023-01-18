@@ -215,6 +215,13 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_ACTIVE_SCROLLBAR, DEFAULT_ACTIVE_SCROLLBAR);
 	}
 
+	public static final String KEY_HIGHLIGHT_USER_POSTS = "highlight_user_posts";
+	public static final boolean DEFAULT_HIGHLIGHT_USER_POSTS = true;
+
+	public static boolean isHighlightUserPosts() {
+		return PREFERENCES.getBoolean(KEY_HIGHLIGHT_USER_POSTS, DEFAULT_HIGHLIGHT_USER_POSTS);
+	}
+
 	public static final String KEY_ADVANCED_SEARCH = "advanced_search";
 	public static final boolean DEFAULT_ADVANCED_SEARCH = false;
 
