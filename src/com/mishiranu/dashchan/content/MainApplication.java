@@ -14,9 +14,6 @@ import chan.http.HttpClient;
 import chan.util.CommonUtils;
 import chan.util.StringUtils;
 
-import com.github.javiersantos.appupdater.AppUpdater;
-import com.github.javiersantos.appupdater.enums.Display;
-import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.content.database.ChanDatabase;
 import com.mishiranu.dashchan.content.database.CommonDatabase;
@@ -81,18 +78,6 @@ public class MainApplication extends Application {
 		} else if (checkProcess(PROCESS_WEB_VIEW)) {
 			IOUtils.deleteRecursive(getWebViewCacheDir());
 		}
-
-		AppUpdater appUpdater = new AppUpdater(this)
-				.setDisplay(Display.DIALOG)
-				.setUpdateFrom(UpdateFrom.JSON)
-				.setUpdateJSON("https://raw.githubusercontent.com/TrixiEther/DashchanFork/experemental/update/update.json")
-				.setTitleOnUpdateAvailable("Update available")
-				.setContentOnUpdateAvailable("Update available for DashchanFork!")
-				.setContentOnUpdateNotAvailable("No update available...")
-				.setButtonUpdate("Update now?")
-				.setButtonDismiss("Later")
-				.setButtonDoNotShowAgain("Never");
-		appUpdater.start();
 
 	}
 
