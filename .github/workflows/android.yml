@@ -1,10 +1,10 @@
-name: Dashchan-Experemental build
+name: Dashchan-Experimental build
 
 on:
   push:
-    branches: [ "experemental" ]
+    branches: [ "experimental" ]
   pull_request:
-    branches: [ "experemental" ]
+    branches: [ "experimental" ]
     
 env:
   KEYSTORE_FILENAME: ${{ secrets.KEYSTORE_FILENAME }}
@@ -55,5 +55,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v2
       with:
-        name: Dashchan-Experemental.apk
+        name: Dashchan-Experimental.apk
         path: build/outputs/apk/release/DashchanFork-release.apk
