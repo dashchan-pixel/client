@@ -28,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -1183,24 +1184,26 @@ public class ViewUnit {
 		private final UiManager.PostStateProvider postStateProvider;
 		private final PostNumber postNumber;
 		private final ColorDrawable drawable;
+		private final int endColor;
 
 		private ValueAnimator animator;
 		private boolean applied = false;
 
 		public NewPostAnimation(PostLinearLayout layout, UiManager.PostStateProvider postStateProvider,
-				PostNumber postNumber, int color) {
+				PostNumber postNumber, int startColor, int endColor) {
 			this.layout = layout;
 			this.postStateProvider = postStateProvider;
 			this.postNumber = postNumber;
-			drawable = new ColorDrawable(color);
+			this.endColor = endColor;
+			drawable = new ColorDrawable(startColor);
 			layout.setSecondaryBackground(drawable);
 			layout.postDelayed(this, 500);
 		}
 
 		@Override
 		public void run() {
-			int color = drawable.getColor();
-			animator = ValueAnimator.ofObject(new ArgbEvaluator(), color, color & 0x00ffffff);
+			int startColor = drawable.getColor();
+			animator = ValueAnimator.ofObject(new ArgbEvaluator(), startColor, endColor);
 			animator.addUpdateListener(this);
 			animator.setDuration(500);
 			animator.start();
@@ -1324,7 +1327,6 @@ public class ViewUnit {
     		ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
     		highlightBackgroundColor = colorScheme.highlightBackgroundColor;
     		highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
-    
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
 			thumbnailLongClickListener = uiManager.interaction().createThumbnailLongClickListener();
@@ -1404,13 +1406,22 @@ public class ViewUnit {
 			}
 			PostItem postItem = getPostItem();
 			UiManager.ConfigurationSet configurationSet = getConfigurationSet();
+			boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
+					configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
 			if (selection == UiManager.Selection.DISABLED &&
 					!configurationSet.postStateProvider.isRead(postItem.getPostNumber())) {
 				switch (Preferences.getHighlightUnreadMode()) {
 					case AUTOMATICALLY: {
+						int endColor;
+						if(highlightUserPost){
+							endColor = highlightUserPostBackgroundColor;
+						}
+						else {
+							endColor = ColorUtils.setAlphaComponent(highlightBackgroundColor, 0);
+						}
 						newPostAnimation = new NewPostAnimation(layout,
 								configurationSet.postStateProvider, postItem.getPostNumber(),
-								highlightBackgroundColor);
+								highlightBackgroundColor, endColor);
 						break;
 					}
 					case MANUALLY: {
@@ -1428,8 +1439,6 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
-						configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
 				if (highlightUserPost) {
 					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
 				} else {
