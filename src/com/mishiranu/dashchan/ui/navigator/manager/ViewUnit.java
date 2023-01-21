@@ -8,9 +8,7 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
@@ -76,6 +74,8 @@ public class ViewUnit {
 
 	private static final float ALPHA_HIDDEN_POST = 0.2f;
 	private static final float ALPHA_DELETED_POST = 0.5f;
+
+	private static final float MEDIA_ITEM_RESIZE_COEFFICIENT = 1.5f;
 
 	@SuppressLint("InflateParams")
 	ViewUnit(UiManager uiManager) {
@@ -544,7 +544,7 @@ public class ViewUnit {
 				int holders = attachmentHolders.size();
 				if (holders < size) {
 					int postBackgroundColor = getPostBackgroundColor(uiManager.getContext(), configurationSet);
-					float thumbnailsScale = Preferences.getThumbnailsScale();
+					float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
 					float textScale = Preferences.getTextScale();
 					for (int i = holders; i < size; i++) {
 						View view = LayoutInflater.from(context).inflate(R.layout.list_item_post_attachment, null);
@@ -1283,6 +1283,7 @@ public class ViewUnit {
 		public ArrayList<ImageView> badgeImages;
 		public final ImageView[] stateImages = new ImageView[PostState.POST_ITEM_STATES.size()];
 		public final int highlightBackgroundColor;
+		public final int highlightUserPostBackgroundColor;
 
 		public final UiManager.ThumbnailClickListener thumbnailClickListener;
 		public final UiManager.ThumbnailLongClickListener thumbnailLongClickListener;
@@ -1319,7 +1320,11 @@ public class ViewUnit {
 			bottomBarReplies = itemView.findViewById(R.id.bottom_bar_replies);
 			bottomBarExpand = itemView.findViewById(R.id.bottom_bar_expand);
 			bottomBarOpenThread = itemView.findViewById(R.id.bottom_bar_open_thread);
-			highlightBackgroundColor = ThemeEngine.getColorScheme(itemView.getContext()).highlightBackgroundColor;
+
+    		ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
+    		highlightBackgroundColor = colorScheme.highlightBackgroundColor;
+    		highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
+    
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
 			thumbnailLongClickListener = uiManager.interaction().createThumbnailLongClickListener();
@@ -1355,7 +1360,7 @@ public class ViewUnit {
 			this.dimensions = dimensions.get(this);
 			thumbnail.setDrawTouching(true);
 			ViewGroup.LayoutParams thumbnailLayoutParams = thumbnail.getLayoutParams();
-			float thumbnailsScale = Preferences.getThumbnailsScale() * 1.5f;
+			float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
 			if (thumbnailsScale != 1f) {
 				thumbnailLayoutParams.width = (int) (this.dimensions.thumbnailWidth * thumbnailsScale);
 				thumbnailLayoutParams.height = thumbnailLayoutParams.width;
@@ -1423,7 +1428,13 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				layout.setSecondaryBackground(null);
+				boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
+						configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
+				if (highlightUserPost) {
+					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
+				} else {
+					layout.setSecondaryBackground(null);
+				}
 			}
 		}
 
