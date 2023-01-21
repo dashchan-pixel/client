@@ -28,6 +28,8 @@ public class ColorScheme {
 		clickedColor = ResourceUtils.getSystemSelectorColor(context);
 		highlightTextColor = (Color.BLACK | linkColor) & 0x80ffffff;
 		highlightBackgroundColor = GraphicsUtils.isLight(windowBackgroundColor) ? 0x1e000000 : 0x1effffff;
+		// So far the same, but just in case - a new variable
+		highlightUserPostBackgroundColor = GraphicsUtils.isLight(windowBackgroundColor) ? 0x1e000000 : 0x1effffff;
 	}
 
 	public final int windowBackgroundColor;
@@ -45,6 +47,7 @@ public class ColorScheme {
 
 	public final int highlightTextColor;
 	public final int highlightBackgroundColor;
+	public final int highlightUserPostBackgroundColor;
 
 	public final float colorGainFactor;
 

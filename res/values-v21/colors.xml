@@ -20,4 +20,10 @@
 
 	<color name="color_text_error">#ffe53935</color>
 
+	<color name="background_clickable_toast_light">@color/background_popup_light</color>
+	<color name="color_text_clickable_toast_light">#000000</color>
+
+	<color name="background_clickable_toast_dark">@color/background_popup_dark</color>
+	<color name="color_text_clickable_toast_dark">#ffffff</color>
+
 </resources>
