@@ -22,7 +22,6 @@ import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
-import com.mishiranu.dashchan.ui.preference.core.Preference;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.ViewUtils;
@@ -54,6 +53,9 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	private final Timer captchaExpiredTimer;
 	private TimerTask captchaExpiredTask;
 
+	private final static int CAPTCHA_CHANGE_TTL = 1;
+	private final static int CAPTCHA_EXPIRED = 2;
+
 	private ChanConfiguration.Captcha.Input captchaInput;
 
 	public interface Callback {
@@ -73,7 +75,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 
 		@Override
 		public void run() {
-			handler.obtainMessage(currentTTL).sendToTarget();
+			handler.obtainMessage(CAPTCHA_CHANGE_TTL, currentTTL).sendToTarget();
 			currentTTL--;
 		}
 
@@ -186,22 +188,27 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		Handler captchaHandler = new Handler(Looper.getMainLooper()) {
 			@Override
 			public void handleMessage(@NonNull Message msg) {
-				captchaTTL.setText(String.valueOf(msg.what));
+				switch (msg.what) {
+					case CAPTCHA_CHANGE_TTL: {
+						captchaTTL.setText(String.valueOf(msg.obj));
+						break;
+					}
+					case CAPTCHA_EXPIRED: {
+						if (Preferences.isCaptchaAutoReload()) {
+							callback.onRefreshCaptcha(false);
+						} else {
+							CaptchaExpiredMessage message = (CaptchaExpiredMessage) msg.obj;
+							showCaptcha(message.state, message.input, null, message.large, message.invertColors);
+						}
+						break;
+					}
+					default:
+						break;
+				}
 			}
 		};
 		captchaTTLDecreaseTask = new CaptchaTTLDecreaseTask(ttl, captchaHandler);
 		captchaTTLDecreaseTimer.scheduleAtFixedRate(captchaTTLDecreaseTask, 0, 1000);
-		Handler captchaExpiredHandler = new Handler(Looper.getMainLooper()) {
-			@Override
-			public void handleMessage(@NonNull Message msg) {
-				if (Preferences.isCaptchaAutoReload()) {
-					callback.onRefreshCaptcha(false);
-				} else {
-					CaptchaExpiredMessage message = (CaptchaExpiredMessage) msg.obj;
-					showCaptcha(message.state, message.input, null, message.large, message.invertColors);
-				}
-			}
-		};
 		captchaExpiredTask = new TimerTask() {
 			@Override
 			public void run() {
@@ -212,7 +219,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 						large,
 						invertColors
 				);
-				captchaExpiredHandler.obtainMessage(1, msg).sendToTarget();
+				captchaHandler.obtainMessage(CAPTCHA_EXPIRED, msg).sendToTarget();
 			}
 		};
 		captchaExpiredTimer.schedule( captchaExpiredTask, ttl * 1000);
