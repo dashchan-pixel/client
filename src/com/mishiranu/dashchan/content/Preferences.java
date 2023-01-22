@@ -803,6 +803,20 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_HUGE_CAPTCHA, DEFAULT_HUGE_CAPTCHA);
 	}
 
+	public static final String KEY_CAPTCHA_TTL = "captcha_ttl";
+	public static final boolean DEFAULT_CAPTCHA_TTL = false;
+
+	public static boolean isCaptchaTTL() {
+		return PREFERENCES.getBoolean(KEY_CAPTCHA_TTL, DEFAULT_CAPTCHA_TTL);
+	}
+
+	public static final String KEY_CAPTCHA_AUTO_RELOAD = "captcha_auto_reload";
+	public static final boolean DEFAULT_CAPTCHA_AUTO_RELOAD = false;
+
+	public static boolean isCaptchaAutoReload() {
+		return PREFERENCES.getBoolean(KEY_CAPTCHA_AUTO_RELOAD, DEFAULT_CAPTCHA_AUTO_RELOAD);
+	}
+
 	public static final String KEY_INTERNAL_BROWSER = "internal_browser";
 	public static final boolean DEFAULT_INTERNAL_BROWSER = true;
 

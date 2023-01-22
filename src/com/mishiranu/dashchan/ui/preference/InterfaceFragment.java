@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentManager;
@@ -86,6 +87,18 @@ public class InterfaceFragment extends PreferenceFragment {
 				Preferences.DEFAULT_HIDE_PERSONAL_DATA, R.string.hide_personal_data_block, 0);
 		addCheck(true, Preferences.KEY_HUGE_CAPTCHA, Preferences.DEFAULT_HUGE_CAPTCHA,
 				R.string.huge_captcha, 0);
+		addCheck(true, Preferences.KEY_CAPTCHA_TTL, Preferences.DEFAULT_CAPTCHA_TTL,
+				R.string.captcha_show_ttl, R.string.captcha_show_ttl__summary)
+				.setOnAfterChangeListener(p -> {
+					if (p.getValue()) {
+						findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(true);
+					} else {
+						findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(false);
+					}
+				});
+		addCheck(true, Preferences.KEY_CAPTCHA_AUTO_RELOAD, Preferences.DEFAULT_CAPTCHA_AUTO_RELOAD,
+				R.string.captcha_reload_automatically, R.string.captcha_reload_automatically__summary)
+				.setEnabled((Boolean)findPreference(Preferences.KEY_CAPTCHA_TTL).getValue());
 	}
 
 	@Override
