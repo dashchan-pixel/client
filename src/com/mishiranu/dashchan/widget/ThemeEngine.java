@@ -87,6 +87,7 @@ public class ThemeEngine {
 		public final int quote;
 		public final int tripcode;
 		public final int capcode;
+		public final int highlight;
 		public final float colorGainFactor;
 
 		public final int controlNormal21;
@@ -94,7 +95,7 @@ public class ThemeEngine {
 
 		public Theme(Base base, String name, boolean builtIn, String json,
 				int window, int primary, int accent, int card, int thread, int post, int meta,
-				int spoiler, int link, int quote, int tripcode, int capcode,
+				int spoiler, int link, int quote, int tripcode, int capcode, int highlight,
 				float colorGainFactor, int controlNormal21, float disabledAlpha21) {
 			this.base = base;
 			this.name = name;
@@ -112,6 +113,7 @@ public class ThemeEngine {
 			this.quote = quote;
 			this.tripcode = tripcode;
 			this.capcode = capcode;
+			this.highlight = highlight;
 			this.colorGainFactor = colorGainFactor;
 			this.controlNormal21 = controlNormal21;
 			this.disabledAlpha21 = disabledAlpha21;
@@ -150,6 +152,7 @@ public class ThemeEngine {
 				case "quote": return quote;
 				case "tripcode": return tripcode;
 				case "capcode": return capcode;
+				case "highlight": return highlight;
 				default: throw new IllegalArgumentException();
 			}
 		}
@@ -930,6 +933,8 @@ public class ThemeEngine {
 					null, R.attr.colorTextTripcode));
 			map.put("capcode", new Value((b, c) -> b.capcode = c, b -> b.capcode,
 					b -> b.tripcode, R.attr.colorTextCapcode));
+			map.put("highlight", new Value((b, c) -> b.highlight = c, b -> b.highlight,
+					null, R.attr.colorPostHighlight));
 			MAP = Collections.unmodifiableMap(map);
 		}
 
@@ -944,6 +949,7 @@ public class ThemeEngine {
 		Integer quote;
 		Integer tripcode;
 		Integer capcode;
+		Integer highlight;
 
 		public Theme create(Theme.Base base, String name, boolean builtIn, String json, Context context) {
 			while (true) {
@@ -981,7 +987,7 @@ public class ThemeEngine {
 			}
 			return new Theme(base, name, builtIn, json,
 					window, primary, accent, card, thread, post, meta,
-					spoiler, link, quote, tripcode, capcode, colorGainFactor,
+					spoiler, link, quote, tripcode, capcode, highlight, colorGainFactor,
 					controlNormal21, disabledAlpha21);
 		}
 
