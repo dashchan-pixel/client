@@ -19,6 +19,7 @@
 	<attr name="colorTextTripcode" format="color|reference" />
 	<attr name="colorTextCapcode" format="color|reference" />
 	<attr name="colorTextClickableToast" format="color|reference" />
+	<attr name="colorPostHighlight" format="color|reference" />
 
 	<attr name="colorPrimarySupport" format="color|reference" />
 	<attr name="colorAccentSupport" format="color|reference" />
