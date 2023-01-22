@@ -36,6 +36,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	private final View inputParentView;
 	private final EditText inputView;
 	private final View cancelView;
+	private final TextView captchaTTL;
 
 	private ChanConfiguration.Captcha.Input captchaInput;
 
@@ -55,6 +56,8 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		loadingView = container.findViewById(R.id.captcha_loading);
 		skipBlockView = container.findViewById(R.id.captcha_skip_block);
 		skipTextView = container.findViewById(R.id.captcha_skip_text);
+		captchaTTL = container.findViewById(R.id.captcha_ttl);
+		captchaTTL.setVisibility(View.GONE);
 		this.inputParentView = inputParentView;
 		this.inputView = inputView;
 		if (hideInput) {
@@ -112,6 +115,16 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				blockView.requestLayout();
 			}
 		}
+	}
+
+	private void calculateCaptchaTTLPadding(boolean large) {
+		if (imageView.getDrawable() == null)
+			return;
+		int imageViewWidth = imageView.getDrawable().getIntrinsicWidth();
+		float density = ResourceUtils.obtainDensity(imageView);
+		int calculated = blockView.getWidth() / 2  - imageViewWidth / 2
+				- (int) (96f * density) / 2;
+		captchaTTL.setPadding(0,0, calculated,0);
 	}
 
 	@Override
@@ -209,6 +222,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.GONE);
 				setInputEnabled(false, false);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 			case ERROR: {
@@ -219,6 +233,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.VISIBLE);
 				setInputEnabled(false, false);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 			case IMAGE: {
@@ -230,6 +245,12 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				setInputEnabled(true, true);
 				updateCaptchaInput(input != null ? input : captchaInput);
 				updateCaptchaHeight(large);
+				if (Preferences.isHugeCaptcha() || large) {
+					calculateCaptchaTTLPadding(large);
+					captchaTTL.setVisibility(View.VISIBLE);
+				} else {
+					captchaTTL.setVisibility(View.GONE);
+				}
 				break;
 			}
 			case SKIP:
@@ -242,6 +263,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.VISIBLE);
 				setInputEnabled(false, true);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 		}

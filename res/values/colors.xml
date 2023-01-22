@@ -47,4 +47,6 @@
 	<color name="background_clickable_toast_dark">@color/background_clickable_toast_light</color>
 	<color name="color_text_clickable_toast_dark">@color/color_text_clickable_toast_light</color>
 
+	<color name="captcha_ttl">#ff777777</color>
+
 </resources>
