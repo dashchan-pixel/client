@@ -29,6 +29,7 @@ import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.view.ViewCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import chan.content.Chan;
@@ -177,7 +178,6 @@ public class ViewUnit {
 		((LinearLayoutManager) recyclerView.getLayoutManager()).setRecycleChildrenOnDetach(true);
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.M)
 	public RecyclerView.ViewHolder createView(ViewGroup parent, ViewType viewType) {
 		switch (viewType) {
 			case THREAD: {
@@ -976,9 +976,7 @@ public class ViewUnit {
 		}
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.M)
 	private static void fillVoting(ViewGroup parent, VoteState voteState, float topDp, float startDp, float endDp) {
-
 		float density = ResourceUtils.obtainDensity(parent);
 		int size = (int) (12f * density + 0.5f);
 		int top = (int) (topDp * density + 0.5f);
@@ -1004,7 +1002,7 @@ public class ViewUnit {
 
 		TextView likeTextView = new TextView(parent.getContext());
 		voteState.votingText[0] = likeTextView;
-		likeTextView.setTextAppearance(R.style.Widget_VoteTextLike);
+		TextViewCompat.setTextAppearance(likeTextView, R.style.Widget_VoteTextLike);
 		parent.addView(likeTextView,1, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 		ImageView dislikeImageView = new ImageView(parent.getContext());
@@ -1021,7 +1019,7 @@ public class ViewUnit {
 
 		TextView dislikeTextView = new TextView(parent.getContext());
 		voteState.votingText[1] = dislikeTextView;
-		dislikeTextView.setTextAppearance(R.style.Widget_VoteTextDislike);
+		TextViewCompat.setTextAppearance(dislikeTextView, R.style.Widget_VoteTextDislike);
 		parent.addView(dislikeTextView,3, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 		typedArray.recycle();
@@ -1294,7 +1292,6 @@ public class ViewUnit {
 		public NewPostAnimation newPostAnimation;
 		public long lastCommentClick;
 
-		@RequiresApi(api = Build.VERSION_CODES.M)
 		public PostViewHolder(ViewGroup parent, UiManager uiManager, Lazy<Dimensions> dimensions) {
 			super(LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_post, parent, false));
 
