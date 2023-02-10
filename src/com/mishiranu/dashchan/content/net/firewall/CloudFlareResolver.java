@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class CloudFlareResolver extends FirewallResolver {
 	private static final String COOKIE_CLOUDFLARE = "cf_clearance";
-	private static final String[] TITLES = {"Attention Required! | Cloudflare", "Just a moment..."};
+	private static final String[] TITLES = {"Attention Required! | Cloudflare", "Just a moment...", "Please wait…"};
 
 	private static class CookieResult {
 		public final String cookie;
@@ -119,7 +119,7 @@ public class CloudFlareResolver extends FirewallResolver {
 						}
 					}
 					if (responseText.contains("<form class=\"challenge-form\" id=\"challenge-form\"") &&
-							responseText.contains("__cf_chl_captcha_tk__")) {
+							(responseText.contains("__cf_chl_captcha_tk__") || responseText.contains("__cf_chl_f_tk"))) {
 						int start = responseText.indexOf("<title>");
 						if (start >= 0) {
 							int end = responseText.indexOf("</title>", start);
