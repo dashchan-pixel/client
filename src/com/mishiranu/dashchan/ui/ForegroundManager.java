@@ -48,6 +48,8 @@ import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
 import com.mishiranu.dashchan.content.async.TaskViewModel;
 import com.mishiranu.dashchan.content.model.ErrorItem;
 import com.mishiranu.dashchan.content.net.RecaptchaReader;
+import com.mishiranu.dashchan.content.net.firewall.FirewallResolutionDialog;
+import com.mishiranu.dashchan.content.net.firewall.FirewallResolutionDialogRequest;
 import com.mishiranu.dashchan.graphics.SelectorBorderDrawable;
 import com.mishiranu.dashchan.graphics.SelectorCheckDrawable;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
@@ -76,7 +78,8 @@ public class ForegroundManager implements Handler.Callback {
 	private static final int MESSAGE_REQUIRE_USER_CAPTCHA = 2;
 	private static final int MESSAGE_REQUIRE_USER_CHOICE = 3;
 	private static final int MESSAGE_REQUIRE_USER_RECAPTCHA_V2 = 4;
-	private static final int MESSAGE_SHOW_CAPTCHA_INVALID = 5;
+	private static final int MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL = 5;
+	private static final int MESSAGE_SHOW_CAPTCHA_INVALID = 6;
 
 	private static class DelayedMessage {
 		public final int what;
@@ -877,6 +880,23 @@ public class ForegroundManager implements Handler.Callback {
 		}
 	}
 
+	public static class FirewallResolutionDialogImpl<T> extends FirewallResolutionDialog<T> implements PendingDataDialog<FirewallResolutionPendingData<T>>{
+
+		public FirewallResolutionDialogImpl(){}
+
+		public FirewallResolutionDialogImpl(String pendingDataId, FirewallResolutionDialogRequest<T> request) {
+			super(request);
+			fillArguments(getArguments(), pendingDataId);
+		}
+
+		@Override
+		protected void onFirewallResolutionFinished(T firewallResolutionResult) {
+			notifyResult(pendingData -> pendingData.result = firewallResolutionResult);
+		}
+
+
+	}
+
 	@Override
 	public boolean handleMessage(Message msg) {
 		switch (msg.what) {
@@ -897,7 +917,9 @@ public class ForegroundManager implements Handler.Callback {
 			}
 			case MESSAGE_REQUIRE_USER_CAPTCHA:
 			case MESSAGE_REQUIRE_USER_CHOICE:
-			case MESSAGE_REQUIRE_USER_RECAPTCHA_V2: {
+			case MESSAGE_REQUIRE_USER_RECAPTCHA_V2:
+			case MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL:
+			{
 				HandlerData handlerData = (HandlerData) msg.obj;
 				FragmentActivity activity = getActivity();
 				PendingData pendingData = getPendingData(handlerData.pendingDataId);
@@ -941,6 +963,11 @@ public class ForegroundManager implements Handler.Callback {
 									recaptchaV2HandlerData.apiKey, recaptchaV2HandlerData.invisible,
 									recaptchaV2HandlerData.hcaptcha, recaptchaV2HandlerData.challengeExtra)
 									.show(activity);
+							break;
+						}
+						case MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL: {
+							FirewallHandlerData<?> firewallHandlerData = (FirewallHandlerData<?>) handlerData;
+							new FirewallResolutionDialogImpl<>(firewallHandlerData.pendingDataId, firewallHandlerData.request).show(activity);
 						}
 					}
 				}
@@ -1022,6 +1049,15 @@ public class ForegroundManager implements Handler.Callback {
 		}
 	}
 
+	private static class FirewallHandlerData<T> extends HandlerData {
+		private final FirewallResolutionDialogRequest<T> request;
+
+		public FirewallHandlerData(String pendingDataId, FirewallResolutionDialogRequest<T> request) {
+			super(pendingDataId);
+			this.request = request;
+		}
+	}
+
 	private static abstract class PendingData {
 		public boolean ready = false;
 
@@ -1058,6 +1094,10 @@ public class ForegroundManager implements Handler.Callback {
 	private static class RecaptchaV2PendingData extends PendingData {
 		public String response;
 		public HttpException exception;
+	}
+
+	private static class FirewallResolutionPendingData<T> extends PendingData{
+		public T result;
 	}
 
 	private String putPendingData(PendingData pendingData) {
@@ -1191,6 +1231,19 @@ public class ForegroundManager implements Handler.Callback {
 			}
 			return pendingData.response;
 		} finally {
+			removePendingData(pendingDataId);
+		}
+	}
+
+	public <T> T requireUserResolveFirewall(FirewallResolutionDialogRequest<T> request) throws InterruptedException {
+		FirewallResolutionPendingData<T> pendingData = new FirewallResolutionPendingData<>();
+		String pendingDataId = putPendingData(pendingData);
+		try {
+			FirewallHandlerData<T> handlerData = new FirewallHandlerData<>(pendingDataId, request);
+			handler.obtainMessage(MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL, handlerData).sendToTarget();
+			return pendingData.await(handler, handlerData) ? pendingData.result : null;
+		}
+		finally {
 			removePendingData(pendingDataId);
 		}
 	}
