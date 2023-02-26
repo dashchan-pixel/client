@@ -34,7 +34,8 @@ public class SearchImageDialog extends DialogFragment {
 		ChanLocator locator = Chan.getFallback().locator;
 		String imageUriString = Chan.get(chanName).locator.convert(uri).toString();
 		return new DialogMenu(new ContextThemeWrapper(context, R.style.Theme_Gallery))
-				.add("Google", () -> GoogleImageSearchDialog.show(imageUriString, getParentFragmentManager()))
+				.add("Google", () -> searchImageUri(locator.buildQueryWithHost("www.google.com",
+						"searchbyimage", "image_url", imageUriString)))
 				.add("Yandex", () -> searchImageUri(locator.buildQueryWithHost("www.yandex.ru",
 						"images/search", "rpt", "imageview", "url", imageUriString)))
 				.add("TinEye", () -> searchImageUri(locator.buildQueryWithHost("www.tineye.com",

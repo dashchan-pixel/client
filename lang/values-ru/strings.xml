@@ -556,7 +556,5 @@
 	<string name="vote_like">Двачую</string>
 	<string name="vote_dislike">RRRAGE!!!</string>
 	<string name="vote_posting_prohibited">Вы уже голосовали</string>
-    <string name="please_wait">Пожалуйста, подождите…</string>
-	<string name="unable_to_get_search_link">Ошибка при получении ссылки</string>
 
 </resources>
