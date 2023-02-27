@@ -77,8 +77,6 @@ public class ViewUnit {
 	private static final float ALPHA_HIDDEN_POST = 0.2f;
 	private static final float ALPHA_DELETED_POST = 0.5f;
 
-	private static final float MEDIA_ITEM_RESIZE_COEFFICIENT = 1.5f;
-
 	@SuppressLint("InflateParams")
 	ViewUnit(UiManager uiManager) {
 		Context context = uiManager.getContext();
@@ -545,7 +543,7 @@ public class ViewUnit {
 				int holders = attachmentHolders.size();
 				if (holders < size) {
 					int postBackgroundColor = getPostBackgroundColor(uiManager.getContext(), configurationSet);
-					float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
+					float thumbnailsScale = Preferences.getThumbnailsScale();
 					float textScale = Preferences.getTextScale();
 					for (int i = holders; i < size; i++) {
 						View view = LayoutInflater.from(context).inflate(R.layout.list_item_post_attachment, null);
@@ -1359,7 +1357,7 @@ public class ViewUnit {
 			this.dimensions = dimensions.get(this);
 			thumbnail.setDrawTouching(true);
 			ViewGroup.LayoutParams thumbnailLayoutParams = thumbnail.getLayoutParams();
-			float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
+			float thumbnailsScale = Preferences.getThumbnailsScale();
 			if (thumbnailsScale != 1f) {
 				thumbnailLayoutParams.width = (int) (this.dimensions.thumbnailWidth * thumbnailsScale);
 				thumbnailLayoutParams.height = thumbnailLayoutParams.width;
