@@ -449,7 +449,7 @@ public final class WebSocket {
 				requestBuilder.append("User-Agent: ").append(userAgent.replaceAll("[\r\n]", "")).append("\r\n");
 			}
 			FirewallResolver.Identifier resolverIdentifier = new FirewallResolver
-					.Identifier(userAgent, addUserAgent);
+					.Identifier(userAgent, addUserAgent, url.getHost());
 			CookieBuilder cookieBuilder = client.obtainModifiedCookieBuilder(this.cookieBuilder,
 					holder.chan, uri, resolverIdentifier);
 			if (cookieBuilder != null) {
