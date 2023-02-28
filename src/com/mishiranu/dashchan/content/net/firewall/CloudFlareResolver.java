@@ -68,7 +68,7 @@ public class CloudFlareResolver extends FirewallResolver {
 	}
 
 	private Exclusive.Key toKey(Session session) {
-		return session.getKey(Identifier.Flag.USER_AGENT);
+		return session.getKey(Identifier.Flag.USER_AGENT, Identifier.Flag.HOST);
 	}
 
 	@Override
@@ -83,8 +83,9 @@ public class CloudFlareResolver extends FirewallResolver {
 
 	private void storeCookie(Session session, Exclusive.Key key, String cookie, Uri uri) {
 		Chan chan = session.getChan();
+		String cookieTitle = "Cloudflare " + session.getUri().getHost();
 		chan.configuration.storeCookie(key.formatKey(COOKIE_CLOUDFLARE), cookie,
-				cookie != null ? key.formatTitle("CloudFlare") : null);
+				cookie != null ? key.formatTitle(cookieTitle) : null);
 		chan.configuration.commit();
 		if (uri != null) {
 			String host = uri.getHost();
