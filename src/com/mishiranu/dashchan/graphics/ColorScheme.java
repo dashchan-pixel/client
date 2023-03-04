@@ -3,18 +3,19 @@ package com.mishiranu.dashchan.graphics;
 import android.content.Context;
 import android.graphics.Color;
 import android.text.Spanned;
+import androidx.core.graphics.ColorUtils;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.widget.ThemeEngine;
 
 public class ColorScheme {
 	public ColorScheme(Context context, ThemeEngine.Theme theme) {
-		this(context, theme.window, theme.spoiler, theme.link, theme.quote, theme.tripcode, theme.capcode,
+		this(context, theme.window, theme.spoiler, theme.link, theme.quote, theme.tripcode, theme.capcode, theme.highlight,
 				theme.colorGainFactor);
 	}
 
 	private ColorScheme(Context context, int windowBackgroundColor, int spoilerBackgroundColor,
-			int linkColor, int quoteColor, int tripcodeColor, int capcodeColor, float colorGainFactor) {
+			int linkColor, int quoteColor, int tripcodeColor, int capcodeColor, int userPostHighlightColor, float colorGainFactor) {
 		this.windowBackgroundColor = windowBackgroundColor;
 		this.tripcodeColor = tripcodeColor;
 		this.capcodeColor = capcodeColor;
@@ -28,8 +29,7 @@ public class ColorScheme {
 		clickedColor = ResourceUtils.getSystemSelectorColor(context);
 		highlightTextColor = (Color.BLACK | linkColor) & 0x80ffffff;
 		highlightBackgroundColor = GraphicsUtils.isLight(windowBackgroundColor) ? 0x1e000000 : 0x1effffff;
-		// So far the same, but just in case - a new variable
-		highlightUserPostBackgroundColor = GraphicsUtils.isLight(windowBackgroundColor) ? 0x1e000000 : 0x1effffff;
+		highlightUserPostBackgroundColor = ColorUtils.setAlphaComponent(userPostHighlightColor, (int) (255 * 0.1));
 	}
 
 	public final int windowBackgroundColor;

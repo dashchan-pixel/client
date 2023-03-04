@@ -28,7 +28,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import chan.content.Chan;
@@ -74,8 +76,6 @@ public class ViewUnit {
 
 	private static final float ALPHA_HIDDEN_POST = 0.2f;
 	private static final float ALPHA_DELETED_POST = 0.5f;
-
-	private static final float MEDIA_ITEM_RESIZE_COEFFICIENT = 1.5f;
 
 	@SuppressLint("InflateParams")
 	ViewUnit(UiManager uiManager) {
@@ -177,7 +177,6 @@ public class ViewUnit {
 		((LinearLayoutManager) recyclerView.getLayoutManager()).setRecycleChildrenOnDetach(true);
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.M)
 	public RecyclerView.ViewHolder createView(ViewGroup parent, ViewType viewType) {
 		switch (viewType) {
 			case THREAD: {
@@ -544,7 +543,7 @@ public class ViewUnit {
 				int holders = attachmentHolders.size();
 				if (holders < size) {
 					int postBackgroundColor = getPostBackgroundColor(uiManager.getContext(), configurationSet);
-					float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
+					float thumbnailsScale = Preferences.getThumbnailsScale();
 					float textScale = Preferences.getTextScale();
 					for (int i = holders; i < size; i++) {
 						View view = LayoutInflater.from(context).inflate(R.layout.list_item_post_attachment, null);
@@ -976,9 +975,7 @@ public class ViewUnit {
 		}
 	}
 
-	@RequiresApi(api = Build.VERSION_CODES.M)
 	private static void fillVoting(ViewGroup parent, VoteState voteState, float topDp, float startDp, float endDp) {
-
 		float density = ResourceUtils.obtainDensity(parent);
 		int size = (int) (12f * density + 0.5f);
 		int top = (int) (topDp * density + 0.5f);
@@ -1004,7 +1001,7 @@ public class ViewUnit {
 
 		TextView likeTextView = new TextView(parent.getContext());
 		voteState.votingText[0] = likeTextView;
-		likeTextView.setTextAppearance(R.style.Widget_VoteTextLike);
+		TextViewCompat.setTextAppearance(likeTextView, R.style.Widget_VoteTextLike);
 		parent.addView(likeTextView,1, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 		ImageView dislikeImageView = new ImageView(parent.getContext());
@@ -1021,7 +1018,7 @@ public class ViewUnit {
 
 		TextView dislikeTextView = new TextView(parent.getContext());
 		voteState.votingText[1] = dislikeTextView;
-		dislikeTextView.setTextAppearance(R.style.Widget_VoteTextDislike);
+		TextViewCompat.setTextAppearance(dislikeTextView, R.style.Widget_VoteTextDislike);
 		parent.addView(dislikeTextView,3, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
 		typedArray.recycle();
@@ -1183,24 +1180,26 @@ public class ViewUnit {
 		private final UiManager.PostStateProvider postStateProvider;
 		private final PostNumber postNumber;
 		private final ColorDrawable drawable;
+		private final int endColor;
 
 		private ValueAnimator animator;
 		private boolean applied = false;
 
 		public NewPostAnimation(PostLinearLayout layout, UiManager.PostStateProvider postStateProvider,
-				PostNumber postNumber, int color) {
+				PostNumber postNumber, int startColor, int endColor) {
 			this.layout = layout;
 			this.postStateProvider = postStateProvider;
 			this.postNumber = postNumber;
-			drawable = new ColorDrawable(color);
+			this.endColor = endColor;
+			drawable = new ColorDrawable(startColor);
 			layout.setSecondaryBackground(drawable);
 			layout.postDelayed(this, 500);
 		}
 
 		@Override
 		public void run() {
-			int color = drawable.getColor();
-			animator = ValueAnimator.ofObject(new ArgbEvaluator(), color, color & 0x00ffffff);
+			int startColor = drawable.getColor();
+			animator = ValueAnimator.ofObject(new ArgbEvaluator(), startColor, endColor);
 			animator.addUpdateListener(this);
 			animator.setDuration(500);
 			animator.start();
@@ -1294,7 +1293,6 @@ public class ViewUnit {
 		public NewPostAnimation newPostAnimation;
 		public long lastCommentClick;
 
-		@RequiresApi(api = Build.VERSION_CODES.M)
 		public PostViewHolder(ViewGroup parent, UiManager uiManager, Lazy<Dimensions> dimensions) {
 			super(LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_post, parent, false));
 
@@ -1324,7 +1322,6 @@ public class ViewUnit {
     		ColorScheme colorScheme = ThemeEngine.getColorScheme(itemView.getContext());
     		highlightBackgroundColor = colorScheme.highlightBackgroundColor;
     		highlightUserPostBackgroundColor = colorScheme.highlightUserPostBackgroundColor;
-    
 
 			thumbnailClickListener = uiManager.interaction().createThumbnailClickListener();
 			thumbnailLongClickListener = uiManager.interaction().createThumbnailLongClickListener();
@@ -1360,7 +1357,7 @@ public class ViewUnit {
 			this.dimensions = dimensions.get(this);
 			thumbnail.setDrawTouching(true);
 			ViewGroup.LayoutParams thumbnailLayoutParams = thumbnail.getLayoutParams();
-			float thumbnailsScale = Preferences.getThumbnailsScale() * MEDIA_ITEM_RESIZE_COEFFICIENT;
+			float thumbnailsScale = Preferences.getThumbnailsScale();
 			if (thumbnailsScale != 1f) {
 				thumbnailLayoutParams.width = (int) (this.dimensions.thumbnailWidth * thumbnailsScale);
 				thumbnailLayoutParams.height = thumbnailLayoutParams.width;
@@ -1404,13 +1401,22 @@ public class ViewUnit {
 			}
 			PostItem postItem = getPostItem();
 			UiManager.ConfigurationSet configurationSet = getConfigurationSet();
+			boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
+					configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
 			if (selection == UiManager.Selection.DISABLED &&
 					!configurationSet.postStateProvider.isRead(postItem.getPostNumber())) {
 				switch (Preferences.getHighlightUnreadMode()) {
 					case AUTOMATICALLY: {
+						int endColor;
+						if(highlightUserPost){
+							endColor = highlightUserPostBackgroundColor;
+						}
+						else {
+							endColor = ColorUtils.setAlphaComponent(highlightBackgroundColor, 0);
+						}
 						newPostAnimation = new NewPostAnimation(layout,
 								configurationSet.postStateProvider, postItem.getPostNumber(),
-								highlightBackgroundColor);
+								highlightBackgroundColor, endColor);
 						break;
 					}
 					case MANUALLY: {
@@ -1428,8 +1434,6 @@ public class ViewUnit {
 			} else if (selection == UiManager.Selection.SELECTED) {
 				layout.setSecondaryBackgroundColor(highlightBackgroundColor);
 			} else {
-				boolean highlightUserPost = Preferences.isHighlightUserPosts() &&
-						configurationSet.postStateProvider.isUserPost(postItem.getPostNumber());
 				if (highlightUserPost) {
 					layout.setSecondaryBackgroundColor(highlightUserPostBackgroundColor);
 				} else {
