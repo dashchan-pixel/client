@@ -541,7 +541,5 @@
 	<string name="vote_like">Like</string>
 	<string name="vote_dislike">RRRAGE!!!</string>
 	<string name="vote_posting_prohibited">You have already voted</string>
-	<string name="please_wait">Please wait…</string>
-	<string name="unable_to_get_search_link">Unable to get search link</string>
 
 </resources>
