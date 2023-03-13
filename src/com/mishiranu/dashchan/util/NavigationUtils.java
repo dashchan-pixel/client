@@ -78,7 +78,7 @@ public class NavigationUtils {
 				if (chan.locator.safe(false).isAttachmentUri(uri)) {
 					String userAgent = AdvancedPreferences.getUserAgent(chanName);
 					FirewallResolver.Identifier resolverIdentifier = new FirewallResolver
-							.Identifier(userAgent, true);
+							.Identifier(userAgent, true, uri.getHost());
 					CookieBuilder cookieBuilder = FirewallResolver.Implementation.getInstance()
 							.collectCookies(chan, uri, resolverIdentifier, true);
 					if (!cookieBuilder.isEmpty()) {

@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,6 +136,9 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 						}
 						break;
 					}
+					case HOST:
+						generator.append("host", identifier.host);
+						break;
 					default: {
 						throw new IllegalArgumentException();
 					}
@@ -208,6 +210,7 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 		public <Result> Result resolveWebView(FirewallResolver.WebViewClient<Result> webViewClient) {
 			throw new IllegalStateException();
 		}
+
 	}
 
 	private static class CheckHolder {
@@ -261,21 +264,7 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 			} catch (Exception e) {
 				uri = null;
 			}
-			Map<String, String> cookies;
-			if (cookie != null && !cookie.isEmpty()) {
-				cookies = new HashMap<>();
-				String[] splitted = cookie.split(";\\s*");
-				for (String pair : splitted) {
-					int index = pair.indexOf('=');
-					if (index >= 0) {
-						String key = pair.substring(0, index);
-						String value = pair.substring(index + 1);
-						cookies.put(key, value);
-					}
-				}
-			} else {
-				cookies = Collections.emptyMap();
-			}
+			Map<String, String> cookies = FirewallUtils.parseCookies(cookie);
 			try {
 				return client.onPageFinished(uri, cookies, title);
 			} catch (LinkageError | RuntimeException e) {
@@ -418,7 +407,39 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 		}
 	}
 
-	private <T> T resolveWebView(FirewallResolver.Session session, FirewallResolver.WebViewClient<T> client)
+	private <T> T resolveWebView(FirewallResolver.Session session, FirewallResolver.WebViewClient<T> client) throws FirewallResolver.CancelException, InterruptedException {
+		Uri initialUri = session.getUri().buildUpon().clearQuery().encodedFragment(null).build();
+		Chan chan = session.getChan();
+		String userAgent = session.getIdentifier().userAgent;
+		HttpClient.ProxyData proxyData = HttpClient.getInstance().getProxyData(chan);
+		Preferences.FirewallResolutionMethod firewallResolutionMethod = Preferences.getFirewallResolutionMethod();
+		T firewallResolutionResult = null;
+		switch (firewallResolutionMethod){
+			case MANUAL:{
+				firewallResolutionResult = resolveWebViewForeground(initialUri, userAgent, proxyData, client);
+				break;
+			}
+			case AUTO: {
+				firewallResolutionResult = resolveWebViewBackground(initialUri, userAgent, proxyData, client, chan);
+				break;
+			}
+			case AUTO_THEN_MANUAL: {
+				firewallResolutionResult = resolveWebViewBackground(initialUri, userAgent, proxyData, client, chan);
+				if(firewallResolutionResult == null){
+					firewallResolutionResult = resolveWebViewForeground(initialUri, userAgent, proxyData, client);
+				}
+				break;
+			}
+		}
+		return firewallResolutionResult;
+	}
+
+	private <T> T resolveWebViewForeground(Uri initialUri, String userAgent, HttpClient.ProxyData proxyData, FirewallResolver.WebViewClient<T> client) throws InterruptedException{
+		FirewallResolutionDialogRequest<T> firewallResolutionDialogRequest = new FirewallResolutionDialogRequest<>(initialUri.toString(), userAgent, proxyData, client);
+		return ForegroundManager.getInstance().requireUserResolveFirewall(firewallResolutionDialogRequest);
+	}
+
+	private <T> T resolveWebViewBackground(Uri initialUri, String userAgent, HttpClient.ProxyData proxyData, FirewallResolver.WebViewClient<T> client, Chan chan)
 			throws FirewallResolver.CancelException, InterruptedException {
 		Context context = MainApplication.getInstance();
 		class Status {
@@ -463,12 +484,8 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 				service = status.service;
 			}
 			if (service != null) {
-				boolean[] finished = {false};
-				Chan chan = session.getChan();
-				Uri initialUri = session.getUri().buildUpon().clearQuery().encodedFragment(null).build();
 				String chanTitle = chan.configuration.getTitle();
-				String userAgent = session.getIdentifier().userAgent;
-				HttpClient.ProxyData proxyData = HttpClient.getInstance().getProxyData(chan);
+				boolean[] finished = {false};
 				boolean verifyCertificate = chan.locator.isUseHttps() && Preferences.isVerifyCertificate();
 				WebViewRequestCallback requestCallback = new WebViewRequestCallback(client, initialUri, chanTitle,
 						() -> status.cancel = true);

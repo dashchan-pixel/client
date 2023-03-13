@@ -78,6 +78,8 @@ public class GeneralFragment extends PreferenceFragment implements FragmentHandl
 		captchaSolvingPreference.setOnAfterChangeListener(p -> configureCaptchaSolvingSummary(true));
 		captchaSolvingPreference.setDescription(getString(R.string.captcha_solving_info__sentence));
 		configureCaptchaSolvingNeutralButton();
+		addList(Preferences.KEY_FIREWALL_RESOLUTION_METHOD, enumList(Preferences.FirewallResolutionMethod.values(), v -> v.value), Preferences.DEFAULT_FIREWALL_RESOLUTION_METHOD.value,
+				R.string.firewall_resolution_method, enumResList(Preferences.FirewallResolutionMethod.values(), v -> v.titleResId));
 
 		addHeader(R.string.connection);
 		addButton(0, R.string.specific_to_internal_services__sentence).setSelectable(false);

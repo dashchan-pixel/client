@@ -449,7 +449,7 @@ public class HttpClient {
 					}
 					connection.setRequestProperty(header.first, header.second);
 					if ("User-Agent".equalsIgnoreCase(header.first)) {
-						userAgent = header.first;
+						userAgent = header.second;
 						userAgentSet = true;
 					}
 					if ("Accept-Encoding".equalsIgnoreCase(header.first)) {
@@ -474,7 +474,7 @@ public class HttpClient {
 				connection.setRequestProperty("Accept-Encoding", acceptEncoding.toString());
 			}
 			FirewallResolver.Identifier resolverIdentifier = new FirewallResolver
-					.Identifier(userAgent, !userAgentSet);
+					.Identifier(userAgent, !userAgentSet, url.getHost());
 			CookieBuilder cookieBuilder = !session.mayCheckFirewallBlock
 					? request.cookieBuilder : obtainModifiedCookieBuilder(request.cookieBuilder,
 					session.holder.chan, requestedUri, resolverIdentifier);
