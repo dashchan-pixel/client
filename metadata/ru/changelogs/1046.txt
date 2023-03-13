@@ -1,2 +1,2 @@
-* Fix with UserAgent to bypass Cloudflare DDoS protection
-* Fixed a crash issue when using swipe to hide threads
+* Исправление UserAgent для обхода защиты Cloudflare от DDoS.
+* Исправлена проблема с вылетом при использовании свайпа для скрытия тем.
