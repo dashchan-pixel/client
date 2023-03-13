@@ -137,6 +137,9 @@ public class FirewallResolvers extends FirewallResolver.Implementation {
 						}
 						break;
 					}
+					case HOST:
+						generator.append("host", identifier.host);
+						break;
 					default: {
 						throw new IllegalArgumentException();
 					}

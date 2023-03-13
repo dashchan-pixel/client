@@ -7,6 +7,7 @@ import chan.content.Chan;
 import chan.content.ChanConfiguration;
 import com.mishiranu.dashchan.content.net.firewall.FirewallResolvers;
 import java.util.Map;
+import java.util.Objects;
 
 @Extendable
 public abstract class FirewallResolver {
@@ -38,37 +39,31 @@ public abstract class FirewallResolver {
 	public static final class Identifier {
 		@Public
 		public enum Flag {
-			@Public USER_AGENT
+			@Public USER_AGENT,
+			HOST
 		}
 
 		@Public public final String userAgent;
 		@Public public final boolean defaultUserAgent;
+		public final String host;
 
-		public Identifier(String userAgent, boolean defaultUserAgent) {
+		public Identifier(String userAgent, boolean defaultUserAgent, String host) {
 			this.userAgent = userAgent;
 			this.defaultUserAgent = defaultUserAgent;
+			this.host = host;
 		}
 
 		@Override
 		public boolean equals(Object o) {
-			if (o == this) {
-				return true;
-			}
-			if (o instanceof Identifier) {
-				Identifier identifier = (Identifier) o;
-				return userAgent.equals(identifier.userAgent) &&
-						defaultUserAgent == identifier.defaultUserAgent;
-			}
-			return false;
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Identifier that = (Identifier) o;
+			return defaultUserAgent == that.defaultUserAgent && Objects.equals(userAgent, that.userAgent) && Objects.equals(host, that.host);
 		}
 
 		@Override
 		public int hashCode() {
-			int prime = 31;
-			int result = 1;
-			result = prime * result + userAgent.hashCode();
-			result = prime * result + (defaultUserAgent ? 1 : 0);
-			return result;
+			return Objects.hash(userAgent, defaultUserAgent, host);
 		}
 	}
 
