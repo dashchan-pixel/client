@@ -1,4 +1,4 @@
-* Monochrome icon design available
-* Fix some issues with Cloudflare bypass
-* Fix media information display
-* Added the ability to bypass the lock manually
+* Доступен монохромный иконки
+* Исправлены некоторые проблемы с обходом Cloudflare
+* Фикс отображения медиаинформации
+* Добавлена возможность обхода блокировки вручную
