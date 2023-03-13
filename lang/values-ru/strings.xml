@@ -559,5 +559,9 @@
 	<string name="vote_like">Двачую</string>
 	<string name="vote_dislike">RRRAGE!!!</string>
 	<string name="vote_posting_prohibited">Вы уже голосовали</string>
+  <string name="firewall_resolution_method">Метод обхода фаервола</string>
+	<string name="firewall_resolution_method_manual">Вручную</string>
+	<string name="firewall_resolution_method_auto">Авто</string>
+	<string name="firewall_resolution_method_auto_then_manual">Авто, затем вручную</string>
 
 </resources>

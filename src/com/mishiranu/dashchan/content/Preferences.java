@@ -11,6 +11,8 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Pair;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.StringRes;
+
 import chan.content.Chan;
 import chan.content.ChanConfiguration;
 import chan.content.ChanManager;
@@ -1425,6 +1427,30 @@ public class Preferences {
 
 	public static boolean isSwipeToHideThreadEnabled(){
 		return PREFERENCES.getBoolean(KEY_SWIPE_TO_HIDE_THREAD, DEFAULT_SWIPE_TO_HIDE_THREAD);
+	}
+
+	public static final String KEY_FIREWALL_RESOLUTION_METHOD = "firewall_resolution_method";
+	public static final FirewallResolutionMethod DEFAULT_FIREWALL_RESOLUTION_METHOD = FirewallResolutionMethod.MANUAL;
+
+	public static FirewallResolutionMethod getFirewallResolutionMethod() {
+		return getEnumValue(KEY_FIREWALL_RESOLUTION_METHOD, FirewallResolutionMethod.values(),
+				DEFAULT_FIREWALL_RESOLUTION_METHOD, FirewallResolutionMethod.VALUE_PROVIDER);
+	}
+
+	public enum FirewallResolutionMethod {
+		MANUAL("manual", R.string.firewall_resolution_method_manual),
+		AUTO("auto", R.string.firewall_resolution_method_auto),
+		AUTO_THEN_MANUAL("auto_then_manual", R.string.firewall_resolution_method_auto_then_manual);
+
+		private static final EnumValueProvider<FirewallResolutionMethod> VALUE_PROVIDER = o -> o.value;
+
+		public final String value;
+		@StringRes public final int titleResId;
+
+		FirewallResolutionMethod(String value, int titleResId) {
+			this.value = value;
+			this.titleResId = titleResId;
+		}
 	}
 
 }

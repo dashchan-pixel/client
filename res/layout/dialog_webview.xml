@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialog_webview_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- TODO create theme for top bar -->
+    <LinearLayout
+        android:id="@+id/dialog_webview_topbar"
+        style="?android:actionBarStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:tag="theme.background=primary">
+
+        <ImageView
+            android:id="@+id/dialog_webview_icon_close"
+            style="?android:actionButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_action_cancel_dark"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/dialog_webview_title"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Widget.ActionBar.Title"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            tools:text="Title" />
+
+        <ImageView
+            android:id="@+id/dialog_webview_icon_refresh"
+            style="?android:actionButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="?iconActionRefresh" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <WebView
+            android:id="@+id/dialog_webview_webview"
+            android:layout_width="match_parent"
+            android:background="@android:color/white"
+            android:layout_height="match_parent"
+            android:layout_gravity="center" />
+
+        <ProgressBar
+            android:id="@+id/dialog_webview_progressbar"
+            style="?android:progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_gravity="top"
+            android:alpha="0"
+            android:tag="theme.progressTint=accent"
+            tools:alpha="1"
+            tools:progress="50"
+            android:visibility="gone"
+            tools:progressTint="@android:color/holo_purple" />
+
+    </FrameLayout>
+
+</LinearLayout>
