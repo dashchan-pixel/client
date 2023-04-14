@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:id="@+id/captcha_block_parent"
 	android:layout_width="match_parent"
@@ -32,8 +33,8 @@
 			android:id="@+id/captcha_ttl"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_alignParentRight="true"
 			android:layout_alignParentEnd="true"
+			android:layout_alignParentRight="true"
 			android:layout_alignParentBottom="true"
 			android:textColor="@color/captcha_ttl"
 			android:textSize="24sp" />

@@ -2,9 +2,6 @@ package com.mishiranu.dashchan.ui;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.view.KeyEvent;
@@ -14,23 +11,19 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-
 import chan.content.ChanConfiguration;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
+import com.mishiranu.dashchan.util.CaptchaUtils;
+import com.mishiranu.dashchan.util.ConcurrentUtils;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.ViewUtils;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 public class CaptchaForm implements View.OnClickListener, View.OnLongClickListener,
-		TextView.OnEditorActionListener {
+		TextView.OnEditorActionListener, CaptchaUtils.Callback {
 	public enum CaptchaViewType {LOADING, IMAGE, SKIP, SKIP_LOCK, ERROR}
 
 	private final Callback callback;
@@ -45,57 +38,13 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	private final View inputParentView;
 	private final EditText inputView;
 	private final View cancelView;
-
 	private final TextView captchaTTL;
-	private final int ttl;
-	private final Timer captchaTTLDecreaseTimer;
-	private CaptchaTTLDecreaseTask captchaTTLDecreaseTask;
-	private final Timer captchaExpiredTimer;
-	private TimerTask captchaExpiredTask;
-
-	private final static int CAPTCHA_CHANGE_TTL = 1;
-	private final static int CAPTCHA_EXPIRED = 2;
 
 	private ChanConfiguration.Captcha.Input captchaInput;
 
 	public interface Callback {
 		void onRefreshCaptcha(boolean forceRefresh);
 		void onConfirmCaptcha();
-	}
-
-	static class CaptchaTTLDecreaseTask extends TimerTask {
-
-		private int currentTTL;
-		private final Handler handler;
-
-		public CaptchaTTLDecreaseTask(int ttl, Handler handler) {
-			this.currentTTL = ttl;
-			this.handler = handler;
-		}
-
-		@Override
-		public void run() {
-			handler.obtainMessage(CAPTCHA_CHANGE_TTL, currentTTL).sendToTarget();
-			currentTTL--;
-		}
-
-	}
-
-	static class CaptchaExpiredMessage  {
-
-		public ReadCaptchaTask.CaptchaState state;
-		public ChanConfiguration.Captcha.Input input;
-		public boolean large;
-		public boolean invertColors;
-
-		public CaptchaExpiredMessage(ReadCaptchaTask.CaptchaState state, ChanConfiguration.Captcha.Input input,
-			 	boolean large, boolean invertColors) {
-			this.state = state;
-			this.input = input;
-			this.large = large;
-			this.invertColors = invertColors;
-		}
-
 	}
 
 	public CaptchaForm(Callback callback, boolean hideInput, boolean applyHeight,
@@ -111,9 +60,6 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		skipTextView = container.findViewById(R.id.captcha_skip_text);
 		captchaTTL = container.findViewById(R.id.captcha_ttl);
 		captchaTTL.setVisibility(View.GONE);
-		ttl = captcha.ttl;
-		captchaTTLDecreaseTimer = new Timer(true);
-		captchaExpiredTimer = new Timer(true);
 		this.inputParentView = inputParentView;
 		this.inputView = inputView;
 		if (hideInput) {
@@ -173,64 +119,38 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		}
 	}
 
-	private void calculateCaptchaTTLPadding(boolean large) {
+	private int getBlockViewWidth() {
+		return blockView.getWidth();
+	}
+
+	/*
+		When trying to calculate the padding right away,
+		we run into the problem that the blockView can have a width of zero,
+		which causes issue in the display when the posting window is opened.
+		To avoid this problem, we perform a recalculation on a timer of 1 second
+	 */
+	private final Runnable refreshCaptchaTTLPadding = () -> {
+		if (getBlockViewWidth() != 0) {
+			calculateCaptchaTTLPadding();
+		} else {
+			queueNextCaptchaTTPPaddingUpdate();
+		}
+	};
+
+	private void queueNextCaptchaTTPPaddingUpdate() {
+		ConcurrentUtils.HANDLER.removeCallbacks(refreshCaptchaTTLPadding);
+		ConcurrentUtils.HANDLER.postDelayed(refreshCaptchaTTLPadding, 1000);
+	}
+
+	private void calculateCaptchaTTLPadding() {
 		if (imageView.getDrawable() == null)
 			return;
 		int imageViewWidth = imageView.getDrawable().getIntrinsicWidth();
 		float density = ResourceUtils.obtainDensity(imageView);
-		int calculated = blockView.getWidth() / 2  - imageViewWidth / 2
+		int calculated = blockView.getWidth() / 2 - imageViewWidth / 2
 				- (int) (96f * density) / 2;
 		captchaTTL.setPadding(0,0, calculated,0);
-	}
-
-	private void scheduleTimerTask(boolean large, boolean invertColors) {
-		cancelTTLDecreaseTask(false);
-		Handler captchaHandler = new Handler(Looper.getMainLooper()) {
-			@Override
-			public void handleMessage(@NonNull Message msg) {
-				switch (msg.what) {
-					case CAPTCHA_CHANGE_TTL: {
-						captchaTTL.setText(String.valueOf(msg.obj));
-						break;
-					}
-					case CAPTCHA_EXPIRED: {
-						if (Preferences.isCaptchaAutoReload()) {
-							callback.onRefreshCaptcha(false);
-						} else {
-							CaptchaExpiredMessage message = (CaptchaExpiredMessage) msg.obj;
-							showCaptcha(message.state, message.input, null, message.large, message.invertColors);
-						}
-						break;
-					}
-					default:
-						break;
-				}
-			}
-		};
-		captchaTTLDecreaseTask = new CaptchaTTLDecreaseTask(ttl, captchaHandler);
-		captchaTTLDecreaseTimer.scheduleAtFixedRate(captchaTTLDecreaseTask, 0, 1000);
-		captchaExpiredTask = new TimerTask() {
-			@Override
-			public void run() {
-				cancelTTLDecreaseTask(true);
-				CaptchaExpiredMessage msg = new CaptchaExpiredMessage(
-						ReadCaptchaTask.CaptchaState.NEED_LOAD,
-						captchaInput,
-						large,
-						invertColors
-				);
-				captchaHandler.obtainMessage(CAPTCHA_EXPIRED, msg).sendToTarget();
-			}
-		};
-		captchaExpiredTimer.schedule( captchaExpiredTask, ttl * 1000);
-	}
-
-	private void cancelTTLDecreaseTask(boolean calledByTimer) {
-		if (captchaTTLDecreaseTask != null)
-			captchaTTLDecreaseTask.cancel();
-		if (!calledByTimer && captchaExpiredTask != null)
-			captchaExpiredTask.cancel();
-
+		captchaTTL.setVisibility(View.VISIBLE);
 	}
 
 	@Override
@@ -247,6 +167,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				inputMethodManager.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT);
 			}
 		}
+		CaptchaUtils.getInstance().clear();
 	}
 
 	@Override
@@ -264,13 +185,32 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		return true;
 	}
 
+	@Override
+	public void onTTLChange(int ttl) {
+		if (captchaTTL != null)
+			captchaTTL.setText(String.valueOf(ttl));
+	}
+
+	@Override
+	public void onCaptchaTimeout(boolean needReload) {
+		if (captchaTTL != null) {
+			if (needReload) {
+				onClick(blockParentView);
+			} else {
+				skipTextView.setText(R.string.load_captcha);
+				cancelView.setVisibility(View.GONE);
+				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
+			}
+		}
+	}
+
 	public void showCaptcha(ReadCaptchaTask.CaptchaState captchaState, ChanConfiguration.Captcha.Input input,
 			Bitmap image, boolean large, boolean invertColors) {
 		switch (captchaState) {
 			case CAPTCHA: {
 				imageView.setImageBitmap(image);
 				imageView.setColorFilter(invertColors ? GraphicsUtils.INVERT_FILTER : null);
-				switchToCaptchaView(CaptchaViewType.IMAGE, input, large, invertColors);
+				switchToCaptchaView(CaptchaViewType.IMAGE, input, large);
 				break;
 			}
 			case NEED_LOAD:
@@ -279,19 +219,19 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipTextView.setText(R.string.load_captcha);
 				cancelView.setVisibility(captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING
 						? View.VISIBLE : View.GONE);
-				switchToCaptchaView(CaptchaViewType.SKIP, null, false, invertColors);
+				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
 				break;
 			}
 			case SKIP: {
 				skipTextView.setText(R.string.captcha_is_not_required);
 				cancelView.setVisibility(View.VISIBLE);
-				switchToCaptchaView(CaptchaViewType.SKIP_LOCK, null, false, invertColors);
+				switchToCaptchaView(CaptchaViewType.SKIP_LOCK, null, false);
 				break;
 			}
 			case PASS: {
 				skipTextView.setText(R.string.captcha_pass);
 				cancelView.setVisibility(View.VISIBLE);
-				switchToCaptchaView(CaptchaViewType.SKIP, null, false, invertColors);
+				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
 				break;
 			}
 		}
@@ -301,12 +241,12 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		imageView.setImageResource(android.R.color.transparent);
 		skipTextView.setText(R.string.load_captcha);
 		cancelView.setVisibility(View.GONE);
-		switchToCaptchaView(CaptchaViewType.ERROR, null, false, false);
+		switchToCaptchaView(CaptchaViewType.ERROR, null, false);
 	}
 
 	public void showLoading() {
 		inputView.setText(null);
-		switchToCaptchaView(CaptchaViewType.LOADING, null, false, false);
+		switchToCaptchaView(CaptchaViewType.LOADING, null, false);
 	}
 
 	private void setInputEnabled(boolean enabled, boolean switchVisibility) {
@@ -317,7 +257,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	}
 
 	private void switchToCaptchaView(CaptchaViewType captchaViewType,
-			ChanConfiguration.Captcha.Input input, boolean large, boolean invertColors) {
+			ChanConfiguration.Captcha.Input input, boolean large) {
 		switch (captchaViewType) {
 			case LOADING: {
 				blockParentView.setClickable(true);
@@ -351,12 +291,8 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				setInputEnabled(true, true);
 				updateCaptchaInput(input != null ? input : captchaInput);
 				updateCaptchaHeight(large);
-				if (Preferences.isCaptchaTTL() && ttl > 0) {
-					if (Preferences.isHugeCaptcha() || large) {
-						calculateCaptchaTTLPadding(large);
-						captchaTTL.setVisibility(View.VISIBLE);
-					}
-					scheduleTimerTask(large, invertColors);
+				if (CaptchaUtils.isCaptchaTTLEnabled()) {
+					queueNextCaptchaTTPPaddingUpdate();
 				} else {
 					captchaTTL.setVisibility(View.GONE);
 				}
