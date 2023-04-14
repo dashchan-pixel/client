@@ -78,10 +78,8 @@ public class CaptchaUtils {
     }
 
     public static boolean isCaptchaTTLEnabled() {
-        if (Preferences.isCaptchaTTL()) {
-            if (Preferences.isHugeCaptcha()) {
-                return true;
-            }
+        if (Preferences.isCaptchaTTL() && Preferences.isHugeCaptcha()) {
+            return true;
         }
         return false;
     }
