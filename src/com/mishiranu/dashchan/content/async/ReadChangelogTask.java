@@ -25,6 +25,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<ReadChangelogTask.Entry>>> {
+
+	private static final String PREFIX_EXPERIMENTAL_VERSION = "3.1.4-experimental-";
+
 	public interface Callback {
 		void onReadChangelogComplete(List<Entry> entries, ErrorItem errorItem);
 	}
@@ -40,9 +43,19 @@ public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<R
 			}
 
 			public String getMajorMinor() {
+				if (name.contains(PREFIX_EXPERIMENTAL_VERSION)) {
+					return getExperimentalMajorMinor();
+				}
 				int index = name.indexOf('.');
 				index = name.indexOf('.', index + 1);
 				return index >= 0 ? name.substring(0, index) : name;
+			}
+
+			private String getExperimentalMajorMinor() {
+				String experimentalName = name.replace(PREFIX_EXPERIMENTAL_VERSION, "");
+				int index = experimentalName.indexOf('.');
+				index = experimentalName.indexOf('.', index + 1);
+				return index >= 0 ? experimentalName.substring(0, index) : name;
 			}
 		}
 
