@@ -545,5 +545,9 @@
 	<string name="firewall_resolution_method_manual">Manual</string>
 	<string name="firewall_resolution_method_auto">Auto</string>
 	<string name="firewall_resolution_method_auto_then_manual">Auto then manual</string>
+	<string name="favorites_hide_all">Hide all</string>
+	<string name="favorites_show_all">Show all</string>
+	<string name="favorites_hide_deleted">Hide deleted</string>
+	<string name="favorites_show_deleted">Show deleted</string>
 
 </resources>
