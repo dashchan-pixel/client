@@ -226,12 +226,14 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipTextView.setText(R.string.captcha_is_not_required);
 				cancelView.setVisibility(View.VISIBLE);
 				switchToCaptchaView(CaptchaViewType.SKIP_LOCK, null, false);
+				CaptchaUtils.getInstance().clear();
 				break;
 			}
 			case PASS: {
 				skipTextView.setText(R.string.captcha_pass);
 				cancelView.setVisibility(View.VISIBLE);
 				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
+				CaptchaUtils.getInstance().clear();
 				break;
 			}
 		}
