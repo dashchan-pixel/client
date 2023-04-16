@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.LauncherActivity;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
@@ -895,12 +896,8 @@ public class DrawerForm extends RecyclerView.Adapter<DrawerForm.ViewHolder> impl
 							context.getString(R.string.favorite_boards)));
 					addSection = false;
 				}
-				if (!Preferences.isFavoritesHidedAll()) {
-					if (!(Preferences.isFavoritesHidedDeleted() && watcherServiceClient.getCounter(favoriteItem.chanName, favoriteItem.boardName, favoriteItem.threadNumber).deleted)) {
-						favorites.add(new ListItem(ListItem.Type.FAVORITE, 0, favoriteItem.chanName, favoriteItem.boardName,
-								null, chan.configuration.getBoardTitle(favoriteItem.boardName)));
-					}
-				}
+				favorites.add(new ListItem(ListItem.Type.FAVORITE, 0, favoriteItem.chanName, favoriteItem.boardName,
+						null, chan.configuration.getBoardTitle(favoriteItem.boardName)));
 			}
 		}
 	}
@@ -1074,7 +1071,7 @@ public class DrawerForm extends RecyclerView.Adapter<DrawerForm.ViewHolder> impl
 									}
 									Preferences.setFavoritesHideDeleted(!Preferences.isFavoritesHidedDeleted());
 									if (Preferences.isFavoritesHidedDeleted()) {
-										favorites.removeIf(fav -> fav.threadNumber != null && getCounter(fav).deleted);
+										favorites.removeIf(fav -> fav.isThreadItem() && getCounter(fav).deleted);
 									} else {
 										updateListFavorites();
 									}
@@ -1090,7 +1087,7 @@ public class DrawerForm extends RecyclerView.Adapter<DrawerForm.ViewHolder> impl
 									}
 									Preferences.setFavoritesHideAll(!Preferences.isFavoritesHidedAll());
 									if (Preferences.isFavoritesHidedAll()) {
-										favorites.removeIf(fav -> fav.type == ListItem.Type.FAVORITE);
+										favorites.removeIf(fav -> fav.type == ListItem.Type.FAVORITE && fav.isThreadItem());
 									}
 									else
 										updateListFavorites();
