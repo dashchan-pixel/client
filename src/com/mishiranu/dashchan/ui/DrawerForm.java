@@ -1667,7 +1667,8 @@ public class DrawerForm extends RecyclerView.Adapter<DrawerForm.ViewHolder> impl
 					fav.type == ListItem.Type.FAVORITE &&
 						(fav.chanName.equals(chanName) &&
 						fav.boardName.equals(boardName) &&
-						fav.threadNumber.equals(threadNumber))
+						fav.threadNumber != null 
+						&& fav.threadNumber.equals(threadNumber))
 				);
 				notifyDataSetChanged();
 			}
