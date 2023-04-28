@@ -10,6 +10,7 @@
 	<color name="background_attachment_light">#ff888888</color>
 	<color name="background_spoiler_light">#33000000</color>
 	<color name="background_card_light">#fffafafa</color>
+	<color name="background_clickable_toast_light">#323232</color>
 	<color name="color_text_thread_light">#aa000000</color>
 	<color name="color_text_post_light">#ff000000</color>
 	<color name="color_text_meta_light">#aa000000</color>
@@ -17,9 +18,13 @@
 	<color name="color_text_quote_light">#ff888888</color>
 	<color name="color_text_tripcode_light">@color/color_text_quote_light</color>
 	<color name="color_text_capcode_light">@color/color_text_tripcode_light</color>
+	<color name="color_text_clickable_toast_light">#ffffff</color>
+	<color name="color_text_likes_count_light">#357938</color>
+	<color name="color_text_dislikes_count_light">#D5190B</color>
 	<color name="color_primary_light">#ff666666</color>
 	<color name="color_accent_light">@color/color_primary_light</color>
 	<color name="color_selection_light">#66666666</color>
+	<color name="color_highlight_light">#000000</color>
 
 	<color name="background_popup_dark">#ff303030</color>
 	<color name="background_window_dark">#ff181818</color>
@@ -27,6 +32,7 @@
 	<color name="background_attachment_dark">#ff111111</color>
 	<color name="background_spoiler_dark">#33ffffff</color>
 	<color name="background_card_dark">#ff303030</color>
+	<color name="background_clickable_toast_dark">@color/background_clickable_toast_light</color>
 	<color name="color_text_thread_dark">#99ffffff</color>
 	<color name="color_text_post_dark">#ccffffff</color>
 	<color name="color_text_meta_dark">#99ffffff</color>
@@ -34,20 +40,12 @@
 	<color name="color_text_quote_dark">#ff888888</color>
 	<color name="color_text_tripcode_dark">@color/color_text_quote_dark</color>
 	<color name="color_text_capcode_dark">@color/color_text_tripcode_light</color>
+	<color name="color_text_clickable_toast_dark">@color/color_text_clickable_toast_light</color>
+	<color name="color_text_likes_count_dark">#5CB764</color>
+	<color name="color_text_dislikes_count_dark">#F97F77</color>
 	<color name="color_primary_dark">#ffaaaaaa</color>
 	<color name="color_accent_dark">@color/color_primary_dark</color>
 	<color name="color_selection_dark">#66aaaaaa</color>
-
-	<color name="color_vote_like">#027305</color>
-	<color name="color_vote_red">#ff0000</color>
-
-	<color name="background_clickable_toast_light">#323232</color>
-	<color name="color_text_clickable_toast_light">#ffffff</color>
-
-	<color name="background_clickable_toast_dark">@color/background_clickable_toast_light</color>
-	<color name="color_text_clickable_toast_dark">@color/color_text_clickable_toast_light</color>
-
-	<color name="color_highlight_light">#000000</color>
 	<color name="color_highlight_dark">#ffffff</color>
 
 </resources>
