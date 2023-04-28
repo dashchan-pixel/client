@@ -80,6 +80,8 @@ public class InterfaceFragment extends PreferenceFragment {
 				});
 		addCheck(true, Preferences.KEY_DISPLAY_ICONS, Preferences.DEFAULT_DISPLAY_ICONS,
 				R.string.display_post_icons, R.string.display_post_icons__summary);
+		addCheck(true, Preferences.KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, Preferences.DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, R.string.show_important_posts_on_fastscroll_bar, 0);
+		addDependency(Preferences.KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, Preferences.KEY_ACTIVE_SCROLLBAR, true);
 
 		addHeader(R.string.submission_form);
 		addCheck(true, Preferences.KEY_HIDE_PERSONAL_DATA,
