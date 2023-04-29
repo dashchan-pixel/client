@@ -71,7 +71,6 @@
             android:tag="theme.progressTint=accent"
             tools:alpha="1"
             tools:progress="50"
-            android:visibility="gone"
             tools:progressTint="@android:color/holo_purple" />
 
     </FrameLayout>

@@ -16,12 +16,14 @@ import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
+import com.mishiranu.dashchan.util.CaptchaUtils;
+import com.mishiranu.dashchan.util.ConcurrentUtils;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.ViewUtils;
 
 public class CaptchaForm implements View.OnClickListener, View.OnLongClickListener,
-		TextView.OnEditorActionListener {
+		TextView.OnEditorActionListener, CaptchaUtils.Callback {
 	public enum CaptchaViewType {LOADING, IMAGE, SKIP, SKIP_LOCK, ERROR}
 
 	private final Callback callback;
@@ -36,6 +38,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	private final View inputParentView;
 	private final EditText inputView;
 	private final View cancelView;
+	private final TextView captchaTTL;
 
 	private ChanConfiguration.Captcha.Input captchaInput;
 
@@ -55,6 +58,8 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		loadingView = container.findViewById(R.id.captcha_loading);
 		skipBlockView = container.findViewById(R.id.captcha_skip_block);
 		skipTextView = container.findViewById(R.id.captcha_skip_text);
+		captchaTTL = container.findViewById(R.id.captcha_ttl);
+		captchaTTL.setVisibility(View.GONE);
 		this.inputParentView = inputParentView;
 		this.inputView = inputView;
 		if (hideInput) {
@@ -114,6 +119,40 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		}
 	}
 
+	private int getBlockViewWidth() {
+		return blockView.getWidth();
+	}
+
+	/*
+		When trying to calculate the padding right away,
+		we run into the problem that the blockView can have a width of zero,
+		which causes issue in the display when the posting window is opened.
+		To avoid this problem, we perform a recalculation on a timer of 1 second
+	 */
+	private final Runnable refreshCaptchaTTLPadding = () -> {
+		if (getBlockViewWidth() != 0) {
+			calculateCaptchaTTLPadding();
+		} else {
+			queueNextCaptchaTTPPaddingUpdate();
+		}
+	};
+
+	private void queueNextCaptchaTTPPaddingUpdate() {
+		ConcurrentUtils.HANDLER.removeCallbacks(refreshCaptchaTTLPadding);
+		ConcurrentUtils.HANDLER.postDelayed(refreshCaptchaTTLPadding, 1000);
+	}
+
+	private void calculateCaptchaTTLPadding() {
+		if (imageView.getDrawable() == null)
+			return;
+		int imageViewWidth = imageView.getDrawable().getIntrinsicWidth();
+		float density = ResourceUtils.obtainDensity(imageView);
+		int calculated = blockView.getWidth() / 2 - imageViewWidth / 2
+				- (int) (96f * density) / 2;
+		captchaTTL.setPadding(0,0, calculated,0);
+		captchaTTL.setVisibility(View.VISIBLE);
+	}
+
 	@Override
 	public void onClick(View v) {
 		if (v == cancelView) {
@@ -128,12 +167,14 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				inputMethodManager.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT);
 			}
 		}
+		CaptchaUtils.getInstance().clear();
 	}
 
 	@Override
 	public boolean onLongClick(View v) {
 		if (v == blockParentView) {
 			callback.onRefreshCaptcha(true);
+			CaptchaUtils.getInstance().clear();
 			return true;
 		}
 		return false;
@@ -143,6 +184,25 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 		callback.onConfirmCaptcha();
 		return true;
+	}
+
+	@Override
+	public void onTTLChange(int ttl) {
+		if (captchaTTL != null)
+			captchaTTL.setText(String.valueOf(ttl));
+	}
+
+	@Override
+	public void onCaptchaTimeout(boolean needReload) {
+		if (captchaTTL != null) {
+			if (needReload) {
+				onClick(blockParentView);
+			} else {
+				skipTextView.setText(R.string.load_captcha);
+				cancelView.setVisibility(View.GONE);
+				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
+			}
+		}
 	}
 
 	public void showCaptcha(ReadCaptchaTask.CaptchaState captchaState, ChanConfiguration.Captcha.Input input,
@@ -167,12 +227,14 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipTextView.setText(R.string.captcha_is_not_required);
 				cancelView.setVisibility(View.VISIBLE);
 				switchToCaptchaView(CaptchaViewType.SKIP_LOCK, null, false);
+				CaptchaUtils.getInstance().clear();
 				break;
 			}
 			case PASS: {
 				skipTextView.setText(R.string.captcha_pass);
 				cancelView.setVisibility(View.VISIBLE);
 				switchToCaptchaView(CaptchaViewType.SKIP, null, false);
+				CaptchaUtils.getInstance().clear();
 				break;
 			}
 		}
@@ -209,6 +271,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.GONE);
 				setInputEnabled(false, false);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 			case ERROR: {
@@ -219,6 +282,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.VISIBLE);
 				setInputEnabled(false, false);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 			case IMAGE: {
@@ -230,6 +294,11 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				setInputEnabled(true, true);
 				updateCaptchaInput(input != null ? input : captchaInput);
 				updateCaptchaHeight(large);
+				if (CaptchaUtils.isCaptchaTTLEnabled()) {
+					queueNextCaptchaTTPPaddingUpdate();
+				} else {
+					captchaTTL.setVisibility(View.GONE);
+				}
 				break;
 			}
 			case SKIP:
@@ -242,6 +311,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 				skipBlockView.setVisibility(View.VISIBLE);
 				setInputEnabled(false, true);
 				updateCaptchaHeight(false);
+				captchaTTL.setVisibility(View.GONE);
 				break;
 			}
 		}

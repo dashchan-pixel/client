@@ -143,6 +143,7 @@ public class ChanConfiguration implements Chan.Linked {
 		@Public public String title;
 		@Public public Input input = Input.ALL;
 		@Public public Validity validity = Validity.LONG_LIFETIME;
+		@Public public int ttl = -1;
 
 		@Public
 		public Captcha() {}
