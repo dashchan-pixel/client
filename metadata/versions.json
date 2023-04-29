@@ -556,9 +556,9 @@
 			"code": 1050,
 			"name": "3.1.4-experimental-1.5.1",
 			"date": "13.03.2023",
-      "changelog": true
-    },
-    {
+			"changelog": true
+		},
+		{
 			"code": 1051,
 			"name": "3.1.4-experimental-1.6",
 			"date": "29.04.2023",

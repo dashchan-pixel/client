@@ -1,3 +1,4 @@
-* ClickableToast design fix
-* Fixed bug when selecting "Show thumbnails of all images" media content was smaller
-* Added feature "Highlight my posts", which changes the background color for user posts
+* Monochrome icon design available
+* Fix some issues with Cloudflare bypass
+* Fix media information display
+* Added the ability to bypass the lock manually
