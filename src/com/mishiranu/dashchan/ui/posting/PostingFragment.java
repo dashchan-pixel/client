@@ -641,6 +641,8 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		captchaForm = null;
 		sendButton = null;
 		attachments.clear();
+
+		CaptchaUtils.getInstance().lockCallback();
 	}
 
 	@Override

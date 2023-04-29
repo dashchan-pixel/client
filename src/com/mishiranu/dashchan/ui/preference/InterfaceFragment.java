@@ -86,19 +86,21 @@ public class InterfaceFragment extends PreferenceFragment {
 		addCheck(true, Preferences.KEY_HIDE_PERSONAL_DATA,
 				Preferences.DEFAULT_HIDE_PERSONAL_DATA, R.string.hide_personal_data_block, 0);
 		addCheck(true, Preferences.KEY_HUGE_CAPTCHA, Preferences.DEFAULT_HUGE_CAPTCHA,
-				R.string.huge_captcha, 0);
+				R.string.huge_captcha, 0).setOnAfterChangeListener(p -> {
+					findPreference(Preferences.KEY_CAPTCHA_TTL).setEnabled(p.getValue());
+					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(p.getValue());
+		});
 		addCheck(true, Preferences.KEY_CAPTCHA_TTL, Preferences.DEFAULT_CAPTCHA_TTL,
 				R.string.captcha_show_ttl, R.string.captcha_show_ttl__summary)
 				.setOnAfterChangeListener(p -> {
-					if (p.getValue()) {
-						findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(true);
-					} else {
-						findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(false);
-					}
+					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(p.getValue());
 				});
+		findPreference(Preferences.KEY_CAPTCHA_TTL)
+				.setEnabled((Boolean)findPreference(Preferences.KEY_HUGE_CAPTCHA).getValue());
 		addCheck(true, Preferences.KEY_CAPTCHA_AUTO_RELOAD, Preferences.DEFAULT_CAPTCHA_AUTO_RELOAD,
 				R.string.captcha_reload_automatically, R.string.captcha_reload_automatically__summary)
-				.setEnabled((Boolean)findPreference(Preferences.KEY_CAPTCHA_TTL).getValue());
+				.setEnabled((Boolean)findPreference(Preferences.KEY_CAPTCHA_TTL).getValue()
+						&& (Boolean)findPreference(Preferences.KEY_HUGE_CAPTCHA).getValue());
 	}
 
 	@Override

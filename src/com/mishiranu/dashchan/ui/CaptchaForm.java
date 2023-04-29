@@ -174,6 +174,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	public boolean onLongClick(View v) {
 		if (v == blockParentView) {
 			callback.onRefreshCaptcha(true);
+			CaptchaUtils.getInstance().clear();
 			return true;
 		}
 		return false;

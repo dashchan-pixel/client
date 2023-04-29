@@ -14,6 +14,7 @@ public class CaptchaUtils {
     private String currentTTLId = "";
     private int currentTTL;
     private Callback callback;
+    private boolean lockCallback = false;
 
     public interface Callback {
         void onTTLChange(int ttl);
@@ -24,15 +25,12 @@ public class CaptchaUtils {
         return INSTANCE;
     }
 
-    private int getCurrentTTL(){
-        return currentTTL;
-    }
-
     private final Runnable refreshCaptchaTTL = () -> {
         if (callback != null) {
-            callback.onTTLChange(getCurrentTTL());
+            callback.onTTLChange(currentTTL);
             queueNextCaptchaTTLUpdate();
-            currentTTL--;
+            if (currentTTL > 0)
+                currentTTL--;
         }
     };
 
@@ -41,7 +39,9 @@ public class CaptchaUtils {
             ConcurrentUtils.HANDLER.removeCallbacks(refreshCaptchaTTL);
             ConcurrentUtils.HANDLER.postDelayed(refreshCaptchaTTL, 1000);
         } else {
-            callback.onCaptchaTimeout(Preferences.isCaptchaAutoReload());
+            if (!lockCallback && callback != null) {
+                callback.onCaptchaTimeout(Preferences.isCaptchaAutoReload());
+            }
         }
     }
 
@@ -55,14 +55,25 @@ public class CaptchaUtils {
 
      */
     public void registerCaptchaTTL(String chan, String board, String thread, int ttl, Callback callback) {
-        if (ttl > 0 && isCaptchaTTLEnabled()) {
-            if (!currentTTLId.equals(toHolderId(chan, board, thread))) {
+        if (!lockCallback) {
+            if (isCaptchaTTLEnabled() && ttl != -1) {
                 currentTTLId = toHolderId(chan, board, thread);
                 currentTTL = ttl;
                 this.callback = callback;
                 queueNextCaptchaTTLUpdate();
+            }
+        } else {
+            /*
+                If the captcha was blocked, we will check if the ID matches or not.
+                This will either restart the timer (with the possibility of calling timeout immediately)
+                or initialize a new one for the new posting form
+             */
+            String captchaID = toHolderId(chan, board, thread);
+            lockCallback = false;
+            if (captchaID.equals(currentTTLId)) {
+                registerCaptchaTTL(chan, board, thread, currentTTL, callback);
             } else {
-                this.callback = callback;
+                registerCaptchaTTL(chan, board, thread, ttl, callback);
             }
         }
     }
@@ -70,7 +81,11 @@ public class CaptchaUtils {
     public void clear() {
         ConcurrentUtils.HANDLER.removeCallbacks(refreshCaptchaTTL);
         currentTTLId = "";
-        callback = null;
+        lockCallback = false;
+    }
+
+    public void lockCallback() {
+        lockCallback = true;
     }
 
     private static String toHolderId(String chan, String board, String thread) {
@@ -78,10 +93,7 @@ public class CaptchaUtils {
     }
 
     public static boolean isCaptchaTTLEnabled() {
-        if (Preferences.isCaptchaTTL() && Preferences.isHugeCaptcha()) {
-            return true;
-        }
-        return false;
+        return Preferences.isCaptchaTTL() && Preferences.isHugeCaptcha();
     }
 
 }
