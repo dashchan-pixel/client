@@ -1,0 +1,7 @@
+* Added the ability to hide threads in the favorites block
+* Added the ability to see the captcha timer if the site supports it
+* Automatic captcha reload after the timer expires if enabled
+* Added the ability to hide deleted threads
+* Fix bug with Progressbar in new WebView
+* Correction of the highlighting of new posts and the availability of their configuration through themes
+* Fixed incorrect display of changes between versions
