@@ -220,7 +220,6 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 				else {
 					getAdapter().notifyDataSetChanged(); // this will bring swiped thread view back
 				}
-				resetOpacityForThread(viewHolder); //need to reset opacity of a thread view holder or it will be transparent when reused
 			}
 
 			private void hideThreadAndNotifyAdapter(int threadPosition) {
@@ -228,10 +227,6 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 				PostItem thread = adapter.getThread(threadPosition);
 				setThreadHideState(thread, PostItem.HideState.HIDDEN);
 				adapter.notifyThreadHidden(thread);
-			}
-
-			private void resetOpacityForThread(RecyclerView.ViewHolder threadViewHolder) {
-				threadViewHolder.itemView.setAlpha(1);
 			}
 
 			@Override
@@ -243,10 +238,24 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 				super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
 			}
 
-			private void setOpacityForSwipedThread(RecyclerView.ViewHolder threadViewHolder, float swipeDeltaX) {
-				View threadRootView = threadViewHolder.itemView;
-				double alpha = 1 - 1.5 * (Math.abs(swipeDeltaX) / threadRootView.getWidth());
-				threadRootView.setAlpha((float) alpha);
+			private void setOpacityForSwipedThread(RecyclerView.ViewHolder swipedThreadViewWidth, float swipeDeltaX) {
+				View threadRootView = swipedThreadViewWidth.itemView;
+				float opacity = calculateOpacityForSwipedThread(threadRootView.getWidth(), swipeDeltaX);
+				threadRootView.setAlpha(opacity);
+			}
+
+			private float calculateOpacityForSwipedThread(int swipedThreadViewWidth, float swipeDeltaX){
+				return (float) (1 - 1.5 * (Math.abs(swipeDeltaX) / swipedThreadViewWidth));
+			}
+
+			@Override
+			public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+				resetOpacityForThread(viewHolder); //need to reset opacity of a thread view holder or it will be transparent when reused
+				super.clearView(recyclerView, viewHolder);
+			}
+
+			private void resetOpacityForThread(RecyclerView.ViewHolder threadViewHolder) {
+				threadViewHolder.itemView.setAlpha(1);
 			}
 
 		};

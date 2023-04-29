@@ -56,6 +56,10 @@
 	<string name="captcha_solving__summary">Use external service to solve reCAPTCHA or hCaptcha automatically</string>
 	<string name="captcha_solving_info__sentence">Antigate API-compatible services are supported.</string>
 	<string name="captcha_type">Captcha type</string>
+	<string name="captcha_show_ttl">Show captcha timer</string>
+	<string name="captcha_show_ttl__summary">It is recommended to enable "Big captcha" for display. The function will offer to reload the captcha after the expiration date</string>
+	<string name="captcha_reload_automatically">Auto-reload captcha</string>
+	<string name="captcha_reload_automatically__summary">Automatically reload captcha when timer expires</string>
 	<string name="cards">Cards</string>
 	<string name="catalog">Catalog</string>
 	<string name="change_theme">Change theme</string>
@@ -545,5 +549,9 @@
 	<string name="firewall_resolution_method_manual">Manual</string>
 	<string name="firewall_resolution_method_auto">Auto</string>
 	<string name="firewall_resolution_method_auto_then_manual">Auto then manual</string>
+	<string name="favorites_hide_all">Hide all</string>
+	<string name="favorites_show_all">Show all</string>
+	<string name="favorites_hide_deleted">Hide deleted</string>
+	<string name="favorites_show_deleted">Show deleted</string>
 
 </resources>

@@ -104,7 +104,7 @@ public abstract class WebViewDialog extends DialogFragment {
 
 		private void animateProgressBarVisibility(int newProgress) {
 			boolean animateHide = newProgress == 100 && lastProgress != 100;
-			boolean animateShow = newProgress != 100 && lastProgress == 100;
+			boolean animateShow = lastProgress == 0 || (newProgress != 100 && lastProgress == 100);
 			boolean animate = animateHide || animateShow;
 			if (animate) {
 				if (progressBarVisibilityAnimator.isRunning()) {
