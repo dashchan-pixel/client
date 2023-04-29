@@ -55,6 +55,10 @@
 		reCAPTCHA или hCaptcha</string>
 	<string name="captcha_solving_info__sentence">Поддерживаются совместимые с Antigate API сервисы.</string>
 	<string name="captcha_type">Тип капчи</string>
+	<string name="captcha_show_ttl">Показывать таймер капчи</string>
+	<string name="captcha_show_ttl__summary">Для отображения рекомендуется включить "Большую капчу". Функция предложит перезагрузить капчу по истечении срока действия</string>
+	<string name="captcha_reload_automatically">Авто-перезагрузка капчи</string>
+	<string name="captcha_reload_automatically__summary">Автоматически перезагружать капчу по истечению времени</string>
 	<string name="cards">Карточки</string>
 	<string name="catalog">Каталог</string>
 	<string name="change_theme">Сменить тему</string>
