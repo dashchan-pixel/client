@@ -27,6 +27,8 @@
 	<attr name="colorAccentSupport" format="color|reference" />
 
 	<attr name="colorPostHighlight" format="color|reference" />
+	<attr name="colorPostMarkUserPost" format="color|reference" />
+	<attr name="colorPostMarkReply" format="color|reference" />
 
 	<attr name="colorGainFactor" format="float" />
 

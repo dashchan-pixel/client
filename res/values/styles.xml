@@ -149,6 +149,8 @@
 		<item name="colorTextDislikesCount">@color/color_text_dislikes_count_light</item>
 
 		<item name="colorPostHighlight">@color/color_highlight_light</item>
+		<item name="colorPostMarkUserPost">@color/color_post_mark_user_post_light</item>
+		<item name="colorPostMarkReply">@color/color_post_mark_reply_light</item>
 
 		<item name="colorGainFactor">0.75</item>
 
@@ -183,6 +185,8 @@
 		<item name="colorTextDislikesCount">@color/color_text_dislikes_count_dark</item>
 
 		<item name="colorPostHighlight">@color/color_highlight_dark</item>
+		<item name="colorPostMarkUserPost">@color/color_post_mark_user_post_dark</item>
+		<item name="colorPostMarkReply">@color/color_post_mark_reply_dark</item>
 
 		<item name="colorGainFactor">1.25</item>
 
