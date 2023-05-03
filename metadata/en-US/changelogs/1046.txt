@@ -1,1 +1,2 @@
-* Added the ability to hide threads with a swipe (activated in the settings)
+* Fix with UserAgent to bypass Cloudflare DDoS protection
+* Fixed a crash issue when using swipe to hide threads

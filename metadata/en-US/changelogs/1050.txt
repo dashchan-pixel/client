@@ -1,0 +1,4 @@
+* Monochrome icon design available
+* Fix some issues with Cloudflare bypass
+* Fix media information display
+* Added the ability to bypass the lock manually

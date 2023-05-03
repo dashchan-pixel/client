@@ -79,6 +79,7 @@ import com.mishiranu.dashchan.ui.posting.text.CommentEditWatcher;
 import com.mishiranu.dashchan.ui.posting.text.MarkupButtonProvider;
 import com.mishiranu.dashchan.ui.posting.text.NameEditWatcher;
 import com.mishiranu.dashchan.ui.posting.text.QuoteEditWatcher;
+import com.mishiranu.dashchan.util.CaptchaUtils;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
@@ -603,6 +604,8 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		if (!captchaRestoreSuccess) {
 			refreshCaptcha(false, true, false);
 		}
+
+		CaptchaUtils.getInstance().registerCaptchaTTL(getChanName(), getBoardName(), getThreadNumber(), captcha.ttl, captchaForm);
 	}
 
 	@Override
@@ -638,6 +641,8 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		captchaForm = null;
 		sendButton = null;
 		attachments.clear();
+
+		CaptchaUtils.getInstance().lockCallback();
 	}
 
 	@Override
@@ -1053,6 +1058,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		}
 		boolean captchaNeedLoad = captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD ||
 				captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING;
+		CaptchaUtils.getInstance().clear();
 		ChanPerformer.SendPostData data = new ChanPerformer.SendPostData(getBoardName(), getThreadNumber(),
 				subject, comment, name, email, password, attachments, optionSage, optionSpoiler, optionOriginalPoster,
 				userIcon, captchaType, captchaData, captchaNeedLoad, 15000, 45000);
@@ -1200,6 +1206,9 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		showCaptcha(result.captchaState, result.captchaData, result.captchaType, result.input, result.validity,
 				result.image, result.large, result.blackAndWhite);
 		updatePostingConfigurationIfNeeded();
+		Chan chan = Chan.get(getChanName());
+		ChanConfiguration.Captcha captcha = chan.configuration.safe().obtainCaptcha(captchaType);
+		CaptchaUtils.getInstance().registerCaptchaTTL(getChanName(), getBoardName(), getThreadNumber(), captcha.ttl, captchaForm);
 	}
 
 	@Override

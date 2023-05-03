@@ -767,6 +767,28 @@ public class Preferences {
 				DEFAULT_FAVORITES_ORDER, FavoritesOrder.VALUE_PROVIDER);
 	}
 
+	public static final String KEY_FAVORITES_HIDED_ALL = "favorites_hided_all";
+	public static final boolean DEFAULT_FAVORITES_HIDED_ALL = false;
+
+	public static boolean isFavoritesHidedAll() {
+		return PREFERENCES.getBoolean(KEY_FAVORITES_HIDED_ALL, DEFAULT_FAVORITES_HIDED_ALL);
+	}
+
+	public static void setFavoritesHideAll(boolean flag) {
+		PREFERENCES.edit().put(KEY_FAVORITES_HIDED_ALL, flag).close();
+	}
+
+	public static final String KEY_FAVORITES_HIDED_DELETED = "favorites_hided_deleted";
+	public static final boolean DEFAULT_FAVORITES_HIDED_DELETED = false;
+
+	public static boolean isFavoritesHidedDeleted() {
+		return PREFERENCES.getBoolean(KEY_FAVORITES_HIDED_DELETED, DEFAULT_FAVORITES_HIDED_DELETED);
+	}
+
+	public static void setFavoritesHideDeleted(boolean flag) {
+		PREFERENCES.edit().put(KEY_FAVORITES_HIDED_DELETED, flag).close();
+	}
+
 	public static final String KEY_HIDE_PERSONAL_DATA = "hide_personal_data";
 	public static final boolean DEFAULT_HIDE_PERSONAL_DATA = false;
 
@@ -803,6 +825,20 @@ public class Preferences {
 
 	public static boolean isHugeCaptcha() {
 		return PREFERENCES.getBoolean(KEY_HUGE_CAPTCHA, DEFAULT_HUGE_CAPTCHA);
+	}
+
+	public static final String KEY_CAPTCHA_TTL = "captcha_ttl";
+	public static final boolean DEFAULT_CAPTCHA_TTL = false;
+
+	public static boolean isCaptchaTTL() {
+		return PREFERENCES.getBoolean(KEY_CAPTCHA_TTL, DEFAULT_CAPTCHA_TTL);
+	}
+
+	public static final String KEY_CAPTCHA_AUTO_RELOAD = "captcha_auto_reload";
+	public static final boolean DEFAULT_CAPTCHA_AUTO_RELOAD = false;
+
+	public static boolean isCaptchaAutoReload() {
+		return PREFERENCES.getBoolean(KEY_CAPTCHA_AUTO_RELOAD, DEFAULT_CAPTCHA_AUTO_RELOAD);
 	}
 
 	public static final String KEY_INTERNAL_BROWSER = "internal_browser";
