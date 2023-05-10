@@ -821,21 +821,21 @@ public class Preferences {
 	}
 
 	public static final String KEY_HUGE_CAPTCHA = "huge_captcha";
-	public static final boolean DEFAULT_HUGE_CAPTCHA = false;
+	public static final boolean DEFAULT_HUGE_CAPTCHA = true;
 
 	public static boolean isHugeCaptcha() {
 		return PREFERENCES.getBoolean(KEY_HUGE_CAPTCHA, DEFAULT_HUGE_CAPTCHA);
 	}
 
-	public static final String KEY_CAPTCHA_TTL = "captcha_ttl";
-	public static final boolean DEFAULT_CAPTCHA_TTL = false;
+	public static final String KEY_CAPTCHA_TIMER = "captcha_timer";
+	public static final boolean DEFAULT_CAPTCHA_TIMER = true;
 
-	public static boolean isCaptchaTTL() {
-		return PREFERENCES.getBoolean(KEY_CAPTCHA_TTL, DEFAULT_CAPTCHA_TTL);
+	public static boolean isCaptchaTimer() {
+		return PREFERENCES.getBoolean(KEY_CAPTCHA_TIMER, DEFAULT_CAPTCHA_TIMER);
 	}
 
 	public static final String KEY_CAPTCHA_AUTO_RELOAD = "captcha_auto_reload";
-	public static final boolean DEFAULT_CAPTCHA_AUTO_RELOAD = false;
+	public static final boolean DEFAULT_CAPTCHA_AUTO_RELOAD = true;
 
 	public static boolean isCaptchaAutoReload() {
 		return PREFERENCES.getBoolean(KEY_CAPTCHA_AUTO_RELOAD, DEFAULT_CAPTCHA_AUTO_RELOAD);
