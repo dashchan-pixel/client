@@ -444,6 +444,7 @@
 	<string name="show">Show</string>
 	<string name="show_download_configuration_dialog">Show download configuration dialog</string>
 	<string name="show_on_map">Show on map</string>
+	<string name="show_important_posts_on_fastscroll_bar">Show important posts on scrollbar</string>
 	<string name="show_thumbnail">Show thumbnail</string>
 	<string name="similar_posts">Similar posts</string>
 	<string name="similar_to_number__format">Similar to %s</string>
