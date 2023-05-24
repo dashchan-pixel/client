@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
@@ -36,11 +37,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
-import chan.content.Chan;
-import chan.content.ChanConfiguration;
-import chan.content.ChanPerformer;
-import chan.http.HttpException;
-import chan.util.StringUtils;
+
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.Preferences;
@@ -57,6 +54,7 @@ import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.ViewUtils;
 import com.mishiranu.dashchan.widget.ClickableToast;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,6 +62,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+
+import chan.content.Chan;
+import chan.content.ChanConfiguration;
+import chan.content.ChanPerformer;
+import chan.http.HttpException;
+import chan.util.StringUtils;
 
 public class ForegroundManager implements Handler.Callback {
 	private static final ForegroundManager INSTANCE = new ForegroundManager();
@@ -240,15 +244,18 @@ public class ForegroundManager implements Handler.Callback {
 
 		private static final String EXTRA_CAPTCHA_STATE = "captchaState";
 		private static final String EXTRA_LOADED_INPUT = "loadedInput";
-		private static final String EXTRA_IMAGE = "image";
+		private static final String EXTRA_CAPTCHA = "captcha";
 		private static final String EXTRA_LARGE = "large";
 		private static final String EXTRA_BLACK_AND_WHITE = "blackAndWhite";
 
 		private ReadCaptchaTask.CaptchaState captchaState;
 		private ChanConfiguration.Captcha.Input loadedInput;
-		private Bitmap image;
+		private CaptchaForm.Captcha captcha;
+		private int captchaLifetimeSeconds;
 		private boolean large;
 		private boolean blackAndWhite;
+		private boolean refreshCaptchaWhenLifetimeEnd;
+
 
 		private CaptchaForm captchaForm;
 
@@ -282,12 +289,12 @@ public class ForegroundManager implements Handler.Callback {
 				String captchaStateString = savedInstanceState.getString(EXTRA_CAPTCHA_STATE);
 				ReadCaptchaTask.CaptchaState captchaState = captchaStateString != null
 						? ReadCaptchaTask.CaptchaState.valueOf(captchaStateString) : null;
-				Bitmap image = savedInstanceState.getParcelable(EXTRA_IMAGE);
+				CaptchaForm.Captcha captcha = savedInstanceState.getParcelable(EXTRA_CAPTCHA);
 				if (captchaState != null) {
 					String loadedInputString = savedInstanceState.getString(EXTRA_LOADED_INPUT);
 					ChanConfiguration.Captcha.Input loadedInput = loadedInputString != null
 							? ChanConfiguration.Captcha.Input.valueOf(loadedInputString) : null;
-					showCaptcha(captchaState, pendingData.loadedCaptchaType, loadedInput, image,
+					showCaptcha(captchaState, pendingData.loadedCaptchaType, loadedInput, captcha,
 							savedInstanceState.getBoolean(EXTRA_LARGE),
 							savedInstanceState.getBoolean(EXTRA_BLACK_AND_WHITE));
 					needLoad = false;
@@ -306,7 +313,7 @@ public class ForegroundManager implements Handler.Callback {
 			super.onSaveInstanceState(outState);
 			outState.putString(EXTRA_CAPTCHA_STATE, captchaState != null ? captchaState.name() : null);
 			outState.putString(EXTRA_LOADED_INPUT, loadedInput != null ? loadedInput.name() : null);
-			outState.putParcelable(EXTRA_IMAGE, image);
+			outState.putParcelable(EXTRA_CAPTCHA, captcha);
 			outState.putBoolean(EXTRA_LARGE, large);
 			outState.putBoolean(EXTRA_BLACK_AND_WHITE, blackAndWhite);
 		}
@@ -318,7 +325,7 @@ public class ForegroundManager implements Handler.Callback {
 			boolean allowSolveAutomatically = !forceCaptcha ||
 					captchaState != ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING;
 			captchaState = null;
-			image = null;
+			captcha = null;
 			large = false;
 			blackAndWhite = false;
 			updatePositiveButtonState();
@@ -347,7 +354,7 @@ public class ForegroundManager implements Handler.Callback {
 			pendingData.captchaData = result.captchaData != null ? result.captchaData : new ChanPerformer.CaptchaData();
 			pendingData.loadedCaptchaType = result.captchaType;
 			showCaptcha(result.captchaState, result.captchaType, result.input,
-					result.image, result.large, result.blackAndWhite);
+					new CaptchaForm.Captcha(result.image, captchaLifetimeSeconds), result.large, result.blackAndWhite);
 			if (result.captchaState == ReadCaptchaTask.CaptchaState.SKIP) {
 				onConfirmCaptcha();
 			}
@@ -362,22 +369,19 @@ public class ForegroundManager implements Handler.Callback {
 		}
 
 		private void showCaptcha(ReadCaptchaTask.CaptchaState captchaState, String captchaType,
-				ChanConfiguration.Captcha.Input input, Bitmap image, boolean large, boolean blackAndWhite) {
+								 ChanConfiguration.Captcha.Input input, CaptchaForm.Captcha captcha, boolean large, boolean blackAndWhite) {
 			this.captchaState = captchaState;
 			if (captchaType != null && input == null) {
 				Chan chan = Chan.get(requireArguments().getString(EXTRA_CHAN_NAME));
 				input = chan.configuration.safe().obtainCaptcha(captchaType).input;
 			}
 			loadedInput = input;
-			if (this.image != null && this.image != image) {
-				this.image.recycle();
-			}
-			this.image = image;
+			this.captcha = captcha;
 			this.large = large;
 			this.blackAndWhite = blackAndWhite;
 			boolean invertColors = blackAndWhite && !GraphicsUtils.isLight(ResourceUtils
 					.getDialogBackground(requireContext()));
-			captchaForm.showCaptcha(captchaState, input, image, large, invertColors);
+			captchaForm.showCaptcha(captchaState, input, captcha, large, invertColors);
 			updatePositiveButtonState();
 		}
 
@@ -403,10 +407,12 @@ public class ForegroundManager implements Handler.Callback {
 				comment.setVisibility(View.GONE);
 			}
 			Chan chan = Chan.get(args.getString(EXTRA_CHAN_NAME));
-			ChanConfiguration.Captcha captcha = chan.configuration
+			ChanConfiguration.Captcha captchaConfiguration = chan.configuration
 					.safe().obtainCaptcha(args.getString(EXTRA_CAPTCHA_TYPE));
+			captchaLifetimeSeconds = captchaConfiguration.ttl;
+			refreshCaptchaWhenLifetimeEnd = Preferences.isCaptchaAutoReload();
 			EditText captchaInputView = container.findViewById(R.id.captcha_input);
-			captchaForm = new CaptchaForm(this, false, true, container, null, captchaInputView, captcha);
+			captchaForm = new CaptchaForm(this, false, true, container, null, captchaInputView, captchaConfiguration);
 			AlertDialog alertDialog = new AlertDialog.Builder(requireContext())
 					.setTitle(R.string.confirmation).setView(container)
 					.setPositiveButton(android.R.string.ok, (dialog, which) -> confirmCaptchaInternal())
@@ -423,6 +429,7 @@ public class ForegroundManager implements Handler.Callback {
 		@Override
 		public void onDestroyView() {
 			super.onDestroyView();
+			captchaForm.onDestroyView();
 			captchaForm = null;
 		}
 
@@ -439,6 +446,15 @@ public class ForegroundManager implements Handler.Callback {
 		public void onConfirmCaptcha() {
 			dismiss();
 			confirmCaptchaInternal();
+		}
+
+		@Override
+		public void onCaptchaLifetimeEnded() {
+			if (refreshCaptchaWhenLifetimeEnd) {
+				onRefreshCaptcha(false);
+			} else {
+				showCaptcha(ReadCaptchaTask.CaptchaState.NEED_LOAD, null, null, null, false, false);
+			}
 		}
 
 		@Override

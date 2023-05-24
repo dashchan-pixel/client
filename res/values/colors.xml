@@ -3,7 +3,8 @@
 
 	<color name="color_icon_background">#ffdddddd</color>
 	<color name="color_text_error">#ffcc0000</color>
-	<color name="captcha_ttl">#ff777777</color>
+	<color name="color_text_captcha_lifetime_timer">#FFFFFF</color>
+	<color name="background_captcha_lifetime_timer">#99000000</color>
 
 	<color name="background_popup_light">#ffffffff</color>
 	<color name="background_window_light">#ffeeeeee</color>
