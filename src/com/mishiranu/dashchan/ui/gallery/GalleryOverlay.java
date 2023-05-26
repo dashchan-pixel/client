@@ -131,7 +131,12 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setRetainInstance(true);
+		boolean restoringAfterProcessDeath = savedInstanceState != null;
+		if (restoringAfterProcessDeath) {
+			dismiss();
+		} else {
+			setRetainInstance(true);
+		}
 	}
 
 	@NonNull
