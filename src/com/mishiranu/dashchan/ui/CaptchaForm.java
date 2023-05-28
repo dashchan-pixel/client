@@ -55,6 +55,8 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 
 	private final boolean captchaLifetimeTimerEnabled;
 	private int captchaLifetimeSeconds;
+	private Bitmap captchaImage;
+
 	private ChanConfiguration.Captcha.Input captchaInput;
 
 	public interface Callback {
@@ -63,6 +65,8 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		void onConfirmCaptcha();
 
 		void onCaptchaLifetimeEnded();
+
+		void showCaptchaOptionsDialog(CaptchaOptionsDialog dialog);
 	}
 
 	public static class Captcha implements Parcelable {
@@ -227,7 +231,11 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	@Override
 	public boolean onLongClick(View v) {
 		if (v == blockParentView) {
-			callback.onRefreshCaptcha(true);
+			if (captchaImage != null) {
+				callback.showCaptchaOptionsDialog(new CaptchaOptionsDialog(captchaImage));
+			} else {
+				callback.onRefreshCaptcha(true);
+			}
 			return true;
 		}
 		return false;
@@ -247,6 +255,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 					if (captchaLifetimeTimerEnabled && !captcha.alive()) {
 						callback.onCaptchaLifetimeEnded();
 					} else {
+						captchaImage = captcha.image;
 						imageView.setImageBitmap(captcha.image);
 						imageView.setColorFilter(invertColors ? GraphicsUtils.INVERT_FILTER : null);
 						captchaLifetimeSeconds = captcha.getRemainingLifetimeSeconds();
@@ -313,6 +322,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		if (captchaViewType != CaptchaViewType.IMAGE) {
 			hideCaptchaLifetimeTimer();
 			stopCaptchaLifetimeTimer();
+			captchaImage = null;
 		}
 
 		switch (captchaViewType) {
@@ -404,12 +414,12 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	}
 
 	private int getCaptchaImageRealWidth() {
-		Drawable captchaImage = imageView.getDrawable();
-		if (captchaImage == null) {
+		Drawable captchaImageDrawable = imageView.getDrawable();
+		if (captchaImageDrawable == null) {
 			return 0;
 		}
 
-		int captchaImageWidth = captchaImage.getIntrinsicWidth();
+		int captchaImageWidth = captchaImageDrawable.getIntrinsicWidth();
 		float[] imageMatrix = new float[9];
 		imageView.getImageMatrix().getValues(imageMatrix);
 

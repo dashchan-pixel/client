@@ -44,9 +44,11 @@ import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
 import com.mishiranu.dashchan.content.async.TaskViewModel;
 import com.mishiranu.dashchan.content.model.ErrorItem;
+import com.mishiranu.dashchan.content.model.FileHolder;
 import com.mishiranu.dashchan.content.net.RecaptchaReader;
 import com.mishiranu.dashchan.content.net.firewall.FirewallResolutionDialog;
 import com.mishiranu.dashchan.content.net.firewall.FirewallResolutionDialogRequest;
+import com.mishiranu.dashchan.content.storage.DraftsStorage;
 import com.mishiranu.dashchan.graphics.SelectorBorderDrawable;
 import com.mishiranu.dashchan.graphics.SelectorCheckDrawable;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
@@ -67,6 +69,7 @@ import chan.content.Chan;
 import chan.content.ChanConfiguration;
 import chan.content.ChanPerformer;
 import chan.http.HttpException;
+import chan.util.DataFile;
 import chan.util.StringUtils;
 
 public class ForegroundManager implements Handler.Callback {
@@ -234,7 +237,7 @@ public class ForegroundManager implements Handler.Callback {
 	}
 
 	public static class CaptchaDialog extends DialogFragment implements PendingDataDialog<CaptchaPendingData>,
-			CaptchaForm.Callback, ReadCaptchaTask.Callback {
+			CaptchaForm.Callback, ReadCaptchaTask.Callback, CaptchaOptionsDialog.Callback {
 		private static final String EXTRA_CHAN_NAME = "chanName";
 		private static final String EXTRA_CAPTCHA_TYPE = "captchaType";
 		private static final String EXTRA_REQUIREMENT = "requirement";
@@ -455,6 +458,35 @@ public class ForegroundManager implements Handler.Callback {
 			} else {
 				showCaptcha(ReadCaptchaTask.CaptchaState.NEED_LOAD, null, null, null, false, false);
 			}
+		}
+
+		@Override
+		public void showCaptchaOptionsDialog(CaptchaOptionsDialog dialog) {
+			dialog.show(getChildFragmentManager(), null);
+		}
+
+		@Override
+		public void attachCaptchaImageToPost(DataFile captchaImageAttachmentDataFile) {
+			FileHolder captchaImageHolder = FileHolder.obtain(captchaImageAttachmentDataFile);
+			if (captchaImageHolder != null) {
+				DraftsStorage.getInstance().storeFuture(captchaImageHolder);
+				ClickableToast.show(R.string.draft_saved);
+			}
+			captchaImageAttachmentDataFile.delete();
+		}
+
+		@Override
+		public CaptchaOptionsDialog.CaptchaImageDownloadParameters getCaptchaImageDownloadParameters() {
+			Bundle args = requireArguments();
+			String chanName = args.getString(EXTRA_CHAN_NAME);
+			String boardName = args.getString(EXTRA_BOARD_NAME);
+			String threadNumber = args.getString(EXTRA_THREAD_NUMBER);
+			return new CaptchaOptionsDialog.CaptchaImageDownloadParameters(chanName, boardName, threadNumber);
+		}
+
+		@Override
+		public void refreshCaptcha() {
+			onRefreshCaptcha(true);
 		}
 
 		@Override

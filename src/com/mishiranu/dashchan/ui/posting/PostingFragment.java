@@ -63,6 +63,7 @@ import com.mishiranu.dashchan.graphics.TransparentTileDrawable;
 import com.mishiranu.dashchan.media.JpegData;
 import com.mishiranu.dashchan.media.PngData;
 import com.mishiranu.dashchan.ui.CaptchaForm;
+import com.mishiranu.dashchan.ui.CaptchaOptionsDialog;
 import com.mishiranu.dashchan.ui.ContentFragment;
 import com.mishiranu.dashchan.ui.FragmentHandler;
 import com.mishiranu.dashchan.ui.posting.dialog.AttachmentOptionsDialog;
@@ -96,10 +97,11 @@ import chan.content.ChanMarkup;
 import chan.content.ChanPerformer;
 import chan.text.CommentEditor;
 import chan.util.CommonUtils;
+import chan.util.DataFile;
 import chan.util.StringUtils;
 
 public class PostingFragment extends ContentFragment implements FragmentHandler.Callback, CaptchaForm.Callback,
-		ReadCaptchaTask.Callback, PostingDialogCallback {
+		ReadCaptchaTask.Callback, PostingDialogCallback, CaptchaOptionsDialog.Callback {
 	private static final String EXTRA_CHAN_NAME = "chanName";
 	private static final String EXTRA_BOARD_NAME = "boardName";
 	private static final String EXTRA_THREAD_NUMBER = "threadNumber";
@@ -751,6 +753,32 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 			draftsStorage.store(obtainPostDraft());
 			draftsStorage.store(getChanName(), obtainCaptchaDraft());
 		}
+	}
+
+	@Override
+	public void showCaptchaOptionsDialog(CaptchaOptionsDialog dialog) {
+		dialog.show(getChildFragmentManager(), null);
+	}
+
+	@Override
+	public void attachCaptchaImageToPost(DataFile captchaImageAttachmentDataFile) {
+		FileHolder captchaImageFileHolder = FileHolder.obtain(captchaImageAttachmentDataFile);
+		if (captchaImageFileHolder != null) {
+			String captchaImageAttachmentHash = DraftsStorage.getInstance().store(captchaImageFileHolder);
+			String captchaImageAttachmentName = captchaImageFileHolder.getName();
+			addAttachment(captchaImageAttachmentHash, captchaImageAttachmentName);
+		}
+		captchaImageAttachmentDataFile.delete();
+	}
+
+	@Override
+	public CaptchaOptionsDialog.CaptchaImageDownloadParameters getCaptchaImageDownloadParameters() {
+		return new CaptchaOptionsDialog.CaptchaImageDownloadParameters(getChanName(), getBoardName(), getThreadNumber());
+	}
+
+	@Override
+	public void refreshCaptcha() {
+		onRefreshCaptcha(true);
 	}
 
 	@Override
