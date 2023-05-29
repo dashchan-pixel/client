@@ -120,6 +120,8 @@
 	<string name="details">Подробнее</string>
 	<string name="disabled">Отключено</string>
 	<string name="display_hidden_threads">Выводить скрытые треды</string>
+	<string name="display_hidden_posts">Выводить скрытые посты</string>
+	<string name="display_hidden_posts__summary">Отключение функции полностью убирает отображение постов, которые были автоматически скрыты</string>
 	<string name="display_post_icons">Показывать иконки сообщений</string>
 	<string name="display_post_icons__summary">Иконки доступны в некоторых разделах</string>
 	<string name="do_nothing">Ничего не делать</string>

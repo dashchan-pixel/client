@@ -386,6 +386,8 @@ public class PostItem implements AttachmentItem.Master, ChanMarkup.MarkupExtra, 
 		return post.isPosterBanned();
 	}
 
+	public boolean isHidden() { return hideState.hidden; }
+
 	public enum BumpLimitState {NOT_REACHED, REACHED, NEED_COUNT}
 
 	public BumpLimitState getBumpLimitReachedState(Chan chan, int postsCount) {
