@@ -594,7 +594,7 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 	public Pair<String, String> obtainTitleSubtitle() {
 		String subtitle = null;
 		if (!Preferences.isDisplayHiddenPostsEnabled()) {
-			int hidden = getAdapter().getHidedPostsCount();
+			int hidden = getAdapter().getHiddenPostsCount();
 			if (hidden > 0)
 				subtitle = getString(R.string.hidden_posts_count__format, hidden);
 		}

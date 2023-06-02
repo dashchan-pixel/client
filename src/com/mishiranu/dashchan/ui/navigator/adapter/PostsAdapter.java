@@ -116,7 +116,7 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 		return postNumbers.size();
 	}
 
-	public int getHidedPostsCount() {
+	public int getHiddenPostsCount() {
 		return hiddenPosts.count(PostItem.HideState.HIDDEN);
 	}
 
