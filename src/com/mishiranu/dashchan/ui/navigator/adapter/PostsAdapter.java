@@ -329,14 +329,10 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 		if (wasHidden) {
 			recyclerView.post(
 					() -> {
-						int referencePosition = 0;
-						boolean foundReference = false;
 						for (PostNumber referenceTo : post.getReferencesTo()) {
 							PostItem referenced = postItemsMap.get(referenceTo);
 							if (referenced != null) {
 								referenced.removeReferenceFrom(post.getPostNumber());
-								referencePosition = positionOfPostNumber(referenced.getPostNumber());
-								foundReference = true;
 							}
 						}
 						gallerySet.remove(post.getPostNumber());
@@ -345,8 +341,6 @@ public class PostsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 						postNumbers.addAll(postItemsMap.keySet());
 						Collections.sort(postNumbers);
 						notifyDataSetChanged();
-						if (foundReference)
-							notifyItemChanged(referencePosition);
 					}
 			);
 		}
