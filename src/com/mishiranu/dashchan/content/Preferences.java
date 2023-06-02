@@ -1468,7 +1468,7 @@ public class Preferences {
 	public static final String KEY_DISPLAY_HIDDEN_POSTS = "display_hidden_posts";
 	public static final boolean DEFAULT_DISPLAY_HIDDEN_POSTS = true;
 
-	public static boolean isDefaultDisplayHiddenPostsEnabled(){
+	public static boolean isDisplayHiddenPostsEnabled(){
 		return PREFERENCES.getBoolean(KEY_DISPLAY_HIDDEN_POSTS, DEFAULT_DISPLAY_HIDDEN_POSTS);
 	}
 

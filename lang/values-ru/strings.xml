@@ -574,5 +574,6 @@
 	<string name="favorites_show_all">Показать все</string>
 	<string name="favorites_hide_deleted">Скрыть удаленные</string>
 	<string name="favorites_show_deleted">Показать удаленные</string>
+	<string name="hidden_posts_count__format">Скрыто постов: %1$d</string>
 
 </resources>
