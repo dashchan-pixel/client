@@ -302,6 +302,11 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 						postItem.setHidden(PostItem.HideState.SHOWN, null);
 					}
 				}
+				if (!Preferences.isDisplayHiddenPostsEnabled() && postItem.isHidden()) {
+					getAdapter().removeHiddenPost(postItem);
+					setPostHideState(postItem, postItem.getHideState());
+					notifyTitleChanged();
+				}
 			}
 			return postItem.getHideState().hidden;
 		}
@@ -363,7 +368,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 			return board.allowPosting;
 		};
 		PostsAdapter adapter = new PostsAdapter(this, page.chanName, uiManager,
-				replyable, postStateProvider, getFragmentManager(), recyclerView, retainableExtra.postItems);
+				replyable, postStateProvider, getFragmentManager(),
+				recyclerView, retainableExtra.postItems, retainableExtra.hiddenPosts);
 		recyclerView.setAdapter(adapter);
 		recyclerView.addItemDecoration(new DividerItemDecoration(recyclerView.getContext(),
 				(c, position) -> adapter.configureDivider(c, position).horizontal(dividerPadding, dividerPadding)));
@@ -586,6 +592,17 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 			Page page = getPage();
 			return StringUtils.formatThreadTitle(page.chanName, page.boardName, page.threadNumber);
 		}
+	}
+
+	@Override
+	public Pair<String, String> obtainTitleSubtitle() {
+		String subtitle = null;
+		if (!Preferences.isDisplayHiddenPostsEnabled()) {
+			int hidden = getAdapter().getHiddenPostsCount();
+			if (hidden > 0)
+				subtitle = getString(R.string.hidden_posts_count__format, hidden);
+		}
+		return new Pair<>(this.obtainTitle(), subtitle);
 	}
 
 	@Override
@@ -1838,6 +1855,11 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 			case PERFORM_SWITCH_HIDE: {
 				setPostHideState(postItem, !postItem.getHideState().hidden
 						? PostItem.HideState.HIDDEN : PostItem.HideState.SHOWN);
+				if (postItem.getHideState() == PostItem.HideState.HIDDEN) {
+					if (!Preferences.isDisplayHiddenPostsEnabled())
+						getAdapter().removeHiddenPost(postItem);
+				}
+				notifyTitleChanged();
 				updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true;
 				getUiManager().sendPostItemMessage(postItem, UiManager.Message.POST_INVALIDATE_ALL_VIEWS);
 				break;
@@ -1872,6 +1894,13 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 					encodeAndStoreThreadExtra();
 				} else if (result == HidePerformer.AddResult.EXISTS && !postItem.getHideState().hidden) {
 					setPostHideState(postItem, PostItem.HideState.UNDEFINED);
+					if (message == UiManager.Message.PERFORM_HIDE_REPLIES) {
+						for (PostNumber postNumber : postItem.getReferencesFrom()) {
+							PostItem post = getAdapter().findPostItem(postNumber);
+							if (post != null)
+								setPostHideState(post, PostItem.HideState.UNDEFINED);
+						}
+					}
 					notifyAllAdaptersChanged();
 				}
 				adapter.preloadPosts(((LinearLayoutManager) recyclerView.getLayoutManager())

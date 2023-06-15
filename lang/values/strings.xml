@@ -120,6 +120,8 @@
 	<string name="details">Details</string>
 	<string name="disabled">Disabled</string>
 	<string name="display_hidden_threads">Display hidden threads</string>
+	<string name="display_hidden_posts">Display hidden posts</string>
+	<string name="display_hidden_posts__summary">Deactivating the feature completely removes the display of posts that was hidden</string>
 	<string name="display_post_icons">Display post icons</string>
 	<string name="display_post_icons__summary">Post icons may be available on some boards</string>
 	<string name="do_nothing">Do nothing</string>
@@ -554,5 +556,5 @@
 	<string name="favorites_show_all">Show all</string>
 	<string name="favorites_hide_deleted">Hide deleted</string>
 	<string name="favorites_show_deleted">Show deleted</string>
-
+	<string name="hidden_posts_count__format">Hidden posts: %1$d</string>
 </resources>

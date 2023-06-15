@@ -1465,6 +1465,13 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_SWIPE_TO_HIDE_THREAD, DEFAULT_SWIPE_TO_HIDE_THREAD);
 	}
 
+	public static final String KEY_DISPLAY_HIDDEN_POSTS = "display_hidden_posts";
+	public static final boolean DEFAULT_DISPLAY_HIDDEN_POSTS = true;
+
+	public static boolean isDisplayHiddenPostsEnabled(){
+		return PREFERENCES.getBoolean(KEY_DISPLAY_HIDDEN_POSTS, DEFAULT_DISPLAY_HIDDEN_POSTS);
+	}
+
 	public static final String KEY_FIREWALL_RESOLUTION_METHOD = "firewall_resolution_method";
 	public static final FirewallResolutionMethod DEFAULT_FIREWALL_RESOLUTION_METHOD = FirewallResolutionMethod.MANUAL;
 
