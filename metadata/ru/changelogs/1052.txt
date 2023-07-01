@@ -1,6 +1,6 @@
-* New feature: border for user posts and replies
-* New feature: important posts can be displayed on the scrollbar on the right side
-* New feature(beta): hiding posts now removes them from threads, leaving no stubs (beta feature, unstable operation is possible)
-* New feature: the ability to save the captcha to the device
-* Improved post timer
-* Other small fixes and improvements
+* Новая функция: отображение границы для сообщений и ответов пользователей
+* Новая функция: важные сообщения могут отображаться на полосе прокрутки с правой стороны
+* Новая функция (бета-версия): скрытие сообщений теперь удаляет их из потоков, не оставляя заглушек (бета-функция, возможна нестабильная работа)
+* Новая функция: возможность сохранять капчу на устройстве
+* Улучшенный таймер
+* Другие небольшие исправления и улучшения
