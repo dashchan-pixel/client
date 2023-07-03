@@ -18,6 +18,7 @@ import androidx.fragment.app.DialogFragment;
 import chan.content.ChanConfiguration;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
+import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.model.FileHolder;
 import com.mishiranu.dashchan.content.storage.DraftsStorage;
 import com.mishiranu.dashchan.graphics.TransparentTileDrawable;
@@ -101,6 +102,9 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 			dismiss();
 			return new Dialog(activity);
 		}
+		holder.optionUniqueHash = Preferences.isAlwaysUniqueHash();
+		holder.optionRemoveMetadata = Preferences.isAlwaysClearMetadata();
+		holder.optionRemoveFileName = Preferences.isAlwaysRemoveFilename();
 		ChanConfiguration.Posting postingConfiguration = ((PostingDialogCallback) getParentFragment())
 				.getPostingConfiguration();
 		int index = 0;

@@ -571,5 +571,9 @@
 	<string name="favorites_show_all">Показать все</string>
 	<string name="favorites_hide_deleted">Скрыть удаленные</string>
 	<string name="favorites_show_deleted">Показать удаленные</string>
+	<string name="posting_media">Постинг медиа</string>
+	<string name="always_unique_hash">Всегда выставлять уникальный хеш</string>
+	<string name="always_clear_metadata">Всегда очищать метаданные</string>
+	<string name="always_remove_filename">Всегда удалять имея файла</string>
 
 </resources>

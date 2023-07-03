@@ -553,5 +553,9 @@
 	<string name="favorites_show_all">Show all</string>
 	<string name="favorites_hide_deleted">Hide deleted</string>
 	<string name="favorites_show_deleted">Show deleted</string>
+	<string name="posting_media">Posting media</string>
+	<string name="always_unique_hash">Always set a unique hash</string>
+	<string name="always_clear_metadata">Always clear metadata</string>
+	<string name="always_remove_filename">Always remove filename</string>
 
 </resources>
