@@ -120,6 +120,8 @@
 	<string name="details">Подробнее</string>
 	<string name="disabled">Отключено</string>
 	<string name="display_hidden_threads">Выводить скрытые треды</string>
+	<string name="display_hidden_posts">Выводить скрытые посты</string>
+	<string name="display_hidden_posts__summary">Отключение функции полностью убирает отображение постов, которые были скрыты</string>
 	<string name="display_post_icons">Показывать иконки сообщений</string>
 	<string name="display_post_icons__summary">Иконки доступны в некоторых разделах</string>
 	<string name="do_nothing">Ничего не делать</string>
@@ -572,6 +574,8 @@
 	<string name="favorites_show_all">Показать все</string>
 	<string name="favorites_hide_deleted">Скрыть удаленные</string>
 	<string name="favorites_show_deleted">Показать удаленные</string>
+
+	<string name="hidden_posts_count__format">Скрыто постов: %1$d</string>
 	<string name="posting_media">Постинг медиа</string>
 	<string name="always_unique_hash">Всегда выставлять уникальный хеш</string>
 	<string name="always_clear_metadata">Всегда очищать метаданные</string>
