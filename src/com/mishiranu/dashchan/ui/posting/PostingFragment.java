@@ -24,6 +24,7 @@ import android.os.ParcelFileDescriptor;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -1554,7 +1555,8 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 	}
 
 	private void addAttachment(String hash, String name) {
-		addAttachment(hash, name, null, false, false, false, false, null);
+		addAttachment(hash, name, null, Preferences.isAlwaysUniqueHash(), Preferences.isAlwaysClearMetadata(), Preferences.isAlwaysRemoveFilename(),
+				false, null);
 	}
 
 	private void addAttachment(String hash, String name, String rating, boolean optionUniqueHash,
