@@ -1503,7 +1503,7 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR);
 	}
 
-	public static final String KEY_SHOW_POSTS_BORDERS = "user_posts_border";
+	public static final String KEY_SHOW_POSTS_BORDERS = "posts_borders";
 	public static final boolean DEFAULT_SHOW_POSTS_BORDERS = true;
 
 	public static boolean isShowPostsBorders() {
