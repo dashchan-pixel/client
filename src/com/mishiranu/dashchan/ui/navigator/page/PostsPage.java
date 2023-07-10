@@ -1761,7 +1761,10 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 
 			for (PostNumber userPostNumber : userPosts) {
 				int userPostPosition = adapter.positionOfPostNumber(userPostNumber);
-				boolean showUserPostOnScrollBar = userPostPosition >= 0 && !postStateProvider.isHiddenResolve(adapter.getItem(userPostPosition));
+				if (userPostPosition < 0) {
+					continue;
+				}
+				boolean showUserPostOnScrollBar = !postStateProvider.isHiddenResolve(adapter.getItem(userPostPosition));
 				if (showUserPostOnScrollBar) {
 					userPostsPositions.add(userPostPosition);
 				}
