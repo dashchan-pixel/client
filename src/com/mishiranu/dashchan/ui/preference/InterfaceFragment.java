@@ -87,10 +87,6 @@ public class InterfaceFragment extends PreferenceFragment {
 		addCheck(true, Preferences.KEY_SHOW_POSTS_BORDERS, Preferences.DEFAULT_SHOW_POSTS_BORDERS, R.string.show_posts_borders, 0);
 		addCheck(true, Preferences.KEY_HIGHLIGHT_USER_POSTS, Preferences.DEFAULT_HIGHLIGHT_USER_POSTS, R.string.highlight_user_posts, 0);
 		addCheck(true, Preferences.KEY_DISPLAY_HIDDEN_POSTS, Preferences.DEFAULT_DISPLAY_HIDDEN_POSTS, R.string.display_hidden_posts, R.string.display_hidden_posts__summary);
-		addCheck(true, Preferences.KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, Preferences.DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, R.string.show_important_posts_on_fastscroll_bar, 0);
-		addDependency(Preferences.KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, Preferences.KEY_ACTIVE_SCROLLBAR, true);
-		addCheck(true, Preferences.KEY_DISPLAY_HIDDEN_POSTS, Preferences.DEFAULT_DISPLAY_HIDDEN_POSTS,
-				R.string.display_hidden_posts, R.string.display_hidden_posts__summary);
 
 		addHeader(R.string.submission_form);
 		addCheck(true, Preferences.KEY_HIDE_PERSONAL_DATA,
