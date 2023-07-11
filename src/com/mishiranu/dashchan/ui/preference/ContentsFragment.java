@@ -86,7 +86,7 @@ public class ContentsFragment extends PreferenceFragment {
 		});
 		invalidateReplyNotifications();
 
-		addHeader(R.string.usability_managing);
+		addHeader(R.string.usability_management);
 		addCheck(true, Preferences.KEY_SPACE_AFTER_QUOTE, Preferences.DEFAULT_SPACE_AFTER_QUOTE,
 				R.string.space_after_quote, 0);
 
