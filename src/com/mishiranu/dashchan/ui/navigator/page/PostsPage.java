@@ -1786,62 +1786,6 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 		getRecyclerView().invalidateItemDecorations();
 	}
 
-	private void initializeImportantPostsMarksFastScrollBarDecoration(PaddedRecyclerView recyclerView, RetainableExtra retainableExtra) {
-		boolean showImportantPostsOnFastScrollBar = Preferences.isShowImportantPostsOnFastScrollBar() && Preferences.isActiveScrollbar();
-		if (showImportantPostsOnFastScrollBar) {
-			importantPostsMarksFastScrollBarDecoration = new ImportantPostsMarksFastScrollBarDecoration(getContext());
-			recyclerView.setImportantPostsMarksFastScrollBarDecoration(importantPostsMarksFastScrollBarDecoration);
-			ImportantPostsMarksFastScrollBarDecoration.Data fastScrollBarDecorationData = retainableExtra.importantPostsMarksFastScrollBarDecorationData;
-
-			if (fastScrollBarDecorationData == null) {
-				updateImportantPostsFastScrollBarDecorationData();
-			} else {
-				importantPostsMarksFastScrollBarDecoration.setData(fastScrollBarDecorationData);
-			}
-
-		} else {
-			retainableExtra.importantPostsMarksFastScrollBarDecorationData = null;
-		}
-	}
-
-	private void updateImportantPostsFastScrollBarDecorationData() {
-		if (importantPostsMarksFastScrollBarDecoration == null) {
-			return;
-		}
-
-		ImportantPostsMarksFastScrollBarDecoration.Data importantPostsMarksFastScrollBarDecorationData = null;
-		RetainableExtra retainableExtra = getRetainableExtra(RetainableExtra.FACTORY);
-		HashSet<PostNumber> userPosts = retainableExtra.userPosts;
-
-		if (!userPosts.isEmpty()) {
-			PostsAdapter adapter = getAdapter();
-			Set<Integer> userPostsPositions = new HashSet<>();
-			Set<Integer> repliesPositions = new HashSet<>();
-
-			for (PostNumber userPostNumber : userPosts) {
-				int userPostPosition = adapter.positionOfPostNumber(userPostNumber);
-				boolean showUserPostOnScrollBar = userPostPosition >= 0 && !postStateProvider.isHiddenResolve(adapter.getItem(userPostPosition));
-				if (showUserPostOnScrollBar) {
-					userPostsPositions.add(userPostPosition);
-				}
-				Set<PostNumber> repliesPostNumbers = adapter.getItem(userPostPosition).getReferencesFrom();
-				for (PostNumber replyPostNumber : repliesPostNumbers) {
-					int replyPosition = adapter.positionOfPostNumber(replyPostNumber);
-					boolean showReplyOnScrollBar = replyPosition >= 0 && !postStateProvider.isHiddenResolve(adapter.getItem(replyPosition));
-					if (showReplyOnScrollBar) {
-						repliesPositions.add(replyPosition);
-					}
-				}
-			}
-
-			importantPostsMarksFastScrollBarDecorationData = new ImportantPostsMarksFastScrollBarDecoration.Data(userPostsPositions, repliesPositions, adapter.getItemCount());
-		}
-
-		retainableExtra.importantPostsMarksFastScrollBarDecorationData = importantPostsMarksFastScrollBarDecorationData;
-		importantPostsMarksFastScrollBarDecoration.setData(importantPostsMarksFastScrollBarDecorationData);
-		getRecyclerView().invalidateItemDecorations();
-	}
-
 	@Override
 	public void onReadPostsSuccess(PagesDatabase.Cache.State cacheState, ConsumeReplies consumeReplies) {
 		ReadViewModel readViewModel = getViewModel(ReadViewModel.class);
