@@ -1501,6 +1501,20 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_ALWAYS_REMOVE_FILENAME, DEFAULT_ALWAYS_REMOVE_FILENAME);
 	}
 
+	public static final String KEY_ALWAYS_RENAME_FILENAME = "always_rename_filename";
+	public static final boolean DEFAULT_ALWAYS_RENAME_FILENAME = false;
+
+	public static boolean isAlwaysRenameFilename() {
+		return PREFERENCES.getBoolean(KEY_ALWAYS_RENAME_FILENAME, DEFAULT_ALWAYS_RENAME_FILENAME);
+	}
+
+	public static final String KEY_FILE_NEWNAME = "file_newname";
+	public static final String DEFAULT_FILE_NEWNAME = "image";
+
+	public static final String getConfiguredFileNewname() {
+		return PREFERENCES.getString(KEY_FILE_NEWNAME, DEFAULT_FILE_NEWNAME);
+	}
+
 	public enum FirewallResolutionMethod {
 		MANUAL("manual", R.string.firewall_resolution_method_manual),
 		AUTO("auto", R.string.firewall_resolution_method_auto),
