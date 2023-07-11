@@ -1534,6 +1534,20 @@ public class Preferences {
 	public static final String KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR = "important_posts_on_fastscroll_bar";
 	public static final boolean DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR = true;
 
+	public static boolean isShowImportantPostsOnFastScrollBar() {
+		return PREFERENCES.getBoolean(KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR);
+	}
+
+	public static final String KEY_SHOW_POSTS_BORDERS = "posts_borders";
+	public static final boolean DEFAULT_SHOW_POSTS_BORDERS = true;
+
+	public static boolean isShowPostsBorders() {
+		return PREFERENCES.getBoolean(KEY_SHOW_POSTS_BORDERS, DEFAULT_SHOW_POSTS_BORDERS);
+	}
+
+	public static final String KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR = "important_posts_on_fastscroll_bar";
+	public static final boolean DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR = true;
+
 	public static boolean isShowImportantPostsOnFastScrollBar(){
 		return PREFERENCES.getBoolean(KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR, DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR);
 	}

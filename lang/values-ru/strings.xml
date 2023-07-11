@@ -464,7 +464,10 @@
 	<string name="share_text">Отправить текст</string>
 	<string name="show">Показать</string>
 	<string name="show_download_configuration_dialog">Диалог конфигурации загрузки</string>
+	<string name="show_important_posts_on_fastscroll_bar">Показывать важные сообщения на полосе прокрутки</string>
 	<string name="show_on_map">Показать на карте</string>
+	<string name="show_posts_borders">"Отмечать полосами мои сообщения и ответы"</string>
+	<string name="show_thumbnail">Показать миниатюру</string>
         <string name="show_important_posts_on_fastscroll_bar">Показывать важные сообщения на полосе прокрутки</string>
         <string name="show_thumbnail">Показать миниатюру</string>
 	<string name="similar_posts">Похожие сообщения</string>
@@ -575,6 +578,7 @@
 	<string name="favorites_show_all">Показать все</string>
 	<string name="favorites_hide_deleted">Скрыть удаленные</string>
 	<string name="favorites_show_deleted">Показать удаленные</string>
+	<string name="hidden_posts_count__format">Скрыто постов: %1$d</string>
 
 	<string name="hidden_posts_count__format">Скрыто постов: %1$d</string>
 	<string name="posting_media">Постинг медиа</string>

@@ -446,7 +446,9 @@
 	<string name="share_text">Share text</string>
 	<string name="show">Show</string>
 	<string name="show_download_configuration_dialog">Show download configuration dialog</string>
+	<string name="show_important_posts_on_fastscroll_bar">Show important posts on scrollbar</string>
 	<string name="show_on_map">Show on map</string>
+	<string name="show_posts_borders">Mark my posts and replies with lines</string>
 	<string name="show_important_posts_on_fastscroll_bar">Show important posts on scrollbar</string>
 	<string name="show_thumbnail">Show thumbnail</string>
 	<string name="similar_posts">Similar posts</string>
@@ -557,7 +559,7 @@
 	<string name="favorites_show_all">Show all</string>
 	<string name="favorites_hide_deleted">Hide deleted</string>
 	<string name="favorites_show_deleted">Show deleted</string>
-
+	<string name="hidden_posts_count__format">Hidden posts: %1$d</string>
 	<string name="hidden_posts_count__format">Hidden posts: %1$d</string>
 	<string name="posting_media">Posting media</string>
 	<string name="always_unique_hash">Always set a unique hash</string>
