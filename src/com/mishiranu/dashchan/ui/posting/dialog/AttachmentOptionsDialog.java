@@ -4,34 +4,22 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.Outline;
-import android.graphics.Rect;
-import android.graphics.drawable.InsetDrawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RoundRectShape;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
-import android.text.Spanned;
 import android.text.TextWatcher;
 import android.util.SparseBooleanArray;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewOutlineProvider;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HeaderViewListAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.DialogFragment;
@@ -46,8 +34,7 @@ import com.mishiranu.dashchan.ui.posting.AttachmentHolder;
 import com.mishiranu.dashchan.ui.posting.PostingDialogCallback;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
-import com.mishiranu.dashchan.util.ViewUtils;
-import com.mishiranu.dashchan.widget.ThemeEngine;
+import com.mishiranu.dashchan.widget.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +64,6 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 	private ListView listView;
 	private EditText filenameEditText;
 	private TextView extensionTextView;
-	private TableLayout filenameTable;
 	private Button restoreButton;
 
 	public AttachmentOptionsDialog() {}
@@ -184,102 +170,46 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 			listView.setItemChecked(i, optionItems.get(i).checked);
 		}
 		listView.setOnItemClickListener(this);
-		if (activity != null) {
-			View nameExtensionLayout = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_filename, null);
-			filenameEditText = nameExtensionLayout.findViewById(R.id.filename);
+
+		ViewGroup nameExtensionLayout = (ViewGroup) LayoutInflater.from(activity).inflate(R.layout.dialog_filename, listView, false);
+		listView.addFooterView(nameExtensionLayout);
+		listView.setAdapter(adapter);
+		filenameEditText = nameExtensionLayout.findViewById(R.id.filename);
+		filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
+		InputFilter filter = (source, start, end, dest, dstart, dend) -> {
+			for (int i = start; i < end; i++) {
+				if (!Character.isLetterOrDigit(source.charAt(i)) || Character.isSpaceChar(source.charAt(i))) {
+					return "";
+				}
+			}
+			return null;
+		};
+		filenameEditText.setFilters(new InputFilter[]{filter});
+		filenameEditText.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+			}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				holder.newname = s.toString() + "." + StringUtils.getFileExtension(holder.name);
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {
+			}
+		});
+		extensionTextView = nameExtensionLayout.findViewById(R.id.extension);
+		CharSequence ext = "." + StringUtils.getFileExtension(holder.name);
+		extensionTextView.setText(ext);
+		restoreButton = C.API_LOLLIPOP ? new MaterialButton(activity) : new Button(activity, null, android.R.attr.borderlessButtonStyle);
+		restoreButton.setText(R.string.restore_filename);
+		restoreButton.setOnClickListener(v -> {
+			holder.newname = holder.name;
 			filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
-			InputFilter filter = (source, start, end, dest, dstart, dend) -> {
-				for (int i = start; i < end; i++) {
-					if (!Character.isLetterOrDigit(source.charAt(i)) || Character.isSpaceChar(source.charAt(i))) {
-						return "";
-					}
-				}
-				return null;
-			};
-			filenameEditText.setFilters(new InputFilter[]{filter});
-			filenameEditText.addTextChangedListener(new TextWatcher() {
-				@Override
-				public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+		});
+		nameExtensionLayout.addView(restoreButton);
 
-				@Override
-				public void onTextChanged(CharSequence s, int start, int before, int count) {
-					holder.newname = s.toString() + "." + StringUtils.getFileExtension(holder.name);
-				}
-
-				@Override
-				public void afterTextChanged(Editable s) {}
-			});
-			extensionTextView = nameExtensionLayout.findViewById(R.id.extension);
-			CharSequence ext = "." + StringUtils.getFileExtension(holder.name);
-			extensionTextView.setText(ext);
-			linearLayout.addView(nameExtensionLayout);
-			filenameTable = nameExtensionLayout.findViewById(R.id.table_filename);
-			if (C.API_LOLLIPOP) {
-				float density = ResourceUtils.obtainDensity(listView);
-				float maxTranslationZ = (int) (2f * density);
-				restoreButton = new Button(nameExtensionLayout.getContext(), null, 0, C.API_MARSHMALLOW
-						? android.R.style.Widget_Material_Button_Colored : android.R.style.Widget_Material_Button) {
-					@Override
-					public void setTranslationZ(float translationZ) {
-						super.setTranslationZ(Math.min(translationZ, maxTranslationZ));
-					}
-				};
-				if (!C.API_MARSHMALLOW) {
-					if (!C.API_LOLLIPOP_MR1) {
-						// GradientDrawable doesn't support tints
-						float radius = 2f * density;
-						float[] radiusArray = {radius, radius, radius, radius, radius, radius, radius, radius};
-						ShapeDrawable background = new ShapeDrawable() {
-							@Override
-							public void getOutline(Outline outline) {
-								// Lollipop has broken RoundRectShape.getOutline
-								Rect bounds = getBounds();
-								outline.setRoundRect(bounds.left, bounds.top, bounds.right, bounds.bottom, radius);
-							}
-						};
-						background.setShape(new RoundRectShape(radiusArray, null, null));
-						restoreButton.setBackground(new InsetDrawable(background, (int) (4f * density),
-								(int) (6f * density), (int) (4f * density), (int) (6f * density)));
-					}
-					restoreButton.setTextColor(ResourceUtils.getColorStateList(restoreButton.getContext(),
-							android.R.attr.textColorPrimaryInverse));
-				}
-				if (C.API_LOLLIPOP_MR1) {
-					Rect rect = new Rect();
-					// Limit elevation height since the shadow looks ugly when the view is at the bottom
-					restoreButton.setOutlineProvider(new ViewOutlineProvider() {
-						@Override
-						public void getOutline(View view, Outline outline) {
-							view.getBackground().getOutline(outline);
-							if (ViewUtils.getOutlineRect(outline, rect)) {
-								float radius = ViewUtils.getOutlineRadius(outline);
-								rect.bottom -= (int) (2f * density);
-								outline.setRoundRect(rect, radius);
-							}
-						}
-					});
-				}
-				ThemeEngine.Theme theme = ThemeEngine.getTheme(restoreButton.getContext());
-				int colorControlDisabled = GraphicsUtils.applyAlpha(theme.controlNormal21, theme.disabledAlpha21);
-				int[][] states = {{-android.R.attr.state_enabled}, {}};
-				int[] colors = {colorControlDisabled, theme.accent};
-				restoreButton.setBackgroundTintList(new ColorStateList(states, colors));
-			} else {
-				restoreButton = new Button(nameExtensionLayout.getContext(), null, android.R.attr.borderlessButtonStyle);
-			}
-			restoreButton.setSingleLine(true);
-			if (C.API_LOLLIPOP) {
-				// setSingleLine breaks capitalization
-				restoreButton.setAllCaps(true);
-			}
-			restoreButton.setText(R.string.restore_filename);
-			restoreButton.setOnClickListener(v -> {
-				holder.newname = holder.name;
-				filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
-			});
-			TableRow row = filenameTable.findViewById(R.id.restore_name_row);
-			row.addView(restoreButton, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		}
 		updateItemsEnabled(adapter, holder);
 		AlertDialog dialog = new AlertDialog.Builder(activity).setView(linearLayout).create();
 		dialog.setCanceledOnTouchOutside(true);
@@ -352,7 +282,8 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 				break;
 			}
 		}
-		updateItemsEnabled((ItemsAdapter) listView.getAdapter(), holder);
+		updateItemsEnabled((ItemsAdapter) ((HeaderViewListAdapter) listView.getAdapter()).getWrappedAdapter(), holder);
+
 	}
 
 	public void setReencoding(GraphicsUtils.Reencoding reencoding) {
