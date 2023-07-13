@@ -71,15 +71,13 @@ public class MediaFragment extends PreferenceFragment implements FragmentHandler
 		addCheck(true, Preferences.KEY_ALWAYS_CLEAR_METADATA, Preferences.DEFAULT_ALWAYS_CLEAR_METADATA,
 				R.string.always_clear_metadata, 0);
 		addCheck(true, Preferences.KEY_ALWAYS_REMOVE_FILENAME, Preferences.DEFAULT_ALWAYS_REMOVE_FILENAME,
-				R.string.always_remove_filename, 0)
-				.setOnAfterChangeListener(p ->  {
-					findPreference(Preferences.KEY_ALWAYS_RENAME_FILENAME).setEnabled(!p.getValue());
-					findPreference(Preferences.KEY_FILE_NEWNAME).setEnabled(!p.getValue());
-				});
+				R.string.always_remove_filename, 0);
 		addCheck(true, Preferences.KEY_ALWAYS_RENAME_FILENAME, Preferences.DEFAULT_ALWAYS_RENAME_FILENAME,
-				R.string.always_rename_files, 0).setEnabled(!(Boolean)findPreference(Preferences.KEY_ALWAYS_REMOVE_FILENAME).getValue());
+				R.string.always_rename_files, 0);
+		addDependency(Preferences.KEY_ALWAYS_RENAME_FILENAME, Preferences.KEY_ALWAYS_REMOVE_FILENAME, false);
 		addEdit(Preferences.KEY_FILE_NEWNAME, Preferences.DEFAULT_FILE_NEWNAME, R.string.new_filename,
-				Preferences.DEFAULT_FILE_NEWNAME, InputType.TYPE_CLASS_TEXT).setEnabled(!(Boolean)findPreference(Preferences.KEY_ALWAYS_REMOVE_FILENAME).getValue());
+				Preferences.DEFAULT_FILE_NEWNAME, InputType.TYPE_CLASS_TEXT);
+		addDependency(Preferences.KEY_FILE_NEWNAME, Preferences.KEY_ALWAYS_REMOVE_FILENAME, false);
 
 		addHeader(R.string.downloads);
 		addCheck(true, Preferences.KEY_DOWNLOAD_DETAIL_NAME, Preferences.DEFAULT_DOWNLOAD_DETAIL_NAME,
