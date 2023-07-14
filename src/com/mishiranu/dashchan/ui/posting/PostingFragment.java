@@ -24,6 +24,7 @@ import android.os.ParcelFileDescriptor;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -441,10 +442,10 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 			ArrayList<DraftsStorage.AttachmentDraft> attachmentDrafts = postDraft.attachmentDrafts;
 			if (attachmentDrafts != null && !attachmentDrafts.isEmpty()) {
 				for (DraftsStorage.AttachmentDraft attachmentDraft : attachmentDrafts) {
-					addAttachment(attachmentDraft.hash, attachmentDraft.name, attachmentDraft.rating,
+					addAttachment(attachmentDraft.hash, attachmentDraft.name, attachmentDraft.newname, attachmentDraft.rating,
 							attachmentDraft.optionUniqueHash, attachmentDraft.optionRemoveMetadata,
 							attachmentDraft.optionRemoveFileName, attachmentDraft.optionSpoiler,
-							attachmentDraft.reencoding);
+							attachmentDraft.reencoding, attachmentDraft.optionCustomName);
 				}
 			}
 			nameView.setText(postDraft.name);
@@ -677,9 +678,9 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		if (attachments.size() > 0) {
 			attachmentDrafts = new ArrayList<>(attachments.size());
 			for (AttachmentHolder holder : attachments) {
-				attachmentDrafts.add(new DraftsStorage.AttachmentDraft(holder.hash, holder.name, holder.rating,
+				attachmentDrafts.add(new DraftsStorage.AttachmentDraft(holder.hash, holder.name, holder.newname, holder.rating,
 						holder.optionUniqueHash, holder.optionRemoveMetadata, holder.optionRemoveFileName,
-						holder.optionSpoiler, holder.reencoding));
+						holder.optionSpoiler, holder.reencoding, holder.optionCustomName));
 			}
 		}
 		String subject = subjectView.getText().toString();
@@ -1090,8 +1091,10 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 			}
 			FileHolder fileHolder = draftsStorage.getAttachmentDraftFileHolder(data.hash);
 			if (fileHolder != null) {
-				array.add(new ChanPerformer.SendPostData.Attachment(fileHolder, data.name, rating,
-						data.optionUniqueHash, data.optionRemoveMetadata, data.optionRemoveFileName,
+				array.add(new ChanPerformer.SendPostData.Attachment(fileHolder,
+						data.optionCustomName && !data.optionRemoveFileName ? data.newname : data.name, rating,
+						data.optionUniqueHash, data.optionRemoveMetadata,
+						data.optionRemoveFileName,
 						postingConfiguration.attachmentSpoiler && data.optionSpoiler, data.reencoding));
 			}
 		}
@@ -1560,24 +1563,28 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 	}
 
 	private void addAttachment(String hash, String name) {
-		addAttachment(hash, name, null, false, false, false, false, null);
+		addAttachment(hash, name, Preferences.getConfiguredFileNewname(), null,
+				Preferences.isAlwaysUniqueHash(), Preferences.isAlwaysClearMetadata(), Preferences.isAlwaysRemoveFilename(),
+				false, null, Preferences.isAlwaysRenameFilename());
 	}
 
-	private void addAttachment(String hash, String name, String rating, boolean optionUniqueHash,
+	private void addAttachment(String hash, String name, String newname, String rating, boolean optionUniqueHash,
 			boolean optionRemoveMetadata, boolean optionRemoveFileName, boolean optionSpoiler,
-			GraphicsUtils.Reencoding reencoding) {
+			GraphicsUtils.Reencoding reencoding, boolean optionCustomName) {
 		FileHolder fileHolder = DraftsStorage.getInstance().getAttachmentDraftFileHolder(hash);
 		JpegData jpegData = fileHolder != null ? fileHolder.getJpegData() : null;
 		PngData pngData = fileHolder != null ? fileHolder.getPngData() : null;
 		AttachmentHolder holder = addNewAttachment();
 		holder.hash = hash;
 		holder.name = name;
+		holder.newname = newname;
 		holder.rating = rating;
 		holder.optionUniqueHash = optionUniqueHash;
 		holder.optionRemoveMetadata = optionRemoveMetadata;
 		holder.optionRemoveFileName = optionRemoveFileName;
 		holder.optionSpoiler = optionSpoiler;
 		holder.reencoding = reencoding;
+		holder.optionCustomName = optionCustomName;
 		holder.fileName.setText(name);
 		int size = fileHolder != null ? fileHolder.getSize() : 0;
 		String fileSize = StringUtils.formatFileSize(size, false);

@@ -387,6 +387,7 @@
 	<string name="remove_metadata">Remove metadata</string>
 	<string name="remove_rules">Remove rules</string>
 	<string name="rename">Rename</string>
+	<string name="restore_filename">Restore filename</string>
 	<string name="repeated_files_are_prohibited">Repeated files are prohibited</string>
 	<string name="replace">Replace</string>
 	<string name="replies">Replies</string>
@@ -558,5 +559,11 @@
 	<string name="favorites_hide_deleted">Hide deleted</string>
 	<string name="favorites_show_deleted">Show deleted</string>
 	<string name="hidden_posts_count__format">Hidden posts: %1$d</string>
+	<string name="posting_media">Posting media</string>
+	<string name="always_unique_hash">Always set a unique hash</string>
+	<string name="always_clear_metadata">Always clear metadata</string>
+	<string name="always_remove_filename">Always remove filename</string>
+	<string name="always_rename_files">Always rename file</string>
+	<string name="new_filename">New filename</string>
 	<string name="space_after_quote">Add space after quote</string>
 </resources>

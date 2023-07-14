@@ -405,6 +405,7 @@
 	<string name="remove_metadata">Стереть метаданные</string>
 	<string name="remove_rules">Удалить правила</string>
 	<string name="rename">Переименовать</string>
+	<string name="restore_filename">Восстановить имя файла</string>
 	<string name="repeated_files_are_prohibited">Повторные файлы запрещены</string>
 	<string name="replace">Заменить</string>
 	<string name="replies">Ответы</string>
@@ -576,5 +577,11 @@
 	<string name="favorites_hide_deleted">Скрыть удаленные</string>
 	<string name="favorites_show_deleted">Показать удаленные</string>
 	<string name="hidden_posts_count__format">Скрыто постов: %1$d</string>
+	<string name="posting_media">Постинг медиа</string>
+	<string name="always_unique_hash">Всегда выставлять уникальный хеш</string>
+	<string name="always_clear_metadata">Всегда очищать метаданные</string>
+	<string name="always_remove_filename">Всегда удалять имя файла</string>
+	<string name="always_rename_files">Всегда переименовывать файл</string>
+	<string name="new_filename">Новое имя файла</string>
 	<string name="space_after_quote">Добавлять пробел после цитирования</string>
 </resources>
