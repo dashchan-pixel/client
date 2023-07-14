@@ -1545,4 +1545,12 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_SHOW_POSTS_BORDERS, DEFAULT_SHOW_POSTS_BORDERS);
 	}
 
+	public static final String KEY_SPACE_AFTER_QUOTE = "space_after_quote";
+	public static final boolean DEFAULT_SPACE_AFTER_QUOTE = true;
+
+	public static boolean isAddSpaceAfterQuote() {
+		return PREFERENCES.getBoolean(KEY_SPACE_AFTER_QUOTE, DEFAULT_SPACE_AFTER_QUOTE);
+	}
+
+
 }

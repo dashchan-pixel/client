@@ -600,9 +600,15 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 					}
 					// Remove links in the beginning of the post
 					comment = comment.replaceAll("(^|\n)(>>\\d+(\n|\\s)?)+", "$1");
-					comment = comment.replaceAll("(\n+)", "$1> ");
-					builder.insert(commentCarriage, "> ");
-					commentCarriage += 2;
+					if (Preferences.isAddSpaceAfterQuote()) {
+						comment = comment.replaceAll("(\n+)", "$1> ");
+						builder.insert(commentCarriage, "> ");
+						commentCarriage += 2;
+					} else {
+						comment = comment.replaceAll("(\n+)", "$1>");
+						builder.insert(commentCarriage, ">");
+						commentCarriage += 1;
+					}
 					builder.insert(commentCarriage, comment);
 					commentCarriage += comment.length();
 					builder.insert(commentCarriage++, '\n');

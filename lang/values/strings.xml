@@ -565,4 +565,5 @@
 	<string name="always_remove_filename">Always remove filename</string>
 	<string name="always_rename_files">Always rename file</string>
 	<string name="new_filename">New filename</string>
+	<string name="space_after_quote">Add space after quote</string>
 </resources>

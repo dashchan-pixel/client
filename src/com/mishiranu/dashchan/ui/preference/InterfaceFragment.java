@@ -90,6 +90,8 @@ public class InterfaceFragment extends PreferenceFragment {
 		addHeader(R.string.submission_form);
 		addCheck(true, Preferences.KEY_HIDE_PERSONAL_DATA,
 				Preferences.DEFAULT_HIDE_PERSONAL_DATA, R.string.hide_personal_data_block, 0);
+		addCheck(true, Preferences.KEY_SPACE_AFTER_QUOTE, Preferences.DEFAULT_SPACE_AFTER_QUOTE,
+				R.string.space_after_quote, 0);
 		addCheck(true, Preferences.KEY_HUGE_CAPTCHA, Preferences.DEFAULT_HUGE_CAPTCHA,
 				R.string.huge_captcha, 0)
 				.setOnAfterChangeListener(p -> findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(captchaAutoReloadEnabled()));
