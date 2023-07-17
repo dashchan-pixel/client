@@ -24,7 +24,6 @@ import android.os.ParcelFileDescriptor;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -84,6 +83,7 @@ import com.mishiranu.dashchan.widget.DropdownView;
 import com.mishiranu.dashchan.widget.ExpandedLayout;
 import com.mishiranu.dashchan.widget.ProgressDialog;
 import com.mishiranu.dashchan.widget.ThemeEngine;
+import com.mishiranu.dashchan.widget.UriPasteEditText;
 import com.mishiranu.dashchan.widget.ViewFactory;
 
 import java.util.ArrayList;
@@ -102,7 +102,7 @@ import chan.util.DataFile;
 import chan.util.StringUtils;
 
 public class PostingFragment extends ContentFragment implements FragmentHandler.Callback, CaptchaForm.Callback,
-		ReadCaptchaTask.Callback, PostingDialogCallback, CaptchaOptionsDialog.Callback {
+		ReadCaptchaTask.Callback, PostingDialogCallback, CaptchaOptionsDialog.Callback, UriPasteEditText.Callback {
 	private static final String EXTRA_CHAN_NAME = "chanName";
 	private static final String EXTRA_BOARD_NAME = "boardName";
 	private static final String EXTRA_THREAD_NUMBER = "threadNumber";
@@ -163,7 +163,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 	private int captchaLifetimeSeconds;
 
 	private ScrollView scrollView;
-	private EditText commentView;
+	private UriPasteEditText commentView;
 	private CheckBox sageCheckBox;
 	private CheckBox spoilerCheckBox;
 	private CheckBox originalPosterCheckBox;
@@ -292,6 +292,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		commentView.setOnFocusChangeListener((v, hasFocus) -> updateFocusButtons(hasFocus));
 		commentView.addTextChangedListener(commentEditWatcher);
 		commentView.addTextChangedListener(new QuoteEditWatcher(requireContext()));
+		commentView.setCallback(this, buildMimeTypeList(postingConfiguration.attachmentMimeTypes));
 		boolean addPaddingToRoot = false;
 		if (C.API_LOLLIPOP) {
 			boolean landscape = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
@@ -759,6 +760,18 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 			DraftsStorage draftsStorage = DraftsStorage.getInstance();
 			draftsStorage.store(obtainPostDraft());
 			draftsStorage.store(getChanName(), obtainCaptchaDraft());
+		}
+	}
+
+	@Override
+	public void onUriWithAllowedMimeTypePasted(Uri uri) {
+		FileHolder file = FileHolder.obtain(uri);
+		if (file != null) {
+			String hash = DraftsStorage.getInstance().store(file);
+			if (hash != null) {
+				String name = file.getName();
+				addAttachment(hash, name);
+			}
 		}
 	}
 
