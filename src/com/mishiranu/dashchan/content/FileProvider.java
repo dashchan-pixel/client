@@ -20,10 +20,12 @@ public class FileProvider extends ContentProvider {
 	private static final String PATH_UPDATES = "updates";
 	private static final String PATH_DOWNLOADS = "downloads";
 	private static final String PATH_SHARE = "share";
+	private static final String PATH_CLIPBOARD = "clipboard";
 
 	private static final int URI_UPDATES = 1;
 	private static final int URI_DOWNLOADS = 2;
 	private static final int URI_SHARE = 3;
+	private static final int URI_CLIPBOARD = 4;
 
 	private static final UriMatcher URI_MATCHER;
 
@@ -32,6 +34,7 @@ public class FileProvider extends ContentProvider {
 		URI_MATCHER.addURI(AUTHORITY, PATH_UPDATES + "/*", URI_UPDATES);
 		URI_MATCHER.addURI(AUTHORITY, PATH_DOWNLOADS + "/*", URI_DOWNLOADS);
 		URI_MATCHER.addURI(AUTHORITY, PATH_SHARE + "/*", URI_SHARE);
+		URI_MATCHER.addURI(AUTHORITY, PATH_CLIPBOARD + "/*", URI_CLIPBOARD);
 	}
 
 	@Override
@@ -86,6 +89,7 @@ public class FileProvider extends ContentProvider {
 
 	private static InternalFile downloadsFile;
 	private static InternalFile shareFile;
+	private static InternalFile clipboardFile;
 
 	private static InternalFile convertFile(File directory, File file, String type, String providerPath) {
 		if (C.API_NOUGAT) {
@@ -122,6 +126,15 @@ public class FileProvider extends ContentProvider {
 		return Uri.fromFile(file);
 	}
 
+	public static Uri convertClipboardFile(File directory, File file, String type){
+		InternalFile internalFile = convertFile(directory, file, type, PATH_CLIPBOARD);
+		if (internalFile != null) {
+			clipboardFile = internalFile;
+			return internalFile.uri;
+		}
+		return Uri.fromFile(file);
+	}
+
 	@Override
 	public String getType(@NonNull Uri uri) {
 		switch (URI_MATCHER.match(uri)) {
@@ -136,6 +149,11 @@ public class FileProvider extends ContentProvider {
 			case URI_SHARE: {
 				if (shareFile != null) {
 					return shareFile.type;
+				}
+			}
+			case URI_CLIPBOARD: {
+				if (clipboardFile != null) {
+					return clipboardFile.type;
 				}
 			}
 			default: {
@@ -166,6 +184,11 @@ public class FileProvider extends ContentProvider {
 					return ParcelFileDescriptor.open(shareFile.file, ParcelFileDescriptor.MODE_READ_ONLY);
 				}
 			}
+			case URI_CLIPBOARD: {
+				if (clipboardFile != null && uri.equals(clipboardFile.uri)) {
+					return ParcelFileDescriptor.open(clipboardFile.file, ParcelFileDescriptor.MODE_READ_ONLY);
+				}
+			}
 			default: {
 				throw new FileNotFoundException();
 			}
@@ -181,7 +204,8 @@ public class FileProvider extends ContentProvider {
 		switch (URI_MATCHER.match(uri)) {
 			case URI_UPDATES:
 			case URI_DOWNLOADS:
-			case URI_SHARE: {
+			case URI_SHARE:
+			case URI_CLIPBOARD: {
 				if (projection == null) {
 					projection = PROJECTION;
 				}
@@ -206,6 +230,10 @@ public class FileProvider extends ContentProvider {
 					}
 					case URI_SHARE: {
 						file = shareFile != null ? shareFile.file : null;
+						break;
+					}
+					case URI_CLIPBOARD: {
+						file = clipboardFile != null ? clipboardFile.file : null;
 						break;
 					}
 				}
