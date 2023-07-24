@@ -12,6 +12,7 @@ import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -214,6 +215,12 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		AlertDialog dialog = new AlertDialog.Builder(activity).setView(linearLayout).create();
 		dialog.setCanceledOnTouchOutside(true);
 		return dialog;
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		requireDialog().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
 	}
 
 	private void updateItemsEnabled(ItemsAdapter adapter, AttachmentHolder holder) {
