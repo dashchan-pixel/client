@@ -18,6 +18,8 @@ import androidx.core.content.MimeTypeFilter;
 import androidx.core.view.inputmethod.EditorInfoCompat;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 
+import com.mishiranu.dashchan.R;
+
 import java.util.List;
 
 public class UriPasteEditText extends SafePasteEditText implements ActionMode.Callback {
@@ -63,6 +65,7 @@ public class UriPasteEditText extends SafePasteEditText implements ActionMode.Ca
 				inputContentInfo.requestPermission();
 				callback.onUriWithAllowedMimeTypePasted(inputContentInfo.getContentUri());
 				inputContentInfo.releasePermission();
+				ClickableToast.show(R.string.pasted);
 				return true;
 			};
 
