@@ -345,6 +345,7 @@
 	<string name="password">Password</string>
 	<string name="password_for_removal">Password for removal</string>
 	<string name="password_for_removal__summary">Used when sending and removing posts</string>
+	<string name="pasted">Pasted</string>
 	<string name="pause">Pause</string>
 	<string name="pending_downloading">Pending downloading</string>
 	<string name="personal_data">Personal data</string>

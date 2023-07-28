@@ -364,6 +364,7 @@
 	<string name="password">Пароль</string>
 	<string name="password_for_removal">Пароль для удаления</string>
 	<string name="password_for_removal__summary">Используется при отправке и удалении сообщений</string>
+	<string name="pasted">Вставлено</string>
 	<string name="pause">Пауза</string>
 	<string name="pending_downloading">Ожидание загрузки</string>
 	<string name="personal_data">Личные данные</string>
