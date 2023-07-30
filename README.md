@@ -39,9 +39,11 @@ Android client for imageboards.
 
 ## Screenshots
 
+<p>
 <img src="metadata/en-US/images/phoneScreenshots/9.png" width="20%" />
 <img src="metadata/en-US/images/phoneScreenshots/10.png" width="20%" />
 <img src="metadata/en-US/images/phoneScreenshots/11.png" width="20%" />
+</p>
 
 ## Building Guide
 
