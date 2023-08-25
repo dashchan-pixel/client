@@ -166,15 +166,16 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 			listView.setDividerHeight(0);
 		}
 		ItemsAdapter adapter = new ItemsAdapter(activity, resId, items);
+
+		ViewGroup nameExtensionLayout = (ViewGroup) LayoutInflater.from(activity).inflate(R.layout.dialog_filename, listView, false);
+		listView.addFooterView(nameExtensionLayout);
 		listView.setAdapter(adapter);
+
 		for (int i = 0; i < optionItems.size(); i++) {
 			listView.setItemChecked(i, optionItems.get(i).checked);
 		}
 		listView.setOnItemClickListener(this);
 
-		ViewGroup nameExtensionLayout = (ViewGroup) LayoutInflater.from(activity).inflate(R.layout.dialog_filename, listView, false);
-		listView.addFooterView(nameExtensionLayout);
-		listView.setAdapter(adapter);
 		filenameEditText = nameExtensionLayout.findViewById(R.id.filename);
 		filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
 		InputFilter filter = (source, start, end, dest, dstart, dend) -> {
@@ -299,7 +300,7 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		if (reencodeIndex != null) {
 			holder.reencoding = reencoding;
 			listView.setItemChecked(reencodeIndex, reencoding != null);
-			updateItemsEnabled((ItemsAdapter) listView.getAdapter(), holder);
+			updateItemsEnabled((ItemsAdapter) ((HeaderViewListAdapter) listView.getAdapter()).getWrappedAdapter(), holder);
 		}
 	}
 }
