@@ -1,12 +1,12 @@
 bug:
-- any:
+- all:
     - base-branch: ['3.1.4-experimental-*']
-    - head-branch: ['*/bug/*']
+    - head-branch: ['^[\D\d]+\/bug\/[\D\d]+']
 
 enhancement:
-- any:
+- all:
     - base-branch: ['3.1.4-experimental-*']
-    - head-branch: ['*/enhancement/*']
+    - head-branch: ['^[\D\d]+\/enhancement\/[\D\d]+']
 
 documentation:
 - any:
