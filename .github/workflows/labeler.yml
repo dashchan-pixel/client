@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: TrixiEther/DashchanFork
-      - uses: actions/labeler@main
+          repository: "TrixiEther/DashchanFork"
+      - uses: actions/labeler@v5.0.0-alpha.1
         with:
           repo-token: "${{ secrets.DASHCHAN_REPO_TOKEN }}"
           sync-labels: true
