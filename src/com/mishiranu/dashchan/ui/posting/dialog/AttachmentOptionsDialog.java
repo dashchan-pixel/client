@@ -44,6 +44,8 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 	public static final String TAG = AttachmentOptionsDialog.class.getName();
 
 	private static final String EXTRA_ATTACHMENT_INDEX = "attachmentIndex";
+	private static final String FILENAME_BLOCKED_CHARACTERS = "\\/:*?\"<>|.";
+	private static final int FILENAME_MAX_CHARACTER_COUNT = 255;
 
 	private enum Type {UNIQUE_HASH, REMOVE_METADATA, REENCODE_IMAGE, REMOVE_FILE_NAME, SPOILER, RENAME}
 
@@ -168,6 +170,7 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		ItemsAdapter adapter = new ItemsAdapter(activity, resId, items);
 
 		ViewGroup nameExtensionLayout = (ViewGroup) LayoutInflater.from(activity).inflate(R.layout.dialog_filename, listView, false);
+		nameExtensionLayout.setOnClickListener(null);
 		listView.addFooterView(nameExtensionLayout);
 		listView.setAdapter(adapter);
 
@@ -180,7 +183,7 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
 		InputFilter filter = (source, start, end, dest, dstart, dend) -> {
 			for (int i = start; i < end; i++) {
-				if (!Character.isLetterOrDigit(source.charAt(i)) || Character.isSpaceChar(source.charAt(i))) {
+				if (FILENAME_BLOCKED_CHARACTERS.contains(Character.toString(source.charAt(i)))) {
 					return "";
 				}
 			}
@@ -194,11 +197,15 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				holder.newname = s.toString() + "." + StringUtils.getFileExtension(holder.name);
+				if (s.length() > FILENAME_MAX_CHARACTER_COUNT) {
+					CharSequence filename = s.subSequence(0, FILENAME_MAX_CHARACTER_COUNT);
+					filenameEditText.setText(filename);
+				}
 			}
 
 			@Override
 			public void afterTextChanged(Editable s) {
+				holder.newname = s.toString() + "." + StringUtils.getFileExtension(holder.name);
 			}
 		});
 		extensionTextView = nameExtensionLayout.findViewById(R.id.extension);
