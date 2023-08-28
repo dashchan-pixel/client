@@ -5,6 +5,8 @@ on:
     branches: [ "experimental" ]
   pull_request:
     branches: [ "experimental" ]
+  pull_request_target:
+    branches: ["3.1.4-experimental-*"]
     
 env:
   KEYSTORE_FILENAME: ${{ secrets.KEYSTORE_FILENAME }}
