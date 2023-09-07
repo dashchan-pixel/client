@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
@@ -29,6 +30,7 @@ import com.mishiranu.dashchan.ui.preference.core.EditPreference;
 import com.mishiranu.dashchan.ui.preference.core.Preference;
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
+import com.mishiranu.dashchan.util.FilenameUtils;
 import com.mishiranu.dashchan.util.IOUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.SharedPreferences;
@@ -76,7 +78,16 @@ public class MediaFragment extends PreferenceFragment implements FragmentHandler
 				R.string.always_rename_files, 0);
 		addDependency(Preferences.KEY_ALWAYS_RENAME_FILENAME, Preferences.KEY_ALWAYS_REMOVE_FILENAME, false);
 		addEdit(Preferences.KEY_FILE_NEWNAME, Preferences.DEFAULT_FILE_NEWNAME, R.string.new_filename,
-				Preferences.DEFAULT_FILE_NEWNAME, InputType.TYPE_CLASS_TEXT);
+				Preferences.DEFAULT_FILE_NEWNAME, InputType.TYPE_CLASS_TEXT)
+				.addFilter((source, start, end, dest, dstart, dend) -> {
+					for (int i = start; i < end; i++) {
+						if (!FilenameUtils.isValidCharacter(source.charAt(i))) {
+							return "";
+						}
+					}
+					return null;
+				})
+				.addFilter(new InputFilter.LengthFilter(FilenameUtils.getFilenameMaxCharacterCount()));
 		addDependency(Preferences.KEY_FILE_NEWNAME, Preferences.KEY_ALWAYS_REMOVE_FILENAME, false);
 
 		addHeader(R.string.downloads);

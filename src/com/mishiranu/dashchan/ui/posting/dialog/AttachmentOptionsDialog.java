@@ -33,6 +33,7 @@ import com.mishiranu.dashchan.content.storage.DraftsStorage;
 import com.mishiranu.dashchan.graphics.TransparentTileDrawable;
 import com.mishiranu.dashchan.ui.posting.AttachmentHolder;
 import com.mishiranu.dashchan.ui.posting.PostingDialogCallback;
+import com.mishiranu.dashchan.util.FilenameUtils;
 import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.widget.MaterialButton;
@@ -183,13 +184,16 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		filenameEditText.setText(StringUtils.removeFileExtension(holder.newname));
 		InputFilter filter = (source, start, end, dest, dstart, dend) -> {
 			for (int i = start; i < end; i++) {
-				if (FILENAME_BLOCKED_CHARACTERS.contains(Character.toString(source.charAt(i)))) {
+				if (!FilenameUtils.isValidCharacter(source.charAt(i))) {
 					return "";
 				}
 			}
 			return null;
 		};
-		filenameEditText.setFilters(new InputFilter[]{filter});
+		filenameEditText.setFilters(new InputFilter[]{
+				filter,
+				new InputFilter.LengthFilter(FilenameUtils.getFilenameMaxCharacterCount())
+		});
 		filenameEditText.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -197,10 +201,6 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (s.length() > FILENAME_MAX_CHARACTER_COUNT) {
-					CharSequence filename = s.subSequence(0, FILENAME_MAX_CHARACTER_COUNT);
-					filenameEditText.setText(filename);
-				}
 			}
 
 			@Override
