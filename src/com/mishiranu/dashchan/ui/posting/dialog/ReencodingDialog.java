@@ -70,7 +70,7 @@ public class ReencodingDialog extends DialogFragment implements DialogInterface.
 			radioGroup.addView(radioButton);
 		}
 		radioGroup.check(IDS[JPEG_POSITION]);
-		LinearLayout jpegToJpgLayout = new LinearLayout(context);
+		FrameLayout jpegToJpgLayout = new FrameLayout(context);
 		jpegToJpgLayout.setPadding(padding, 0, 0, padding / 2);
 		jpegToJpgLayout.addView(jpegToJpg);
 		LinearLayout linearLayout = new LinearLayout(context);
