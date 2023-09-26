@@ -569,4 +569,5 @@
 	<string name="always_rename_files">Always rename file</string>
 	<string name="new_filename">New filename</string>
 	<string name="space_after_quote">Add space after quote</string>
+	<string name="rename_to_jpg">Rename to .jpg</string>
 </resources>
