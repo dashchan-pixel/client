@@ -65,6 +65,9 @@ public class VideoUnit {
 	private boolean hideSurfaceOnInit;
 
 	private ReadVideoCallback readVideoCallback;
+	private Uri videoUri;
+	private File videoFile;
+	private boolean initFromFile;
 
 	public VideoUnit(PagerInstance instance) {
 		this.instance = instance;
@@ -183,33 +186,34 @@ public class VideoUnit {
 		wasPlaying = true;
 		finishedPlayback = false;
 		hideSurfaceOnInit = false;
+		videoUri = uri;
+		videoFile = file;
+		readVideoCallback = null;
 		boolean seekAnyFrame = Preferences.isVideoSeekAnyFrame();
 		VideoPlayer player = new VideoPlayer(playerListener, seekAnyFrame);
-		boolean loadedFromFile = false;
-		if (!reload && file.exists()) {
+		this.player = player;
+		initFromFile = !reload && file.exists();
+		if (initFromFile) {
 			try {
 				player.init(file, null);
-				loadedFromFile = true;
+				// Initialization continues in playerListener.onReady
 			} catch (IOException e) {
-				// Player was consumed, create a new one and try to download a new video file
+				initFromFile = false;
+				player.destroy();
 				player = new VideoPlayer(playerListener, seekAnyFrame);
+				this.player = player;
 			}
 		}
-		this.player = player;
-		if (loadedFromFile) {
-			initializePlayer();
-			seekBar.setSecondaryProgress(seekBar.getMax());
-			if (instance.currentHolder.mediaSummary.updateSize(file.length())) {
-				instance.galleryInstance.callback.updateTitle();
-			}
-			instance.currentHolder.loadState = PagerInstance.LoadState.COMPLETE;
-			instance.galleryInstance.callback.invalidateOptionsMenu();
-		} else {
-			instance.currentHolder.progressBar.setIndeterminate(true);
-			instance.currentHolder.progressBar.setVisible(true, false);
-			readVideoCallback = new ReadVideoCallback(player, instance.currentHolder,
-					instance.galleryInstance.chanName, uri);
+		if (!initFromFile) {
+			startDownload(player);
 		}
+	}
+
+	private void startDownload(VideoPlayer player) {
+		instance.currentHolder.progressBar.setIndeterminate(true);
+		instance.currentHolder.progressBar.setVisible(true, false);
+		readVideoCallback = new ReadVideoCallback(player, instance.currentHolder,
+				instance.galleryInstance.chanName, videoUri);
 	}
 
 	private boolean setPlaying(boolean playing, boolean resetFocus) {
@@ -542,6 +546,49 @@ public class VideoUnit {
 
 	private final VideoPlayer.Listener playerListener = new VideoPlayer.Listener() {
 		@Override
+		public void onReady(VideoPlayer player) {
+			if (player != VideoUnit.this.player || initialized) {
+				return;
+			}
+			PagerInstance.ViewHolder holder = instance.currentHolder;
+			holder.progressBar.setVisible(false, false);
+			initializePlayer();
+			if (readVideoCallback == null) {
+				if (instance.currentHolder.mediaSummary.updateSize(videoFile.length())) {
+					instance.galleryInstance.callback.updateTitle();
+				}
+			}
+			if (readVideoCallback == null || readVideoCallback.isDownloadFinished()) {
+				seekBar.setSecondaryProgress(seekBar.getMax());
+				holder.loadState = PagerInstance.LoadState.COMPLETE;
+			}
+			instance.galleryInstance.callback.invalidateOptionsMenu();
+		}
+
+		@Override
+		public void onError(VideoPlayer player, String message) {
+			if (player != VideoUnit.this.player) {
+				return;
+			}
+			PagerInstance.ViewHolder holder = instance.currentHolder;
+			if (!initialized && initFromFile) {
+				// The cached file cannot be played, download a fresh copy
+				initFromFile = false;
+				VideoUnit.this.player.destroy();
+				VideoPlayer newPlayer = new VideoPlayer(playerListener, Preferences.isVideoSeekAnyFrame());
+				VideoUnit.this.player = newPlayer;
+				startDownload(newPlayer);
+			} else if (!initialized) {
+				if (readVideoCallback != null) {
+					readVideoCallback.handleInitFailure();
+				}
+			} else {
+				instance.callback.showError(holder, instance.galleryInstance.context
+						.getString(R.string.playback_error));
+			}
+		}
+
+		@Override
 		public void onComplete(VideoPlayer player) {
 			switch (Preferences.getVideoCompletionMode()) {
 				case NOTHING: {
@@ -650,50 +697,37 @@ public class VideoUnit {
 			}
 		}
 
+		public boolean isDownloadFinished() {
+			return downloadTask == null;
+		}
+
+		public void handleInitFailure() {
+			holder.progressBar.setVisible(false, false);
+			if (downloadTask != null) {
+				if (!downloadTask.isError()) {
+					downloadTask.cancel();
+					downloadTask = null;
+				} else {
+					return;
+				}
+			}
+			if (rangeTask != null) {
+				rangeTask.cancel();
+				rangeTask = null;
+			}
+			instance.callback.showError(holder, instance.galleryInstance.context
+					.getString(R.string.playback_error));
+		}
+
 		@Override
 		public void onReadVideoInit(File partialFile) {
 			if (workPlayer == player) {
-				new Thread(() -> {
-					boolean success;
-					try {
-						workPlayer.init(partialFile, ReadVideoCallback.this);
-						success = true;
-					} catch (VideoPlayer.InitializationException e) {
-						e.printStackTrace();
-						success = false;
-					} catch (IOException e) {
-						success = false;
-					}
-					boolean successFinal = success;
-					ConcurrentUtils.HANDLER.post(() -> {
-						if (workPlayer == player) {
-							holder.progressBar.setVisible(false, false);
-							if (successFinal) {
-								initializePlayer();
-								if (downloadTask == null) {
-									seekBar.setSecondaryProgress(seekBar.getMax());
-									holder.loadState = PagerInstance.LoadState.COMPLETE;
-								}
-								instance.galleryInstance.callback.invalidateOptionsMenu();
-							} else {
-								if (downloadTask != null) {
-									if (!downloadTask.isError()) {
-										downloadTask.cancel();
-										downloadTask = null;
-									} else {
-										return;
-									}
-								}
-								if (rangeTask != null) {
-									rangeTask.cancel();
-									rangeTask = null;
-								}
-								instance.callback.showError(holder, instance.galleryInstance.context
-										.getString(R.string.playback_error));
-							}
-						}
-					});
-				}).start();
+				try {
+					workPlayer.init(partialFile, this);
+					// Initialization continues in playerListener.onReady
+				} catch (IOException e) {
+					handleInitFailure();
+				}
 			}
 		}
 

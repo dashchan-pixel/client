@@ -6,8 +6,7 @@ import com.mishiranu.dashchan.content.ImageLoader;
 import com.mishiranu.dashchan.content.model.GalleryItem;
 import com.mishiranu.dashchan.graphics.DecoderDrawable;
 import com.mishiranu.dashchan.graphics.SimpleBitmapDrawable;
-import com.mishiranu.dashchan.media.AnimatedPngDecoder;
-import com.mishiranu.dashchan.media.GifDecoder;
+import com.mishiranu.dashchan.media.AnimatedImageDecoder;
 import com.mishiranu.dashchan.media.JpegData;
 import com.mishiranu.dashchan.widget.CircularProgressBar;
 import com.mishiranu.dashchan.widget.PhotoView;
@@ -74,8 +73,7 @@ public class PagerInstance {
 
 		public SimpleBitmapDrawable simpleBitmapDrawable;
 		public DecoderDrawable decoderDrawable;
-		public AnimatedPngDecoder animatedPngDecoder;
-		public GifDecoder gifDecoder;
+		public AnimatedImageDecoder animatedImageDecoder;
 		public JpegData jpegData;
 		public boolean photoViewThumbnail;
 		public ImageLoader.Target thumbnailTarget;
@@ -93,13 +91,9 @@ public class PagerInstance {
 				decoderDrawable.recycle();
 				decoderDrawable = null;
 			}
-			if (animatedPngDecoder != null) {
-				animatedPngDecoder.recycle();
-				animatedPngDecoder = null;
-			}
-			if (gifDecoder != null) {
-				gifDecoder.recycle();
-				gifDecoder = null;
+			if (animatedImageDecoder != null) {
+				animatedImageDecoder.recycle();
+				animatedImageDecoder = null;
 			}
 			jpegData = null;
 			photoViewThumbnail = false;

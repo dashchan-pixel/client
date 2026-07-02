@@ -24,7 +24,6 @@ import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.MainApplication;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.graphics.ChanIconDrawable;
-import com.mishiranu.dashchan.media.VideoPlayer;
 import com.mishiranu.dashchan.util.AndroidUtils;
 import com.mishiranu.dashchan.util.Hasher;
 import com.mishiranu.dashchan.util.WeakObservable;
@@ -606,26 +605,6 @@ public class ChanManager {
 		return null;
 	}
 
-	private void loadLibrary(ExtensionItem libraryItem) {
-		switch (libraryItem.name) {
-			case EXTENSION_NAME_LIB_WEBM: {
-				if (Preferences.isUseVideoPlayer()) {
-					VideoPlayer.loadLibraries(MainApplication.getInstance());
-				}
-				break;
-			}
-		}
-	}
-
-	public void loadLibraries() {
-		for (Extension extension : extensions.values()) {
-			if (extension.item.type == ExtensionItem.Type.LIBRARY &&
-					extension.item.trustState == ExtensionItem.TrustState.TRUSTED) {
-				loadLibrary(extension.item);
-			}
-		}
-	}
-
 	public void changeUntrustedExtensionState(String extensionName, boolean trusted) {
 		Extension extension = extensions.get(extensionName);
 		if (extension == null || extension.item.trustState != ExtensionItem.TrustState.UNTRUSTED) {
@@ -645,7 +624,6 @@ public class ChanManager {
 			} else if (extension.item.type == ExtensionItem.Type.LIBRARY) {
 				Extension newExtension = new Extension(extension.item.changeTrustState(true), null);
 				updateExtensions(newExtension, null, false);
-				loadLibrary(newExtension.item);
 			}
 		} else {
 			Extension newExtension = new Extension(extension.item.changeTrustState(false), null);

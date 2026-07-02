@@ -140,8 +140,7 @@ public class NavigationUtils {
 	}
 
 	public static boolean isOpenableVideoExtension(String extension) {
-		return Preferences.isUseVideoPlayer() && VideoPlayer.isLoaded() &
-				C.OPENABLE_VIDEO_EXTENSIONS.contains(extension);
+		return Preferences.isUseVideoPlayer() && C.OPENABLE_VIDEO_EXTENSIONS.contains(extension);
 	}
 
 	public static void shareText(Context context, String subject, String text, Uri uri) {

@@ -122,39 +122,18 @@ public class MediaFragment extends PreferenceFragment implements FragmentHandler
 				enumResList(Preferences.MediaLoadingAction.values(), v -> v.titleResId));
 
 		addHeader(R.string.video_player);
-		Pair<Boolean, String> playerLoadResult = VideoPlayer.loadLibraries(requireContext());
-		if (!playerLoadResult.first) {
-			if (playerLoadResult.second != null) {
-				SpannableStringBuilder builder = new SpannableStringBuilder(playerLoadResult.second);
-				if (builder.length() == 0) {
-					builder.append(getString(R.string.unknown_error));
-				}
-				builder.setSpan(new ForegroundColorSpan(ResourceUtils.getColor(requireContext(),
-						R.attr.colorTextError)), 0, builder.length(), SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE);
-				addButton(null, builder).setSelectable(false);
-			} else {
-				addButton(0, R.string.requires_decoding_libraries__sentence).setSelectable(false);
-			}
-		}
 		addCheck(true, Preferences.KEY_USE_VIDEO_PLAYER, Preferences.DEFAULT_USE_VIDEO_PLAYER,
-				R.string.use_built_in_video_player, R.string.use_built_in_video_player__summary)
-				.setEnabled(playerLoadResult.first);
+				R.string.use_built_in_video_player, R.string.use_built_in_video_player__summary);
 		addList(Preferences.KEY_VIDEO_COMPLETION, enumList(Preferences.VideoCompletionMode.values(), o -> o.value),
 				Preferences.DEFAULT_VIDEO_COMPLETION.value, R.string.action_on_playback_completion,
-				enumResList(Preferences.VideoCompletionMode.values(), o -> o.titleResId))
-				.setEnabled(playerLoadResult.first);
+				enumResList(Preferences.VideoCompletionMode.values(), o -> o.titleResId));
 		addCheck(true, Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.DEFAULT_VIDEO_PLAY_AFTER_SCROLL,
-				R.string.play_after_scroll, R.string.play_after_scroll__summary).setEnabled(playerLoadResult.first);
+				R.string.play_after_scroll, R.string.play_after_scroll__summary);
 		addCheck(true, Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.DEFAULT_VIDEO_SEEK_ANY_FRAME,
-				R.string.seek_any_frame, R.string.seek_any_frame__summary).setEnabled(playerLoadResult.first);
-		addCheck(true, Preferences.KEY_VIDEO_MULTITHREADED_DECODING, Preferences.DEFAULT_VIDEO_MULTITHREADED_DECODING,
-				R.string.video_multithreaded_decoding, R.string.video_multithreaded_decoding__summary).setEnabled(playerLoadResult.first);
-		if (playerLoadResult.first) {
-			addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_VIDEO_PLAYER, true);
-			addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_VIDEO_PLAYER, true);
-			addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_VIDEO_PLAYER, true);
-			addDependency(Preferences.KEY_VIDEO_MULTITHREADED_DECODING, Preferences.KEY_USE_VIDEO_PLAYER, true);
-		}
+				R.string.seek_any_frame, R.string.seek_any_frame__summary);
+		addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_VIDEO_PLAYER, true);
+		addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_VIDEO_PLAYER, true);
+		addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_VIDEO_PLAYER, true);
 
 		addHeader(R.string.additional);
 		addSeek(Preferences.KEY_CACHE_SIZE, Preferences.DEFAULT_CACHE_SIZE, getString(R.string.cache_size), "%d MB",

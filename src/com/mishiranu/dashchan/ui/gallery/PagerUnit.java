@@ -523,7 +523,7 @@ public class PagerUnit implements PagerInstance.Callback {
 					holder.loadState == PagerInstance.LoadState.COMPLETE &&
 					!galleryItem.isVideo(Chan.get(galleryInstance.chanName));
 			if (hasValidImage) {
-				if (holder.animatedPngDecoder != null || holder.gifDecoder != null) {
+				if (holder.animatedImageDecoder != null) {
 					holder.recyclePhotoView();
 					hasValidImage = false;
 				} else {

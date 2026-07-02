@@ -74,7 +74,6 @@ public class MainApplication extends Application {
 			PagesDatabase.getInstance();
 			ChanDatabase.getInstance();
 			CacheManager.getInstance();
-			ChanManager.getInstance().loadLibraries();
 		} else if (checkProcess(PROCESS_WEB_VIEW)) {
 			IOUtils.deleteRecursive(getWebViewCacheDir());
 		}

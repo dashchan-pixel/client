@@ -21,9 +21,8 @@ import com.mishiranu.dashchan.content.model.FileHolder;
 import com.mishiranu.dashchan.content.model.GalleryItem;
 import com.mishiranu.dashchan.graphics.DecoderDrawable;
 import com.mishiranu.dashchan.graphics.SimpleBitmapDrawable;
-import com.mishiranu.dashchan.media.AnimatedPngDecoder;
+import com.mishiranu.dashchan.media.AnimatedImageDecoder;
 import com.mishiranu.dashchan.media.ExifData;
-import com.mishiranu.dashchan.media.GifDecoder;
 import com.mishiranu.dashchan.media.JpegData;
 import com.mishiranu.dashchan.ui.InstanceDialog;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
@@ -247,8 +246,7 @@ public class ImageUnit {
 
 		private Bitmap bitmap;
 		private DecoderDrawable decoderDrawable;
-		private AnimatedPngDecoder animatedPngDecoder;
-		private GifDecoder gifDecoder;
+		private AnimatedImageDecoder animatedImageDecoder;
 		private int errorMessageId;
 
 		public DecodeBitmapTask(File file, FileHolder fileHolder) {
@@ -268,19 +266,14 @@ public class ImageUnit {
 				errorMessageId = R.string.image_is_corrupted;
 				return null;
 			}
-			if (fileHolder.getImageType() == FileHolder.ImageType.IMAGE_PNG) {
+			if (fileHolder.getImageType() == FileHolder.ImageType.IMAGE_PNG
+					|| fileHolder.getImageType() == FileHolder.ImageType.IMAGE_GIF
+					|| fileHolder.getImageType() == FileHolder.ImageType.IMAGE_WEBP) {
 				try {
-					animatedPngDecoder = new AnimatedPngDecoder(fileHolder);
+					animatedImageDecoder = new AnimatedImageDecoder(file);
 					return null;
 				} catch (IOException e) {
-					// Ignore exception
-				}
-			} else if (fileHolder.getImageType() == FileHolder.ImageType.IMAGE_GIF) {
-				try {
-					gifDecoder = new GifDecoder(file);
-					return null;
-				} catch (IOException e) {
-					// Ignore exception
+					// Not an animated image, fall back to bitmap decoding
 				}
 			}
 			try {
@@ -315,18 +308,12 @@ public class ImageUnit {
 			PagerInstance.ViewHolder holder = instance.currentHolder;
 			holder.decodeBitmapTask = null;
 			holder.progressBar.setVisible(false, false);
-			if (bitmap != null || decoderDrawable != null || animatedPngDecoder != null || gifDecoder != null) {
+			if (bitmap != null || decoderDrawable != null || animatedImageDecoder != null) {
 				int width;
 				int height;
-				if (animatedPngDecoder != null) {
-					holder.animatedPngDecoder = animatedPngDecoder;
-					Drawable drawable = animatedPngDecoder.getDrawable();
-					width = drawable.getIntrinsicWidth();
-					height = drawable.getIntrinsicHeight();
-					setPhotoViewImage(holder, drawable, true);
-				} else if (gifDecoder != null) {
-					holder.gifDecoder = gifDecoder;
-					Drawable drawable = gifDecoder.getDrawable();
+				if (animatedImageDecoder != null) {
+					holder.animatedImageDecoder = animatedImageDecoder;
+					Drawable drawable = animatedImageDecoder.getDrawable();
 					width = drawable.getIntrinsicWidth();
 					height = drawable.getIntrinsicHeight();
 					setPhotoViewImage(holder, drawable, true);
