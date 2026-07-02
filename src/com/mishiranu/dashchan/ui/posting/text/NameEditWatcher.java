@@ -45,12 +45,11 @@ public class NameEditWatcher implements TextWatcher {
 		if (watchTripcodeWarning) {
 			boolean error = index >= 0;
 			if (this.error != error) {
-				if (C.API_LOLLIPOP) {
-					if (errorSetter == null) {
-						errorSetter = new ErrorEditTextSetter(nameView);
-					}
-					errorSetter.setError(error);
+				if (errorSetter == null) {
+					errorSetter = new ErrorEditTextSetter(nameView);
 				}
+				errorSetter.setError(error);
+			
 				tripcodeWarning.setVisibility(error ? View.VISIBLE : View.GONE);
 				layoutCallback.run();
 				this.error = error;

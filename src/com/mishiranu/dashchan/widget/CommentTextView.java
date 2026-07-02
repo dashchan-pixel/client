@@ -106,7 +106,7 @@ public class CommentTextView extends TextView {
 	}
 
 	public CommentTextView(Context context, AttributeSet attrs, int defStyleAttr) {
-		super(C.API_LOLLIPOP && AndroidUtils.IS_MIUI ? new MiuiContext(context) : context, attrs, defStyleAttr);
+		super(context, attrs, defStyleAttr);
 		ThemeEngine.applyStyle(this);
 		float density = ResourceUtils.obtainDensity(this);
 		int delta = (int) (RING_RADIUS * density);
@@ -123,13 +123,7 @@ public class CommentTextView extends TextView {
 			add += BASE_POINTS.length;
 		}
 		touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-		MiuiContext miuiContext = getMiuiContext();
-		if (miuiContext != null) {
-			miuiContext.setTextView(this);
-			super.setCustomSelectionActionModeCallback(miuiContext);
-		} else {
-			super.setCustomSelectionActionModeCallback(new CustomSelectionCallback(this));
-		}
+		super.setCustomSelectionActionModeCallback(new CustomSelectionCallback(this));
 		super.setTextIsSelectable(true);
 	}
 
@@ -293,11 +287,6 @@ public class CommentTextView extends TextView {
 	private Spannable getSpannableText() {
 		CharSequence text = getText();
 		return text instanceof Spannable ? (Spannable) text : null;
-	}
-
-	private MiuiContext getMiuiContext() {
-		Context context = getContext();
-		return context instanceof MiuiContext ? (MiuiContext) context : null;
 	}
 
 	@Override
@@ -519,7 +508,7 @@ public class CommentTextView extends TextView {
 			CommentTextView textView = this.textView.get();
 			textView.setSelectionMode(selectionMode);
 			currentActionMode = mode;
-			boolean floating = C.API_MARSHMALLOW && mode.getType() == ActionMode.TYPE_FLOATING;
+			boolean floating = mode.getType() == ActionMode.TYPE_FLOATING;
 			// Only "cut" menu item uses this order "1" which doesn't present in non-editable TextView
 			textView.onCreateSelectionMenu(menu, floating ? 1 : 0);
 			return true;
@@ -548,180 +537,6 @@ public class CommentTextView extends TextView {
 				mode.finish();
 			}
 			return result;
-		}
-	}
-
-	private static class MiuiContext extends ContextWrapper implements ActionMode.Callback,
-			View.OnKeyListener, View.OnAttachStateChangeListener {
-		private WeakReference<CommentTextView> textView;
-		private WindowManager windowManagerProxy;
-		private WeakReference<Menu> actionModeMenu;
-
-		private WeakHashMap<View, Object> addedViews;
-		private boolean hasAttachedViews;
-		private boolean selectionMode;
-
-		private final CommentTextView.SelectionMode activeSelectionMode = new CommentTextView.SelectionMode() {
-			@Override
-			public boolean isActive() {
-				return true;
-			}
-
-			@Override
-			public void invalidateMenu() {
-				updateMenu(false);
-			}
-		};
-
-		public MiuiContext(Context base) {
-			super(base);
-		}
-
-		public void setTextView(CommentTextView textView) {
-			if (this.textView != null || textView == null) {
-				throw new IllegalStateException();
-			}
-			this.textView = new WeakReference<>(textView);
-			textView.setOnKeyListener(this);
-		}
-
-		private static WindowManager createWindowManagerProxy(WindowManager windowManager,
-				WeakHashMap<View, Object> addedViews, OnAttachStateChangeListener listener) {
-			Class<?>[] instances = {WindowManager.class};
-			InvocationHandler handler = (proxy, method, args) -> {
-				if (method.getName().equals("addView")) {
-					View view = (View) args[0];
-					if (!addedViews.containsKey(view)) {
-						addedViews.put(view, view);
-						view.addOnAttachStateChangeListener(listener);
-					}
-				}
-				return method.invoke(windowManager, args);
-			};
-			return (WindowManager) Proxy.newProxyInstance(MiuiContext.class.getClassLoader(), instances, handler);
-		}
-
-		@Override
-		public Object getSystemService(String name) {
-			if (WINDOW_SERVICE.equals(name)) {
-				// Return tracking WindowManager for Editor inner classes
-				String editorClass = "android.widget.Editor";
-				for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
-					String className = StringUtils.emptyIfNull(element.getClassName());
-					if (className.equals(editorClass) || className.startsWith(editorClass) &&
-							className.charAt(editorClass.length()) == '$') {
-						if (windowManagerProxy == null) {
-							addedViews = new WeakHashMap<>();
-							WindowManager windowManager = (WindowManager) super.getSystemService(name);
-							windowManagerProxy = createWindowManagerProxy(windowManager, addedViews, this);
-						}
-						return windowManagerProxy;
-					}
-				}
-			}
-			return super.getSystemService(name);
-		}
-
-		public boolean onTextContextMenuItem(int id) {
-			CommentTextView textView = this.textView.get();
-			if (textView.onSelectionItemClicked(id)) {
-				stopAndRemoveSelection(textView);
-				return true;
-			}
-			return false;
-		}
-
-		private static void stopAndRemoveSelection(CommentTextView textView) {
-			// onVisibilityChanged causes stopTextActionMode call
-			int visibility = textView.getVisibility();
-			if (visibility == View.VISIBLE) {
-				textView.onVisibilityChanged(textView, View.INVISIBLE);
-				textView.onVisibilityChanged(textView, View.VISIBLE);
-			}
-			textView.removeSelection();
-		}
-
-		private void updateMenu(boolean reset) {
-			Menu menu = actionModeMenu != null ? actionModeMenu.get() : null;
-			if (menu != null) {
-				CommentTextView textView = this.textView.get();
-				if (reset) {
-					menu.clear();
-					textView.onCreateSelectionMenu(menu, 0);
-				}
-				textView.onPrepareSelectionMenu(menu);
-			}
-		}
-
-		@Override
-		public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-			// Fake action mode is created only once
-			actionModeMenu = new WeakReference<>(menu);
-			updateMenu(true);
-			return true;
-		}
-
-		@Override
-		public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-			// Prepare is never called by MIUI, but this may be changed in the future
-			return onCreateActionMode(mode, menu);
-		}
-
-		@Override
-		public void onDestroyActionMode(ActionMode mode) {}
-
-		@Override
-		public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-			CommentTextView textView = this.textView.get();
-			textView.onSelectionItemClicked(item.getItemId());
-			stopAndRemoveSelection(textView);
-			return true;
-		}
-
-		@Override
-		public boolean onKey(View v, int keyCode, KeyEvent event) {
-			CommentTextView textView = this.textView.get();
-			if (keyCode == KeyEvent.KEYCODE_BACK && v == textView && textView.isSelectionMode()) {
-				// MIUI ignores KEYCODE_BACK key events
-				if (event.getAction() == KeyEvent.ACTION_UP && !event.isLongPress()) {
-					stopAndRemoveSelection(textView);
-				}
-				return true;
-			}
-			return false;
-		}
-
-		@Override
-		public void onViewAttachedToWindow(View v) {
-			if (!hasAttachedViews) {
-				hasAttachedViews = true;
-				CommentTextView textView = this.textView.get();
-				textView.setSelectionMode(activeSelectionMode);
-				selectionMode = true;
-				updateMenu(true);
-			}
-		}
-
-		@Override
-		public void onViewDetachedFromWindow(View v) {
-			if (hasAttachedViews) {
-				boolean hasAttachedViews = false;
-				for (View view : addedViews.keySet()) {
-					if (view != v && ViewCompat.isAttachedToWindow(view)) {
-						hasAttachedViews = true;
-						break;
-					}
-				}
-				if (!hasAttachedViews) {
-					this.hasAttachedViews = false;
-					if (selectionMode) {
-						selectionMode = false;
-						CommentTextView textView = this.textView.get();
-						textView.setSelectionMode(null);
-						textView.removeSelection();
-					}
-				}
-			}
 		}
 	}
 
@@ -787,10 +602,6 @@ public class CommentTextView extends TextView {
 
 	@Override
 	public boolean onTextContextMenuItem(int id) {
-		MiuiContext miuiContext = getMiuiContext();
-		if (miuiContext != null && miuiContext.onTextContextMenuItem(id)) {
-			return true;
-		}
 		return super.onTextContextMenuItem(id);
 	}
 

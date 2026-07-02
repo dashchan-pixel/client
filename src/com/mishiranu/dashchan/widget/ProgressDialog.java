@@ -37,8 +37,8 @@ public class ProgressDialog extends AlertDialog {
 
 		LinearLayout layout = new LinearLayout(context);
 		float density = ResourceUtils.obtainDensity(context);
-		int horizontalPadding = (int) ((C.API_LOLLIPOP ? numberFormat != null ? 24f : 20f : 16f) * density);
-		int verticalPadding = (int) ((C.API_LOLLIPOP ? 18f : 16f) * density);
+		int horizontalPadding = (int) ((numberFormat != null ? 24f : 20f) * density);
+		int verticalPadding = (int) ((18f) * density);
 		layout.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
 		setView(layout);
 
@@ -52,7 +52,7 @@ public class ProgressDialog extends AlertDialog {
 			message = new TextView(context);
 			layout.addView(message, LinearLayout.LayoutParams.MATCH_PARENT,
 					LinearLayout.LayoutParams.WRAP_CONTENT);
-			if (C.API_JELLY_BEAN_MR1 && message.getLayoutDirection() == TextView.LAYOUT_DIRECTION_RTL) {
+			if (message.getLayoutDirection() == TextView.LAYOUT_DIRECTION_RTL) {
 				message.setPadding(0, 0, horizontalPadding, 0);
 			} else {
 				message.setPadding(horizontalPadding, 0, 0, 0);
@@ -76,7 +76,7 @@ public class ProgressDialog extends AlertDialog {
 			progress = new TextView(context);
 			inner.addView(progress, 0, LinearLayout.LayoutParams.WRAP_CONTENT);
 			((LinearLayout.LayoutParams) progress.getLayoutParams()).weight = 1f;
-			progress.setGravity(C.API_JELLY_BEAN_MR1 ? Gravity.END : Gravity.RIGHT);
+			progress.setGravity(Gravity.END);
 		}
 		updateProgress();
 	}

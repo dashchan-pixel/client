@@ -195,13 +195,8 @@ public abstract class Preference<T> {
 			ImageView icon = new ImageView(viewHolder.view.getContext());
 			LinearLayout.LayoutParams layoutParams = new LinearLayout
 					.LayoutParams((int) (24f * density), (int) (24f * density));
-			if (C.API_LOLLIPOP) {
-				layoutParams.setMarginEnd((int) (32f * density));
-			} else if (C.API_JELLY_BEAN_MR1) {
-				layoutParams.setMarginEnd((int) (8f * density));
-			} else {
-				layoutParams.setMargins(0, 0, (int) (8f * density), 0);
-			}
+			layoutParams.setMarginEnd((int) (32f * density));
+		
 			icon.setLayoutParams(layoutParams);
 			((LinearLayout) viewHolder.view).addView(icon, 0);
 			return new IconViewHolder(viewHolder, icon);

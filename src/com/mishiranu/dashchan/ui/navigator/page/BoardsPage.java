@@ -52,10 +52,6 @@ public class BoardsPage extends ListPage implements BoardsAdapter.Callback,
 	protected void onCreate() {
 		PaddedRecyclerView recyclerView = getRecyclerView();
 		recyclerView.setLayoutManager(new LinearLayoutManager(recyclerView.getContext()));
-		if (!C.API_LOLLIPOP) {
-			float density = ResourceUtils.obtainDensity(recyclerView);
-			ViewUtils.setNewPadding(recyclerView, (int) (16f * density), null, (int) (16f * density), null);
-		}
 		searchQuery = getInitSearch().currentQuery;
 		BoardsAdapter adapter = new BoardsAdapter(this);
 		recyclerView.setAdapter(adapter);

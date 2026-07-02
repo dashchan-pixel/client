@@ -58,10 +58,6 @@ public abstract class BaseListFragment extends ContentFragment {
 	}
 
 	protected void setListPadding(RecyclerView recyclerView) {
-		if (!C.API_LOLLIPOP) {
-			float density = ResourceUtils.obtainDensity(recyclerView);
-			ViewUtils.setNewPadding(recyclerView, (int) (16f * density), null, (int) (16f * density), null);
-		}
 	}
 
 	protected DividerItemDecoration.Configuration configureDivider

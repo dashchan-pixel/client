@@ -196,7 +196,7 @@ public class WebViewDecoder extends WebViewClient {
 	}
 
 	public static Bitmap loadBitmap(FileHolder fileHolder, BitmapFactory.Options options) {
-		if (C.WEB_VIEW_BITMAP_DECODER_SUPPORTED && !MainApplication.getInstance().isLowRam()) {
+		if (!MainApplication.getInstance().isLowRam()) {
 			WebViewDecoder decoder;
 			try {
 				decoder = new WebViewDecoder(fileHolder, options);

@@ -76,7 +76,7 @@ public abstract class DataFile {
 	}
 
 	public static DataFile obtain(Target target, String path) {
-		if (target.safTarget != null && C.USE_SAF) {
+		if (target.safTarget != null) {
 			return new SafFile(target, validatePath(path));
 		} else {
 			return new RegularFile(target, validatePath(path));

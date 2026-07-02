@@ -102,11 +102,8 @@ public abstract class WebViewDialog extends DialogFragment {
 		public void onProgressChanged(WebView view, int newProgress) {
 			delegate.onProgressChanged(view, newProgress);
 			animateProgressBarVisibility(newProgress);
-			if (C.API_NOUGAT) {
-				pageLoadingProgressBar.setProgress(newProgress, true);
-			} else {
-				pageLoadingProgressBar.setProgress(newProgress);
-			}
+			pageLoadingProgressBar.setProgress(newProgress, true);
+		
 			lastProgress = newProgress;
 		}
 

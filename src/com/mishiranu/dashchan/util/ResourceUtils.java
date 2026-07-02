@@ -123,7 +123,7 @@ public class ResourceUtils {
 
 	@SuppressWarnings("deprecation")
 	public static Drawable getDrawable(Context context, int resId) {
-		return C.API_LOLLIPOP ? context.getDrawable(resId) : context.getResources().getDrawable(resId);
+		return context.getDrawable(resId);
 	}
 
 	public static Drawable getDrawable(Context context, int attr, int notFound) {
@@ -133,10 +133,9 @@ public class ResourceUtils {
 
 	public static Drawable getActionBarIcon(Context context, int attr) {
 		Drawable drawable = getDrawable(context, attr, 0);
-		if (C.API_LOLLIPOP) {
-			drawable.mutate();
-			drawable.setTint(getColor(context, android.R.attr.textColorPrimary));
-		}
+		drawable.mutate();
+		drawable.setTint(getColor(context, android.R.attr.textColorPrimary));
+	
 		return drawable;
 	}
 
@@ -150,15 +149,8 @@ public class ResourceUtils {
 	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	@SuppressWarnings("deprecation")
 	public static int getSystemSelectorColor(Context context) {
-		if (C.API_LOLLIPOP) {
-			return getColor(context, android.R.attr.colorControlHighlight);
-		} else {
-			int resId = getResourceId(context, android.R.attr.listChoiceBackgroundIndicator,
-					android.R.drawable.list_selector_background);
-			Drawable drawable = context.getResources().getDrawable(resId);
-			drawable.setState(PRESSED_STATE);
-			return GraphicsUtils.getDrawableColor(context, drawable, Gravity.CENTER);
-		}
+		return getColor(context, android.R.attr.colorControlHighlight);
+	
 	}
 
 	@TargetApi(Build.VERSION_CODES.KITKAT)
@@ -167,7 +159,7 @@ public class ResourceUtils {
 		TypedArray typedArray = context.obtainStyledAttributes(new int[] {android.R.attr.windowBackground});
 		Drawable drawable = typedArray.getDrawable(0);
 		typedArray.recycle();
-		if (C.API_KITKAT && drawable instanceof InsetDrawable) {
+		if (drawable instanceof InsetDrawable) {
 			drawable = ((InsetDrawable) drawable).getDrawable();
 		}
 		return drawable != null ? GraphicsUtils.getDrawableColor(context, drawable, Gravity.CENTER) : 0;

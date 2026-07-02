@@ -28,9 +28,8 @@ public class ThreadDescriptionView extends View {
 
 	public ThreadDescriptionView(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		if (C.API_LOLLIPOP) {
-			paint.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-		}
+		paint.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+	
 	}
 
 	public void setTextColor(int color) {

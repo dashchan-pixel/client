@@ -818,11 +818,8 @@ public class ForegroundManager implements Handler.Callback {
 						view.setOnClickListener(this);
 						frameLayout.addView(view, FrameLayout.LayoutParams.MATCH_PARENT,
 								FrameLayout.LayoutParams.MATCH_PARENT);
-						if (C.API_LOLLIPOP) {
-							frameLayout.setForeground(new SelectorCheckDrawable());
-						} else {
-							frameLayout.setForeground(new SelectorBorderDrawable(frameLayout.getContext()));
-						}
+						frameLayout.setForeground(new SelectorCheckDrawable());
+					
 					}
 				}
 			}
@@ -886,11 +883,8 @@ public class ForegroundManager implements Handler.Callback {
 
 		private void updateSelection(int index) {
 			Drawable drawable = selectionViews[index].getForeground();
-			if (C.API_LOLLIPOP) {
-				((SelectorCheckDrawable) drawable).setSelected(selected[index], true);
-			} else {
-				((SelectorBorderDrawable) drawable).setSelected(selected[index]);
-			}
+			((SelectorCheckDrawable) drawable).setSelected(selected[index], true);
+		
 		}
 
 		@Override

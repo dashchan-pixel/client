@@ -253,9 +253,6 @@ public class DecoderDrawable extends BaseDrawable {
 		@SuppressWarnings("deprecation")
 		public void cancel() {
 			super.cancel();
-			if (!C.API_NOUGAT) {
-				options.mCancel = true;
-			}
 		}
 
 		@Override

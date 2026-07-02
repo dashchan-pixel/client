@@ -159,7 +159,7 @@ public class MarkupButtonProvider {
 		PROVIDERS.add(new MarkupButtonProvider(ChanMarkup.TAG_QUOTE, 40, 4, ">", null) {
 			@Override
 			public Object getSpan(Context context) {
-				return C.API_LOLLIPOP ? null : new ForegroundColorSpan(ThemeEngine.getTheme(context).quote);
+				return null;
 			}
 		});
 	}

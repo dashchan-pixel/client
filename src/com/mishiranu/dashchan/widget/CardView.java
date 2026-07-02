@@ -22,8 +22,7 @@ import com.mishiranu.dashchan.graphics.BaseDrawable;
 import com.mishiranu.dashchan.util.ResourceUtils;
 
 public class CardView extends FrameLayout {
-	private static final Implementation IMPLEMENTATION = C.API_LOLLIPOP
-			? new CardViewLollipop() : new CardViewJellyBean();
+	private static final Implementation IMPLEMENTATION =new CardViewLollipop();
 
 	private final boolean initialized;
 

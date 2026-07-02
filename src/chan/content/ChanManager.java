@@ -29,7 +29,6 @@ import com.mishiranu.dashchan.util.AndroidUtils;
 import com.mishiranu.dashchan.util.Hasher;
 import com.mishiranu.dashchan.util.WeakObservable;
 import dalvik.system.DelegateLastClassLoader;
-import dalvik.system.PathClassLoader;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,7 +84,7 @@ public class ChanManager {
 
 	@SuppressWarnings("deprecation")
 	private static final int PACKAGE_MANAGER_SIGNATURE_FLAGS = PackageManager.GET_SIGNATURES |
-			(C.API_PIE ? PackageManager.GET_SIGNING_CERTIFICATES : 0);
+			(PackageManager.GET_SIGNING_CERTIFICATES);
 
 	private final Chan fallbackChan;
 	private final Fingerprints applicationFingerprints;
@@ -470,33 +469,6 @@ public class ChanManager {
 		}
 	}
 
-	private static class CompatDelegateLastClassLoader extends PathClassLoader {
-		public CompatDelegateLastClassLoader(String dexPath, String librarySearchPath, ClassLoader parent) {
-			super(dexPath, librarySearchPath, parent);
-		}
-
-		@Override
-		protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-			Class<?> loaded = findLoadedClass(name);
-			if (loaded != null) {
-				return loaded;
-			}
-			try {
-				return Object.class.getClassLoader().loadClass(name);
-			} catch (ClassNotFoundException e1) {
-				try {
-					return findClass(name);
-				} catch (ClassNotFoundException exception) {
-					try {
-						return getParent().loadClass(name);
-					} catch (ClassNotFoundException e2) {
-						throw exception;
-					}
-				}
-			}
-		}
-	}
-
 	private boolean isExtension(PackageInfo packageInfo, String feature) {
 		FeatureInfo[] features = packageInfo.reqFeatures;
 		if (features != null) {
@@ -610,11 +582,8 @@ public class ChanManager {
 				ClassLoader classLoader;
 				String dexPath = chanItem.applicationInfo.sourceDir;
 				ClassLoader parent = ChanManager.class.getClassLoader();
-				if (C.API_OREO_MR1) {
-					classLoader = new DelegateLastClassLoader(dexPath, nativeLibraryDir, parent);
-				} else {
-					classLoader = new CompatDelegateLastClassLoader(dexPath, nativeLibraryDir, parent);
-				}
+				classLoader = new DelegateLastClassLoader(dexPath, nativeLibraryDir, parent);
+			
 				Resources resources = packageManager.getResourcesForApplication(chanItem.applicationInfo);
 				Chan.Provider chanProvider = new Chan.Provider(null);
 				ChanConfiguration configuration = ChanConfiguration.INITIALIZER.initialize(classLoader,
@@ -625,7 +594,7 @@ public class ChanManager {
 						chanItem.classLocator, chanName, chanProvider, resources);
 				ChanMarkup markup = ChanMarkup.INITIALIZER.initialize(classLoader,
 						chanItem.classMarkup, chanName, chanProvider, resources);
-				Drawable icon = C.API_LOLLIPOP && chanItem.iconResId != 0
+				Drawable icon = chanItem.iconResId != 0
 						? resources.getDrawable(chanItem.iconResId, null) : null;
 				Chan chan = new Chan(chanName, chanItem.packageName, configuration, performer, locator, markup, icon);
 				chanProvider.set(chan);
@@ -850,7 +819,7 @@ public class ChanManager {
 	}
 
 	public ChanIconDrawable getIcon(Chan chan) {
-		if (chan != null && C.API_LOLLIPOP) {
+		if (chan != null) {
 			Drawable drawable = chan.icon;
 			if (drawable == null) {
 				drawable = MainApplication.getInstance().getDrawable(R.drawable.ic_extension);
@@ -881,15 +850,10 @@ public class ChanManager {
 	private static Fingerprints extractFingerprints(PackageInfo packageInfo) {
 		HashSet<String> fingerprints = new HashSet<>();
 		List<android.content.pm.Signature> signatures;
-		if (C.API_PIE) {
-			android.content.pm.Signature[] signaturesArray = packageInfo.signingInfo != null
-					? packageInfo.signingInfo.getApkContentsSigners() : null;
-			signatures = signaturesArray != null ? Arrays.asList(signaturesArray) : Collections.emptyList();
-		} else {
-			@SuppressWarnings("deprecation")
-			android.content.pm.Signature[] signaturesArray = packageInfo.signatures;
-			signatures = signaturesArray != null ? Arrays.asList(signaturesArray) : Collections.emptyList();
-		}
+		android.content.pm.Signature[] signaturesArray = packageInfo.signingInfo != null
+				? packageInfo.signingInfo.getApkContentsSigners() : null;
+		signatures = signaturesArray != null ? Arrays.asList(signaturesArray) : Collections.emptyList();
+	
 		for (android.content.pm.Signature signature : signatures) {
 			if (signature != null) {
 				fingerprints.add(StringUtils.formatHex(Hasher

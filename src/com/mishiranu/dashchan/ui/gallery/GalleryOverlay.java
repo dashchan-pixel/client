@@ -172,10 +172,9 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		WindowManager.LayoutParams attributes = getWindow().getAttributes();
 		attributes.windowAnimations = imageViewPosition == null
 				? R.style.Animation_Gallery_Full : R.style.Animation_Gallery_Partial;
-		if (C.API_PIE) {
-			attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams
-					.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-		}
+		attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams
+				.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+	
 
 		if (rootView == null) {
 			Context context = ThemeEngine.attach(new ContextThemeWrapper
@@ -312,15 +311,14 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		if (titleSubtitle != null) {
 			dialog.setTitleSubtitle(titleSubtitle.first, titleSubtitle.second);
 		}
-		if (C.API_LOLLIPOP) {
-			Window window = getWindow();
-			if (window != null) {
-				int color = ACTION_BAR_COLOR;
-				window.setStatusBarColor(color);
-				window.setNavigationBarColor(color);
-				ViewUtils.setWindowLayoutFullscreen(window);
-			}
+		Window window = getWindow();
+		if (window != null) {
+			int color = ACTION_BAR_COLOR;
+			window.setStatusBarColor(color);
+			window.setNavigationBarColor(color);
+			ViewUtils.setWindowLayoutFullscreen(window);
 		}
+	
 		setScreenOnFixed(screenOnFixed);
 		invalidateSystemUiVisibility();
 	}
@@ -540,13 +538,9 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 			fromActionBarAlpha = Color.alpha(drawable instanceof ColorDrawable
 					? ((ColorDrawable) drawable).getColor() : statusBarAlpha);
 			toActionBarAlpha = actionBarAlpha;
-			if (C.API_LOLLIPOP) {
-				fromStatusBarAlpha = Color.alpha(getWindow().getStatusBarColor());
-				toStatusBarAlpha = statusBarAlpha;
-			} else {
-				fromStatusBarAlpha = 0x00;
-				toStatusBarAlpha = 0x00;
-			}
+			fromStatusBarAlpha = Color.alpha(getWindow().getStatusBarColor());
+			toStatusBarAlpha = statusBarAlpha;
+		
 			if (fromActionBarAlpha != toActionBarAlpha || fromStatusBarAlpha != toStatusBarAlpha) {
 				cornerAnimator = this;
 				run();
@@ -565,12 +559,11 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 				if (actionContextBar != null) {
 					actionContextBar.setBackgroundColor(actionBarColor);
 				}
-				if (C.API_LOLLIPOP) {
-					int statusBarColorAlpha = (int) AnimationUtils.lerp(fromStatusBarAlpha, toStatusBarAlpha, t);
-					int color = (statusBarColorAlpha << 24) | (0x00ffffff & ACTION_BAR_COLOR);
-					getWindow().setStatusBarColor(color);
-					getWindow().setNavigationBarColor(color);
-				}
+				int statusBarColorAlpha = (int) AnimationUtils.lerp(fromStatusBarAlpha, toStatusBarAlpha, t);
+				int color = (statusBarColorAlpha << 24) | (0x00ffffff & ACTION_BAR_COLOR);
+				getWindow().setStatusBarColor(color);
+				getWindow().setNavigationBarColor(color);
+			
 				if (t < 1f) {
 					rootView.postOnAnimation(this);
 				} else if (cornerAnimator == this) {
@@ -729,30 +722,17 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	private void invalidateSystemUiFlags() {
-		if (C.API_LOLLIPOP) {
-			boolean visible = isSystemUiVisible();
-			Window window = getWindow();
-			if (C.API_R) {
-				WindowInsetsController controller = window.getInsetsController();
-				controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-				if (visible) {
-					controller.show(WindowInsets.Type.systemBars());
-				} else {
-					controller.hide(WindowInsets.Type.systemBars());
-				}
-			} else {
-				View decorView = window.getDecorView();
-				@SuppressWarnings("deprecation")
-				Runnable runnable = () -> {
-					@SuppressWarnings("deprecation")
-					int visibility = decorView.getSystemUiVisibility();
-					visibility = FlagUtils.set(visibility, View.SYSTEM_UI_FLAG_FULLSCREEN |
-							View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION, !visible);
-					decorView.setSystemUiVisibility(visibility);
-				};
-				runnable.run();
-			}
+		boolean visible = isSystemUiVisible();
+		Window window = getWindow();
+		WindowInsetsController controller = window.getInsetsController();
+		controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+		if (visible) {
+			controller.show(WindowInsets.Type.systemBars());
+		} else {
+			controller.hide(WindowInsets.Type.systemBars());
 		}
+	
+	
 	}
 
 	@Override
@@ -837,9 +817,8 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
 				WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
 		layoutParams.windowAnimations = R.style.Animation_Gallery_Full;
-		if (C.API_LOLLIPOP) {
-			layoutParams.flags |= WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
-		}
+		layoutParams.flags |= WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
+	
 		windowManager.addView(frameLayout, layoutParams);
 
 		showcaseDestroy = () -> windowManager.removeViewImmediate(frameLayout);

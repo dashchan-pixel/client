@@ -44,11 +44,8 @@ public class AudioFocus {
 				}
 			}
 		};
-		if (C.API_OREO) {
-			implementation = new Implementation26();
-		} else {
-			implementation = new Implementation8();
-		}
+		implementation = new Implementation26();
+	
 	}
 
 	private boolean acquired = false;

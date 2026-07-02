@@ -28,9 +28,6 @@ public final class FileUriClipboard {
 		ContentResolver contentResolver = context.getContentResolver();
 		ClipData clip = ClipData.newUri(contentResolver, originalFileName, fileUri);
 		clipboard.setPrimaryClip(clip);
-		if (!C.API_S_V2) {
-			ClickableToast.show(R.string.copied_to_clipboard);
-		}
 	}
 
 }

@@ -81,7 +81,7 @@ public class CategoriesFragment extends PreferenceFragment {
 	public void onResume() {
 		super.onResume();
 
-		boolean hasIssues = C.API_NOUGAT_MR1 && !Settings.canDrawOverlays(requireContext());
+		boolean hasIssues = !Settings.canDrawOverlays(requireContext());
 		setCategoryTint(compatibilityPreference, hasIssues ? ColorStateList.valueOf(ResourceUtils
 				.getColor(requireContext(), R.attr.colorTextError)) : null);
 	}

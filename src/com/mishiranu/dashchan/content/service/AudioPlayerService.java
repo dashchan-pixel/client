@@ -89,16 +89,14 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 		});
 		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		int notificationColor = 0;
-		if (C.API_LOLLIPOP) {
-			ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
-			notificationColor = theme.accent;
-		}
+		ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
+		notificationColor = theme.accent;
+	
 		this.notificationColor = notificationColor;
-		if (C.API_OREO) {
-			notificationManager.createNotificationChannel
-					(new NotificationChannel(C.NOTIFICATION_CHANNEL_AUDIO_PLAYER,
-							getString(R.string.audio_player), NotificationManager.IMPORTANCE_LOW));
-		}
+		notificationManager.createNotificationChannel
+				(new NotificationChannel(C.NOTIFICATION_CHANNEL_AUDIO_PLAYER,
+						getString(R.string.audio_player), NotificationManager.IMPORTANCE_LOW));
+	
 		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
 		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName() + ":AudioPlayerWakeLock");
 		wakeLock.setReferenceCounted(false);
@@ -178,10 +176,9 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 		}
 		wakeLock.release();
 		if (stopSelf) {
-			if (C.API_OREO) {
-				// Ensure service was started foreground at least once
-				startForeground(getPlaybackNotification(false));
-			}
+			// Ensure service was started foreground at least once
+			startForeground(getPlaybackNotification(false));
+		
 			stopForeground(true);
 			stopSelf();
 		}
@@ -332,15 +329,14 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 					new Intent(this, MainActivity.class).setAction(C.ACTION_PLAYER),
 					PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 			builder.setContentIntent(contentIntent);
-			PendingIntent toggleIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
+			PendingIntent toggleIntent = PendingIntent.getForegroundService(this, 0,
 					obtainIntent(this, ACTION_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 			boolean playing = mediaPlayer != null && mediaPlayer.isPlaying();
-			builder.addAction(C.API_LOLLIPOP ? 0 : playing
-							? R.drawable.ic_action_pause_dark : R.drawable.ic_action_play_dark,
+			builder.addAction(0,
 					getString(playing ? R.string.pause : R.string.play), toggleIntent);
-			PendingIntent cancelIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
+			PendingIntent cancelIntent = PendingIntent.getForegroundService(this, 0,
 					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-			builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
+			builder.addAction(0,
 					getString(R.string.stop), cancelIntent);
 			this.builder = builder;
 			builder.setContentTitle(getString(R.string.audio_playback));
@@ -355,23 +351,22 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 			builder = new NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_AUDIO_PLAYER);
 			builder.setSmallIcon(error ? android.R.drawable.stat_sys_download_done
 					: android.R.drawable.stat_sys_download);
-			builder.setDeleteIntent(AndroidUtils.getAnyServicePendingIntent(this, 0,
+			builder.setDeleteIntent(PendingIntent.getForegroundService(this, 0,
 					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			if (error) {
-				PendingIntent retryIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
+				PendingIntent retryIntent = PendingIntent.getForegroundService(this, 0,
 						obtainIntent(this, ACTION_START).setData(uri).putExtra(EXTRA_CHAN_NAME, chanName)
 								.putExtra(EXTRA_FILE_NAME, fileName), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-				builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_refresh_dark,
+				builder.addAction(0,
 						getString(R.string.retry), retryIntent);
 			} else {
-				PendingIntent cancelIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
+				PendingIntent cancelIntent = PendingIntent.getForegroundService(this, 0,
 						obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-				builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
+				builder.addAction(0,
 						getString(android.R.string.cancel), cancelIntent);
 			}
-			if (C.API_LOLLIPOP) {
-				builder.setColor(notificationColor);
-			}
+			builder.setColor(notificationColor);
+		
 			this.builder = builder;
 		}
 		if (error) {
@@ -417,7 +412,7 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 	}
 
 	public static void start(Context context, String chanName, Uri uri, String fileName) {
-		AndroidUtils.startAnyService(context, obtainIntent(context, ACTION_START).setData(uri)
+		context.startForegroundService(obtainIntent(context, ACTION_START).setData(uri)
 				.putExtra(EXTRA_CHAN_NAME, chanName).putExtra(EXTRA_FILE_NAME, fileName));
 	}
 }

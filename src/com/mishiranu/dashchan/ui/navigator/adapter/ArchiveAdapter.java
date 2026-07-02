@@ -96,6 +96,6 @@ public class ArchiveAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
 	public DividerItemDecoration.Configuration configureDivider(DividerItemDecoration.Configuration configuration,
 			@SuppressWarnings("unused") int position) {
-		return configuration.need(!C.API_LOLLIPOP);
+		return configuration.need(false);
 	}
 }

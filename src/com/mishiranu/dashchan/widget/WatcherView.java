@@ -42,9 +42,8 @@ public class WatcherView extends FrameLayout {
 
 		setBackgroundResource(ResourceUtils.getResourceId(context, android.R.attr.selectableItemBackground, 0));
 		progressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleSmall);
-		if (C.API_LOLLIPOP) {
-			progressBar.setIndeterminateTintList(ColorStateList.valueOf(Color.WHITE));
-		}
+		progressBar.setIndeterminateTintList(ColorStateList.valueOf(Color.WHITE));
+	
 		addView(progressBar, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT,
 				FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
 		this.colorSet = colorSet;
@@ -58,16 +57,12 @@ public class WatcherView extends FrameLayout {
 	@Override
 	public void draw(Canvas canvas) {
 		float density = ResourceUtils.obtainDensity(this);
-		if (C.API_LOLLIPOP) {
-			int paddingHorizontal = (int) (8f * density);
-			int paddingVertical = (int) (12f * density);
-			rectF.set(paddingHorizontal, paddingVertical, getWidth() - paddingHorizontal,
-					getHeight() - paddingVertical);
-		} else {
-			int padding = (int) (8f * density);
-			rectF.set(padding, padding, getWidth() - padding, getHeight() - padding);
-		}
-		int cornerRadius = C.API_LOLLIPOP ? (int) density : (int) (4f * density);
+		int paddingHorizontal = (int) (8f * density);
+		int paddingVertical = (int) (12f * density);
+		rectF.set(paddingHorizontal, paddingVertical, getWidth() - paddingHorizontal,
+				getHeight() - paddingVertical);
+	
+		int cornerRadius =(int) density;
 		paint.setColor(color);
 		canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, paint);
 		canvas.save();
@@ -75,7 +70,7 @@ public class WatcherView extends FrameLayout {
 		super.draw(canvas);
 
 		if (progressBar.getVisibility() != View.VISIBLE) {
-			int fontSize = C.API_LOLLIPOP ? 12 : 16;
+			int fontSize =12;
 			paint.setColor(Color.WHITE);
 			if (!hasNew) {
 				paint.setAlpha(0x99);

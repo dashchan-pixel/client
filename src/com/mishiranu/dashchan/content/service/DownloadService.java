@@ -126,19 +126,17 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		notificationsWorker.start();
 		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		int notificationColor = 0;
-		if (C.API_LOLLIPOP) {
-			ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
-			notificationColor = theme.accent;
-		}
+		ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
+		notificationColor = theme.accent;
+	
 		this.notificationColor = notificationColor;
-		if (C.API_OREO) {
-			notificationManager.createNotificationChannel
-					(new NotificationChannel(C.NOTIFICATION_CHANNEL_DOWNLOADING,
-							getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW));
-			notificationManager.createNotificationChannel(AndroidUtils
-					.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE,
-							getString(R.string.completed_downloads)));
-		}
+		notificationManager.createNotificationChannel
+				(new NotificationChannel(C.NOTIFICATION_CHANNEL_DOWNLOADING,
+						getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW));
+		notificationManager.createNotificationChannel(AndroidUtils
+				.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE,
+						getString(R.string.completed_downloads)));
+	
 		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
 		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
 				getPackageName() + ":DownloadServiceWakeLock");
@@ -235,7 +233,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 				}
 			}
 		}
-		if (external && C.USE_SAF) {
+		if (external) {
 			return Preferences.getDownloadUriTree(this) != null;
 		} else {
 			return true;
@@ -954,7 +952,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 			if (foreground) {
 				if (!isForegroundWorker) {
 					isForegroundWorker = true;
-					AndroidUtils.startAnyService(this, new Intent(this, DownloadService.class));
+					this.startForegroundService(new Intent(this, DownloadService.class));
 				}
 				startForeground(C.NOTIFICATION_ID_DOWNLOADING, notification);
 			} else {
@@ -995,7 +993,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 			switch (notificationData.type) {
 				case PROGRESS:
 				case REQUEST: {
-					builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
+					builder.addAction(0,
 							getString(android.R.string.cancel), PendingIntent.getBroadcast(this, 0,
 									new Intent(this, Receiver.class).setAction(ACTION_CANCEL),
 									PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
@@ -1003,7 +1001,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 				}
 				case RESULT: {
 					if (notificationData.allowRetry) {
-						builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_refresh_dark,
+						builder.addAction(0,
 								getString(R.string.retry), PendingIntent.getBroadcast(this, 0,
 										new Intent(this, Receiver.class).setAction(ACTION_RETRY),
 										PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
@@ -1062,45 +1060,41 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 		builder.setContentTitle(contentTitle);
 		builder.setContentText(contentText);
-		if (C.API_LOLLIPOP) {
-			if (headsUp && Preferences.isNotifyDownloadComplete()) {
-				builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE);
-				builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-				builder.setVibrate(new long[0]);
-			} else {
-				builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING);
-				builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-				builder.setVibrate(null);
-			}
+		if (headsUp && Preferences.isNotifyDownloadComplete()) {
+			builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE);
+			builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+			builder.setVibrate(new long[0]);
 		} else {
-			builder.setTicker(headsUp ? contentTitle : null);
+			builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING);
+			builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+			builder.setVibrate(null);
 		}
+	
 		startStopForeground(foreground, foreground ? builder.build() : null);
 		if (!foreground) {
-			if (C.API_NOUGAT) {
-				// Await notification removed so it could be dismissed by user
-				for (int i = 0; i < 10; i++) {
-					StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
-					if (notifications == null) {
+			// Await notification removed so it could be dismissed by user
+			for (int i = 0; i < 10; i++) {
+				StatusBarNotification[] notifications = notificationManager.getActiveNotifications();
+				if (notifications == null) {
+					break;
+				}
+				boolean found = false;
+				for (StatusBarNotification notification : notifications) {
+					if (notification.getId() == C.NOTIFICATION_ID_DOWNLOADING) {
+						found = true;
 						break;
-					}
-					boolean found = false;
-					for (StatusBarNotification notification : notifications) {
-						if (notification.getId() == C.NOTIFICATION_ID_DOWNLOADING) {
-							found = true;
-							break;
-						}
-					}
-					if (!found) {
-						break;
-					}
-					try {
-						Thread.sleep(50);
-					} catch (InterruptedException e) {
-						return;
 					}
 				}
+				if (!found) {
+					break;
+				}
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					return;
+				}
 			}
+		
 			notificationManager.notify(C.NOTIFICATION_ID_DOWNLOADING, builder.build());
 		}
 	}

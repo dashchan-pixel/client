@@ -34,31 +34,25 @@ public class NetworkObserver {
 		Context context = MainApplication.getInstance();
 		connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		onActiveNetworkChange();
-		if (C.API_NOUGAT) {
-			Runnable onActiveNetworkChange = NetworkObserver.this::onActiveNetworkChange;
-			connectivityManager.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
-				private void handleChange() {
-					ConcurrentUtils.HANDLER.removeCallbacks(onActiveNetworkChange);
-					ConcurrentUtils.HANDLER.postDelayed(onActiveNetworkChange, 500L);
-				}
+		Runnable onActiveNetworkChange = NetworkObserver.this::onActiveNetworkChange;
+		connectivityManager.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
+			private void handleChange() {
+				ConcurrentUtils.HANDLER.removeCallbacks(onActiveNetworkChange);
+				ConcurrentUtils.HANDLER.postDelayed(onActiveNetworkChange, 500L);
+			}
 
-				@Override
-				public void onCapabilitiesChanged(@NonNull Network network,
-						@NonNull NetworkCapabilities networkCapabilities) {
-					handleChange();
-				}
+			@Override
+			public void onCapabilitiesChanged(@NonNull Network network,
+					@NonNull NetworkCapabilities networkCapabilities) {
+				handleChange();
+			}
 
-				@Override
-				public void onLost(@NonNull Network network) {
-					handleChange();
-				}
-			});
-		} else {
-			@SuppressWarnings("deprecation")
-			String action = ConnectivityManager.CONNECTIVITY_ACTION;
-			context.registerReceiver(AndroidUtils.createReceiver((r, c, i) -> onActiveNetworkChange()),
-					new IntentFilter(action));
-		}
+			@Override
+			public void onLost(@NonNull Network network) {
+				handleChange();
+			}
+		});
+	
 	}
 
 	@RequiresApi(Build.VERSION_CODES.M)
@@ -82,11 +76,8 @@ public class NetworkObserver {
 			}
 			case MOBILE: {
 				if (SystemClock.elapsedRealtime() - last3GChecked >= 2000) {
-					if (C.API_PIE) {
-						update3GConnected28();
-					} else {
-						update3GConnectedPre28();
-					}
+					update3GConnected28();
+				
 					last3GChecked = SystemClock.elapsedRealtime();
 				}
 				return last3GAvailable;
@@ -157,11 +148,8 @@ public class NetworkObserver {
 	}
 
 	private void onActiveNetworkChange() {
-		if (C.API_PIE) {
-			updateNetworkState28();
-		} else {
-			updateNetworkStatePre28();
-		}
+		updateNetworkState28();
+	
 		last3GChecked = 0L;
 	}
 

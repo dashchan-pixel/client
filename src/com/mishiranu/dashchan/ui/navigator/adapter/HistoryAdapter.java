@@ -100,12 +100,8 @@ public class HistoryAdapter extends CursorAdapter<HistoryDatabase.HistoryCursor,
 
 	public DividerItemDecoration.Configuration configureDivider
 			(DividerItemDecoration.Configuration configuration, int position) {
-		if (C.API_LOLLIPOP) {
-			return configuration.need(true);
-		} else {
-			Header header = position + 1 < getItemCount() ? getItemHeader(position + 1) : null;
-			return configuration.need(header == null);
-		}
+		return configuration.need(true);
+	
 	}
 
 	private Header getItemHeader(int position) {

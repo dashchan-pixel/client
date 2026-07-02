@@ -88,7 +88,7 @@ public class AboutFragment extends PreferenceFragment implements FragmentHandler
 	}
 
 	private void restoreBackup() {
-		if (C.USE_SAF && Preferences.getDownloadUriTree(requireContext()) == null) {
+		if (Preferences.getDownloadUriTree(requireContext()) == null) {
 			if (((FragmentHandler) requireActivity()).requestStorage()) {
 				inStorageRequest = true;
 			}

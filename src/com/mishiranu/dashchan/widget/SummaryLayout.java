@@ -65,14 +65,11 @@ public class SummaryLayout implements CommentTextView.PrepareToCopyListener, Vie
 		textView.setPrepareToCopyListener(this);
 
 		Context dividerContext;
-		if (C.API_LOLLIPOP) {
-			// Dialogs have disabled dividers
-			boolean light = GraphicsUtils.isLight(ResourceUtils.getDialogBackground(context));
-			dividerContext = new ContextThemeWrapper(context,
-					light ? R.style.Theme_Main_Light : R.style.Theme_Main_Dark);
-		} else {
-			dividerContext = context;
-		}
+		// Dialogs have disabled dividers
+		boolean light = GraphicsUtils.isLight(ResourceUtils.getDialogBackground(context));
+		dividerContext = new ContextThemeWrapper(context,
+				light ? R.style.Theme_Main_Light : R.style.Theme_Main_Dark);
+	
 		dividerDrawable = ResourceUtils.getDrawable(dividerContext, android.R.attr.dividerHorizontal, 0);
 
 		int unspecifiedSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
@@ -97,13 +94,9 @@ public class SummaryLayout implements CommentTextView.PrepareToCopyListener, Vie
 				(dividerDrawable != null ? dividerDrawable.getIntrinsicHeight() : 0), false, true);
 
 		textView.setText(null);
-		if (C.API_LOLLIPOP) {
-			textView.setPadding((int) (24f * density), (int) (20f * density),
-					(int) (24f * density), (int) (8f * density));
-		} else {
-			textView.setPadding((int) (16f * density), (int) (16f * density),
-					(int) (16f * density), (int) (16f * density));
-		}
+		textView.setPadding((int) (24f * density), (int) (20f * density),
+				(int) (24f * density), (int) (8f * density));
+	
 	}
 
 	private static float calculateFontSize(TextView textView, int padding, boolean titleFirst, boolean titleSecond) {

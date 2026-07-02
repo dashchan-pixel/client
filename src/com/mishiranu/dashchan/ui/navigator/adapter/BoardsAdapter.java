@@ -49,11 +49,8 @@ public class BoardsAdapter extends CursorAdapter<ChanDatabase.BoardCursor, Recyc
 	public DividerItemDecoration.Configuration configureDivider
 			(DividerItemDecoration.Configuration configuration, int position) {
 		String header = position + 1 < getItemCount() ? getItemHeader(position + 1) : null;
-		if (C.API_LOLLIPOP) {
-			return configuration.need(header != null);
-		} else {
-			return configuration.need(header == null);
-		}
+		return configuration.need(header != null);
+	
 	}
 
 	public String getItemHeader(int position) {

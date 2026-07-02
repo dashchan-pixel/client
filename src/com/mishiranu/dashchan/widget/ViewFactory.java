@@ -32,38 +32,27 @@ public class ViewFactory {
 
 	public static TextView makeListTextHeader(ViewGroup parent) {
 		TextView textView;
-		if (C.API_LOLLIPOP) {
-			textView = new TextView(parent.getContext());
-			float density = ResourceUtils.obtainDensity(parent);
-			textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-					ViewGroup.LayoutParams.WRAP_CONTENT));
-			textView.setMinHeight((int) (48f * density));
-			textView.setGravity(Gravity.CENTER_VERTICAL);
-			textView.setTextColor(ThemeEngine.getTheme(textView.getContext()).accent);
-			textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			ViewUtils.setTextSizeScaled(textView, 14);
-			textView.setPadding((int) (16f * density), (int) (16f * density), (int) (16f * density),
-					(int) (8f * density));
-		} else {
-			textView = (TextView) LayoutInflater.from(parent.getContext())
-					.inflate(android.R.layout.preference_category, parent, false);
-			float density = ResourceUtils.obtainDensity(parent);
-			textView.setPadding((int) (8f * density), textView.getPaddingTop(), (int) (8f * density),
-					textView.getPaddingBottom());
-		}
+		textView = new TextView(parent.getContext());
+		float density = ResourceUtils.obtainDensity(parent);
+		textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+				ViewGroup.LayoutParams.WRAP_CONTENT));
+		textView.setMinHeight((int) (48f * density));
+		textView.setGravity(Gravity.CENTER_VERTICAL);
+		textView.setTextColor(ThemeEngine.getTheme(textView.getContext()).accent);
+		textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		ViewUtils.setTextSizeScaled(textView, 14);
+		textView.setPadding((int) (16f * density), (int) (16f * density), (int) (16f * density),
+				(int) (8f * density));
+	
 		return textView;
 	}
 
 	public static View makeSingleLineListItem(ViewGroup parent) {
 		float density = ResourceUtils.obtainDensity(parent);
 		TextView textView = new TextView(parent.getContext());
-		if (C.API_LOLLIPOP) {
-			textView.setPadding((int) (16f * density), 0, (int) (16f * density), 0);
-		} else {
-			textView.setPadding((int) (8f * density), 0, (int) (8f * density), 0);
-		}
-		TypedArray typedArray = textView.getContext().obtainStyledAttributes(new int[] {C.API_LOLLIPOP
-				? android.R.attr.textAppearanceListItem : android.R.attr.textAppearanceMedium,
+		textView.setPadding((int) (16f * density), 0, (int) (16f * density), 0);
+	
+		TypedArray typedArray = textView.getContext().obtainStyledAttributes(new int[] {android.R.attr.textAppearanceListItem,
 				android.R.attr.listPreferredItemHeightSmall});
 		TextViewCompat.setTextAppearance(textView, typedArray.getResourceId(0, 0));
 		textView.setMinimumHeight(typedArray.getDimensionPixelSize(1, 0));
@@ -94,10 +83,7 @@ public class ViewFactory {
 		}
 	}
 
-	private static final int[] ATTRS_TWO_LINES = {
-			C.API_LOLLIPOP ? android.R.attr.listPreferredItemHeightSmall : android.R.attr.listPreferredItemHeight,
-			C.API_LOLLIPOP ? android.R.attr.textAppearanceListItem : android.R.attr.textAppearanceMedium,
-			C.API_LOLLIPOP ? android.R.attr.textAppearanceListItemSecondary : android.R.attr.textAppearanceSmall,
+	private static final int[] ATTRS_TWO_LINES = {android.R.attr.listPreferredItemHeightSmall,android.R.attr.textAppearanceListItem,android.R.attr.textAppearanceListItemSecondary,
 			android.R.attr.textColorSecondary
 	};
 
@@ -106,8 +92,8 @@ public class ViewFactory {
 		LinearLayout outerLayout = new LinearLayout(parent.getContext());
 		outerLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
 				ViewGroup.LayoutParams.WRAP_CONTENT));
-		int outerPaddingHorizontal = (int) ((C.API_LOLLIPOP ? 16f : 8f) * density + 0.5f);
-		int innerPaddingVertical = (int) ((C.API_LOLLIPOP ? 16f : 6f) * density + 0.5f);
+		int outerPaddingHorizontal = (int) ((16f) * density + 0.5f);
+		int innerPaddingVertical = (int) ((16f) * density + 0.5f);
 		boolean featureWidgetFrame = FlagUtils.get(features, FEATURE_WIDGET);
 		LinearLayout innerLayout;
 		if (featureWidgetFrame) {
@@ -177,11 +163,8 @@ public class ViewFactory {
 				widgetFrame.setVisibility(View.GONE);
 				outerLayout.addView(widgetFrame, LinearLayout.LayoutParams.WRAP_CONTENT,
 						LinearLayout.LayoutParams.MATCH_PARENT);
-				if (C.API_LOLLIPOP) {
-					ViewUtils.setNewMarginRelative(widgetFrame, outerPaddingHorizontal, null, null, null);
-				} else {
-					widgetFrame.setMinimumWidth((int) (48f * density + 0.5f));
-				}
+				ViewUtils.setNewMarginRelative(widgetFrame, outerPaddingHorizontal, null, null, null);
+			
 			} else {
 				widgetFrame = null;
 			}
@@ -268,10 +251,9 @@ public class ViewFactory {
 		layout.setGravity(Gravity.CENTER);
 		ImageView image = new ImageView(layout.getContext());
 		image.setImageDrawable(ResourceUtils.getDrawable(image.getContext(), R.attr.iconButtonWarning, 0));
-		if (C.API_LOLLIPOP) {
-			image.setImageTintList(ResourceUtils.getColorStateList(image.getContext(),
-					android.R.attr.textColorSecondary));
-		}
+		image.setImageTintList(ResourceUtils.getColorStateList(image.getContext(),
+				android.R.attr.textColorSecondary));
+	
 		layout.addView(image, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		TextView text = new TextView(layout.getContext());
 		TextViewCompat.setTextAppearance(text, ResourceUtils.getResourceId(text.getContext(),
@@ -362,9 +344,8 @@ public class ViewFactory {
 			switchView.setVisibility(View.GONE);
 		} else {
 			switchView.setOnCheckedChangeListener((v, isChecked) -> holder.setEnabled(isChecked));
-			if (C.API_LOLLIPOP) {
-				ViewUtils.setNewMarginRelative(switchView, null, null, 0, null);
-			}
+			ViewUtils.setNewMarginRelative(switchView, null, null, 0, null);
+		
 		}
 		return holder;
 	}

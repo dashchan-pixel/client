@@ -13,15 +13,7 @@ public class UserAgentProvider {
 
 	@MainThread
 	public static void initialize(Application appContext) {
-		String userAgent;
-
-		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-			userAgent = WebSettings.getDefaultUserAgent(appContext);
-		} else {
-			userAgent = new WebView(appContext).getSettings().getUserAgentString();
-		}
-
-		INSTANCE.userAgent = userAgent;
+		INSTANCE.userAgent = WebSettings.getDefaultUserAgent(appContext);
 	}
 
 	public static UserAgentProvider getInstance() {

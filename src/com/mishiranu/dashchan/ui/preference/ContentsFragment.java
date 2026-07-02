@@ -75,14 +75,10 @@ public class ContentsFragment extends PreferenceFragment {
 		replyNotifications = addCheck(false, "reply_notifications", false,
 				R.string.reply_notifications, R.string.reply_notifications__format);
 		replyNotifications.setOnClickListener(p -> {
-			if (C.API_OREO) {
-				Preferences.setWatcherNotifications(p.getValue() ? Collections.emptySet()
-						: Collections.singleton(Preferences.NotificationFeature.ENABLED));
-				invalidateReplyNotifications();
-			} else {
-				WatcherNotificationsDialog dialog = new WatcherNotificationsDialog();
-				dialog.show(getChildFragmentManager(), WatcherNotificationsDialog.class.getName());
-			}
+			Preferences.setWatcherNotifications(p.getValue() ? Collections.emptySet()
+					: Collections.singleton(Preferences.NotificationFeature.ENABLED));
+			invalidateReplyNotifications();
+		
 		});
 		invalidateReplyNotifications();
 

@@ -96,18 +96,14 @@ public class MediaFragment extends PreferenceFragment implements FragmentHandler
 				R.string.detailed_file_name, R.string.detailed_file_name__summary);
 		addCheck(true, Preferences.KEY_DOWNLOAD_ORIGINAL_NAME, Preferences.DEFAULT_DOWNLOAD_ORIGINAL_NAME,
 				R.string.original_file_name, R.string.original_file_name__summary);
-		if (C.USE_SAF) {
-			downloadUriTreePreference = addButton(getString(R.string.download_directory),
-					p -> DataFile.obtain(DataFile.Target.DOWNLOADS, null).getName());
-			downloadUriTreePreference.setOnClickListener(p -> {
-				if (((FragmentHandler) requireActivity()).requestStorage()) {
-					inStorageRequest = true;
-				}
-			});
-		} else {
-			addEdit(Preferences.KEY_DOWNLOAD_PATH, null, R.string.download_path, C.DEFAULT_DOWNLOAD_PATH,
-					InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-		}
+		downloadUriTreePreference = addButton(getString(R.string.download_directory),
+				p -> DataFile.obtain(DataFile.Target.DOWNLOADS, null).getName());
+		downloadUriTreePreference.setOnClickListener(p -> {
+			if (((FragmentHandler) requireActivity()).requestStorage()) {
+				inStorageRequest = true;
+			}
+		});
+	
 		addList(Preferences.KEY_DOWNLOAD_SUBDIR, enumList(Preferences.DownloadSubdirMode.values(), v -> v.value),
 				Preferences.DEFAULT_DOWNLOAD_SUBDIR.value, R.string.show_download_configuration_dialog,
 				enumResList(Preferences.DownloadSubdirMode.values(), v -> v.titleResId));
@@ -118,10 +114,9 @@ public class MediaFragment extends PreferenceFragment implements FragmentHandler
 		subdirectoryPreference.setDescription(BUILDER_SUBDIRECTORY.fromHtmlReduced(subdirectoryHtml));
 		subdirectoryPreference.setNeutralButton(getString(R.string.more_info),
 				() -> showSubdirectoryInfoDialog(getChildFragmentManager()));
-		if (C.API_LOLLIPOP) {
-			addCheck(true, Preferences.KEY_NOTIFY_DOWNLOAD_COMPLETE, Preferences.DEFAULT_NOTIFY_DOWNLOAD_COMPLETE,
-					R.string.notify_when_download_is_completed, R.string.notify_when_download_is_completed__summary);
-		}
+		addCheck(true, Preferences.KEY_NOTIFY_DOWNLOAD_COMPLETE, Preferences.DEFAULT_NOTIFY_DOWNLOAD_COMPLETE,
+				R.string.notify_when_download_is_completed, R.string.notify_when_download_is_completed__summary);
+	
 		addList(Preferences.KEY_MEDIA_LOADING_ACTION, enumList(Preferences.MediaLoadingAction.values(), v -> v.value),
 				Preferences.DEFAULT_MEDIA_LOADING_ACTION.value, R.string.standard_action_when_loading_media,
 				enumResList(Preferences.MediaLoadingAction.values(), v -> v.titleResId));

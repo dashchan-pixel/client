@@ -97,12 +97,9 @@ public class MainApplication extends Application {
 
 	@TargetApi(Build.VERSION_CODES.KITKAT)
 	public boolean isLowRam() {
-		if (C.API_KITKAT) {
-			ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-			return activityManager != null && activityManager.isLowRamDevice();
-		} else {
-			return Runtime.getRuntime().maxMemory() <= 64 * 1024 * 1024;
-		}
+		ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+		return activityManager != null && activityManager.isLowRamDevice();
+	
 	}
 
 	public File getSharedPrefsDir() {

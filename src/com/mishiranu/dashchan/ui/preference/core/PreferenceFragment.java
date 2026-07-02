@@ -107,16 +107,12 @@ public abstract class PreferenceFragment extends ContentFragment {
 			Preference<?> current = preferences.get(position);
 			Preference<?> next = preferences.size() > position + 1 ? preferences.get(position + 1) : null;
 			boolean need = !(current instanceof HeaderPreference) &&
-					(!(next instanceof HeaderPreference) || C.API_LOLLIPOP);
-			if (need && C.API_LOLLIPOP) {
+					(!(next instanceof HeaderPreference) || true);
+			if (need) {
 				need = !(current instanceof CategoryPreference) && !(next instanceof CategoryPreference);
 			}
 			return c.need(need);
 		}));
-		if (!C.API_LOLLIPOP) {
-			float density = ResourceUtils.obtainDensity(recyclerView);
-			ViewUtils.setNewPadding(recyclerView, (int) (16f * density), null, (int) (16f * density), null);
-		}
 		ExpandedLayout layout = new ExpandedLayout(container.getContext(), true);
 		layout.addView(recyclerView, ExpandedLayout.LayoutParams.MATCH_PARENT,
 				ExpandedLayout.LayoutParams.MATCH_PARENT);
@@ -216,8 +212,7 @@ public abstract class PreferenceFragment extends ContentFragment {
 	}
 
 	public Preference<Void> addCategory(int titleResId, int iconResId) {
-		return addCategory(getString(titleResId), C.API_LOLLIPOP
-				? ContextCompat.getDrawable(requireContext(), iconResId) : null);
+		return addCategory(getString(titleResId),ContextCompat.getDrawable(requireContext(), iconResId));
 	}
 
 	public Preference<Void> addCategory(CharSequence title, Drawable icon) {
@@ -500,18 +495,8 @@ public abstract class PreferenceFragment extends ContentFragment {
 		@Override
 		public ViewHolder createViewHolder(ViewGroup parent) {
 			ViewHolder viewHolder = super.createViewHolder(parent);
-			if (C.API_LOLLIPOP) {
-				return createIconViewHolder(parent);
-			} else  {
-				TypedArray typedArray = parent.getContext()
-						.obtainStyledAttributes(new int[] {android.R.attr.listPreferredItemHeightSmall});
-				if (typedArray.hasValue(0)) {
-					viewHolder.view.setMinimumHeight(typedArray.getDimensionPixelSize(0,
-							viewHolder.view.getMinimumHeight()));
-				}
-				typedArray.recycle();
-				return viewHolder;
-			}
+			return createIconViewHolder(parent);
+		
 		}
 
 		@Override
@@ -529,10 +514,8 @@ public abstract class PreferenceFragment extends ContentFragment {
 				IconViewHolder iconViewHolder = (IconViewHolder) viewHolder;
 				iconViewHolder.icon.setImageDrawable(icon);
 				iconViewHolder.icon.setVisibility(icon != null ? View.VISIBLE : View.GONE);
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-					iconViewHolder.icon.setImageTintList(tintList != null ? tintList : ColorStateList.valueOf(ResourceUtils
-							.getColor(viewHolder.view.getContext(), android.R.attr.textColorSecondary)));
-				}
+				iconViewHolder.icon.setImageTintList(tintList != null ? tintList : ColorStateList.valueOf(ResourceUtils
+						.getColor(viewHolder.view.getContext(), android.R.attr.textColorSecondary)));
 			}
 		}
 	}

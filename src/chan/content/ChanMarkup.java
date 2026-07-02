@@ -755,10 +755,8 @@ public class ChanMarkup implements Chan.Linked {
 						spannable.setSpan(span, styledItem.start, styledItem.end,
 								SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
 						if (styledItem.tag == TAG_AI) {
-							if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-								spannable.setSpan(new LeadingMarginSpan.Standard(30), styledItem.start, styledItem.end,
-										SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
-							}
+							spannable.setSpan(new LeadingMarginSpan.Standard(30), styledItem.start, styledItem.end,
+									SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE);
 						}
 					}
 				}

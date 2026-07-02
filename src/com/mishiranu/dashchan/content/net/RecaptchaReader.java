@@ -124,7 +124,7 @@ public class RecaptchaReader {
 				return new ChallengeExtra(null, autoResponse, null);
 			}
 		}
-		if (useJavaScript && C.API_KITKAT) {
+		if (useJavaScript) {
 			ChallengeExtra.ForegroundSolver solver = (newHolder, challengeExtra) -> {
 				synchronized (accessLock) {
 					String response = ForegroundManager.getInstance()
@@ -158,12 +158,9 @@ public class RecaptchaReader {
 			if (initialResponse == null) {
 				if (initialResponseText
 						.contains("Please enable JavaScript to get a reCAPTCHA challenge")) {
-					if (C.API_KITKAT) {
-						return getChallenge2(initialHolder, apiKey, invisible, refererFinal,
-								true, solveInBackground, false);
-					} else {
-						throw new HttpException(ErrorItem.Type.UNSUPPORTED_RECAPTCHA, false, false);
-					}
+					return getChallenge2(initialHolder, apiKey, invisible, refererFinal,
+							true, solveInBackground, false);
+				
 				} else {
 					throw new HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false);
 				}

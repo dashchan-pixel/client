@@ -984,7 +984,7 @@ public class ViewUnit {
 			images[i] = imageView;
 		}
 		typedArray.recycle();
-		if (C.API_LOLLIPOP && images.length > 0) {
+		if (images.length > 0) {
 			ColorStateList tint = ColorStateList.valueOf(ThemeEngine.getTheme(images[0].getContext()).meta);
 			for (ImageView image : images) {
 				image.setImageTintList(tint);
@@ -1040,12 +1040,11 @@ public class ViewUnit {
 
 		typedArray.recycle();
 
-		if (C.API_LOLLIPOP) {
-			ColorStateList likeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(likeImageView.getContext()).meta);
-			likeImageView.setImageTintList(likeTintList);
-			ColorStateList dislikeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(dislikeImageView.getContext()).meta);
-			dislikeImageView.setImageTintList(dislikeTintList);
-		}
+		ColorStateList likeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(likeImageView.getContext()).meta);
+		likeImageView.setImageTintList(likeTintList);
+		ColorStateList dislikeTintList = ColorStateList.valueOf(ThemeEngine.getTheme(dislikeImageView.getContext()).meta);
+		dislikeImageView.setImageTintList(dislikeTintList);
+	
 	}
 
 	private static class Lazy<T> {
@@ -1360,11 +1359,10 @@ public class ViewUnit {
 			bottomBarOpenThread.setOnClickListener(uiManager.view().threadLinkBlockClickListener);
 
 			index.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			if (C.API_LOLLIPOP) {
-				bottomBarReplies.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-				bottomBarExpand.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-				bottomBarOpenThread.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			}
+			bottomBarReplies.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+			bottomBarExpand.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+			bottomBarOpenThread.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		
 			float textScale = Preferences.getTextScale();
 			if (textScale != 1f) {
 				ViewUtils.applyScaleSize(textScale, number, name, index, date, comment, attachmentInfo,

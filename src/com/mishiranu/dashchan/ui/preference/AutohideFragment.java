@@ -396,9 +396,8 @@ public class AutohideFragment extends BaseListFragment {
 			valueEdit.addTextChangedListener(valueListener);
 			testStringEdit.addTextChangedListener(testStringListener);
 			chanNameSelector.setOnClickListener(v -> new ChanMultiChoiceDialog(selectedChanNames).show(this));
-			if (C.API_LOLLIPOP) {
-				chanNameSelector.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			}
+			chanNameSelector.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		
 			if (!ChanManager.getInstance().hasMultipleAvailableChans()) {
 				chanNameSelector.setVisibility(View.GONE);
 			}
@@ -458,8 +457,7 @@ public class AutohideFragment extends BaseListFragment {
 						(d, which) -> ((AutohideFragment) getParentFragment()).onDelete(index));
 			}
 			AlertDialog dialog = builder.create();
-			dialog.getWindow().setSoftInputMode(C.API_R ? WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN
-					: ViewUtils.SOFT_INPUT_ADJUST_RESIZE_COMPAT);
+			dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 			return dialog;
 		}
 
@@ -520,12 +518,11 @@ public class AutohideFragment extends BaseListFragment {
 			} else if (errorSpan != null) {
 				value.removeSpan(errorSpan);
 			}
-			if (C.API_LOLLIPOP) {
-				if (errorValueSetter == null) {
-					errorValueSetter = new ErrorEditTextSetter(valueEdit);
-				}
-				errorValueSetter.setError(error);
+			if (errorValueSetter == null) {
+				errorValueSetter = new ErrorEditTextSetter(valueEdit);
 			}
+			errorValueSetter.setError(error);
+		
 			if (StringUtils.isEmpty(text)) {
 				errorText.setVisibility(View.GONE);
 			} else {

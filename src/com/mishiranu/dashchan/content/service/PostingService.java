@@ -154,19 +154,17 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 		super.onCreate();
 		notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		int notificationColor = 0;
-		if (C.API_LOLLIPOP) {
-			ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
-			notificationColor = theme.accent;
-		}
+		ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
+		notificationColor = theme.accent;
+	
 		this.notificationColor = notificationColor;
-		if (C.API_OREO) {
-			notificationManager.createNotificationChannel
-					(new NotificationChannel(C.NOTIFICATION_CHANNEL_POSTING,
-							getString(R.string.posting), NotificationManager.IMPORTANCE_LOW));
-			notificationManager.createNotificationChannel(AndroidUtils
-					.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_POSTING_COMPLETE,
-							getString(R.string.sent_posts)));
-		}
+		notificationManager.createNotificationChannel
+				(new NotificationChannel(C.NOTIFICATION_CHANNEL_POSTING,
+						getString(R.string.posting), NotificationManager.IMPORTANCE_LOW));
+		notificationManager.createNotificationChannel(AndroidUtils
+				.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_POSTING_COMPLETE,
+						getString(R.string.sent_posts)));
+	
 		PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
 		wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName() + ":PostingWakeLock");
 		wakeLock.setReferenceCounted(false);
@@ -223,10 +221,10 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 					builder.setSmallIcon(android.R.drawable.stat_sys_upload);
 					PendingIntent cancelIntent = PendingIntent.getBroadcast(this, 0, new Intent(this, Receiver.class)
 							.setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-					builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
+					builder.addAction(0,
 							getString(android.R.string.cancel), cancelIntent);
 					builder.setColor(notificationColor);
-					AndroidUtils.startAnyService(this, new Intent(this, PostingService.class));
+					this.startForegroundService(new Intent(this, PostingService.class));
 				}
 				boolean progressMode = taskState.task.isProgressMode();
 				switch (taskState.progressState) {
@@ -290,7 +288,7 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 		public boolean executeSendPost(String chanName, ChanPerformer.SendPostData data) {
 			if (taskState == null) {
 				Key key = new Key(chanName, data.boardName, data.threadNumber);
-				AndroidUtils.startAnyService(PostingService.this, new Intent(PostingService.this, PostingService.class));
+				PostingService.this.startForegroundService(new Intent(PostingService.this, PostingService.class));
 				wakeLock.acquire();
 				Chan chan = Chan.get(chanName);
 				SendPostTask<Key> task = new SendPostTask<>(key, PostingService.this, chan, data);
@@ -491,12 +489,9 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 						C.NOTIFICATION_CHANNEL_POSTING_COMPLETE);
 				builder.setSmallIcon(android.R.drawable.stat_sys_upload_done);
 				builder.setColor(notificationColor);
-				if (C.API_LOLLIPOP) {
-					builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-					builder.setVibrate(new long[0]);
-				} else {
-					builder.setTicker(getString(R.string.post_sent));
-				}
+				builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+				builder.setVibrate(new long[0]);
+			
 				builder.setContentTitle(getString(R.string.post_sent));
 				builder.setContentText(buildNotificationText(chan, data.boardName, targetThreadNumber, postNumber));
 				String tag = newPostData.tag;

@@ -204,11 +204,6 @@ public class DialogUnit {
 			PaddedRecyclerView recyclerView = new PaddedRecyclerView(context);
 			content.addView(recyclerView, FrameLayout.LayoutParams.MATCH_PARENT,
 					FrameLayout.LayoutParams.WRAP_CONTENT);
-			if (!C.API_MARSHMALLOW) {
-				@SuppressWarnings("deprecation")
-				Runnable setAnimationCacheEnabled = () -> recyclerView.setAnimationCacheEnabled(false);
-				setAnimationCacheEnabled.run();
-			}
 			recyclerView.setMotionEventSplittingEnabled(false);
 			recyclerView.setVerticalScrollBarEnabled(true);
 			recyclerView.setClipToPadding(false);
@@ -1123,14 +1118,12 @@ public class DialogUnit {
 			@Override
 			public void draw(Canvas canvas) {
 				super.draw(canvas);
-				if (C.API_LOLLIPOP) {
-					ViewUtils.drawSystemInsetsOver(this, canvas, InsetsLayout.isTargetGesture29(this));
-				}
+				ViewUtils.drawSystemInsetsOver(this, canvas, InsetsLayout.isTargetGesture29(this));
+			
 			}
 		};
-		if (C.API_LOLLIPOP) {
-			scrollView.setWillNotDraw(false);
-		}
+		scrollView.setWillNotDraw(false);
+	
 		scrollView.setVerticalScrollBarEnabled(false);
 		scrollView.setClipToPadding(false);
 		rootView.setOnApplyInsetsTarget(scrollView);
@@ -1185,9 +1178,8 @@ public class DialogUnit {
 			AttachmentView attachmentView = view.findViewById(R.id.thumbnail);
 			TextView textView = view.findViewById(R.id.attachment_info);
 			textView.setBackgroundColor(0xcc222222);
-			if (C.API_LOLLIPOP) {
-				textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			}
+			textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		
 			attachmentItem.configureAndLoad(attachmentView, chan, false, true);
 			textView.setText(attachmentItem.getDescription(AttachmentItem.FormatMode.TWO_LINES));
 			View clickView = view.findViewById(R.id.attachment_click);
@@ -1221,11 +1213,10 @@ public class DialogUnit {
 		} finally {
 			typedArray.recycle();
 		}
-		if (C.API_LOLLIPOP) {
-			window.setStatusBarColor(0x00000000);
-			window.setNavigationBarColor(0x00000000);
-			ViewUtils.setWindowLayoutFullscreen(window);
-		}
+		window.setStatusBarColor(0x00000000);
+		window.setNavigationBarColor(0x00000000);
+		ViewUtils.setWindowLayoutFullscreen(window);
+	
 		ThemeEngine.markDecorAsDialog(window.getDecorView());
 		UiManager.Observer observer = new UiManager.Observer() {
 			@Override
@@ -1332,9 +1323,8 @@ public class DialogUnit {
 		Chan chan = Chan.get(chanName);
 		LinearLayout container = new LinearLayout(context);
 		container.setOrientation(LinearLayout.VERTICAL);
-		if (C.API_LOLLIPOP) {
-			container.setPadding(0, (int) (12f * density), 0, 0);
-		}
+		container.setPadding(0, (int) (12f * density), 0, 0);
+	
 		for (IconData icon : icons) {
 			LinearLayout linearLayout = new LinearLayout(context);
 			container.addView(linearLayout, LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1349,24 +1339,18 @@ public class DialogUnit {
 				imageLoader.loadImage(chan, icon.uri, false, imageView);
 			} else {
 				imageView.setImageResource(ResourceUtils.getResourceId(context, icon.attrId, 0));
-				if (C.API_LOLLIPOP) {
-					imageView.setImageTintList(ResourceUtils.getColorStateList(imageView.getContext(),
-							android.R.attr.textColorSecondary));
-				}
+				imageView.setImageTintList(ResourceUtils.getColorStateList(imageView.getContext(),
+						android.R.attr.textColorSecondary));
+			
 			}
 			TextView textView = new TextView(context, null, android.R.attr.textAppearanceListItem);
 			linearLayout.addView(textView, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 			textView.setSingleLine(true);
 			textView.setText(icon.title);
-			if (C.API_LOLLIPOP) {
-				textView.setPadding((int) (26f * density), 0, 0, 0); // 26f = 24f + 2f
-				ViewUtils.setTextSizeScaled(textView, 14);
-				textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			} else {
-				textView.setPadding((int) (10f * density), 0, 0, 0); // 20f = 8f + 2f
-				ViewUtils.setTextSizeScaled(textView, 16);
-				textView.setAllCaps(true);
-			}
+			textView.setPadding((int) (26f * density), 0, 0, 0); // 26f = 24f + 2f
+			ViewUtils.setTextSizeScaled(textView, 14);
+			textView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		
 		}
 		AlertDialog.Builder builder = new AlertDialog.Builder(context).setPositiveButton(android.R.string.ok, null);
 		if (!StringUtils.isEmpty(emailToCopy)) {

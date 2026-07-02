@@ -165,9 +165,8 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 				LinearLayout.LayoutParams.WRAP_CONTENT);
 		listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 		int resId = ResourceUtils.obtainAlertDialogLayoutResId(activity, ResourceUtils.DialogLayout.MULTI_CHOICE);
-		if (C.API_LOLLIPOP) {
-			listView.setDividerHeight(0);
-		}
+		listView.setDividerHeight(0);
+	
 		ItemsAdapter adapter = new ItemsAdapter(activity, resId, items);
 
 		ViewGroup nameExtensionLayout = (ViewGroup) LayoutInflater.from(activity).inflate(R.layout.dialog_filename, listView, false);
@@ -211,7 +210,7 @@ public class AttachmentOptionsDialog extends DialogFragment implements AdapterVi
 		extensionTextView = nameExtensionLayout.findViewById(R.id.extension);
 		CharSequence ext = "." + StringUtils.getFileExtension(holder.name);
 		extensionTextView.setText(ext);
-		restoreButton = C.API_LOLLIPOP ? new MaterialButton(activity) : new Button(activity, null, android.R.attr.borderlessButtonStyle);
+		restoreButton =new MaterialButton(activity);
 		restoreButton.setText(R.string.restore_filename);
 		restoreButton.setOnClickListener(v -> {
 			holder.newname = holder.name;

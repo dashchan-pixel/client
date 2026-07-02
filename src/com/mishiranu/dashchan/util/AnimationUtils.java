@@ -120,30 +120,11 @@ public class AnimationUtils {
 
 	static {
 		Field valueAnimatorDurationScaleField = null;
-		if (!C.API_OREO) {
-			try {
-				valueAnimatorDurationScaleField = ValueAnimator.class.getDeclaredField("sDurationScale");
-				valueAnimatorDurationScaleField.setAccessible(true);
-			} catch (Exception e) {
-				valueAnimatorDurationScaleField = null;
-			}
-		}
 		FIELD_VALUE_ANIMATOR_DURATION_SCALE = valueAnimatorDurationScaleField;
 	}
 
 	public static boolean areAnimatorsEnabled() {
-		if (C.API_OREO) {
-			return ValueAnimator.areAnimatorsEnabled();
-		} else {
-			float durationScale = 1f;
-			if (FIELD_VALUE_ANIMATOR_DURATION_SCALE != null) {
-				try {
-					durationScale = FIELD_VALUE_ANIMATOR_DURATION_SCALE.getFloat(null);
-				} catch (Exception e) {
-					// Ignore
-				}
-			}
-			return durationScale > 0f;
-		}
+		return ValueAnimator.areAnimatorsEnabled();
+	
 	}
 }

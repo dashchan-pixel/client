@@ -131,10 +131,9 @@ public class CookiesFragment extends BaseListFragment implements FragmentHandler
 				int margin = (int) (6f * density + 0.5f);
 				blocked.setImageDrawable(ResourceUtils.getDrawable(parent.getContext(), R.attr.iconPostClosed, 0));
 				deleteOnExit.setImageDrawable(ResourceUtils.getDrawable(parent.getContext(), R.attr.iconPostBanned, 0));
-				if (C.API_LOLLIPOP) {
-					blocked.setImageTintList(title.getTextColors());
-					deleteOnExit.setImageTintList(title.getTextColors());
-				}
+				blocked.setImageTintList(title.getTextColors());
+				deleteOnExit.setImageTintList(title.getTextColors());
+			
 				titleLayout.addView(blocked, size, size);
 				ViewUtils.setNewMarginRelative(blocked, margin, top, 0, 0);
 				titleLayout.addView(deleteOnExit, size, size);

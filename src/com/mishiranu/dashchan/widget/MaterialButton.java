@@ -22,23 +22,7 @@ public class MaterialButton extends Button {
 	float density = ResourceUtils.obtainDensity(this);
 
 	public MaterialButton(Context context) {
-		super(context, null, 0, C.API_MARSHMALLOW ? android.R.style.Widget_Material_Button_Colored : android.R.style.Widget_Material_Button);
-		if (!C.API_LOLLIPOP_MR1) {
-			// GradientDrawable doesn't support tints
-			float radius = 2f * density;
-			float[] radiusArray = {radius, radius, radius, radius, radius, radius, radius, radius};
-			ShapeDrawable background = new ShapeDrawable() {
-				@Override
-				public void getOutline(Outline outline) {
-					// Lollipop has broken RoundRectShape.getOutline
-					Rect bounds = getBounds();
-					outline.setRoundRect(bounds.left, bounds.top, bounds.right, bounds.bottom, radius);
-				}
-			};
-			background.setShape(new RoundRectShape(radiusArray, null, null));
-			setBackground(new InsetDrawable(background, (int) (4f * density),
-					(int) (6f * density), (int) (4f * density), (int) (6f * density)));
-		}
+		super(context, null, 0,android.R.style.Widget_Material_Button_Colored);
 
 		setTextColor(ResourceUtils.getColorStateList(getContext(),
 				android.R.attr.textColorPrimaryInverse));

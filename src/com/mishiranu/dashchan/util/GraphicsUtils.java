@@ -23,7 +23,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -134,45 +133,8 @@ public class GraphicsUtils {
 		}
 	}
 
-	private static final Field FIELD_GRADIENT_STATE;
-	private static final Field FIELD_GRADIENT_STATE_RADIUS;
-
-	static {
-		Field gradientStateField = null;
-		Field gradientStateRadiusField = null;
-		if (!C.API_NOUGAT) {
-			Field field;
-			try {
-				field = GradientDrawable.class.getDeclaredField("mGradientState");
-				field.setAccessible(true);
-				gradientStateField = field;
-				field = field.getType().getDeclaredField("mRadius");
-				field.setAccessible(true);
-				gradientStateRadiusField = field;
-			} catch (Exception e) {
-				e.printStackTrace();
-				gradientStateField = null;
-				gradientStateRadiusField = null;
-			}
-		}
-		FIELD_GRADIENT_STATE = gradientStateField;
-		FIELD_GRADIENT_STATE_RADIUS = gradientStateRadiusField;
-	}
-
 	public static float getCornerRadius(GradientDrawable drawable) {
-		if (C.API_NOUGAT) {
-			return drawable.getCornerRadius();
-		} else if (FIELD_GRADIENT_STATE != null && FIELD_GRADIENT_STATE_RADIUS != null) {
-			try {
-				Object state = FIELD_GRADIENT_STATE.get(drawable);
-				return FIELD_GRADIENT_STATE_RADIUS.getFloat(state);
-			} catch (Exception e) {
-				e.printStackTrace();
-				return 0f;
-			}
-		} else {
-			return 0f;
-		}
+		return drawable.getCornerRadius();
 	}
 
 	public static Bitmap reduceThumbnailSize(Resources resources, Bitmap bitmap) {

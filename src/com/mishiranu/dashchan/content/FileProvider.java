@@ -68,7 +68,7 @@ public class FileProvider extends ContentProvider {
 	}
 
 	public static Uri convertUpdatesUri(Uri uri) {
-		if (C.API_NOUGAT && "file".equals(uri.getScheme())) {
+		if ("file".equals(uri.getScheme())) {
 			File fileParent = new File(uri.getPath()).getParentFile();
 			File directory = getUpdatesDirectory();
 			if (fileParent != null && fileParent.equals(directory)) {
@@ -133,19 +133,18 @@ public class FileProvider extends ContentProvider {
 	}
 
 	private static InternalFile createInternalFile(File directory, File file, String type, String providerPath) {
-		if (C.API_NOUGAT) {
-			String filePath = file.getAbsolutePath();
-			String directoryPath = directory.getAbsolutePath();
-			if (filePath.startsWith(directoryPath)) {
-				filePath = filePath.substring(directoryPath.length());
-				if (filePath.startsWith("/")) {
-					filePath = filePath.substring(1);
-				}
-				Uri uri = new Uri.Builder().scheme("content").authority(AUTHORITY)
-						.appendPath(providerPath).appendEncodedPath(filePath).build();
-				return new InternalFile(file, type, uri);
+		String filePath = file.getAbsolutePath();
+		String directoryPath = directory.getAbsolutePath();
+		if (filePath.startsWith(directoryPath)) {
+			filePath = filePath.substring(directoryPath.length());
+			if (filePath.startsWith("/")) {
+				filePath = filePath.substring(1);
 			}
+			Uri uri = new Uri.Builder().scheme("content").authority(AUTHORITY)
+					.appendPath(providerPath).appendEncodedPath(filePath).build();
+			return new InternalFile(file, type, uri);
 		}
+	
 		return null;
 	}
 

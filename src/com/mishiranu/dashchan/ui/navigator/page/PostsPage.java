@@ -403,9 +403,6 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 		int buttonPadding = (int) (10f * density);
 		searchResultText = new Button(toolbarContext, null, android.R.attr.borderlessButtonStyle);
 		ViewUtils.setTextSizeScaled(searchResultText, 11);
-		if (!C.API_LOLLIPOP) {
-			searchResultText.setTypeface(null, Typeface.BOLD);
-		}
 		searchResultText.setPadding((int) (14f * density), 0, (int) (14f * density), 0);
 		searchResultText.setMinimumWidth(0);
 		searchResultText.setMinWidth(0);
@@ -424,32 +421,27 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 		forwardButtonView.setPadding(buttonPadding, buttonPadding, buttonPadding, buttonPadding);
 		forwardButtonView.setOnClickListener(v -> findNext(1));
 		searchControlLayout.addView(forwardButtonView, (int) (48f * density), (int) (48f * density));
-		if (C.API_LOLLIPOP) {
-			for (int i = 0, last = searchControlLayout.getChildCount() - 1; i <= last; i++) {
-				View view = searchControlLayout.getChildAt(i);
-				if (i == 0) {
-					ViewUtils.setNewMarginRelative(view, (int) (-6f * density), null, null, null);
-				}
-				if (i == last) {
-					ViewUtils.setNewMarginRelative(view, null, null, (int) (6f * density), null);
-				} else {
-					ViewUtils.setNewMarginRelative(view, null, null, (int) (-6f * density), null);
-				}
+		for (int i = 0, last = searchControlLayout.getChildCount() - 1; i <= last; i++) {
+			View view = searchControlLayout.getChildAt(i);
+			if (i == 0) {
+				ViewUtils.setNewMarginRelative(view, (int) (-6f * density), null, null, null);
+			}
+			if (i == last) {
+				ViewUtils.setNewMarginRelative(view, null, null, (int) (6f * density), null);
+			} else {
+				ViewUtils.setNewMarginRelative(view, null, null, (int) (-6f * density), null);
 			}
 		}
+	
 		FrameLayout searchProcessLayout = new FrameLayout(toolbarContext);
 		ProgressBar searchProgress = new ProgressBar(toolbarContext, null, android.R.attr.progressBarStyleSmall);
-		if (C.API_LOLLIPOP) {
-			int color = ResourceUtils.getColor(toolbarContext, android.R.attr.textColorPrimary);
-			searchProgress.setIndeterminateTintList(ColorStateList.valueOf(color));
-		}
+		int color = ResourceUtils.getColor(toolbarContext, android.R.attr.textColorPrimary);
+		searchProgress.setIndeterminateTintList(ColorStateList.valueOf(color));
+	
 		searchProcessLayout.addView(searchProgress, (int) (20f * density), (int) (20f * density));
 		((FrameLayout.LayoutParams) searchProgress.getLayoutParams()).gravity = Gravity.CENTER;
-		if (C.API_LOLLIPOP) {
-			ViewUtils.setNewMarginRelative(searchProgress, (int) (12f * density), 0, (int) (16f * density), 0);
-		} else {
-			ViewUtils.setNewMarginRelative(searchProgress, (int) (8f * density), 0, (int) (12f * density), 0);
-		}
+		ViewUtils.setNewMarginRelative(searchProgress, (int) (12f * density), 0, (int) (16f * density), 0);
+	
 		searchProcessView = searchProcessLayout;
 
 		InitRequest initRequest = getInitRequest();
@@ -548,7 +540,7 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 			searchWorker = null;
 		}
 		getRecyclerView().removeOnScrollListener(scrollListener);
-		if (AndroidUtils.hasCallbacks(ConcurrentUtils.HANDLER, storePositionRunnable)) {
+		if (ConcurrentUtils.HANDLER.hasCallbacks(storePositionRunnable)) {
 			ConcurrentUtils.HANDLER.removeCallbacks(storePositionRunnable);
 			storePositionRunnable.run();
 		}

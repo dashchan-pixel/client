@@ -125,11 +125,6 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 		layout.addView(recyclerView, ExpandedLayout.LayoutParams.MATCH_PARENT,
 				ExpandedLayout.LayoutParams.MATCH_PARENT);
 		layout.setRecyclerView(recyclerView);
-		if (!C.API_MARSHMALLOW) {
-			@SuppressWarnings("deprecation")
-			Runnable setAnimationCacheEnabled = () -> recyclerView.setAnimationCacheEnabled(false);
-			setAnimationCacheEnabled.run();
-		}
 		recyclerView.setMotionEventSplittingEnabled(false);
 		recyclerView.setVerticalScrollBarEnabled(true);
 		recyclerView.setClipToPadding(false);

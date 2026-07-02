@@ -160,13 +160,12 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		if (hideInput) {
 			inputView.setVisibility(View.GONE);
 		}
-		if (C.API_LOLLIPOP) {
-			cancelView.setImageTintList(ResourceUtils.getColorStateList(cancelView.getContext(),
-					android.R.attr.textColorPrimary));
-			skipTextView.setAllCaps(true);
-			skipTextView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
-			ViewUtils.setTextSizeScaled(skipTextView, 12);
-		}
+		cancelView.setImageTintList(ResourceUtils.getColorStateList(cancelView.getContext(),
+				android.R.attr.textColorPrimary));
+		skipTextView.setAllCaps(true);
+		skipTextView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM);
+		ViewUtils.setTextSizeScaled(skipTextView, 12);
+	
 		updateCaptchaHeight(false);
 		captchaInput = captcha.input;
 		if (captchaInput == null) {

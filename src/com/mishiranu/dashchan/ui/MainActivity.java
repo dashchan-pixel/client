@@ -157,18 +157,16 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		if (C.API_LOLLIPOP) {
-			requestWindowFeature(Window.FEATURE_NO_TITLE);
-			requestWindowFeature(Window.FEATURE_ACTION_MODE_OVERLAY);
-		}
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		requestWindowFeature(Window.FEATURE_ACTION_MODE_OVERLAY);
+	
 		ExpandedScreen.PreThemeInit expandedScreenPreThemeInit = new ExpandedScreen
 				.PreThemeInit(this, Preferences.isExpandedScreen());
 		ThemeEngine.applyTheme(this);
 		ExpandedScreen.Init expandedScreenInit = expandedScreenPreThemeInit.initAfterTheme();
 		super.onCreate(savedInstanceState);
 		// ExpandedScreen should handle this for R+
-		getWindow().setSoftInputMode(C.API_R ? WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
-				: ViewUtils.SOFT_INPUT_ADJUST_RESIZE_COMPAT);
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
 		float density = ResourceUtils.obtainDensity(this);
 		setContentView(R.layout.activity_main);
 		ClickableToast.register(this);
@@ -183,18 +181,9 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		ThemeEngine.Theme theme = ThemeEngine.getTheme(this);
 		Context drawerContext;
 		int drawerBackground;
-		if (C.API_LOLLIPOP) {
-			drawerContext = this;
-			drawerBackground = theme.card;
-		} else {
-			boolean black = theme.isBlack4();
-			drawerContext = new ContextThemeWrapper(this, R.style.Theme_Main_Dark);
-			drawerBackground = black ? 0xff000000 : 0xff202020;
-			if (black) {
-				getActionBar().setLogo(android.R.color.transparent);
-				getActionBar().setBackgroundDrawable(new ColorDrawable(0xff000000));
-			}
-		}
+		drawerContext = this;
+		drawerBackground = theme.card;
+	
 		drawerCommon.setBackgroundColor(drawerBackground);
 		drawerWide.setBackgroundColor(drawerBackground);
 		drawerForm = new DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient);
@@ -204,34 +193,27 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		drawerLayout = findViewById(R.id.drawer_layout);
 		drawerLayout.setSaveEnabled(false);
 		FrameLayout drawerInterlayer = findViewById(R.id.drawer_interlayer);
-		if (C.API_LOLLIPOP) {
-			getLayoutInflater().inflate(R.layout.widget_toolbar, drawerInterlayer);
-			Toolbar toolbar = findViewById(R.id.toolbar);
-			setActionBar(toolbar);
-			setTitle(null);
-			// Allow CustomSearchView to ignore content inset
-			toolbar.setClipChildren(false);
-			toolbarHolder = ViewFactory.addToolbarTitle(toolbar);
-			toolbarExtra = findViewById(R.id.toolbar_extra);
-			LayoutTransition layoutTransition = new LayoutTransition();
-			layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0);
-			layoutTransition.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
-			layoutTransition.setDuration(100);
-			toolbarExtra.setLayoutTransition(layoutTransition);
-		} else {
-			// Show white logo on search
-			getActionBar().setIcon(R.mipmap.ic_logo);
-		}
+		getLayoutInflater().inflate(R.layout.widget_toolbar, drawerInterlayer);
+		Toolbar toolbar = findViewById(R.id.toolbar);
+		setActionBar(toolbar);
+		setTitle(null);
+		// Allow CustomSearchView to ignore content inset
+		toolbar.setClipChildren(false);
+		toolbarHolder = ViewFactory.addToolbarTitle(toolbar);
+		toolbarExtra = findViewById(R.id.toolbar_extra);
+		LayoutTransition layoutTransition = new LayoutTransition();
+		layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0);
+		layoutTransition.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0);
+		layoutTransition.setDuration(100);
+		toolbarExtra.setLayoutTransition(layoutTransition);
+	
 		View toolbarLayout = findViewById(R.id.toolbar_layout);
 
 		drawerToggle = new DrawerToggle(this, toolbarHolder != null
 				? toolbarHolder.toolbar.getContext() : null, drawerLayout);
-		if (C.API_LOLLIPOP) {
-			drawerCommon.setElevation(4f * density);
-			drawerWide.setElevation(4f * density);
-		} else {
-			drawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-		}
+		drawerCommon.setElevation(4f * density);
+		drawerWide.setElevation(4f * density);
+	
 		drawerLayout.addDrawerListener(drawerToggle);
 		drawerLayout.addDrawerListener(drawerForm);
 		if (toolbarHolder == null) {
@@ -455,12 +437,8 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 
 	@Override
 	public void setTitleSubtitle(CharSequence title, CharSequence subtitle) {
-		if (C.API_LOLLIPOP) {
-			toolbarHolder.update(title, subtitle);
-		} else {
-			setTitle(title);
-			getActionBar().setSubtitle(subtitle);
-		}
+		toolbarHolder.update(title, subtitle);
+	
 	}
 
 	@Override
@@ -1873,18 +1851,15 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 
 		@Override
 		public void requestPermission() {
-			if (C.USE_SAF) {
-				if (storageRequestState == StorageRequestState.NONE) {
-					if (Preferences.getDownloadUriTree(MainActivity.this) != null) {
-						downloadBinder.onPermissionResult(DownloadService.PermissionResult.SUCCESS);
-					} else {
-						storageRequestState = StorageRequestState.INSTRUCTIONS;
-						showStorageInstructionsDialog();
-					}
+			if (storageRequestState == StorageRequestState.NONE) {
+				if (Preferences.getDownloadUriTree(MainActivity.this) != null) {
+					downloadBinder.onPermissionResult(DownloadService.PermissionResult.SUCCESS);
+				} else {
+					storageRequestState = StorageRequestState.INSTRUCTIONS;
+					showStorageInstructionsDialog();
 				}
-			} else {
-				downloadBinder.onPermissionResult(DownloadService.PermissionResult.SUCCESS);
 			}
+		
 		}
 	};
 
@@ -1923,10 +1898,9 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 							.putExtra("android.provider.extra.SHOW_ADVANCED", true)
 							.putExtra("android.content.extra.SHOW_ADVANCED", true)
 							.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-					if (C.API_OREO) {
-						intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, DocumentsContract
-								.buildRootUri("com.android.externalstorage.documents", "primary"));
-					}
+					intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, DocumentsContract
+							.buildRootUri("com.android.externalstorage.documents", "primary"));
+				
 					try {
 						startActivityForResult(intent, C.REQUEST_CODE_OPEN_URI_TREE);
 					} catch (ActivityNotFoundException e) {
@@ -1988,21 +1962,17 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 
 	private void handleUpdateData(ReadUpdateTask.UpdateDataMap updateDataMap, int count) {
 		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		if (C.API_OREO) {
-			notificationManager.createNotificationChannel(AndroidUtils
-					.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_UPDATES,
-							getString(R.string.updates)));
-		}
+		notificationManager.createNotificationChannel(AndroidUtils
+				.createHeadsUpNotificationChannel(C.NOTIFICATION_CHANNEL_UPDATES,
+						getString(R.string.updates)));
+	
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_UPDATES);
 		builder.setSmallIcon(R.drawable.ic_new_releases_white_24dp);
 		String text = ResourceUtils.getColonString(getResources(), R.string.updates_available__genitive, count);
-		if (C.API_LOLLIPOP) {
-			builder.setColor(ThemeEngine.getTheme(this).accent);
-			builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-			builder.setVibrate(new long[0]);
-		} else {
-			builder.setTicker(text);
-		}
+		builder.setColor(ThemeEngine.getTheme(this).accent);
+		builder.setPriority(NotificationCompat.PRIORITY_HIGH);
+		builder.setVibrate(new long[0]);
+	
 		builder.setContentTitle(getString(R.string.application_name_update__format,
 				AndroidUtils.getApplicationLabel(this)));
 		builder.setContentText(text);

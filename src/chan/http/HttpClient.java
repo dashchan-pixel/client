@@ -92,21 +92,6 @@ public class HttpClient {
 	static final int HTTP_TEMPORARY_REDIRECT = 307;
 
 	static {
-		if (!C.API_PIE) {
-			int poolSize = 20;
-			System.setProperty("http.maxConnections", Integer.toString(poolSize));
-			try {
-				// http.maxConnections may do nothing because ConnectionPool inits earlier. Android bug?
-				@SuppressLint("PrivateApi")
-				Object connectionPool = Class.forName("com.android.okhttp.ConnectionPool")
-						.getMethod("getDefault").invoke(null);
-				Field maxIdleConnectionsField = connectionPool.getClass().getDeclaredField("maxIdleConnections");
-				maxIdleConnectionsField.setAccessible(true);
-				maxIdleConnectionsField.setInt(connectionPool, poolSize);
-			} catch (Exception e) {
-				// Reflective operation, ignore exception
-			}
-		}
 
 		SHORT_RESPONSE_MESSAGES.put("Internal Server Error", "Internal Error");
 		SHORT_RESPONSE_MESSAGES.put("Service Temporarily Unavailable", "Service Unavailable");
@@ -313,9 +298,6 @@ public class HttpClient {
 				sslSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
 				sslSocketFactory = new SSLSocketFactoryWrapper(sslSocketFactory,
 						socket -> new HandshakeSSLSocket(socket, handshakeSessions.get()));
-				if (!C.API_LOLLIPOP_MR1) {
-					sslSocketFactory = new SSLSocketFactoryWrapper(sslSocketFactory, TLSv12SSLSocket::new);
-				}
 			}
 			if (verifyCertificate) {
 				return sslSocketFactory;
@@ -505,11 +487,8 @@ public class HttpClient {
 				connection.setRequestProperty("Content-Type", entity.getContentType());
 				long contentLength = entity.getContentLength();
 				if (contentLength > 0) {
-					if (C.API_KITKAT) {
-						connection.setFixedLengthStreamingMode(contentLength);
-					} else {
-						connection.setFixedLengthStreamingMode((int) contentLength);
-					}
+					connection.setFixedLengthStreamingMode(contentLength);
+				
 				}
 				try (ClientOutputStream output = new ClientOutputStream(new BufferedOutputStream(connection
 						.getOutputStream(), 1024), session, forceGet ? null : request.outputListener, contentLength)) {

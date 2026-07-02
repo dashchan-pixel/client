@@ -176,12 +176,8 @@ public class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
 	public DividerItemDecoration.Configuration configureDivider
 			(DividerItemDecoration.Configuration configuration, int position) {
-		if (C.API_LOLLIPOP) {
-			return configuration.need(true);
-		} else {
-			String header = position + 1 < getItemCount() ? getItemHeader(position + 1) : null;
-			return configuration.need(header == null);
-		}
+		return configuration.need(true);
+	
 	}
 
 	public void configureItemHeader(Context context, TextView headerView) {

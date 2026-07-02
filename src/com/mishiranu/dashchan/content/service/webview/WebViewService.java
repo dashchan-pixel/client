@@ -382,8 +382,6 @@ public class WebViewService extends Service {
 
 	@SuppressWarnings("deprecation")
 	private static void disableCacheCompat(WebView webView) {
-		if (!C.API_R) {
-		}
 	}
 
 	@SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
@@ -396,9 +394,8 @@ public class WebViewService extends Service {
 			File file = new File(getExternalCacheDir().getParentFile(), "files/webview.png");
 			if (file.exists()) {
 				captureImageFile = file;
-				if (C.API_LOLLIPOP) {
-					WebView.enableSlowWholeDocumentDraw();
-				}
+				WebView.enableSlowWholeDocumentDraw();
+			
 			}
 		}
 

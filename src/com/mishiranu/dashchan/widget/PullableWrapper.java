@@ -31,8 +31,8 @@ public class PullableWrapper {
 	public PullableWrapper(Wrapped listView) {
 		this.listView = listView;
 		Context context = listView.getContext();
-		topView = C.API_LOLLIPOP ? new LollipopView(listView, true) : new JellyBeanView(listView, true);
-		bottomView = C.API_LOLLIPOP ? new LollipopView(listView, false) : new JellyBeanView(listView, false);
+		topView =new LollipopView(listView, true);
+		bottomView =new LollipopView(listView, false);
 		pullDeltaGain = ResourceUtils.isTablet(context.getResources().getConfiguration()) ? 6f : 4f;
 		setColor(ThemeEngine.getTheme(listView.getContext()).accent);
 	}
@@ -578,8 +578,7 @@ public class PullableWrapper {
 			Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			shadowPaint.setColor(0x7f000000);
 			shadowPaint.setMaskFilter(new BlurMaskFilter(shadowSize, BlurMaskFilter.Blur.NORMAL));
-			canvas.drawCircle(bitmapSize / 2f, bitmapSize / 2f,
-					C.API_Q ? radius - shadowSize : radius - shadowSize / 2f, shadowPaint);
+			canvas.drawCircle(bitmapSize / 2f, bitmapSize / 2f,radius - shadowSize, shadowPaint);
 		}
 
 		@Override

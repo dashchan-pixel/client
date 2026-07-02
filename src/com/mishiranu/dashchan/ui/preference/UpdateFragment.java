@@ -565,7 +565,7 @@ public class UpdateFragment extends BaseListFragment {
 				(DividerItemDecoration.Configuration configuration, int position) {
 			ListItem current = listItems.get(position);
 			ListItem next = listItems.size() > position + 1 ? listItems.get(position + 1) : null;
-			return configuration.need(!current.isHeader() && (next == null || !next.isHeader() || C.API_LOLLIPOP));
+			return configuration.need(!current.isHeader() && (next == null || !next.isHeader() || true));
 		}
 
 		@Override

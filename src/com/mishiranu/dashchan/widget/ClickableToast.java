@@ -263,18 +263,17 @@ public class ClickableToast implements LifecycleObserver {
 		((LinearLayout.LayoutParams) message1.getLayoutParams()).weight = 1f;
 		((LinearLayout.LayoutParams) message2.getLayoutParams()).gravity = Gravity.CENTER_VERTICAL;
 		linearLayout.setPadding(horizontalPadding, totalPadding.top, horizontalPadding, totalPadding.bottom);
-		if (C.API_LOLLIPOP) {
-			final Drawable finalBackgroundDrawable = backgroundDrawable;
-			linearLayout.setOutlineProvider(new ViewOutlineProvider() {
-				@Override
-				public void getOutline(View view, Outline outline) {
-					finalBackgroundDrawable.getOutline(outline);
-				}
-			});
-			float toastElevation = activity.getResources().getDimension(R.dimen.clickable_toast_elevation);
-			linearLayout.setElevation(toastElevation);
-			linearLayout.setClipToOutline(true);
-		}
+		final Drawable finalBackgroundDrawable = backgroundDrawable;
+		linearLayout.setOutlineProvider(new ViewOutlineProvider() {
+			@Override
+			public void getOutline(View view, Outline outline) {
+				finalBackgroundDrawable.getOutline(outline);
+			}
+		});
+		float toastElevation = activity.getResources().getDimension(R.dimen.clickable_toast_elevation);
+		linearLayout.setElevation(toastElevation);
+		linearLayout.setClipToOutline(true);
+	
 
 		partialClickDrawable = new PartialClickDrawable(activity, backgroundDrawable);
 		linearLayout.setBackground(partialClickDrawable);
@@ -361,25 +360,11 @@ public class ClickableToast implements LifecycleObserver {
 
 	private boolean addContainerToWindowManager() {
 		boolean added = false;
-		if (C.API_OREO) {
-			// TYPE_APPLICATION_OVERLAY requires SYSTEM_ALERT_WINDOW permission
-			if (Settings.canDrawOverlays(activity)) {
-				added = addContainerToWindowManager(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-			}
-		} else if (C.API_NOUGAT_MR1) {
-			// TYPE_TOAST is prohibited on 7.1 when target API is > 7.1 (excuse me, wtf?)
-			// TYPE_PHONE requires SYSTEM_ALERT_WINDOW permission
-			if (Settings.canDrawOverlays(activity)) {
-				@SuppressWarnings("deprecation")
-				int type = WindowManager.LayoutParams.TYPE_PHONE;
-				added = addContainerToWindowManager(type);
-			}
-		} else if (C.API_LOLLIPOP && !AndroidUtils.IS_MIUI) {
-			// TYPE_TOAST works well only on Android 5.0-7.1, but doesn't work on MIUI
-			@SuppressWarnings("deprecation")
-			int type = WindowManager.LayoutParams.TYPE_TOAST;
-			added = addContainerToWindowManager(type);
+		// TYPE_APPLICATION_OVERLAY requires SYSTEM_ALERT_WINDOW permission
+		if (Settings.canDrawOverlays(activity)) {
+			added = addContainerToWindowManager(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
 		}
+	
 		if (!added) {
 			// TYPE_APPLICATION can't even properly overlay dialogs, used as fallback option
 			added = addContainerToWindowManager(WindowManager.LayoutParams.TYPE_APPLICATION);

@@ -197,11 +197,8 @@ public class NavigationUtils {
 		PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		long when = SystemClock.elapsedRealtime() + 1000;
-		if (C.API_KITKAT) {
-			alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, when, pendingIntent);
-		} else {
-			alarmManager.set(AlarmManager.ELAPSED_REALTIME, when, pendingIntent);
-		}
+		alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, when, pendingIntent);
+	
 		System.exit(0);
 	}
 }

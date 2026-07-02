@@ -1068,10 +1068,9 @@ public class WatcherService extends BaseService {
 	};
 
 	private void updateNotificationColor() {
-		if (C.API_LOLLIPOP) {
-			ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
-			notificationColor = theme.accent;
-		}
+		ThemeEngine.Theme theme = ThemeEngine.attachAndApply(this);
+		notificationColor = theme.accent;
+	
 	}
 
 	private static final Worker WORKER_FOREGROUND = new Worker(ConcurrentUtils.PARALLEL_EXECUTOR);

@@ -126,26 +126,25 @@ public class InsetsLayout extends FrameLayout {
 			lastGesture29 = gesture29;
 			lastIme29 = ime29;
 			if (onApplyInsetsListener != null) {
-				boolean useGesture29 = C.API_Q && (gesture29.left > window.left || gesture29.right > window.right);
+				boolean useGesture29 = (gesture29.left > window.left || gesture29.right > window.right);
 				onApplyInsetsListener.onApplyInsets(new Apply(window, useGesture29, ime29.bottom));
 			}
 		}
 	}
 
 	private static Insets getWindowWithCutout(Insets window, WindowInsets insets) {
-		if (C.API_PIE) {
-			DisplayCutout cutout = insets.getDisplayCutout();
-			if (cutout != null) {
-				int left = cutout.getSafeInsetLeft();
-				int top = cutout.getSafeInsetTop();
-				int right = cutout.getSafeInsetRight();
-				int bottom = cutout.getSafeInsetBottom();
-				if (left > window.left || top > window.top || right > window.right || bottom > window.bottom) {
-					return new Insets(Math.max(left, window.left), Math.max(top, window.top),
-							Math.max(right, window.right), Math.max(bottom, window.bottom));
-				}
+		DisplayCutout cutout = insets.getDisplayCutout();
+		if (cutout != null) {
+			int left = cutout.getSafeInsetLeft();
+			int top = cutout.getSafeInsetTop();
+			int right = cutout.getSafeInsetRight();
+			int bottom = cutout.getSafeInsetBottom();
+			if (left > window.left || top > window.top || right > window.right || bottom > window.bottom) {
+				return new Insets(Math.max(left, window.left), Math.max(top, window.top),
+						Math.max(right, window.right), Math.max(bottom, window.bottom));
 			}
 		}
+	
 		return window;
 	}
 
@@ -154,67 +153,33 @@ public class InsetsLayout extends FrameLayout {
 		try {
 			return super.onApplyWindowInsets(insets);
 		} finally {
-			if (C.API_LOLLIPOP) {
-				setPadding(0, 0, 0, 0);
-				Insets window;
-				Insets gesture29;
-				Insets ime29;
-				if (C.API_R) {
-					Insets realWindow = new Insets(insets.getInsetsIgnoringVisibility
-							(WindowInsets.Type.displayCutout() | WindowInsets.Type.systemBars()));
-					gesture29 = new Insets(insets.getInsets(WindowInsets.Type.systemGestures()));
-					ime29 = new Insets(insets.getInsets(WindowInsets.Type.ime()));
-					if (ime29.bottom > realWindow.bottom) {
-						// Assume keyboard can be at the bottom only
-						window = new Insets(realWindow.left, realWindow.top, realWindow.right, 0);
-					} else {
-						window = realWindow;
-					}
-				} else if (C.API_Q) {
-					@SuppressWarnings("deprecation")
-					Insets realWindow = new Insets(insets.getSystemWindowInsets());
-					@SuppressWarnings("deprecation")
-					Insets gesture29Deprecated = new Insets(insets.getSystemGestureInsets());
-					gesture29 = gesture29Deprecated;
-					float density = ResourceUtils.obtainDensity(this);
-					int minKeyboardHeight = (int) (200f * density);
-					if (realWindow.bottom >= minKeyboardHeight) {
-						// Sometimes SOFT_INPUT_ADJUST_RESIZE doesn't work with Android 10 gestures
-						window = new Insets(realWindow.left, realWindow.top, realWindow.right, 0);
-						ime29 = new Insets(0, 0, 0, realWindow.bottom);
-					} else {
-						window = realWindow;
-						ime29 = Insets.DEFAULT;
-					}
-				} else {
-					@SuppressWarnings("deprecation")
-					int left = insets.getSystemWindowInsetLeft();
-					@SuppressWarnings("deprecation")
-					int top = insets.getSystemWindowInsetTop();
-					@SuppressWarnings("deprecation")
-					int right = insets.getSystemWindowInsetRight();
-					@SuppressWarnings("deprecation")
-					int bottom = insets.getSystemWindowInsetBottom();
-					window = getWindowWithCutout(new Insets(left, top, right, bottom), insets);
-					gesture29 = Insets.DEFAULT;
-					ime29 = Insets.DEFAULT;
-				}
-				onInsetsChangedInternal(window, gesture29, ime29);
+			setPadding(0, 0, 0, 0);
+			Insets window;
+			Insets gesture29;
+			Insets ime29;
+			Insets realWindow = new Insets(insets.getInsetsIgnoringVisibility
+					(WindowInsets.Type.displayCutout() | WindowInsets.Type.systemBars()));
+			gesture29 = new Insets(insets.getInsets(WindowInsets.Type.systemGestures()));
+			ime29 = new Insets(insets.getInsets(WindowInsets.Type.ime()));
+			if (ime29.bottom > realWindow.bottom) {
+				// Assume keyboard can be at the bottom only
+				window = new Insets(realWindow.left, realWindow.top, realWindow.right, 0);
+			} else {
+				window = realWindow;
 			}
+		
+			onInsetsChangedInternal(window, gesture29, ime29);
+		
 		}
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected boolean fitSystemWindows(Rect insets) {
-		Insets windowInsets = !C.API_LOLLIPOP ? new Insets(insets.left, insets.top, insets.right, insets.bottom) : null;
+		Insets windowInsets = null;
 		try {
 			return super.fitSystemWindows(insets);
 		} finally {
-			if (!C.API_LOLLIPOP) {
-				setPadding(0, 0, 0, 0);
-				onInsetsChangedInternal(windowInsets, Insets.DEFAULT, Insets.DEFAULT);
-			}
 		}
 	}
 }

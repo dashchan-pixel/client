@@ -89,7 +89,7 @@ public class AudioPlayerDialog extends DialogFragment {
 		LinearLayout linearLayout = new LinearLayout(context);
 		linearLayout.setOrientation(LinearLayout.VERTICAL);
 		int padding = getResources().getDimensionPixelSize(R.dimen.dialog_padding_view);
-		linearLayout.setPadding(padding, padding, padding, C.API_LOLLIPOP ? (int) (8f * density) : padding);
+		linearLayout.setPadding(padding, padding, padding,(int) (8f * density));
 		textView = new TextView(context, null, android.R.attr.textAppearanceListItem);
 		linearLayout.addView(textView, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		textView.setPadding(0, 0, 0, 0);
@@ -126,10 +126,9 @@ public class AudioPlayerDialog extends DialogFragment {
 		});
 		button = new ImageButton(context);
 		horizontal.addView(button, (int) (48f * density), (int) (48f * density));
-		if (C.API_LOLLIPOP) {
-			button.setImageTintList(ResourceUtils.getColorStateList(button.getContext(),
-					android.R.attr.textColorPrimary));
-		}
+		button.setImageTintList(ResourceUtils.getColorStateList(button.getContext(),
+				android.R.attr.textColorPrimary));
+	
 		button.setBackgroundResource(ResourceUtils.getResourceId(context,
 				android.R.attr.listChoiceBackgroundIndicator, 0));
 		updatePlayState();

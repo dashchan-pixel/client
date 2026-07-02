@@ -49,12 +49,9 @@ public class ThemeDialog extends DialogFragment {
 		Context context = requireContext();
 		PaddedRecyclerView recyclerView = new PaddedRecyclerView(context);
 		recyclerView.setLayoutManager(new LinearLayoutManager(context));
-		if (C.API_LOLLIPOP) {
-			float density = ResourceUtils.obtainDensity(context);
-			recyclerView.setPadding(0, (int) (12f * density), 0, 0);
-		} else {
-			recyclerView.addItemDecoration(new DividerItemDecoration(context, (c, p) -> c.need(true)));
-		}
+		float density = ResourceUtils.obtainDensity(context);
+		recyclerView.setPadding(0, (int) (12f * density), 0, 0);
+	
 		AlertDialog dialog = new AlertDialog.Builder(context)
 				.setTitle(R.string.change_theme)
 				.setView(recyclerView)
@@ -84,9 +81,6 @@ public class ThemeDialog extends DialogFragment {
 				float density = ResourceUtils.obtainDensity(itemView);
 				itemView.setPadding(itemView.getPaddingLeft() + (int) (8f * density), itemView.getPaddingTop(),
 						itemView.getPaddingRight() + (int) (8f * density), itemView.getPaddingBottom());
-				if (!C.API_LOLLIPOP) {
-					itemView.setMinimumHeight((int) (56f * density));
-				}
 			}
 		}
 

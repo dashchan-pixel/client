@@ -41,10 +41,6 @@ public class HistoryPage extends ListPage implements HistoryAdapter.Callback, Ge
 	protected void onCreate() {
 		PaddedRecyclerView recyclerView = getRecyclerView();
 		recyclerView.setLayoutManager(new LinearLayoutManager(recyclerView.getContext()));
-		if (!C.API_LOLLIPOP) {
-			float density = ResourceUtils.obtainDensity(recyclerView);
-			ViewUtils.setNewPadding(recyclerView, (int) (16f * density), null, (int) (16f * density), null);
-		}
 		chanName = Preferences.isMergeChans() ? null : getPage().chanName;
 		searchQuery = getInitSearch().currentQuery;
 		CommonDatabase.getInstance().getHistory().registerObserver(updateHistoryRunnable);

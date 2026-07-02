@@ -65,12 +65,11 @@ public class CustomSearchView extends FrameLayout implements CollapsibleActionVi
 		});
 
 		int contentInsetEnd = 0;
-		if (C.API_LOLLIPOP) {
-			TypedArray typedArray = context.obtainStyledAttributes(null,
-					new int[] {android.R.attr.contentInsetEnd}, android.R.attr.actionBarStyle, 0);
-			contentInsetEnd = typedArray.getDimensionPixelSize(0, 0);
-			typedArray.recycle();
-		}
+		TypedArray typedArray = context.obtainStyledAttributes(null,
+				new int[] {android.R.attr.contentInsetEnd}, android.R.attr.actionBarStyle, 0);
+		contentInsetEnd = typedArray.getDimensionPixelSize(0, 0);
+		typedArray.recycle();
+	
 		this.contentInsetEnd = contentInsetEnd;
 	}
 
@@ -80,7 +79,7 @@ public class CustomSearchView extends FrameLayout implements CollapsibleActionVi
 
 		// Ignore Toolbar's content inset at the end if there is only free space left
 		// There should be "home" button at the start, so this side is not handled at all
-		if (C.API_LOLLIPOP && contentInsetEnd > 0 && getParent() instanceof Toolbar) {
+		if (contentInsetEnd > 0 && getParent() instanceof Toolbar) {
 			View layout = getChildAt(0);
 			FrameLayout.LayoutParams layoutParams = (LayoutParams) layout.getLayoutParams();
 			Toolbar toolbar = (Toolbar) getParent();
