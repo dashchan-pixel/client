@@ -90,12 +90,11 @@ public class StatisticsFragment extends BaseListFragment {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_clear: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_clear) {
+
 				StatisticsStorage.getInstance().clear();
 				((FragmentHandler) requireActivity()).removeFragment();
-				break;
-			}
 		}
 		return super.onOptionsItemSelected(item);
 	}

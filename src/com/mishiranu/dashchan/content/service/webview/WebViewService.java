@@ -383,7 +383,6 @@ public class WebViewService extends Service {
 	@SuppressWarnings("deprecation")
 	private static void disableCacheCompat(WebView webView) {
 		if (!C.API_R) {
-			webView.getSettings().setAppCacheEnabled(false);
 		}
 	}
 

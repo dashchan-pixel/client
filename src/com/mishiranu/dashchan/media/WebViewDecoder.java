@@ -151,7 +151,6 @@ public class WebViewDecoder extends WebViewClient {
 					WebView webView = new WebView(MainApplication.getInstance());
 					WebSettings settings = webView.getSettings();
 					settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-					settings.setAppCacheEnabled(false);
 					settings.setJavaScriptEnabled(true);
 					webView.setInitialScale(100 / decoder.sampleSize);
 					webView.setWebViewClient(decoder);

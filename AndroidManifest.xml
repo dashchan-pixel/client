@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
 	xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:tools="http://schemas.android.com/tools"
-	package="com.mishiranu.dashchan">
+	xmlns:tools="http://schemas.android.com/tools">
 
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.WAKE_LOCK" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="android.permission.VIBRATE" android:maxSdkVersion="18" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="22" />
-	<uses-permission-sdk-23 android:name="android.permission.FOREGROUND_SERVICE" />
-	<uses-permission-sdk-23 android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-	<uses-permission-sdk-23 android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-	<uses-permission-sdk-23 android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-	<uses-permission-sdk-23 android:name="android.permission.QUERY_ALL_PACKAGES" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+	<uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+	<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
 	<application
 		android:name=".content.MainApplication"
@@ -30,12 +30,12 @@
 
 		<activity
 			android:name=".ui.MainActivity"
-			android:launchMode="singleTask">
+			android:launchMode="singleTask"
+			android:exported="true">
 
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
-				<category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
 			</intent-filter>
 
 			<intent-filter>
@@ -52,6 +52,7 @@
 			android:taskAffinity=".postingshare"
 			android:launchMode="singleInstance"
 			android:excludeFromRecents="true"
+			android:exported="true"
 			android:theme="@android:style/Theme.Translucent.NoTitleBar">
 
 			<intent-filter>
@@ -71,28 +72,39 @@
 		<activity
 			android:name=".content.UpdaterActivity"
 			android:excludeFromRecents="true"
+			android:exported="false"
 			android:theme="@android:style/Theme.Panel" />
 
 		<service
-			android:name=".content.service.PostingService" />
+			android:name=".content.service.PostingService"
+			android:exported="false"
+			android:foregroundServiceType="dataSync" />
 
 		<receiver
-			android:name=".content.service.PostingService$Receiver" />
+			android:name=".content.service.PostingService$Receiver"
+			android:exported="false" />
 
 		<service
-			android:name=".content.service.DownloadService" />
+			android:name=".content.service.DownloadService"
+			android:exported="false"
+			android:foregroundServiceType="dataSync" />
 
 		<receiver
-			android:name=".content.service.DownloadService$Receiver" />
+			android:name=".content.service.DownloadService$Receiver"
+			android:exported="false" />
 
 		<service
-			android:name=".content.service.WatcherService" />
+			android:name=".content.service.WatcherService"
+			android:exported="false" />
 
 		<service
-			android:name=".content.service.AudioPlayerService" />
+			android:name=".content.service.AudioPlayerService"
+			android:exported="false"
+			android:foregroundServiceType="mediaPlayback" />
 
 		<service
 			android:name=".content.service.webview.WebViewService"
+			android:exported="false"
 			android:process=":webview" />
 
 		<provider
@@ -100,12 +112,6 @@
 			android:authorities="com.mishiranu.providers.dashchan"
 			android:exported="false"
 			android:grantUriPermissions="true" />
-
-		<meta-data android:name="com.sec.android.support.multiwindow" android:value="true" />
-		<meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_W" android:value="632dp" />
-		<meta-data android:name="com.sec.android.multiwindow.DEFAULT_SIZE_H" android:value="598dp" />
-		<meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="632dp" />
-		<meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H" android:value="598dp" />
 
 	</application>
 

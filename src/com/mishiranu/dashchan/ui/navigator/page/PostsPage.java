@@ -719,13 +719,14 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 	public boolean onOptionsItemSelected(MenuItem item) {
 		Page page = getPage();
 		PostsAdapter adapter = getAdapter();
-		switch (item.getItemId()) {
-			case R.id.menu_add_post: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_add_post) {
+
 				getUiManager().navigator().navigatePosting(page.chanName, page.boardName,
 						page.threadNumber);
 				return true;
-			}
-			case R.id.menu_gallery: {
+		} else if (switchItemId0 == R.id.menu_gallery) {
+
 				int imageIndex = -1;
 				PaddedRecyclerView recyclerView = getRecyclerView();
 				View child = recyclerView.getChildAt(0);
@@ -744,55 +745,53 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				getUiManager().navigator().navigateGallery(page.chanName, gallerySet, imageIndex,
 						null, GalleryOverlay.NavigatePostMode.ENABLED, true);
 				return true;
-			}
-			case R.id.menu_select: {
+		} else if (switchItemId0 == R.id.menu_select) {
+
 				selectionMode = startActionMode(new SelectionCallback(this));
 				return true;
-			}
-			case R.id.menu_refresh: {
+		} else if (switchItemId0 == R.id.menu_refresh) {
+
 				refreshPosts(false);
 				return true;
-			}
-			case R.id.menu_reload: {
+		} else if (switchItemId0 == R.id.menu_reload) {
+
 				refreshPosts(true);
 				return true;
-			}
-			case R.id.menu_erase: {
+		} else if (switchItemId0 == R.id.menu_erase) {
+
 				showEraseDialog(getFragmentManager());
 				return true;
-			}
-			case R.id.menu_clear_old: {
+		} else if (switchItemId0 == R.id.menu_clear_old) {
+
 				extractPosts(PagesDatabase.Cleanup.OLD);
 				return true;
-			}
-			case R.id.menu_clear_deleted: {
+		} else if (switchItemId0 == R.id.menu_clear_deleted) {
+
 				showClearDeletedDialog(getFragmentManager());
 				return true;
-			}
-			case R.id.menu_summary: {
+		} else if (switchItemId0 == R.id.menu_summary) {
+
 				showSummaryDialog(getFragmentManager());
 				return true;
-			}
-			case R.id.menu_hidden_posts: {
+		} else if (switchItemId0 == R.id.menu_hidden_posts) {
+
 				List<String> localFilters = hidePerformer.getReadableLocalFilters(getContext());
 				showHiddenPostsDialog(getFragmentManager(), localFilters);
 				return true;
-			}
-			case R.id.menu_star_text:
-			case R.id.menu_star_icon: {
+		} else if (switchItemId0 == R.id.menu_star_text || switchItemId0 == R.id.menu_star_icon) {
+
 				ParcelableExtra parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY);
 				FavoritesStorage.getInstance().add(page.chanName, page.boardName, page.threadNumber,
 						parcelableExtra.threadTitle, true);
 				updateOptionsMenu();
 				return true;
-			}
-			case R.id.menu_unstar_text:
-			case R.id.menu_unstar_icon: {
+		} else if (switchItemId0 == R.id.menu_unstar_text || switchItemId0 == R.id.menu_unstar_icon) {
+
 				FavoritesStorage.getInstance().remove(page.chanName, page.boardName, page.threadNumber);
 				updateOptionsMenu();
 				return true;
-			}
-			case R.id.menu_open_original_thread: {
+		} else if (switchItemId0 == R.id.menu_open_original_thread) {
+
 				RetainableExtra retainableExtra = getRetainableExtra(RetainableExtra.FACTORY);
 				Chan chan = Chan.getPreferred(null, retainableExtra.archivedThreadUri);
 				if (chan.name != null) {
@@ -805,8 +804,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 					}
 				}
 				return true;
-			}
-			case R.id.menu_archive: {
+		} else if (switchItemId0 == R.id.menu_archive) {
+
 				String threadTitle = null;
 				ArrayList<Post> posts = new ArrayList<>();
 				for (PostItem postItem : adapter) {
@@ -818,7 +817,6 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				getUiManager().dialog().performSendArchiveThread(getFragmentManager(),
 						page.chanName, page.boardName, page.threadNumber, threadTitle, posts);
 				return true;
-			}
 		}
 		return false;
 	}
@@ -949,13 +947,10 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 
 	@Override
 	public void onAppearanceOptionChanged(int what) {
-		switch (what) {
-			case R.id.menu_spoilers:
-			case R.id.menu_my_posts:
-			case R.id.menu_sfw_mode: {
+		int switchItemId1 = what;
+		if (switchItemId1 == R.id.menu_spoilers || switchItemId1 == R.id.menu_my_posts || switchItemId1 == R.id.menu_sfw_mode) {
+
 				notifyAllAdaptersChanged();
-				break;
-			}
 		}
 	}
 
@@ -995,8 +990,9 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 
 	private boolean onSelectionItemSelected(ActionMode mode, MenuItem item) {
 		PostsAdapter adapter = getAdapter();
-		switch (item.getItemId()) {
-			case R.id.menu_make_threadshot: {
+		int switchItemId2 = item.getItemId();
+		if (switchItemId2 == R.id.menu_make_threadshot) {
+
 				ArrayList<PostItem> postItems = adapter.getSelectedItems();
 				if (postItems.size() > 0) {
 					Page page = getPage();
@@ -1006,8 +1002,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				}
 				mode.finish();
 				return true;
-			}
-			case R.id.menu_reply: {
+		} else if (switchItemId2 == R.id.menu_reply) {
+
 				ArrayList<Replyable.ReplyData> data = new ArrayList<>();
 				for (PostItem postItem : adapter.getSelectedItems()) {
 					data.add(new Replyable.ReplyData(postItem.getPostNumber(), null));
@@ -1017,8 +1013,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				}
 				mode.finish();
 				return true;
-			}
-			case R.id.menu_delete: {
+		} else if (switchItemId2 == R.id.menu_delete) {
+
 				ArrayList<PostItem> postItems = adapter.getSelectedItems();
 				ArrayList<PostNumber> postNumbers = new ArrayList<>();
 				for (PostItem postItem : postItems) {
@@ -1033,8 +1029,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				}
 				mode.finish();
 				return true;
-			}
-			case R.id.menu_report: {
+		} else if (switchItemId2 == R.id.menu_report) {
+
 				ArrayList<PostItem> postItems = adapter.getSelectedItems();
 				ArrayList<PostNumber> postNumbers = new ArrayList<>();
 				for (PostItem postItem : postItems) {
@@ -1049,7 +1045,6 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				}
 				mode.finish();
 				return true;
-			}
 		}
 		return false;
 	}

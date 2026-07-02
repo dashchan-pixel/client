@@ -155,12 +155,13 @@ public class AutohideFragment extends BaseListFragment {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_new_rule: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_new_rule) {
+
 				editRule(null, -1);
 				return true;
-			}
-			case R.id.menu_search: {
+		} else if (switchItemId0 == R.id.menu_search) {
+
 				if (item == searchMenuItem) {
 					searchFocused = true;
 					return false;
@@ -171,7 +172,6 @@ public class AutohideFragment extends BaseListFragment {
 				} else {
 					return true;
 				}
-			}
 		}
 		return super.onOptionsItemSelected(item);
 	}

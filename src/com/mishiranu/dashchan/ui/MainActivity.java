@@ -1349,8 +1349,9 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 			return true;
 		}
 		ContentFragment currentFragment = getCurrentFragment();
-		switch (item.getItemId()) {
-			case android.R.id.home: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == android.R.id.home) {
+
 				if (currentFragment.onHomePressed()) {
 					return true;
 				}
@@ -1383,48 +1384,41 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 					removeFragment();
 				}
 				return true;
-			}
-			case R.id.menu_change_theme:
-			case R.id.menu_expanded_screen:
-			case R.id.menu_spoilers:
-			case R.id.menu_my_posts:
-			case R.id.menu_drawer:
-			case R.id.menu_sfw_mode: {
+		} else if (switchItemId0 == R.id.menu_change_theme || switchItemId0 == R.id.menu_expanded_screen || switchItemId0 == R.id.menu_spoilers || switchItemId0 == R.id.menu_my_posts || switchItemId0 == R.id.menu_drawer || switchItemId0 == R.id.menu_sfw_mode) {
+
 				try {
-					switch (item.getItemId()) {
-						case R.id.menu_change_theme: {
+					if (switchItemId0 == R.id.menu_change_theme) {
+
 							new ThemeDialog().show(getSupportFragmentManager(), ThemeDialog.class.getName());
 							return true;
-						}
-						case R.id.menu_expanded_screen: {
+					} else if (switchItemId0 == R.id.menu_expanded_screen) {
+
 							Preferences.setExpandedScreen(!item.isChecked());
 							recreate();
 							return true;
-						}
-						case R.id.menu_spoilers: {
+					} else if (switchItemId0 == R.id.menu_spoilers) {
+
 							Preferences.setShowSpoilers(!item.isChecked());
 							return true;
-						}
-						case R.id.menu_my_posts: {
+					} else if (switchItemId0 == R.id.menu_my_posts) {
+
 							Preferences.setShowMyPosts(!item.isChecked());
 							return true;
-						}
-						case R.id.menu_drawer: {
+					} else if (switchItemId0 == R.id.menu_drawer) {
+
 							Preferences.setDrawerLocked(!item.isChecked());
 							updateWideConfiguration(false);
 							return true;
-						}
-						case R.id.menu_sfw_mode: {
+					} else if (switchItemId0 == R.id.menu_sfw_mode) {
+
 							Preferences.setSfwMode(!item.isChecked());
 							return true;
-						}
 					}
 				} finally {
 					if (currentFragment instanceof PageFragment) {
 						((PageFragment) currentFragment).onAppearanceOptionChanged(item.getItemId());
 					}
 				}
-			}
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -2016,7 +2010,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		Intent intent = new Intent(this, MainActivity.class).setAction("updates")
 				.putExtra(C.EXTRA_UPDATE_DATA_MAP, updateDataMap)
 				.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		builder.setContentIntent(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+		builder.setContentIntent(PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 		builder.setAutoCancel(true);
 		notificationManager.notify(C.NOTIFICATION_ID_UPDATES, builder.build());
 	}

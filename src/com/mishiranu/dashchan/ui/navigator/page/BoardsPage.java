@@ -137,19 +137,19 @@ public class BoardsPage extends ListPage implements BoardsAdapter.Callback,
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_refresh: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_refresh) {
+
 				RetainableExtra retainableExtra = getRetainableExtra(RetainableExtra.FACTORY);
 				if (!retainableExtra.firstLoad) {
 					refreshBoards(!getAdapter().isRealEmpty());
 				}
 				return true;
-			}
-			case R.id.menu_make_home_page: {
+		} else if (switchItemId0 == R.id.menu_make_home_page) {
+
 				Preferences.setDefaultBoardName(getPage().chanName, null);
 				item.setVisible(false);
 				return true;
-			}
 		}
 		return false;
 	}

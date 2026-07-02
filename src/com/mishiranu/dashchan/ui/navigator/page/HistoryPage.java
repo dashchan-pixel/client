@@ -117,11 +117,11 @@ public class HistoryPage extends ListPage implements HistoryAdapter.Callback, Ge
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_clear: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_clear) {
+
 				showClearHistoryDialog(getFragmentManager(), chanName);
 				return true;
-			}
 		}
 		return false;
 	}

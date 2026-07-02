@@ -12,8 +12,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.renderscript.Allocation;
-import android.renderscript.RenderScript;
 import android.util.Base64;
 import android.util.Pair;
 import android.view.Gravity;
@@ -21,7 +19,6 @@ import androidx.core.graphics.ColorUtils;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.content.MainApplication;
 import com.mishiranu.dashchan.content.model.FileHolder;
-import com.mishiranu.dashchan.graphics.ScriptC_GammaCorrection;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -497,35 +494,20 @@ public class GraphicsUtils {
 		if (bitmap == null) {
 			return null;
 		}
-		if (C.API_LOLLIPOP) {
-			RenderScript renderScript = RenderScript.create(MainApplication.getInstance());
-			Allocation allocation = Allocation.createFromBitmap(renderScript, bitmap);
-			ScriptC_GammaCorrection script = new ScriptC_GammaCorrection(renderScript);
-			script.set_gammaCorrection(gammaCorrection);
-			script.forEach_apply(allocation);
-			allocation.copyTo(bitmap);
-			allocation.destroy();
-			renderScript.destroy();
-		} else {
-			int width = bitmap.getWidth();
-			int height = bitmap.getHeight();
-			int[] pixels = new int[width];
-			for (int y = 0; y < height; y++) {
-				bitmap.getPixels(pixels, 0, width, 0, y, width, 1);
-				for (int x = 0; x < width; x++) {
-					int color = pixels[x];
-					float red = Color.red(color) / 255f;
-					float green = Color.green(color) / 255f;
-					float blue = Color.blue(color) / 255f;
-					red = (float) Math.pow(red, gammaCorrection);
-					green = (float) Math.pow(green, gammaCorrection);
-					blue = (float) Math.pow(blue, gammaCorrection);
-					pixels[x] = Color.argb(Color.alpha(color), (int) (red * 255 + 0.5f),
-							(int) (green * 255 + 0.5f), (int) (blue * 255 + 0.5f));
-				}
-				bitmap.setPixels(pixels, 0, width, 0, y, width, 1);
-			}
+		int[] lut = new int[256];
+		for (int i = 0; i < 256; i++) {
+			lut[i] = (int) (Math.pow(i / 255f, gammaCorrection) * 255 + 0.5f);
 		}
+		int width = bitmap.getWidth();
+		int height = bitmap.getHeight();
+		int[] pixels = new int[width * height];
+		bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+		for (int i = 0; i < pixels.length; i++) {
+			int color = pixels[i];
+			pixels[i] = Color.argb(Color.alpha(color), lut[Color.red(color)],
+					lut[Color.green(color)], lut[Color.blue(color)]);
+		}
+		bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
 		return bitmap;
 	}
 }

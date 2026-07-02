@@ -219,30 +219,28 @@ public class SearchPage extends ListPage implements SearchAdapter.Callback,
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_refresh: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_refresh) {
+
 				refreshSearch(getAdapter().getItemCount() > 0, false);
 				return true;
-			}
-			case R.id.menu_group: {
+		} else if (switchItemId0 == R.id.menu_group) {
+
 				SearchAdapter adapter = getAdapter();
 				boolean groupMode = !adapter.isGroupMode();
 				adapter.setGroupMode(groupMode);
 				getParcelableExtra(ParcelableExtra.FACTORY).groupMode = groupMode;
 				return true;
-			}
 		}
 		return false;
 	}
 
 	@Override
 	public void onAppearanceOptionChanged(int what) {
-		switch (what) {
-			case R.id.menu_spoilers:
-			case R.id.menu_sfw_mode: {
+		int switchItemId1 = what;
+		if (switchItemId1 == R.id.menu_spoilers || switchItemId1 == R.id.menu_sfw_mode) {
+
 				notifyAllAdaptersChanged();
-				break;
-			}
 		}
 	}
 

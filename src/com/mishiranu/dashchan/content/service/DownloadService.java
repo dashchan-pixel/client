@@ -986,7 +986,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 			notificationManager.cancel(C.NOTIFICATION_ID_DOWNLOADING);
 			builder = new NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_DOWNLOADING);
 			builder.setDeleteIntent(PendingIntent.getBroadcast(this, 0, new Intent(this, Receiver.class)
-					.setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT));
+					.setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			builder.setSmallIcon(notificationData.type.iconResId);
 			builder.setColor(notificationColor);
 			if (notificationData.lastSuccessFile != null) {
@@ -998,7 +998,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 					builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
 							getString(android.R.string.cancel), PendingIntent.getBroadcast(this, 0,
 									new Intent(this, Receiver.class).setAction(ACTION_CANCEL),
-									PendingIntent.FLAG_UPDATE_CURRENT));
+									PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 					break;
 				}
 				case RESULT: {
@@ -1006,20 +1006,20 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 						builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_refresh_dark,
 								getString(R.string.retry), PendingIntent.getBroadcast(this, 0,
 										new Intent(this, Receiver.class).setAction(ACTION_RETRY),
-										PendingIntent.FLAG_UPDATE_CURRENT));
+										PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 					}
 					break;
 				}
 			}
 			if (notificationData.type == NotificationData.Type.REQUEST) {
 				builder.setContentIntent(PendingIntent.getActivity(this, 0,
-						new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT));
+						new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			} else if (notificationData.lastSuccessFile != null) {
 				builder.setContentIntent(PendingIntent.getBroadcast(this, 0, new Intent(this, Receiver.class)
 						.putExtra(EXTRA_FILE_TARGET, notificationData.lastSuccessFile.getTarget().name())
 						.putExtra(EXTRA_FILE_PATH, notificationData.lastSuccessFile.getRelativePath())
 						.putExtra(EXTRA_ALLOW_WRITE, notificationData.allowWrite)
-						.setAction(ACTION_OPEN), PendingIntent.FLAG_UPDATE_CURRENT));
+						.setAction(ACTION_OPEN), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			}
 		}
 		String contentTitle;

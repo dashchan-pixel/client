@@ -137,8 +137,9 @@ public class ThemesFragment extends BaseListFragment {
 
 	@Override
 	public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_add_theme: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_add_theme) {
+
 				// Check Android supports "application/json" MIME-type
 				String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json");
 				if (StringUtils.isEmpty(mimeType) || "application/octet-stream".equals(mimeType)) {
@@ -149,7 +150,6 @@ public class ThemesFragment extends BaseListFragment {
 						.setType(mimeType).putExtra("android.content.extra.SHOW_ADVANCED", true);
 				startActivityForResult(intent, C.REQUEST_CODE_ATTACH);
 				return true;
-			}
 		}
 		return super.onOptionsItemSelected(item);
 	}

@@ -984,8 +984,9 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_attach: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_attach) {
+
 				// SHOW_ADVANCED to show folder navigation
 				Intent intent = new Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE)
 						.putExtra("android.content.extra.SHOW_ADVANCED", true);
@@ -1015,8 +1016,6 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 				} catch (ActivityNotFoundException e) {
 					ClickableToast.show(R.string.unknown_address);
 				}
-				break;
-			}
 		}
 		return true;
 	}

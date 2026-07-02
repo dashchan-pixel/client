@@ -330,16 +330,16 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 			builder.setColor(notificationColor);
 			PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 					new Intent(this, MainActivity.class).setAction(C.ACTION_PLAYER),
-					PendingIntent.FLAG_UPDATE_CURRENT);
+					PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 			builder.setContentIntent(contentIntent);
 			PendingIntent toggleIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
-					obtainIntent(this, ACTION_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT);
+					obtainIntent(this, ACTION_TOGGLE), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 			boolean playing = mediaPlayer != null && mediaPlayer.isPlaying();
 			builder.addAction(C.API_LOLLIPOP ? 0 : playing
 							? R.drawable.ic_action_pause_dark : R.drawable.ic_action_play_dark,
 					getString(playing ? R.string.pause : R.string.play), toggleIntent);
 			PendingIntent cancelIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
-					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT);
+					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 			builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
 					getString(R.string.stop), cancelIntent);
 			this.builder = builder;
@@ -356,16 +356,16 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 			builder.setSmallIcon(error ? android.R.drawable.stat_sys_download_done
 					: android.R.drawable.stat_sys_download);
 			builder.setDeleteIntent(AndroidUtils.getAnyServicePendingIntent(this, 0,
-					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT));
+					obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			if (error) {
 				PendingIntent retryIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
 						obtainIntent(this, ACTION_START).setData(uri).putExtra(EXTRA_CHAN_NAME, chanName)
-								.putExtra(EXTRA_FILE_NAME, fileName), PendingIntent.FLAG_UPDATE_CURRENT);
+								.putExtra(EXTRA_FILE_NAME, fileName), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_refresh_dark,
 						getString(R.string.retry), retryIntent);
 			} else {
 				PendingIntent cancelIntent = AndroidUtils.getAnyServicePendingIntent(this, 0,
-						obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT);
+						obtainIntent(this, ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 				builder.addAction(C.API_LOLLIPOP ? 0 : R.drawable.ic_action_cancel_dark,
 						getString(android.R.string.cancel), cancelIntent);
 			}

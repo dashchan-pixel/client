@@ -436,8 +436,9 @@ public class UpdateFragment extends BaseListFragment {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-			case R.id.menu_download: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_download) {
+
 				ArrayList<UpdaterActivity.Request> requests = new ArrayList<>();
 				if (updateDataMap != null) {
 					Adapter adapter = (Adapter) getRecyclerView().getAdapter();
@@ -461,11 +462,9 @@ public class UpdateFragment extends BaseListFragment {
 					ClickableToast.show(R.string.no_available_updates);
 				}
 				return true;
-			}
-			case R.id.menu_check_on_start: {
+		} else if (switchItemId0 == R.id.menu_check_on_start) {
+
 				Preferences.setCheckUpdatesOnStart(!item.isChecked());
-				break;
-			}
 		}
 		return false;
 	}

@@ -419,23 +419,19 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	@Override
 	public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 		PagerInstance.ViewHolder holder = pagerUnit != null ? pagerUnit.getCurrentHolder() : null;
-		switch (item.getItemId()) {
-			case android.R.id.home: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == android.R.id.home) {
+
 				dismiss();
-				break;
-			}
-			case R.id.menu_save: {
+		} else if (switchItemId0 == R.id.menu_save) {
+
 				downloadGalleryItem(holder.galleryItem);
-				break;
-			}
-			case R.id.menu_refresh: {
+		} else if (switchItemId0 == R.id.menu_refresh) {
+
 				pagerUnit.refreshCurrent();
-				break;
-			}
-			case R.id.menu_select: {
+		} else if (switchItemId0 == R.id.menu_select) {
+
 				listUnit.startSelectionMode(null);
-				break;
-			}
 		}
 		return true;
 	}

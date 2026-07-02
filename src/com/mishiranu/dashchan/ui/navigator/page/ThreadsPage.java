@@ -483,46 +483,44 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		Page page = getPage();
-		switch (item.getItemId()) {
-			case R.id.menu_refresh: {
+		int switchItemId0 = item.getItemId();
+		if (switchItemId0 == R.id.menu_refresh) {
+
 				refreshThreads(RefreshPage.CURRENT);
 				return true;
-			}
-			case R.id.menu_catalog: {
+		} else if (switchItemId0 == R.id.menu_catalog) {
+
 				loadThreadsPage(PAGE_NUMBER_CATALOG, false);
 				return true;
-			}
-			case R.id.menu_pages: {
+		} else if (switchItemId0 == R.id.menu_pages) {
+
 				loadThreadsPage(0, false);
 				return true;
-			}
-			case R.id.menu_archive: {
+		} else if (switchItemId0 == R.id.menu_archive) {
+
 				getUiManager().navigator().navigateArchive(page.chanName, page.boardName);
 				return true;
-			}
-			case R.id.menu_new_thread: {
+		} else if (switchItemId0 == R.id.menu_new_thread) {
+
 				getUiManager().navigator().navigatePosting(page.chanName, page.boardName, null);
 				return true;
-			}
-			case R.id.menu_summary: {
+		} else if (switchItemId0 == R.id.menu_summary) {
+
 				showSummaryDialog(getFragmentManager(), page.chanName, page.boardName);
 				return true;
-			}
-			case R.id.menu_star_text:
-			case R.id.menu_star_icon: {
+		} else if (switchItemId0 == R.id.menu_star_text || switchItemId0 == R.id.menu_star_icon) {
+
 				FavoritesStorage.getInstance().add(page.chanName, page.boardName);
 				return true;
-			}
-			case R.id.menu_unstar_text:
-			case R.id.menu_unstar_icon: {
+		} else if (switchItemId0 == R.id.menu_unstar_text || switchItemId0 == R.id.menu_unstar_icon) {
+
 				FavoritesStorage.getInstance().remove(page.chanName, page.boardName, null);
 				return true;
-			}
-			case R.id.menu_make_home_page: {
+		} else if (switchItemId0 == R.id.menu_make_home_page) {
+
 				Preferences.setDefaultBoardName(page.chanName, page.boardName);
 				item.setVisible(false);
 				return true;
-			}
 		}
 		for (Preferences.CatalogSort catalogSort : Preferences.CatalogSort.values()) {
 			if (item.getItemId() == catalogSort.menuItemId) {
@@ -625,12 +623,10 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 
 	@Override
 	public void onAppearanceOptionChanged(int what) {
-		switch (what) {
-			case R.id.menu_spoilers:
-			case R.id.menu_sfw_mode: {
+		int switchItemId1 = what;
+		if (switchItemId1 == R.id.menu_spoilers || switchItemId1 == R.id.menu_sfw_mode) {
+
 				notifyAllAdaptersChanged();
-				break;
-			}
 		}
 	}
 

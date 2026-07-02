@@ -207,12 +207,6 @@ public abstract class WebViewDialog extends DialogFragment {
 		}
 
 		@Override
-		@Deprecated
-		public void onReachedMaxAppCacheSize(long requiredStorage, long quota, WebStorage.QuotaUpdater quotaUpdater) {
-			delegate.onReachedMaxAppCacheSize(requiredStorage, quota, quotaUpdater);
-		}
-
-		@Override
 		public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
 			delegate.onGeolocationPermissionsShowPrompt(origin, callback);
 		}
