@@ -5,13 +5,12 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Pair;
 import chan.content.Chan;
-import chan.http.HttpClient;
 import chan.http.HttpException;
-import chan.http.InetSocket;
+import chan.http.HttpHolder;
 import com.mishiranu.dashchan.BuildConfig;
 import com.mishiranu.dashchan.content.model.ErrorItem;
-import com.mishiranu.dashchan.content.net.SubversionProtocol;
-import java.io.IOException;
+import com.mishiranu.dashchan.content.net.GithubRepository;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,7 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<ReadChangelogTask.Entry>>> {
+public class ReadChangelogTask extends HttpHolderTask<Void, Pair<ErrorItem, List<ReadChangelogTask.Entry>>> {
 
 	private static final String PREFIX_EXPERIMENTAL_VERSION = "3.1.4-experimental-";
 
@@ -129,48 +128,36 @@ public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<R
 	private final List<Locale> locales;
 
 	public ReadChangelogTask(Callback callback, List<Locale> locales) {
+		super(Chan.getFallback());
 		this.callback = callback;
 		this.locales = locales;
 	}
 
-	private static String decodeDiffToString(byte[] svnDiff) throws IOException {
-		byte[] decoded;
-		try {
-			decoded = SubversionProtocol.applyDiff(null, svnDiff);
-		} catch (IllegalArgumentException e) {
-			Throwable cause = e.getCause();
-			if (cause instanceof IOException) {
-				throw (IOException) cause;
-			} else {
-				throw new IOException(e);
-			}
-		}
-		return decoded != null ? new String(decoded) : null;
-	}
-
 	@Override
-	protected Pair<ErrorItem, List<Entry>> run() throws InterruptedException {
+	protected Pair<ErrorItem, List<Entry>> run(HttpHolder holder) {
 		Uri githubUri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(BuildConfig.GITHUB_URI_METADATA), null);
 		String metadataPath = BuildConfig.GITHUB_PATH_METADATA;
 		try {
-			HashMap<String, byte[]> metadataFiles = SubversionProtocol.listGithubFiles(githubUri, metadataPath);
+			GithubRepository repository = new GithubRepository(holder, githubUri);
+			Map<String, GithubRepository.Entry> metadataFiles = repository.listFiles(metadataPath);
 			if (isCancelled()) {
 				return null;
 			}
 			HashSet<String> metadataDirs = new HashSet<>();
-			for (HashMap.Entry<String, byte[]> entry : metadataFiles.entrySet()) {
-				if (entry.getValue() == null) {
+			for (Map.Entry<String, GithubRepository.Entry> entry : metadataFiles.entrySet()) {
+				if (entry.getValue().directory) {
 					metadataDirs.add(entry.getKey());
 				}
 			}
 			if (metadataDirs.isEmpty()) {
 				return new Pair<>(new ErrorItem(ErrorItem.Type.UNKNOWN), null);
 			}
-			byte[] versionsFile = metadataFiles.get("versions.json");
+			GithubRepository.Entry versionsFile = metadataFiles.get("versions.json");
 			if (versionsFile == null) {
 				return new Pair<>(new ErrorItem(ErrorItem.Type.UNKNOWN), null);
 			}
-			JSONArray versionsArray = new JSONObject(decodeDiffToString(versionsFile)).getJSONArray("versions");
+			JSONArray versionsArray = new JSONObject(new String(repository.readFile(versionsFile)))
+					.getJSONArray("versions");
 
 			ArrayList<String> downloadLocales = new ArrayList<>();
 			for (Locale locale : locales) {
@@ -201,13 +188,12 @@ public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<R
 			}
 
 			HashSet<String> checkedLocales = new HashSet<>();
-			HashMap<String, byte[]> changelogFiles = null;
+			Map<String, GithubRepository.Entry> changelogFiles = null;
 			for (String localeDir : downloadLocales) {
 				if (!checkedLocales.contains(localeDir)) {
 					checkedLocales.add(localeDir);
 					try {
-						changelogFiles = SubversionProtocol.listGithubFiles(githubUri,
-								metadataPath + "/" + localeDir + "/changelogs");
+						changelogFiles = repository.listFiles(metadataPath + "/" + localeDir + "/changelogs");
 						if (isCancelled()) {
 							return null;
 						}
@@ -233,8 +219,9 @@ public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<R
 				String date = jsonObject.getString("date");
 				Entry entry = entriesMap.get(code);
 				if ((entry == null || entry.texts.isEmpty()) && jsonObject.optBoolean("changelog")) {
-					byte[] file = changelogFiles.get(code + ".txt");
-					String changelog = decodeDiffToString(file);
+					GithubRepository.Entry file = changelogFiles.get(code + ".txt");
+					byte[] fileBytes = file != null ? repository.readFile(file) : null;
+					String changelog = fileBytes != null ? new String(fileBytes) : null;
 					if (changelog != null) {
 						entry = new Entry(entry != null ? entry.versions : new ArrayList<>(),
 								entry != null ? entry.texts : new ArrayList<>());
@@ -273,12 +260,6 @@ public class ReadChangelogTask extends ExecutorTask<Void, Pair<ErrorItem, List<R
 			return new Pair<>(null, entries);
 		} catch (HttpException e) {
 			return new Pair<>(e.getErrorItemAndHandle(), null);
-		} catch (InetSocket.InvalidCertificateException e) {
-			e.printStackTrace();
-			return new Pair<>(new ErrorItem(ErrorItem.Type.INVALID_CERTIFICATE), null);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return new Pair<>(HttpClient.transformIOException(e).getErrorItemAndHandle(), null);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			return new Pair<>(new ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null);

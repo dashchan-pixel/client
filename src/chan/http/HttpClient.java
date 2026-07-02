@@ -1,59 +1,41 @@
 package chan.http;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
-import android.os.SystemClock;
 import android.util.Pair;
 import androidx.annotation.NonNull;
 import chan.content.Chan;
 import chan.util.CommonUtils;
 import chan.util.StringUtils;
-import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.content.AdvancedPreferences;
-import com.mishiranu.dashchan.content.MainApplication;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.model.ErrorItem;
 import com.mishiranu.dashchan.util.IOUtils;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.CookieHandler;
-import java.net.CookieManager;
 import java.net.HttpURLConnection;
 import java.net.IDN;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
@@ -61,13 +43,18 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
+import okhttp3.Call;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okio.BufferedSink;
 import org.brotli.dec.BrotliInputStream;
 
 public class HttpClient {
@@ -85,66 +72,15 @@ public class HttpClient {
 
 		@Override
 		public X509Certificate[] getAcceptedIssuers() {
-			return null;
+			return new X509Certificate[0];
 		}
 	};
 
 	static final int HTTP_TEMPORARY_REDIRECT = 307;
 
 	static {
-
 		SHORT_RESPONSE_MESSAGES.put("Internal Server Error", "Internal Error");
 		SHORT_RESPONSE_MESSAGES.put("Service Temporarily Unavailable", "Service Unavailable");
-
-		if (Preferences.isUseGmsProvider()) {
-			try {
-				// Load GmsCore_OpenSSL from Google Play Services package
-				Context context = MainApplication.getInstance().createPackageContext("com.google.android.gms",
-						Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
-				Class<?> providerInstallerImplClass = Class.forName("com.google.android.gms.common.security"
-						+ ".ProviderInstallerImpl", false, context.getClassLoader());
-				Method insertProviderMethod = providerInstallerImplClass.getMethod("insertProvider", Context.class);
-				insertProviderMethod.invoke(null, context);
-			} catch (Exception e) {
-				// Reflective operation, ignore exception
-			}
-		}
-
-		/*
-		 * MediaPlayer uses MediaHTTPConnection that uses its own CookieHandler instance.
-		 * This cause some bugs in application work.
-		 *
-		 * This CookieHandler doesn't allow the application to store cookies when chan HttpClient used.
-		 */
-		CookieHandler.setDefault(new CookieHandler() {
-			private final CookieManager cookieManager = new CookieManager();
-
-			private boolean isInternalRequest() {
-				StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-				for (StackTraceElement element : elements) {
-					if (HttpClient.class.getName().equals(element.getClassName())) {
-						return true;
-					}
-				}
-				return false;
-			}
-
-			@Override
-			public void put(URI uri, Map<String, List<String>> responseHeaders) throws IOException {
-				if (isInternalRequest()) {
-					return;
-				}
-				cookieManager.put(uri, responseHeaders);
-			}
-
-			@Override
-			public Map<String, List<String>> get(URI uri, Map<String, List<String>> requestHeaders) throws IOException {
-				if (isInternalRequest()) {
-					return Collections.emptyMap();
-				}
-				return cookieManager.get(uri, requestHeaders);
-			}
-		});
 	}
 
 	private static final HttpClient INSTANCE = new HttpClient();
@@ -246,11 +182,6 @@ public class HttpClient {
 	}
 
 	private final HashMap<String, ProxyData> proxies = new HashMap<>();
-	private final ThreadLocal<HandshakeSSLSocket.Session> handshakeSessions = new ThreadLocal<>();
-
-	private boolean ssl3Disabled = false;
-	private SSLSocketFactory sslSocketFactory;
-	private SSLSocketFactory unsafeSslSocketFactory;
 
 	static final class InterruptedHttpException extends IOException {
 		public HttpException toHttp() {
@@ -259,26 +190,23 @@ public class HttpClient {
 	}
 
 	private static final class RetryException extends Exception {}
-	private static final class HandshakeTimeoutException extends IOException {}
 
 	enum Encoding {
-		IDENTITY("identity", false),
-		GZIP("gzip", true),
-		DEFLATE("deflate", true),
-		BROTLI("br", true),
-		UNKNOWN("", false);
+		IDENTITY("identity"),
+		GZIP("gzip"),
+		DEFLATE("deflate"),
+		BROTLI("br"),
+		UNKNOWN("");
 
 		public final String name;
-		public final boolean use;
 
-		Encoding(String name, boolean use) {
+		Encoding(String name) {
 			this.name = name;
-			this.use = use;
 		}
 
-		public static Encoding get(HttpURLConnection connection) {
-			if (connection != null) {
-				String contentEncoding = connection.getContentEncoding();
+		public static Encoding get(Headers headers) {
+			if (headers != null) {
+				String contentEncoding = headers.get("Content-Encoding");
 				if (!StringUtils.isEmpty(contentEncoding)) {
 					for (Encoding encoding : values()) {
 						if (contentEncoding.equals(encoding.name)) {
@@ -292,45 +220,94 @@ public class HttpClient {
 		}
 	}
 
-	SSLSocketFactory getSSLSocketFactory(boolean verifyCertificate) {
-		synchronized (this) {
-			if (sslSocketFactory == null) {
-				sslSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
-				sslSocketFactory = new SSLSocketFactoryWrapper(sslSocketFactory,
-						socket -> new HandshakeSSLSocket(socket, handshakeSessions.get()));
+	private static final String ACCEPT_ENCODING = "gzip, deflate, br";
+
+	private OkHttpClient baseClient;
+	private SSLSocketFactory unsafeSslSocketFactory;
+	private final HashMap<ClientKey, OkHttpClient> clients = new HashMap<>();
+
+	private static final class ClientKey {
+		final Proxy proxy;
+		final boolean verifyCertificate;
+		final int connectTimeout;
+		final int readTimeout;
+
+		ClientKey(Proxy proxy, boolean verifyCertificate, int connectTimeout, int readTimeout) {
+			this.proxy = proxy;
+			this.verifyCertificate = verifyCertificate;
+			this.connectTimeout = connectTimeout;
+			this.readTimeout = readTimeout;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o == this) {
+				return true;
 			}
-			if (verifyCertificate) {
-				return sslSocketFactory;
+			if (o instanceof ClientKey) {
+				ClientKey key = (ClientKey) o;
+				return CommonUtils.equals(proxy, key.proxy) && verifyCertificate == key.verifyCertificate
+						&& connectTimeout == key.connectTimeout && readTimeout == key.readTimeout;
 			}
-			if (unsafeSslSocketFactory == null) {
-				try {
-					SSLContext sslContext = SSLContext.getInstance("TLS");
-					sslContext.init(null, new X509TrustManager[] {UNSAFE_TRUST_MANAGER}, null);
-					unsafeSslSocketFactory = sslContext.getSocketFactory();
-				} catch (Exception e) {
-					unsafeSslSocketFactory = sslSocketFactory;
-				}
-			}
-			return unsafeSslSocketFactory;
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = proxy != null ? proxy.hashCode() : 0;
+			result = 31 * result + (verifyCertificate ? 1 : 0);
+			result = 31 * result + connectTimeout;
+			result = 31 * result + readTimeout;
+			return result;
 		}
 	}
 
-	HostnameVerifier getHostnameVerifier(boolean verifyCertificate) {
-		return verifyCertificate ? HttpsURLConnection.getDefaultHostnameVerifier() : UNSAFE_HOSTNAME_VERIFIER;
+	private synchronized OkHttpClient obtainClient(Proxy proxy, boolean verifyCertificate,
+			int connectTimeout, int readTimeout) {
+		if (baseClient == null) {
+			baseClient = new OkHttpClient.Builder()
+					.followRedirects(false)
+					.followSslRedirects(false)
+					.retryOnConnectionFailure(false)
+					.build();
+		}
+		ClientKey key = new ClientKey(proxy, verifyCertificate, connectTimeout, readTimeout);
+		OkHttpClient client = clients.get(key);
+		if (client == null) {
+			OkHttpClient.Builder builder = baseClient.newBuilder()
+					.proxy(proxy != null ? proxy : Proxy.NO_PROXY)
+					.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+					.readTimeout(readTimeout, TimeUnit.MILLISECONDS)
+					.writeTimeout(readTimeout, TimeUnit.MILLISECONDS);
+			if (!verifyCertificate) {
+				if (unsafeSslSocketFactory == null) {
+					try {
+						SSLContext sslContext = SSLContext.getInstance("TLS");
+						sslContext.init(null, new X509TrustManager[] {UNSAFE_TRUST_MANAGER}, null);
+						unsafeSslSocketFactory = sslContext.getSocketFactory();
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				}
+				builder.sslSocketFactory(unsafeSslSocketFactory, UNSAFE_TRUST_MANAGER);
+				builder.hostnameVerifier(UNSAFE_HOSTNAME_VERIFIER);
+			}
+			client = builder.build();
+			if (clients.size() > 16) {
+				clients.clear();
+			}
+			clients.put(key, client);
+		}
+		return client;
 	}
 
 	HttpResponse execute(HttpSession session, HttpRequest request) throws HttpException {
-		handshakeSessions.set(new HandshakeSSLSocket.Session(request.connectTimeout));
-		try {
-			while (true) {
-				try {
-					return executeInternal(session, request);
-				} catch (RetryException e) {
-					// Continue
-				}
+		while (true) {
+			try {
+				return executeInternal(session, request);
+			} catch (RetryException e) {
+				// Continue
 			}
-		} finally {
-			handshakeSessions.remove();
 		}
 	}
 
@@ -389,7 +366,39 @@ public class HttpClient {
 		return new URL(uriStringBuilder.toString());
 	}
 
-	@TargetApi(Build.VERSION_CODES.KITKAT)
+	private static class EntityRequestBody extends RequestBody {
+		private final RequestEntity entity;
+		private final HttpSession session;
+		private final HttpRequest.OutputListener listener;
+
+		EntityRequestBody(RequestEntity entity, HttpSession session, HttpRequest.OutputListener listener) {
+			this.entity = entity;
+			this.session = session;
+			this.listener = listener;
+		}
+
+		@Override
+		public MediaType contentType() {
+			String contentType = entity.getContentType();
+			return contentType != null ? MediaType.parse(contentType) : null;
+		}
+
+		@Override
+		public long contentLength() {
+			long contentLength = entity.getContentLength();
+			return contentLength > 0 ? contentLength : -1;
+		}
+
+		@Override
+		public void writeTo(@NonNull BufferedSink sink) throws IOException {
+			long contentLength = entity.getContentLength();
+			ClientOutputStream output = new ClientOutputStream(sink.outputStream(),
+					session, listener, contentLength);
+			entity.write(output);
+			output.flush();
+		}
+	}
+
 	private HttpResponse executeInternal(HttpSession session, HttpRequest request)
 			throws HttpException, RetryException {
 		session.checkThread();
@@ -402,26 +411,8 @@ public class HttpClient {
 				throw new HttpException(ErrorItem.Type.UNSUPPORTED_SCHEME, false, false);
 			}
 			URL url = encodeUri(requestedUri);
-			HttpURLConnection connection = (HttpURLConnection) (session.proxy != null
-					? url.openConnection(session.proxy) : url.openConnection());
-			if (connection instanceof HttpsURLConnection) {
-				HttpsURLConnection secureConnection = (HttpsURLConnection) connection;
-				secureConnection.setSSLSocketFactory(getSSLSocketFactory(session.verifyCertificate));
-				secureConnection.setHostnameVerifier(getHostnameVerifier(session.verifyCertificate));
-			}
-			try {
-				session.setConnection(connection);
-			} catch (InterruptedHttpException e) {
-				connection.disconnect();
-				throw e;
-			}
+			Request.Builder builder = new Request.Builder().url(url);
 
-			connection.setUseCaches(false);
-			connection.setConnectTimeout(request.connectTimeout);
-			connection.setReadTimeout(request.readTimeout);
-			connection.setInstanceFollowRedirects(false);
-			connection.setRequestProperty("Host", url.getHost());
-			connection.setRequestProperty("Connection", request.keepAlive ? "keep-alive" : "close");
 			String userAgent = null;
 			boolean userAgentSet = false;
 			boolean acceptEncodingSet = false;
@@ -430,7 +421,7 @@ public class HttpClient {
 					if ("Connection".equalsIgnoreCase(header.first)) {
 						continue;
 					}
-					connection.setRequestProperty(header.first, header.second);
+					builder.header(header.first, header.second);
 					if ("User-Agent".equalsIgnoreCase(header.first)) {
 						userAgent = header.second;
 						userAgentSet = true;
@@ -442,19 +433,10 @@ public class HttpClient {
 			}
 			if (!userAgentSet) {
 				userAgent = AdvancedPreferences.getUserAgent(session.holder.chan.name);
-				connection.setRequestProperty("User-Agent", userAgent);
+				builder.header("User-Agent", userAgent);
 			}
 			if (!acceptEncodingSet) {
-				StringBuilder acceptEncoding = new StringBuilder();
-				for (Encoding encoding : Encoding.values()) {
-					if (encoding.use) {
-						if (acceptEncoding.length() > 0) {
-							acceptEncoding.append(", ");
-						}
-						acceptEncoding.append(encoding.name);
-					}
-				}
-				connection.setRequestProperty("Accept-Encoding", acceptEncoding.toString());
+				builder.header("Accept-Encoding", ACCEPT_ENCODING);
 			}
 			FirewallResolver.Identifier resolverIdentifier = new FirewallResolver
 					.Identifier(userAgent, !userAgentSet, url.getHost());
@@ -462,14 +444,19 @@ public class HttpClient {
 					? request.cookieBuilder : obtainModifiedCookieBuilder(request.cookieBuilder,
 					session.holder.chan, requestedUri, resolverIdentifier);
 			if (cookieBuilder != null) {
-				connection.setRequestProperty("Cookie", cookieBuilder.build());
+				builder.header("Cookie", cookieBuilder.build());
 			}
 			HttpValidator validator = request.validator;
 			if (validator != null) {
-				validator.write(connection);
+				if (!StringUtils.isEmpty(validator.getEntityTag())) {
+					builder.header("If-None-Match", validator.getEntityTag());
+				}
+				if (!StringUtils.isEmpty(validator.getLastModified())) {
+					builder.header("If-Modified-Since", validator.getLastModified());
+				}
 			}
 			if (request.rangeStart >= 0 || request.rangeEnd >= 0) {
-				connection.setRequestProperty("Range", "bytes=" +
+				builder.header("Range", "bytes=" +
 						(request.rangeStart >= 0 ? request.rangeStart : "") + "-" +
 						(request.rangeEnd >= 0 ? request.rangeEnd : ""));
 			}
@@ -481,37 +468,33 @@ public class HttpClient {
 				requestMethod = HttpRequest.RequestMethod.GET;
 			}
 			RequestEntity entity = forceGet ? null : request.requestEntity;
-			connection.setRequestMethod(requestMethod.name());
+			RequestBody requestBody = null;
 			if (entity != null) {
-				connection.setDoOutput(true);
-				connection.setRequestProperty("Content-Type", entity.getContentType());
-				long contentLength = entity.getContentLength();
-				if (contentLength > 0) {
-					connection.setFixedLengthStreamingMode(contentLength);
-				
-				}
-				try (ClientOutputStream output = new ClientOutputStream(new BufferedOutputStream(connection
-						.getOutputStream(), 1024), session, forceGet ? null : request.outputListener, contentLength)) {
-					entity.write(output);
-					output.flush();
-				}
+				requestBody = new EntityRequestBody(entity, session,
+						forceGet ? null : request.outputListener);
+			} else if (requestMethod == HttpRequest.RequestMethod.POST
+					|| requestMethod == HttpRequest.RequestMethod.PUT) {
+				requestBody = RequestBody.create(new byte[0], null);
 			}
+			builder.method(requestMethod.name(), requestBody);
 
-			int responseCode;
+			OkHttpClient client = obtainClient(session.proxy, session.verifyCertificate,
+					request.connectTimeout, request.readTimeout);
+			Call call = client.newCall(builder.build());
+			session.setCall(call);
+			Response okResponse;
 			try {
-				responseCode = connection.getResponseCode();
-			} catch (NullPointerException e) {
-				String message = e.getMessage();
-				if (message != null && message.contains("java.net.InetAddress.getHostAddress")) {
-					// okhttp 2.6 bug in com.square.okhttp.Connection.toString
-					throw new HttpException(ErrorItem.Type.CONNECTION_RESET, false, true, e);
-				} else {
-					throw e;
+				okResponse = call.execute();
+			} catch (IOException e) {
+				if (call.isCanceled()) {
+					throw new InterruptedHttpException();
 				}
+				throw e;
 			}
-			session.closeInput = true;
-			HttpValidator resultValidator = HttpValidator.obtain(connection);
-			String contentType = connection.getHeaderField("Content-Type");
+			session.okResponse = okResponse;
+			int responseCode = okResponse.code();
+			HttpValidator resultValidator = HttpValidator.obtain(okResponse.headers());
+			String contentType = okResponse.header("Content-Type");
 			String charsetName = extractCharsetName(contentType);
 			session.holder.checkInterrupted();
 			HttpResponse response = new HttpResponse(session, resultValidator, charsetName);
@@ -523,20 +506,15 @@ public class HttpClient {
 				case HttpURLConnection.HTTP_MOVED_TEMP:
 				case HttpURLConnection.HTTP_SEE_OTHER:
 				case HTTP_TEMPORARY_REDIRECT: {
-					boolean oldHttps = connection instanceof HttpsURLConnection;
-					Uri redirectedUri = obtainRedirectedUri(requestedUri, connection.getHeaderField("Location"));
+					boolean oldHttps = "https".equals(requestedUri.getScheme());
+					Uri redirectedUri = obtainRedirectedUri(requestedUri, okResponse.header("Location"));
 					if (redirectedUri == null) {
 						throw new HttpException(ErrorItem.Type.DOWNLOAD, false, false);
 					}
 					session.redirectedUri = redirectedUri;
 					HttpRequest.RedirectHandler.Action action;
 					try {
-						try {
-							action = redirectHandler.onRedirect(response);
-						} catch (AbstractMethodError | NoSuchMethodError e) {
-							action = redirectHandler.onRedirectReached(responseCode,
-									requestedUri, redirectedUri, session.holder);
-						}
+						action = redirectHandler.onRedirect(response);
 					} catch (HttpException e) {
 						session.disconnectAndClear();
 						throw e;
@@ -569,7 +547,7 @@ public class HttpClient {
 			}
 
 			if (validator != null && responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
-				String responseMessage = connection.getResponseMessage();
+				String responseMessage = session.getResponseMessage();
 				session.disconnectAndClear();
 				throw new HttpException(responseCode, responseMessage);
 			}
@@ -619,34 +597,10 @@ public class HttpClient {
 					throw new RetryException();
 				}
 			}
-			if (e.getCause() instanceof SSLProtocolException) {
-				String message = e.getMessage();
-				if (message != null && message.contains("routines:SSL23_GET_SERVER_HELLO:sslv3")) {
-					synchronized (this) {
-						if (!ssl3Disabled) {
-							ssl3Disabled = true;
-							// Fix https://code.google.com/p/android/issues/detail?id=78187
-							sslSocketFactory = new SSLSocketFactoryWrapper(sslSocketFactory, NoSSLv3SSLSocket::new);
-							unsafeSslSocketFactory = null;
-						}
-					}
-					if (session.nextAttempt()) {
-						throw new RetryException();
-					}
-				}
-			}
 			session.disconnectAndClear();
 			throw transformIOException(e);
 		} finally {
 			session.executing = false;
-		}
-	}
-
-	InputStream getInput(HttpURLConnection connection) throws IOException {
-		try {
-			return connection.getInputStream();
-		} catch (FileNotFoundException e) {
-			return connection.getErrorStream();
 		}
 	}
 
@@ -656,11 +610,11 @@ public class HttpClient {
 		}
 		response.session.checkThread();
 		try {
-			HttpURLConnection connection = response.session.connection;
-			if (connection == null) {
+			Response okResponse = response.session.okResponse;
+			if (okResponse == null) {
 				throw new InterruptedHttpException();
 			}
-			InputStream input = getInput(connection);
+			InputStream input = okResponse.body() != null ? okResponse.body().byteStream() : null;
 			boolean success = false;
 			try {
 				if (input == null) {
@@ -668,7 +622,7 @@ public class HttpClient {
 				}
 				response.session.holder.checkInterrupted();
 				input = new BufferedInputStream(input, 8192);
-				switch (Encoding.get(connection)) {
+				switch (Encoding.get(okResponse.headers())) {
 					case IDENTITY: {
 						break;
 					}
@@ -691,7 +645,6 @@ public class HttpClient {
 				success = true;
 				return new ClientInputStream(input, response.session);
 			} finally {
-				response.session.closeInput = false;
 				if (!success) {
 					IOUtils.close(input);
 				}
@@ -793,23 +746,18 @@ public class HttpClient {
 			if (message.contains("thread interrupted") && exception instanceof InterruptedIOException) {
 				throw (InterruptedIOException) exception;
 			}
-			if (message.contains("failed to connect to") && message.contains("ETIMEDOUT")) {
+			if (message.contains("Failed to connect to") ||
+					message.contains("failed to connect to")) {
 				return ErrorItem.Type.CONNECT_TIMEOUT;
 			}
 			if (message.contains("SSL handshake timed out")) {
-				// SocketTimeoutException
-				// Throws when connection was established but SSL handshake was timed out
 				return ErrorItem.Type.CONNECT_TIMEOUT;
 			}
 			if (message.startsWith("Hostname ") && message.endsWith(" not verified")) {
-				// IOException
-				// Throws when hostname not matches certificate
 				return ErrorItem.Type.INVALID_CERTIFICATE;
 			}
 			if (message.contains("Could not validate certificate") ||
 					message.contains("Trust anchor for certification path not found")) {
-				// SSLHandshakeException
-				// Throws when certificate expired or not yet valid
 				return ErrorItem.Type.INVALID_CERTIFICATE;
 			}
 		}
@@ -817,10 +765,11 @@ public class HttpClient {
 			return ErrorItem.Type.SSL;
 		}
 		if (exception instanceof SocketTimeoutException) {
+			String timeoutMessage = exception.getMessage();
+			if (timeoutMessage != null && timeoutMessage.toLowerCase(Locale.US).contains("connect")) {
+				return ErrorItem.Type.CONNECT_TIMEOUT;
+			}
 			return ErrorItem.Type.READ_TIMEOUT;
-		}
-		if (exception instanceof HandshakeTimeoutException) {
-			return ErrorItem.Type.CONNECT_TIMEOUT;
 		}
 		return null;
 	}
@@ -1047,7 +996,7 @@ public class HttpClient {
 
 		@Override
 		public void close() throws IOException {
-			output.close();
+			flush();
 		}
 
 		@Override
@@ -1057,13 +1006,13 @@ public class HttpClient {
 		}
 	}
 
-	private final HashMap<String, HttpURLConnection> singleConnections = new HashMap<>();
-	private final HashMap<HttpURLConnection, String> singleConnectionIdentifiers = new HashMap<>();
+	private final HashMap<String, Call> singleConnections = new HashMap<>();
+	private final HashMap<Call, String> singleConnectionIdentifiers = new HashMap<>();
 
 	private final HashMap<String, AtomicBoolean> delayLocks = new HashMap<>();
 
 	// Called from HttpSession
-	void onConnect(Chan chan, HttpURLConnection connection, int delay) throws InterruptedHttpException {
+	void onConnect(Chan chan, Call call, int delay) throws InterruptedHttpException {
 		if (AdvancedPreferences.isSingleConnection(chan.name)) {
 			synchronized (singleConnections) {
 				while (singleConnections.containsKey(chan.name)) {
@@ -1074,13 +1023,12 @@ public class HttpClient {
 						throw new InterruptedHttpException();
 					}
 				}
-				singleConnections.put(chan.name, connection);
-				singleConnectionIdentifiers.put(connection, chan.name);
+				singleConnections.put(chan.name, call);
+				singleConnectionIdentifiers.put(call, chan.name);
 			}
 		}
 		if (delay > 0) {
-			URL url = connection.getURL();
-			String key = url.getAuthority();
+			String key = call.request().url().host() + ":" + call.request().url().port();
 			AtomicBoolean delayLock;
 			synchronized (delayLocks) {
 				delayLock = delayLocks.get(key);
@@ -1112,175 +1060,15 @@ public class HttpClient {
 	}
 
 	// Called from HttpSession
-	void onDisconnect(HttpURLConnection connection) {
+	void onDisconnect(Call call) {
 		synchronized (singleConnections) {
-			String chanName = singleConnectionIdentifiers.remove(connection);
+			String chanName = singleConnectionIdentifiers.remove(call);
 			if (chanName != null) {
-				if (connection == singleConnections.get(chanName)) {
+				if (call == singleConnections.get(chanName)) {
 					singleConnections.remove(chanName);
 					singleConnections.notifyAll();
 				}
 			}
-		}
-	}
-
-	private static class SSLSocketFactoryWrapper extends SSLSocketFactory {
-		public interface Wrapper {
-			SSLSocket wrap(SSLSocket socket);
-		}
-
-		private final SSLSocketFactory factory;
-		private final Wrapper wrapper;
-
-		public SSLSocketFactoryWrapper(SSLSocketFactory factory, Wrapper wrapper) {
-			this.factory = factory;
-			this.wrapper = wrapper;
-		}
-
-		private Socket wrap(Socket socket) {
-			if (socket instanceof SSLSocket) {
-				socket = wrapper.wrap((SSLSocket) socket);
-			}
-			return socket;
-		}
-
-		@Override
-		public String[] getDefaultCipherSuites() {
-			return factory.getDefaultCipherSuites();
-		}
-
-		@Override
-		public String[] getSupportedCipherSuites() {
-			return factory.getSupportedCipherSuites();
-		}
-
-		@Override
-		public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
-			return wrap(factory.createSocket(s, host, port, autoClose));
-		}
-
-		@Override
-		public Socket createSocket(String host, int port) throws IOException {
-			return wrap(factory.createSocket(host, port));
-		}
-
-		@Override
-		public Socket createSocket(InetAddress address, int port) throws IOException {
-			return wrap(factory.createSocket(address, port));
-		}
-
-		@Override
-		public Socket createSocket(String host, int port, InetAddress localAddress, int localPort) throws IOException {
-			return wrap(factory.createSocket(host, port, localAddress, localPort));
-		}
-
-		@Override
-		public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
-				throws IOException {
-			return wrap(factory.createSocket(address, port, localAddress, localPort));
-		}
-	}
-
-	private static class HandshakeSSLSocket extends SSLSocketWrapper {
-		public static class Session {
-			public final int timeout;
-			public long totalTime;
-
-			public Session(int timeout) {
-				this.timeout = timeout;
-			}
-
-			public boolean exceeded() {
-				return totalTime >= 0.8f * timeout;
-			}
-		}
-
-		private final Session session;
-
-		public HandshakeSSLSocket(SSLSocket socket, Session session) {
-			super(socket);
-			this.session = session;
-		}
-
-		@Override
-		public void startHandshake() throws IOException {
-			if (session != null && session.exceeded()) {
-				throw new HandshakeTimeoutException();
-			}
-			long start = SystemClock.elapsedRealtime();
-			try {
-				super.startHandshake();
-			} catch (IOException e) {
-				long end = SystemClock.elapsedRealtime();
-				if (session != null) {
-					session.totalTime += end - start;
-					if (session.exceeded()) {
-						throw new HandshakeTimeoutException();
-					}
-				}
-				throw e;
-			}
-		}
-	}
-
-	private static class TLSv12SSLSocket extends SSLSocketWrapper {
-		private static final List<String> PROTOCOLS;
-
-		static {
-			ArrayList<String> protocols = new ArrayList<>();
-			for (String protocol : Arrays.asList("TLSv1.1", "TLSv1.2")) {
-				boolean supported;
-				try {
-					SSLContext.getInstance(protocol);
-					supported = true;
-				} catch (Exception e) {
-					supported = false;
-				}
-				if (supported) {
-					protocols.add(protocol);
-				}
-			}
-			PROTOCOLS = Collections.unmodifiableList(protocols);
-		}
-
-		public TLSv12SSLSocket(SSLSocket socket) {
-			super(socket);
-			String[] protocolsArray = getEnabledProtocols();
-			List<String> protocols = protocolsArray != null ? Arrays.asList(protocolsArray) : Collections.emptyList();
-			if (!protocols.containsAll(PROTOCOLS)) {
-				ArrayList<String> enabledProtocols = new ArrayList<>(protocols);
-				for (String protocol : PROTOCOLS) {
-					if (!enabledProtocols.contains(protocol)) {
-						enabledProtocols.add(protocol);
-					}
-				}
-				setEnabledProtocols(CommonUtils.toArray(enabledProtocols, String.class));
-			}
-		}
-	}
-
-	private static class NoSSLv3SSLSocket extends SSLSocketWrapper {
-		public NoSSLv3SSLSocket(SSLSocket socket) {
-			super(socket);
-			SSLSocket realSocket = getRealSocket();
-			try {
-				realSocket.getClass().getMethod("setUseSessionTickets", boolean.class).invoke(realSocket, true);
-			} catch (Exception e) {
-				// Reflective operation, ignore exception
-			}
-		}
-
-		@Override
-		public void setEnabledProtocols(String[] protocols) {
-			if (protocols != null && protocols.length == 1 && "SSLv3".equals(protocols[0])) {
-				ArrayList<String> enabledProtocols = new ArrayList<>();
-				Collections.addAll(enabledProtocols, getEnabledProtocols());
-				if (enabledProtocols.size() > 1) {
-					enabledProtocols.remove("SSLv3");
-				}
-				protocols = CommonUtils.toArray(enabledProtocols, String.class);
-			}
-			super.setEnabledProtocols(protocols);
 		}
 	}
 }

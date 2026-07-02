@@ -255,7 +255,7 @@ public final class HttpResponse {
 	private InputStream prepareOrGetInput() throws HttpException {
 		if (input == null && session != null) {
 			session.checkThread();
-			if (session.connection != null) {
+			if (session.okResponse != null) {
 				InputStream input = session.client.open(this);
 				// Set input to ensure client.open called only once
 				this.input = input;
@@ -406,7 +406,7 @@ public final class HttpResponse {
 		}
 		IOUtils.close(input);
 		input = null;
-		if (session != null && session.connection != null) {
+		if (session != null && session.okResponse != null) {
 			session.disconnectAndClear();
 		}
 	}

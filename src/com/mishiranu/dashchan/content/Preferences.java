@@ -1267,13 +1267,6 @@ public class Preferences {
 		PREFERENCES.edit().put(KEY_TRUSTED_EXSTENSIONS, packageNameFingerprints).close();
 	}
 
-	public static final String KEY_USE_GMS_PROVIDER = "use_gms_provider";
-	public static final boolean DEFAULT_USE_GMS_PROVIDER = false;
-
-	public static boolean isUseGmsProvider() {
-		return PREFERENCES.getBoolean(KEY_USE_GMS_PROVIDER, DEFAULT_USE_GMS_PROVIDER);
-	}
-
 	public static final ChanKey KEY_USE_HTTPS = new ChanKey("use_https");
 	public static final String KEY_USE_HTTPS_GENERAL = KEY_USE_HTTPS.bind(SPECIAL_CHAN_NAME_GENERAL);
 	public static final boolean DEFAULT_USE_HTTPS = true;

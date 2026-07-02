@@ -1,14 +1,15 @@
 package chan.http;
 
 import android.net.Uri;
-import com.mishiranu.dashchan.util.IOUtils;
-import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import okhttp3.Call;
+import okhttp3.Headers;
+import okhttp3.Response;
 
 public final class HttpSession {
 	final HttpHolder holder;
@@ -26,10 +27,10 @@ public final class HttpSession {
 	int attempt;
 	boolean forceGet;
 	boolean executing;
-	boolean closeInput;
 
-	HttpURLConnection connection;
-	HttpURLConnection deadConnection;
+	Call call;
+	Response okResponse;
+	Response deadResponse;
 	HttpHolder.Callback callback;
 
 	HttpSession(HttpHolder holder, HttpClient client, Uri uri, Proxy proxy,
@@ -69,30 +70,30 @@ public final class HttpSession {
 		requestedUris.add(uri);
 	}
 
-	private void setConnection(HttpURLConnection connection, HttpHolder.Callback callback)
+	private void setCallInternal(Call call, HttpHolder.Callback callback)
 			throws HttpClient.InterruptedHttpException {
 		checkThread();
-		this.connection = connection;
+		this.call = call;
 		this.callback = callback;
 		redirectedUri = null;
 		if (holder.isInterrupted()) {
-			this.connection = null;
+			this.call = null;
 			this.callback = null;
 			throw new HttpClient.InterruptedHttpException();
 		}
-		if (connection != null) {
-			client.onConnect(holder.chan, connection, delay);
+		if (call != null) {
+			client.onConnect(holder.chan, call, delay);
 		}
 	}
 
-	void setConnection(HttpURLConnection connection) throws HttpClient.InterruptedHttpException {
+	void setCall(Call call) throws HttpClient.InterruptedHttpException {
 		checkThread();
-		setConnection(connection, null);
+		setCallInternal(call, null);
 	}
 
 	void setCallback(HttpHolder.Callback callback) throws HttpClient.InterruptedHttpException {
 		checkThread();
-		setConnection(null, callback);
+		setCallInternal(null, callback);
 	}
 
 	boolean nextAttempt() {
@@ -102,31 +103,23 @@ public final class HttpSession {
 
 	void disconnectAndClear() {
 		checkThread();
-		boolean closeInput = this.closeInput;
-		this.closeInput = false;
-		HttpURLConnection connection = this.connection;
-		this.connection = null;
+		Call call = this.call;
+		this.call = null;
+		Response okResponse = this.okResponse;
+		this.okResponse = null;
 		HttpHolder.Callback callback = this.callback;
 		this.callback = null;
 		if (response != null) {
-			// HttpResponse will call disconnectAndClear if connection != null
+			// HttpResponse will call disconnectAndClear if the response is still active
 			response.cleanupAndDisconnect();
 		}
-		if (connection != null) {
-			try {
-				if (closeInput) {
-					IOUtils.close(client.getInput(connection));
-				}
-			} catch (IOException e) {
-				// Ignore
-			} finally {
-				try {
-					connection.disconnect();
-				} finally {
-					deadConnection = connection;
-					client.onDisconnect(connection);
-				}
-			}
+		if (okResponse != null) {
+			okResponse.close();
+			deadResponse = okResponse;
+		}
+		if (call != null) {
+			call.cancel();
+			client.onDisconnect(call);
 		}
 		if (callback != null) {
 			callback.onDisconnectRequested();
@@ -136,8 +129,7 @@ public final class HttpSession {
 	void checkResponseCode() throws HttpException {
 		checkThread();
 		int responseCode = getResponseCode();
-		boolean success = responseCode >= HttpURLConnection.HTTP_OK &&
-				responseCode <= HttpURLConnection.HTTP_SEE_OTHER
+		boolean success = responseCode >= 200 && responseCode <= 303
 				|| responseCode == HttpClient.HTTP_TEMPORARY_REDIRECT;
 		if (!success) {
 			String message = HttpClient.transformResponseMessage(getResponseMessage());
@@ -146,48 +138,54 @@ public final class HttpSession {
 		}
 	}
 
-	private HttpURLConnection getConnectionForHeaders() {
+	private Response getResponseForHeaders() {
 		checkThread();
-		HttpURLConnection connection = this.connection;
-		if (connection == null) {
-			connection = deadConnection;
+		Response response = okResponse;
+		if (response == null) {
+			response = deadResponse;
 		}
-		return connection;
+		return response;
 	}
 
 	int getResponseCode() {
-		HttpURLConnection connection = getConnectionForHeaders();
-		if (connection != null) {
-			try {
-				return connection.getResponseCode();
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-		return -1;
+		Response response = getResponseForHeaders();
+		return response != null ? response.code() : -1;
 	}
 
 	String getResponseMessage() {
-		HttpURLConnection connection = getConnectionForHeaders();
-		if (connection != null) {
-			try {
-				return connection.getResponseMessage();
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+		Response response = getResponseForHeaders();
+		if (response != null) {
+			String message = response.message();
+			return message.isEmpty() ? null : message;
 		}
 		return null;
 	}
 
 	Map<String, List<String>> getHeaderFields() {
-		HttpURLConnection connection = getConnectionForHeaders();
-		Map<String, List<String>> map = connection != null ? connection.getHeaderFields() : null;
-		return map != null ? map : Collections.emptyMap();
+		Response response = getResponseForHeaders();
+		if (response == null) {
+			return Collections.emptyMap();
+		}
+		Headers headers = response.headers();
+		LinkedHashMap<String, List<String>> map = new LinkedHashMap<>();
+		for (int i = 0; i < headers.size(); i++) {
+			String name = headers.name(i);
+			List<String> values = map.get(name);
+			if (values == null) {
+				values = new ArrayList<>(1);
+				map.put(name, values);
+			}
+			values.add(headers.value(i));
+		}
+		return map;
 	}
 
 	String getCookieValue(String name) {
 		Map<String, List<String>> headers = getHeaderFields();
 		List<String> cookies = headers.get("Set-Cookie");
+		if (cookies == null) {
+			cookies = headers.get("set-cookie");
+		}
 		if (cookies != null) {
 			String start = name + "=";
 			for (String cookie : cookies) {
@@ -206,8 +204,17 @@ public final class HttpSession {
 	}
 
 	long getLength() {
-		HttpURLConnection connection = getConnectionForHeaders();
-		return connection != null && HttpClient.Encoding.get(connection) == HttpClient.Encoding.IDENTITY
-				? connection.getContentLength() : -1;
+		Response response = getResponseForHeaders();
+		if (response != null && HttpClient.Encoding.get(response.headers()) == HttpClient.Encoding.IDENTITY) {
+			String contentLength = response.header("Content-Length");
+			if (contentLength != null) {
+				try {
+					return Long.parseLong(contentLength);
+				} catch (NumberFormatException e) {
+					return -1;
+				}
+			}
+		}
+		return -1;
 	}
 }

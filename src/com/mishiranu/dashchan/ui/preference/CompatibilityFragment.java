@@ -40,8 +40,6 @@ public class CompatibilityFragment extends PreferenceFragment {
 		});
 	
 		addHeader(R.string.additional);
-		addCheck(true, Preferences.KEY_USE_GMS_PROVIDER, Preferences.DEFAULT_USE_GMS_PROVIDER,
-				R.string.use_gms_security_provider, R.string.use_gms_security_provider__summary);
 	}
 
 	@Override
