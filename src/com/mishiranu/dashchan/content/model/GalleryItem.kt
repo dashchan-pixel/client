@@ -102,8 +102,8 @@ class GalleryItem {
 			if (attachmentItems != null) {
 				val galleryItems = ArrayList<GalleryItem>()
 				for (attachmentItem in attachmentItems) {
-					if (attachmentItem.isShowInGallery && attachmentItem.canDownloadToStorage()) {
-						galleryItems.add(attachmentItem.createGalleryItem())
+					if (attachmentItem.isShowInGallery() && attachmentItem.canDownloadToStorage()) {
+						galleryItems.add(attachmentItem.createGalleryItem()!!)
 					}
 				}
 				if (galleryItems.isNotEmpty()) {
@@ -123,7 +123,7 @@ class GalleryItem {
 		fun findIndex(postItem: PostItem): Int {
 			if (postItem.hasAttachments()) {
 				var index = 0
-				val postNumber = postItem.postNumber
+				val postNumber = postItem.getPostNumber()
 				for ((key, value) in galleryItems) {
 					if (postNumber == key) {
 						return index
