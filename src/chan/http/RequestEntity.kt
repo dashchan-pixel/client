@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package chan.http;
+package chan.http
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-import chan.annotation.Extendable;
+import chan.annotation.Extendable
+import java.io.IOException
+import java.io.OutputStream
 
 @Extendable
-public interface RequestEntity extends Cloneable {
+interface RequestEntity : Cloneable {
 	@Extendable
-	public abstract void add(String name, String value);
+	fun add(name: String, value: String?)
 
 	@Extendable
-	public abstract String getContentType();
+	fun getContentType(): String?
 
 	@Extendable
-	public abstract long getContentLength();
+	fun getContentLength(): Long
 
 	@Extendable
-	public abstract void write(OutputStream output) throws IOException;
+	@Throws(IOException::class)
+	fun write(output: OutputStream)
 
 	@Extendable
-	public abstract RequestEntity copy();
+	fun copy(): RequestEntity
 }
