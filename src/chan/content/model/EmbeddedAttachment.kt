@@ -28,7 +28,7 @@ class EmbeddedAttachment : Attachment {
 			else -> null
 		}
 		embedded = Post.Attachment.Embedded.createExternal(true, fileUri, thumbnailUri, embeddedType,
-				embeddedContentType, canDownload, forcedName)
+				embeddedContentType, canDownload, forcedName)!!
 	}
 
 	@Public

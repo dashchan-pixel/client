@@ -198,7 +198,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setSage(sage: Boolean): Post {
-		builder!!.builder.setSage(sage)
+		builder!!.builder.isSage = sage
 		return this
 	}
 
@@ -207,7 +207,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setSticky(sticky: Boolean): Post {
-		builder!!.builder.setSticky(sticky)
+		builder!!.builder.isSticky = sticky
 		return this
 	}
 
@@ -216,7 +216,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setClosed(closed: Boolean): Post {
-		builder!!.builder.setClosed(closed)
+		builder!!.builder.isClosed = closed
 		return this
 	}
 
@@ -225,7 +225,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setArchived(archived: Boolean): Post {
-		builder!!.builder.setArchived(archived)
+		builder!!.builder.isArchived = archived
 		return this
 	}
 
@@ -234,7 +234,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setCyclical(cyclical: Boolean): Post {
-		builder!!.builder.setCyclical(cyclical)
+		builder!!.builder.isCyclical = cyclical
 		return this
 	}
 
@@ -243,7 +243,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setPosterWarned(posterWarned: Boolean): Post {
-		builder!!.builder.setPosterWarned(posterWarned)
+		builder!!.builder.isPosterWarned = posterWarned
 		return this
 	}
 
@@ -252,7 +252,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setPosterBanned(posterBanned: Boolean): Post {
-		builder!!.builder.setPosterBanned(posterBanned)
+		builder!!.builder.isPosterBanned = posterBanned
 		return this
 	}
 
@@ -261,7 +261,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setOriginalPoster(originalPoster: Boolean): Post {
-		builder!!.builder.setOriginalPoster(originalPoster)
+		builder!!.builder.isOriginalPoster = originalPoster
 		return this
 	}
 
@@ -270,7 +270,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setDefaultName(defaultName: Boolean): Post {
-		builder!!.builder.setDefaultName(defaultName)
+		builder!!.builder.isDefaultName = defaultName
 		return this
 	}
 
@@ -279,7 +279,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	fun setBumpLimitReached(bumpLimitReached: Boolean): Post {
-		builder!!.builder.setBumpLimitReached(bumpLimitReached)
+		builder!!.builder.isBumpLimitReached = bumpLimitReached
 		return this
 	}
 
@@ -297,7 +297,7 @@ class Post : Comparable<Post> {
 
 	@Public
 	override fun compareTo(other: Post): Int {
-		return builder!!.builder.number.compareTo(other.builder!!.builder.number)
+		return builder!!.builder.number!!.compareTo(other.builder!!.builder.number!!)
 	}
 
 	private class ChanBuilder {
@@ -314,7 +314,8 @@ class Post : Comparable<Post> {
 		val builder = this.builder!!
 		val attachments = builder.attachments
 		if (attachments != null && attachments.isNotEmpty()) {
-			builder.builder.attachments = ArrayList()
+			val list = ArrayList<com.mishiranu.dashchan.content.model.Post.Attachment>()
+			builder.builder.attachments = list
 			for (attachment in attachments) {
 				if (attachment is FileAttachment) {
 					val file = com.mishiranu.dashchan.content.model.Post.Attachment.File
@@ -323,22 +324,23 @@ class Post : Comparable<Post> {
 									attachment.getWidth(), attachment.getHeight(),
 									attachment.isSpoiler())
 					if (file != null) {
-						builder.builder.attachments.add(file)
+						list.add(file)
 					}
 				} else if (attachment is EmbeddedAttachment) {
-					builder.builder.attachments.add(attachment.embedded)
+					list.add(attachment.embedded)
 				}
 			}
 		}
 		val icons = builder.icons
 		if (icons != null && icons.isNotEmpty()) {
-			builder.builder.icons = ArrayList()
+			val list = ArrayList<com.mishiranu.dashchan.content.model.Post.Icon>()
+			builder.builder.icons = list
 			for (icon in icons) {
 				if (icon != null) {
 					val postIcon = com.mishiranu.dashchan.content.model.Post.Icon
 							.createExternal(icon.uri, icon.getTitle())
 					if (postIcon != null) {
-						builder.builder.icons.add(postIcon)
+						list.add(postIcon)
 					}
 				}
 			}
