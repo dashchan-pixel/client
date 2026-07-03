@@ -281,7 +281,7 @@ abstract class DataFile protected constructor(val target: Target, private val pa
 			}
 			val name = segments[segments.size - 1]
 			val mimeType = MimeTypes.forExtension(StringUtils.getFileExtension(name),
-					"application/octet-stream")
+					"application/octet-stream")!!
 			try {
 				val documentUri = DocumentsContract.createDocument(contentResolver, childDocumentUri!!,
 						mimeType, name)
