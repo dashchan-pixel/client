@@ -20,6 +20,6 @@ class ThreadRedirectException @Public constructor(private val boardName: String?
 	@Throws(ExtensionException::class)
 	fun obtainTarget(chanName: String?, boardName: String?): RedirectException.Target {
 		return RedirectException.toThread(this.boardName ?: boardName,
-				threadNumber, postNumber).obtainTarget(chanName)
+				threadNumber, postNumber).obtainTarget(chanName)!!
 	}
 }
