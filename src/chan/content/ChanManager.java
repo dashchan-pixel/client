@@ -785,7 +785,7 @@ public class ChanManager {
 		return null;
 	}
 
-	String getChanNameByHost(String host) {
+	public String getChanNameByHost(String host) {
 		if (host != null) {
 			for (Extension extension : extensions.values()) {
 				if (extension.chan != null && extension.chan.locator.isChanHost(host)) {
@@ -861,11 +861,11 @@ public class ChanManager {
 		return extractFingerprints(packageInfo);
 	}
 
-	Chan getFallbackChan() {
+	public Chan getFallbackChan() {
 		return fallbackChan;
 	}
 
-	Chan getChan(String chanName) {
+	public Chan getChan(String chanName) {
 		Extension extension = extensions.get(chanName);
 		Chan chan = extension != null ? extension.chan : null;
 		return chan != null ? chan : fallbackChan;
