@@ -84,7 +84,7 @@ class HistoryAdapter(context: Context, private val callback: Callback, private v
 			title = chan.configuration.getTitle() + " — " + title
 		}
 		viewHolder.text2.text = title
-		viewHolder.text2End.text = postDateFormatter.formatDate(historyItem.time)
+		viewHolder.text2End!!.text = postDateFormatter.formatDate(historyItem.time)
 	}
 
 	fun configureDivider(configuration: DividerItemDecoration.Configuration,

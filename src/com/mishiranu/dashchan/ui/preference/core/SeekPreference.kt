@@ -40,12 +40,12 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 		val holder = ViewFactory.createSeekLayout(builder.context,
 				specialValue != null, minValue, maxValue, step, valueFormat)
 		if (savedInstanceState != null) {
-			holder.setEnabled(savedInstanceState.getBoolean(STATE_ENABLED))
-			holder.setValue(savedInstanceState.getInt(STATE_VALUE))
+			holder.isEnabled = savedInstanceState.getBoolean(STATE_ENABLED)
+			holder.value = savedInstanceState.getInt(STATE_VALUE)
 		} else {
 			val value = getValue()
-			holder.setEnabled(specialValue == null || specialValue != value)
-			holder.setValue(if (specialValue != null && specialValue == value) defaultValue else value)
+			holder.isEnabled = specialValue == null || specialValue != value
+			holder.value = if (specialValue != null && specialValue == value) defaultValue else value
 		}
 		return super.configureDialog(savedInstanceState, builder).setView(holder.layout)
 				.setPositiveButton(android.R.string.ok) { _, _ ->

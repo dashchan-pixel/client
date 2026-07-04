@@ -31,10 +31,10 @@ class ReencodingDialog : DialogFragment(), DialogInterface.OnClickListener,
 		val context: Context = requireActivity()
 		qualityLayoutHolder = ViewFactory.createSeekLayout(context, false, 1, 100, 1,
 				ResourceUtils.getColonString(resources, R.string.quality, "%d%%"))
-		qualityLayoutHolder.setValue(if (savedInstanceState != null) savedInstanceState.getInt(EXTRA_QUALITY) else 90)
+		qualityLayoutHolder.value = if (savedInstanceState != null) savedInstanceState.getInt(EXTRA_QUALITY) else 90
 		reduceLayoutHolder = ViewFactory.createSeekLayout(context, false, 1, 8, 1,
 				ResourceUtils.getColonString(resources, R.string.reduce, "%dx"))
-		reduceLayoutHolder.setValue(if (savedInstanceState != null) savedInstanceState.getInt(EXTRA_REDUCE) else 1)
+		reduceLayoutHolder.value = if (savedInstanceState != null) savedInstanceState.getInt(EXTRA_REDUCE) else 1
 		val padding = resources.getDimensionPixelSize(R.dimen.dialog_padding_view)
 		ViewUtils.setNewPadding(qualityLayoutHolder.layout, null, 0, null, padding / 2)
 		ViewUtils.setNewPadding(reduceLayoutHolder.layout, null, 0, null, null)
@@ -83,8 +83,8 @@ class ReencodingDialog : DialogFragment(), DialogInterface.OnClickListener,
 
 	override fun onSaveInstanceState(outState: Bundle) {
 		super.onSaveInstanceState(outState)
-		outState.putInt(EXTRA_QUALITY, qualityLayoutHolder.getValue())
-		outState.putInt(EXTRA_REDUCE, reduceLayoutHolder.getValue())
+		outState.putInt(EXTRA_QUALITY, qualityLayoutHolder.value)
+		outState.putInt(EXTRA_REDUCE, reduceLayoutHolder.value)
 	}
 
 	override fun onClick(dialog: DialogInterface, which: Int) {
@@ -101,7 +101,7 @@ class ReencodingDialog : DialogFragment(), DialogInterface.OnClickListener,
 			}
 		}
 		(parentFragment as AttachmentOptionsDialog).setReencoding(GraphicsUtils
-				.Reencoding(format, qualityLayoutHolder.getValue(), reduceLayoutHolder.getValue()))
+				.Reencoding(format, qualityLayoutHolder.value, reduceLayoutHolder.value))
 	}
 
 	override fun onCheckedChanged(group: RadioGroup, checkedId: Int) {
@@ -112,7 +112,7 @@ class ReencodingDialog : DialogFragment(), DialogInterface.OnClickListener,
 				break
 			}
 		}
-		qualityLayoutHolder.setEnabled(allowQuality)
+		qualityLayoutHolder.isEnabled = allowQuality
 		jpegToJpg.isEnabled = checkedId == IDS[JPEG_POSITION]
 	}
 
