@@ -16,7 +16,7 @@ open class TaskViewModel<Task : ExecutorTask<*, *>, Result> : ViewModel() {
 
 	fun getTask(): Task? = task
 
-	fun attach(task: Task) {
+	fun attach(task: Task?) {
 		result.value = null
 		this.task?.cancel()
 		this.task = task
