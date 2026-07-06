@@ -15,10 +15,10 @@ import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.SafePasteEditText
 import java.util.ArrayList
 
-class EditPreference(context: Context, key: String, defaultValue: String,
+class EditPreference(context: Context, key: String, defaultValue: String?,
 		title: CharSequence?, summaryProvider: SummaryProvider<String>?,
 		@JvmField val hint: CharSequence?, @JvmField val inputType: Int) :
-		DialogPreference<String>(context, key, defaultValue, title, summaryProvider) {
+		DialogPreference<String>(context, key, defaultValue ?: "", title, summaryProvider) {
 	@JvmField
 	val customFilters = ArrayList<InputFilter>()
 

@@ -38,7 +38,7 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 		super.bindViewHolder(viewHolder)
 
 		if (viewHolder is CheckViewHolder) {
-			viewHolder.check.isChecked = getValue()
+			viewHolder.check.isChecked = getValue() ?: defaultValue
 			viewHolder.check.isEnabled = isEnabled()
 		}
 	}
