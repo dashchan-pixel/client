@@ -14,7 +14,7 @@ import com.mishiranu.dashchan.content.model.Post
 import com.mishiranu.dashchan.content.model.PostItem
 import com.mishiranu.dashchan.content.model.PostNumber
 
-class ExtractPostsTask(private val callback: Callback, private val cache: PagesDatabase.Cache,
+class ExtractPostsTask(private val callback: Callback, private val cache: PagesDatabase.Cache?,
 		private val chan: Chan, private val boardName: String?, private val threadNumber: String?,
 		private val extractStateExtra: Boolean, private val cleanup: PagesDatabase.Cleanup) :
 		ExecutorTask<Void, ExtractPostsTask.Result?>() {
