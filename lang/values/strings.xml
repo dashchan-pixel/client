@@ -178,6 +178,7 @@
 	<string name="forum">Forum</string>
 	<string name="forum_only__format">%s only</string>
 	<string name="forums">Forums</string>
+	<string name="flow">Flow</string>
 	<string name="foss_licenses">FOSS licenses</string>
 	<string name="foss_licenses__summary">License details for free and open source software</string>
 	<string name="gallery">Gallery</string>
@@ -274,6 +275,7 @@
 	<string name="no_information">No information</string>
 	<string name="no_matches_found">No matches found</string>
 	<string name="no_rules_defined">No rules defined</string>
+	<string name="no_video_attachments">No video attachments</string>
 	<string name="not_downloaded">Not downloaded</string>
 	<string name="not_found">Not found</string>
 	<string name="notify_when_download_is_completed">Notify when download is completed</string>

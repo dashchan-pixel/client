@@ -51,6 +51,7 @@ import com.mishiranu.dashchan.content.storage.FavoritesStorage;
 import com.mishiranu.dashchan.content.storage.StatisticsStorage;
 import com.mishiranu.dashchan.ui.DrawerForm;
 import com.mishiranu.dashchan.ui.InstanceDialog;
+import com.mishiranu.dashchan.ui.gallery.FlowDialog;
 import com.mishiranu.dashchan.ui.gallery.GalleryOverlay;
 import com.mishiranu.dashchan.ui.navigator.Page;
 import com.mishiranu.dashchan.ui.navigator.adapter.PostsAdapter;
@@ -659,6 +660,7 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 		menu.add(0, R.id.menu_search, 0, R.string.search)
 				.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW);
 		menu.add(0, R.id.menu_gallery, 0, R.string.gallery);
+		menu.add(0, R.id.menu_flow, 0, R.string.flow);
 		menu.add(0, R.id.menu_select, 0, R.string.select);
 		SubMenu contentsMenu = menu.addSubMenu(0, R.id.menu_contents, 0, R.string.contents);
 		contentsMenu.getItem().setIcon(getActionBarIcon(R.attr.iconActionSync))
@@ -736,6 +738,22 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				}
 				getUiManager().navigator().navigateGallery(page.chanName, gallerySet, imageIndex,
 						null, GalleryOverlay.NavigatePostMode.ENABLED, true);
+				return true;
+		} else if (switchItemId0 == R.id.menu_flow) {
+
+				Chan chan = getChan();
+				GalleryItem.Set gallerySet = adapter.getGallerySet();
+				ArrayList<GalleryItem> videoItems = new ArrayList<>();
+				for (GalleryItem galleryItem : gallerySet.createList()) {
+					if (galleryItem.isVideo(chan)) {
+						videoItems.add(galleryItem);
+					}
+				}
+				if (videoItems.isEmpty()) {
+					ClickableToast.show(R.string.no_video_attachments);
+				} else {
+					FlowDialog.show(getFragmentManager(), chan, videoItems);
+				}
 				return true;
 		} else if (switchItemId0 == R.id.menu_select) {
 
