@@ -24,6 +24,8 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.media.VideoPlayer
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.ResourceUtils
+import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.AspectRatioFrameLayout
 import java.io.File
 import java.io.IOException
@@ -32,7 +34,8 @@ import java.util.Locale
 /**
  * A single page of the video Flow feed (reels/TikTok-style). Downloads one video attachment
  * progressively — mirroring the gallery's [com.mishiranu.dashchan.ui.gallery.VideoUnit] —
- * and plays it looped, with a scrub bar and play/pause controls.
+ * and plays it looped. Uses the same control bar as the single-video gallery player
+ * (scrub bar, elapsed/total time, play/pause button, muted indicator); tap toggles the bar.
  *
  * The host distinguishes three states via [prepare] and [setActive]:
  * - [prepare]: begin buffering (download + ready the player) but stay paused — used to
@@ -49,11 +52,13 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var videoWrapper: AspectRatioFrameLayout? = null
 
 	private val controlsView: LinearLayout
+	private val configurationView: LinearLayout
 	private val playPauseButton: ImageButton
 	private val positionText: TextView
 	private val durationText: TextView
 	private val seekBar: SeekBar
 	private var tracking = false
+	private var controlsVisible = false
 
 	private var chan: Chan? = null
 	private var uri: Uri? = null
@@ -85,21 +90,30 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		errorView.visibility = GONE
 		addView(errorView, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
 
-		val density = resources.displayMetrics.density
-		val pad = (12f * density).toInt()
+		// Controls mirror VideoUnit's single-video (portrait) layout.
+		val density = ResourceUtils.obtainDensity(context)
 		controlsView = LinearLayout(context)
-		controlsView.orientation = LinearLayout.HORIZONTAL
-		controlsView.gravity = Gravity.CENTER_VERTICAL
-		controlsView.setBackgroundColor(0x66000000)
-		controlsView.setPadding(pad, pad / 2, pad, pad / 2)
+		controlsView.orientation = LinearLayout.VERTICAL
 		controlsView.visibility = GONE
-		playPauseButton = ImageButton(context)
-		playPauseButton.setBackgroundColor(Color.TRANSPARENT)
-		playPauseButton.setImageResource(android.R.drawable.ic_media_pause)
-		playPauseButton.setColorFilter(Color.WHITE)
-		playPauseButton.setOnClickListener { toggle() }
+
+		configurationView = LinearLayout(context)
+		configurationView.orientation = LinearLayout.HORIZONTAL
+		configurationView.gravity = Gravity.END
+		configurationView.setPadding((8f * density).toInt(), 0, (8f * density).toInt(), 0)
+		controlsView.addView(configurationView, LinearLayout.LayoutParams.MATCH_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT)
+
+		val controls = LinearLayout(context)
+		controls.orientation = LinearLayout.VERTICAL
+		controls.setBackgroundColor(CONTROLS_BACKGROUND_COLOR)
+		controls.setPadding((8f * density).toInt(), (8f * density).toInt(), (8f * density).toInt(), 0)
+		controls.isClickable = true
+		controlsView.addView(controls, LinearLayout.LayoutParams.MATCH_PARENT,
+				LinearLayout.LayoutParams.WRAP_CONTENT)
+
 		positionText = timeLabel(context)
 		durationText = timeLabel(context)
+
 		seekBar = SeekBar(context)
 		seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
 			override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -115,27 +129,36 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 				player?.setPosition(seekBar.progress.toLong())
 			}
 		})
-		controlsView.addView(playPauseButton, LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-		controlsView.addView(positionText, LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-		controlsView.addView(seekBar, LinearLayout.LayoutParams(0,
-				LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-		controlsView.addView(durationText, LinearLayout.LayoutParams(
-				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-		addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT,
-				LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
 
-		setOnClickListener { toggle() }
+		playPauseButton = ImageButton(context, null, android.R.attr.borderlessButtonStyle)
+		playPauseButton.scaleType = ImageView.ScaleType.CENTER
+		playPauseButton.setOnClickListener { toggle() }
+
+		val controls1 = LinearLayout(context)
+		controls1.orientation = LinearLayout.HORIZONTAL
+		controls1.gravity = Gravity.CENTER_VERTICAL
+		controls1.setPadding(0, (8f * density).toInt(), 0, (8f * density).toInt())
+		val controls2 = LinearLayout(context)
+		controls2.orientation = LinearLayout.HORIZONTAL
+		controls2.gravity = Gravity.CENTER_VERTICAL
+		controls.addView(controls1, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+		controls.addView(controls2, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+		controls1.addView(seekBar, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+		controls2.addView(positionText, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+		controls2.addView(playPauseButton, (80f * density).toInt(), LinearLayout.LayoutParams.WRAP_CONTENT)
+		controls2.addView(durationText, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+
+		addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+
+		setOnClickListener { setControlsVisible(!controlsVisible, true) }
 	}
 
 	private fun timeLabel(context: Context): TextView {
-		val textView = TextView(context)
-		textView.setTextColor(Color.WHITE)
+		val textView = TextView(context, null, android.R.attr.textAppearanceListItem)
+		ViewUtils.setTextSizeScaled(textView, 14)
+		textView.gravity = Gravity.CENTER_HORIZONTAL
+		textView.typeface = ResourceUtils.TYPEFACE_MEDIUM
 		textView.text = formatTime(0)
-		val density = resources.displayMetrics.density
-		val pad = (6f * density).toInt()
-		textView.setPadding(pad, 0, pad, 0)
 		return textView
 	}
 
@@ -234,13 +257,41 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		videoWrapper = null
 		progressBar.visibility = GONE
 		errorView.visibility = GONE
+		configurationView.removeAllViews()
+		controlsView.animate().cancel()
 		controlsView.visibility = GONE
+		controlsView.alpha = 1f
+		controlsView.translationY = 0f
+		controlsVisible = false
 		coverView.visibility = VISIBLE
 	}
 
+	private fun setControlsVisible(visible: Boolean, animate: Boolean) {
+		if (controlsVisible == visible || player == null) {
+			return
+		}
+		controlsVisible = visible
+		controlsView.animate().cancel()
+		if (visible) {
+			controlsView.visibility = VISIBLE
+			if (animate) {
+				controlsView.animate().alpha(1f).translationY(0f).setDuration(250).start()
+			} else {
+				controlsView.alpha = 1f
+				controlsView.translationY = 0f
+			}
+		} else if (animate) {
+			controlsView.animate().alpha(0f).translationY(controlsView.height.toFloat())
+					.setDuration(250).withEndAction { controlsView.visibility = GONE }.start()
+		} else {
+			controlsView.alpha = 0f
+			controlsView.visibility = GONE
+		}
+	}
+
 	private fun updatePlayPauseIcon() {
-		playPauseButton.setImageResource(if (player?.isPlaying() == true)
-				android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+		playPauseButton.setImageResource(ResourceUtils.getResourceId(context,
+				if (player?.isPlaying() == true) R.attr.iconButtonPause else R.attr.iconButtonPlay, 0))
 	}
 
 	private fun updateControls() {
@@ -261,8 +312,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	}
 
 	private fun formatTime(ms: Long): String {
-		val totalSeconds = (ms / 1000).toInt()
-		return String.format(Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
+		val totalSeconds = ms / 1000
+		return String.format(Locale.US, "%02d:%02d", totalSeconds / 60 % 60, totalSeconds % 60)
 	}
 
 	private val playerListener = object : VideoPlayer.Listener {
@@ -280,8 +331,21 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 			// Insert below the cover (index 0) so the thumbnail hides the surface until first frame.
 			addView(wrapper, 0, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
 			player.setPlaying(active)
+			// Muted indicator, as in the gallery player.
+			configurationView.removeAllViews()
+			if (!player.isAudioPresent()) {
+				val density = ResourceUtils.obtainDensity(context)
+				val imageView = ImageView(context)
+				imageView.setImageResource(ResourceUtils.getResourceId(context, R.attr.iconActionVolumeOff, 0))
+				imageView.scaleType = ImageView.ScaleType.CENTER
+				imageView.imageAlpha = 0x99
+				configurationView.addView(imageView, (48f * density).toInt(), (48f * density).toInt())
+			}
 			controlsView.visibility = VISIBLE
-			updatePlayPauseIcon()
+			controlsView.alpha = 1f
+			controlsView.translationY = 0f
+			controlsVisible = true
+			updateControls()
 			handler.removeCallbacks(progressRunnable)
 			handler.post(progressRunnable)
 		}
@@ -373,5 +437,10 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 			rangeTask = task
 			task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		}
+	}
+
+	companion object {
+		// Matches GalleryOverlay's action bar chrome colour.
+		private const val CONTROLS_BACKGROUND_COLOR = 0xaa202020.toInt()
 	}
 }
