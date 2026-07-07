@@ -181,9 +181,11 @@ class FavoritesStorage private constructor() :
 		add(FavoriteItem(chanName, boardName, null))
 	}
 
-	fun moveAfter(favoriteItem: FavoriteItem, afterFavoriteItem: FavoriteItem) {
+	fun moveAfter(favoriteItem: FavoriteItem, afterFavoriteItem: FavoriteItem?) {
 		if (canSortManually() && favoriteItemsList.remove(favoriteItem)) {
-			val index = favoriteItemsList.indexOf(afterFavoriteItem) + 1
+			// A null afterFavoriteItem (e.g. dragged to the top) inserts at the start, matching the
+			// original Java where indexOf(null) returned -1.
+			val index = if (afterFavoriteItem != null) favoriteItemsList.indexOf(afterFavoriteItem) + 1 else 0
 			favoriteItemsList.add(index, favoriteItem)
 			serialize()
 		}
