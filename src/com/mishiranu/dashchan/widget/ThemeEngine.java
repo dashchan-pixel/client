@@ -531,7 +531,8 @@ public class ThemeEngine {
 					ColorUtils.blendARGB(STATUS_OVERLAY_DARK, STATUS_OVERLAY_LIGHT, lightness));
 			activity.getWindow().setStatusBarColor(statusBarColor);
 			ActivityManager.TaskDescription taskDescription;
-			taskDescription = new ActivityManager.TaskDescription(null, R.mipmap.ic_launcher, toolbarColor);
+			taskDescription = new ActivityManager.TaskDescription.Builder()
+					.setIcon(R.mipmap.ic_launcher).setPrimaryColor(toolbarColor).build();
 		
 			activity.setTaskDescription(taskDescription);
 		

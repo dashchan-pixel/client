@@ -80,7 +80,7 @@ class CardView : FrameLayout {
 	private class CardViewJellyBean : Implementation {
 		override fun initialize(cardView: CardView, context: Context, backgroundColor: Int, size: Float) {
 			val background = RoundRectDrawableWithShadow(context.resources, backgroundColor, size)
-			cardView.setBackgroundDrawable(background)
+			cardView.background = background
 			val shadowPadding = Rect()
 			background.getMaxShadowAndCornerPadding(shadowPadding)
 			cardView.minimumHeight = Math.ceil(background.getMinHeight().toDouble()).toInt()
@@ -116,7 +116,7 @@ class CardView : FrameLayout {
 	private class CardViewLollipop : Implementation {
 		override fun initialize(cardView: CardView, context: Context, backgroundColor: Int, size: Float) {
 			val backgroundDrawable = RoundRectDrawable(backgroundColor, size)
-			cardView.setBackgroundDrawable(backgroundDrawable)
+			cardView.background = backgroundDrawable
 			cardView.clipToOutline = true
 			cardView.elevation = size
 			backgroundDrawable.setPadding(size)

@@ -6,6 +6,7 @@ import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.TypedValue
 import android.graphics.Rect
 import android.graphics.RectF
 import android.view.Gravity
@@ -61,7 +62,8 @@ class WatcherView(context: Context, private val colorSet: ColorSet) : FrameLayou
 			if (!hasNew) {
 				paint.alpha = 0x99
 			}
-			paint.textSize = (fontSize * resources.displayMetrics.scaledDensity + 0.5f).toInt().toFloat()
+			paint.textSize = (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+					fontSize.toFloat(), resources.displayMetrics) + 0.5f).toInt().toFloat()
 			paint.textAlign = Paint.Align.CENTER
 			paint.getTextBounds(text, 0, text.length, rect)
 			canvas.drawText(text, width / 2f, (height + rect.height()) / 2f, paint)

@@ -34,12 +34,8 @@ class StackItem : Parcelable {
 
 	fun create(replaceFragment: ReplaceFragment?): Fragment {
 		var fragment: Fragment = try {
-			Class.forName(className).newInstance() as Fragment
-		} catch (e: ClassNotFoundException) {
-			throw RuntimeException(e)
-		} catch (e: IllegalAccessException) {
-			throw RuntimeException(e)
-		} catch (e: InstantiationException) {
+			Class.forName(className).getDeclaredConstructor().newInstance() as Fragment
+		} catch (e: ReflectiveOperationException) {
 			throw RuntimeException(e)
 		}
 		if (arguments != null) {

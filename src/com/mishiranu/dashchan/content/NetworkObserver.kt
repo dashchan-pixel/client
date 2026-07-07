@@ -82,6 +82,8 @@ class NetworkObserver private constructor() {
 		last3GAvailable = is3GAvailable
 	}
 
+	// NETWORK_TYPE_EVDO_0/A/B and EHRPD are deprecated with no replacement constants; still valid subtype values.
+	@Suppress("DEPRECATION")
 	private fun isNetworkType3G(type: Int): Boolean {
 		return when (type) {
 			TelephonyManager.NETWORK_TYPE_UMTS,

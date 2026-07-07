@@ -26,6 +26,7 @@ import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import com.mishiranu.dashchan.R
 
 object ViewUtils {
@@ -252,7 +253,7 @@ object ViewUtils {
 
 	@JvmStatic
 	fun setWindowLayoutFullscreen(window: Window) {
-		window.setDecorFitsSystemWindows(false)
+		WindowCompat.setDecorFitsSystemWindows(window, false)
 	}
 
 	@JvmStatic

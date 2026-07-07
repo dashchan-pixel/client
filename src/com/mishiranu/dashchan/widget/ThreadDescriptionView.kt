@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import chan.util.StringUtils
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -31,7 +32,8 @@ class ThreadDescriptionView(context: Context, attrs: AttributeSet?) : View(conte
 	}
 
 	fun setTextSizeSp(sizeSp: Float) {
-		val size = (sizeSp * resources.displayMetrics.scaledDensity + 0.5f).toInt()
+		val size = (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp,
+				resources.displayMetrics) + 0.5f).toInt()
 		paint.textSize = size.toFloat()
 		requestLayout()
 	}

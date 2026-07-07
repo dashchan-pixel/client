@@ -959,7 +959,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 			} else {
 				if (isForegroundWorker) {
 					isForegroundWorker = false;
-					stopForeground(true);
+					stopForeground(STOP_FOREGROUND_REMOVE);
 					stopSelf();
 				}
 			}

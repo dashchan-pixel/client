@@ -107,7 +107,7 @@ class LocaleManager private constructor() {
 				val splitted = codes[i]!!.split("_")
 				val language = splitted[0]
 				val country = if (splitted.size > 1) splitted[1] else null
-				val locale = if (country != null) Locale(language, country) else Locale(language)
+				val locale = if (country != null) Locale.of(language, country) else Locale.of(language)
 				val displayName = locale.getDisplayName(locale)
 				names[i] = displayName.substring(0, 1).uppercase(locale) + displayName.substring(1)
 				locales[i] = locale

@@ -653,7 +653,7 @@ public class ChanManager {
 				holder = new Holder(chanName, chanProvider, resources);
 				T result;
 				try {
-					result = (T) Class.forName(className, false, classLoader).newInstance();
+					result = (T) Class.forName(className, false, classLoader).getDeclaredConstructor().newInstance();
 				} finally {
 					holder = null;
 				}

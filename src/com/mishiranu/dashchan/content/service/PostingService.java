@@ -213,7 +213,7 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 				return;
 			}
 			if (notificationData.type == NotificationData.Type.CANCEL) {
-				stopForeground(true);
+				stopForeground(STOP_FOREGROUND_REMOVE);
 				stopSelf();
 			} else {
 				TaskState taskState = notificationData.taskState;

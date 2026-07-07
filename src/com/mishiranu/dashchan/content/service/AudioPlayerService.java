@@ -179,7 +179,7 @@ public class AudioPlayerService extends BaseService implements MediaPlayer.OnCom
 			// Ensure service was started foreground at least once
 			startForeground(getPlaybackNotification(false));
 		
-			stopForeground(true);
+			stopForeground(STOP_FOREGROUND_REMOVE);
 			stopSelf();
 		}
 		if (notify) {
