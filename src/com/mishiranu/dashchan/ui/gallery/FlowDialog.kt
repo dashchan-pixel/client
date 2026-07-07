@@ -18,9 +18,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
+import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.content.service.DownloadService
 import com.mishiranu.dashchan.ui.FragmentHandler
+import com.mishiranu.dashchan.widget.ClickableToast
 import kotlin.math.abs
 
 /**
@@ -32,8 +34,13 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 	/** Retains the (non-Parcelable) item list across configuration changes. */
 	class FlowViewModel : ViewModel() {
 		var chan: Chan? = null
+		/** The full gallery attachment list (images + videos), used to switch back to the gallery. */
+		var allItems: List<GalleryItem>? = null
+		/** The video-only subset actually shown in the feed. */
 		var items: List<GalleryItem>? = null
 		var threadTitle: String? = null
+		/** Index within [items] to open at; -1 means the first video. */
+		var startIndex = -1
 	}
 
 	private lateinit var viewModel: FlowViewModel
@@ -48,11 +55,15 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		viewModel = ViewModelProvider(this).get(FlowViewModel::class.java)
 		if (viewModel.items == null) {
 			viewModel.chan = pendingChan
+			viewModel.allItems = pendingAllItems
 			viewModel.items = pendingItems
 			viewModel.threadTitle = pendingThreadTitle
+			viewModel.startIndex = pendingItems?.indexOfFirst { it === pendingStartItem } ?: -1
 		}
 		pendingChan = null
+		pendingAllItems = null
 		pendingItems = null
+		pendingStartItem = null
 		pendingThreadTitle = null
 		if (viewModel.items == null) {
 			// Handoff lost (e.g. process death) — nothing to show.
@@ -98,8 +109,11 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 					updateActive(findCenterPosition(rv))
 				}
 			})
-			// Start in the middle of the virtual (looping) range so swipes wrap both ways.
-			val startPosition = if (items.size > 1) LOOP_COUNT / 2 - LOOP_COUNT / 2 % items.size else 0
+			// Start in the middle of the virtual (looping) range, offset to the requested video,
+			// so swipes wrap both ways and we open at the same attachment the gallery was showing.
+			val startIndex = viewModel.startIndex.coerceIn(0, items.size - 1)
+			val startPosition = if (items.size > 1)
+					LOOP_COUNT / 2 - LOOP_COUNT / 2 % items.size + startIndex else 0
 			recyclerView.scrollToPosition(startPosition)
 			recyclerView.post { if (currentPosition < 0) updateActive(startPosition) }
 		}
@@ -218,6 +232,23 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 
 	override fun getThreadTitle(): String? = viewModel.threadTitle
 
+	override fun onSwitchToGallery(galleryItem: GalleryItem) {
+		val allItems = viewModel.allItems ?: return
+		val chan = viewModel.chan ?: return
+		val index = allItems.indexOfFirst { it === galleryItem }
+		if (index < 0) {
+			return
+		}
+		// Open the regular gallery in the activity's fragment manager (where it natively lives),
+		// at the same attachment, then dismiss this feed so no player keeps running.
+		val fragmentManager = requireActivity().supportFragmentManager
+		(fragmentManager.findFragmentByTag(GALLERY_TAG) as? GalleryOverlay)?.dismiss()
+		val overlay = GalleryOverlay(chan.name, ArrayList(allItems), index, viewModel.threadTitle,
+				null, GalleryOverlay.NavigatePostMode.ENABLED, false)
+		overlay.show(fragmentManager, GALLERY_TAG)
+		dismiss()
+	}
+
 	override fun onVideoEnded(view: FlowVideoView) {
 		val recyclerView = recyclerView ?: return
 		val size = viewModel.items?.size ?: 0
@@ -232,19 +263,31 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 
 	companion object {
 		private val TAG = FlowDialog::class.java.name
+		private val GALLERY_TAG = GalleryOverlay::class.java.name
 		private const val LOOP_COUNT = 1_000_000
 		private var pendingChan: Chan? = null
+		private var pendingAllItems: List<GalleryItem>? = null
 		private var pendingItems: List<GalleryItem>? = null
+		private var pendingStartItem: GalleryItem? = null
 		private var pendingThreadTitle: String? = null
 
+		/**
+		 * Open the video feed for [galleryItems] (the full gallery attachment list; only videos are shown),
+		 * starting at [startItem] if given. Shows a toast and does nothing if the thread has no videos.
+		 */
 		@JvmStatic
-		fun show(fragmentManager: FragmentManager, chan: Chan, items: List<GalleryItem>, threadTitle: String?) {
-			if (items.isEmpty()) {
+		fun show(fragmentManager: FragmentManager, chan: Chan, galleryItems: List<GalleryItem>,
+				startItem: GalleryItem?, threadTitle: String?) {
+			val videoItems = galleryItems.filter { it.isVideo(chan) }
+			if (videoItems.isEmpty()) {
+				ClickableToast.show(R.string.no_video_attachments)
 				return
 			}
 			(fragmentManager.findFragmentByTag(TAG) as? FlowDialog)?.dismiss()
 			pendingChan = chan
-			pendingItems = items
+			pendingAllItems = galleryItems
+			pendingItems = videoItems
+			pendingStartItem = startItem
 			pendingThreadTitle = threadTitle
 			FlowDialog().show(fragmentManager, TAG)
 		}

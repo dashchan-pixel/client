@@ -391,6 +391,8 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 			menu.add(0, R.id.menu_select, 0, R.string.select)
 					.setIcon(ResourceUtils.getActionBarIcon(instance.context, R.attr.iconActionSelect))
 					.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+			menu.add(0, R.id.menu_flow, 0, R.string.flow)
+					.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
 		}
 	}
 
@@ -406,6 +408,8 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 				menu.findItem(R.id.menu_save).setVisible(capabilities.save);
 				menu.findItem(R.id.menu_refresh).setVisible(capabilities.refresh);
 			}
+			// Offer switching to the video feed only while viewing a video attachment.
+			menu.findItem(R.id.menu_flow).setVisible(isCurrentItemVideo());
 			if (pagerUnit != null) {
 				pagerUnit.invalidatePopupMenu();
 			}
@@ -430,8 +434,28 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		} else if (switchItemId0 == R.id.menu_select) {
 
 				listUnit.startSelectionMode(null);
+		} else if (switchItemId0 == R.id.menu_flow) {
+
+				switchToFlow();
 		}
 		return true;
+	}
+
+	private boolean isCurrentItemVideo() {
+		PagerInstance.ViewHolder holder = pagerUnit != null ? pagerUnit.getCurrentHolder() : null;
+		return holder != null && holder.galleryItem != null && instance != null &&
+				holder.galleryItem.isVideo(Chan.get(instance.chanName));
+	}
+
+	private void switchToFlow() {
+		PagerInstance.ViewHolder holder = pagerUnit != null ? pagerUnit.getCurrentHolder() : null;
+		if (holder == null || holder.galleryItem == null || instance == null) {
+			return;
+		}
+		// Open the video feed at the same attachment, then close the gallery so nothing keeps playing.
+		FlowDialog.show(requireActivity().getSupportFragmentManager(), Chan.get(instance.chanName),
+				instance.galleryItems, holder.galleryItem, getThreadTitle());
+		dismiss();
 	}
 
 	@Override

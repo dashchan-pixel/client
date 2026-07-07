@@ -483,6 +483,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		val dialogMenu = DialogMenu(context)
 		dialogMenu.setTitle(if (!StringUtils.isEmpty(galleryItem.originalName)) galleryItem.originalName
 				else galleryItem.getFileName(chan))
+		dialogMenu.add(R.string.gallery) { callback?.onSwitchToGallery(galleryItem) }
 		dialogMenu.add(R.string.save) {
 			val binder = callback?.getDownloadBinder()
 			if (binder != null) {
@@ -531,6 +532,9 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		fun getDownloadBinder(): DownloadService.Binder?
 		fun getThreadTitle(): String?
 		fun onVideoEnded(view: FlowVideoView)
+
+		/** Switch to the regular gallery, opened at this same attachment. */
+		fun onSwitchToGallery(galleryItem: GalleryItem)
 	}
 
 	companion object {

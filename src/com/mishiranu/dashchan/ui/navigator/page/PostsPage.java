@@ -743,17 +743,8 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 
 				Chan chan = getChan();
 				GalleryItem.Set gallerySet = adapter.getGallerySet();
-				ArrayList<GalleryItem> videoItems = new ArrayList<>();
-				for (GalleryItem galleryItem : gallerySet.createList()) {
-					if (galleryItem.isVideo(chan)) {
-						videoItems.add(galleryItem);
-					}
-				}
-				if (videoItems.isEmpty()) {
-					ClickableToast.show(R.string.no_video_attachments);
-				} else {
-					FlowDialog.show(getFragmentManager(), chan, videoItems, gallerySet.getThreadTitle());
-				}
+				FlowDialog.show(getFragmentManager(), chan, gallerySet.createList(), null,
+						gallerySet.getThreadTitle());
 				return true;
 		} else if (switchItemId0 == R.id.menu_select) {
 
