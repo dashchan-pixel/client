@@ -268,6 +268,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		bindService(new Intent(this, DownloadService.class), downloadConnection, BIND_AUTO_CREATE);
 		boolean allowSelectChan = ChanManager.getInstance().hasMultipleAvailableChans();
 		if (savedInstanceState == null) {
+			EasterEgg.INSTANCE.maybeShow(this);
 			Preferences.DrawerInitialPosition drawerInitialPosition = Preferences.getDrawerInitialPosition();
 			if (drawerInitialPosition != Preferences.DrawerInitialPosition.CLOSED) {
 				if (!wideMode) {
