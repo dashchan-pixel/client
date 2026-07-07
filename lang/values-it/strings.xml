@@ -67,7 +67,6 @@
     <string name="code_number_address">Board, numero pag. o indirizzo</string>
     <string name="comment">Commento</string>
     <string name="comment_is_too_short">Il commento è troppo corto</string>
-    <string name="compatibility">Compatibilità</string>
     <string name="completed">Completato</string>
     <string name="completed_downloads">Download completati</string>
     <string name="configuration">Configurazione</string>
@@ -119,10 +118,6 @@
     <string name="downloading_number_of_number__format">Download in corso: %1$d di %2$d</string>
     <string name="downloads">Download</string>
     <string name="draft_saved">Bozza salvata</string>
-    <string name="draw_over_other_applications">Porta sopra le altre applicazioni</string>
-    <string name="draw_over_other_applications__summary">Questo permesso è necessario per abilitare tutte le funzioni
-        dei toast cliccabili, assicurare riavii affidabili dell\'applicazione e consentire il lancio dell\'applicazione
-        quando l\'invio fallisce.</string>
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
     <string name="enter_valid_data">Inserisci un dato valido</string>

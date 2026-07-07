@@ -83,7 +83,6 @@
 	<string name="code_number_address">Code, number, address</string>
 	<string name="comment">Comment</string>
 	<string name="comment_is_too_short">Comment is too short</string>
-	<string name="compatibility">Compatibility</string>
 	<string name="completed">Completed</string>
 	<string name="completed_downloads">Completed downloads</string>
 	<string name="configuration">Configuration</string>
@@ -142,9 +141,6 @@
 	<string name="downloading_number_of_number__format">Downloading %1$d of %2$d</string>
 	<string name="downloads">Downloads</string>
 	<string name="draft_saved">Draft saved</string>
-	<string name="draw_over_other_applications">Draw over other applications</string>
-	<string name="draw_over_other_applications__summary">This permission is needed to enable all features of clickable
-		toasts, ensure reliable application restarts, and allow to launch application when posting fails</string>
 	<string name="empty_response">Empty response</string>
 	<string name="enabled">Enabled</string>
 	<string name="enter_valid_data">Enter a valid data</string>
