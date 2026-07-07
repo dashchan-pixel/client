@@ -3,11 +3,16 @@ package com.mishiranu.dashchan.ui.gallery
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.TextView
 import chan.content.Chan
 import com.mishiranu.dashchan.R
@@ -22,13 +27,19 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.widget.AspectRatioFrameLayout
 import java.io.File
 import java.io.IOException
+import java.util.Locale
 
 /**
  * A single page of the video Flow feed (reels/TikTok-style). Downloads one video attachment
  * progressively — mirroring the gallery's [com.mishiranu.dashchan.ui.gallery.VideoUnit] —
- * and plays it looped. The host calls [setActive] to start/resume playback when the page
- * scrolls into view and to pause it when it leaves, and [recycle] when the view is reused
- * by the RecyclerView for a different item.
+ * and plays it looped, with a scrub bar and play/pause controls.
+ *
+ * The host distinguishes three states via [prepare] and [setActive]:
+ * - [prepare]: begin buffering (download + ready the player) but stay paused — used to
+ *   pre-buffer the next page so it plays instantly on arrival.
+ * - [setActive] true: the page is centered; buffer if needed and play.
+ * - [setActive] false: the page left the center/screen; pause (but keep it buffered).
+ * [recycle] fully releases the player when the RecyclerView reuses the view.
  */
 class FlowVideoView(context: Context) : FrameLayout(context),
 		ReadVideoTask.Callback, VideoPlayer.RangeCallback {
@@ -36,6 +47,13 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private val progressBar = ProgressBar(context)
 	private val errorView = TextView(context)
 	private var videoWrapper: AspectRatioFrameLayout? = null
+
+	private val controlsView: LinearLayout
+	private val playPauseButton: ImageButton
+	private val positionText: TextView
+	private val durationText: TextView
+	private val seekBar: SeekBar
+	private var tracking = false
 
 	private var chan: Chan? = null
 	private var uri: Uri? = null
@@ -46,6 +64,16 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var allowRangeRequests = true
 	private var active = false
 	private var started = false
+	private var downloadProgress = 0L
+	private var downloadMax = 0L
+
+	private val handler = Handler(Looper.getMainLooper())
+	private val progressRunnable = object : Runnable {
+		override fun run() {
+			updateControls()
+			handler.postDelayed(this, 500)
+		}
+	}
 
 	init {
 		setBackgroundColor(Color.BLACK)
@@ -56,7 +84,59 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		errorView.setTextColor(Color.WHITE)
 		errorView.visibility = GONE
 		addView(errorView, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+
+		val density = resources.displayMetrics.density
+		val pad = (12f * density).toInt()
+		controlsView = LinearLayout(context)
+		controlsView.orientation = LinearLayout.HORIZONTAL
+		controlsView.gravity = Gravity.CENTER_VERTICAL
+		controlsView.setBackgroundColor(0x66000000)
+		controlsView.setPadding(pad, pad / 2, pad, pad / 2)
+		controlsView.visibility = GONE
+		playPauseButton = ImageButton(context)
+		playPauseButton.setBackgroundColor(Color.TRANSPARENT)
+		playPauseButton.setImageResource(android.R.drawable.ic_media_pause)
+		playPauseButton.setColorFilter(Color.WHITE)
+		playPauseButton.setOnClickListener { toggle() }
+		positionText = timeLabel(context)
+		durationText = timeLabel(context)
+		seekBar = SeekBar(context)
+		seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+			override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+				if (fromUser) {
+					positionText.text = formatTime(progress.toLong())
+				}
+			}
+			override fun onStartTrackingTouch(seekBar: SeekBar) {
+				tracking = true
+			}
+			override fun onStopTrackingTouch(seekBar: SeekBar) {
+				tracking = false
+				player?.setPosition(seekBar.progress.toLong())
+			}
+		})
+		controlsView.addView(playPauseButton, LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+		controlsView.addView(positionText, LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+		controlsView.addView(seekBar, LinearLayout.LayoutParams(0,
+				LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+		controlsView.addView(durationText, LinearLayout.LayoutParams(
+				LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+		addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT,
+				LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
+
 		setOnClickListener { toggle() }
+	}
+
+	private fun timeLabel(context: Context): TextView {
+		val textView = TextView(context)
+		textView.setTextColor(Color.WHITE)
+		textView.text = formatTime(0)
+		val density = resources.displayMetrics.density
+		val pad = (6f * density).toInt()
+		textView.setPadding(pad, 0, pad, 0)
+		return textView
 	}
 
 	fun bind(chan: Chan, galleryItem: GalleryItem) {
@@ -71,23 +151,29 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		}
 	}
 
-	/** Start/resume playback when true (the page is centered), pause when false. */
+	/** Begin buffering (download + ready player) without forcing playback. */
+	fun prepare() {
+		if (!started) {
+			start()
+		}
+	}
+
+	/** Play/resume when centered (true); pause when off-center/off-screen (false). */
 	fun setActive(active: Boolean) {
 		this.active = active
 		if (active) {
-			if (!started) {
-				start()
-			} else {
-				player?.setPlaying(true)
-			}
+			prepare()
+			player?.setPlaying(true)
 		} else {
 			player?.setPlaying(false)
 		}
+		updatePlayPauseIcon()
 	}
 
 	private fun toggle() {
 		val player = player ?: return
 		player.setPlaying(!player.isPlaying())
+		updatePlayPauseIcon()
 	}
 
 	private fun start() {
@@ -132,8 +218,12 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	}
 
 	fun recycle() {
+		handler.removeCallbacks(progressRunnable)
 		active = false
 		started = false
+		downloadProgress = 0L
+		downloadMax = 0L
+		tracking = false
 		downloadTask?.cancel()
 		downloadTask = null
 		rangeTask?.cancel()
@@ -144,7 +234,35 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		videoWrapper = null
 		progressBar.visibility = GONE
 		errorView.visibility = GONE
+		controlsView.visibility = GONE
 		coverView.visibility = VISIBLE
+	}
+
+	private fun updatePlayPauseIcon() {
+		playPauseButton.setImageResource(if (player?.isPlaying() == true)
+				android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+	}
+
+	private fun updateControls() {
+		val player = player ?: return
+		val duration = player.getDuration()
+		if (duration > 0) {
+			if (!tracking) {
+				seekBar.max = duration.toInt()
+				seekBar.progress = player.getPosition().toInt()
+				positionText.text = formatTime(player.getPosition())
+			}
+			durationText.text = formatTime(duration)
+			if (downloadMax > 0) {
+				seekBar.secondaryProgress = (duration * downloadProgress / downloadMax).toInt()
+			}
+		}
+		updatePlayPauseIcon()
+	}
+
+	private fun formatTime(ms: Long): String {
+		val totalSeconds = (ms / 1000).toInt()
+		return String.format(Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
 	}
 
 	private val playerListener = object : VideoPlayer.Listener {
@@ -162,6 +280,10 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 			// Insert below the cover (index 0) so the thumbnail hides the surface until first frame.
 			addView(wrapper, 0, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
 			player.setPlaying(active)
+			controlsView.visibility = VISIBLE
+			updatePlayPauseIcon()
+			handler.removeCallbacks(progressRunnable)
+			handler.post(progressRunnable)
 		}
 
 		override fun onError(player: VideoPlayer, message: String?) {
@@ -208,6 +330,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	}
 
 	override fun onReadVideoProgressUpdate(progress: Long, progressMax: Long) {
+		downloadProgress = progress
+		downloadMax = progressMax
 		player?.setDownloadRange(progress, progressMax)
 	}
 
@@ -221,6 +345,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		} else {
 			downloadTask = null
 			val length = file.length()
+			downloadProgress = length
+			downloadMax = length
 			player?.setDownloadRange(length, length)
 		}
 	}

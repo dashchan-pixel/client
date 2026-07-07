@@ -57,7 +57,18 @@ class FlowDialog : DialogFragment() {
 		recyclerView.setBackgroundColor(Color.BLACK)
 		recyclerView.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
 		recyclerView.setHasFixedSize(true)
+		// Keep neighbours bound so the next page can be pre-buffered.
+		recyclerView.setItemViewCacheSize(2)
 		snapHelper.attachToRecyclerView(recyclerView)
+		// Pause any page as soon as it leaves the screen. Necessary because RecyclerView keeps
+		// recently-detached views in its cache (without recycling them), so their players would
+		// otherwise keep playing off-screen.
+		recyclerView.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+			override fun onChildViewAttachedToWindow(view: View) {}
+			override fun onChildViewDetachedFromWindow(view: View) {
+				(view as? FlowVideoView)?.setActive(false)
+			}
+		})
 		val chan = viewModel.chan
 		val items = viewModel.items
 		if (chan != null && items != null) {
@@ -115,6 +126,16 @@ class FlowDialog : DialogFragment() {
 		(recyclerView.findViewHolderForAdapterPosition(currentPosition) as? Holder)?.videoView?.setActive(false)
 		currentPosition = position
 		(recyclerView.findViewHolderForAdapterPosition(position) as? Holder)?.videoView?.setActive(true)
+		// Pre-buffer the adjacent pages so the next swipe plays instantly.
+		preload(position + 1)
+		preload(position - 1)
+	}
+
+	private fun preload(position: Int) {
+		if (position < 0) {
+			return
+		}
+		(recyclerView?.findViewHolderForAdapterPosition(position) as? Holder)?.videoView?.prepare()
 	}
 
 	private inner class Adapter(private val chan: Chan, private val items: List<GalleryItem>) :
@@ -130,6 +151,9 @@ class FlowDialog : DialogFragment() {
 			holder.videoView.bind(chan, items[position])
 			if (position == currentPosition) {
 				holder.videoView.setActive(true)
+			} else if (position == currentPosition + 1 || position == currentPosition - 1) {
+				// This neighbour bound after the active page settled (e.g. via prefetch) — buffer it.
+				holder.videoView.prepare()
 			}
 		}
 
