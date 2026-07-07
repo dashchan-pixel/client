@@ -1,3 +1,4 @@
 -dontobfuscate
 -keep class com.mishiranu.dashchan.** { *; }
 -keep class chan.** { *; }
+-dontwarn kotlin.Cloneable$DefaultImpls
