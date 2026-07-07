@@ -88,7 +88,7 @@ class SortableHelper<VH : RecyclerView.ViewHolder>(recyclerView: RecyclerView,
 			viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float,
 			actionState: Int, isCurrentlyActive: Boolean) {
 		var dy = dY
-		val position = viewHolder.adapterPosition
+		val position = viewHolder.bindingAdapterPosition
 		val count = recyclerView.layoutManager!!.itemCount
 		if (position == 0) {
 			dy = max(0f, dy)

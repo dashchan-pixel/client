@@ -192,7 +192,7 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 
 			@Override
 			public int getSwipeDirs(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-				int threadPosition = viewHolder.getAdapterPosition();
+				int threadPosition = viewHolder.getBindingAdapterPosition();
 				if (threadPosition == RecyclerView.NO_POSITION || threadHidden(threadPosition)) {
 					return 0; //disable swipe for hidden threads or if can't get thread's position
 				} else {
@@ -213,7 +213,7 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 
 			@Override
 			public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-				int threadPosition = viewHolder.getAdapterPosition();
+				int threadPosition = viewHolder.getBindingAdapterPosition();
 				if (threadPosition != RecyclerView.NO_POSITION){
 					hideThreadAndNotifyAdapter(threadPosition);
 				}
@@ -785,7 +785,7 @@ public class ThreadsPage extends ListPage implements ThreadsAdapter.Callback,
 			int childCount = recyclerView.getChildCount();
 			if (childCount > 0) {
 				View child = recyclerView.getChildAt(childCount - 1);
-				int position = recyclerView.getChildViewHolder(child).getAdapterPosition();
+				int position = recyclerView.getChildViewHolder(child).getBindingAdapterPosition();
 				needScroll = position + 1 == oldCount &&
 						recyclerView.getHeight() - recyclerView.getPaddingBottom() - child.getBottom() >= 0;
 			}
