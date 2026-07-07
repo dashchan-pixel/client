@@ -35,6 +35,7 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 		fun onComplete(player: VideoPlayer)
 		fun onBusyStateChange(player: VideoPlayer, busy: Boolean)
 		fun onDimensionChange(player: VideoPlayer)
+		fun onRenderedFirstFrame(player: VideoPlayer) {}
 	}
 
 	fun interface RangeCallback {
@@ -91,6 +92,10 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 				if (ready) {
 					listener.onDimensionChange(this@VideoPlayer)
 				}
+			}
+
+			override fun onRenderedFirstFrame() {
+				listener.onRenderedFirstFrame(this@VideoPlayer)
 			}
 
 			override fun onPlayerError(error: PlaybackException) {

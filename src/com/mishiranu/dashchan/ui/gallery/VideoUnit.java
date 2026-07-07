@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.net.Uri;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -37,6 +38,7 @@ import com.mishiranu.dashchan.util.AudioFocus;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
 import com.mishiranu.dashchan.util.ResourceUtils;
 import com.mishiranu.dashchan.util.ViewUtils;
+import com.mishiranu.dashchan.widget.AspectRatioFrameLayout;
 import com.mishiranu.dashchan.widget.SummaryLayout;
 import java.io.File;
 import java.io.IOException;
@@ -63,6 +65,7 @@ public class VideoUnit {
 	private boolean finishedPlayback;
 	private boolean trackingNow;
 	private boolean hideSurfaceOnInit;
+	private View videoCover;
 
 	private ReadVideoCallback readVideoCallback;
 	private Uri videoUri;
@@ -164,6 +167,7 @@ public class VideoUnit {
 			backgroundDrawable.recycle();
 			backgroundDrawable = null;
 		}
+		videoCover = null;
 		interruptHolder(instance.leftHolder);
 		interruptHolder(instance.currentHolder);
 		interruptHolder(instance.rightHolder);
@@ -246,8 +250,22 @@ public class VideoUnit {
 		holder.recyclePhotoView();
 		holder.photoView.setImage(backgroundDrawable, false, true, false);
 		View videoView = player.getVideoView(instance.galleryInstance.context);
-		holder.surfaceParent.addView(videoView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+		// Host the surface in an aspect-ratio container sized (fit-center) at layout time, so the
+		// TextureView is created at the correct shape and the video is never rendered stretched to the
+		// full screen before its first frame.
+		AspectRatioFrameLayout videoWrapper = new AspectRatioFrameLayout(instance.galleryInstance.context);
+		videoWrapper.setAspectRatio(aspectRatio(dimensions));
+		videoWrapper.addView(videoView, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+				FrameLayout.LayoutParams.MATCH_PARENT));
+		holder.surfaceParent.addView(videoWrapper, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
 				FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER));
+		// Cover the surface with an opaque view until ExoPlayer renders its first frame, so the surface is
+		// never shown before the video actually starts (it briefly renders stretched otherwise).
+		View videoCover = new View(instance.galleryInstance.context);
+		videoCover.setBackgroundColor(Color.BLACK);
+		holder.surfaceParent.addView(videoCover, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+				FrameLayout.LayoutParams.MATCH_PARENT));
+		this.videoCover = videoCover;
 		recreateVideoControls();
 		playPauseButton.setEnabled(true);
 		seekBar.setEnabled(true);
@@ -259,6 +277,10 @@ public class VideoUnit {
 		invalidateControlsVisibility();
 		setPlaying(wasPlaying, true);
 		updatePlayState();
+	}
+
+	private static float aspectRatio(Point dimensions) {
+		return dimensions.x > 0 && dimensions.y > 0 ? (float) dimensions.x / dimensions.y : 0f;
 	}
 
 	private void recreateVideoControls() {
@@ -625,9 +647,27 @@ public class VideoUnit {
 				backgroundDrawable.width = dimensions.x;
 				backgroundDrawable.height = dimensions.y;
 				instance.currentHolder.photoView.resetScale();
+				View videoView = player.getVideoView(instance.galleryInstance.context);
+				if (videoView.getParent() instanceof AspectRatioFrameLayout) {
+					((AspectRatioFrameLayout) videoView.getParent()).setAspectRatio(aspectRatio(dimensions));
+				}
 			}
 		}
+
+		@Override
+		public void onRenderedFirstFrame(VideoPlayer player) {
+			removeVideoCover();
+		}
 	};
+
+	private void removeVideoCover() {
+		if (videoCover != null) {
+			if (videoCover.getParent() instanceof ViewGroup) {
+				((ViewGroup) videoCover.getParent()).removeView(videoCover);
+			}
+			videoCover = null;
+		}
+	}
 
 	public void showHideVideoView(boolean show) {
 		if (initialized) {
