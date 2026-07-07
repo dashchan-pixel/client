@@ -32,6 +32,8 @@ import android.widget.FrameLayout;
 import android.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.IntentCompat;
+import androidx.core.os.BundleCompat;
 import androidx.core.view.GravityCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -313,8 +315,8 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 				}
 			}
 			if (savedInstanceState != null) {
-				currentFragmentFromSaved = (ContentFragment) savedInstanceState
-						.<StackItem>getParcelable(EXTRA_CURRENT_FRAGMENT).create(null);
+				currentFragmentFromSaved = (ContentFragment) BundleCompat
+						.getParcelable(savedInstanceState, EXTRA_CURRENT_FRAGMENT, StackItem.class).create(null);
 				if (currentFragmentFromSaved == null) {
 					savedInstanceState = null;
 				}
@@ -322,10 +324,10 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		}
 
 		if (savedInstanceState != null) {
-			fragments.addAll(savedInstanceState.getParcelableArrayList(EXTRA_FRAGMENTS));
-			stackPageItems.addAll(savedInstanceState.getParcelableArrayList(EXTRA_STACK_PAGE_ITEMS));
-			preservedPageItems.addAll(savedInstanceState.getParcelableArrayList(EXTRA_PRESERVED_PAGE_ITEMS));
-			currentPageItem = savedInstanceState.getParcelable(EXTRA_CURRENT_PAGE_ITEM);
+			fragments.addAll(BundleCompat.getParcelableArrayList(savedInstanceState, EXTRA_FRAGMENTS, StackItem.class));
+			stackPageItems.addAll(BundleCompat.getParcelableArrayList(savedInstanceState, EXTRA_STACK_PAGE_ITEMS, SavedPageItem.class));
+			preservedPageItems.addAll(BundleCompat.getParcelableArrayList(savedInstanceState, EXTRA_PRESERVED_PAGE_ITEMS, SavedPageItem.class));
+			currentPageItem = BundleCompat.getParcelable(savedInstanceState, EXTRA_CURRENT_PAGE_ITEM, PageItem.class);
 		}
 		Iterator<SavedPageItem> iterator = new ConcatIterable<>(preservedPageItems, stackPageItems).iterator();
 		while (iterator.hasNext()) {
@@ -584,7 +586,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 	}
 
 	private void navigateIntentUnchecked(Intent intent) {
-		ReadUpdateTask.UpdateDataMap updateDataMap = intent.getParcelableExtra(C.EXTRA_UPDATE_DATA_MAP);
+		ReadUpdateTask.UpdateDataMap updateDataMap = IntentCompat.getParcelableExtra(intent, C.EXTRA_UPDATE_DATA_MAP, ReadUpdateTask.UpdateDataMap.class);
 		if (updateDataMap != null) {
 			fragments.clear();
 			navigateFragment(new UpdateFragment(updateDataMap), null, true);
@@ -592,7 +594,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 			String chanName = intent.getStringExtra(C.EXTRA_CHAN_NAME);
 			String boardName = intent.getStringExtra(C.EXTRA_BOARD_NAME);
 			String threadNumber = intent.getStringExtra(C.EXTRA_THREAD_NUMBER);
-			PostingService.FailResult failResult = intent.getParcelableExtra(C.EXTRA_FAIL_RESULT);
+			PostingService.FailResult failResult = IntentCompat.getParcelableExtra(intent, C.EXTRA_FAIL_RESULT, PostingService.FailResult.class);
 			ContentFragment currentFragment = getCurrentFragment();
 			boolean replace = true;
 			if (currentFragment instanceof PostingFragment &&

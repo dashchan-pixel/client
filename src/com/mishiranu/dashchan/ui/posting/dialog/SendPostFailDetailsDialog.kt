@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.ui.posting.dialog
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import chan.content.ApiException
 import chan.util.StringUtils
@@ -19,7 +20,7 @@ class SendPostFailDetailsDialog() : DialogFragment() {
 	}
 
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-		val extra = requireArguments().getParcelable<ApiException.Extra>(EXTRA_EXTRA)
+		val extra = BundleCompat.getParcelable(requireArguments(), EXTRA_EXTRA, ApiException.Extra::class.java)
 		val dialog = AlertDialog.Builder(requireContext())
 				.setTitle(R.string.details)
 				.setPositiveButton(android.R.string.ok, null)

@@ -22,6 +22,7 @@ import android.util.DisplayMetrics;
 import android.util.Pair;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.os.ParcelCompat;
 
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
@@ -928,7 +929,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 				String chanName = source.readString();
 				boolean finishedFromCache = source.readByte() != 0;
 				boolean overwrite = source.readByte() != 0;
-				Uri uri = source.readParcelable(getClass().getClassLoader());
+				Uri uri = ParcelCompat.readParcelable(source, getClass().getClassLoader(), Uri.class);
 				byte[] checkSha256 = source.createByteArray();
 				ChanManager.Fingerprints checkFingerprints = source.readByte() != 0
 						? ChanManager.Fingerprints.CREATOR.createFromParcel(source) : null;

@@ -43,6 +43,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.os.BundleCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -418,7 +419,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 
 		boolean captchaRestoreSuccess = false;
 		if (savedInstanceState != null && savedInstanceState.containsKey(EXTRA_CAPTCHA_DRAFT)) {
-			DraftsStorage.CaptchaDraft captchaDraft = savedInstanceState.getParcelable(EXTRA_CAPTCHA_DRAFT);
+			DraftsStorage.CaptchaDraft captchaDraft = BundleCompat.getParcelable(savedInstanceState, EXTRA_CAPTCHA_DRAFT, DraftsStorage.CaptchaDraft.class);
 			if (captchaDraft.captchaState != null) {
 				showCaptcha(captchaDraft.captchaState, captchaDraft.captchaData, captchaDraft.loadedCaptchaType,
 						captchaDraft.loadedInput, captchaDraft.loadedValidity, captchaDraft.captcha,
@@ -490,7 +491,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		}
 
 		List<Replyable.ReplyData> replyDataList = savedInstanceState != null ? Collections.emptyList()
-				: requireArguments().getParcelableArrayList(EXTRA_REPLY_DATA_LIST);
+				: BundleCompat.getParcelableArrayList(requireArguments(), EXTRA_REPLY_DATA_LIST, Replyable.ReplyData.class);
 		if (!replyDataList.isEmpty()) {
 			boolean onlyLinks = true;
 			for (Replyable.ReplyData data : replyDataList) {

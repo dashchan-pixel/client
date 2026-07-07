@@ -19,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.os.ParcelCompat;
 import androidx.core.view.MarginLayoutParamsCompat;
 import androidx.core.view.ViewCompat;
 
@@ -81,7 +82,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 		}
 
 		protected Captcha(Parcel in) {
-			image = in.readParcelable(Bitmap.class.getClassLoader());
+			image = ParcelCompat.readParcelable(in, Bitmap.class.getClassLoader(), Bitmap.class);
 			lifetimeSeconds = in.readInt();
 			creationTimeMillis = in.readLong();
 		}

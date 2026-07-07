@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.net.Uri
 import android.os.Bundle
 import android.view.ContextThemeWrapper
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import chan.content.Chan
 import com.mishiranu.dashchan.R
@@ -20,7 +21,7 @@ class SearchImageDialog() : DialogFragment() {
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 		val context = requireContext()
 		val chanName = requireArguments().getString(EXTRA_CHAN_NAME)
-		val uri = requireArguments().getParcelable<Uri>(EXTRA_URI)
+		val uri = BundleCompat.getParcelable(requireArguments(), EXTRA_URI, Uri::class.java)
 		val locator = Chan.getFallback().locator
 		val imageUriString = Chan.get(chanName).locator.convert(uri).toString()
 		return DialogMenu(ContextThemeWrapper(context, R.style.Theme_Gallery))

@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import androidx.core.os.BundleCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.ChanMarkup
@@ -91,9 +92,9 @@ class TextFragment : BaseListFragment {
 			Type.CHANGELOG -> {
 				(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.changelog), null)
 				changelogEntries = if (savedInstanceState != null)
-						savedInstanceState.getParcelableArrayList(EXTRA_CHANGELOG_ENTRIES) else null
+						BundleCompat.getParcelableArrayList(savedInstanceState, EXTRA_CHANGELOG_ENTRIES, ReadChangelogTask.Entry::class.java) else null
 				errorItem = if (savedInstanceState != null)
-						savedInstanceState.getParcelable(EXTRA_ERROR_ITEM) else null
+						BundleCompat.getParcelable(savedInstanceState, EXTRA_ERROR_ITEM, ErrorItem::class.java) else null
 				val errorItem = this.errorItem
 				if (errorItem != null) {
 					recyclerView.visibility = View.GONE

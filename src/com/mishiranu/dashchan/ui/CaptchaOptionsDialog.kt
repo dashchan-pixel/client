@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Bundle
+import androidx.core.os.BundleCompat
 import androidx.core.util.Pair
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.MutableLiveData
@@ -41,7 +42,7 @@ class CaptchaOptionsDialog : DialogFragment {
 	}
 
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-		val captchaImage = requireArguments().getParcelable<Bitmap>(KEY_CAPTCHA_IMAGE)!!
+		val captchaImage = BundleCompat.getParcelable(requireArguments(), KEY_CAPTCHA_IMAGE, Bitmap::class.java)!!
 		val buttonTitles = arrayOf(getString(R.string.attach), getString(R.string.download_file),
 				getString(R.string.refresh))
 		val dialog = AlertDialog.Builder(requireContext()).setItems(buttonTitles, null).create()

@@ -18,6 +18,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
+import androidx.core.os.BundleCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
@@ -140,12 +141,12 @@ class UpdateFragment : BaseListFragment {
 		super.onActivityCreated(savedInstanceState)
 
 		if (isUpdateDataProvided()) {
-			updateDataMap = requireArguments().getParcelable(EXTRA_UPDATE_DATA_MAP)
+			updateDataMap = BundleCompat.getParcelable(requireArguments(), EXTRA_UPDATE_DATA_MAP, ReadUpdateTask.UpdateDataMap::class.java)
 		} else {
 			updateDataMap = if (savedInstanceState != null)
-					savedInstanceState.getParcelable(EXTRA_UPDATE_DATA_MAP) else null
+					BundleCompat.getParcelable(savedInstanceState, EXTRA_UPDATE_DATA_MAP, ReadUpdateTask.UpdateDataMap::class.java) else null
 			updateErrorItem = if (savedInstanceState != null)
-					savedInstanceState.getParcelable(EXTRA_UPDATE_ERROR_ITEM) else null
+					BundleCompat.getParcelable(savedInstanceState, EXTRA_UPDATE_ERROR_ITEM, ErrorItem::class.java) else null
 			val updateErrorItem = this.updateErrorItem
 			if (updateErrorItem != null) {
 				setErrorText(updateErrorItem.toString())

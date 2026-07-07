@@ -27,6 +27,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.os.BundleCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.DialogFragment;
 import chan.content.Chan;
@@ -231,7 +232,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 
 		Integer newImagePosition = null;
 		if (instance == null) {
-			Uri uri = requireArguments().getParcelable(EXTRA_URI);
+			Uri uri = BundleCompat.getParcelable(requireArguments(), EXTRA_URI, Uri.class);
 			String chanNameFromArguments = requireArguments().getString(EXTRA_CHAN_NAME);
 			Chan chan = chanNameFromArguments == null && uri != null
 					? Chan.getPreferred(null, uri) : Chan.get(chanNameFromArguments);

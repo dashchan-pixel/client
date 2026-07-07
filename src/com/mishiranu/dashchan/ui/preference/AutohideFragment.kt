@@ -16,6 +16,7 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
@@ -377,10 +378,10 @@ class AutohideFragment : BaseListFragment() {
 			}
 			var autohideItem: AutohideStorage.AutohideItem? = null
 			if (savedInstanceState != null) {
-				autohideItem = savedInstanceState.getParcelable(EXTRA_ITEM)
+				autohideItem = BundleCompat.getParcelable(savedInstanceState, EXTRA_ITEM, AutohideStorage.AutohideItem::class.java)
 			}
 			if (autohideItem == null) {
-				autohideItem = requireArguments().getParcelable(EXTRA_ITEM)
+				autohideItem = BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, AutohideStorage.AutohideItem::class.java)
 			}
 			if (autohideItem != null) {
 				if (autohideItem.chanNames != null) {

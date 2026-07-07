@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import androidx.core.os.BundleCompat;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -292,7 +293,7 @@ public class ForegroundManager implements Handler.Callback {
 				String captchaStateString = savedInstanceState.getString(EXTRA_CAPTCHA_STATE);
 				ReadCaptchaTask.CaptchaState captchaState = captchaStateString != null
 						? ReadCaptchaTask.CaptchaState.valueOf(captchaStateString) : null;
-				CaptchaForm.Captcha captcha = savedInstanceState.getParcelable(EXTRA_CAPTCHA);
+				CaptchaForm.Captcha captcha = BundleCompat.getParcelable(savedInstanceState, EXTRA_CAPTCHA, CaptchaForm.Captcha.class);
 				if (captchaState != null) {
 					String loadedInputString = savedInstanceState.getString(EXTRA_LOADED_INPUT);
 					ChanConfiguration.Captcha.Input loadedInput = loadedInputString != null
@@ -616,7 +617,7 @@ public class ForegroundManager implements Handler.Callback {
 				items = new CharSequence[0];
 			}
 			String descriptionText = requireArguments().getString(EXTRA_DESCRIPTION_TEXT);
-			Bitmap descriptionImage = requireArguments().getParcelable(EXTRA_DESCRIPTION_IMAGE);
+			Bitmap descriptionImage = BundleCompat.getParcelable(requireArguments(), EXTRA_DESCRIPTION_IMAGE, Bitmap.class);
 			boolean multiple = requireArguments().getBoolean(EXTRA_MULTIPLE);
 			selected = new boolean[items.length];
 			boolean[] selected = savedInstanceState != null ? savedInstanceState.getBooleanArray(EXTRA_SELECTED) : null;
@@ -723,7 +724,7 @@ public class ForegroundManager implements Handler.Callback {
 		private void ensureArrays() {
 			if (selectionViews == null) {
 				int columns = requireArguments().getInt(EXTRA_COLUMNS);
-				Parcelable[] parcelables = requireArguments().getParcelableArray(EXTRA_IMAGES);
+				Parcelable[] parcelables = BundleCompat.getParcelableArray(requireArguments(), EXTRA_IMAGES, Bitmap.class);
 				int count = parcelables != null ? parcelables.length : 0;
 				selectionViews = new FrameLayout[(count + columns - 1) / columns * columns];
 				selected = new boolean[count];
@@ -762,14 +763,14 @@ public class ForegroundManager implements Handler.Callback {
 			final float density = ResourceUtils.obtainDensity(requireContext());
 			LinearLayout container = new LinearLayout(requireContext());
 			container.setOrientation(LinearLayout.VERTICAL);
-			Parcelable[] parcelables = requireArguments().getParcelableArray(EXTRA_IMAGES);
+			Parcelable[] parcelables = BundleCompat.getParcelableArray(requireArguments(), EXTRA_IMAGES, Bitmap.class);
 			Bitmap[] images = new Bitmap[parcelables != null ? parcelables.length : 0];
 			if (images.length > 0) {
 				// noinspection SuspiciousSystemArraycopy
 				System.arraycopy(parcelables, 0, images, 0, images.length);
 			}
 			String descriptionText = requireArguments().getString(EXTRA_DESCRIPTION_TEXT);
-			Bitmap descriptionImage = requireArguments().getParcelable(EXTRA_DESCRIPTION_IMAGE);
+			Bitmap descriptionImage = BundleCompat.getParcelable(requireArguments(), EXTRA_DESCRIPTION_IMAGE, Bitmap.class);
 			int outerPadding = container.getResources().getDimensionPixelOffset(R.dimen.dialog_padding_text);
 			container.setPadding(outerPadding, outerPadding, outerPadding, outerPadding);
 			int cornersRadius = (int) (2f * density);

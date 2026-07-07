@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import android.content.Intent
+import androidx.core.content.IntentCompat
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.model.FileHolder
@@ -21,7 +22,7 @@ class PostingShareActivity : Activity() {
 		val intent = intent
 
 		if (Intent.ACTION_SEND == intent.action) {
-			val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+			val uri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
 			if (uri != null) {
 				uris = ArrayList(1)
 				uris.add(uri)
@@ -34,7 +35,7 @@ class PostingShareActivity : Activity() {
 				}
 			}
 		} else if (Intent.ACTION_SEND_MULTIPLE == intent.action) {
-			uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+			uris = IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
 		}
 
 		var success = 0

@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui.navigator;
 
 import android.content.Context;
 import android.os.Bundle;
+import androidx.core.os.BundleCompat;
 import android.os.Parcelable;
 import android.util.Pair;
 import android.view.ActionMode;
@@ -60,7 +61,7 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 	}
 
 	public Page getPage() {
-		return requireArguments().getParcelable(EXTRA_PAGE);
+		return BundleCompat.getParcelable(requireArguments(), EXTRA_PAGE, Page.class);
 	}
 
 	public String getRetainId() {
@@ -102,11 +103,11 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 		super.onCreate(savedInstanceState);
 
 		listPosition = savedInstanceState != null && !resetScroll
-				? savedInstanceState.getParcelable(EXTRA_LIST_POSITION) : null;
-		parcelableExtra = savedInstanceState != null ? savedInstanceState
-				.getParcelable(EXTRA_PARCELABLE_EXTRA) : null;
-		initErrorItem = savedInstanceState != null ? savedInstanceState
-				.getParcelable(EXTRA_INIT_ERROR_ITEM) : null;
+				? BundleCompat.getParcelable(savedInstanceState, EXTRA_LIST_POSITION, ListPosition.class) : null;
+		parcelableExtra = savedInstanceState != null ? BundleCompat
+				.getParcelable(savedInstanceState, EXTRA_PARCELABLE_EXTRA, Parcelable.class) : null;
+		initErrorItem = savedInstanceState != null ? BundleCompat
+				.getParcelable(savedInstanceState, EXTRA_INIT_ERROR_ITEM, ErrorItem.class) : null;
 		searchCurrentQuery = savedInstanceState != null ? savedInstanceState
 				.getString(EXTRA_SEARCH_CURRENT_QUERY) : null;
 		searchSubmitQuery = savedInstanceState != null ? savedInstanceState

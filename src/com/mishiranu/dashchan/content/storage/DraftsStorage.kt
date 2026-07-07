@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.content.storage
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.SystemClock
+import androidx.core.os.ParcelCompat
 import android.util.Pair
 import chan.content.ChanConfiguration
 import chan.content.ChanPerformer
@@ -430,8 +431,8 @@ class DraftsStorage private constructor() :
 					val loadedValidity = source.readString()
 							?.let { ChanConfiguration.Captcha.Validity.valueOf(it) }
 					val text = source.readString()
-					val captcha = source.readParcelable<CaptchaForm.Captcha>(
-							CaptchaForm.Captcha::class.java.classLoader)
+					val captcha = ParcelCompat.readParcelable(source,
+							CaptchaForm.Captcha::class.java.classLoader, CaptchaForm.Captcha::class.java)
 					val large = source.readInt() != 0
 					val blackAndWhite = source.readInt() != 0
 					val boardName = source.readString()

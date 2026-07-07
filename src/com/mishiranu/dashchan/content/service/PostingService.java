@@ -14,6 +14,7 @@ import android.os.Parcelable;
 import android.os.PowerManager;
 import android.util.Pair;
 import androidx.core.app.NotificationCompat;
+import androidx.core.os.ParcelCompat;
 import chan.content.ApiException;
 import chan.content.Chan;
 import chan.content.ChanPerformer;
@@ -597,7 +598,7 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 			@Override
 			public FailResult createFromParcel(Parcel in) {
 				ErrorItem errorItem = ErrorItem.CREATOR.createFromParcel(in);
-				ApiException.Extra extra = in.readParcelable(FailResult.class.getClassLoader());
+				ApiException.Extra extra = ParcelCompat.readParcelable(in, FailResult.class.getClassLoader(), ApiException.Extra.class);
 				boolean captchaError = in.readByte() != 0;
 				boolean keepCaptcha = in.readByte() != 0;
 				return new FailResult(errorItem, extra, captchaError, keepCaptcha);

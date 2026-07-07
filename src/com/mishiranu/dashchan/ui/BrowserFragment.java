@@ -27,6 +27,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.core.os.BundleCompat;
 import androidx.fragment.app.DialogFragment;
 import chan.content.Chan;
 import chan.content.ChanLocator;
@@ -130,7 +131,7 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 		((FragmentHandler) requireActivity()).setTitleSubtitle(getString(R.string.web_browser), null);
 		if (savedInstanceState == null) {
 			WebViewUtils.clearAll(webView);
-			webView.loadUrl(requireArguments().<Uri>getParcelable(EXTRA_URI).toString());
+			webView.loadUrl(BundleCompat.getParcelable(requireArguments(), EXTRA_URI, Uri.class).toString());
 		}
 	}
 
@@ -280,7 +281,7 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 		@Override
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
 			String chanName = requireArguments().getString(EXTRA_CHAN_NAME);
-			ChanLocator.NavigationData navigationData = requireArguments().getParcelable(EXTRA_NAVIGATION_DATA);
+			ChanLocator.NavigationData navigationData = BundleCompat.getParcelable(requireArguments(), EXTRA_NAVIGATION_DATA, ChanLocator.NavigationData.class);
 			return new AlertDialog.Builder(requireContext())
 					.setMessage(R.string.follow_the_link__sentence)
 					.setNegativeButton(android.R.string.cancel, null)
