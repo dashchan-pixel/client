@@ -5,13 +5,13 @@
 	"client": [
 		{
 			"title": "Release",
-			"name": "3.1.4-experimental-1.6.5",
-			"code": 1057,
+			"name": "26.7-pixel",
+			"code": 1337,
 			"minVersion": 1,
 			"maxVersion": 1,
 			"minSdk": 36,
 			"length": 4293904,
-			"source": "//github.com/TrixiEther/DashchanFork/releases/download/3.1.4-experimental-1.6.5/DashchanFork-release.apk",
+			"source": "//github.com/TrixiEther/DashchanFork/releases/download/26.7-pixel/DashchanFork-release.apk",
 			"fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0"
 		}
 	],
