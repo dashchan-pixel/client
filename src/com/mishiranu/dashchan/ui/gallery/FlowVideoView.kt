@@ -218,6 +218,14 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		updatePlayPauseIcon()
 	}
 
+	/** Restart this clip from the beginning (used to loop a single-video thread). */
+	fun replay() {
+		val player = player ?: return
+		player.setPosition(0)
+		player.setPlaying(true)
+		updatePlayPauseIcon()
+	}
+
 	private fun start() {
 		val chan = chan ?: return
 		val uri = uri ?: return
@@ -377,9 +385,17 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 		override fun onComplete(player: VideoPlayer) {
 			if (player == this@FlowVideoView.player) {
-				// Loop the clip, reels-style.
+				// Reset to the start and pause; the feed decides whether to advance to the next
+				// video or (for a single-video thread) loop this one. Resetting here means the clip
+				// plays from the beginning if the user swipes back to it later.
 				player.setPosition(0)
-				player.setPlaying(active)
+				player.setPlaying(false)
+				val callback = callback
+				if (callback != null) {
+					callback.onVideoEnded(this@FlowVideoView)
+				} else {
+					player.setPlaying(active)
+				}
 			}
 		}
 
@@ -509,11 +525,12 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 				.show()
 	}
 
-	/** Actions that need the hosting fragment/activity (post navigation, downloads). */
+	/** Actions that need the hosting fragment/activity (post navigation, downloads, advancing). */
 	interface Callback {
 		fun onGoToPost(galleryItem: GalleryItem)
 		fun getDownloadBinder(): DownloadService.Binder?
 		fun getThreadTitle(): String?
+		fun onVideoEnded(view: FlowVideoView)
 	}
 
 	companion object {
