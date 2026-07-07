@@ -354,9 +354,8 @@
     <string name="replies_tree">Albero delle risposte</string>
     <string name="reply">Rispondi</string>
     <string name="report">Segnala</string>
+    <string name="repositories">Repository</string>
     <string name="request_has_been_sent_successfully">Richiesta inviata con successo</string>
-    <string name="requires_decoding_libraries__sentence">Devi installare le librerie del decoder per abilitare
-		il player video.</string>
     <string name="restart">Riavvia</string>
     <string name="restore_data">Ripristina dati</string>
     <string name="retry">Riprova</string>

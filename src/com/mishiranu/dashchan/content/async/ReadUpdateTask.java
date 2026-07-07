@@ -16,6 +16,7 @@ import chan.http.HttpRequest;
 import chan.util.CommonUtils;
 import chan.util.StringUtils;
 import com.mishiranu.dashchan.BuildConfig;
+import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.FileProvider;
 import com.mishiranu.dashchan.content.model.ErrorItem;
 import java.io.File;
@@ -544,7 +545,7 @@ public class ReadUpdateTask extends HttpHolderTask<Void, Pair<ErrorItem, ReadUpd
 		LinkedHashMap<TargetUri, HashSet<String>> targets = new LinkedHashMap<>();
 		HashMap<TargetUri, String> requestedScheme = new HashMap<>();
 		{
-			Uri uri = Uri.parse(BuildConfig.URI_UPDATES);
+			Uri uri = Uri.parse(Preferences.getUriUpdates());
 			TargetUri targetUri = new TargetUri(uri);
 			HashSet<String> extensionNames = new HashSet<>();
 			extensionNames.add(ChanManager.EXTENSION_NAME_CLIENT);

@@ -418,9 +418,8 @@
 	<string name="reply_notifications">Уведомления об ответах</string>
 	<string name="reply_notifications__format">Показывать уведомление при получении нового ответа</string>
 	<string name="report">Пожаловаться</string>
+	<string name="repositories">Репозитории</string>
 	<string name="request_has_been_sent_successfully">Запрос успешно отправлен</string>
-	<string name="requires_decoding_libraries__sentence">Для работы видеоплеера необходимо установить
-		библиотеки декодирования.</string>
 	<string name="restart">Перезапуск</string>
 	<string name="restore_data">Восстановить данные</string>
 	<string name="retry">Повторить</string>

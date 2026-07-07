@@ -402,9 +402,8 @@
 	<string name="reply_notifications">Reply notifications</string>
 	<string name="reply_notifications__format">Notify when a new reply has been received</string>
 	<string name="report">Report</string>
+	<string name="repositories">Repositories</string>
 	<string name="request_has_been_sent_successfully">The request has been sent successfully</string>
-	<string name="requires_decoding_libraries__sentence">Decoding libraries should be installed in order to enable
-		video player.</string>
 	<string name="restart">Restart</string>
 	<string name="restore_data">Restore data</string>
 	<string name="retry">Retry</string>

@@ -8,6 +8,7 @@ import chan.content.Chan;
 import chan.http.HttpException;
 import chan.http.HttpHolder;
 import com.mishiranu.dashchan.BuildConfig;
+import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.model.ErrorItem;
 import com.mishiranu.dashchan.content.net.GithubRepository;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class ReadChangelogTask extends HttpHolderTask<Void, Pair<ErrorItem, List
 
 	@Override
 	protected Pair<ErrorItem, List<Entry>> run(HttpHolder holder) {
-		Uri githubUri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(BuildConfig.GITHUB_URI_METADATA), null);
+		Uri githubUri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.getGithubUriMetadata()), null);
 		String metadataPath = BuildConfig.GITHUB_PATH_METADATA;
 		try {
 			GithubRepository repository = new GithubRepository(holder, githubUri);

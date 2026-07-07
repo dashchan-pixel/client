@@ -17,6 +17,7 @@ import chan.content.Chan;
 import chan.content.ChanConfiguration;
 import chan.content.ChanManager;
 import chan.util.StringUtils;
+import com.mishiranu.dashchan.BuildConfig;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.util.SharedPreferences;
@@ -895,6 +896,28 @@ public class Preferences {
 
 	public static String getLocale() {
 		return PREFERENCES.getString(KEY_LOCALE, LocaleManager.DEFAULT_LOCALE);
+	}
+
+	// Repository sources. An empty stored value means "use the built-in default" (BuildConfig).
+	public static final String KEY_URI_UPDATES = "uri_updates";
+	public static final String KEY_URI_THEMES = "uri_themes";
+	public static final String KEY_URI_METADATA = "uri_metadata";
+
+	private static String getRepositoryUri(String key, String defaultValue) {
+		String value = PREFERENCES.getString(key, "");
+		return value != null && !value.isEmpty() ? value : defaultValue;
+	}
+
+	public static String getUriUpdates() {
+		return getRepositoryUri(KEY_URI_UPDATES, BuildConfig.URI_UPDATES);
+	}
+
+	public static String getUriThemes() {
+		return getRepositoryUri(KEY_URI_THEMES, BuildConfig.URI_THEMES);
+	}
+
+	public static String getGithubUriMetadata() {
+		return getRepositoryUri(KEY_URI_METADATA, BuildConfig.GITHUB_URI_METADATA);
 	}
 
 	public static final String KEY_LOCK_DRAWER = "lock_drawer";

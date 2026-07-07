@@ -11,6 +11,7 @@ import chan.content.Chan
 import chan.content.ChanManager
 import chan.http.HttpException
 import chan.http.HttpHolder
+import com.mishiranu.dashchan.BuildConfig
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.LocaleManager
 import com.mishiranu.dashchan.content.Preferences
@@ -21,6 +22,7 @@ import com.mishiranu.dashchan.content.net.CaptchaSolving
 import com.mishiranu.dashchan.text.style.MonospaceSpan
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
+import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -32,10 +34,15 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	private var captchaSolvingPreference: MultipleEditPreference<Map<String, String>>? = null
 	private var captchaSolvingCheckDialog: ProgressDialog? = null
 
+	/** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
+	private val anotherUriKeys = HashSet<String>()
+
 	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
+
+		savedInstanceState?.getStringArrayList(EXTRA_ANOTHER_URI_KEYS)?.let { anotherUriKeys.addAll(it) }
 
 		addList(Preferences.KEY_LOCALE, LocaleManager.VALUES_LOCALE, LocaleManager.DEFAULT_LOCALE,
 				R.string.language, LocaleManager.ENTRIES_LOCALE)
@@ -78,6 +85,46 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 				R.string.secure_connection, R.string.secure_connection__summary)
 		addCheck(true, Preferences.KEY_VERIFY_CERTIFICATE, Preferences.DEFAULT_VERIFY_CERTIFICATE,
 				R.string.verify_certificate, R.string.verify_certificate__summary)
+
+		addHeader(R.string.repositories)
+		addRepositoryUri(Preferences.KEY_URI_UPDATES, R.string.updates, BuildConfig.URI_UPDATES)
+		addRepositoryUri(Preferences.KEY_URI_THEMES, R.string.themes, BuildConfig.URI_THEMES)
+		addRepositoryUri(Preferences.KEY_URI_METADATA, R.string.metadata, BuildConfig.GITHUB_URI_METADATA)
+	}
+
+	/**
+	 * Repository-source preference in the dvach-domain style: a [Default, Another] list that swaps to a free-text
+	 * edit field when "Another" is chosen. An empty stored value means "use the built-in default" (see
+	 * [Preferences.getUriUpdates] and friends), so the default URI is shown as the first list entry and as the
+	 * edit field's hint.
+	 */
+	private fun addRepositoryUri(key: String, titleResId: Int, default: String) {
+		val stored = Preferences.PREFERENCES.getString(key, "")
+		if (anotherUriKeys.contains(key) || !stored.isNullOrEmpty()) {
+			anotherUriKeys.add(key)
+			addAnotherUri(key, titleResId, default)
+		} else {
+			val entries = listOf<CharSequence>(default, getString(R.string.another))
+			val values = listOf("", VALUE_CUSTOM_URI)
+			val listPreference = addList(key, values, "", titleResId, entries)
+			listPreference.setOnBeforeChangeListener { _, value ->
+				if (VALUE_CUSTOM_URI == value) {
+					anotherUriKeys.add(key)
+					val editPreference = addAnotherUri(key, titleResId, default)
+					movePreference(editPreference, listPreference)
+					removePreference(listPreference)
+					editPreference.performClick()
+					false
+				} else {
+					true
+				}
+			}
+		}
+	}
+
+	private fun addAnotherUri(key: String, titleResId: Int, default: String): Preference<String> {
+		return addEdit(key, "", titleResId, default,
+				InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
 	}
 
 	override fun onDestroyView() {
@@ -88,6 +135,11 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 			it.dismiss()
 			captchaSolvingCheckDialog = null
 		}
+	}
+
+	override fun onSaveInstanceState(outState: Bundle) {
+		super.onSaveInstanceState(outState)
+		outState.putStringArrayList(EXTRA_ANOTHER_URI_KEYS, ArrayList(anotherUriKeys))
 	}
 
 	override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -223,5 +275,10 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 		override fun onComplete(result: Pair<ErrorItem, Map<String, String>>) {
 			viewModel.handleResult(result)
 		}
+	}
+
+	companion object {
+		private const val VALUE_CUSTOM_URI = "custom_uri\n"
+		private const val EXTRA_ANOTHER_URI_KEYS = "anotherUriKeys"
 	}
 }

@@ -276,8 +276,8 @@
 	<string name="replies_tree">Árvore de respostas</string>
 	<string name="reply">Responder</string>
 	<string name="report">Reportar</string>
+	<string name="repositories">Repositórios</string>
 	<string name="request_has_been_sent_successfully">A solicitação foi enviado com sucesso</string>
-	<string name="requires_decoding_libraries__sentence">Você deve instalar a extensão de reprodução primeiro.</string>
 	<string name="restart">Reiniciar</string>
 	<string name="restore_data">Restaurar</string>
 	<string name="retry">Tentar novamente</string>

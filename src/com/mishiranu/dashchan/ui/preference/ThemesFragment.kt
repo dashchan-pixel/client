@@ -350,7 +350,7 @@ class ThemesFragment : BaseListFragment() {
 			HttpHolderTask<Void, Pair<ErrorItem, List<JSONObject>>>(Chan.getFallback()) {
 		override fun run(holder: HttpHolder): Pair<ErrorItem, List<JSONObject>> {
 			try {
-				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(BuildConfig.URI_THEMES), null)
+				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.getUriThemes()), null)
 				var redirects = 0
 				while (redirects++ < 5) {
 					val jsonObject = JSONObject(HttpRequest(uri, holder).perform().readString())
