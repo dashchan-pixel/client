@@ -177,6 +177,7 @@
 	<string name="forum">Форум</string>
 	<string name="forum_only__format">Только %s</string>
 	<string name="forums">Форумы</string>
+	<string name="flow">Поток</string>
 	<string name="foss_licenses">Лицензии FOSS</string>
 	<string name="foss_licenses__summary">Сведения о лицензиях на свободное ПО и ПО с открытым исходным кодом</string>
 	<string name="gallery">Галерея</string>

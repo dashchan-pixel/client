@@ -152,6 +152,7 @@
     <string name="forum">Imageboard</string>
     <string name="forum_only__format">Solamente %s</string>
     <string name="forums">Imageboard</string>
+    <string name="flow">Flusso</string>
     <string name="foss_licenses">Licenze FOSS</string>
     <string name="foss_licenses__summary">Dettaglio licenze software free e open source</string>
     <string name="gallery">Galleria</string>

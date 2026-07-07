@@ -752,7 +752,7 @@ public class PostsPage extends ListPage implements PostsAdapter.Callback, Favori
 				if (videoItems.isEmpty()) {
 					ClickableToast.show(R.string.no_video_attachments);
 				} else {
-					FlowDialog.show(getFragmentManager(), chan, videoItems);
+					FlowDialog.show(getFragmentManager(), chan, videoItems, gallerySet.getThreadTitle());
 				}
 				return true;
 		} else if (switchItemId0 == R.id.menu_select) {

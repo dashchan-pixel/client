@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.ui.gallery
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
@@ -15,6 +16,7 @@ import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.TextView
 import chan.content.Chan
+import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.AdvancedPreferences
 import com.mishiranu.dashchan.content.CacheManager
@@ -22,11 +24,15 @@ import com.mishiranu.dashchan.content.ImageLoader
 import com.mishiranu.dashchan.content.async.ReadVideoTask
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.GalleryItem
+import com.mishiranu.dashchan.content.service.DownloadService
 import com.mishiranu.dashchan.media.VideoPlayer
+import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.AspectRatioFrameLayout
+import com.mishiranu.dashchan.widget.ClickableToast
 import java.io.File
 import java.io.IOException
 import java.util.Locale
@@ -61,7 +67,9 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var controlsVisible = false
 
 	private var chan: Chan? = null
+	private var galleryItem: GalleryItem? = null
 	private var uri: Uri? = null
+	private var callback: Callback? = null
 
 	private var player: VideoPlayer? = null
 	private var downloadTask: ReadVideoTask? = null
@@ -151,6 +159,15 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
 
 		setOnClickListener { setControlsVisible(!controlsVisible, true) }
+		setOnLongClickListener {
+			displayContextMenu()
+			true
+		}
+	}
+
+	/** Lift the control bar above the system navigation bar / gesture area. */
+	fun setBottomInset(bottom: Int) {
+		controlsView.setPadding(0, 0, 0, bottom)
 	}
 
 	private fun timeLabel(context: Context): TextView {
@@ -162,9 +179,11 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		return textView
 	}
 
-	fun bind(chan: Chan, galleryItem: GalleryItem) {
+	fun bind(chan: Chan, galleryItem: GalleryItem, callback: Callback) {
 		recycle()
 		this.chan = chan
+		this.galleryItem = galleryItem
+		this.callback = callback
 		this.uri = galleryItem.getFileUri(chan)
 		coverView.visibility = VISIBLE
 		coverView.setImageDrawable(null)
@@ -437,6 +456,64 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 			rangeTask = task
 			task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		}
+	}
+
+	// Per-video context menu, mirroring the gallery's popup (video items only).
+	private fun displayContextMenu() {
+		val chan = chan ?: return
+		val galleryItem = galleryItem ?: return
+		val uri = uri ?: return
+		val callback = callback
+		val dialogMenu = DialogMenu(context)
+		dialogMenu.setTitle(if (!StringUtils.isEmpty(galleryItem.originalName)) galleryItem.originalName
+				else galleryItem.getFileName(chan))
+		dialogMenu.add(R.string.save) {
+			val binder = callback?.getDownloadBinder()
+			if (binder != null) {
+				galleryItem.downloadStorage(binder, chan, callback.getThreadTitle())
+			}
+		}
+		if (player != null) {
+			dialogMenu.add(R.string.metadata) { showMetadata() }
+		}
+		if (galleryItem.postNumber != null) {
+			dialogMenu.add(R.string.go_to_post) { callback?.onGoToPost(galleryItem) }
+		}
+		dialogMenu.add(R.string.copy_link) { StringUtils.copyToClipboard(context, uri.toString()) }
+		dialogMenu.add(R.string.share_link) { NavigationUtils.shareLink(context, null, uri) }
+		dialogMenu.add(R.string.share_file) {
+			val file = CacheManager.getInstance().getMediaFile(uri, false)
+			if (file != null) {
+				NavigationUtils.shareFile(context, file, galleryItem.getFileName(chan))
+			} else {
+				ClickableToast.show(R.string.cache_is_unavailable)
+			}
+		}
+		dialogMenu.create().show()
+	}
+
+	private fun showMetadata() {
+		val player = player ?: return
+		val metadata = player.getMetadata()
+		if (metadata.isEmpty()) {
+			return
+		}
+		val builder = StringBuilder()
+		for ((key, value) in metadata) {
+			builder.append(key).append(": ").append(value).append('\n')
+		}
+		AlertDialog.Builder(context)
+				.setTitle(R.string.metadata)
+				.setMessage(builder.toString().trim())
+				.setPositiveButton(android.R.string.ok, null)
+				.show()
+	}
+
+	/** Actions that need the hosting fragment/activity (post navigation, downloads). */
+	interface Callback {
+		fun onGoToPost(galleryItem: GalleryItem)
+		fun getDownloadBinder(): DownloadService.Binder?
+		fun getThreadTitle(): String?
 	}
 
 	companion object {

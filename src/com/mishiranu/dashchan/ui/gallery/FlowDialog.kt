@@ -7,6 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModel
@@ -16,23 +19,27 @@ import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
 import com.mishiranu.dashchan.content.model.GalleryItem
+import com.mishiranu.dashchan.content.service.DownloadService
+import com.mishiranu.dashchan.ui.FragmentHandler
 
 /**
  * A full-screen, vertically-swiped feed of a thread's video attachments — reels/TikTok-style.
  * Each page auto-plays and loops the video; only the centered page plays. Launched from the
  * thread menu's "Flow" item next to "Gallery".
  */
-class FlowDialog : DialogFragment() {
+class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 	/** Retains the (non-Parcelable) item list across configuration changes. */
 	class FlowViewModel : ViewModel() {
 		var chan: Chan? = null
 		var items: List<GalleryItem>? = null
+		var threadTitle: String? = null
 	}
 
 	private lateinit var viewModel: FlowViewModel
 	private var recyclerView: RecyclerView? = null
 	private val snapHelper = PagerSnapHelper()
 	private var currentPosition = -1
+	private var bottomInset = 0
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -41,9 +48,11 @@ class FlowDialog : DialogFragment() {
 		if (viewModel.items == null) {
 			viewModel.chan = pendingChan
 			viewModel.items = pendingItems
+			viewModel.threadTitle = pendingThreadTitle
 		}
 		pendingChan = null
 		pendingItems = null
+		pendingThreadTitle = null
 		if (viewModel.items == null) {
 			// Handoff lost (e.g. process death) — nothing to show.
 			dismiss()
@@ -60,6 +69,14 @@ class FlowDialog : DialogFragment() {
 		// Keep neighbours bound so the next page can be pre-buffered.
 		recyclerView.setItemViewCacheSize(2)
 		snapHelper.attachToRecyclerView(recyclerView)
+		// Keep the control bar clear of the gesture nav bar: propagate the bottom inset to pages.
+		ViewCompat.setOnApplyWindowInsetsListener(recyclerView) { view, insets ->
+			bottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+			for (i in 0 until (view as RecyclerView).childCount) {
+				(view.getChildAt(i) as? FlowVideoView)?.setBottomInset(bottomInset)
+			}
+			insets
+		}
 		// Pause any page as soon as it leaves the screen. Necessary because RecyclerView keeps
 		// recently-detached views in its cache (without recycling them), so their players would
 		// otherwise keep playing off-screen.
@@ -94,6 +111,8 @@ class FlowDialog : DialogFragment() {
 		dialog?.window?.apply {
 			setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
 			setBackgroundDrawable(ColorDrawable(Color.BLACK))
+			// Draw edge-to-edge so the bottom inset is reported and the controls can clear the nav bar.
+			WindowCompat.setDecorFitsSystemWindows(this, false)
 		}
 	}
 
@@ -148,7 +167,8 @@ class FlowDialog : DialogFragment() {
 		}
 
 		override fun onBindViewHolder(holder: Holder, position: Int) {
-			holder.videoView.bind(chan, items[position])
+			holder.videoView.bind(chan, items[position], this@FlowDialog)
+			holder.videoView.setBottomInset(bottomInset)
 			if (position == currentPosition) {
 				holder.videoView.setActive(true)
 			} else if (position == currentPosition + 1 || position == currentPosition - 1) {
@@ -166,19 +186,36 @@ class FlowDialog : DialogFragment() {
 
 	private class Holder(val videoView: FlowVideoView) : RecyclerView.ViewHolder(videoView)
 
+	// FlowVideoView.Callback
+
+	override fun onGoToPost(galleryItem: GalleryItem) {
+		val chan = viewModel.chan ?: return
+		(activity as? FragmentHandler)?.scrollToPost(chan.name, galleryItem.boardName,
+				galleryItem.threadNumber, galleryItem.postNumber)
+		dismiss()
+	}
+
+	override fun getDownloadBinder(): DownloadService.Binder? {
+		return (activity as? FragmentHandler)?.getDownloadBinder()
+	}
+
+	override fun getThreadTitle(): String? = viewModel.threadTitle
+
 	companion object {
 		private val TAG = FlowDialog::class.java.name
 		private var pendingChan: Chan? = null
 		private var pendingItems: List<GalleryItem>? = null
+		private var pendingThreadTitle: String? = null
 
 		@JvmStatic
-		fun show(fragmentManager: FragmentManager, chan: Chan, items: List<GalleryItem>) {
+		fun show(fragmentManager: FragmentManager, chan: Chan, items: List<GalleryItem>, threadTitle: String?) {
 			if (items.isEmpty()) {
 				return
 			}
 			(fragmentManager.findFragmentByTag(TAG) as? FlowDialog)?.dismiss()
 			pendingChan = chan
 			pendingItems = items
+			pendingThreadTitle = threadTitle
 			FlowDialog().show(fragmentManager, TAG)
 		}
 	}
