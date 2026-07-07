@@ -17,7 +17,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mishiranu.dashchan.graphics.BaseDrawable
@@ -158,8 +157,8 @@ class DialogMenu(private val context: Context) {
 						LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
 				val density = ResourceUtils.obtainDensity(view)
 				// Align to checkbox inner padding
-				val padding = ViewCompat.getPaddingEnd(view) - (2f * density).toInt()
-				ViewCompat.setPaddingRelative(view, ViewCompat.getPaddingStart(view),
+				val padding = view.paddingEnd - (2f * density).toInt()
+				view.setPaddingRelative(view.paddingStart,
 						view.paddingTop, 0, view.paddingBottom)
 				val contentSize = (24f * density).toInt()
 				val contentLayout = FrameLayout(parent.context)
@@ -215,7 +214,7 @@ class DialogMenu(private val context: Context) {
 		init {
 			val density = ResourceUtils.obtainDensity(view)
 			color = ResourceUtils.getColorStateList(view.context, android.R.attr.textColorSecondary)!!
-			rtl = ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL
+			rtl = view.layoutDirection == View.LAYOUT_DIRECTION_RTL
 			size = (SIZE_DP * density).toInt()
 		}
 

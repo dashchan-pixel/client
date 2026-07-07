@@ -4,9 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import androidx.core.view.GravityCompat
-import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import androidx.drawerlayout.widget.DrawerLayout
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -55,7 +55,7 @@ class CustomDrawerLayout(context: Context, attrs: AttributeSet?) : DrawerLayout(
 				handle = false
 				if (expandableFromAnyPoint && abs(dx) > abs(dy) &&
 						getDrawerLockMode(GravityCompat.START) == LOCK_MODE_UNLOCKED) {
-					val rtl = ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+					val rtl = this.layoutDirection == View.LAYOUT_DIRECTION_RTL
 					val left = !rtl && dx > 0 && startX >= edgeSize
 					val right = rtl && dx < 0 && startX <= width - edgeSize
 					if (left || right) {

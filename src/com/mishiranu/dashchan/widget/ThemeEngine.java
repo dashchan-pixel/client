@@ -26,7 +26,6 @@ import android.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.ColorUtils;
-import androidx.core.view.ViewCompat;
 import chan.util.StringUtils;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
@@ -226,7 +225,7 @@ public class ThemeEngine {
 
 		@Override
 		public OnOverlayFocusListener.MutableItem transform(StackItem data, View referenced) {
-			if (ViewCompat.isAttachedToWindow(referenced)) {
+			if (referenced.isAttachedToWindow()) {
 				OnOverlayFocusListener.MutableItem mutableItem = this.mutableItem;
 				mutableItem.decorView = referenced;
 				mutableItem.indirect = data.indirect;

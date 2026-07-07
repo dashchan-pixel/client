@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.view.ViewCompat
 import chan.util.StringUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import java.util.Locale
@@ -134,7 +133,7 @@ class ThreadDescriptionView(context: Context, attrs: AttributeSet?) : View(conte
 		val baseline = height - paddingBottom - Math.ceil(fontMetrics.bottom.toDouble()).toInt()
 		var left = paddingLeft.toFloat()
 		var right = (width - paddingRight).toFloat()
-		val rtl = ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+		val rtl = this.layoutDirection == View.LAYOUT_DIRECTION_RTL
 		if (rtl != toEnd) {
 			for (i in measurements.indices.reversed()) {
 				val text = description[i]

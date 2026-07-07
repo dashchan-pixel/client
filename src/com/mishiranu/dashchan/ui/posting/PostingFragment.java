@@ -1456,7 +1456,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		textLayout.setGravity(Gravity.CENTER_VERTICAL);
 		controls.addView(textLayout, 0, LinearLayout.LayoutParams.MATCH_PARENT);
 		((LinearLayout.LayoutParams) textLayout.getLayoutParams()).weight = 1f;
-		ViewCompat.setPaddingRelative(textLayout, (int) (4f * density), 0, (int) (8f * density), 0);
+		textLayout.setPaddingRelative((int) (4f * density), 0, (int) (8f * density), 0);
 		TextView fileName = new TextView(controls.getContext());
 		textLayout.addView(fileName, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 		TextViewCompat.setTextAppearance(fileName, ResourceUtils.getResourceId(fileName.getContext(),android.R.attr.textAppearanceListItem, 0));

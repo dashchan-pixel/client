@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.view.View
-import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.mishiranu.dashchan.util.ResourceUtils
 import kotlin.math.max
@@ -94,7 +93,7 @@ class DividerItemDecoration(context: Context, private val callback: Callback) :
 		val childCount = parent.childCount
 		val left = parent.paddingLeft
 		val right = parent.width - parent.paddingRight
-		val rtl = ViewCompat.getLayoutDirection(parent) == ViewCompat.LAYOUT_DIRECTION_RTL
+		val rtl = parent.layoutDirection == View.LAYOUT_DIRECTION_RTL
 		for (i in 0 until childCount) {
 			val view = parent.getChildAt(i)
 			val position = parent.getChildAdapterPosition(view)

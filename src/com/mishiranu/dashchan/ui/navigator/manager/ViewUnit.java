@@ -962,7 +962,7 @@ public class ViewUnit {
 		int top = (int) (topDp * density + 0.5f);
 		int start = (int) (startDp * density + 0.5f);
 		int end = (int) (endDp * density + 0.5f);
-		boolean rtl = ViewCompat.getLayoutDirection(parent) == ViewCompat.LAYOUT_DIRECTION_RTL;
+		boolean rtl = parent.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
 		int left = rtl ? end : start;
 		int right = rtl ? start : end;
 		int[] attrs = new int[states.size()];
@@ -998,7 +998,7 @@ public class ViewUnit {
 		int top = (int) (topDp * density + 0.5f);
 		int start = (int) (startDp * density + 0.5f);
 		int end = (int) (endDp * density + 0.5f);
-		boolean rtl = ViewCompat.getLayoutDirection(parent) == ViewCompat.LAYOUT_DIRECTION_RTL;
+		boolean rtl = parent.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
 		int left = rtl ? end : start;
 		int right = rtl ? start : end;
 
@@ -1406,7 +1406,7 @@ public class ViewUnit {
 		}
 
 		public void installBackground() {
-			if (ViewCompat.isAttachedToWindow(itemView)) {
+			if (itemView.isAttachedToWindow()) {
 				installBackgroundUnchecked();
 			}
 		}

@@ -20,8 +20,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.core.os.ParcelCompat;
-import androidx.core.view.MarginLayoutParamsCompat;
-import androidx.core.view.ViewCompat;
 
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
@@ -384,7 +382,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 	}
 
 	private void showCaptchaLifetimeTimer() {
-		if (!ViewCompat.isLaidOut(imageView)) {
+		if (!imageView.isLaidOut()) {
 			showCaptchaLifetimeTimerWhenImageViewIsLaidOut();
 			return;
 		}
@@ -408,7 +406,7 @@ public class CaptchaForm implements View.OnClickListener, View.OnLongClickListen
 			int captchaImageViewWidth = imageView.getWidth();
 			int lifetimeTimerViewEndMargin = (captchaImageViewWidth - captchaImageRealWidth) / 2;
 			FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) lifetimeTimerView.getLayoutParams();
-			MarginLayoutParamsCompat.setMarginEnd(params, lifetimeTimerViewEndMargin);
+			params.setMarginEnd(lifetimeTimerViewEndMargin);
 			lifetimeTimerView.setLayoutParams(params);
 		}
 	}

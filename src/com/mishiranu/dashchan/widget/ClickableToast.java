@@ -281,7 +281,7 @@ public class ClickableToast implements LifecycleObserver {
 		message1.setBackground(null);
 		message2.setBackground(null);
 		message1.setPadding(0, 0, 0, 0);
-		ViewCompat.setPaddingRelative(message2, innerPadding, 0, 0, 0);
+		message2.setPaddingRelative(innerPadding, 0, 0, 0);
 		message1.setMaxLines(3);
 		message2.setSingleLine(true);
 		message1.setEllipsize(TextUtils.TruncateAt.END);
@@ -556,7 +556,7 @@ public class ClickableToast implements LifecycleObserver {
 			if (clicked) {
 				Rect toastBounds = getBounds();
 				Rect buttonBounds;
-				if (ViewCompat.getLayoutDirection(button) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+				if (button.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {
 					int shift = button.getRight();
 					buttonBounds = new Rect(toastBounds.left + shift, toastBounds.top, toastBounds.left + shift, toastBounds.bottom);
 				} else {
