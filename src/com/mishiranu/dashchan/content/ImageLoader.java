@@ -158,7 +158,9 @@ public class ImageLoader {
 			} catch (Exception | OutOfMemoryError e) {
 				e.printStackTrace();
 			}
-			return bitmap;
+			// Thumbnails are display-only: move them to GPU memory (no-op for
+			// bitmaps that already came out of the cache as hardware bitmaps).
+			return bitmap != null ? GraphicsUtils.toHardware(bitmap) : null;
 		}
 
 		@Override

@@ -259,7 +259,17 @@ class AttachmentView(context: Context, attrs: AttributeSet?) :
 			}
 			invalidate = saturation < 1f
 
-			canvas.drawBitmap(bitmap, source, destination, bitmapPaint)
+			if (!canvas.isHardwareAccelerated && bitmap.config == Bitmap.Config.HARDWARE) {
+				// Threadshots render post views into a software canvas, which cannot
+				// draw hardware bitmaps - draw a transient software copy instead.
+				val softwareBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+				if (softwareBitmap != null) {
+					canvas.drawBitmap(softwareBitmap, source, destination, bitmapPaint)
+					softwareBitmap.recycle()
+				}
+			} else {
+				canvas.drawBitmap(bitmap, source, destination, bitmapPaint)
+			}
 		}
 		if (sfwMode) {
 			canvas.drawColor(backgroundColor and 0x00ffffff or 0xe0000000.toInt())

@@ -219,7 +219,8 @@ class DecoderDrawable @Throws(IOException::class) constructor(private val scaled
 					if (gammaCorrection != null) {
 						bitmap = GraphicsUtils.applyGammaCorrection(bitmap, gammaCorrection)
 					}
-					bitmap
+					// Fragments are display-only: keep them in GPU memory.
+					bitmap?.let { GraphicsUtils.toHardware(it) }
 				}
 			} catch (t: Throwable) {
 				error = true

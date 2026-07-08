@@ -3,7 +3,7 @@ package com.mishiranu.dashchan.content;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Pair;
@@ -16,7 +16,6 @@ import com.mishiranu.dashchan.util.IOUtils;
 import com.mishiranu.dashchan.util.LruCache;
 import com.mishiranu.dashchan.util.MimeTypes;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -502,14 +501,15 @@ public class CacheManager implements Runnable {
 			return null;
 		}
 		Bitmap bitmap;
-		try (FileInputStream input = new FileInputStream(file)) {
-			bitmap = BitmapFactory.decodeStream(input);
-			if (bitmap == null) {
-				file.delete();
-				return null;
-			}
+		try {
+			// The default allocator yields a HARDWARE bitmap (GPU memory, zero-copy drawing)
+			// with an automatic software fallback when hardware allocation is not possible.
+			bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(file));
 			updateCachedFileLastModified(file, thumbnailKey, CacheItem.Type.THUMBNAILS);
 			return bitmap;
+		} catch (ImageDecoder.DecodeException e) {
+			file.delete();
+			return null;
 		} catch (IOException e) {
 			return null;
 		}

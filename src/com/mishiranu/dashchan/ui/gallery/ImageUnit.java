@@ -26,6 +26,7 @@ import com.mishiranu.dashchan.media.ExifData;
 import com.mishiranu.dashchan.media.JpegData;
 import com.mishiranu.dashchan.ui.InstanceDialog;
 import com.mishiranu.dashchan.util.ConcurrentUtils;
+import com.mishiranu.dashchan.util.GraphicsUtils;
 import com.mishiranu.dashchan.widget.PhotoView;
 import com.mishiranu.dashchan.widget.SummaryLayout;
 import java.io.File;
@@ -282,6 +283,9 @@ public class ImageUnit {
 				if (bitmap == null) {
 					errorMessageId = R.string.image_is_corrupted;
 				} else {
+					// Display-only from here on: move to GPU memory. DecoderDrawable
+					// also only draws the scaled bitmap, never touches its pixels.
+					bitmap = GraphicsUtils.toHardware(bitmap);
 					if (bitmap.getWidth() < fileHolder.getImageWidth() ||
 							bitmap.getHeight() < fileHolder.getImageHeight()) {
 						try {

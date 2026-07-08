@@ -395,6 +395,22 @@ object GraphicsUtils {
 		return Bitmap.createBitmap(pixels, realSize, realSize, Bitmap.Config.ARGB_8888)
 	}
 
+	/**
+	 * Moves a display-only bitmap into GPU memory ([Bitmap.Config.HARDWARE]): zero-copy drawing
+	 * and no Java-heap footprint. The result cannot be drawn to a software canvas or have its
+	 * pixels accessed, so only convert bitmaps at the display boundary. Falls back to the
+	 * original bitmap if the copy fails.
+	 */
+	@JvmStatic
+	fun toHardware(bitmap: Bitmap): Bitmap {
+		if (bitmap.config == Bitmap.Config.HARDWARE) {
+			return bitmap
+		}
+		val hardwareBitmap = bitmap.copy(Bitmap.Config.HARDWARE, false) ?: return bitmap
+		bitmap.recycle()
+		return hardwareBitmap
+	}
+
 	@JvmStatic
 	fun mutateBitmap(bitmap: Bitmap): Bitmap {
 		if (bitmap.isMutable) {
