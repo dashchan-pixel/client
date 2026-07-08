@@ -28,6 +28,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.DialogFragment;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import chan.content.Chan;
 import chan.util.CommonUtils;
 import chan.util.StringUtils;
@@ -85,6 +87,44 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	private boolean screenOnFixed = false;
 	private int systemUiVisibilityFlags = GalleryInstance.Flags.LOCKED_USER;
 
+	// Replaces setRetainInstance: everything that must survive a configuration change
+	// (the view tree, the gallery instance and its units) is kept here, owned by a
+	// ViewModel, and re-adopted by the recreated fragment in onCreate. "current" points
+	// at the live fragment so listeners installed on the retained rootView never call
+	// into a destroyed fragment instance.
+	private static class Retained {
+		private GalleryOverlay current;
+
+		private List<GalleryItem> queuedGalleryItems;
+
+		private InsetsLayout rootView;
+		private GalleryInstance instance;
+		private PagerUnit pagerUnit;
+		private ListUnit listUnit;
+
+		private boolean galleryWindow;
+		private boolean galleryMode;
+
+		private Pair<CharSequence, CharSequence> titleSubtitle;
+		private boolean screenOnFixed = false;
+		private int systemUiVisibilityFlags = GalleryInstance.Flags.LOCKED_USER;
+	}
+
+	public static class RetainedViewModel extends ViewModel {
+		private Retained retained;
+
+		@Override
+		protected void onCleared() {
+			Retained retained = this.retained;
+			this.retained = null;
+			if (retained != null && retained.pagerUnit != null) {
+				retained.pagerUnit.onFinish();
+			}
+		}
+	}
+
+	private Retained retained;
+
 	private static final int ACTION_BAR_COLOR = 0xaa202020;
 	private static final int BACKGROUND_COLOR = 0xf0101010;
 
@@ -130,11 +170,34 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		boolean restoringAfterProcessDeath = savedInstanceState != null;
-		if (restoringAfterProcessDeath) {
+		RetainedViewModel viewModel = new ViewModelProvider(this).get(RetainedViewModel.class);
+		Retained retained = viewModel.retained;
+		if (retained == null && savedInstanceState != null) {
+			// Restoring after process death: the gallery content lived only in memory
 			dismiss();
-		} else {
-			setRetainInstance(true);
+			return;
+		}
+		if (retained == null) {
+			retained = new Retained();
+			viewModel.retained = retained;
+		}
+		this.retained = retained;
+		retained.current = this;
+		if (queuedGalleryItems != null) {
+			retained.queuedGalleryItems = queuedGalleryItems;
+			queuedGalleryItems = null;
+		}
+		rootView = retained.rootView;
+		instance = retained.instance;
+		pagerUnit = retained.pagerUnit;
+		listUnit = retained.listUnit;
+		galleryWindow = retained.galleryWindow;
+		galleryMode = retained.galleryMode;
+		titleSubtitle = retained.titleSubtitle;
+		screenOnFixed = retained.screenOnFixed;
+		systemUiVisibilityFlags = retained.systemUiVisibilityFlags;
+		if (instance != null) {
+			instance.callback = this;
 		}
 	}
 
@@ -153,12 +216,24 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	public void onDestroyView() {
 		super.onDestroyView();
 		destroyShowcase(false);
+		if (cornerAnimator != null) {
+			cornerAnimator.cancel();
+			cornerAnimator = null;
+		}
+		if (rootView != null) {
+			rootView.removeCallbacks(returnToGalleryRunnable);
+		}
 	}
 
 	@Override
 	public void onViewStateRestored(Bundle savedInstanceState) {
 		super.onViewStateRestored(savedInstanceState);
 
+		Retained retained = this.retained;
+		if (retained == null) {
+			// Dismissing after process death
+			return;
+		}
 		View queuedFromView = this.queuedFromView != null ? this.queuedFromView.get() : null;
 		this.queuedFromView = null;
 		int[] imageViewPosition = null;
@@ -179,11 +254,14 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 			Context context = ThemeEngine.attach(new ContextThemeWrapper
 					(MainApplication.getInstance().getLocalizedContext(), R.style.Theme_Gallery));
 			rootView = new InsetsLayout(context);
+			// The listeners below live as long as the retained rootView: route them through
+			// retained.current so they always talk to the fragment instance that is alive.
 			rootView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
 				@Override
 				public void onViewAttachedToWindow(View v) {
-					if (!galleryMode) {
-						displayShowcase();
+					GalleryOverlay current = retained.current;
+					if (current != null && !current.galleryMode) {
+						current.displayShowcase();
 					}
 				}
 
@@ -192,19 +270,24 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 			});
 			rootView.setOnApplyInsetsListener(apply -> {
 				InsetsLayout.Insets insets = apply.get();
-				if (listUnit != null) {
-					boolean invalidate = listUnit.onApplyWindowInsets(insets);
+				GalleryOverlay current = retained.current;
+				if (current == null) {
+					return;
+				}
+				if (current.listUnit != null) {
+					boolean invalidate = current.listUnit.onApplyWindowInsets(insets);
 					if (invalidate) {
-						postInvalidateSystemUIVisibility();
+						current.postInvalidateSystemUIVisibility();
 					}
 				}
-				if (pagerUnit != null) {
-					pagerUnit.onApplyWindowInsets(insets);
+				if (current.pagerUnit != null) {
+					current.pagerUnit.onApplyWindowInsets(insets);
 				}
 			});
 			rootView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
 					ViewGroup.LayoutParams.MATCH_PARENT));
 			rootView.setBackground(new GalleryBackgroundDrawable(rootView, imageViewPosition, BACKGROUND_COLOR));
+			retained.rootView = rootView;
 		}
 		GalleryDialog dialog = getDialog();
 		ViewUtils.removeFromParent(rootView);
@@ -248,16 +331,19 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 				galleryItems = Collections.singletonList(new GalleryItem(uri, boardName, threadNumber));
 				imagePosition = 0;
 			} else {
-				galleryItems = queuedGalleryItems;
-				queuedGalleryItems = null;
+				galleryItems = retained.queuedGalleryItems;
+				retained.queuedGalleryItems = null;
 				imagePosition = savedInstanceState != null ? savedInstanceState.getInt(EXTRA_POSITION)
 						: requireArguments().getInt(EXTRA_IMAGE_INDEX);
 			}
 			instance = new GalleryInstance(rootView.getContext(), this, ACTION_BAR_COLOR, chan.name,
 					galleryItems != null ? galleryItems : Collections.emptyList());
+			retained.instance = instance;
 			if (!instance.galleryItems.isEmpty()) {
 				listUnit = new ListUnit(instance);
 				pagerUnit = new PagerUnit(instance);
+				retained.listUnit = listUnit;
+				retained.pagerUnit = pagerUnit;
 				rootView.addView(listUnit.getRecyclerView(), InsetsLayout.LayoutParams.MATCH_PARENT,
 						InsetsLayout.LayoutParams.MATCH_PARENT);
 				rootView.addView(pagerUnit.getView(), InsetsLayout.LayoutParams.MATCH_PARENT,
@@ -341,11 +427,19 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	public void onDestroy() {
 		super.onDestroy();
 
-		if (cornerAnimator != null) {
-			cornerAnimator.cancel();
-		}
-		if (pagerUnit != null) {
-			pagerUnit.onFinish();
+		// Final cleanup (PagerUnit.onFinish) happens in RetainedViewModel.onCleared;
+		// here the mutable state is stored for the fragment recreated after a
+		// configuration change.
+		Retained retained = this.retained;
+		if (retained != null) {
+			if (retained.current == this) {
+				retained.current = null;
+			}
+			retained.galleryWindow = galleryWindow;
+			retained.galleryMode = galleryMode;
+			retained.titleSubtitle = titleSubtitle;
+			retained.screenOnFixed = screenOnFixed;
+			retained.systemUiVisibilityFlags = systemUiVisibilityFlags;
 		}
 	}
 

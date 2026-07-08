@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.ui.InstanceDialog
 
-class GalleryInstance(@JvmField val context: Context, @JvmField val callback: Callback,
+class GalleryInstance(@JvmField val context: Context, @JvmField var callback: Callback,
 		@JvmField val actionBarColor: Int, @JvmField val chanName: String?,
 		@JvmField val galleryItems: List<GalleryItem>) {
 	interface Flags {
