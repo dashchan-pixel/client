@@ -137,8 +137,8 @@ class UpdateFragment : BaseListFragment {
 		progressView = null
 	}
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
 
 		if (isUpdateDataProvided()) {
 			updateDataMap = BundleCompat.getParcelable(requireArguments(), EXTRA_UPDATE_DATA_MAP, ReadUpdateTask.UpdateDataMap::class.java)

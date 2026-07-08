@@ -238,6 +238,8 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				startActivity(intent)
 			}
 		}
+
+		(requireActivity() as FragmentHandler).setTitleSubtitle(chan.configuration.getTitle(), null)
 	}
 
 	override fun onDestroyView() {
@@ -246,13 +248,6 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 		captchaPassPreference = null
 		userAuthorizationPreference = null
 		cookiePreference = null
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
-
-		val chan = Chan.get(getChanName())
-		(requireActivity() as FragmentHandler).setTitleSubtitle(chan.configuration.getTitle(), null)
 	}
 
 	override fun onResume() {
@@ -322,8 +317,8 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 			return dialog
 		}
 
-		override fun onActivityCreated(savedInstanceState: Bundle?) {
-			super.onActivityCreated(savedInstanceState)
+		override fun onViewStateRestored(savedInstanceState: Bundle?) {
+			super.onViewStateRestored(savedInstanceState)
 
 			val viewModel = ViewModelProvider(this).get(CheckAuthorizationViewModel::class.java)
 			if (!viewModel.hasTaskOrValue()) {

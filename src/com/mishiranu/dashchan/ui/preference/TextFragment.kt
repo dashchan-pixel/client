@@ -74,8 +74,8 @@ class TextFragment : BaseListFragment {
 		progressView = null
 	}
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
 
 		val recyclerView = getRecyclerView()!!
 		val context = recyclerView.context

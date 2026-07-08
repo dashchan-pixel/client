@@ -21,8 +21,8 @@ import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.util.ResourceUtils
 
 class StatisticsFragment : BaseListFragment() {
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
 
 		val startTime = StatisticsStorage.getInstance().getStartTime()
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.statistics),

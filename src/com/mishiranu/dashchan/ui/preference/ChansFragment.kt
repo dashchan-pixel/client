@@ -15,10 +15,7 @@ class ChansFragment : PreferenceFragment(), FragmentHandler.Callback {
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 		updateList()
-	}
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.forums), null)
 	}
 

@@ -90,6 +90,29 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 		addRepositoryUri(Preferences.KEY_URI_UPDATES, R.string.updates, BuildConfig.URI_UPDATES)
 		addRepositoryUri(Preferences.KEY_URI_THEMES, R.string.themes, BuildConfig.URI_THEMES)
 		addRepositoryUri(Preferences.KEY_URI_METADATA, R.string.metadata, BuildConfig.GITHUB_URI_METADATA)
+
+		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.general), null)
+		val viewModel = ViewModelProvider(this).get(CheckViewModel::class.java)
+		if (viewModel.showDialog) {
+			displayCaptchaSolvingCheckDialog()
+		}
+		viewModel.observe(viewLifecycleOwner) { result ->
+			result!!
+			viewModel.showDialog = false
+			viewModel.errorItem = result.first
+			viewModel.extraMap = result.second
+			captchaSolvingPreference!!.invalidate()
+			if (captchaSolvingCheckDialog != null) {
+				captchaSolvingCheckDialog!!.dismiss()
+				captchaSolvingCheckDialog = null
+				if (result.second != null) {
+					ClickableToast.show(R.string.validation_completed)
+				} else {
+					ClickableToast.show(result.first)
+					captchaSolvingPreference!!.performClick()
+				}
+			}
+		}
 	}
 
 	/**
@@ -140,33 +163,6 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	override fun onSaveInstanceState(outState: Bundle) {
 		super.onSaveInstanceState(outState)
 		outState.putStringArrayList(EXTRA_ANOTHER_URI_KEYS, ArrayList(anotherUriKeys))
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
-
-		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.general), null)
-		val viewModel = ViewModelProvider(this).get(CheckViewModel::class.java)
-		if (viewModel.showDialog) {
-			displayCaptchaSolvingCheckDialog()
-		}
-		viewModel.observe(viewLifecycleOwner) { result ->
-			result!!
-			viewModel.showDialog = false
-			viewModel.errorItem = result.first
-			viewModel.extraMap = result.second
-			captchaSolvingPreference!!.invalidate()
-			if (captchaSolvingCheckDialog != null) {
-				captchaSolvingCheckDialog!!.dismiss()
-				captchaSolvingCheckDialog = null
-				if (result.second != null) {
-					ClickableToast.show(R.string.validation_completed)
-				} else {
-					ClickableToast.show(result.first)
-					captchaSolvingPreference!!.performClick()
-				}
-			}
-		}
 	}
 
 	override fun onChansChanged(changed: Collection<String>, removed: Collection<String>) {

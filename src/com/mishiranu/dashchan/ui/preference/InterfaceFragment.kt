@@ -106,17 +106,14 @@ class InterfaceFragment : PreferenceFragment() {
 		addCheck(true, Preferences.KEY_CAPTCHA_AUTO_RELOAD, Preferences.DEFAULT_CAPTCHA_AUTO_RELOAD,
 				R.string.captcha_reload_automatically, R.string.captcha_reload_automatically__summary)
 				.setEnabled(captchaAutoReloadEnabled())
+
+		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.user_interface), null)
 	}
 
 	private fun captchaAutoReloadEnabled(): Boolean {
 		val hugeCaptchaEnabled = (findPreference(Preferences.KEY_HUGE_CAPTCHA) as CheckPreference).value
 		val captchaTimerEnabled = (findPreference(Preferences.KEY_CAPTCHA_TIMER) as CheckPreference).value
 		return hugeCaptchaEnabled && captchaTimerEnabled
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
-		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.user_interface), null)
 	}
 
 	companion object {

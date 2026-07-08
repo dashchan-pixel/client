@@ -142,6 +142,8 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 			CacheManager.getInstance().rebuildCache()
 			clearCachePreference!!.invalidate()
 		}
+
+		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.media), null)
 	}
 
 	override fun onDestroyView() {
@@ -149,11 +151,6 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 
 		downloadUriTreePreference = null
 		clearCachePreference = null
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
-		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.media), null)
 	}
 
 	override fun onSaveInstanceState(outState: Bundle) {
@@ -216,8 +213,8 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 			return dialog
 		}
 
-		override fun onActivityCreated(savedInstanceState: Bundle?) {
-			super.onActivityCreated(savedInstanceState)
+		override fun onViewStateRestored(savedInstanceState: Bundle?) {
+			super.onViewStateRestored(savedInstanceState)
 
 			val viewModel = ViewModelProvider(this).get(ClearCacheViewModel::class.java)
 			if (!viewModel.hasTaskOrValue()) {

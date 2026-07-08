@@ -59,10 +59,8 @@ class InstanceDialog : DialogFragment {
 		return viewModel.factory?.createDialog(provider) ?: DismissDialog(requireContext())
 	}
 
-	@Deprecated("Deprecated in Java")
-	@Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewStateRestored(savedInstanceState: Bundle?) {
+		super.onViewStateRestored(savedInstanceState)
 		if (dialog is DismissDialog) {
 			dismiss()
 		}

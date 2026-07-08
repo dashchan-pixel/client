@@ -108,6 +108,12 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 		if (savedInstanceState != null) {
 			webView.restoreState(savedInstanceState);
 		}
+
+		((FragmentHandler) requireActivity()).setTitleSubtitle(getString(R.string.web_browser), null);
+		if (savedInstanceState == null) {
+			WebViewUtils.clearAll(webView);
+			webView.loadUrl(BundleCompat.getParcelable(requireArguments(), EXTRA_URI, Uri.class).toString());
+		}
 	}
 
 	@Override
@@ -122,17 +128,6 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 		ViewUtils.removeFromParent(webView);
 		webView = null;
 		progressView = null;
-	}
-
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-
-		((FragmentHandler) requireActivity()).setTitleSubtitle(getString(R.string.web_browser), null);
-		if (savedInstanceState == null) {
-			WebViewUtils.clearAll(webView);
-			webView.loadUrl(BundleCompat.getParcelable(requireArguments(), EXTRA_URI, Uri.class).toString());
-		}
 	}
 
 	@Override

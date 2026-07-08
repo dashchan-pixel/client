@@ -157,8 +157,8 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+	public void onViewStateRestored(Bundle savedInstanceState) {
+		super.onViewStateRestored(savedInstanceState);
 
 		View queuedFromView = this.queuedFromView != null ? this.queuedFromView.get() : null;
 		this.queuedFromView = null;

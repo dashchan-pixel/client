@@ -79,16 +79,13 @@ class ContentsFragment : PreferenceFragment() {
 			dialog.show(childFragmentManager, ClearCacheDialog::class.java.name)
 		}
 		clearCachePreference!!.invalidate()
+
+		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.contents), null)
 	}
 
 	override fun onDestroyView() {
 		super.onDestroyView()
 		clearCachePreference = null
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
-		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.contents), null)
 	}
 
 	internal fun invalidateReplyNotifications() {
@@ -184,8 +181,8 @@ class ContentsFragment : PreferenceFragment() {
 			return dialog
 		}
 
-		override fun onActivityCreated(savedInstanceState: Bundle?) {
-			super.onActivityCreated(savedInstanceState)
+		override fun onViewStateRestored(savedInstanceState: Bundle?) {
+			super.onViewStateRestored(savedInstanceState)
 
 			val viewModel = ViewModelProvider(this).get(ClearCacheViewModel::class.java)
 			if (!viewModel.hasTaskOrValue()) {

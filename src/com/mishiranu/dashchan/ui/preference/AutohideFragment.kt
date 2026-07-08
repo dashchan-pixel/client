@@ -65,10 +65,6 @@ class AutohideFragment : BaseListFragment() {
 				searchQuery = query
 			}
 		}
-	}
-
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
 
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.autohide), null)
 		items.addAll(AutohideStorage.getInstance().getItems())

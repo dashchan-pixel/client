@@ -50,10 +50,7 @@ class AboutFragment : PreferenceFragment(), FragmentHandler.Callback {
 				DateFormat.getDateFormat(requireContext()), BuildConfig.VERSION_DATE)
 		addButton(getString(R.string.version), BuildConfig.VERSION_NAME +
 				(if (versionDate != null) " $versionDate" else ""))
-	}
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.about), null)
 	}
 

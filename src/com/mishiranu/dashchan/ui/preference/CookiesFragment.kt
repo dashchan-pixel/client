@@ -33,8 +33,8 @@ class CookiesFragment : BaseListFragment, FragmentHandler.Callback {
 
 	private fun getChanName(): String = requireArguments().getString(EXTRA_CHAN_NAME)!!
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
 
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.manage_cookies), null)
 		getRecyclerView()!!.adapter = Adapter(this::onCookieClick)

@@ -54,8 +54,8 @@ import java.util.Collections
 class ThemesFragment : BaseListFragment() {
 	private var availableJsonThemes: List<JSONObject>? = null
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
+	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+		super.onViewCreated(view, savedInstanceState)
 
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.themes), null)
 		val recyclerView = getRecyclerView()!!

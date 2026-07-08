@@ -279,8 +279,8 @@ public class ForegroundManager implements Handler.Callback {
 		}
 
 		@Override
-		public void onActivityCreated(Bundle savedInstanceState) {
-			super.onActivityCreated(savedInstanceState);
+		public void onViewStateRestored(Bundle savedInstanceState) {
+			super.onViewStateRestored(savedInstanceState);
 
 			CaptchaPendingData pendingData = getPendingDataOrDismiss();
 			if (pendingData == null) {
@@ -596,8 +596,8 @@ public class ForegroundManager implements Handler.Callback {
 		}
 
 		@Override
-		public void onActivityCreated(Bundle savedInstanceState) {
-			super.onActivityCreated(savedInstanceState);
+		public void onViewStateRestored(Bundle savedInstanceState) {
+			super.onViewStateRestored(savedInstanceState);
 			getPendingDataOrDismiss();
 		}
 
@@ -730,8 +730,8 @@ public class ForegroundManager implements Handler.Callback {
 		}
 
 		@Override
-		public void onActivityCreated(Bundle savedInstanceState) {
-			super.onActivityCreated(savedInstanceState);
+		public void onViewStateRestored(Bundle savedInstanceState) {
+			super.onViewStateRestored(savedInstanceState);
 			PendingData pendingData = getPendingDataOrDismiss();
 			if (pendingData == null) {
 				return;

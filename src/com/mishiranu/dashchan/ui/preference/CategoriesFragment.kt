@@ -40,10 +40,8 @@ class CategoriesFragment : PreferenceFragment() {
 				.setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(AutohideFragment()) }
 		addCategory(R.string.about, R.drawable.ic_info)
 				.setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(AboutFragment()) }
-	}
 
-	override fun onActivityCreated(savedInstanceState: Bundle?) {
-		super.onActivityCreated(savedInstanceState)
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.preferences), null)
 	}
+
 }
