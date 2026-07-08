@@ -4,7 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.net.Uri
-import android.view.TextureView
+import android.view.PixelCopy
+import android.view.SurfaceView
 import android.view.View
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
@@ -18,6 +19,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.SeekParameters
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.mishiranu.dashchan.content.MainApplication
+import com.mishiranu.dashchan.util.ConcurrentUtils
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -44,8 +46,12 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 
 	class InitializationException(message: String?) : IOException(message)
 
+	fun interface FrameCallback {
+		fun onFrame(frame: Bitmap?)
+	}
+
 	private var exoPlayer: ExoPlayer? = null
-	private var textureView: TextureView? = null
+	private var surfaceView: SurfaceView? = null
 	private var ready = false
 	private var released = false
 
@@ -190,16 +196,46 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 	}
 
 	fun getVideoView(context: Context): View {
-		var textureView = this.textureView
-		if (textureView == null) {
-			textureView = TextureView(context)
-			this.textureView = textureView
-			exoPlayer!!.setVideoTextureView(textureView)
+		var surfaceView = this.surfaceView
+		if (surfaceView == null) {
+			// SurfaceView instead of TextureView: the decoder output goes straight to the
+			// compositor (no GPU copy through the view hierarchy, lower power), and
+			// ExoPlayer's Surface.setFrameRate votes reach the display, so fixed-rate
+			// videos get refresh-rate matching on 90/120 Hz panels.
+			surfaceView = SurfaceView(context)
+			this.surfaceView = surfaceView
+			exoPlayer!!.setVideoSurfaceView(surfaceView)
 		}
-		return textureView
+		return surfaceView
 	}
 
-	fun getCurrentFrame(): Bitmap? = textureView?.bitmap
+	/**
+	 * Asynchronously snapshots the current video frame via [PixelCopy]. The callback is
+	 * invoked on the main thread with null if the frame could not be captured.
+	 */
+	fun captureCurrentFrame(callback: FrameCallback) {
+		val surfaceView = this.surfaceView
+		if (surfaceView == null || surfaceView.width <= 0 || surfaceView.height <= 0 ||
+				!surfaceView.holder.surface.isValid) {
+			callback.onFrame(null)
+			return
+		}
+		val bitmap = Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
+		try {
+			PixelCopy.request(surfaceView, bitmap, { result ->
+				if (result == PixelCopy.SUCCESS) {
+					callback.onFrame(bitmap)
+				} else {
+					bitmap.recycle()
+					callback.onFrame(null)
+				}
+			}, ConcurrentUtils.HANDLER)
+		} catch (e: IllegalArgumentException) {
+			// The surface was released between the validity check and the request
+			bitmap.recycle()
+			callback.onFrame(null)
+		}
+	}
 
 	fun destroy() {
 		if (released) {

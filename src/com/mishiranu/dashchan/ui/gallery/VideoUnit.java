@@ -251,7 +251,7 @@ public class VideoUnit {
 		holder.photoView.setImage(backgroundDrawable, false, true, false);
 		View videoView = player.getVideoView(instance.galleryInstance.context);
 		// Host the surface in an aspect-ratio container sized (fit-center) at layout time, so the
-		// TextureView is created at the correct shape and the video is never rendered stretched to the
+		// SurfaceView is created at the correct shape and the video is never rendered stretched to the
 		// full screen before its first frame.
 		AspectRatioFrameLayout videoWrapper = new AspectRatioFrameLayout(instance.galleryInstance.context);
 		videoWrapper.setAspectRatio(aspectRatio(dimensions));
@@ -657,6 +657,10 @@ public class VideoUnit {
 		@Override
 		public void onRenderedFirstFrame(VideoPlayer player) {
 			removeVideoCover();
+			if (backgroundDrawable != null) {
+				// The surface has content again - drop the last-frame snapshot.
+				backgroundDrawable.recycle();
+			}
 		}
 	};
 
@@ -673,11 +677,18 @@ public class VideoUnit {
 		if (initialized) {
 			View videoView = player.getVideoView(instance.galleryInstance.context);
 			if (show) {
-				backgroundDrawable.recycle();
+				// Keep the last-frame snapshot in backgroundDrawable visible until the
+				// recreated surface has rendered; it is recycled in onRenderedFirstFrame.
 				videoView.setVisibility(View.VISIBLE);
 			} else {
-				backgroundDrawable.setFrame(player.getCurrentFrame());
-				videoView.setVisibility(View.GONE);
+				player.captureCurrentFrame(frame -> {
+					if (backgroundDrawable != null) {
+						backgroundDrawable.setFrame(frame);
+					} else if (frame != null) {
+						frame.recycle();
+					}
+					videoView.setVisibility(View.GONE);
+				});
 			}
 		}
 	}
