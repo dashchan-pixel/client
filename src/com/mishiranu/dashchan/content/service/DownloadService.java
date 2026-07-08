@@ -21,7 +21,6 @@ import android.service.notification.StatusBarNotification;
 import android.util.DisplayMetrics;
 import android.util.Pair;
 
-import androidx.core.app.NotificationCompat;
 import androidx.core.os.ParcelCompat;
 
 import com.mishiranu.dashchan.C;
@@ -102,7 +101,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 	private final LinkedHashMap<String, TaskData> errorTasks = new LinkedHashMap<>();
 	private Pair<TaskData, ReadFileTask> activeTask;
 
-	private NotificationCompat.Builder builder;
+	private Notification.Builder builder;
 
 	private int progress;
 	private int progressMax;
@@ -983,7 +982,7 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		if (builder == null || notificationData.type != oldNotificationDataType) {
 			oldNotificationDataType = notificationData.type;
 			notificationManager.cancel(C.NOTIFICATION_ID_DOWNLOADING);
-			builder = new NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_DOWNLOADING);
+			builder = new Notification.Builder(this, C.NOTIFICATION_CHANNEL_DOWNLOADING);
 			builder.setDeleteIntent(PendingIntent.getBroadcast(this, 0, new Intent(this, Receiver.class)
 					.setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 			builder.setSmallIcon(notificationData.type.iconResId);
@@ -994,18 +993,18 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 			switch (notificationData.type) {
 				case PROGRESS:
 				case REQUEST: {
-					builder.addAction(0,
+					builder.addAction(new Notification.Action.Builder(null,
 							getString(android.R.string.cancel), PendingIntent.getBroadcast(this, 0,
 									new Intent(this, Receiver.class).setAction(ACTION_CANCEL),
-									PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+									PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).build());
 					break;
 				}
 				case RESULT: {
 					if (notificationData.allowRetry) {
-						builder.addAction(0,
+						builder.addAction(new Notification.Action.Builder(null,
 								getString(R.string.retry), PendingIntent.getBroadcast(this, 0,
 										new Intent(this, Receiver.class).setAction(ACTION_RETRY),
-										PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+										PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE)).build());
 					}
 					break;
 				}
@@ -1034,9 +1033,20 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 				contentText = getString(R.string.file_name__format, notificationData.activeName);
 				headsUp = false;
 				foreground = true;
-				builder.setProgress(notificationData.progressMax, notificationData.progress,
-						notificationData.progressMax == 0 || notificationData.progress > notificationData.progressMax
-								|| notificationData.progress < 0);
+				Notification.ProgressStyle progressStyle = new Notification.ProgressStyle();
+				boolean indeterminate = notificationData.progressMax == 0
+						|| notificationData.progress > notificationData.progressMax
+						|| notificationData.progress < 0;
+				if (indeterminate) {
+					progressStyle.setProgressIndeterminate(true);
+				} else {
+					progressStyle.setProgressSegments(Collections.singletonList(new Notification
+							.ProgressStyle.Segment(notificationData.progressMax)));
+					progressStyle.setProgress(notificationData.progress);
+					builder.setShortCriticalText(100 * notificationData.progress
+							/ notificationData.progressMax + "%");
+				}
+				builder.setStyle(progressStyle);
 				break;
 			}
 			case RESULT: {
@@ -1061,15 +1071,9 @@ public class DownloadService extends BaseService implements ReadFileTask.Callbac
 		}
 		builder.setContentTitle(contentTitle);
 		builder.setContentText(contentText);
-		if (headsUp && Preferences.isNotifyDownloadComplete()) {
-			builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE);
-			builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-			builder.setVibrate(new long[0]);
-		} else {
-			builder.setChannelId(C.NOTIFICATION_CHANNEL_DOWNLOADING);
-			builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
-			builder.setVibrate(null);
-		}
+		// Importance, sound and vibration are governed by the channels themselves.
+		builder.setChannelId(headsUp && Preferences.isNotifyDownloadComplete()
+				? C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE : C.NOTIFICATION_CHANNEL_DOWNLOADING);
 	
 		startStopForeground(foreground, foreground ? builder.build() : null);
 		if (!foreground) {

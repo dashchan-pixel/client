@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.content.service;
 
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -13,7 +14,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.PowerManager;
 import android.util.Pair;
-import androidx.core.app.NotificationCompat;
 import androidx.core.os.ParcelCompat;
 import chan.content.ApiException;
 import chan.content.Chan;
@@ -43,6 +43,7 @@ import com.mishiranu.dashchan.util.WeakObservable;
 import com.mishiranu.dashchan.widget.ThemeEngine;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -101,7 +102,7 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 	private static class TaskState {
 		public final Key key;
 		public final SendPostTask<Key> task;
-		public final NotificationCompat.Builder builder;
+		public final Notification.Builder builder;
 		public final String text;
 
 		private SendPostTask.ProgressState progressState = SendPostTask.ProgressState.CONNECTING;
@@ -115,7 +116,7 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 				ChanPerformer.SendPostData data) {
 			this.key = key;
 			this.task = task;
-			builder = new NotificationCompat.Builder(context, C.NOTIFICATION_CHANNEL_POSTING);
+			builder = new Notification.Builder(context, C.NOTIFICATION_CHANNEL_POSTING);
 			text = buildNotificationText(chan, data.boardName, data.threadNumber, null);
 		}
 	}
@@ -217,13 +218,13 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 				stopSelf();
 			} else {
 				TaskState taskState = notificationData.taskState;
-				NotificationCompat.Builder builder = taskState.builder;
+				Notification.Builder builder = taskState.builder;
 				if (notificationData.type == NotificationData.Type.CREATE) {
 					builder.setSmallIcon(android.R.drawable.stat_sys_upload);
 					PendingIntent cancelIntent = PendingIntent.getBroadcast(this, 0, new Intent(this, Receiver.class)
 							.setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-					builder.addAction(0,
-							getString(android.R.string.cancel), cancelIntent);
+					builder.addAction(new Notification.Action.Builder(null,
+							getString(android.R.string.cancel), cancelIntent).build());
 					builder.setColor(notificationColor);
 					this.startForegroundService(new Intent(this, PostingService.class));
 				}
@@ -231,20 +232,25 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 				switch (taskState.progressState) {
 					case CONNECTING: {
 						if (progressMode) {
-							builder.setProgress(1, 0, true);
+							builder.setStyle(new Notification.ProgressStyle().setProgressIndeterminate(true));
 						}
 						builder.setContentTitle(getString(R.string.sending__ellipsis));
 						break;
 					}
 					case SENDING: {
 						if (progressMode) {
+							Notification.ProgressStyle progressStyle = new Notification.ProgressStyle();
 							if (taskState.progressMax > 0) {
 								int max = 1000;
 								int progress = (int) (taskState.progress * max / taskState.progressMax);
-								builder.setProgress(max, progress, false);
+								progressStyle.setProgressSegments(Collections.singletonList(
+										new Notification.ProgressStyle.Segment(max)));
+								progressStyle.setProgress(progress);
+								builder.setShortCriticalText(100 * progress / max + "%");
 							} else {
-								builder.setProgress(0, 0, true);
+								progressStyle.setProgressIndeterminate(true);
 							}
+							builder.setStyle(progressStyle);
 							builder.setContentTitle(getString(R.string.sending_number_of_number__ellipsis_format,
 									taskState.attachmentIndex + 1, taskState.attachmentsCount));
 						} else {
@@ -254,7 +260,10 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 					}
 					case PROCESSING: {
 						if (progressMode) {
-							builder.setProgress(1, 1, false);
+							builder.setStyle(new Notification.ProgressStyle()
+									.setProgressSegments(Collections.singletonList(
+											new Notification.ProgressStyle.Segment(1)))
+									.setProgress(1));
 						}
 						builder.setContentTitle(getString(R.string.processing_data__ellipsis));
 						break;
@@ -486,13 +495,11 @@ public class PostingService extends BaseService implements SendPostTask.Callback
 					PostingService.newThreadData = new Pair<>(new Key(chanName, data.boardName, null), newPostData);
 				}
 
-				NotificationCompat.Builder builder = new NotificationCompat.Builder(this,
+				// Importance, sound and vibration are governed by the channel itself.
+				Notification.Builder builder = new Notification.Builder(this,
 						C.NOTIFICATION_CHANNEL_POSTING_COMPLETE);
 				builder.setSmallIcon(android.R.drawable.stat_sys_upload_done);
 				builder.setColor(notificationColor);
-				builder.setPriority(NotificationCompat.PRIORITY_HIGH);
-				builder.setVibrate(new long[0]);
-			
 				builder.setContentTitle(getString(R.string.post_sent));
 				builder.setContentText(buildNotificationText(chan, data.boardName, targetThreadNumber, postNumber));
 				String tag = newPostData.tag;
