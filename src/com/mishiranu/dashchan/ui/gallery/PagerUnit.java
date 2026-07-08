@@ -609,6 +609,10 @@ public class PagerUnit implements PagerInstance.Callback {
 			DialogMenu dialogMenu = new DialogMenu(context);
 			dialogMenu.setTitle(!StringUtils.isEmpty(galleryItem.originalName)
 					? galleryItem.originalName : galleryItem.getFileName(chan));
+			if (galleryItem.isVideo(chan)) {
+				// Mirrors the flow player's context menu, which offers switching to the gallery.
+				dialogMenu.add(R.string.flow, galleryInstance.callback::switchToFlow);
+			}
 			if (!galleryInstance.callback.isSystemUiVisible()) {
 				if (capabilities.save) {
 					dialogMenu.add(R.string.save, () -> galleryInstance.callback

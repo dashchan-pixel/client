@@ -32,6 +32,9 @@ class GalleryInstance(@JvmField val context: Context, @JvmField val callback: Ca
 		fun navigatePageFromList(position: Int)
 		fun navigatePost(galleryItem: GalleryItem, manually: Boolean, force: Boolean)
 
+		/** Switch to the video feed (flow) at the currently viewed attachment. */
+		fun switchToFlow()
+
 		fun isAllowNavigatePostManually(fromPager: Boolean): Boolean
 
 		fun invalidateOptionsMenu()
