@@ -102,6 +102,12 @@ class AutohideFragment : BaseListFragment() {
 		return false
 	}
 
+	override fun isBackHandled(): Boolean {
+		// searchQuery mirrors the action view expansion and, unlike isActionViewExpanded,
+		// is already updated when the expand listener notifies about the change.
+		return searchQuery != null
+	}
+
 	override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
 		menu.add(0, R.id.menu_new_rule, 0, R.string.new_rule)
 				.setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
@@ -124,6 +130,7 @@ class AutohideFragment : BaseListFragment() {
 				}
 				(getRecyclerView()!!.adapter as Adapter).setSearchQuery(searchQuery)
 				onPrepareOptionsMenu(menu)
+				notifyBackHandledChanged()
 				true
 			})
 			if (searchQuery != null) {

@@ -30,6 +30,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.Toolbar;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.IntentCompat;
@@ -221,6 +222,18 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		if (toolbarHolder == null) {
 			drawerLayout.addDrawerListener(new ExpandedScreenDrawerLocker());
 		}
+		getOnBackPressedDispatcher().addCallback(this, backPressedCallback);
+		drawerLayout.addDrawerListener(new CustomDrawerLayout.SimpleDrawerListener() {
+			@Override
+			public void onDrawerOpened(@NonNull View drawerView) {
+				updateBackHandling();
+			}
+
+			@Override
+			public void onDrawerClosed(@NonNull View drawerView) {
+				updateBackHandling();
+			}
+		});
 
 		downloadDialog = new DownloadDialog(this, new DownloadDialog.Callback() {
 			@Override
@@ -976,6 +989,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 				.replace(R.id.content_fragment, fragment)
 				.commit();
 		updatePostFragmentConfiguration();
+		updateBackHandling();
 
 		if (currentFragment instanceof PageFragment || fragment instanceof PageFragment) {
 			HashSet<String> retainIds = new HashSet<>(1 + stackPageItems.size() + preservedPageItems.size());
@@ -1116,6 +1130,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 			ViewUtils.removeFromParent(drawerParent);
 			(wideMode ? drawerWide : drawerCommon).addView(drawerParent);
 			invalidateHomeUpState();
+			updateBackHandling();
 		}
 		float density = ResourceUtils.obtainDensity(this);
 		int actionBarSize = getResources().getDimensionPixelSize(ResourceUtils.getResourceId(this,
@@ -1213,22 +1228,68 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 
 	@Override
 	public void removeFragment() {
-		onBackPressed(true, false, () -> navigateInitial(true));
+		handleBackPress(true, () -> navigateInitial(true));
 	}
 
-	private long backPressed = 0;
+	// Predictive back: the callback is enabled only while something in the app claims the back
+	// gesture (open drawer, fragment-internal state, page/fragment back stack), so the system
+	// back-to-home animation plays whenever a back gesture would leave the app.
+	private final OnBackPressedCallback backPressedCallback = new OnBackPressedCallback(false) {
+		@Override
+		public void handleOnBackPressed() {
+			// The enabled state was stale if nothing handles the press: swallow this
+			// press and let the system take the next one.
+			handleBackPress(false, () -> setEnabled(false));
+		}
+	};
 
-	@Override
-	public void onBackPressed() {
-		onBackPressed(false, true, super::onBackPressed);
+	public void updateBackHandling() {
+		backPressedCallback.setEnabled(isBackHandled());
 	}
 
-	private void onBackPressed(boolean homeHandled, boolean allowTimeout, Runnable close) {
+	private boolean isBackHandled() {
+		if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+			return true;
+		}
+		ContentFragment currentFragment = getCurrentFragment();
+		if (currentFragment == null) {
+			return false;
+		}
+		if (currentFragment.isBackHandled()) {
+			return true;
+		}
+		if (currentFragment instanceof PageFragment) {
+			return hasTargetPreviousPage();
+		}
+		return !fragments.isEmpty() || !stackPageItems.isEmpty();
+	}
+
+	// Side-effect-free version of prepareTargetPreviousPage(true).
+	private boolean hasTargetPreviousPage() {
+		if (currentPageItem != null && currentPageItem.allowReturn && !stackPageItems.isEmpty()) {
+			return true;
+		}
+		ContentFragment currentFragment = getCurrentFragment();
+		if (!(currentFragment instanceof PageFragment)) {
+			return false;
+		}
+		String chanName = ((PageFragment) currentFragment).getPage().chanName;
+		boolean mergeChans = Preferences.isMergeChans();
+		for (int i = stackPageItems.size() - 1; i >= 0; i--) {
+			if (mergeChans || getSavedPage(stackPageItems.get(i)).chanName.equals(chanName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void handleBackPress(boolean homeHandled, Runnable close) {
 		if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
 			drawerLayout.closeDrawers();
 		} else {
 			ContentFragment currentFragment = getCurrentFragment();
 			if (!homeHandled && currentFragment.onBackPressed()) {
+				updateBackHandling();
 				return;
 			}
 			boolean handled = false;
@@ -1255,14 +1316,10 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 				handled = true;
 			}
 			if (!handled) {
-				if (allowTimeout && SystemClock.elapsedRealtime() - backPressed > 2000) {
-					ClickableToast.show(R.string.press_again_to_exit);
-					backPressed = SystemClock.elapsedRealtime();
-				} else {
-					close.run();
-				}
+				close.run();
 			}
 		}
+		updateBackHandling();
 	}
 
 	private WeakReference<ActionMode> currentActionMode;

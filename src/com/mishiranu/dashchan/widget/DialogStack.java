@@ -21,6 +21,8 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.customview.widget.ViewDragHelper;
@@ -198,6 +200,28 @@ public class DialogStack<T extends DialogStack.ViewFactory<T>> implements Iterab
 						return keyBackHandler.onBackKey(event, !visibleViews.isEmpty());
 					}
 					return false;
+				}
+
+				// With predictive back enabled, back gestures arrive here instead of
+				// dispatchKeyEvent. Pops a single dialog like the KeyEvent handler
+				// (the long-press-back "clear all" shortcut has no gesture equivalent).
+				private final OnBackInvokedCallback backInvokedCallback = () -> {
+					if (!visibleViews.isEmpty()) {
+						popInternal();
+					}
+				};
+
+				@Override
+				protected void onStart() {
+					super.onStart();
+					getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+							OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback);
+				}
+
+				@Override
+				protected void onStop() {
+					getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+					super.onStop();
 				}
 			};
 			dialog.setContentView(contentView);

@@ -12,6 +12,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -118,11 +120,27 @@ public class GalleryDialog extends Dialog {
 		return actionContextBar;
 	}
 
-	@Override
-	public void onBackPressed() {
+	// With predictive back enabled the framework no longer calls Dialog.onBackPressed();
+	// an explicit OnBackInvokedCallback replicates the old behavior (fragment first, then cancel).
+	private final OnBackInvokedCallback backInvokedCallback = this::handleBackInvoked;
+
+	private void handleBackInvoked() {
 		if (!(fragment instanceof Callback) || !((Callback) fragment).onBackPressed()) {
-			super.onBackPressed();
+			cancel();
 		}
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+				OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback);
+	}
+
+	@Override
+	protected void onStop() {
+		getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+		super.onStop();
 	}
 
 	@Override

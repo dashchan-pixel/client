@@ -199,6 +199,11 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 	}
 
 	@Override
+	public boolean isBackHandled() {
+		return webView != null && webView.canGoBack();
+	}
+
+	@Override
 	public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype,
 			long contentLength) {
 		try {
@@ -251,6 +256,12 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 			String title = view.getTitle();
 			((FragmentHandler) requireActivity()).setTitleSubtitle(StringUtils.isEmptyOrWhitespace(title)
 					? getString(R.string.web_browser) : title, null);
+		}
+
+		@Override
+		public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+			// canGoBack() may have changed - re-sync back gesture interception.
+			notifyBackHandledChanged();
 		}
 
 		@Override

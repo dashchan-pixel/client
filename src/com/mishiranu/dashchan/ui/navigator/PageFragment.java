@@ -286,6 +286,7 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 			invalidateOptionsMenu();
 			((FragmentHandler) requireActivity()).setActionBarLocked(actionBarLockerSearch, search);
 			getCallback().invalidateHomeUpState();
+			notifyBackHandledChanged();
 			if (toggle) {
 				if (search) {
 					menuItem.expandActionView();
@@ -417,6 +418,11 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 	@Override
 	public boolean onBackPressed() {
 		return setSearchMode(false);
+	}
+
+	@Override
+	public boolean isBackHandled() {
+		return searchMode;
 	}
 
 	@Override

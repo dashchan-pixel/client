@@ -28,7 +28,7 @@
 		android:icon="@mipmap/ic_launcher"
 		android:logo="@mipmap/ic_logo"
 		android:theme="@style/Theme.Launcher"
-		android:enableOnBackInvokedCallback="false"
+		android:enableOnBackInvokedCallback="true"
 		android:allowBackup="true"
 		android:fullBackupContent="true"
 		android:usesCleartextTraffic="true"

@@ -47,6 +47,23 @@ public abstract class ContentFragment extends Fragment {
 		return false;
 	}
 
+	/**
+	 * Whether {@link #onBackPressed()} would currently handle a back press. Drives the enabled
+	 * state of the activity's back callback: the predictive back-to-home animation only plays
+	 * when no fragment claims the gesture. Override together with {@link #onBackPressed()} and
+	 * call {@link #notifyBackHandledChanged()} whenever the returned value may have changed.
+	 */
+	public boolean isBackHandled() {
+		return false;
+	}
+
+	protected final void notifyBackHandledChanged() {
+		FragmentActivity activity = getActivity();
+		if (activity instanceof FragmentHandler) {
+			((FragmentHandler) activity).updateBackHandling();
+		}
+	}
+
 	private void clearOptionMenus() {
 		for (WeakHashMap.Entry<Menu, MenuState> entry : menuStates.entrySet()) {
 			if (entry.getValue().created) {
@@ -144,6 +161,9 @@ public abstract class ContentFragment extends Fragment {
 		super.onResume();
 		// Menu can be requested too early on some Android 4.x
 		invalidateMenuInternal(true);
+		// Fragment transactions commit asynchronously - re-sync back interception
+		// once the new fragment is actually current.
+		notifyBackHandledChanged();
 	}
 
 	@Override

@@ -27,6 +27,10 @@ interface FragmentHandler {
 	fun pushFragment(fragment: ContentFragment)
 	fun removeFragment()
 
+	// Re-evaluates whether the system back gesture should be intercepted (predictive back:
+	// the back-to-home animation only plays when nothing in the app claims the gesture).
+	fun updateBackHandling() {}
+
 	fun getDownloadBinder(): DownloadService.Binder?
 	fun requestStorage(): Boolean
 
