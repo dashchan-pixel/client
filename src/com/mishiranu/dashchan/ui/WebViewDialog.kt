@@ -17,7 +17,6 @@ import android.webkit.JsResult
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebStorage
 import android.webkit.WebView
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -173,14 +172,6 @@ abstract class WebViewDialog : DialogFragment() {
 
 		override fun onJsBeforeUnload(view: WebView, url: String, message: String, result: JsResult): Boolean {
 			return delegate.onJsBeforeUnload(view, url, message, result)
-		}
-
-		@Deprecated("Deprecated in Java")
-		override fun onExceededDatabaseQuota(url: String, databaseIdentifier: String, quota: Long,
-				estimatedDatabaseSize: Long, totalQuota: Long, quotaUpdater: WebStorage.QuotaUpdater) {
-			@Suppress("DEPRECATION")
-			delegate.onExceededDatabaseQuota(url, databaseIdentifier, quota,
-					estimatedDatabaseSize, totalQuota, quotaUpdater)
 		}
 
 		override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
