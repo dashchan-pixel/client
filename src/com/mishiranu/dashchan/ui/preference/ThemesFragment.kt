@@ -128,7 +128,7 @@ class ThemesFragment : BaseListFragment() {
 	}
 
 	@Suppress("DEPRECATION")
-	override fun onOptionsItemSelected(item: MenuItem): Boolean {
+	override fun onMenuItemSelected(item: MenuItem): Boolean {
 		if (item.itemId == R.id.menu_add_theme) {
 			// Check Android supports "application/json" MIME-type
 			var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json")
@@ -141,7 +141,7 @@ class ThemesFragment : BaseListFragment() {
 			startActivityForResult(intent, C.REQUEST_CODE_ATTACH)
 			return true
 		}
-		return super.onOptionsItemSelected(item)
+		return super.onMenuItemSelected(item)
 	}
 
 	@Suppress("DEPRECATION")

@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Toolbar;
 import androidx.annotation.NonNull;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -24,7 +25,7 @@ import com.mishiranu.dashchan.widget.CustomSearchView;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
-public abstract class ContentFragment extends Fragment {
+public abstract class ContentFragment extends Fragment implements MenuProvider {
 	private static class MenuState {
 		public boolean created;
 	}
@@ -151,9 +152,9 @@ public abstract class ContentFragment extends Fragment {
 	}
 
 	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		super.setHasOptionsMenu(true);
+	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		requireActivity().addMenuProvider(this, getViewLifecycleOwner());
 	}
 
 	@Override
@@ -166,11 +167,6 @@ public abstract class ContentFragment extends Fragment {
 		notifyBackHandledChanged();
 	}
 
-	@Override
-	public void setHasOptionsMenu(boolean hasMenu) {
-		throw new UnsupportedOperationException();
-	}
-
 	private MenuState obtainMenuState(Menu menu) {
 		MenuState menuState = menuStates.get(menu);
 		if (menuState == null) {
@@ -181,7 +177,7 @@ public abstract class ContentFragment extends Fragment {
 	}
 
 	@Override
-	public final void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+	public final void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
 		MenuState menuState = obtainMenuState(menu);
 		if (isAdded() && isValidOptionsMenuState()) {
 			menuState.created = true;
@@ -190,7 +186,7 @@ public abstract class ContentFragment extends Fragment {
 	}
 
 	@Override
-	public final void onPrepareOptionsMenu(@NonNull Menu menu) {
+	public final void onPrepareMenu(@NonNull Menu menu) {
 		if (isAdded() && isValidOptionsMenuState()) {
 			boolean primary = isPrimaryMenu(menu);
 			MenuState menuState = obtainMenuState(menu);
@@ -214,6 +210,11 @@ public abstract class ContentFragment extends Fragment {
 
 	public void onPrepareOptionsMenu(Menu menu, boolean primary) {}
 
+	@Override
+	public boolean onMenuItemSelected(@NonNull MenuItem item) {
+		return false;
+	}
+
 	public void invalidateOptionsMenu() {
 		invalidateMenuInternal(false);
 	}
@@ -221,7 +222,7 @@ public abstract class ContentFragment extends Fragment {
 	private void invalidateMenuInternal(boolean prepareOnly) {
 		for (WeakHashMap.Entry<Menu, MenuState> entry : menuStates.entrySet()) {
 			if (!prepareOnly || !entry.getValue().created) {
-				onPrepareOptionsMenu(entry.getKey());
+				onPrepareMenu(entry.getKey());
 			}
 		}
 	}

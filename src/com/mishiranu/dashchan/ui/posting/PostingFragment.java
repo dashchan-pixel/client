@@ -923,7 +923,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
+	public boolean onMenuItemSelected(@NonNull MenuItem item) {
 		int switchItemId0 = item.getItemId();
 		if (switchItemId0 == R.id.menu_attach) {
 

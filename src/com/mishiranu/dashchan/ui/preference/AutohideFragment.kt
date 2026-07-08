@@ -125,7 +125,7 @@ class AutohideFragment : BaseListFragment() {
 					searchQuery = null
 				}
 				(getRecyclerView()!!.adapter as Adapter).setSearchQuery(searchQuery)
-				onPrepareOptionsMenu(menu)
+				onPrepareMenu(menu)
 				notifyBackHandledChanged()
 				true
 			})
@@ -139,7 +139,7 @@ class AutohideFragment : BaseListFragment() {
 		menu.findItem(R.id.menu_new_rule).isVisible = searchQuery == null
 	}
 
-	override fun onOptionsItemSelected(item: MenuItem): Boolean {
+	override fun onMenuItemSelected(item: MenuItem): Boolean {
 		when (item.itemId) {
 			R.id.menu_new_rule -> {
 				editRule(null, -1)
@@ -158,7 +158,7 @@ class AutohideFragment : BaseListFragment() {
 				}
 			}
 		}
-		return super.onOptionsItemSelected(item)
+		return super.onMenuItemSelected(item)
 	}
 
 	private fun editRule(autohideItem: AutohideStorage.AutohideItem?, index: Int) {

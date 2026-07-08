@@ -6,7 +6,6 @@ import android.graphics.Insets;
 import android.media.AudioManager;
 import android.view.ActionMode;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -26,10 +25,12 @@ public class GalleryDialog extends Dialog {
 	public interface Callback {
 		boolean onBackPressed();
 		void onCreateActionContextBarView();
+		void onCreateDialogMenu(Menu menu);
+		void onPrepareDialogMenu(Menu menu);
+		boolean onDialogMenuItemSelected(MenuItem item);
 	}
 
 	private final Fragment fragment;
-	private final MenuInflater menuInflater;
 
 	private ViewFactory.ToolbarHolder toolbarHolder;
 	private View actionBar;
@@ -38,7 +39,6 @@ public class GalleryDialog extends Dialog {
 	public GalleryDialog(Fragment fragment) {
 		super(fragment.requireContext(), R.style.Theme_Gallery);
 		this.fragment = fragment;
-		this.menuInflater = fragment.requireActivity().getMenuInflater();
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
 		WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
 		layoutParams.setTitle(getContext().getPackageName() + "/" + getClass().getName());
@@ -154,16 +154,16 @@ public class GalleryDialog extends Dialog {
 
 	@Override
 	public boolean onCreateOptionsMenu(@NonNull Menu menu) {
-		if (fragment.isAdded()) {
-			fragment.onCreateOptionsMenu(menu, menuInflater);
+		if (fragment.isAdded() && fragment instanceof Callback) {
+			((Callback) fragment).onCreateDialogMenu(menu);
 		}
 		return true;
 	}
 
 	@Override
 	public boolean onPrepareOptionsMenu(@NonNull Menu menu) {
-		if (fragment.isAdded()) {
-			fragment.onPrepareOptionsMenu(menu);
+		if (fragment.isAdded() && fragment instanceof Callback) {
+			((Callback) fragment).onPrepareDialogMenu(menu);
 		}
 		return true;
 	}
@@ -179,7 +179,8 @@ public class GalleryDialog extends Dialog {
 
 	@Override
 	public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-		return fragment.isAdded() && fragment.onOptionsItemSelected(item);
+		return fragment.isAdded() && fragment instanceof Callback
+				&& ((Callback) fragment).onDialogMenuItemSelected(item);
 	}
 
 	@Override

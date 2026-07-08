@@ -391,7 +391,7 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+	public boolean onMenuItemSelected(@NonNull MenuItem item) {
 		if (item.getItemId() == R.id.menu_search) {
 			if (item == searchMenuItem) {
 				searchFocused = true;
@@ -407,7 +407,7 @@ public final class PageFragment extends ContentFragment implements FragmentHandl
 		if (listPage.onOptionsItemSelected(item)) {
 			return true;
 		}
-		return super.onOptionsItemSelected(item);
+		return super.onMenuItemSelected(item);
 	}
 
 	@Override

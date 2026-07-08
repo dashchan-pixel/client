@@ -161,7 +161,7 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
+	public boolean onMenuItemSelected(@NonNull MenuItem item) {
 		int switchItemId0 = item.getItemId();
 		if (switchItemId0 == R.id.menu_reload) {
 

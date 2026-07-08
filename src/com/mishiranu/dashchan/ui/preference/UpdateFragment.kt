@@ -257,7 +257,7 @@ class UpdateFragment : BaseListFragment {
 		menu.findItem(R.id.menu_check_on_start).setChecked(Preferences.isCheckUpdatesOnStart())
 	}
 
-	override fun onOptionsItemSelected(item: MenuItem): Boolean {
+	override fun onMenuItemSelected(item: MenuItem): Boolean {
 		val itemId = item.itemId
 		if (itemId == R.id.menu_download) {
 			val requests = ArrayList<UpdaterActivity.Request>()

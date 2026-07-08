@@ -14,7 +14,6 @@ import android.util.Pair;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -380,7 +379,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	@Override
-	public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+	public void onCreateDialogMenu(Menu menu) {
 		if (instance != null) {
 			menu.add(0, R.id.menu_save, 0, R.string.save)
 					.setIcon(ResourceUtils.getActionBarIcon(instance.context, R.attr.iconActionSave))
@@ -395,7 +394,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	@Override
-	public void onPrepareOptionsMenu(@NonNull Menu menu) {
+	public void onPrepareDialogMenu(Menu menu) {
 		for (int i = 0; i < menu.size(); i++) {
 			menu.getItem(i).setVisible(false);
 		}
@@ -415,7 +414,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+	public boolean onDialogMenuItemSelected(MenuItem item) {
 		PagerInstance.ViewHolder holder = pagerUnit != null ? pagerUnit.getCurrentHolder() : null;
 		int switchItemId0 = item.getItemId();
 		if (switchItemId0 == android.R.id.home) {

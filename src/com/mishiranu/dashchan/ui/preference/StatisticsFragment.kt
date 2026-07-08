@@ -80,12 +80,12 @@ class StatisticsFragment : BaseListFragment() {
 				.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
 	}
 
-	override fun onOptionsItemSelected(item: MenuItem): Boolean {
+	override fun onMenuItemSelected(item: MenuItem): Boolean {
 		if (item.itemId == R.id.menu_clear) {
 			StatisticsStorage.getInstance().clear()
 			(requireActivity() as FragmentHandler).removeFragment()
 		}
-		return super.onOptionsItemSelected(item)
+		return super.onMenuItemSelected(item)
 	}
 
 	private class Adapter(private val listItems: List<ListItem>) : RecyclerView.Adapter<Adapter.ViewHolder>() {
