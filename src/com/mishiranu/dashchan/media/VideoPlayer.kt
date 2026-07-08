@@ -52,6 +52,33 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 
 	private var exoPlayer: ExoPlayer? = null
 	private var surfaceView: SurfaceView? = null
+
+	private val playerListener = object : Player.Listener {
+		override fun onPlaybackStateChanged(playbackState: Int) {
+			if (playbackState == Player.STATE_READY && !ready) {
+				ready = true
+				listener.onReady(this@VideoPlayer)
+			}
+			listener.onBusyStateChange(this@VideoPlayer, playbackState == Player.STATE_BUFFERING)
+			if (playbackState == Player.STATE_ENDED) {
+				listener.onComplete(this@VideoPlayer)
+			}
+		}
+
+		override fun onVideoSizeChanged(videoSize: VideoSize) {
+			if (ready) {
+				listener.onDimensionChange(this@VideoPlayer)
+			}
+		}
+
+		override fun onRenderedFirstFrame() {
+			listener.onRenderedFirstFrame(this@VideoPlayer)
+		}
+
+		override fun onPlayerError(error: PlaybackException) {
+			listener.onError(this@VideoPlayer, error.message)
+		}
+	}
 	private var ready = false
 	private var released = false
 
@@ -79,35 +106,10 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 			// Keep an open handle: the partial file may be renamed once the download completes.
 			partialFile = RandomAccessFile(file, "r")
 		}
-		val player = ExoPlayer.Builder(MainApplication.getInstance()).build()
+		val player = obtainPooledPlayer()
 		exoPlayer = player
 		player.setSeekParameters(if (seekAnyFrame) SeekParameters.CLOSEST_SYNC else SeekParameters.DEFAULT)
-		player.addListener(object : Player.Listener {
-			override fun onPlaybackStateChanged(playbackState: Int) {
-				if (playbackState == Player.STATE_READY && !ready) {
-					ready = true
-					listener.onReady(this@VideoPlayer)
-				}
-				listener.onBusyStateChange(this@VideoPlayer, playbackState == Player.STATE_BUFFERING)
-				if (playbackState == Player.STATE_ENDED) {
-					listener.onComplete(this@VideoPlayer)
-				}
-			}
-
-			override fun onVideoSizeChanged(videoSize: VideoSize) {
-				if (ready) {
-					listener.onDimensionChange(this@VideoPlayer)
-				}
-			}
-
-			override fun onRenderedFirstFrame() {
-				listener.onRenderedFirstFrame(this@VideoPlayer)
-			}
-
-			override fun onPlayerError(error: PlaybackException) {
-				listener.onError(this@VideoPlayer, error.message)
-			}
-		})
+		player.addListener(playerListener)
 		if (rangeCallback == null) {
 			player.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
 		} else {
@@ -245,7 +247,11 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 		synchronized(rangeLock) {
 			rangeLock.notifyAll()
 		}
-		exoPlayer?.release()
+		exoPlayer?.let { player ->
+			player.removeListener(playerListener)
+			player.clearVideoSurface()
+			recyclePooledPlayer(player)
+		}
 		exoPlayer = null
 		try {
 			partialFile?.close()
@@ -363,6 +369,39 @@ class VideoPlayer(private val listener: Listener, private val seekAnyFrame: Bool
 	}
 
 	companion object {
+		private const val POOL_SIZE = 4
+
+		// Idle ExoPlayer instances kept for reuse (player + playback thread construction is
+		// skipped on the next init()). Main-thread only, like every ExoPlayer interaction here.
+		private val playerPool = ArrayDeque<ExoPlayer>()
+
+		/** Pre-create idle players (up to the pool cap) so upcoming [init] calls start warm. */
+		@JvmStatic
+		fun prewarm(count: Int) {
+			ConcurrentUtils.HANDLER.post {
+				while (playerPool.size < minOf(count, POOL_SIZE)) {
+					playerPool.addLast(ExoPlayer.Builder(MainApplication.getInstance()).build())
+				}
+			}
+		}
+
+		private fun obtainPooledPlayer(): ExoPlayer {
+			return playerPool.removeFirstOrNull()
+					?: ExoPlayer.Builder(MainApplication.getInstance()).build()
+		}
+
+		private fun recyclePooledPlayer(player: ExoPlayer) {
+			// A player that hit a playback error is not trusted for reuse.
+			if (playerPool.size >= POOL_SIZE || player.playerError != null) {
+				player.release()
+				return
+			}
+			player.playWhenReady = false
+			player.stop()
+			player.clearMediaItems()
+			playerPool.addLast(player)
+		}
+
 		private fun formatName(format: Format): String {
 			val mimeType = format.sampleMimeType ?: return "unknown"
 			return when (mimeType) {

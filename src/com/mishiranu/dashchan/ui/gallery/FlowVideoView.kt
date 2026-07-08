@@ -78,7 +78,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var active = false
 	private var started = false
 	private var reportedFailure = false
-	private var failedHint = false
+	private var renderedFirstFrame = false
+	private var aspectKnown = false
 	private var downloadProgress = 0L
 	private var downloadMax = 0L
 
@@ -92,6 +93,10 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 	init {
 		setBackgroundColor(Color.BLACK)
+		// Opaque: the SurfaceView behind punches a hole through the window, and its first
+		// frame can render stretched before the aspect-ratio layout settles - nothing may
+		// shine through around the fit-centered thumbnail while the cover is up.
+		coverView.setBackgroundColor(Color.BLACK)
 		coverView.scaleType = ImageView.ScaleType.FIT_CENTER
 		addView(coverView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
 		addView(progressBar, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
@@ -181,14 +186,11 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		return textView
 	}
 
-	/** [failed] marks a video the feed already knows is unplayable: show only the cover,
-	 *  never start a player (the feed glides past such pages). */
-	fun bind(chan: Chan, galleryItem: GalleryItem, callback: Callback, failed: Boolean) {
+	fun bind(chan: Chan, galleryItem: GalleryItem, callback: Callback) {
 		recycle()
 		this.chan = chan
 		this.galleryItem = galleryItem
 		this.callback = callback
-		failedHint = failed
 		reportedFailure = false
 		this.uri = galleryItem.getFileUri(chan)
 		coverView.visibility = VISIBLE
@@ -201,7 +203,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 	/** Begin buffering (download + ready player) without forcing playback. */
 	fun prepare() {
-		if (!started && !failedHint) {
+		if (!started) {
 			start()
 		}
 	}
@@ -209,9 +211,6 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	/** Play/resume when centered (true); pause when off-center/off-screen (false). */
 	fun setActive(active: Boolean) {
 		this.active = active
-		if (failedHint) {
-			return
-		}
 		if (active) {
 			prepare()
 			player?.setPlaying(true)
@@ -299,6 +298,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		player = null
 		videoWrapper?.let { removeView(it) }
 		videoWrapper = null
+		renderedFirstFrame = false
+		aspectKnown = false
 		progressBar.visibility = GONE
 		errorView.visibility = GONE
 		configurationView.removeAllViews()
@@ -330,6 +331,14 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		} else {
 			controlsView.alpha = 0f
 			controlsView.visibility = GONE
+		}
+	}
+
+	// Only drop the cover once a frame is rendered AND the surface has its true aspect
+	// ratio - hiding it earlier exposes a stretched full-bleed first frame.
+	private fun maybeHideCover() {
+		if (renderedFirstFrame && aspectKnown) {
+			coverView.visibility = GONE
 		}
 	}
 
@@ -367,6 +376,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 			}
 			progressBar.visibility = GONE
 			val dimensions = player.getDimensions()
+			aspectKnown = dimensions.y > 0
 			val wrapper = AspectRatioFrameLayout(context)
 			wrapper.setAspectRatio(if (dimensions.y > 0) dimensions.x.toFloat() / dimensions.y else 0f)
 			wrapper.addView(player.getVideoView(context),
@@ -423,13 +433,16 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 				val dimensions = player.getDimensions()
 				if (dimensions.y > 0) {
 					videoWrapper?.setAspectRatio(dimensions.x.toFloat() / dimensions.y)
+					aspectKnown = true
+					maybeHideCover()
 				}
 			}
 		}
 
 		override fun onRenderedFirstFrame(player: VideoPlayer) {
 			if (player == this@FlowVideoView.player) {
-				coverView.visibility = GONE
+				renderedFirstFrame = true
+				maybeHideCover()
 			}
 		}
 	}

@@ -21,6 +21,7 @@ import chan.content.Chan
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.content.service.DownloadService
+import com.mishiranu.dashchan.media.VideoPlayer
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.widget.ClickableToast
 import kotlin.math.abs
@@ -36,10 +37,8 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		var chan: Chan? = null
 		/** The full gallery attachment list (images + videos), used to switch back to the gallery. */
 		var allItems: List<GalleryItem>? = null
-		/** The video-only subset actually shown in the feed. */
-		var items: List<GalleryItem>? = null
-		/** Videos that failed to download or play; the feed glides past them. */
-		val failedItems = HashSet<GalleryItem>()
+		/** The video-only subset actually shown in the feed; unplayable videos are removed. */
+		var items: MutableList<GalleryItem>? = null
 		var threadTitle: String? = null
 		/** Index within [items] to open at; -1 means the first video. */
 		var startIndex = -1
@@ -50,6 +49,13 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 	private val snapHelper = PagerSnapHelper()
 	private var currentPosition = -1
 	private var bottomInset = 0
+
+	/**
+	 * Rotation of the virtual-position -> item mapping: page [position] shows
+	 * items[(position + itemsOffset) mod size]. Re-anchored when an unplayable video is
+	 * removed so the pages currently laid out keep their items and playback is undisturbed.
+	 */
+	private var itemsOffset = 0
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -75,10 +81,19 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 
 	override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
 			savedInstanceState: Bundle?): View {
+		// Warm ExoPlayer instances so the first pages skip player construction.
+		VideoPlayer.prewarm(3)
 		val recyclerView = RecyclerView(requireContext())
 		this.recyclerView = recyclerView
 		recyclerView.setBackgroundColor(Color.BLACK)
-		recyclerView.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false)
+		recyclerView.layoutManager = object : LinearLayoutManager(requireContext(), RecyclerView.VERTICAL, false) {
+			// Lay out (and thus bind and pre-buffer) one full page beyond each edge, so the
+			// neighbouring videos are downloaded and their decoders readied before the swipe.
+			override fun calculateExtraLayoutSpace(state: RecyclerView.State, extraLayoutSpace: IntArray) {
+				extraLayoutSpace[0] = height
+				extraLayoutSpace[1] = height
+			}
+		}
 		recyclerView.setHasFixedSize(true)
 		// Keep neighbours bound so the next page can be pre-buffered.
 		recyclerView.setItemViewCacheSize(2)
@@ -109,14 +124,6 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 			recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
 				override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
 					updateActive(findCenterPosition(rv))
-				}
-
-				override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
-					if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-						// Re-check after a drag settles: a glide past an unplayable page is
-						// suppressed while the finger is down.
-						updateActive(findCenterPosition(rv))
-					}
 				}
 			})
 			// Start in the middle of the virtual (looping) range, offset to the requested video,
@@ -178,65 +185,25 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 	}
 
 	private fun updateActive(position: Int) {
-		if (position == RecyclerView.NO_POSITION) {
+		if (position == RecyclerView.NO_POSITION || position == currentPosition) {
 			return
 		}
 		val recyclerView = recyclerView ?: return
-		val previousPosition = currentPosition
-		if (position != previousPosition) {
-			(recyclerView.findViewHolderForAdapterPosition(previousPosition) as? Holder)
-					?.videoView?.setActive(false)
-			currentPosition = position
-		}
-		if (itemAt(position)?.let { it in viewModel.failedItems } == true) {
-			// On an unplayable page - glide onward in the direction of travel. While the
-			// user is dragging, do nothing: the settle callback re-runs this check.
-			if (recyclerView.scrollState != RecyclerView.SCROLL_STATE_DRAGGING) {
-				val direction = if (previousPosition != RecyclerView.NO_POSITION
-						&& position < previousPosition) -1 else 1
-				val next = nextPlayablePosition(position, direction)
-				if (next != position) {
-					// Posted: may be called from a scroll callback.
-					recyclerView.post { this.recyclerView?.smoothScrollToPosition(next) }
-				}
-			}
-			return
-		}
-		if (position != previousPosition) {
-			(recyclerView.findViewHolderForAdapterPosition(position) as? Holder)?.videoView?.setActive(true)
-			// Pre-buffer the adjacent pages so the next swipe plays instantly.
-			preload(position + 1)
-			preload(position - 1)
-		}
+		(recyclerView.findViewHolderForAdapterPosition(currentPosition) as? Holder)?.videoView?.setActive(false)
+		currentPosition = position
+		(recyclerView.findViewHolderForAdapterPosition(position) as? Holder)?.videoView?.setActive(true)
+		// Pre-buffer the adjacent pages so the next swipe plays instantly.
+		preload(position + 1)
+		preload(position - 1)
 	}
 
 	private fun itemAt(position: Int): GalleryItem? {
 		val items = viewModel.items ?: return null
-		return if (position >= 0 && items.isNotEmpty()) items[position % items.size] else null
-	}
-
-	/** The nearest position in [direction] whose video is still considered playable. */
-	private fun nextPlayablePosition(position: Int, direction: Int): Int {
-		val items = viewModel.items ?: return position
-		var candidate = position
-		repeat(items.size) {
-			candidate += direction
-			if (candidate < 0) {
-				return position
-			}
-			if (items[candidate % items.size] !in viewModel.failedItems) {
-				return candidate
-			}
-		}
-		return position
+		return if (position >= 0 && items.isNotEmpty()) items[(position + itemsOffset).mod(items.size)] else null
 	}
 
 	private fun preload(position: Int) {
 		if (position < 0) {
-			return
-		}
-		if (itemAt(position)?.let { it in viewModel.failedItems } == true) {
-			// Don't waste a player (and repeated failures) on a known-bad video.
 			return
 		}
 		(recyclerView?.findViewHolderForAdapterPosition(position) as? Holder)?.videoView?.prepare()
@@ -252,8 +219,8 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		}
 
 		override fun onBindViewHolder(holder: Holder, position: Int) {
-			val item = items[position % items.size]
-			holder.videoView.bind(chan, item, this@FlowDialog, item in viewModel.failedItems)
+			val item = itemAt(position) ?: return
+			holder.videoView.bind(chan, item, this@FlowDialog)
 			holder.videoView.setBottomInset(bottomInset)
 			if (position == currentPosition) {
 				holder.videoView.setActive(true)
@@ -307,34 +274,66 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 
 	override fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem) {
 		val items = viewModel.items ?: return
-		if (!viewModel.failedItems.add(galleryItem)) {
+		val index = items.indexOfFirst { it === galleryItem }
+		if (index < 0) {
+			// Already removed (the failure was reported through more than one path).
 			return
 		}
-		if (viewModel.failedItems.size >= items.size) {
-			// Nothing playable left in the feed.
+		if (items.size <= 1) {
+			// The only remaining video is unplayable - nothing left to show.
 			ClickableToast.show(R.string.playback_error)
 			dismiss()
 			return
 		}
-		// If the failure happened on the page being watched, glide to the next playable one.
-		// Failed neighbours need no action: preload skips them and updateActive glides past.
-		if (currentHolder()?.videoView === view) {
-			val next = nextPlayablePosition(currentPosition, 1)
-			if (next != currentPosition) {
-				recyclerView?.smoothScrollToPosition(next)
+		val recyclerView = recyclerView ?: return
+		val adapter = recyclerView.adapter ?: return
+		val windowStart = currentPosition - REBIND_WINDOW
+		val windowEnd = currentPosition + REBIND_WINDOW
+		val oldWindowItems = (windowStart..windowEnd).map { itemAt(it) }
+		val oldSize = items.size
+		val currentItem = itemAt(currentPosition)
+		items.removeAt(index)
+		val newSize = items.size
+		if (newSize == 1 || currentPosition < 0) {
+			// The looping virtual range collapses (or nothing is centered yet): full reset.
+			itemsOffset = 0
+			currentPosition = -1
+			adapter.notifyDataSetChanged()
+			val position = if (newSize > 1) LOOP_COUNT / 2 - LOOP_COUNT / 2 % newSize else 0
+			recyclerView.scrollToPosition(position)
+			recyclerView.post { if (currentPosition < 0) updateActive(position) }
+			return
+		}
+		// Re-anchor the mapping at the current page: to the current video if it survived,
+		// otherwise to the video that followed the removed one, which then takes over the
+		// current page in place. Pages around the anchor keep their items (a contiguous
+		// arc that avoids the removed index stays contiguous), so playback is undisturbed.
+		val anchorNewIndex = if (currentItem === galleryItem) index % newSize
+				else items.indexOfFirst { it === currentItem }.coerceAtLeast(0)
+		itemsOffset = (anchorNewIndex - currentPosition).mod(newSize)
+		// Everything outside the laid-out window is at most in the view cache: invalidate
+		// it wholesale so stale pages rebind when reused.
+		if (windowStart > 0) {
+			adapter.notifyItemRangeChanged(0, windowStart)
+		}
+		adapter.notifyItemRangeChanged(windowEnd + 1, adapter.itemCount - windowEnd - 1)
+		// Inside the window, rebind only pages whose video actually changed.
+		(windowStart..windowEnd).forEachIndexed { i, position ->
+			if (position >= 0 && itemAt(position) !== oldWindowItems[i]) {
+				adapter.notifyItemChanged(position)
 			}
 		}
 	}
 
 	override fun onVideoEnded(view: FlowVideoView) {
 		val recyclerView = recyclerView ?: return
-		val items = viewModel.items ?: return
-		if (items.size - viewModel.failedItems.size <= 1) {
-			// Nothing to advance to — loop the single (remaining) clip.
+		val size = viewModel.items?.size ?: 0
+		if (size <= 1) {
+			// Nothing to advance to — loop the single clip.
 			view.replay()
 		} else if (currentHolder()?.videoView === view) {
-			// Advance to the next playable page (wraps around thanks to the looping adapter).
-			recyclerView.smoothScrollToPosition(nextPlayablePosition(currentPosition, 1))
+			// Advance to the next page (wraps around thanks to the looping adapter).
+			recyclerView.smoothScrollToPosition(currentPosition + 1)
 		}
 	}
 
@@ -342,9 +341,13 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		private val TAG = FlowDialog::class.java.name
 		private val GALLERY_TAG = GalleryOverlay::class.java.name
 		private const val LOOP_COUNT = 1_000_000
+
+		// Pages within this distance of the current one may be laid out or cached with a
+		// live player; on removal they are rebound only if their video actually changed.
+		private const val REBIND_WINDOW = 2
 		private var pendingChan: Chan? = null
 		private var pendingAllItems: List<GalleryItem>? = null
-		private var pendingItems: List<GalleryItem>? = null
+		private var pendingItems: MutableList<GalleryItem>? = null
 		private var pendingStartItem: GalleryItem? = null
 		private var pendingThreadTitle: String? = null
 
@@ -355,7 +358,7 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		@JvmStatic
 		fun show(fragmentManager: FragmentManager, chan: Chan, galleryItems: List<GalleryItem>,
 				startItem: GalleryItem?, threadTitle: String?) {
-			val videoItems = galleryItems.filter { it.isVideo(chan) }
+			val videoItems = galleryItems.filterTo(mutableListOf()) { it.isVideo(chan) }
 			if (videoItems.isEmpty()) {
 				ClickableToast.show(R.string.no_video_attachments)
 				return
