@@ -25,7 +25,6 @@
 		android:icon="@mipmap/ic_launcher"
 		android:logo="@mipmap/ic_logo"
 		android:theme="@style/Theme.Launcher"
-		android:largeHeap="true"
 		android:enableOnBackInvokedCallback="false"
 		android:allowBackup="true"
 		android:fullBackupContent="true"
