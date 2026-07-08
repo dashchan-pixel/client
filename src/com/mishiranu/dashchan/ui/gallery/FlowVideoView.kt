@@ -78,6 +78,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var active = false
 	private var started = false
 	private var reportedFailure = false
+	private var failedHint = false
 	private var downloadProgress = 0L
 	private var downloadMax = 0L
 
@@ -180,11 +181,14 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		return textView
 	}
 
-	fun bind(chan: Chan, galleryItem: GalleryItem, callback: Callback) {
+	/** [failed] marks a video the feed already knows is unplayable: show only the cover,
+	 *  never start a player (the feed glides past such pages). */
+	fun bind(chan: Chan, galleryItem: GalleryItem, callback: Callback, failed: Boolean) {
 		recycle()
 		this.chan = chan
 		this.galleryItem = galleryItem
 		this.callback = callback
+		failedHint = failed
 		reportedFailure = false
 		this.uri = galleryItem.getFileUri(chan)
 		coverView.visibility = VISIBLE
@@ -197,7 +201,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 	/** Begin buffering (download + ready player) without forcing playback. */
 	fun prepare() {
-		if (!started) {
+		if (!started && !failedHint) {
 			start()
 		}
 	}
@@ -205,6 +209,9 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	/** Play/resume when centered (true); pause when off-center/off-screen (false). */
 	fun setActive(active: Boolean) {
 		this.active = active
+		if (failedHint) {
+			return
+		}
 		if (active) {
 			prepare()
 			player?.setPlaying(true)
