@@ -77,6 +77,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private var allowRangeRequests = true
 	private var active = false
 	private var started = false
+	private var reportedFailure = false
 	private var downloadProgress = 0L
 	private var downloadMax = 0L
 
@@ -184,6 +185,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		this.chan = chan
 		this.galleryItem = galleryItem
 		this.callback = callback
+		reportedFailure = false
 		this.uri = galleryItem.getFileUri(chan)
 		coverView.visibility = VISIBLE
 		coverView.setImageDrawable(null)
@@ -265,6 +267,14 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		progressBar.visibility = GONE
 		errorView.text = context.getString(R.string.playback_error)
 		errorView.visibility = VISIBLE
+		val galleryItem = galleryItem
+		val callback = callback
+		if (!reportedFailure && galleryItem != null && callback != null) {
+			reportedFailure = true
+			// Posted: the feed removes the item from its adapter, which must not
+			// happen re-entrantly from a bind or layout pass.
+			handler.post { callback.onVideoFailed(this, galleryItem) }
+		}
 	}
 
 	fun recycle() {
@@ -532,6 +542,9 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		fun getDownloadBinder(): DownloadService.Binder?
 		fun getThreadTitle(): String?
 		fun onVideoEnded(view: FlowVideoView)
+
+		/** The video cannot be played (download or playback error) - drop it from the feed. */
+		fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem)
 
 		/** Switch to the regular gallery, opened at this same attachment. */
 		fun onSwitchToGallery(galleryItem: GalleryItem)

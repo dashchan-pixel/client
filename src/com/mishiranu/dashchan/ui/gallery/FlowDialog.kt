@@ -36,8 +36,8 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		var chan: Chan? = null
 		/** The full gallery attachment list (images + videos), used to switch back to the gallery. */
 		var allItems: List<GalleryItem>? = null
-		/** The video-only subset actually shown in the feed. */
-		var items: List<GalleryItem>? = null
+		/** The video-only subset actually shown in the feed; unplayable videos are removed. */
+		var items: MutableList<GalleryItem>? = null
 		var threadTitle: String? = null
 		/** Index within [items] to open at; -1 means the first video. */
 		var startIndex = -1
@@ -249,6 +249,37 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		dismiss()
 	}
 
+	override fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem) {
+		val items = viewModel.items ?: return
+		val index = items.indexOfFirst { it === galleryItem }
+		if (index < 0) {
+			// Already removed (the failure was reported through more than one path).
+			return
+		}
+		if (items.size <= 1) {
+			// The only remaining video is unplayable - nothing left to show.
+			ClickableToast.show(R.string.playback_error)
+			dismiss()
+			return
+		}
+		val recyclerView = recyclerView ?: return
+		val currentItem = if (currentPosition >= 0) items[currentPosition % items.size] else null
+		items.removeAt(index)
+		// Re-anchor the centered page: keep the current video if it survived, otherwise
+		// stay in place, which now shows the video that followed the removed one.
+		val anchorIndex = when {
+			currentItem == null -> 0
+			currentItem === galleryItem -> currentPosition % items.size
+			else -> items.indexOfFirst { it === currentItem }.coerceAtLeast(0)
+		}
+		val newPosition = if (items.size > 1)
+				LOOP_COUNT / 2 - LOOP_COUNT / 2 % items.size + anchorIndex else 0
+		currentPosition = -1
+		recyclerView.adapter?.notifyDataSetChanged()
+		recyclerView.scrollToPosition(newPosition)
+		recyclerView.post { if (currentPosition < 0) updateActive(newPosition) }
+	}
+
 	override fun onVideoEnded(view: FlowVideoView) {
 		val recyclerView = recyclerView ?: return
 		val size = viewModel.items?.size ?: 0
@@ -267,7 +298,7 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		private const val LOOP_COUNT = 1_000_000
 		private var pendingChan: Chan? = null
 		private var pendingAllItems: List<GalleryItem>? = null
-		private var pendingItems: List<GalleryItem>? = null
+		private var pendingItems: MutableList<GalleryItem>? = null
 		private var pendingStartItem: GalleryItem? = null
 		private var pendingThreadTitle: String? = null
 
@@ -278,7 +309,7 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		@JvmStatic
 		fun show(fragmentManager: FragmentManager, chan: Chan, galleryItems: List<GalleryItem>,
 				startItem: GalleryItem?, threadTitle: String?) {
-			val videoItems = galleryItems.filter { it.isVideo(chan) }
+			val videoItems = galleryItems.filterTo(mutableListOf()) { it.isVideo(chan) }
 			if (videoItems.isEmpty()) {
 				ClickableToast.show(R.string.no_video_attachments)
 				return
