@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
@@ -23,7 +24,6 @@ import chan.http.HttpRequest
 import chan.util.CommonUtils
 import chan.util.StringUtils
 import com.mishiranu.dashchan.BuildConfig
-import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.HttpHolderTask
@@ -127,7 +127,6 @@ class ThemesFragment : BaseListFragment() {
 				.setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
 	}
 
-	@Suppress("DEPRECATION")
 	override fun onMenuItemSelected(item: MenuItem): Boolean {
 		if (item.itemId == R.id.menu_add_theme) {
 			// Check Android supports "application/json" MIME-type
@@ -138,43 +137,42 @@ class ThemesFragment : BaseListFragment() {
 			// SHOW_ADVANCED to show folder navigation
 			val intent = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE)
 					.setType(mimeType).putExtra("android.content.extra.SHOW_ADVANCED", true)
-			startActivityForResult(intent, C.REQUEST_CODE_ATTACH)
+			addThemeLauncher.launch(intent)
 			return true
 		}
 		return super.onMenuItemSelected(item)
 	}
 
-	@Suppress("DEPRECATION")
-	override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-		if (resultCode == Activity.RESULT_OK) {
-			if (requestCode == C.REQUEST_CODE_ATTACH) {
-				val uri = data!!.data
-				val fileHolder = if (uri != null) FileHolder.obtain(uri) else null
-				if (fileHolder != null) {
-					val output = ByteArrayOutputStream()
-					val success = try {
-						fileHolder.openInputStream().use { input ->
-							IOUtils.copyStream(input, output)
-						}
-						true
-					} catch (e: IOException) {
-						e.printStackTrace()
-						false
+	private val addThemeLauncher = registerForActivityResult(
+			ActivityResultContracts.StartActivityForResult()) { result ->
+		val data = result.data
+		if (result.resultCode == Activity.RESULT_OK && data != null) {
+			val uri = data.data
+			val fileHolder = if (uri != null) FileHolder.obtain(uri) else null
+			if (fileHolder != null) {
+				val output = ByteArrayOutputStream()
+				val success = try {
+					fileHolder.openInputStream().use { input ->
+						IOUtils.copyStream(input, output)
 					}
-					val array = output.toByteArray()
-					if (success && array.isNotEmpty()) {
-						val jsonObject = try {
-							JSONObject(String(array))
-						} catch (e: JSONException) {
-							null
-						}
-						val theme = if (jsonObject != null)
-								ThemeEngine.parseTheme(requireContext(), jsonObject) else null
-						if (theme != null) {
-							installTheme(theme, false)
-						} else {
-							ClickableToast.show(R.string.invalid_data_format)
-						}
+					true
+				} catch (e: IOException) {
+					e.printStackTrace()
+					false
+				}
+				val array = output.toByteArray()
+				if (success && array.isNotEmpty()) {
+					val jsonObject = try {
+						JSONObject(String(array))
+					} catch (e: JSONException) {
+						null
+					}
+					val theme = if (jsonObject != null)
+							ThemeEngine.parseTheme(requireContext(), jsonObject) else null
+					if (theme != null) {
+						installTheme(theme, false)
+					} else {
+						ClickableToast.show(R.string.invalid_data_format)
 					}
 				}
 			}

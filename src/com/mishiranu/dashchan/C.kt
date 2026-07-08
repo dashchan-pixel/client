@@ -30,9 +30,6 @@ object C {
 	const val ACTION_PLAYER = "com.mishiranu.dashchan.action.PLAYER"
 	const val ACTION_BROWSER = "com.mishiranu.dashchan.action.BROWSER"
 
-	const val REQUEST_CODE_ATTACH = 1
-	const val REQUEST_CODE_OPEN_URI_TREE = 2
-
 	const val NOTIFICATION_ID_POSTING = 1
 	const val NOTIFICATION_ID_DOWNLOADING = 2
 	const val NOTIFICATION_ID_AUDIO_PLAYER = 3

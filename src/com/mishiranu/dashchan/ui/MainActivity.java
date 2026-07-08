@@ -31,6 +31,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.Toolbar;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.IntentCompat;
@@ -427,19 +429,16 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		return CacheManager.getInstance().getInternalCacheFile("saved-pages");
 	}
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-
-		if (requestCode == C.REQUEST_CODE_OPEN_URI_TREE) {
-			boolean cancel = resultCode != RESULT_OK;
-			storageRequestState = StorageRequestState.NONE;
-			if (!cancel && data != null) {
-				Preferences.setDownloadUriTree(this, data.getData(), data.getFlags());
-			}
-			handleStorageRequestResult(cancel);
-		}
-	}
+	private final ActivityResultLauncher<Intent> openUriTreeLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(), result -> {
+				boolean cancel = result.getResultCode() != RESULT_OK;
+				storageRequestState = StorageRequestState.NONE;
+				Intent data = result.getData();
+				if (!cancel && data != null) {
+					Preferences.setDownloadUriTree(this, data.getData(), data.getFlags());
+				}
+				handleStorageRequestResult(cancel);
+			});
 
 	private ContentFragment getCurrentFragment() {
 		FragmentManager fragmentManager = getSupportFragmentManager();
@@ -1962,7 +1961,7 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 							.buildRootUri("com.android.externalstorage.documents", "primary"));
 				
 					try {
-						startActivityForResult(intent, C.REQUEST_CODE_OPEN_URI_TREE);
+						openUriTreeLauncher.launch(intent);
 					} catch (ActivityNotFoundException e) {
 						ClickableToast.show(R.string.unknown_address);
 						storageRequestState = StorageRequestState.NONE;

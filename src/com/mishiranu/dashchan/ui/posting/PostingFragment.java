@@ -42,13 +42,14 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.os.BundleCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
 import com.mishiranu.dashchan.content.Preferences;
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask;
@@ -940,7 +941,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 				intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
 			
 				try {
-					startActivityForResult(intent, C.REQUEST_CODE_ATTACH);
+					attachLauncher.launch(intent);
 				} catch (ActivityNotFoundException e) {
 					ClickableToast.show(R.string.unknown_address);
 				}
@@ -1238,11 +1239,10 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 		updateSendButtonState();
 	}
 
-	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode == Activity.RESULT_OK) {
-			switch (requestCode) {
-				case C.REQUEST_CODE_ATTACH: {
+	private final ActivityResultLauncher<Intent> attachLauncher = registerForActivityResult(
+			new ActivityResultContracts.StartActivityForResult(), result -> {
+				Intent data = result.getData();
+				if (result.getResultCode() == Activity.RESULT_OK && data != null) {
 					LinkedHashSet<Uri> uris = new LinkedHashSet<>();
 					Uri dataUri = data.getData();
 					if (dataUri != null) {
@@ -1258,7 +1258,7 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 							}
 						}
 					}
-				
+
 					ArrayList<Pair<String, String>> attachmentsToAdd = new ArrayList<>();
 					for (Uri uri : uris) {
 						FileHolder fileHolder = FileHolder.obtain(uri);
@@ -1270,11 +1270,8 @@ public class PostingFragment extends ContentFragment implements FragmentHandler.
 						}
 					}
 					handleAttachmentsToAdd(attachmentsToAdd, uris.size());
-					break;
 				}
-			}
-		}
-	}
+			});
 
 	private void handleAttachmentsToAdd(ArrayList<Pair<String, String>> attachmentsToAdd, int addedCount) {
 		int oldCount = attachments.size();
