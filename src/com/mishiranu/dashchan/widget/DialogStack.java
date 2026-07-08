@@ -234,8 +234,6 @@ public class DialogStack<T extends DialogStack.ViewFactory<T>> implements Iterab
 			layoutParams.dimAmount = dialogDimAmount;
 			// For hierarchy view (layout inspector)
 			layoutParams.setTitle(context.getPackageName() + "/" + getClass().getName());
-			window.setStatusBarColor(0x00000000);
-			window.setNavigationBarColor(0x00000000);
 			ViewUtils.setWindowLayoutFullscreen(window);
 		
 			dialog.show();

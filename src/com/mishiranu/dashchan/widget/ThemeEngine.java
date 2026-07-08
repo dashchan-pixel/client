@@ -25,7 +25,6 @@ import android.widget.TextView;
 import android.widget.Toolbar;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.graphics.ColorUtils;
 import chan.util.StringUtils;
 import com.mishiranu.dashchan.C;
 import com.mishiranu.dashchan.R;
@@ -53,9 +52,6 @@ import org.json.JSONObject;
 
 public class ThemeEngine {
 	private static final ThemeEngine INSTANCE = new ThemeEngine();
-
-	private static final int STATUS_OVERLAY_LIGHT = 0x22000000;
-	private static final int STATUS_OVERLAY_DARK = 0x33000000;
 
 	public static class Theme implements Comparable<Theme> {
 		public enum Base {
@@ -523,13 +519,6 @@ public class ThemeEngine {
 			Activity activity = (Activity) context;
 			activity.getWindow().getDecorView().setBackgroundColor(theme.window);
 			int toolbarColor = theme.primary | 0xff000000;
-			float[] hsl = new float[3];
-			ColorUtils.colorToHSL(toolbarColor, hsl);
-			// Interpolate between 0.25f and 0.5f
-			float lightness = Math.max(0f, Math.min(hsl[2] * 4f - 1f, 1f));
-			int statusBarColor = GraphicsUtils.mixColors(theme.primary,
-					ColorUtils.blendARGB(STATUS_OVERLAY_DARK, STATUS_OVERLAY_LIGHT, lightness));
-			activity.getWindow().setStatusBarColor(statusBarColor);
 			ActivityManager.TaskDescription taskDescription;
 			taskDescription = new ActivityManager.TaskDescription.Builder()
 					.setIcon(R.mipmap.ic_launcher).setPrimaryColor(toolbarColor).build();

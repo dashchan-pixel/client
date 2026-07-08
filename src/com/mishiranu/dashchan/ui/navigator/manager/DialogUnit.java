@@ -1213,8 +1213,6 @@ public class DialogUnit {
 		} finally {
 			typedArray.recycle();
 		}
-		window.setStatusBarColor(0x00000000);
-		window.setNavigationBarColor(0x00000000);
 		ViewUtils.setWindowLayoutFullscreen(window);
 	
 		ThemeEngine.markDecorAsDialog(window.getDecorView());

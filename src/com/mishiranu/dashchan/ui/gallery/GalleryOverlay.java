@@ -312,9 +312,6 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		}
 		Window window = getWindow();
 		if (window != null) {
-			int color = ACTION_BAR_COLOR;
-			window.setStatusBarColor(color);
-			window.setNavigationBarColor(color);
 			ViewUtils.setWindowLayoutFullscreen(window);
 		}
 	
@@ -536,23 +533,18 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 
 		private final int fromActionBarAlpha;
 		private final int toActionBarAlpha;
-		private final int fromStatusBarAlpha;
-		private final int toStatusBarAlpha;
 
 		private static final int INTERVAL = 200;
 
-		public CornerAnimator(int actionBarAlpha, int statusBarAlpha) {
+		public CornerAnimator(int actionBarAlpha, int fallbackAlpha) {
 			if (cornerAnimator != null) {
 				cornerAnimator.cancel();
 			}
 			Drawable drawable = getDialog().getActionBarView().getBackground();
 			fromActionBarAlpha = Color.alpha(drawable instanceof ColorDrawable
-					? ((ColorDrawable) drawable).getColor() : statusBarAlpha);
+					? ((ColorDrawable) drawable).getColor() : fallbackAlpha);
 			toActionBarAlpha = actionBarAlpha;
-			fromStatusBarAlpha = Color.alpha(getWindow().getStatusBarColor());
-			toStatusBarAlpha = statusBarAlpha;
-		
-			if (fromActionBarAlpha != toActionBarAlpha || fromStatusBarAlpha != toStatusBarAlpha) {
+			if (fromActionBarAlpha != toActionBarAlpha) {
 				cornerAnimator = this;
 				run();
 			}
@@ -570,11 +562,6 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 				if (actionContextBar != null) {
 					actionContextBar.setBackgroundColor(actionBarColor);
 				}
-				int statusBarColorAlpha = (int) AnimationUtils.lerp(fromStatusBarAlpha, toStatusBarAlpha, t);
-				int color = (statusBarColorAlpha << 24) | (0x00ffffff & ACTION_BAR_COLOR);
-				getWindow().setStatusBarColor(color);
-				getWindow().setNavigationBarColor(color);
-			
 				if (t < 1f) {
 					rootView.postOnAnimation(this);
 				} else if (cornerAnimator == this) {

@@ -121,16 +121,15 @@ public class ExpandedScreen implements RecyclerScrollTracker.OnScrollListener {
 		expandingEnabled = init.expandingEnabled;
 		fullScreenLayoutEnabled = init.fullScreenLayoutEnabled;
 		activity = init.activity;
-		Window window = activity.getWindow();
 		ForegroundDrawable contentForeground;
 		ForegroundDrawable statusBarContentForeground;
 		ForegroundDrawable statusBarDrawerForeground;
 		List<ForegroundDrawable> foregroundDrawables;
 		if (fullScreenLayoutEnabled) {
-			int statusBarColor = window.getStatusBarColor() | Color.BLACK;
-			int navigationBarColor = window.getNavigationBarColor() | Color.BLACK;
-			window.setStatusBarColor(Color.TRANSPARENT);
-			window.setNavigationBarColor(Color.TRANSPARENT);
+			// Edge-to-edge is enforced: system bars are transparent and the scrims below
+			// draw the opaque bar backgrounds the window colors used to provide.
+			int statusBarColor = Color.BLACK;
+			int navigationBarColor = Color.BLACK;
 			contentForeground = new LollipopContentForeground(statusBarColor, navigationBarColor);
 			statusBarContentForeground = new LollipopStatusBarForeground(statusBarColor);
 			statusBarDrawerForeground = new LollipopDrawerForeground();
