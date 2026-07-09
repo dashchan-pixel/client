@@ -211,7 +211,7 @@ class UpdateFragment : BaseListFragment {
 			targets.add(getString(R.string.keep_current_version))
 			repositories.add(null)
 			for (packageItem in applicationItem.packageItems.subList(1, applicationItem.packageItems.size)) {
-				targets.add(packageItem.title)
+				targets.add(packageItem.title!!)
 				repositories.add(packageItem.repository)
 			}
 			targetIndex = listItem.targetIndex
@@ -219,7 +219,7 @@ class UpdateFragment : BaseListFragment {
 			targets.add(getString(R.string.dont_install))
 			repositories.add(null)
 			for (packageItem in applicationItem.packageItems) {
-				targets.add(packageItem.title)
+				targets.add(packageItem.title!!)
 				repositories.add(packageItem.repository)
 			}
 			targetIndex = listItem.targetIndex + 1
@@ -506,7 +506,7 @@ class UpdateFragment : BaseListFragment {
 			if (result != 0) {
 				return@Comparator result
 			}
-			result = lhs.title.compareTo(rhs.title)
+			result = StringUtils.emptyIfNull(lhs.title).compareTo(StringUtils.emptyIfNull(rhs.title))
 			if (result != 0) {
 				return@Comparator result
 			}
