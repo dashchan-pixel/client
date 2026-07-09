@@ -1,0 +1,6 @@
+* Flow: a vertical video feed for threads with swipe navigation, auto-advance and player controls; switch between the gallery and Flow at the same video from the attachment context menu
+* Predictive back navigation across the app
+* Faster video startup, frame-rate matching and smoother playback in the gallery
+* Live progress notifications for downloads and posting on Android 16
+* Update, themes and metadata repository URIs are now configurable
+* Internal modernization: all deprecated Android API usage removed, large parts of the app converted to Kotlin
