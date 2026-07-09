@@ -47,17 +47,12 @@ class AttachmentView(context: Context, attrs: AttributeSet?) :
 	private val colorMatrix2: ColorMatrix
 
 	init {
-		disableDrawingCacheCompat()
 		ViewUtils.setSelectableItemBackground(this)
 		// Use old context to obtain background color.
 		backgroundColor = ResourceUtils.getColor(context, R.attr.colorAttachmentBackground)
 		workColorMatrix = floatArrayOf(1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f)
 		colorMatrix1 = ColorMatrix(workColorMatrix)
 		colorMatrix2 = ColorMatrix(workColorMatrix)
-	}
-
-	@Suppress("DEPRECATION")
-	private fun disableDrawingCacheCompat() {
 	}
 
 	fun setCropEnabled(enabled: Boolean) {

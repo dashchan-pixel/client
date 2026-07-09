@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.webkit.DownloadListener;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -210,10 +211,9 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 	}
 
 	private class CustomWebViewClient extends WebViewClient {
-		@SuppressWarnings("deprecation")
 		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url) {
-			Uri uri = Uri.parse(url);
+		public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+			Uri uri = request.getUrl();
 			Chan chan = Chan.getPreferred(null, uri);
 			if (chan.name != null) {
 				ChanLocator.NavigationData navigationData;
@@ -242,7 +242,7 @@ public class BrowserFragment extends ContentFragment implements DownloadListener
 					return true;
 				}
 			}
-			view.loadUrl(url);
+			view.loadUrl(uri.toString());
 			return true;
 		}
 

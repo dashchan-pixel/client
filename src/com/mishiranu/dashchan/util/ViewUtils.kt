@@ -20,20 +20,15 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowInsets
-import android.view.WindowManager
 import android.widget.EdgeEffect
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import com.mishiranu.dashchan.R
 
 object ViewUtils {
 	const val STATUS_OVERLAY_TRANSPARENT = 0x4d000000
-
-	@Suppress("DEPRECATION")
-	const val SOFT_INPUT_ADJUST_RESIZE_COMPAT = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
 
 	@JvmField
 	val ALERT_DIALOG_LONGER_TITLE = DialogInterface.OnShowListener { dialog ->
@@ -94,8 +89,8 @@ object ViewUtils {
 	@JvmStatic
 	fun setTextSizeScaled(textView: TextView, sizeSp: Int) {
 		// Avoid fractional sizes (the same logic is used for sizes specified in XML)
-		@Suppress("DEPRECATION")
-		val sizePx = (sizeSp * textView.resources.displayMetrics.scaledDensity + 0.5f).toInt()
+		val sizePx = (TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizeSp.toFloat(),
+				textView.resources.displayMetrics) + 0.5f).toInt()
 		textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, sizePx.toFloat())
 	}
 
@@ -221,8 +216,7 @@ object ViewUtils {
 
 	@JvmStatic
 	fun setNewMarginRelative(view: View, start: Int?, top: Int?, end: Int?, bottom: Int?) {
-		@Suppress("DEPRECATION")
-		if (ViewCompat.getLayoutDirection(view) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+		if (view.layoutDirection == View.LAYOUT_DIRECTION_RTL) {
 			setNewMargin(view, end, top, start, bottom)
 		} else {
 			setNewMargin(view, start, top, end, bottom)

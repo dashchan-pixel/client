@@ -1,6 +1,5 @@
 package chan.content;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
@@ -81,9 +80,7 @@ public class ChanManager {
 	private static final String META_LIB_EXTENSION_TITLE = "lib.extension.title";
 	private static final String META_LIB_EXTENSION_SOURCE = "lib.extension.source";
 
-	@SuppressWarnings("deprecation")
-	private static final int PACKAGE_MANAGER_SIGNATURE_FLAGS = PackageManager.GET_SIGNATURES |
-			(PackageManager.GET_SIGNING_CERTIFICATES);
+	private static final int PACKAGE_MANAGER_SIGNATURE_FLAGS = PackageManager.GET_SIGNING_CERTIFICATES;
 
 	private final Chan fallbackChan;
 	private final Fingerprints applicationFingerprints;
@@ -279,7 +276,6 @@ public class ChanManager {
 		return Collections.unmodifiableMap(map);
 	}
 
-	@SuppressLint("PackageManagerGetSignatures")
 	private ChanManager() {
 		String packageName = MainApplication.getInstance().getPackageName();
 		Chan.Provider fallbackChanProvider = new Chan.Provider(null);
@@ -333,7 +329,6 @@ public class ChanManager {
 		}
 	}
 
-	@SuppressLint("PackageManagerGetSignatures")
 	private void registerReceiver() {
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -807,6 +802,8 @@ public class ChanManager {
 		return null;
 	}
 
+	// Resources.updateConfiguration is the only way to update an already-created Resources instance;
+	// extension Resources objects are cached and shared, so they can't be recreated per configuration.
 	@SuppressWarnings("deprecation")
 	public void updateConfiguration(Configuration newConfig, DisplayMetrics metrics) {
 		for (Extension extension : extensions.values()) {

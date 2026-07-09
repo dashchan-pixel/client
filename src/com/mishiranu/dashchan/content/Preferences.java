@@ -572,6 +572,8 @@ public class Preferences {
 
 	private static File externalStorageDirectory;
 
+	// Environment.getExternalStorageDirectory has no replacement for resolving the legacy
+	// path-based download directory preference; SAF is the non-legacy code path.
 	@SuppressWarnings("deprecation")
 	public static File getDownloadDirectoryLegacy() {
 		String path = getDownloadPathLegacy();

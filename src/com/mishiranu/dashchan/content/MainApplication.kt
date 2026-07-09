@@ -4,7 +4,6 @@ import android.annotation.TargetApi
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
-import android.content.res.Configuration
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import android.os.Process
@@ -47,7 +46,6 @@ class MainApplication : Application() {
 			}
 		}
 
-		LocaleManager.getInstance().updateConfiguration(resources.configuration)
 		if (isMainProcess()) {
 			Logger.init(this)
 			UserAgentProvider.initialize(this)
@@ -60,11 +58,6 @@ class MainApplication : Application() {
 		} else if (checkProcess(PROCESS_WEB_VIEW)) {
 			IOUtils.deleteRecursive(getWebViewCacheDir())
 		}
-	}
-
-	override fun onConfigurationChanged(newConfig: Configuration) {
-		super.onConfigurationChanged(newConfig)
-		LocaleManager.getInstance().updateConfiguration(newConfig)
 	}
 
 	val localizedContext: Context

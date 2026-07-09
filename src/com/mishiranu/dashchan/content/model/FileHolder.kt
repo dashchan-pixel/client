@@ -236,8 +236,7 @@ abstract class FileHolder {
 				var decoder: BitmapRegionDecoder? = null
 				try {
 					openInputStream().use { input ->
-						@Suppress("DEPRECATION")
-						decoder = BitmapRegionDecoder.newInstance(input, false)
+						decoder = BitmapRegionDecoder.newInstance(input)
 						return decoder!!.decodeRegion(Rect(0, 0, decoder!!.width, decoder!!.height), options)
 					}
 				} catch (e: IOException) {
@@ -400,17 +399,6 @@ abstract class FileHolder {
 							if (nameIndex >= 0 && sizeIndex >= 0) {
 								var name: String? = cursor.getString(nameIndex)
 								val size = cursor.getInt(sizeIndex)
-								if (name.isNullOrEmpty()) {
-									@Suppress("DEPRECATION")
-									val column = MediaStore.MediaColumns.DATA
-									val dataIndex = cursor.getColumnIndex(column)
-									if (dataIndex >= 0) {
-										val data = cursor.getString(dataIndex)
-										if (data != null) {
-											name = File(data).name
-										}
-									}
-								}
 								if (name.isNullOrEmpty()) {
 									val mimeTypeIndex =
 											cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)

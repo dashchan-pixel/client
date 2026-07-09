@@ -39,6 +39,9 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		inStorageRequest = savedInstanceState != null && savedInstanceState.getBoolean(EXTRA_IN_STORAGE_REQUEST)
+		parentFragmentManager.setFragmentResultListener(REQUEST_UPDATE_CACHE_SIZE, this) { _, _ ->
+			clearCachePreference?.invalidate()
+		}
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -179,8 +182,6 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 					.setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems!![which] = isChecked }
 					.setPositiveButton(android.R.string.ok) { _, _ ->
 						val clearingDialog = ClearingDialog(checkedItems!![0], checkedItems!![1])
-						@Suppress("DEPRECATION")
-						clearingDialog.setTargetFragment(parentFragment, 0)
 						clearingDialog.show(parentFragment!!.parentFragmentManager, ClearingDialog::class.java.name)
 					}
 					.setNegativeButton(android.R.string.cancel, null)
@@ -241,8 +242,7 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 		}
 
 		private fun sendUpdateCacheSize() {
-			@Suppress("DEPRECATION")
-			(targetFragment as MediaFragment).clearCachePreference?.invalidate()
+			parentFragmentManager.setFragmentResult(REQUEST_UPDATE_CACHE_SIZE, Bundle())
 		}
 
 		override fun onCancel(dialog: DialogInterface) {
@@ -283,6 +283,7 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 
 	companion object {
 		private const val EXTRA_IN_STORAGE_REQUEST = "inStorageRequest"
+		private const val REQUEST_UPDATE_CACHE_SIZE = "mediaUpdateCacheSize"
 
 		private val BUILDER_SUBDIRECTORY = ChanMarkup.MarkupBuilder { markup ->
 			markup.addTag("b", ChanMarkup.TAG_BOLD)

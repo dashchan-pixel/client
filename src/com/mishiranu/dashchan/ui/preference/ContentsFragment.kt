@@ -28,7 +28,18 @@ class ContentsFragment : PreferenceFragment() {
 	private lateinit var replyNotifications: CheckPreference
 	internal var clearCachePreference: Preference<Void>? = null
 
+	companion object {
+		private const val REQUEST_UPDATE_CACHE_SIZE = "contentsUpdateCacheSize"
+	}
+
 	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+
+	override fun onCreate(savedInstanceState: Bundle?) {
+		super.onCreate(savedInstanceState)
+		parentFragmentManager.setFragmentResultListener(REQUEST_UPDATE_CACHE_SIZE, this) { _, _ ->
+			clearCachePreference?.invalidate()
+		}
+	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
@@ -148,8 +159,6 @@ class ContentsFragment : PreferenceFragment() {
 					.setSingleChoiceItems(items, checkedIndex) { _, which -> checkedIndex = which }
 					.setPositiveButton(android.R.string.ok) { _, _ ->
 						val clearingDialog = ClearingDialog(checkedIndex == 1)
-						@Suppress("DEPRECATION")
-						clearingDialog.setTargetFragment(parentFragment, 0)
 						clearingDialog.show(parentFragment!!.parentFragmentManager, ClearingDialog::class.java.name)
 					}
 					.setNegativeButton(android.R.string.cancel, null)
@@ -219,8 +228,7 @@ class ContentsFragment : PreferenceFragment() {
 		}
 
 		private fun sendUpdateCacheSize() {
-			@Suppress("DEPRECATION")
-			(targetFragment as ContentsFragment).clearCachePreference?.invalidate()
+			parentFragmentManager.setFragmentResult(REQUEST_UPDATE_CACHE_SIZE, Bundle())
 		}
 
 		override fun onCancel(dialog: DialogInterface) {

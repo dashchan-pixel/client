@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -352,8 +351,6 @@ public class ExpandedScreen implements RecyclerScrollTracker.OnScrollListener {
 		public void onAnimationRepeat(Animator animation) {}
 	}
 
-	private boolean lastTranslucent19 = false;
-
 	private void setState(State state, boolean value) {
 		if (expandingEnabled) {
 			boolean oldShow = checkState(State.SHOW);
@@ -361,21 +358,6 @@ public class ExpandedScreen implements RecyclerScrollTracker.OnScrollListener {
 			boolean oldActionMode = checkState(State.ACTION_MODE);
 			boolean newActionMode = state == State.ACTION_MODE ? value : oldActionMode;
 			stateFlags = FlagUtils.set(stateFlags, state.flag(), value);
-		}
-	}
-
-	@SuppressWarnings("deprecation")
-	private void setTranslucent19Only(boolean translucent) {
-		if (lastTranslucent19 != translucent) {
-			lastTranslucent19 = translucent;
-			Window window = activity.getWindow();
-			if (translucent) {
-				window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-						| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-			} else {
-				window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-						| WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-			}
 		}
 	}
 

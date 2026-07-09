@@ -18,6 +18,8 @@ import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -145,9 +147,8 @@ public class WebViewService extends Service {
 	});
 
 	private class ServiceClient extends WebViewClient {
-		@SuppressWarnings("deprecation")
 		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url) {
+		public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
 			return false;
 		}
 
@@ -199,13 +200,15 @@ public class WebViewService extends Service {
 			}
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
-		public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-			super.onReceivedError(view, errorCode, description, failingUrl);
+		public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+			super.onReceivedError(view, request, error);
 
-			handler.removeMessages(MESSAGE_HANDLE_FINISH);
-			handler.sendEmptyMessage(MESSAGE_HANDLE_FINISH);
+			// The deprecated single-error callback was reported for the main resource only.
+			if (request.isForMainFrame()) {
+				handler.removeMessages(MESSAGE_HANDLE_FINISH);
+				handler.sendEmptyMessage(MESSAGE_HANDLE_FINISH);
+			}
 		}
 
 		private WebResourceResponse getCaptchaApi(String onLoad) {
@@ -215,15 +218,15 @@ public class WebViewService extends Service {
 					new ByteArrayInputStream(stub.getBytes()));
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
-		public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+		public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 			boolean allowed = false;
 			CookieRequest cookieRequest = WebViewService.this.cookieRequest;
+			Uri uri = request.getUrl();
+			String url = uri.toString();
 			boolean recaptcha = url.contains("recaptcha");
 			boolean hcaptcha = url.contains("hcaptcha");
 			if (recaptcha || hcaptcha) {
-				Uri uri = Uri.parse(url);
 				String key = uri.getQueryParameter("render");
 				String onLoad = uri.getQueryParameter("onload");
 				if (key != null || onLoad != null) {
@@ -240,7 +243,7 @@ public class WebViewService extends Service {
 				}
 			}
 			if (allowed) {
-				return super.shouldInterceptRequest(view, url);
+				return super.shouldInterceptRequest(view, request);
 			} else {
 				return new WebResourceResponse("text/html", "UTF-8", null);
 			}
@@ -380,10 +383,6 @@ public class WebViewService extends Service {
 		};
 	}
 
-	@SuppressWarnings("deprecation")
-	private static void disableCacheCompat(WebView webView) {
-	}
-
 	@SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
 	@Override
 	public void onCreate() {
@@ -402,7 +401,6 @@ public class WebViewService extends Service {
 		webView = new WebView(this);
 		webView.getSettings().setJavaScriptEnabled(true);
 		webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-		disableCacheCompat(webView);
 		webView.addJavascriptInterface(javascriptInterface, "jsi");
 		webView.setWebViewClient(new ServiceClient());
 		webView.setWebChromeClient(new WebChromeClient() {

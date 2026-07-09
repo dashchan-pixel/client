@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.util
 
 import android.content.Context
 import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.StateListDrawable
 import android.view.View
@@ -37,8 +38,7 @@ object ListViewUtils {
 
 	private fun <T, VH : RecyclerView.ViewHolder> handleClick(holder: VH,
 			longClick: Boolean, dataCallback: DataCallback<T>?, callback: ClickCallback<T, VH>): Boolean {
-		@Suppress("DEPRECATION")
-		val position = holder.adapterPosition
+		val position = holder.bindingAdapterPosition
 		// position can be NO_POSITION if click event is fired after notifyDataSetChanged
 		return position >= 0 && callback.onItemClick(holder, position,
 				dataCallback?.getData(position), longClick)
@@ -140,11 +140,10 @@ object ListViewUtils {
 			val defaultDrawable = drawable.current
 			if (defaultDrawable !== pressedDrawable) {
 				val stateListDrawable = object : StateListDrawable() {
-					@Suppress("DEPRECATION")
 					override fun onStateChange(stateSet: IntArray): Boolean {
 						val result = super.onStateChange(stateSet)
 						if (result) {
-							setColorFilter(if (current === pressedDrawable) colorPressed
+							colorFilter = PorterDuffColorFilter(if (current === pressedDrawable) colorPressed
 							else colorDefault, PorterDuff.Mode.SRC_IN)
 						}
 						return result

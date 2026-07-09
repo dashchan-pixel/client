@@ -17,7 +17,6 @@ object WebViewUtils {
 		CookieManager.getInstance().removeAllCookies(null)
 	}
 
-	@Suppress("DEPRECATION")
 	@JvmStatic
 	fun clearAll(webView: WebView?) {
 		clearCookie()

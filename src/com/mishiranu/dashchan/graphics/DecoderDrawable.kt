@@ -39,8 +39,7 @@ class DecoderDrawable @Throws(IOException::class) constructor(private val scaled
 		if (!fileHolder.isImageRegionDecoderSupported) {
 			throw IOException("Decoder drawable is not supported")
 		}
-		@Suppress("DEPRECATION")
-		decoder = BitmapRegionDecoder.newInstance(fileHolder.openInputStream(), false)
+		decoder = BitmapRegionDecoder.newInstance(fileHolder.openInputStream())
 				?: throw IOException("Failed to create region decoder")
 		width = fileHolder.imageWidth
 		height = fileHolder.imageHeight

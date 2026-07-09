@@ -12,16 +12,9 @@ import java.util.HashMap
 import java.util.Locale
 
 class LocaleManager private constructor() {
-	private var systemLocaleJellyBean: Locale? = null
-
-	@Suppress("DEPRECATION", "UNUSED_PARAMETER")
-	fun updateConfiguration(configuration: Configuration) {
-	}
-
 	private var lastLocales: List<Locale> = emptyList()
 	private var applicationContext: Context? = null
 
-	@Suppress("DEPRECATION")
 	fun apply(context: Context): Context {
 		var context = context
 		val resources = context.resources
@@ -34,7 +27,6 @@ class LocaleManager private constructor() {
 			} else {
 				LocaleList(Locale.US)
 			})
-			configuration.locale = locale
 			Locale.setDefault(locale)
 			context = context.createConfigurationContext(configuration)
 		} else {

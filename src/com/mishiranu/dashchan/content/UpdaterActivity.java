@@ -1,21 +1,28 @@
 package com.mishiranu.dashchan.content;
 
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageInstaller;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import chan.content.ChanManager;
 import chan.util.DataFile;
 import chan.util.StringUtils;
 import com.mishiranu.dashchan.content.service.DownloadService;
 import com.mishiranu.dashchan.ui.StateActivity;
+import com.mishiranu.dashchan.util.IOUtils;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,21 +32,52 @@ public class UpdaterActivity extends StateActivity {
 
 	private static final String EXTRA_INDEX = "index";
 
+	private static final String ACTION_INSTALL_STATUS =
+			"com.mishiranu.dashchan.action.INSTALL_STATUS";
+
 	private int index = 0;
 
 	private List<String> getFiles() {
 		return getIntent().getStringArrayListExtra(EXTRA_FILES);
 	}
 
+	private final BroadcastReceiver installStatusReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+			if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+				Intent confirmIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class);
+				if (confirmIntent != null) {
+					startActivity(confirmIntent);
+				} else {
+					finish();
+				}
+			} else if (status == PackageInstaller.STATUS_SUCCESS) {
+				index++;
+				performInstallation();
+			} else {
+				finish();
+			}
+		}
+	};
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		registerReceiver(installStatusReceiver, new IntentFilter(ACTION_INSTALL_STATUS),
+				Context.RECEIVER_NOT_EXPORTED);
 		if (savedInstanceState == null) {
 			performInstallation();
 		} else {
 			index = savedInstanceState.getInt(EXTRA_INDEX);
 		}
+	}
+
+	@Override
+	protected void onDestroy() {
+		unregisterReceiver(installStatusReceiver);
+		super.onDestroy();
 	}
 
 	@Override
@@ -56,38 +94,43 @@ public class UpdaterActivity extends StateActivity {
 				index++;
 				performInstallation();
 			} else {
-				Uri uri = FileProvider.convertUpdatesUri(Uri.fromFile(file));
-				@SuppressWarnings("deprecation")
-				String action = Intent.ACTION_INSTALL_PACKAGE;
-				installLauncher.launch(new Intent(action)
-						.setDataAndType(uri, "application/vnd.android.package-archive")
-						.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-						.putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
-						.putExtra(Intent.EXTRA_RETURN_RESULT, true));
+				new Thread(() -> commitInstallSession(file)).start();
 			}
 		} else {
 			finish();
 		}
 	}
 
-	// Hidden error code in PackageManager
-	private static final int INSTALL_FAILED_INVALID_APK = -2;
-
-	private final ActivityResultLauncher<Intent> installLauncher = registerForActivityResult(
-			new ActivityResultContracts.StartActivityForResult(), result -> {
-				Intent data = result.getData();
-				if (result.getResultCode() == RESULT_OK) {
-					index++;
-					performInstallation();
-				} else if (result.getResultCode() == RESULT_FIRST_USER && data != null &&
-						data.getIntExtra("android.intent.extra.INSTALL_RESULT", 0) == INSTALL_FAILED_INVALID_APK) {
-					// Retry on failure. Workaround for Android 10+ bug in FLAG_GRANT_READ_URI_PERMISSION behavior:
-					// sometimes the flag doesn't take effect and package installer is unable to access the package file.
-					performInstallation();
-				} else {
-					finish();
+	private void commitInstallSession(File file) {
+		PackageInstaller installer = getPackageManager().getPackageInstaller();
+		int sessionId = -1;
+		try {
+			PackageInstaller.SessionParams params = new PackageInstaller
+					.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+			sessionId = installer.createSession(params);
+			try (PackageInstaller.Session session = installer.openSession(sessionId)) {
+				try (OutputStream output = session.openWrite(file.getName(), 0, file.length());
+						InputStream input = new FileInputStream(file)) {
+					IOUtils.copyStream(input, output);
+					session.fsync(output);
 				}
-			});
+				Intent statusIntent = new Intent(ACTION_INSTALL_STATUS).setPackage(getPackageName());
+				PendingIntent pendingIntent = PendingIntent.getBroadcast(this, sessionId, statusIntent,
+						PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+				session.commit(pendingIntent.getIntentSender());
+			}
+		} catch (IOException | RuntimeException e) {
+			e.printStackTrace();
+			if (sessionId >= 0) {
+				try {
+					installer.abandonSession(sessionId);
+				} catch (RuntimeException abandonException) {
+					// Ignore
+				}
+			}
+			runOnUiThread(this::finish);
+		}
+	}
 
 	private static Connection activeConnection;
 

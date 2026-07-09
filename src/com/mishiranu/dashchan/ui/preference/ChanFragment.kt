@@ -231,10 +231,8 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 		addButton(R.string.uninstall_extension, 0).setOnClickListener {
 			val innerChan = Chan.get(chanName)
 			if (innerChan.name != null) {
-				@Suppress("DEPRECATION")
-				val intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE)
+				val intent = Intent(Intent.ACTION_DELETE)
 						.setData(Uri.parse("package:" + innerChan.packageName))
-						.putExtra(Intent.EXTRA_RETURN_RESULT, true)
 				startActivity(intent)
 			}
 		}

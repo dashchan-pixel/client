@@ -16,8 +16,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -362,11 +365,11 @@ public class RecaptchaReader {
 				webView.addJavascriptInterface(javascriptInterface, "jsi");
 				webView.setWebViewClient(client);
 				webView.setWebChromeClient(new WebChromeClient() {
-					@SuppressWarnings("deprecation")
 					@Override
-					public void onConsoleMessage(String message, int lineNumber, String sourceID) {
-						Log.d("RecaptchaReader", "Console message: " + lineNumber + " " + sourceID + " " + message);
-						super.onConsoleMessage(message, lineNumber, sourceID);
+					public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+						Log.d("RecaptchaReader", "Console message: " + consoleMessage.lineNumber() + " " +
+								consoleMessage.sourceId() + " " + consoleMessage.message());
+						return super.onConsoleMessage(consoleMessage);
 					}
 				});
 			}
@@ -513,42 +516,36 @@ public class RecaptchaReader {
 				}
 			}
 
-			@SuppressWarnings("deprecation")
 			@Override
-			public boolean shouldOverrideUrlLoading(WebView view, String url) {
+			public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
 				return true;
 			}
 
-			@SuppressWarnings("deprecation")
 			@Override
-			public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-				Uri uri = Uri.parse(url);
-				if ("favicon.ico".equals(uri.getLastPathSegment())) {
+			public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+				if ("favicon.ico".equals(request.getUrl().getLastPathSegment())) {
 					return new WebResourceResponse("text/plain", "ISO-8859-1", null);
 				} else {
-					return super.shouldInterceptRequest(view, url);
+					return super.shouldInterceptRequest(view, request);
 				}
 			}
 
-			@SuppressWarnings("deprecation")
 			@Override
-			public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-				super.onReceivedError(view, errorCode, description, failingUrl);
+			public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+				super.onReceivedError(view, request, error);
 
-				if (failingUrl != null) {
-					Uri uri = Uri.parse(failingUrl);
-					if ("google.com".equals(uri.getHost()) || "www.google.com".equals(uri.getHost())) {
-						ConcurrentUtils.HANDLER.post(() -> {
-							if (webView != null) {
-								HttpException exception = new HttpException(ErrorItem.Type.DOWNLOAD, false, false);
-								if (callback != null) {
-									callback.onError(exception);
-								} else {
-									WebViewHolder.this.exception = exception;
-								}
+				Uri uri = request.getUrl();
+				if ("google.com".equals(uri.getHost()) || "www.google.com".equals(uri.getHost())) {
+					ConcurrentUtils.HANDLER.post(() -> {
+						if (webView != null) {
+							HttpException exception = new HttpException(ErrorItem.Type.DOWNLOAD, false, false);
+							if (callback != null) {
+								callback.onError(exception);
+							} else {
+								WebViewHolder.this.exception = exception;
 							}
-						});
-					}
+						}
+					});
 				}
 			}
 		};
