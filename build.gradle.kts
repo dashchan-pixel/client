@@ -19,9 +19,12 @@ android {
 		// metadata/versions.json is the single source of truth for the app version:
 		// the newest entry there defines versionCode/versionName, so a release bump
 		// is one atomic edit (versions.json + changelogs) and the build can never
-		// disagree with the metadata.
+		// disagree with the metadata. Read via providers.fileContents so the
+		// configuration cache is invalidated when the file changes.
 		@Suppress("UNCHECKED_CAST")
-		val versionsData = JsonSlurper().parse(file("metadata/versions.json")) as Map<String, List<Map<String, Any>>>
+		val versionsData = JsonSlurper().parseText(providers.fileContents(
+				layout.projectDirectory.file("metadata/versions.json")).asText.get())
+				as Map<String, List<Map<String, Any>>>
 		val latestVersion = versionsData.getValue("versions")
 				.maxByOrNull { (it.getValue("code") as Number).toLong() }!!
 		versionCode = (latestVersion.getValue("code") as Number).toInt()
