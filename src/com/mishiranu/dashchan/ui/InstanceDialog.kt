@@ -59,11 +59,12 @@ class InstanceDialog : DialogFragment {
 		return viewModel.factory?.createDialog(provider) ?: DismissDialog(requireContext())
 	}
 
-	override fun onViewStateRestored(savedInstanceState: Bundle?) {
-		super.onViewStateRestored(savedInstanceState)
+	// View-less DialogFragment: onViewStateRestored never runs, so check from onStart.
+	override fun onStart() {
 		if (dialog is DismissDialog) {
 			dismiss()
 		}
+		super.onStart()
 	}
 
 	private class DismissDialog(context: Context) : Dialog(context) {

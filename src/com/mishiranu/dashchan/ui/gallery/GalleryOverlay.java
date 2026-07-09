@@ -170,6 +170,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		this.savedInstanceState = savedInstanceState;
 		RetainedViewModel viewModel = new ViewModelProvider(this).get(RetainedViewModel.class);
 		Retained retained = viewModel.retained;
 		if (retained == null && savedInstanceState != null) {
@@ -225,10 +226,24 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		}
 	}
 
-	@Override
-	public void onViewStateRestored(Bundle savedInstanceState) {
-		super.onViewStateRestored(savedInstanceState);
+	// GalleryOverlay has no fragment view, so view-bound callbacks like onViewStateRestored
+	// never run; the dialog content is set up once per fragment instance from onStart,
+	// before DialogFragment.onStart shows the dialog (same point onActivityCreated used to run).
+	private Bundle savedInstanceState;
+	private boolean dialogInitialized = false;
 
+	@Override
+	public void onStart() {
+		if (!dialogInitialized) {
+			dialogInitialized = true;
+			Bundle savedInstanceState = this.savedInstanceState;
+			this.savedInstanceState = null;
+			initializeDialog(savedInstanceState);
+		}
+		super.onStart();
+	}
+
+	private void initializeDialog(Bundle savedInstanceState) {
 		Retained retained = this.retained;
 		if (retained == null) {
 			// Dismissing after process death

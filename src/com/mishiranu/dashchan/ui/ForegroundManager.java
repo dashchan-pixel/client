@@ -278,10 +278,29 @@ public class ForegroundManager implements Handler.Callback {
 			setArguments(args);
 		}
 
-		@Override
-		public void onViewStateRestored(Bundle savedInstanceState) {
-			super.onViewStateRestored(savedInstanceState);
+		// View-less DialogFragment: onViewStateRestored never runs, so initialize
+		// once per instance from onStart (the point onActivityCreated used to run).
+		private Bundle savedInstanceState;
+		private boolean dialogInitialized = false;
 
+		@Override
+		public void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			this.savedInstanceState = savedInstanceState;
+		}
+
+		@Override
+		public void onStart() {
+			if (!dialogInitialized) {
+				dialogInitialized = true;
+				Bundle savedInstanceState = this.savedInstanceState;
+				this.savedInstanceState = null;
+				initializeDialog(savedInstanceState);
+			}
+			super.onStart();
+		}
+
+		private void initializeDialog(Bundle savedInstanceState) {
 			CaptchaPendingData pendingData = getPendingDataOrDismiss();
 			if (pendingData == null) {
 				return;
@@ -595,10 +614,16 @@ public class ForegroundManager implements Handler.Callback {
 			setArguments(args);
 		}
 
+		// View-less DialogFragment: onViewStateRestored never runs, so check from onStart.
+		private boolean dialogInitialized = false;
+
 		@Override
-		public void onViewStateRestored(Bundle savedInstanceState) {
-			super.onViewStateRestored(savedInstanceState);
-			getPendingDataOrDismiss();
+		public void onStart() {
+			if (!dialogInitialized) {
+				dialogInitialized = true;
+				getPendingDataOrDismiss();
+			}
+			super.onStart();
 		}
 
 		@Override
@@ -729,9 +754,29 @@ public class ForegroundManager implements Handler.Callback {
 			}
 		}
 
+		// View-less DialogFragment: onViewStateRestored never runs, so initialize
+		// once per instance from onStart (the point onActivityCreated used to run).
+		private Bundle savedInstanceState;
+		private boolean dialogInitialized = false;
+
 		@Override
-		public void onViewStateRestored(Bundle savedInstanceState) {
-			super.onViewStateRestored(savedInstanceState);
+		public void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			this.savedInstanceState = savedInstanceState;
+		}
+
+		@Override
+		public void onStart() {
+			if (!dialogInitialized) {
+				dialogInitialized = true;
+				Bundle savedInstanceState = this.savedInstanceState;
+				this.savedInstanceState = null;
+				initializeDialog(savedInstanceState);
+			}
+			super.onStart();
+		}
+
+		private void initializeDialog(Bundle savedInstanceState) {
 			PendingData pendingData = getPendingDataOrDismiss();
 			if (pendingData == null) {
 				return;

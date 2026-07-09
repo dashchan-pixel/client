@@ -317,9 +317,18 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 			return dialog
 		}
 
-		override fun onViewStateRestored(savedInstanceState: Bundle?) {
-			super.onViewStateRestored(savedInstanceState)
+		// View-less DialogFragment: onViewStateRestored never runs, so start the task from onStart.
+		private var dialogInitialized = false
 
+		override fun onStart() {
+			if (!dialogInitialized) {
+				dialogInitialized = true
+				initializeDialog()
+			}
+			super.onStart()
+		}
+
+		private fun initializeDialog() {
 			val viewModel = ViewModelProvider(this).get(CheckAuthorizationViewModel::class.java)
 			if (!viewModel.hasTaskOrValue()) {
 				val args = requireArguments()
