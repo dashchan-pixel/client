@@ -42,6 +42,9 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		var threadTitle: String? = null
 		/** Index within [items] to open at; -1 means the first video. */
 		var startIndex = -1
+		/** One-shot playback position restore for [startSeekItem] (PiP -> fullscreen handback). */
+		var startSeekItem: GalleryItem? = null
+		var startPosition = 0L
 	}
 
 	private lateinit var viewModel: FlowViewModel
@@ -67,12 +70,15 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 			viewModel.items = pendingItems
 			viewModel.threadTitle = pendingThreadTitle
 			viewModel.startIndex = pendingItems?.indexOfFirst { it === pendingStartItem } ?: -1
+			viewModel.startSeekItem = if (pendingStartPosition > 0) pendingStartItem else null
+			viewModel.startPosition = pendingStartPosition
 		}
 		pendingChan = null
 		pendingAllItems = null
 		pendingItems = null
 		pendingStartItem = null
 		pendingThreadTitle = null
+		pendingStartPosition = 0
 		if (viewModel.items == null) {
 			// Handoff lost (e.g. process death) — nothing to show.
 			dismiss()
@@ -276,11 +282,24 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		val chan = viewModel.chan ?: return
 		// Silence this page before the floating player takes over, then close the feed so the
 		// thread is visible behind the picture-in-picture window and nothing else keeps playing.
-		// The feed's video list goes along so the floating player keeps advancing through it.
+		// The feed's video list goes along so the floating player keeps advancing through it;
+		// the full attachment list lets an expanded window restore this feed later.
 		view.setActive(false)
 		VideoPipActivity.start(requireActivity(), chan, galleryItem, viewModel.items?.toList(),
-				viewModel.threadTitle, view.playbackPosition(), true, view.videoDimensions())
+				viewModel.allItems, null, viewModel.threadTitle,
+				view.playbackPosition(), true, view.videoDimensions())
 		dismiss()
+	}
+
+	override fun onVideoReady(view: FlowVideoView) {
+		// Restore the playback position once for the page the PiP window handed back.
+		val startSeekItem = viewModel.startSeekItem ?: return
+		if (view.boundGalleryItem() === startSeekItem) {
+			viewModel.startSeekItem = null
+			if (viewModel.startPosition > 0) {
+				view.seekTo(viewModel.startPosition)
+			}
+		}
 	}
 
 	override fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem) {
@@ -361,14 +380,17 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		private var pendingItems: MutableList<GalleryItem>? = null
 		private var pendingStartItem: GalleryItem? = null
 		private var pendingThreadTitle: String? = null
+		private var pendingStartPosition = 0L
 
 		/**
 		 * Open the video feed for [galleryItems] (the full gallery attachment list; only videos are shown),
-		 * starting at [startItem] if given. Shows a toast and does nothing if the thread has no videos.
+		 * starting at [startItem] if given, [startPosition] ms into it (a PiP window handing back).
+		 * Shows a toast and does nothing if the thread has no videos.
 		 */
 		@JvmStatic
+		@JvmOverloads
 		fun show(fragmentManager: FragmentManager, chan: Chan, galleryItems: List<GalleryItem>,
-				startItem: GalleryItem?, threadTitle: String?) {
+				startItem: GalleryItem?, threadTitle: String?, startPosition: Long = 0) {
 			val videoItems = galleryItems.filterTo(mutableListOf()) { it.isVideo(chan) }
 			if (videoItems.isEmpty()) {
 				ClickableToast.show(R.string.no_video_attachments)
@@ -380,6 +402,7 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 			pendingItems = videoItems
 			pendingStartItem = startItem
 			pendingThreadTitle = threadTitle
+			pendingStartPosition = if (startItem != null) startPosition else 0
 			FlowDialog().show(fragmentManager, TAG)
 		}
 	}

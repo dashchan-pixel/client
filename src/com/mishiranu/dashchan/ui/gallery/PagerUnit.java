@@ -135,6 +135,11 @@ public class PagerUnit implements PagerInstance.Callback {
 		return videoUnit.getVideoDimensions();
 	}
 
+	/** One-shot start position for the next video that initializes (PiP window handing back). */
+	public void setInitialVideoSeek(long position) {
+		videoUnit.setInitialSeekPosition(position);
+	}
+
 	public void onApplyWindowInsets(InsetsLayout.Insets insets) {
 		videoUnit.onApplyWindowInsets(insets.left, insets.right, insets.bottom);
 	}

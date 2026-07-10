@@ -63,6 +63,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	private static final String EXTRA_THREAD_TITLE = "threadTitle";
 	private static final String EXTRA_NAVIGATE_POST_MODE = "navigatePostMode";
 	private static final String EXTRA_INITIAL_GALLERY_MODE = "initialGalleryMode";
+	private static final String EXTRA_INITIAL_VIDEO_POSITION = "initialVideoPosition";
 
 	private static final String EXTRA_POSITION = "position";
 	private static final String EXTRA_SELECTED = "selected";
@@ -161,6 +162,12 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	private NavigatePostMode getNavigatePostMode() {
 		String name = requireArguments().getString(EXTRA_NAVIGATE_POST_MODE);
 		return name != null ? NavigatePostMode.valueOf(name) : NavigatePostMode.DISABLED;
+	}
+
+	/** Start the opening video [position] ms in (a PiP window handing playback back). */
+	public GalleryOverlay setInitialVideoPosition(long position) {
+		requireArguments().putLong(EXTRA_INITIAL_VIDEO_POSITION, position);
+		return this;
 	}
 
 	private String getThreadTitle() {
@@ -357,6 +364,11 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 			if (!instance.galleryItems.isEmpty()) {
 				listUnit = new ListUnit(instance);
 				pagerUnit = new PagerUnit(instance);
+				long initialVideoPosition = requireArguments().getLong(EXTRA_INITIAL_VIDEO_POSITION);
+				if (initialVideoPosition > 0) {
+					requireArguments().remove(EXTRA_INITIAL_VIDEO_POSITION);
+					pagerUnit.setInitialVideoSeek(initialVideoPosition);
+				}
 				retained.listUnit = listUnit;
 				retained.pagerUnit = pagerUnit;
 				rootView.addView(listUnit.getRecyclerView(), InsetsLayout.LayoutParams.MATCH_PARENT,
@@ -559,8 +571,10 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 		}
 		// Hand playback over to the floating window (it downloads and plays on its own), then
 		// close the gallery so the thread is visible behind it and nothing else keeps playing.
+		// The item list and navigate mode let an expanded window reopen this gallery later.
 		VideoPipActivity.start(requireActivity(), Chan.get(instance.chanName), holder.galleryItem,
-				null, getThreadTitle(), pagerUnit.getVideoPosition(), pagerUnit.isVideoPlaying(),
+				null, instance.galleryItems, requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
+				getThreadTitle(), pagerUnit.getVideoPosition(), pagerUnit.isVideoPlaying(),
 				pagerUnit.getVideoDimensions());
 		dismiss();
 	}

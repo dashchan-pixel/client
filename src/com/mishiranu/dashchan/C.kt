@@ -28,6 +28,7 @@ object C {
 	const val ACTION_POSTING = "com.mishiranu.dashchan.action.POSTING"
 	const val ACTION_GALLERY = "com.mishiranu.dashchan.action.GALLERY"
 	const val ACTION_PLAYER = "com.mishiranu.dashchan.action.PLAYER"
+	const val ACTION_VIDEO_PIP = "com.mishiranu.dashchan.action.VIDEO_PIP"
 	const val ACTION_BROWSER = "com.mishiranu.dashchan.action.BROWSER"
 
 	const val NOTIFICATION_ID_POSTING = 1

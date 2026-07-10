@@ -258,6 +258,8 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 	fun videoDimensions(): Point? = player?.getDimensions()?.takeIf { it.x > 0 && it.y > 0 }
 
+	fun boundGalleryItem(): GalleryItem? = galleryItem
+
 	fun setControlsEnabled(enabled: Boolean) {
 		controlsEnabled = enabled
 		if (!enabled) {

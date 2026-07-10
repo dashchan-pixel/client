@@ -72,6 +72,9 @@ public class VideoUnit {
 	private File videoFile;
 	private boolean initFromFile;
 
+	// One-shot start position for the next initialized video (PiP window handing back).
+	private long initialSeekPosition;
+
 	public VideoUnit(PagerInstance instance) {
 		this.instance = instance;
 		controlsView = new LinearLayout(instance.galleryInstance.context);
@@ -158,6 +161,10 @@ public class VideoUnit {
 
 	public Point getVideoDimensions() {
 		return initialized ? player.getDimensions() : null;
+	}
+
+	public void setInitialSeekPosition(long position) {
+		initialSeekPosition = position;
 	}
 
 	public void interrupt() {
@@ -283,6 +290,10 @@ public class VideoUnit {
 		seekBar.setEnabled(true);
 		initialized = true;
 		pausedByTransientLossOfFocus = false;
+		if (initialSeekPosition > 0) {
+			player.setPosition(initialSeekPosition);
+			initialSeekPosition = 0;
+		}
 		if (hideSurfaceOnInit) {
 			showHideVideoView(false);
 		}

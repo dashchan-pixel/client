@@ -64,6 +64,7 @@ import com.mishiranu.dashchan.content.service.PostingService;
 import com.mishiranu.dashchan.content.service.WatcherService;
 import com.mishiranu.dashchan.content.storage.FavoritesStorage;
 import com.mishiranu.dashchan.ui.gallery.GalleryOverlay;
+import com.mishiranu.dashchan.ui.gallery.VideoPipActivity;
 import com.mishiranu.dashchan.ui.navigator.Page;
 import com.mishiranu.dashchan.ui.navigator.PageFragment;
 import com.mishiranu.dashchan.ui.navigator.PageItem;
@@ -630,6 +631,9 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 			if (fragmentManager.findFragmentByTag(tag) == null) {
 				new AudioPlayerDialog().show(fragmentManager, tag);
 			}
+		} else if (C.ACTION_VIDEO_PIP.equals(intent.getAction())) {
+			// An expanded picture-in-picture window handing playback back to its origin
+			VideoPipActivity.reopenInApp(this);
 		} else if (C.ACTION_BROWSER.equals(intent.getAction())) {
 			BrowserFragment browserFragment = new BrowserFragment(intent.getData());
 			if (getCurrentFragment() instanceof BrowserFragment) {
