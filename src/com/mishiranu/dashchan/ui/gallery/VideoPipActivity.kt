@@ -57,7 +57,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 	private var threadTitle: String? = null
 	private var pendingSeekPosition = -1L
 	private var dimensions: Point? = null
-	private var stopped = false
 
 	/**
 	 * When launched from the Flow feed: its video list, so completed videos advance to the
@@ -133,8 +132,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 		pausedByTransientLossOfFocus = false
 		playlist = playback.playlist?.toMutableList()
 		playlistIndex = (playlist?.indexOfFirst { it === playback.item } ?: 0).coerceAtLeast(0)
-		android.util.Log.d("VideoPip", "beginPlayback: playlist=${playlist?.size} index=$playlistIndex " +
-				"position=${playback.position} playing=${playback.playing}")
 		videoView.bind(playback.chan, playback.item, this)
 		// Starts buffering right away; playback begins once the player is ready.
 		videoView.prepare()
@@ -150,7 +147,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 		val chan = chan ?: return
 		val playlist = playlist?.takeIf { it.isNotEmpty() } ?: return
 		playlistIndex = (playlistIndex + delta).mod(playlist.size)
-		android.util.Log.d("VideoPip", "advance($delta) -> index=$playlistIndex of ${playlist.size}")
 		pendingSeekPosition = -1
 		playing = true
 		pausedByTransientLossOfFocus = false
@@ -175,8 +171,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 
 	override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
 		super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-		android.util.Log.d("VideoPip", "onPictureInPictureModeChanged: pip=$isInPictureInPictureMode " +
-				"finishing=$isFinishing stopped=$stopped")
 		// Leaving PiP without finishing means the user tapped the window's fullscreen button.
 		// Expanding a launch-into-PiP activity does not make it fullscreen: the system stops it
 		// (onStop arrives first) and returns the launching task to the front on its own — so
@@ -189,7 +183,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 	private fun expandToApp() {
 		val chan = chan ?: return
 		val item = currentItem ?: return
-		android.util.Log.d("VideoPip", "expandToApp: item=${item.getFileName(chan)}")
 		pendingReopen = Reopen(chan, item, playlist != null,
 				allItems ?: playlist ?: listOf(item), navigatePostMode, threadTitle,
 				videoView.playbackPosition())
@@ -197,26 +190,8 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 		finish()
 	}
 
-	override fun onStart() {
-		super.onStart()
-		android.util.Log.d("VideoPip", "onStart: pip=$isInPictureInPictureMode")
-		stopped = false
-	}
-
-	override fun onResume() {
-		super.onResume()
-		android.util.Log.d("VideoPip", "onResume: pip=$isInPictureInPictureMode")
-	}
-
-	override fun onPause() {
-		super.onPause()
-		android.util.Log.d("VideoPip", "onPause: pip=$isInPictureInPictureMode finishing=$isFinishing")
-	}
-
 	override fun onStop() {
 		super.onStop()
-		android.util.Log.d("VideoPip", "onStop: pip=$isInPictureInPictureMode finishing=$isFinishing")
-		stopped = true
 		// Reached when the PiP window is dismissed or hidden (e.g. screen off): never keep
 		// playing audio without a visible surface. (While in PiP the activity is merely
 		// paused, so playback continues there.)
@@ -225,7 +200,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 
 	override fun onDestroy() {
 		super.onDestroy()
-		android.util.Log.d("VideoPip", "onDestroy: finishing=$isFinishing")
 		if (instance?.get() === this) {
 			instance = null
 		}
@@ -287,7 +261,6 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 
 	override fun onVideoEnded(view: FlowVideoView) {
 		val playlist = playlist
-		android.util.Log.d("VideoPip", "onVideoEnded: playlist=${playlist?.size}")
 		if (playlist != null) {
 			// Flow semantics: advance to the next video, or loop the only one.
 			if (playlist.size > 1) {
@@ -398,15 +371,12 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 			if (existing != null && !existing.isFinishing && !existing.isDestroyed) {
 				if (existing.isInPictureInPictureMode) {
 					// A floating player is already up — swap its video instead of relaunching.
-					android.util.Log.d("VideoPip", "start: rebinding existing instance")
 					existing.beginPlayback(playback)
 					return
 				}
 				// A leftover instance that is no longer a visible PiP window — replace it.
-				android.util.Log.d("VideoPip", "start: finishing stale non-pip instance")
 				existing.finish()
 			}
-			android.util.Log.d("VideoPip", "start: launching into pip")
 			pendingPlayback = playback
 			val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(true)
 			pipAspectRatio(dimensions)?.let { builder.setAspectRatio(it) }
