@@ -1,0 +1,3 @@
+* Picture-in-picture video playback: pop a video out of the gallery or the Flow feed into a floating window with play/pause controls
+* PiP started from Flow advances through the thread's videos when a clip ends, with a Skip action on the window
+* Expanding the PiP window returns to the gallery or Flow player at the same video and position
