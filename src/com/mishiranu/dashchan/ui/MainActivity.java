@@ -1177,6 +1177,10 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 		if (navigateIntentOnResume != null) {
 			navigateIntentUnchecked(navigateIntentOnResume);
 		}
+		// Expanding a PiP window returns this task to the front on the system's initiative,
+		// possibly before the window's activity managed to send C.ACTION_VIDEO_PIP: consume a
+		// pending hand-back directly as well (no-op when there is none, or if the intent won).
+		VideoPipActivity.reopenInApp(this);
 
 		if (downloadBinder != null) {
 			downloadBinder.notifyReadyToHandleRequests();
