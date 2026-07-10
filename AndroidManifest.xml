@@ -77,6 +77,14 @@
 		</activity>
 
 		<activity
+			android:name=".ui.gallery.VideoPipActivity"
+			android:exported="false"
+			android:excludeFromRecents="true"
+			android:supportsPictureInPicture="true"
+			android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden|uiMode|density"
+			android:theme="@style/Theme.VideoPip" />
+
+		<activity
 			android:name=".content.UpdaterActivity"
 			android:excludeFromRecents="true"
 			android:exported="false"

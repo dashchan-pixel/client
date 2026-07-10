@@ -272,6 +272,16 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		dismiss()
 	}
 
+	override fun onEnterPip(view: FlowVideoView, galleryItem: GalleryItem) {
+		val chan = viewModel.chan ?: return
+		// Silence this page before the floating player takes over, then close the feed so the
+		// thread is visible behind the picture-in-picture window and nothing else keeps playing.
+		view.setActive(false)
+		VideoPipActivity.start(requireActivity(), chan, galleryItem, viewModel.threadTitle,
+				view.playbackPosition(), true, view.videoDimensions())
+		dismiss()
+	}
+
 	override fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem) {
 		val items = viewModel.items ?: return
 		val index = items.indexOfFirst { it === galleryItem }

@@ -35,6 +35,9 @@ class GalleryInstance(@JvmField val context: Context, @JvmField var callback: Ca
 		/** Switch to the video feed (flow) at the currently viewed attachment. */
 		fun switchToFlow()
 
+		/** Continue the currently viewed video in the floating picture-in-picture player. */
+		fun switchToPip()
+
 		fun isAllowNavigatePostManually(fromPager: Boolean): Boolean
 
 		fun invalidateOptionsMenu()

@@ -552,6 +552,20 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	}
 
 	@Override
+	public void switchToPip() {
+		PagerInstance.ViewHolder holder = pagerUnit != null ? pagerUnit.getCurrentHolder() : null;
+		if (holder == null || holder.galleryItem == null || instance == null) {
+			return;
+		}
+		// Hand playback over to the floating window (it downloads and plays on its own), then
+		// close the gallery so the thread is visible behind it and nothing else keeps playing.
+		VideoPipActivity.start(requireActivity(), Chan.get(instance.chanName), holder.galleryItem,
+				getThreadTitle(), pagerUnit.getVideoPosition(), pagerUnit.isVideoPlaying(),
+				pagerUnit.getVideoDimensions());
+		dismiss();
+	}
+
+	@Override
 	public Window getWindow() {
 		GalleryDialog dialog = getDialog();
 		return dialog != null ? dialog.getWindow() : null;

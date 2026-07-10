@@ -2,7 +2,9 @@ package com.mishiranu.dashchan.ui.gallery;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Point;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -117,6 +119,20 @@ public class PagerUnit implements PagerInstance.Callback {
 
 	public int getCurrentIndex() {
 		return viewPager.getCurrentIndex();
+	}
+
+	// A not-yet-initialized video reports "playing": the handed-off player should start
+	// automatically once it becomes ready, matching what the gallery would have done.
+	public boolean isVideoPlaying() {
+		return !videoUnit.isInitialized() || videoUnit.isPlaying();
+	}
+
+	public long getVideoPosition() {
+		return videoUnit.getPlaybackPosition();
+	}
+
+	public Point getVideoDimensions() {
+		return videoUnit.getVideoDimensions();
 	}
 
 	public void onApplyWindowInsets(InsetsLayout.Insets insets) {
@@ -612,6 +628,9 @@ public class PagerUnit implements PagerInstance.Callback {
 			if (galleryItem.isVideo(chan)) {
 				// Mirrors the flow player's context menu, which offers switching to the gallery.
 				dialogMenu.add(R.string.flow, galleryInstance.callback::switchToFlow);
+				if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+					dialogMenu.add(R.string.picture_in_picture, galleryInstance.callback::switchToPip);
+				}
 			}
 			if (!galleryInstance.callback.isSystemUiVisible()) {
 				if (capabilities.save) {

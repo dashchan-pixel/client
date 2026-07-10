@@ -243,6 +243,7 @@
 	<string name="password_for_removal__summary">Usado para enviar ou remover posts</string>
 	<string name="pause">Pausar</string>
 	<string name="personal_data">Dados pessoias</string>
+	<string name="picture_in_picture">Picture-in-picture</string>
 	<string name="play">Retomar</string>
 	<string name="play_again">Reproduzir novamente</string>
 	<string name="playback_error">Erro na reprodução</string>

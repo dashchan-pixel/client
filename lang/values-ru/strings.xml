@@ -366,6 +366,7 @@
 	<string name="pause">Пауза</string>
 	<string name="pending_downloading">Ожидание загрузки</string>
 	<string name="personal_data">Личные данные</string>
+	<string name="picture_in_picture">Картинка в картинке</string>
 	<string name="play">Воспроизведение</string>
 	<string name="play_after_scroll">Воспроизвести после прокрутки</string>
 	<string name="play_after_scroll__summary">Не показывать кнопку воспроизведения перед просмотром видео</string>

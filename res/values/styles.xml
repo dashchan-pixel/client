@@ -420,6 +420,15 @@
 		<item name="android:colorAccent">@android:color/white</item>
 
 	</style>
+	<!-- Full-bleed black player window for VideoPipActivity; inherits the icon attrs
+	     (iconButtonPlay etc.) FlowVideoView resolves from its context theme. -->
+	<style name="Theme.VideoPip" parent="@style/Theme.Main.Dark">
+
+		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowActionBar">false</item>
+		<item name="android:windowBackground">@android:color/black</item>
+
+	</style>
 	<style name="Theme.Launcher" parent="@android:style/Theme.Material.NoActionBar">
 
 		<item name="android:navigationBarColor">@android:color/black</item>

@@ -148,6 +148,18 @@ public class VideoUnit {
 		return player != null;
 	}
 
+	public boolean isPlaying() {
+		return initialized && player.isPlaying();
+	}
+
+	public long getPlaybackPosition() {
+		return initialized ? player.getPosition() : 0;
+	}
+
+	public Point getVideoDimensions() {
+		return initialized ? player.getDimensions() : null;
+	}
+
 	public void interrupt() {
 		if (readVideoCallback != null) {
 			readVideoCallback.cancel();

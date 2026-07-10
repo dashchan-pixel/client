@@ -349,6 +349,7 @@
 	<string name="pause">Pause</string>
 	<string name="pending_downloading">Pending downloading</string>
 	<string name="personal_data">Personal data</string>
+	<string name="picture_in_picture">Picture-in-picture</string>
 	<string name="play">Play</string>
 	<string name="play_after_scroll">Play after scroll</string>
 	<string name="play_after_scroll__summary">Hide play button before playing video</string>

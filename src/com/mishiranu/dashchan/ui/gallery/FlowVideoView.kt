@@ -2,7 +2,9 @@ package com.mishiranu.dashchan.ui.gallery
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.Point
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -65,6 +67,12 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 	private val seekBar: SeekBar
 	private var tracking = false
 	private var controlsVisible = false
+
+	/** Cleared in the PiP window, where the system window provides the playback controls. */
+	private var controlsEnabled = true
+
+	/** Cleared in the PiP player, which has no thread UI behind it for the menu's actions. */
+	private var contextMenuEnabled = true
 
 	private var chan: Chan? = null
 	private var galleryItem: GalleryItem? = null
@@ -165,10 +173,14 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 		addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
 
-		setOnClickListener { setControlsVisible(!controlsVisible, true) }
+		setOnClickListener { if (controlsEnabled) setControlsVisible(!controlsVisible, true) }
 		setOnLongClickListener {
-			displayContextMenu()
-			true
+			if (contextMenuEnabled) {
+				displayContextMenu()
+				true
+			} else {
+				false
+			}
 		}
 	}
 
@@ -232,6 +244,29 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		player.setPosition(0)
 		player.setPlaying(true)
 		updatePlayPauseIcon()
+	}
+
+	fun isPlaying(): Boolean = player?.isPlaying() == true
+
+	fun isAudioPresent(): Boolean = player?.isAudioPresent() == true
+
+	fun playbackPosition(): Long = player?.getPosition() ?: 0
+
+	fun seekTo(position: Long) {
+		player?.setPosition(position)
+	}
+
+	fun videoDimensions(): Point? = player?.getDimensions()?.takeIf { it.x > 0 && it.y > 0 }
+
+	fun setControlsEnabled(enabled: Boolean) {
+		controlsEnabled = enabled
+		if (!enabled) {
+			setControlsVisible(visible = false, animate = false)
+		}
+	}
+
+	fun setContextMenuEnabled(enabled: Boolean) {
+		contextMenuEnabled = enabled
 	}
 
 	private fun start() {
@@ -395,13 +430,16 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 				imageView.imageAlpha = 0x99
 				configurationView.addView(imageView, (48f * density).toInt(), (48f * density).toInt())
 			}
-			controlsView.visibility = VISIBLE
-			controlsView.alpha = 1f
-			controlsView.translationY = 0f
-			controlsVisible = true
+			if (controlsEnabled) {
+				controlsView.visibility = VISIBLE
+				controlsView.alpha = 1f
+				controlsView.translationY = 0f
+				controlsVisible = true
+			}
 			updateControls()
 			handler.removeCallbacks(progressRunnable)
 			handler.post(progressRunnable)
+			callback?.onVideoReady(this@FlowVideoView)
 		}
 
 		override fun onError(player: VideoPlayer, message: String?) {
@@ -435,6 +473,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 					videoWrapper?.setAspectRatio(dimensions.x.toFloat() / dimensions.y)
 					aspectKnown = true
 					maybeHideCover()
+					callback?.onVideoSizeChanged(this@FlowVideoView)
 				}
 			}
 		}
@@ -514,6 +553,9 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		dialogMenu.setTitle(if (!StringUtils.isEmpty(galleryItem.originalName)) galleryItem.originalName
 				else galleryItem.getFileName(chan))
 		dialogMenu.add(R.string.gallery) { callback?.onSwitchToGallery(galleryItem) }
+		if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+			dialogMenu.add(R.string.picture_in_picture) { callback?.onEnterPip(this, galleryItem) }
+		}
 		dialogMenu.add(R.string.save) {
 			val binder = callback?.getDownloadBinder()
 			if (binder != null) {
@@ -568,6 +610,15 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 
 		/** Switch to the regular gallery, opened at this same attachment. */
 		fun onSwitchToGallery(galleryItem: GalleryItem)
+
+		/** Continue this video in the floating picture-in-picture player. */
+		fun onEnterPip(view: FlowVideoView, galleryItem: GalleryItem)
+
+		/** The player reached its first ready state: position and duration are now valid. */
+		fun onVideoReady(view: FlowVideoView) {}
+
+		/** The video's true dimensions (via [videoDimensions]) became known or changed. */
+		fun onVideoSizeChanged(view: FlowVideoView) {}
 	}
 
 	companion object {

@@ -309,6 +309,7 @@
     <string name="pause">Pausa</string>
     <string name="pending_downloading">Download in corso</string>
     <string name="personal_data">Dati personali</string>
+    <string name="picture_in_picture">Picture-in-picture</string>
     <string name="play">Riproduci</string>
     <string name="play_after_scroll">Riproduci allo scorrimento</string>
     <string name="play_after_scroll__summary">Nascondi pulsante play prima di riprodurre il video</string>
