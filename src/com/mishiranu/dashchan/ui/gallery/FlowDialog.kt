@@ -251,7 +251,7 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 	override fun onGoToPost(galleryItem: GalleryItem) {
 		val chan = viewModel.chan ?: return
 		(activity as? FragmentHandler)?.scrollToPost(chan.name, galleryItem.boardName,
-				galleryItem.threadNumber, galleryItem.postNumber)
+				galleryItem.threadNumber, galleryItem.postNumber, true)
 		dismiss()
 	}
 

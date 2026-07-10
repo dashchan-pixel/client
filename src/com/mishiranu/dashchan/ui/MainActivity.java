@@ -579,14 +579,19 @@ public class MainActivity extends StateActivity implements DrawerForm.Callback, 
 	}
 
 	@Override
-	public void scrollToPost(String chanName, String boardName, String threadNumber, PostNumber postNumber) {
+	public void scrollToPost(String chanName, String boardName, String threadNumber, PostNumber postNumber,
+			boolean navigateIfNeeded) {
 		ContentFragment fragment = getCurrentFragment();
 		if (fragment instanceof PageFragment) {
 			Page page = ((PageFragment) fragment).getPage();
 			if (page.content == Page.Content.POSTS && page.chanName.equals(chanName) &&
 					CommonUtils.equals(page.boardName, boardName) && page.threadNumber.equals(threadNumber)) {
 				((PageFragment) fragment).scrollToPost(postNumber);
+				return;
 			}
+		}
+		if (navigateIfNeeded) {
+			navigatePosts(chanName, boardName, threadNumber, postNumber, null, true, false);
 		}
 	}
 

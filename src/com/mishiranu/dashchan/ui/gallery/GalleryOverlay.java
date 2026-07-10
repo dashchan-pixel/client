@@ -786,7 +786,7 @@ public class GalleryOverlay extends DialogFragment implements GalleryDialog.Call
 	public void navigatePost(GalleryItem galleryItem, boolean manually, boolean force) {
 		if (checkAllowNavigatePost(manually) && (scrollThread || force)) {
 			((FragmentHandler) requireActivity()).scrollToPost(instance.chanName, galleryItem.boardName,
-					galleryItem.threadNumber, galleryItem.postNumber);
+					galleryItem.threadNumber, galleryItem.postNumber, force);
 			if (force) {
 				dismiss();
 			}

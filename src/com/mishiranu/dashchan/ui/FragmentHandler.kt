@@ -35,7 +35,11 @@ interface FragmentHandler {
 	fun requestStorage(): Boolean
 
 	fun navigateTargetAllowReturn(chanName: String?, navigationData: ChanLocator.NavigationData)
-	fun scrollToPost(chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?)
+	// navigateIfNeeded: when the target thread is not the current page (e.g. a gallery reopened
+	// from picture-in-picture after browsing away), open that thread instead of doing nothing.
+	// Pass false for implicit calls (scroll thread along with gallery) which must never navigate.
+	fun scrollToPost(chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?,
+			navigateIfNeeded: Boolean)
 	fun obtainDrawerPages(): Collection<DrawerForm.Page>
 
 	fun setActionBarLocked(locker: String, locked: Boolean)
