@@ -13,31 +13,31 @@
        clipPathUnits="userSpaceOnUse">
       <path
          id="dash-clip-path"
-         d="M 43.2,24 H 71.2 L 58.1,46 H 70.1 L 44.8,84 L 48.4,58 H 38.4 Z" />
+         d="M 44,32.5 H 70.1 L 57.9,53 H 69.1 L 45.5,88.5 L 48.8,64.2 H 39.5 Z" />
     </clipPath>
   </defs>
   <path
      id="dash" style="display:none"
      fill="#ffffff"
-     d="M 43.2,24 H 71.2 L 58.1,46 H 70.1 L 44.8,84 L 48.4,58 H 38.4 Z" />
+     d="M 44,32.5 H 70.1 L 57.9,53 H 69.1 L 45.5,88.5 L 48.8,64.2 H 39.5 Z" />
   <g
      id="dash-group" style="display:inline"
      clip-path="url(#dash-clip)">
     <rect
        id="dash-blue"
        fill="#4285f4"
-       x="36" y="24" width="38" height="11.5" />
+       x="36" y="32.5" width="38" height="10.8" />
     <rect
        id="dash-red"
        fill="#ea4335"
-       x="36" y="35" width="38" height="11.5" />
+       x="36" y="42.8" width="38" height="10.7" />
     <rect
        id="dash-yellow"
        fill="#fbbc04"
-       x="36" y="46" width="38" height="12.5" />
+       x="36" y="53" width="38" height="11.7" />
     <rect
        id="dash-green"
        fill="#34a853"
-       x="36" y="58" width="38" height="26" />
+       x="36" y="64.2" width="38" height="24.3" />
   </g>
 </svg>
