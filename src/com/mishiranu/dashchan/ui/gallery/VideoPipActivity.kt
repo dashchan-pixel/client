@@ -35,15 +35,24 @@ import java.lang.ref.WeakReference
  * plain fullscreen player (tap toggles the control bar); leaving it re-enters PiP automatically.
  */
 class VideoPipActivity : Activity(), FlowVideoView.Callback {
-	private class Playback(val chan: Chan, val item: GalleryItem, val threadTitle: String?,
-			val position: Long, val playing: Boolean, val dimensions: Point?)
+	private class Playback(val chan: Chan, val item: GalleryItem, val playlist: List<GalleryItem>?,
+			val threadTitle: String?, val position: Long, val playing: Boolean, val dimensions: Point?)
 
 	private lateinit var videoView: FlowVideoView
 	private lateinit var audioFocus: AudioFocus
 
+	private var chan: Chan? = null
 	private var threadTitle: String? = null
 	private var pendingSeekPosition = -1L
 	private var dimensions: Point? = null
+
+	/**
+	 * When launched from the Flow feed: its video list, so completed videos advance to the
+	 * next one (wrapping around) like the feed itself; unplayable entries are dropped.
+	 * Null when launched from the gallery, which honours the completion preference instead.
+	 */
+	private var playlist: MutableList<GalleryItem>? = null
+	private var playlistIndex = 0
 
 	/** The intended playback state; the player itself lags while buffering. */
 	private var playing = true
@@ -54,6 +63,7 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 			when (intent.getIntExtra(EXTRA_COMMAND, -1)) {
 				COMMAND_PLAY -> setPlaying(true)
 				COMMAND_PAUSE -> setPlaying(false)
+				COMMAND_NEXT -> advance(1)
 			}
 		}
 	}
@@ -99,15 +109,32 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 	}
 
 	private fun beginPlayback(playback: Playback) {
+		chan = playback.chan
 		threadTitle = playback.threadTitle
 		pendingSeekPosition = playback.position
 		dimensions = playback.dimensions
 		playing = playback.playing
 		pausedByTransientLossOfFocus = false
+		playlist = playback.playlist?.toMutableList()
+		playlistIndex = (playlist?.indexOfFirst { it === playback.item } ?: 0).coerceAtLeast(0)
 		videoView.bind(playback.chan, playback.item, this)
 		// Starts buffering right away; playback begins once the player is ready.
 		videoView.prepare()
 		videoView.setActive(playback.playing)
+		updatePictureInPictureParams()
+	}
+
+	/** Skip [delta] entries forward in the Flow playlist, wrapping around like the feed. */
+	private fun advance(delta: Int) {
+		val chan = chan ?: return
+		val playlist = playlist?.takeIf { it.isNotEmpty() } ?: return
+		playlistIndex = (playlistIndex + delta).mod(playlist.size)
+		pendingSeekPosition = -1
+		playing = true
+		pausedByTransientLossOfFocus = false
+		videoView.bind(chan, playlist[playlistIndex], this)
+		videoView.prepare()
+		videoView.setActive(true)
 		updatePictureInPictureParams()
 	}
 
@@ -159,15 +186,25 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 				.setAutoEnterEnabled(true)
 				.setSeamlessResizeEnabled(true)
 		pipAspectRatio(dimensions)?.let { builder.setAspectRatio(it) }
-		val command = if (playing) COMMAND_PAUSE else COMMAND_PLAY
-		val icon = if (playing) R.attr.iconButtonPause else R.attr.iconButtonPlay
-		val label = getString(if (playing) R.string.pause else R.string.play)
+		val actions = mutableListOf(if (playing) {
+			remoteAction(COMMAND_PAUSE, R.attr.iconButtonPause, R.string.pause)
+		} else {
+			remoteAction(COMMAND_PLAY, R.attr.iconButtonPlay, R.string.play)
+		})
+		if ((playlist?.size ?: 0) > 1) {
+			actions.add(remoteAction(COMMAND_NEXT, R.attr.iconButtonForward, R.string.skip))
+		}
+		builder.setActions(actions)
+		setPictureInPictureParams(builder.build())
+	}
+
+	private fun remoteAction(command: Int, iconAttr: Int, titleRes: Int): RemoteAction {
+		val label = getString(titleRes)
 		val intent = PendingIntent.getBroadcast(this, command,
 				Intent(ACTION_CONTROL).setPackage(packageName).putExtra(EXTRA_COMMAND, command),
 				PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-		builder.setActions(listOf(RemoteAction(Icon.createWithResource(this,
-				ResourceUtils.getResourceId(this, icon, 0)), label, label, intent)))
-		setPictureInPictureParams(builder.build())
+		return RemoteAction(Icon.createWithResource(this,
+				ResourceUtils.getResourceId(this, iconAttr, 0)), label, label, intent)
 	}
 
 	// FlowVideoView.Callback
@@ -190,7 +227,15 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 	}
 
 	override fun onVideoEnded(view: FlowVideoView) {
-		if (Preferences.getVideoCompletionMode() == Preferences.VideoCompletionMode.LOOP) {
+		val playlist = playlist
+		if (playlist != null) {
+			// Flow semantics: advance to the next video, or loop the only one.
+			if (playlist.size > 1) {
+				advance(1)
+			} else {
+				view.replay()
+			}
+		} else if (Preferences.getVideoCompletionMode() == Preferences.VideoCompletionMode.LOOP) {
 			view.replay()
 		} else {
 			// The view already reset the clip to its start and paused.
@@ -201,6 +246,28 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 	}
 
 	override fun onVideoFailed(view: FlowVideoView, galleryItem: GalleryItem) {
+		// With a Flow playlist, drop the unplayable video and move on (like the feed);
+		// give up only when nothing playable remains.
+		val playlist = playlist
+		if (playlist != null) {
+			val index = playlist.indexOfFirst { it === galleryItem }
+			if (index >= 0 && index != playlistIndex) {
+				// A stale report for a video that is not the one playing: just drop it.
+				playlist.removeAt(index)
+				if (index < playlistIndex) {
+					playlistIndex--
+				}
+				return
+			}
+			if (index == playlistIndex) {
+				playlist.removeAt(index)
+				if (playlist.isNotEmpty()) {
+					// The next video took over the removed one's index; advance(0) wraps it.
+					advance(0)
+					return
+				}
+			}
+		}
 		ClickableToast.show(R.string.playback_error)
 		finish()
 	}
@@ -219,6 +286,7 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 		private const val EXTRA_COMMAND = "command"
 		private const val COMMAND_PLAY = 1
 		private const val COMMAND_PAUSE = 2
+		private const val COMMAND_NEXT = 3
 
 		// In-process handoff, like FlowDialog's pending state: GalleryItem is not Parcelable.
 		private var pendingPlayback: Playback? = null
@@ -226,13 +294,15 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 
 		/**
 		 * Pop [galleryItem]'s video out into the floating player, resuming at [position]
-		 * (already-known [dimensions] shape the window before the first frame). The caller
-		 * is expected to stop its own playback and dismiss itself afterwards.
+		 * (already-known [dimensions] shape the window before the first frame). A Flow feed
+		 * passes its video list as [playlist] so completed videos advance to the next one;
+		 * the gallery passes null to keep single-video semantics. The caller is expected to
+		 * stop its own playback and dismiss itself afterwards.
 		 */
 		@JvmStatic
-		fun start(activity: Activity, chan: Chan, galleryItem: GalleryItem, threadTitle: String?,
-				position: Long, playing: Boolean, dimensions: Point?) {
-			val playback = Playback(chan, galleryItem, threadTitle, position, playing, dimensions)
+		fun start(activity: Activity, chan: Chan, galleryItem: GalleryItem, playlist: List<GalleryItem>?,
+				threadTitle: String?, position: Long, playing: Boolean, dimensions: Point?) {
+			val playback = Playback(chan, galleryItem, playlist, threadTitle, position, playing, dimensions)
 			val existing = instance?.get()
 			if (existing != null && !existing.isFinishing && !existing.isDestroyed) {
 				// A floating player is already up — swap its video instead of relaunching.

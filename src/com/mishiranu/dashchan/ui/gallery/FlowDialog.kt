@@ -276,9 +276,10 @@ class FlowDialog : DialogFragment(), FlowVideoView.Callback {
 		val chan = viewModel.chan ?: return
 		// Silence this page before the floating player takes over, then close the feed so the
 		// thread is visible behind the picture-in-picture window and nothing else keeps playing.
+		// The feed's video list goes along so the floating player keeps advancing through it.
 		view.setActive(false)
-		VideoPipActivity.start(requireActivity(), chan, galleryItem, viewModel.threadTitle,
-				view.playbackPosition(), true, view.videoDimensions())
+		VideoPipActivity.start(requireActivity(), chan, galleryItem, viewModel.items?.toList(),
+				viewModel.threadTitle, view.playbackPosition(), true, view.videoDimensions())
 		dismiss()
 	}
 
