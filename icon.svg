@@ -15,6 +15,19 @@
          id="dash-clip-path"
          d="M 44,32.5 H 70.1 L 57.9,53 H 69.1 L 45.5,88.5 L 48.8,64.2 H 39.5 Z" />
     </clipPath>
+    <linearGradient
+       id="dash-gradient"
+       x1="0" y1="32.5" x2="0" y2="88.5"
+       gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4285f4" />
+      <stop offset="0.1125" stop-color="#4285f4" />
+      <stop offset="0.2554" stop-color="#ea4335" />
+      <stop offset="0.2946" stop-color="#ea4335" />
+      <stop offset="0.4375" stop-color="#fbbc04" />
+      <stop offset="0.4946" stop-color="#fbbc04" />
+      <stop offset="0.6375" stop-color="#34a853" />
+      <stop offset="1" stop-color="#34a853" />
+    </linearGradient>
   </defs>
   <path
      id="dash" style="display:none"
@@ -24,20 +37,8 @@
      id="dash-group" style="display:inline"
      clip-path="url(#dash-clip)">
     <rect
-       id="dash-blue"
-       fill="#4285f4"
-       x="36" y="32.5" width="38" height="10.8" />
-    <rect
-       id="dash-red"
-       fill="#ea4335"
-       x="36" y="42.8" width="38" height="10.7" />
-    <rect
-       id="dash-yellow"
-       fill="#fbbc04"
-       x="36" y="53" width="38" height="11.7" />
-    <rect
-       id="dash-green"
-       fill="#34a853"
-       x="36" y="64.2" width="38" height="24.3" />
+       id="dash-fill"
+       fill="url(#dash-gradient)"
+       x="36" y="32.5" width="38" height="56" />
   </g>
 </svg>
