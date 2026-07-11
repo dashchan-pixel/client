@@ -4,13 +4,11 @@ import android.content.Context
 import chan.util.StringUtils
 import java.text.DateFormat
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Locale
 
 class PostDateFormatter(context: Context) {
 	private val instance: String
 	private val dateFormat: DateFormat
-	private val dateFormatLong: DateFormat
 	private val timeFormat: DateFormat
 
 	init {
@@ -27,25 +25,14 @@ class PostDateFormatter(context: Context) {
 		val timeFormat = if (android.text.format.DateFormat.is24HourFormat(context))
 			"HH:mm:ss" else "hh:mm:ss aa"
 		this.instance = longDateFormat + timeFormat + Locale.getDefault().toString()
-		this.dateFormat = SimpleDateFormat(shortDateFormat, Locale.getDefault())
-		this.dateFormatLong = SimpleDateFormat(longDateFormat, Locale.getDefault())
+		this.dateFormat = SimpleDateFormat(longDateFormat, Locale.getDefault())
 		this.timeFormat = SimpleDateFormat(timeFormat, Locale.US)
 	}
 
-	fun formatDate(timestamp: Long): String {
-		val calendar = Calendar.getInstance()
-		val year = calendar.get(Calendar.YEAR)
-		calendar.timeInMillis = timestamp
-		return (if (calendar.get(Calendar.YEAR) != year) dateFormatLong else dateFormat).format(timestamp)
-	}
+	fun formatDate(timestamp: Long): String = dateFormat.format(timestamp)
 
-	fun formatDateTime(timestamp: Long): String {
-		val calendar = Calendar.getInstance()
-		val year = calendar.get(Calendar.YEAR)
-		calendar.timeInMillis = timestamp
-		return (if (calendar.get(Calendar.YEAR) != year) dateFormatLong else dateFormat).format(timestamp) +
-				" " + timeFormat.format(timestamp)
-	}
+	fun formatDateTime(timestamp: Long): String =
+			dateFormat.format(timestamp) + " " + timeFormat.format(timestamp)
 
 	fun formatDateTime(timestamp: Long, holder: Holder?): Holder {
 		if (holder != null && holder.instance == instance) {
