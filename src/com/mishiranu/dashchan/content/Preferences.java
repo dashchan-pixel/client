@@ -914,8 +914,17 @@ public class Preferences {
 		return getRepositoryUri(KEY_URI_UPDATES, BuildConfig.URI_UPDATES);
 	}
 
-	public static String getUriUpdatesExtensions() {
-		return getRepositoryUri(KEY_URI_UPDATES_EXTENSIONS, BuildConfig.URI_UPDATES_EXTENSIONS);
+	// The stored value is a whitespace-separated list, so updates from any number of
+	// extension repositories can be merged.
+	public static List<String> getUriUpdatesExtensions() {
+		String value = getRepositoryUri(KEY_URI_UPDATES_EXTENSIONS, BuildConfig.URI_UPDATES_EXTENSIONS);
+		ArrayList<String> uris = new ArrayList<>();
+		for (String uri : value.split("\\s+")) {
+			if (!uri.isEmpty()) {
+				uris.add(uri);
+			}
+		}
+		return uris;
 	}
 
 	public static String getUriThemes() {

@@ -599,11 +599,11 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 					requestedScheme[targetUri] = scheme!!
 				}
 			}
-			run {
-				// A separate source combined with the client one: it covers every installed
-				// extension (in addition to each extension's own updateUri) and contributes
-				// install suggestions even when no extensions are installed yet.
-				val uri = Uri.parse(Preferences.getUriUpdatesExtensions())
+			// Separate sources merged with the client one: each covers every installed
+			// extension (in addition to each extension's own updateUri) and contributes
+			// install suggestions even when no extensions are installed yet.
+			for (uriString in Preferences.getUriUpdatesExtensions()) {
+				val uri = Uri.parse(uriString)
 				val targetUri = TargetUri(uri)
 				var extensionNames = targets[targetUri]
 				if (extensionNames == null) {
