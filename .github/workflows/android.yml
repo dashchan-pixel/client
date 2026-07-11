@@ -71,7 +71,7 @@ jobs:
         env:
           BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          git fetch origin "$BRANCH"
+          git fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
           git worktree add ../manifest "origin/$BRANCH"
           python3 scripts/update_manifest.py \
               build/outputs/apk/release/dashchan-pixel-release.apk \
