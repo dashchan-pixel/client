@@ -88,11 +88,6 @@ public class ChanConfiguration implements Chan.Linked {
 	public static final int PAGES_COUNT_INVALID = Integer.MAX_VALUE;
 	public static final int BUMP_LIMIT_INVALID = Integer.MAX_VALUE;
 
-	// TODO CHAN
-	// Remove this field after updating
-	// allchan sevenchan tumbach
-	// Added: 28.07.20 22:23
-	@Public public static final String CAPTCHA_TYPE_RECAPTCHA_1 = "recaptcha_1";
 	@Public public static final String CAPTCHA_TYPE_RECAPTCHA_2 = "recaptcha_2";
 	@Public public static final String CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE = "recaptcha_2_invisible";
 	@Public public static final String CAPTCHA_TYPE_HCAPTCHA = "hcaptcha";
@@ -581,10 +576,6 @@ public class ChanConfiguration implements Chan.Linked {
 		if (captchaType == null) {
 			throw new NullPointerException();
 		}
-		if (CAPTCHA_TYPE_RECAPTCHA_1.equals(captchaType)) {
-			// Unsupported captcha type
-			return;
-		}
 		if (supportedCaptchaTypes == null) {
 			supportedCaptchaTypes = new LinkedHashSet<>();
 		}
@@ -619,10 +610,7 @@ public class ChanConfiguration implements Chan.Linked {
 	}
 
 	private Captcha obtainCaptchaConfigurationSafe(String captchaType) {
-		if (CAPTCHA_TYPE_RECAPTCHA_1.equals(captchaType)) {
-			// Unsupported captcha type
-			return null;
-		} else if (CAPTCHA_TYPE_RECAPTCHA_2.equals(captchaType)) {
+		if (CAPTCHA_TYPE_RECAPTCHA_2.equals(captchaType)) {
 			Captcha captcha = new Captcha();
 			captcha.title = "reCAPTCHA 2";
 			captcha.input = Captcha.Input.LATIN;

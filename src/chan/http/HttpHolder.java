@@ -1,17 +1,12 @@
 package chan.http;
 
 import android.net.Uri;
-import chan.annotation.Public;
 import chan.content.Chan;
 import com.mishiranu.dashchan.content.model.ErrorItem;
 import java.io.Closeable;
 import java.net.Proxy;
 import java.util.ArrayList;
 
-// TODO CHAN
-// Remove @Public annotation after updating all extensions which use HttpHolder in ChanPerformer.
-// Added: 30.03.21 18:45
-@Public
 public final class HttpHolder {
 	public interface Use extends Closeable {
 		void close();

@@ -91,15 +91,21 @@ public final class HttpRequest {
 	CookieBuilder cookieBuilder;
 
 	// TODO CHAN
-	// Remove this constructor after updating
-	// allchan alphachan anonfm archiverbt chuckdfwk desustorage diochan exach fiftyfive fourplebs kropyvach kurisach
-	// nulltirech owlchan ponyach ponychan princessluna randomarchive sevenchan shanachan synch tiretirech tumbach
-	// uboachan wizardchan
-	// Added: 26.09.20 20:10
-	public HttpRequest(Uri uri, HttpHolder holder, Preset preset) {
-		if (holder == null && preset != null) {
-			holder = preset.getHolder();
-		}
+	// Remove this constructor after updating (also used by the client itself)
+	// alphachan alterchan brchan chaosach exach fiftyfive fourplebs haibane kropyvach lainchan nulltirech onechanca
+	// synch twentyseven uboachan wizardchan
+	// Added: 18.10.20 18:58
+	@Public
+	public HttpRequest(Uri uri, HttpHolder holder) {
+		Objects.requireNonNull(holder);
+		this.uri = uri;
+		this.holder = holder;
+		client = HttpClient.getInstance();
+	}
+
+	@Public
+	public HttpRequest(Uri uri, Preset preset) {
+		HttpHolder holder = preset != null ? preset.getHolder() : null;
 		Objects.requireNonNull(holder);
 		this.uri = uri;
 		this.holder = holder;
@@ -114,21 +120,6 @@ public final class HttpRequest {
 			RangePreset rangePreset = (RangePreset) preset;
 			setRange(rangePreset.getRangeStart(), rangePreset.getRangeEnd());
 		}
-	}
-
-	// TODO CHAN
-	// Remove this constructor after updating
-	// alphachan alterchan brchan chaosach exach fiftyfive fourplebs haibane kropyvach lainchan nulltirech onechanca
-	// synch twentyseven uboachan wizardchan
-	// Added: 18.10.20 18:58
-	@Public
-	public HttpRequest(Uri uri, HttpHolder holder) {
-		this(uri, holder, null);
-	}
-
-	@Public
-	public HttpRequest(Uri uri, Preset preset) {
-		this(uri, null, preset);
 	}
 
 	private HttpRequest setMethod(RequestMethod method, RequestEntity entity) {

@@ -658,23 +658,17 @@ public class ChanPerformer implements Chan.Linked {
 	@Public
 	public static class ReadContentData implements HttpRequest.TimeoutsPreset {
 		@Public public final Uri uri;
-		// TODO CHAN
-		// Remove this field after updating
-		// fourplebs
-		// Added: 18.10.20 19:08
-		public final HttpHolder holder;
 		@Public public final HttpRequest.Preset direct;
 
 		public ReadContentData(Uri uri, int connectTimeout, int readTimeout, HttpHolder holder,
 				long rangeStart, long rangeEnd) {
 			this.uri = uri;
-			this.holder = holder;
 			direct = new ReadContentDirectPreset(connectTimeout, readTimeout, holder, rangeStart, rangeEnd);
 		}
 
 		@Override
 		public HttpHolder getHolder() {
-			return holder;
+			return direct.getHolder();
 		}
 
 		@Override
