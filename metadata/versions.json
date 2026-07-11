@@ -629,6 +629,12 @@
 			"name": "26.7.4-pixel",
 			"date": "11.07.2026",
 			"changelog": true
+		},
+		{
+			"code": 1342,
+			"name": "26.7.5-pixel",
+			"date": "11.07.2026",
+			"changelog": true
 		}
 	]
 }

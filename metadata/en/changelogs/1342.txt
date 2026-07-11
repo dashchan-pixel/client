@@ -1,0 +1,6 @@
+* Two app icons to choose from in the interface settings (gradient or striped); all icons are vector now
+* Post dates always include the year
+* Update sources reworked: the client updates from its own repository; extension update sources are configurable and can be combined
+* Fixed the changelog viewer: wrong source repository and wrong language selection for locales like en-PL
+* Removed the obsolete "Wi-Fi or 3G+" network mode
+* Removed long-deprecated extension API methods (extensions from before 2020 may stop working)
