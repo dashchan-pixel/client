@@ -123,7 +123,8 @@ class ReadChangelogTask(private val callback: Callback, private val locales: Lis
 			val downloadLocales = ArrayList<String>()
 			for (locale in locales) {
 				val language = locale.language
-				val country: String? = locale.country
+				// Locale.country is "" (never null) when absent
+				val country: String? = locale.country.takeIf { it.isNotEmpty() }
 				val languageCountry = if (country != null) "$language-$country" else language
 				if (metadataDirs.contains(languageCountry)) {
 					downloadLocales.add(languageCountry)

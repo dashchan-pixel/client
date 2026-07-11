@@ -19,19 +19,19 @@ itself a fork of [Mishiranu/Dashchan](https://github.com/Mishiranu/Dashchan).
 ## Screenshots
 
 <p>
-<img src="metadata/en-US/images/phoneScreenshots/1.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/2.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/3.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/4.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/5.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/6.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/7.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/8.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/9.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/10.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/11.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/12.png" width="20%" />
-<img src="metadata/en-US/images/phoneScreenshots/13.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/1.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/2.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/3.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/4.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/5.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/6.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/7.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/8.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/9.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/10.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/11.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/12.png" width="20%" />
+<img src="metadata/en/images/phoneScreenshots/13.png" width="20%" />
 </p>
 
 ## Changes over the original Dashchan
@@ -49,7 +49,7 @@ itself a fork of [Mishiranu/Dashchan](https://github.com/Mishiranu/Dashchan).
 * Picture-in-picture video playback with a video feed mode
 
 Version history with changelogs lives in [metadata/versions.json](metadata/versions.json)
-and [metadata/en-US/changelogs](metadata/en-US/changelogs).
+and [metadata/en/changelogs](metadata/en/changelogs).
 
 ## Building Guide
 
