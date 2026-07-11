@@ -37,7 +37,7 @@ android {
 		// Client updates come from this repo itself; extension updates from a separate,
 		// independently configurable source (see Preferences.getUriUpdatesExtensions).
 		buildConfigField("String", "URI_UPDATES", "\"//raw.githubusercontent.com/" +
-				"dashchan-pixel/client/rework/update/data.json\"")
+				"dashchan-pixel/client/rework/update/data-v1.json\"")
 		buildConfigField("String", "URI_UPDATES_EXTENSIONS", "\"//raw.githubusercontent.com/" +
 				"TrixiEther/Dashchan-Meta/master/update/data.json\"")
 		buildConfigField("String", "URI_THEMES", "\"//raw.githubusercontent.com/" +

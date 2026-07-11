@@ -1,57 +1,84 @@
-name: Dashchan-Experimental build
+name: Release
+
+# Pushing a tag equal to the newest metadata/versions.json entry (e.g. 26.7.5-pixel)
+# builds the release APK, publishes it as a GitHub release and refreshes
+# update/data-v1.json on the default branch so the update manifest hashes the
+# exact published binary.
 
 on:
   push:
-    branches: [ "experimental", "3.1.4-experimental-*"]
-  pull_request:
-    branches: [ "experimental", "3.1.4-experimental-*"]
-  pull_request_target:
-    types: [opened, edited, synchronize]
-    branches: ["3.1.4-experimental-*"]
-    
-env:
-  KEYSTORE_FILENAME: ${{ secrets.KEYSTORE_FILENAME }}
-  KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-  RELEASE_SIGN_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-  RELEASE_SIGN_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-  RELEASE_SIGNER_NAME: ${{ secrets.SIGNER_NAME }}
+    tags: [ "*-pixel" ]
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-  
-    runs-on: ubuntu-22.04
+  release:
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        cache: gradle
-        
-    - name: Install NDK
-      run: echo "y" | sudo ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.4.7075529" 
-      
-    - name: Install libncurses5
-      run: sudo apt-get install libncurses5 -y
-        
-    - name: Checkout keystore
-      uses: actions/checkout@v3
-      with:
-        repository: ${{ secrets.KEYSTORE_DASHCHAN_REPO }}
-        token: ${{ secrets.KEYSTORE_ACCESS_TOKEN }}
-        path: keystore
+      - uses: actions/checkout@v4
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Build with Gradle
-      run: ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} ./gradlew :assembleRelease
+      - name: Check signing secret
+        run: |
+          if [ -z "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "RELEASE_KEYSTORE_BASE64 secret is not set; a locally generated" \
+                 "keystore would break the update fingerprint check" >&2
+            exit 1
+          fi
 
-      
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: Dashchan-Experimental.apk
-        path: build/outputs/apk/release/DashchanFork-release.apk
+      - name: Verify tag matches the newest version
+        run: |
+          name=$(python3 -c "import json; print(max(json.load(open('metadata/versions.json'))['versions'], key=lambda v: v['code'])['name'])")
+          if [ "$name" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match newest version $name" >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Decode signing keystore
+        run: echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_FILENAME: ${{ runner.temp }}/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_SIGN_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_SIGN_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Locate changelog for release body
+        id: changelog
+        run: |
+          code=$(python3 -c "import json; print(max(json.load(open('metadata/versions.json'))['versions'], key=lambda v: v['code'])['code'])")
+          echo "path=metadata/en/changelogs/$code.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.changelog.outputs.path }}
+          files: build/outputs/apk/release/dashchan-pixel-release.apk
+
+      - name: Refresh update manifest on the default branch
+        env:
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch origin "$BRANCH"
+          git worktree add ../manifest "origin/$BRANCH"
+          python3 scripts/update_manifest.py \
+              build/outputs/apk/release/dashchan-pixel-release.apk \
+              ../manifest/update/data-v1.json "$GITHUB_REF_NAME"
+          cd ../manifest
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update/data-v1.json
+          git commit -m "Update manifest for $GITHUB_REF_NAME" || exit 0
+          git push origin "HEAD:$BRANCH"

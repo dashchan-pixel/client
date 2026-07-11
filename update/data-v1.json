@@ -1,5 +1,5 @@
 {
-	"title": "Dashchan pixel fork releases",
+	"title": "Dashchan Pixel",
 	"applications": [
 		{
 			"name": "client",
@@ -13,10 +13,10 @@
 					"min_api_version": 1,
 					"max_api_version": 1,
 					"min_sdk": 36,
-					"length": 4369856,
+					"length": 4369860,
 					"source": "//github.com/dashchan-pixel/client/releases/download/26.7.5-pixel/dashchan-pixel-release.apk",
 					"fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
-					"sha256sum": "32:9A:03:3B:CB:AB:F6:22:6C:B5:B2:FF:5D:4A:A4:C1:10:A0:40:94:06:C0:15:E0:93:CE:24:FA:D2:BF:13:B1"
+					"sha256sum": "FB:CD:EE:FC:42:01:52:24:6F:56:1F:6E:69:F5:5B:80:D3:16:02:9E:65:48:17:47:7E:4D:E0:E8:53:7B:2A:B8"
 				}
 			]
 		}
