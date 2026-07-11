@@ -22,9 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 @Public
 public final class HttpResponse {
@@ -333,71 +330,10 @@ public final class HttpResponse {
 		return string;
 	}
 
-	// TODO CHAN
-	// Remove this method after updating
-	// allchan alphachan alterchan anonfm archiverbt brchan chaosach chiochan chuckdfwk dangeru desustorage diochan
-	// endchan exach fiftyfive fourplebs haibane kropyvach kurisach lainchan lolifox nulltirech onechanca owlchan
-	// ponyach ponychan princessluna randomarchive sevenchan shanachan synch taima tiretirech tumbach twentyseven
-	// uboachan valkyria wizardchan
-	// Added: 18.10.20 18:54
-	@Public
-	@Deprecated
-	public String getString() throws HttpException {
-		return readString();
-	}
-
 	@Public
 	public Bitmap readBitmap() throws HttpException {
 		readBytes();
 		return bytes != null ? BitmapFactory.decodeByteArray(bytes, 0, bytes.length) : null;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// allchan alphachan alterchan anonfm chaosach chiochan chuckdfwk endchan fourplebs haibane kurisach nulldvachin
-	// onechanca tiretirech tumbach
-	// Added: 18.10.20 18:54
-	@Public
-	public Bitmap getBitmap() throws HttpException {
-		return readBitmap();
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// allchan anonfm brchan dangeru endchan fiftyfive horochan kropyvach kurisach lainchan lolifox nulldvachin
-	// nulltirech onechanca princessluna synch taima tiretirech tumbach twentyseven uboachan wizardchan
-	// Added: 18.10.20 18:54
-	@Deprecated
-	@Public
-	public JSONObject getJsonObject() throws HttpException {
-		String string = readString();
-		if (string != null) {
-			try {
-				return new JSONObject(string);
-			} catch (JSONException e) {
-				// Invalid data, ignore exception
-			}
-		}
-		return null;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// anonfm brchan dangeru endchan fiftyfive kropyvach lainchan lolifox nulltirech onechanca princessluna synch taima
-	// twentyseven uboachan wizardchan
-	// Added: 18.10.20 18:54
-	@Deprecated
-	@Public
-	public JSONArray getJsonArray() throws HttpException {
-		String string = readString();
-		if (string != null) {
-			try {
-				return new JSONArray(string);
-			} catch (JSONException e) {
-				// Invalid data, ignore exception
-			}
-		}
-		return null;
 	}
 
 	public void cleanupAndDisconnect() {

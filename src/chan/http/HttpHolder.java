@@ -7,9 +7,6 @@ import com.mishiranu.dashchan.content.model.ErrorItem;
 import java.io.Closeable;
 import java.net.Proxy;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 // TODO CHAN
 // Remove @Public annotation after updating all extensions which use HttpHolder in ChanPerformer.
@@ -101,104 +98,6 @@ public final class HttpHolder {
 		if (isInterrupted()) {
 			throw new HttpClient.InterruptedHttpException();
 		}
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alterchan chiochan chuckdfwk diochan kurisach nulltirech owlchan ponyach ponychan sevenchan shanachan taima
-	// valkyria
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public void disconnect() {
-		checkThread();
-		if (session != null) {
-			session.disconnectAndClear();
-		}
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alterchan chiochan chuckdfwk diochan kurisach nulltirech owlchan ponyach ponychan sevenchan shanachan taima
-	// valkyria
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public HttpResponse read() throws HttpException {
-		checkThread();
-		if (session != null && session.response != null) {
-			return session.response;
-		}
-		throw new HttpException(ErrorItem.Type.DOWNLOAD, false, false);
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// archiverbt chiochan chuckdfwk desustorage exach fiftyfive fourplebs horochan nulltirech onechanca ponychan
-	// tiretirech
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public void checkResponseCode() throws HttpException {
-		checkThread();
-		if (session != null) {
-			session.checkResponseCode();
-		}
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alphachan alterchan anonfm archiverbt chiochan chuckdfwk desustorage diochan exach fiftyfive fourplebs horochan
-	// kurisach nulltirech onechanca owlchan ponyach ponychan sevenchan shanachan taima tiretirech valkyria
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public int getResponseCode() {
-		checkThread();
-		return session != null ? session.getResponseCode() : -1;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alphachan alterchan anonfm chiochan chuckdfwk diochan exach kurisach onechanca owlchan ponyach ponychan
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public Uri getRedirectedUri() {
-		checkThread();
-		return session != null ? session.redirectedUri : null;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alterchan anonfm wizardchan
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public Map<String, List<String>> getHeaderFields() {
-		checkThread();
-		return session != null ? session.getHeaderFields() : Collections.emptyMap();
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// alphachan alterchan chaosach chiochan chuckdfwk endchan exach haibane kurisach lolifox onechanca ponyach
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public String getCookieValue(String name) {
-		checkThread();
-		return session != null ? session.getCookieValue(name) : null;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// fiftyfive
-	// Added: 18.10.20 19:08
-	@Deprecated
-	@Public
-	public HttpValidator getValidator() {
-		return extractValidator();
 	}
 
 	public HttpValidator extractValidator() {

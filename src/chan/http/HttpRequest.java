@@ -45,60 +45,21 @@ public final class HttpRequest {
 		@Public
 		Action onRedirect(HttpResponse response) throws HttpException;
 
-		// TODO CHAN
-		// Remove this method and simplify default redirect handlers after updating
-		// alterchan chaosach haibane kurisach onechanca owlchan synch tiretirech
-		// Added: 18.10.20 01:50
 		@Public
-		Action onRedirectReached(int responseCode, Uri requestedUri, Uri redirectedUri, HttpHolder holder)
-				throws HttpException;
+		RedirectHandler NONE = response -> Action.CANCEL;
 
 		@Public
-		RedirectHandler NONE = new RedirectHandler() {
-			@Override
-			public Action onRedirect(HttpResponse response) {
-				return onRedirectReached(response.getResponseCode(),
-						response.getRequestedUri(), response.getRedirectedUri(), null);
-			}
-
-			@Override
-			public Action onRedirectReached(int responseCode, Uri requestedUri, Uri redirectedUri, HttpHolder holder) {
-				return Action.CANCEL;
-			}
-		};
+		RedirectHandler BROWSER = response -> Action.GET;
 
 		@Public
-		RedirectHandler BROWSER = new RedirectHandler() {
-			@Override
-			public Action onRedirect(HttpResponse response) {
-				return onRedirectReached(response.getResponseCode(),
-						response.getRequestedUri(), response.getRedirectedUri(), null);
-			}
-
-			@Override
-			public Action onRedirectReached(int responseCode, Uri requestedUri, Uri redirectedUri, HttpHolder holder) {
-				return Action.GET;
-			}
-		};
-
-		@Public
-		RedirectHandler STRICT = new RedirectHandler() {
-			@Override
-			public Action onRedirect(HttpResponse response) {
-				return onRedirectReached(response.getResponseCode(),
-						response.getRequestedUri(), response.getRedirectedUri(), null);
-			}
-
-			@Override
-			public Action onRedirectReached(int responseCode, Uri requestedUri, Uri redirectedUri, HttpHolder holder) {
-				switch (responseCode) {
-					case HttpURLConnection.HTTP_MOVED_PERM:
-					case HttpURLConnection.HTTP_MOVED_TEMP: {
-						return Action.RETRANSMIT;
-					}
-					default: {
-						return Action.GET;
-					}
+		RedirectHandler STRICT = response -> {
+			switch (response.getResponseCode()) {
+				case HttpURLConnection.HTTP_MOVED_PERM:
+				case HttpURLConnection.HTTP_MOVED_TEMP: {
+					return Action.RETRANSMIT;
+				}
+				default: {
+					return Action.GET;
 				}
 			}
 		};
@@ -342,28 +303,4 @@ public final class HttpRequest {
 		return client.execute(session, this);
 	}
 
-	// TODO CHAN
-	// Remove this method after updating
-	// alterchan chiochan chuckdfwk diochan kurisach nulltirech owlchan ponyach ponychan sevenchan shanachan taima
-	// valkyria
-	// Added: 18.10.20 18:58
-	@Deprecated
-	@Public
-	public HttpHolder execute() throws HttpException {
-		perform();
-		return holder;
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// allchan alphachan alterchan anonfm archiverbt brchan chaosach chiochan chuckdfwk dangeru desustorage diochan
-	// endchan exach fiftyfive fourplebs haibane horochan kropyvach kurisach lainchan lolifox nulldvachin nulltirech
-	// onechanca owlchan ponyach ponychan princessluna randomarchive sevenchan shanachan synch taima tiretirech tumbach
-	// twentyseven uboachan valkyria wizardchan
-	// Added: 18.10.20 18:58
-	@Deprecated
-	@Public
-	public HttpResponse read() throws HttpException {
-		return perform();
-	}
 }

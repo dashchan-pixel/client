@@ -44,15 +44,6 @@ object StringUtils {
 	@JvmStatic
 	fun nullIfEmpty(string: String?): String? = if (string.isNullOrEmpty()) null else string
 
-	// TODO CHAN
-	// Remove this method after updating
-	// archiverbt dangeru desustorage nulldvachin
-	// Added: 05.10.20 18:45
-	@Deprecated("Use equality operator instead")
-	@Public
-	@JvmStatic
-	fun equals(first: String?, second: String?): Boolean = first == second
-
 	@JvmStatic
 	fun compare(first: String?, second: String?, ignoreCase: Boolean): Int {
 		if (first === second) {

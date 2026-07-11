@@ -272,15 +272,6 @@ public class ChanMarkup implements Chan.Linked {
 		obtainTagItem(tagName, false, null, true, attribute, value).setColorable(true);
 	}
 
-	// TODO CHAN
-	// Remove this method after updating
-	// horochan ponychan
-	// Added: 14.05.16 12:12
-	@Deprecated
-	public final void addBlock(String tagName, boolean spaced) {
-		addBlock(tagName, true, spaced);
-	}
-
 	@Public
 	public final void addBlock(String tagName, boolean block, boolean spaced) {
 		obtainTagItem(tagName, false, null, false, null, null).setBlock(block, spaced);
@@ -294,15 +285,6 @@ public class ChanMarkup implements Chan.Linked {
 	@Public
 	public final void addBlock(String tagName, String attribute, String value, boolean block, boolean spaced) {
 		obtainTagItem(tagName, false, null, true, attribute, value).setBlock(block, spaced);
-	}
-
-	// TODO CHAN
-	// Remove this method after updating
-	// synch
-	// Added: 14.05.16 12:12
-	@Deprecated
-	public final void addPreformatted(String tagName) {
-		addPreformatted(tagName, true);
 	}
 
 	@Public
