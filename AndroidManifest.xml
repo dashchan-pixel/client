@@ -26,7 +26,7 @@
 		android:name=".content.MainApplication"
 		android:label="Dashchan"
 		android:icon="@mipmap/ic_launcher"
-		android:logo="@mipmap/ic_logo"
+		android:logo="@drawable/ic_logo"
 		android:theme="@style/Theme.Launcher"
 		android:enableOnBackInvokedCallback="true"
 		android:allowBackup="true"
@@ -41,11 +41,6 @@
 			android:exported="true">
 
 			<intent-filter>
-				<action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.LAUNCHER" />
-			</intent-filter>
-
-			<intent-filter>
 				<action android:name="chan.intent.action.HANDLE_URI" />
 				<category android:name="android.intent.category.DEFAULT" />
 				<data android:scheme="http" />
@@ -53,6 +48,34 @@
 			</intent-filter>
 
 		</activity>
+
+		<!-- Launcher entries live on aliases so the icon can be switched at runtime
+		     (Preferences.AppIcon): exactly one alias is enabled at any time. -->
+		<activity-alias
+			android:name=".ui.MainActivityGradient"
+			android:targetActivity=".ui.MainActivity"
+			android:exported="true">
+
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+
+		</activity-alias>
+
+		<activity-alias
+			android:name=".ui.MainActivityStriped"
+			android:targetActivity=".ui.MainActivity"
+			android:icon="@mipmap/ic_launcher_striped"
+			android:enabled="false"
+			android:exported="true">
+
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+
+		</activity-alias>
 
 		<activity
 			android:name=".content.PostingShareActivity"

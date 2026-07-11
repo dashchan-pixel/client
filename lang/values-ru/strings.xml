@@ -23,6 +23,7 @@
 	<string name="allow_this_extension__sentence">Разрешить этому расширению управление приложением?</string>
 	<string name="always">Всегда</string>
 	<string name="another">Другой</string>
+	<string name="app_icon">Иконка приложения</string>
 	<string name="appearance">Внешний вид</string>
 	<string name="application_name_update__format">Обновление %s</string>
 	<string name="archive">Архив</string>
@@ -190,6 +191,7 @@
 	<string name="go_to_search__sentence">Перейти к поиску?</string>
 	<string name="go_to_threads_list__sentence">Перейти к списку тредов?</string>
 	<string name="got_it">Ясно</string>
+	<string name="gradient">Градиент</string>
 	<string name="group">Группировать</string>
 	<string name="headers_order">Порядок категорий</string>
 	<string name="hidden_posts">Скрытые сообщения</string>
@@ -486,6 +488,7 @@
 	<string name="statistics">Статистика</string>
 	<string name="sticky_thread">Тред прикреплён</string>
 	<string name="stop">Стоп</string>
+	<string name="stripes">Полосы</string>
 	<string name="subdirectory_pattern">Шаблон подкаталога</string>
 	<string name="subject">Тема</string>
 	<string name="subject_is_too_short">Тема слишком короткая</string>

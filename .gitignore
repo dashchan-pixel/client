@@ -10,7 +10,6 @@
 !/gradle.properties
 !/gradlew
 !/gradlew.bat
-!/icon.sh
 !/icon.svg
 !/jni
 !/lang

@@ -955,6 +955,31 @@ public class Preferences {
 		return PREFERENCES.getBoolean(KEY_PAGE_BY_PAGE, DEFAULT_PAGE_BY_PAGE);
 	}
 
+	public enum AppIcon {
+		GRADIENT("gradient", R.string.gradient, "MainActivityGradient"),
+		STRIPED("striped", R.string.stripes, "MainActivityStriped");
+
+		public static final EnumValueProvider<AppIcon> VALUE_PROVIDER = o -> o.value;
+
+		public final String value;
+		public final int titleResId;
+		// Suffix of the launcher activity-alias in com.mishiranu.dashchan.ui carrying this icon.
+		public final String componentSuffix;
+
+		AppIcon(String value, int titleResId, String componentSuffix) {
+			this.value = value;
+			this.titleResId = titleResId;
+			this.componentSuffix = componentSuffix;
+		}
+	}
+
+	public static final String KEY_APP_ICON = "app_icon";
+	public static final AppIcon DEFAULT_APP_ICON = AppIcon.GRADIENT;
+
+	public static AppIcon getAppIcon() {
+		return getEnumValue(KEY_APP_ICON, AppIcon.values(), DEFAULT_APP_ICON, AppIcon.VALUE_PROVIDER);
+	}
+
 	public enum PagesListMode {
 		PAGES_FIRST("pages_first", R.string.pages_first),
 		FAVORITES_FIRST("favorites_first", R.string.favorites_first),

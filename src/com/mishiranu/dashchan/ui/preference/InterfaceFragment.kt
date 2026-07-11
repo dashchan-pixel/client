@@ -1,7 +1,9 @@
 package com.mishiranu.dashchan.ui.preference
 
 import android.app.AlertDialog
+import android.content.ComponentName
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -41,6 +43,10 @@ class InterfaceFragment : PreferenceFragment() {
 		addButton(R.string.themes, 0).setOnClickListener {
 			(requireActivity() as FragmentHandler).pushFragment(ThemesFragment())
 		}
+		addList(Preferences.KEY_APP_ICON, enumList(Preferences.AppIcon.values()) { o -> o.value },
+				Preferences.DEFAULT_APP_ICON.value, R.string.app_icon,
+				enumResList(Preferences.AppIcon.values()) { o -> o.titleResId })
+				.setOnAfterChangeListener { applyAppIcon() }
 
 		addHeader(R.string.navigation_drawer)
 		addList(Preferences.KEY_PAGES_LIST, enumList(Preferences.PagesListMode.values()) { o -> o.value },
@@ -108,6 +114,20 @@ class InterfaceFragment : PreferenceFragment() {
 				.setEnabled(captchaAutoReloadEnabled())
 
 		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.user_interface), null)
+	}
+
+	private fun applyAppIcon() {
+		val context = requireContext()
+		val packageManager = context.packageManager
+		val selected = Preferences.getAppIcon()
+		// Enable the new alias before disabling the old one so a launcher entry always exists.
+		for (icon in Preferences.AppIcon.values().sortedByDescending { it == selected }) {
+			packageManager.setComponentEnabledSetting(
+					ComponentName(context, "com.mishiranu.dashchan.ui.${icon.componentSuffix}"),
+					if (icon == selected) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+					else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+					PackageManager.DONT_KILL_APP)
+		}
 	}
 
 	private fun captchaAutoReloadEnabled(): Boolean {
