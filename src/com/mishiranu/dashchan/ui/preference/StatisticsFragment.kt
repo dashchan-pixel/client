@@ -40,27 +40,27 @@ class StatisticsFragment : BaseListFragment() {
 		for (entry in statisticsItems.entries) {
 			val statistics = Chan.get(entry.key).configuration.safe().obtainStatistics()
 			val statisticsItem = entry.value
-			if (statistics.threadsViewed && statisticsItem.threadsViewed > 0) {
+			if (statistics!!.threadsViewed && statisticsItem.threadsViewed > 0) {
 				totalThreadsViewed += statisticsItem.threadsViewed
 			}
-			if (statistics.postsSent && statisticsItem.postsSent > 0) {
+			if (statistics!!.postsSent && statisticsItem.postsSent > 0) {
 				totalPostsSent += statisticsItem.postsSent
 			}
-			if (statistics.threadsCreated && statisticsItem.threadsCreated > 0) {
+			if (statistics!!.threadsCreated && statisticsItem.threadsCreated > 0) {
 				totalThreadsCreated += statisticsItem.threadsCreated
 			}
 		}
 		listItems.add(Adapter.ListItem(getString(R.string.total), totalThreadsViewed.toString(),
 				totalPostsSent.toString(), totalThreadsCreated.toString()))
 
-		for (chan in ChanManager.getInstance().getAvailableChans()) {
+		for (chan in ChanManager.getInstance().availableChans) {
 			val statisticsItem = statisticsItems[chan.name]
 			if (statisticsItem != null) {
 				val statistics = chan.configuration.safe().obtainStatistics()
-				if (statistics.threadsViewed && statistics.postsSent && statistics.threadsCreated) {
-					val threadsViewed = if (statistics.threadsViewed) statisticsItem.threadsViewed else -1
-					val postsSent = if (statistics.postsSent) statisticsItem.postsSent else -1
-					val threadsCreated = if (statistics.threadsCreated) statisticsItem.threadsCreated else -1
+				if (statistics!!.threadsViewed && statistics!!.postsSent && statistics!!.threadsCreated) {
+					val threadsViewed = if (statistics!!.threadsViewed) statisticsItem.threadsViewed else -1
+					val postsSent = if (statistics!!.postsSent) statisticsItem.postsSent else -1
+					val threadsCreated = if (statistics!!.threadsCreated) statisticsItem.threadsCreated else -1
 					var title = chan.configuration.getTitle()
 					if (StringUtils.isEmpty(title)) {
 						title = chan.name

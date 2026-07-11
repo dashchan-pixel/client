@@ -33,7 +33,7 @@ class CaptchaSolving private constructor() {
 	}
 
 	private fun getConfiguration(): Configuration? {
-		val map = Preferences.getCaptchaSolving() ?: return null
+		val map = Preferences.captchaSolving ?: return null
 		val endpoint = map[Preferences.SUB_KEY_CAPTCHA_SOLVING_ENDPOINT]
 		val token = map[Preferences.SUB_KEY_CAPTCHA_SOLVING_TOKEN]
 		if (StringUtils.isEmpty(endpoint) || StringUtils.isEmpty(token)) {
@@ -64,7 +64,7 @@ class CaptchaSolving private constructor() {
 		} catch (e: UnsupportedServiceException) {
 			// Check for HTTP exception
 			HttpRequest(createUri(configuration.endpoint), holder).setHeadMethod()
-					.setSuccessOnly(false).perform().cleanupAndDisconnect()
+					.setSuccessOnly(false).perform()!!.cleanupAndDisconnect()
 			throw e
 		}
 		return extra
@@ -213,7 +213,7 @@ class CaptchaSolving private constructor() {
 					.appendQueryParameter("key", "")
 					.appendQueryParameter("action", "getbalance")
 					.build()
-			val response = HttpRequest(uri, holder).setSuccessOnly(false).perform().readString()
+			val response = HttpRequest(uri, holder).setSuccessOnly(false).perform()!!.readString()
 			return response != null && (response.startsWith("OK|") ||
 					response.startsWith("ERROR_") && response.contains("KEY"))
 		}
@@ -225,7 +225,7 @@ class CaptchaSolving private constructor() {
 					.appendQueryParameter("key", token)
 					.appendQueryParameter("action", "getbalance")
 					.build()
-			val response = HttpRequest(uri, holder).setSuccessOnly(true).perform().readString()
+			val response = HttpRequest(uri, holder).setSuccessOnly(true).perform()!!.readString()
 			if (response != null && response.startsWith("OK|")) {
 				outExtra?.put("balance", response.substring(3))
 				return true
@@ -266,7 +266,7 @@ class CaptchaSolving private constructor() {
 				}
 			}
 			builder.appendQueryParameter("pageurl", referer)
-			var response = HttpRequest(builder.build(), holder).perform().readString()
+			var response = HttpRequest(builder.build(), holder).perform()!!.readString()
 			if (response != null && response.startsWith("OK|")) {
 				response = response.substring(3)
 			} else {
@@ -284,7 +284,7 @@ class CaptchaSolving private constructor() {
 					wait++
 				}
 				waitOrThrow(start, timeout, wait * 1000)
-				response = HttpRequest(uri, holder).perform().readString()
+				response = HttpRequest(uri, holder).perform()!!.readString()
 				if (response != null && response.startsWith("OK|")) {
 					return response.substring(3)
 				} else if ("CAPCHA_NOT_READY" != response) {
@@ -318,7 +318,7 @@ class CaptchaSolving private constructor() {
 			entity.setContentType("application/json")
 			entity.setData(request.toString())
 			val responseText = HttpRequest(endpointUri.buildUpon().appendPath(method).build(), holder)
-					.setPostMethod(entity).setSuccessOnly(false).perform().readString()
+					.setPostMethod(entity).setSuccessOnly(false).perform()!!.readString()
 			return try {
 				JSONObject(responseText)
 			} catch (e: JSONException) {

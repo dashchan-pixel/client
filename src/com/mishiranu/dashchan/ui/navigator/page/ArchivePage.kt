@@ -42,7 +42,7 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 		val adapter = ArchiveAdapter(this)
 		recyclerView.adapter = adapter
 		recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, adapter::configureDivider))
-		recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
+		recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
 		adapter.applyFilter(getInitSearch().currentQuery)
 
 		val initRequest = getInitRequest()
@@ -60,12 +60,12 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 			}
 			if (readViewModel.hasTaskOrValue()) {
 				if (adapter.isRealEmpty()) {
-					recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+					recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 					switchProgress()
 				} else {
-					val task = readViewModel.getTask()
-					val bottom = task != null && task.getPageNumber() > 0
-					recyclerView.pullable.startBusyState(if (bottom)
+					val task = readViewModel.task
+					val bottom = task != null && task.pageNumber > 0
+					recyclerView.pullable!!.startBusyState(if (bottom)
 							PullableWrapper.Side.BOTTOM else PullableWrapper.Side.TOP)
 				}
 			} else if (load) {
@@ -84,13 +84,13 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 	override fun onItemClick(threadNumber: String?) {
 		if (threadNumber != null) {
 			val page = getPage()
-			getUiManager().navigator().navigatePosts(page.chanName, page.boardName, threadNumber, null, null)
+			uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName, threadNumber, null, null)
 		}
 	}
 
 	override fun onItemLongClick(threadNumber: String?): Boolean {
 		val page = getPage()
-		showItemPopupMenu(getFragmentManager(), page.chanName, page.boardName, threadNumber)
+		showItemPopupMenu(fragmentManager, page.chanName, page.boardName, threadNumber)
 		return true
 	}
 
@@ -129,23 +129,23 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 			}
 		}
 		val readViewModel = getViewModel(ReadViewModel::class.java)
-		val task = ReadThreadSummariesTask(readViewModel.callback, getChan(), page.boardName,
+		val task = ReadThreadSummariesTask(readViewModel.callback, chan, page.boardName,
 				pageNumber, ChanPerformer.ReadThreadSummariesData.TYPE_ARCHIVED_THREADS)
 		task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		readViewModel.attach(task)
 		val recyclerView = getRecyclerView()
 		if (showPull) {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 			switchList()
 		} else {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 			switchProgress()
 		}
 	}
 
 	override fun onReadThreadSummariesSuccess(threadSummaries: List<ThreadSummary>, pageNumber: Int) {
 		val recyclerView = getRecyclerView()
-		recyclerView.pullable.cancelBusyState()
+		recyclerView.pullable!!.cancelBusyState()
 		val adapter = getAdapter()
 		if (pageNumber == 0 && threadSummaries.isEmpty()) {
 			if (adapter.isRealEmpty()) {
@@ -190,7 +190,7 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 	}
 
 	override fun onReadThreadSummariesFail(errorItem: ErrorItem) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		if (getAdapter().isRealEmpty()) {
 			switchError(errorItem)
 		} else {

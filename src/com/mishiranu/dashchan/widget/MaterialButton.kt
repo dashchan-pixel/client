@@ -15,9 +15,9 @@ class MaterialButton(context: Context) :
 				android.R.attr.textColorPrimaryInverse))
 
 		val theme = ThemeEngine.getTheme(getContext())
-		val colorControlDisabled = GraphicsUtils.applyAlpha(theme.controlNormal21, theme.disabledAlpha21)
+		val colorControlDisabled = GraphicsUtils.applyAlpha(theme!!.controlNormal21, theme!!.disabledAlpha21)
 		val states = arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf())
-		val colors = intArrayOf(colorControlDisabled, theme.accent)
+		val colors = intArrayOf(colorControlDisabled, theme!!.accent)
 		backgroundTintList = ColorStateList(states, colors)
 		isSingleLine = true
 		isAllCaps = true

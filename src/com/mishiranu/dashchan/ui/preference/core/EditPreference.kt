@@ -27,7 +27,7 @@ class EditPreference(context: Context, key: String, defaultValue: String?,
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, getValue()).close()
+		preferences.edit().put(key, value).close()
 	}
 
 	override fun createDialog(savedInstanceState: Bundle?): AlertDialog {
@@ -40,7 +40,7 @@ class EditPreference(context: Context, key: String, defaultValue: String?,
 		val pair = createDialogLayout(builder.context)
 		val editText = SafePasteEditText(pair.second.context)
 		editText.id = android.R.id.edit
-		configureEdit(editText, hint, inputType, getValue(), customFilters)
+		configureEdit(editText, hint, inputType, value, customFilters)
 		editText.requestFocus()
 		pair.second.addView(editText, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
 		return super.configureDialog(savedInstanceState, builder).setView(pair.first)

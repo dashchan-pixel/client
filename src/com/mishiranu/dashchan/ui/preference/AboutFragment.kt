@@ -113,7 +113,7 @@ class AboutFragment : PreferenceFragment(), FragmentHandler.Callback {
 			val files = ArrayList<String>(backupFiles.size)
 			val names = ArrayList<String>(backupFiles.size)
 			for (backupFile in backupFiles) {
-				files.add(backupFile.file.getRelativePath())
+				files.add(backupFile.file!!.getRelativePath())
 				names.add(backupFile.name)
 			}
 			args.putStringArrayList(EXTRA_FILES, files)

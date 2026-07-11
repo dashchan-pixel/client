@@ -115,7 +115,7 @@ class FavoritesStorage private constructor() :
 	fun getObservable(): WeakObservable<Observer> = observable
 
 	fun canSortManually(): Boolean {
-		return Preferences.getFavoritesOrder() != Preferences.FavoritesOrder.TITLE
+		return Preferences.favoritesOrder != Preferences.FavoritesOrder.TITLE
 	}
 
 	private fun notifyFavoritesUpdate(favoriteItem: FavoriteItem, action: Action) {
@@ -134,7 +134,7 @@ class FavoritesStorage private constructor() :
 
 	private fun sortIfNeededInternal(): Boolean {
 		if (!canSortManually()) {
-			when (Preferences.getFavoritesOrder()) {
+			when (Preferences.favoritesOrder) {
 				Preferences.FavoritesOrder.TITLE -> {
 					favoriteItemsList.sortWith(titlesComparator)
 					return true
@@ -154,7 +154,7 @@ class FavoritesStorage private constructor() :
 	fun add(favoriteItem: FavoriteItem) {
 		if (!hasFavorite(favoriteItem.chanName, favoriteItem.boardName, favoriteItem.threadNumber)) {
 			favoriteItemsMap[makeKey(favoriteItem)] = favoriteItem
-			val order = Preferences.getFavoritesOrder()
+			val order = Preferences.favoritesOrder
 			if (order == Preferences.FavoritesOrder.DATE_DESC) {
 				favoriteItemsList.add(0, favoriteItem)
 			} else {
@@ -173,7 +173,7 @@ class FavoritesStorage private constructor() :
 			title: String?, allowWatcherEnabled: Boolean) {
 		val favoriteItem = FavoriteItem(chanName, boardName, threadNumber)
 		favoriteItem.title = title
-		favoriteItem.watcherEnabled = allowWatcherEnabled && Preferences.isWatcherWatchInitially()
+		favoriteItem.watcherEnabled = allowWatcherEnabled && Preferences.isWatcherWatchInitially
 		add(favoriteItem)
 	}
 

@@ -104,7 +104,7 @@ class ReadFileTask private constructor(private val callback: Callback, private v
 					errorItem = ErrorItem(ErrorItem.Type.DOWNLOAD)
 					return false
 				}
-				progressHandler.setInputProgressMax(response.getLength())
+				progressHandler.setInputProgressMax(response.length)
 				try {
 					response.open().use { input ->
 						toFile.openOutputStream().use { output ->

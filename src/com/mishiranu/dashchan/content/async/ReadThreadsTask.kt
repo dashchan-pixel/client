@@ -64,14 +64,14 @@ class ReadThreadsTask(private val callback: Callback, private val chan: Chan,
 			val postItems = ArrayList<PostItem>(result.threads.size)
 			val threadNumbers = ArrayList<String>(result.threads.size)
 			for (thread in result.threads) {
-				postItems.add(PostItem.createThread(thread.posts, thread.postsCount, thread.filesCount,
-						thread.postsWithFilesCount, chan, boardName, thread.threadNumber))
-				threadNumbers.add(thread.threadNumber)
+				postItems.add(PostItem.createThread(thread!!.posts, thread!!.postsCount, thread!!.filesCount,
+						thread!!.postsWithFilesCount, chan, boardName, thread!!.threadNumber))
+				threadNumbers.add(thread!!.threadNumber)
 			}
 			this.postItems = postItems
 			this.boardSpeed = result.boardSpeed
 			this.resultValidator = result.validator ?: holder.extractValidator()
-			hiddenThreads = CommonDatabase.getInstance().getThreads()
+			hiddenThreads = CommonDatabase.getInstance().threads
 					.getFlags(chan.name!!, boardName, threadNumbers)
 			return true
 		} catch (e: HttpException) {

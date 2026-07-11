@@ -206,7 +206,7 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 	enum class FormatMode { LONG, SIMPLE, TWO_LINES, THREE_LINES }
 
 	fun configureAndLoad(view: AttachmentView, chan: Chan, needShowMultipleIcon: Boolean, force: Boolean) {
-		view.setCropEnabled(Preferences.isCutThumbnails())
+		view.setCropEnabled(Preferences.isCutThumbnails)
 		val type = getType()
 		val key = getThumbnailKey(chan)
 		val overlay = if (needShowMultipleIcon) {
@@ -231,8 +231,8 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 	private fun startLoad(view: AttachmentView, chan: Chan, key: String?, force: Boolean) {
 		if (key != null) {
 			val uri = getThumbnailUri(chan)
-			val loadThumbnails = Preferences.getLoadThumbnails()
-					.isNetworkAvailable(NetworkObserver.getInstance())
+			val loadThumbnails = Preferences.loadThumbnails
+					!!.isNetworkAvailable(NetworkObserver.getInstance())
 			val allowDownload = loadThumbnails || force
 			ImageLoader.getInstance().loadImage(chan, uri, key, !allowDownload, view)
 		} else {

@@ -278,8 +278,8 @@ class TextFragment : BaseListFragment {
 		private const val EXTRA_ERROR_ITEM = "errorItem"
 
 		private val BUILDER = ChanMarkup.MarkupBuilder { markup ->
-			markup.addTag("h1", ChanMarkup.TAG_HEADING)
-			markup.addTag("pre", ChanMarkup.TAG_CODE)
+			markup!!.addTag("h1", ChanMarkup.TAG_HEADING)
+			markup!!.addTag("pre", ChanMarkup.TAG_CODE)
 		}
 
 		private val DATE_FORMAT_CHANGELOG = SimpleDateFormat("dd.MM.yyyy", Locale.US)

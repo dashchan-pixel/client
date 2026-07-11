@@ -141,7 +141,7 @@ open class MarkupButtonProvider private constructor(
 			PROVIDERS.add(MarkupButtonProvider(ChanMarkup.TAG_SUPERSCRIPT, 44, 8, "SUP", ScriptSpan(true)))
 			PROVIDERS.add(object : MarkupButtonProvider(ChanMarkup.TAG_SPOILER, 44, 5, "SP", null) {
 				override fun getSpan(context: Context): Any {
-					return BackgroundColorSpan(ThemeEngine.getTheme(context).spoiler)
+					return BackgroundColorSpan(ThemeEngine.getTheme(context)!!.spoiler)
 				}
 			})
 			PROVIDERS.add(object : MarkupButtonProvider(ChanMarkup.TAG_QUOTE, 40, 4, ">", null) {

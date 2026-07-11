@@ -45,7 +45,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 					val lastOpenable = lastOpenable
 					if (lastOpenable != null) {
 						completeOpenables.add(lastOpenable)
-						if (completeOpenables.size == data.attachments.size) {
+						if (completeOpenables.size == data.attachments!!.size) {
 							completeOpenables.clear()
 						}
 					}
@@ -69,7 +69,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 	init {
 		if (progressMode) {
 			for (attachment in data.attachments) {
-				attachment.listener = progressHandler
+				attachment!!.listener = progressHandler
 			}
 		}
 	}
@@ -84,7 +84,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 		if (lastProgressState != progressState || force) {
 			lastProgressState = progressState
 			callback?.onSendPostChangeProgressState(key, progressState, attachmentIndex,
-					if (progressMode) data.attachments.size else 0)
+					if (progressMode) data.attachments!!.size else 0)
 		}
 	}
 
@@ -156,12 +156,12 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 						val estimator = SimilarTextEstimator(Int.MAX_VALUE, true)
 						val wordsData1 = estimator.getWords<Void>(postComment)
 						for (thread in threads) {
-							val post = thread.posts[0]
-							val comment = HtmlParser.clear(post.comment)
+							val post = thread!!!!!!.posts[0]
+							val comment = HtmlParser.clear(post!!.comment)
 							val wordsData2 = estimator.getWords<Void>(comment)
 							if (estimator.checkSimiliar(wordsData1, wordsData2)
 									|| wordsData1 == null && wordsData2 == null) {
-								result = ChanPerformer.SendPostResult(thread.threadNumber, null)
+								result = ChanPerformer.SendPostResult(thread!!.threadNumber, null)
 								break
 							}
 						}

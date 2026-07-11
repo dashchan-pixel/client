@@ -21,7 +21,7 @@ abstract class DialogPreference<T>(context: Context, key: String, defaultValue: 
 	private var neutralButtonListener: Runnable? = null
 	private var description: CharSequence? = null
 
-	protected open fun createDialog(savedInstanceState: Bundle?): AlertDialog {
+	internal open fun createDialog(savedInstanceState: Bundle?): AlertDialog {
 		val dialog = configureDialog(savedInstanceState, AlertDialog.Builder(context)).create()
 		if (neutralButtonText != null) {
 			dialog.setButton(AlertDialog.BUTTON_NEUTRAL, neutralButtonText,
@@ -65,15 +65,15 @@ abstract class DialogPreference<T>(context: Context, key: String, defaultValue: 
 		return dialog.findViewById(android.R.id.widget_frame)
 	}
 
-	protected open fun configureDialog(savedInstanceState: Bundle?,
+	internal open fun configureDialog(savedInstanceState: Bundle?,
 			builder: AlertDialog.Builder): AlertDialog.Builder {
 		return builder.setTitle(title)
 				.setNegativeButton(android.R.string.cancel, null)
 	}
 
-	protected open fun startDialog(dialog: AlertDialog) {}
-	protected open fun stopDialog(dialog: AlertDialog) {}
-	protected open fun saveState(dialog: AlertDialog, outState: Bundle) {}
+	internal open fun startDialog(dialog: AlertDialog) {}
+	internal open fun stopDialog(dialog: AlertDialog) {}
+	internal open fun saveState(dialog: AlertDialog, outState: Bundle) {}
 
 	fun setNeutralButton(text: CharSequence?, listener: Runnable?) {
 		neutralButtonText = text

@@ -105,7 +105,7 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 						if (!mayShowLoadButton) {
 							val response = readForegroundCaptcha(fallbackHolder, captchaData, foregroundCaptcha,
 									result.challengeExtra, allowSolveAutomatically && result.allowSolveAutomatically)
-							captchaData.put(RECAPTCHA_SKIP_RESPONSE, response)
+							captchaData!!.put(RECAPTCHA_SKIP_RESPONSE, response)
 							captchaState = CaptchaState.SKIP
 						}
 					}
@@ -147,8 +147,8 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 		const val RECAPTCHA_SKIP_RESPONSE = "recaptcha_skip_response"
 
 		private fun allowSolveAutomatically(chanName: String?): Boolean {
-			val chanNames = Preferences.getCaptchaSolvingChans()
-			return chanNames.isEmpty() || chanNames.contains(chanName)
+			val chanNames = Preferences.captchaSolvingChans
+			return chanNames!!.isEmpty() || chanNames!!.contains(chanName)
 		}
 
 		private fun checkForegroundCaptcha(captchaType: String?): ForegroundCaptcha? {
@@ -188,11 +188,11 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 				} else {
 					val invisible = foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE
 					recaptchaReader.getChallenge2(holder,
-							apiKey, invisible, referer, Preferences.isRecaptchaJavascript(),
+							apiKey, invisible, referer, Preferences.isRecaptchaJavascript,
 							false, allowSolveAutomatically)
 				}
 			}
-			return recaptchaChallengeExtra.getResponse(holder)
+			return recaptchaChallengeExtra!!.getResponse(holder)
 		}
 	}
 }

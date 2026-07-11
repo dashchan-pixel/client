@@ -15,7 +15,7 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, getValue()).close()
+		preferences.edit().put(key, value).close()
 	}
 
 	override fun getViewType(): ViewType = ViewType.CHECK
@@ -24,12 +24,12 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 
 	override fun createViewHolder(parent: ViewGroup): CheckViewHolder {
 		val viewHolder = super.createViewHolder(parent)
-		viewHolder.widgetFrame.visibility = View.VISIBLE
-		val check = CheckBox(viewHolder.widgetFrame.context)
+		viewHolder.widgetFrame!!.visibility = View.VISIBLE
+		val check = CheckBox(viewHolder.widgetFrame!!.context)
 		ThemeEngine.applyStyle(check)
 		check.isClickable = false
 		check.isFocusable = false
-		viewHolder.widgetFrame.addView(check, ViewGroup.LayoutParams.WRAP_CONTENT,
+		viewHolder.widgetFrame!!.addView(check, ViewGroup.LayoutParams.WRAP_CONTENT,
 				ViewGroup.LayoutParams.WRAP_CONTENT)
 		return CheckViewHolder(viewHolder, check)
 	}
@@ -38,7 +38,7 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 		super.bindViewHolder(viewHolder)
 
 		if (viewHolder is CheckViewHolder) {
-			viewHolder.check.isChecked = getValue() ?: defaultValue
+			viewHolder.check.isChecked = value ?: defaultValue
 			viewHolder.check.isEnabled = isEnabled()
 		}
 	}

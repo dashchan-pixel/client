@@ -188,7 +188,7 @@ class ThemesFragment : BaseListFragment() {
 		val listItems = ArrayList<ListItem>()
 		var installedAdded = false
 		for (theme in ThemeEngine.getThemes()) {
-			if (!theme.builtIn && !installedAdded) {
+			if (!theme!!.builtIn && !installedAdded) {
 				listItems.add(ListItem(null, false, getString(R.string.installed__plural)))
 				installedAdded = true
 			}
@@ -225,7 +225,7 @@ class ThemesFragment : BaseListFragment() {
 				return
 			}
 		}
-		if (!installed || theme.name != Preferences.getTheme()) {
+		if (!installed || theme.name != Preferences.theme) {
 			Preferences.setTheme(theme.name)
 			requireActivity().recreate()
 		}
@@ -234,7 +234,7 @@ class ThemesFragment : BaseListFragment() {
 	internal fun deleteTheme(name: String) {
 		if (ThemeEngine.deleteTheme(name)) {
 			updateThemes()
-			if (name == Preferences.getTheme()) {
+			if (name == Preferences.theme) {
 				requireActivity().recreate()
 			}
 		}
@@ -255,7 +255,7 @@ class ThemesFragment : BaseListFragment() {
 				RecyclerView.ViewHolder(holder.view) {
 			init {
 				ViewUtils.setSelectableItemBackground(itemView)
-				holder.summary.visibility = View.GONE
+				holder.summary!!.visibility = View.GONE
 			}
 		}
 
@@ -294,8 +294,8 @@ class ThemesFragment : BaseListFragment() {
 			when (ViewType.values()[holder.itemViewType]) {
 				ViewType.ITEM -> {
 					val viewHolder = (holder as ItemViewHolder).holder
-					viewHolder.icon.setImageDrawable(listItem.theme!!.createThemeChoiceDrawable())
-					viewHolder.title.text = listItem.theme.name
+					viewHolder.icon!!.setImageDrawable(listItem.theme!!.createThemeChoiceDrawable())
+					viewHolder.title!!.text = listItem.theme.name
 				}
 				ViewType.HEADER -> (holder.itemView as TextView).text = listItem.title
 			}
@@ -348,10 +348,10 @@ class ThemesFragment : BaseListFragment() {
 			HttpHolderTask<Void, Pair<ErrorItem, List<JSONObject>>>(Chan.getFallback()) {
 		override fun run(holder: HttpHolder): Pair<ErrorItem, List<JSONObject>> {
 			try {
-				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.getUriThemes()), null)
+				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.uriThemes), null)
 				var redirects = 0
 				while (redirects++ < 5) {
-					val jsonObject = JSONObject(HttpRequest(uri, holder).perform().readString())
+					val jsonObject = JSONObject(HttpRequest(uri, holder).perform()!!.readString())
 					val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
 					if (redirect != null) {
 						uri = ReadUpdateTask.normalizeRelativeUri(uri, redirect)

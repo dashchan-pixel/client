@@ -109,7 +109,7 @@ object StringUtils {
 	@Extendable
 	fun interface ReplacementCallback {
 		@Extendable
-		fun getReplacement(matcher: Matcher): String?
+		open fun getReplacement(matcher: Matcher): String?
 	}
 
 	@Public

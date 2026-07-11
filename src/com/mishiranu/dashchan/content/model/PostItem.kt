@@ -21,7 +21,7 @@ import com.mishiranu.dashchan.util.PostDateFormatter
 import java.util.TreeSet
 
 class PostItem private constructor(private val post: Post, threadDataBase: ThreadData.Base?,
-		chan: Chan, private val boardName: String?, private val threadNumber: String?,
+		chan: Chan, private val boardName: String?, internal val threadNumber: String?,
 		private val originalPostNumber: PostNumber) : AttachmentItem.Master, ChanMarkup.MarkupExtra,
 		Comparable<PostItem>, Preferences.CatalogSort.Comparable {
 	enum class HideState(@JvmField val hidden: Boolean) {
@@ -311,7 +311,7 @@ class PostItem private constructor(private val post: Post, threadDataBase: Threa
 		if (comment is Spanned) {
 			val spoilerSpans = comment.getSpans(0, comment.length, SpoilerSpan::class.java)
 			if (spoilerSpans != null) {
-				val enabled = !Preferences.isShowSpoilers()
+				val enabled = !Preferences.isShowSpoilers
 				for (spoilerSpan in spoilerSpans) {
 					spoilerSpan.setEnabled(enabled)
 				}
@@ -326,7 +326,7 @@ class PostItem private constructor(private val post: Post, threadDataBase: Threa
 		return if (!StringUtils.isEmpty(post.commentMarkup)) {
 			post.commentMarkup
 		} else if (!StringUtils.isEmpty(post.comment)) {
-			HtmlParser.unmark(post.comment, chan.markup.getMarkup(), this)
+			HtmlParser.unmark(post.comment, chan.markup.markup, this)
 		} else {
 			""
 		}
@@ -562,7 +562,7 @@ class PostItem private constructor(private val post: Post, threadDataBase: Threa
 
 		private fun obtainComment(comment: String?, markup: ChanMarkup, threadNumber: String?,
 				originalPostNumber: PostNumber?, extra: ChanMarkup.MarkupExtra): CharSequence {
-			return if (comment.isNullOrEmpty()) "" else HtmlParser.spanify(comment, markup.getMarkup(),
+			return if (comment.isNullOrEmpty()) "" else HtmlParser.spanify(comment, markup.markup,
 					threadNumber, originalPostNumber, extra)
 		}
 

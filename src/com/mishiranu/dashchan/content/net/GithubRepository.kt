@@ -29,7 +29,7 @@ class GithubRepository(private val holder: HttpHolder, githubUri: Uri) {
 				.appendEncodedPath("repos$repositoryPath/contents/$path").build()
 		val response = HttpRequest(uri, holder)
 				.addHeader("Accept", "application/vnd.github+json")
-				.perform().readString()
+				.perform()!!.readString()
 		val array = JSONArray(response)
 		val files = LinkedHashMap<String, Entry>()
 		for (i in 0 until array.length()) {
@@ -45,7 +45,7 @@ class GithubRepository(private val holder: HttpHolder, githubUri: Uri) {
 	@Throws(HttpException::class)
 	fun readFile(entry: Entry): ByteArray? {
 		val downloadUri = entry.downloadUri ?: return null
-		return HttpRequest(downloadUri, holder).perform().readBytes()
+		return HttpRequest(downloadUri, holder).perform()!!.readBytes()
 	}
 
 	companion object {

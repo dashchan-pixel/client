@@ -36,7 +36,7 @@ object ViewFactory {
 				ViewGroup.LayoutParams.WRAP_CONTENT)
 		textView.minHeight = (48f * density).toInt()
 		textView.gravity = Gravity.CENTER_VERTICAL
-		textView.setTextColor(ThemeEngine.getTheme(textView.context).accent)
+		textView.setTextColor(ThemeEngine.getTheme(textView.context)!!.accent)
 		textView.typeface = ResourceUtils.TYPEFACE_MEDIUM
 		ViewUtils.setTextSizeScaled(textView, 14)
 		textView.setPadding((16f * density).toInt(), (16f * density).toInt(), (16f * density).toInt(),

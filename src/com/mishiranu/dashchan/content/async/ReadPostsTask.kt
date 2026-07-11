@@ -71,7 +71,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 			val originalPost = PagesDatabase.getInstance().getOriginalPost(threadKey)
 			originalPostNumber = originalPost?.number
 			allowPartialThreadLoading = originalPost == null || !originalPost.isCyclical ||
-					Preferences.getCyclicalRefreshMode() == Preferences.CyclicalRefreshMode.DEFAULT
+					Preferences.cyclicalRefreshMode == Preferences.CyclicalRefreshMode.DEFAULT
 		}
 		var partial = !loadFullThread && allowPartialThreadLoading && Preferences.isPartialThreadLoading(chan)
 		val useValidator = if (!loadFullThread && meta != null) meta.validator else null
@@ -117,7 +117,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 				// Remove repeats and sort
 				val postsMap = TreeMap<PostNumber, Post>()
 				for (post in result.posts) {
-					postsMap[post.number] = post
+					postsMap[post!!.number] = post
 				}
 				if (originalPostNumber == null && postsMap.isNotEmpty()) {
 					originalPostNumber = postsMap.firstKey()
@@ -149,7 +149,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 							removedPendingUserPosts = HashSet()
 						}
 						removedPendingUserPosts.add(pendingUserPost)
-						CommonDatabase.getInstance().getPosts().setFlags(false, chan.name!!,
+						CommonDatabase.getInstance().posts.setFlags(false, chan.name!!,
 								boardName, threadNumber, postNumber, PostItem.HideState.UNDEFINED, true)
 					}
 				}

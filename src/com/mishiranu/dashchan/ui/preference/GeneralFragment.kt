@@ -123,7 +123,7 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	 * edit field's hint.
 	 */
 	private fun addRepositoryUri(key: String, titleResId: Int, default: String) {
-		val stored = Preferences.PREFERENCES.getString(key, "")
+		val stored = Preferences.PREFERENCES!!.getString(key, "")
 		if (anotherUriKeys.contains(key) || !stored.isNullOrEmpty()) {
 			anotherUriKeys.add(key)
 			addAnotherUri(key, titleResId, default)
@@ -175,9 +175,9 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	}
 
 	private fun configureCaptchaSolvingNeutralButton() {
-		if (ChanManager.getInstance().getAvailableChans().iterator().hasNext()) {
+		if (ChanManager.getInstance().availableChans.iterator().hasNext()) {
 			captchaSolvingPreference!!.setNeutralButton(getString(R.string.forums)) {
-				ChanMultiChoiceDialog(Preferences.getCaptchaSolvingChans()).show(this)
+				ChanMultiChoiceDialog(Preferences.captchaSolvingChans).show(this)
 			}
 		} else {
 			captchaSolvingPreference!!.setNeutralButton(null, null)

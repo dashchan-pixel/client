@@ -87,7 +87,7 @@ class ReadVideoTask(private val callback: Callback, private val chan: Chan,
 				}
 			}
 			if (start <= 0) {
-				progressHandler.setInputProgressMax(response.getLength())
+				progressHandler.setInputProgressMax(response.length)
 			}
 			try {
 				response.open().use { input ->

@@ -240,7 +240,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 	}
 
 	override fun run(holder: HttpHolder): Pair<ErrorItem?, UpdateDataMap?>? {
-		val directory = FileProvider.getUpdatesDirectory()
+		val directory = FileProvider.updatesDirectory
 				?: return Pair(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY), null)
 		val files = directory.listFiles()
 		if (files != null) {
@@ -253,10 +253,10 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 			}
 		}
 
-		val extensionItems = ChanManager.getInstance().getExtensionItems()
+		val extensionItems = ChanManager.getInstance().extensionItems
 		val fingerprintsMap = HashMap<String, ChanManager.Fingerprints?>()
 		fingerprintsMap[ChanManager.EXTENSION_NAME_CLIENT] =
-				ChanManager.getInstance().getApplicationFingerprints()
+				ChanManager.getInstance().applicationFingerprints
 		for (extensionItem in extensionItems) {
 			fingerprintsMap[extensionItem.name] = extensionItem.fingerprints
 		}
@@ -589,7 +589,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 			val targets = LinkedHashMap<TargetUri, HashSet<String>>()
 			val requestedScheme = HashMap<TargetUri, String>()
 			run {
-				val uri = Uri.parse(Preferences.getUriUpdates())
+				val uri = Uri.parse(Preferences.uriUpdates)
 				val targetUri = TargetUri(uri)
 				val extensionNames = HashSet<String>()
 				extensionNames.add(ChanManager.EXTENSION_NAME_CLIENT)
@@ -602,7 +602,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 			// Separate sources merged with the client one: each covers every installed
 			// extension (in addition to each extension's own updateUri) and contributes
 			// install suggestions even when no extensions are installed yet.
-			for (uriString in Preferences.getUriUpdatesExtensions()) {
+			for (uriString in Preferences.uriUpdatesExtensions) {
 				val uri = Uri.parse(uriString)
 				val targetUri = TargetUri(uri)
 				var extensionNames = targets[targetUri]
@@ -656,10 +656,10 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 							var lastHttpException: HttpException? = null
 							val directoryUri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
 							for (dataVersion in DataVersion.values()) {
-								val uri = directoryUri.buildUpon().appendPath(dataVersion.fileName).build()
+								val uri = directoryUri!!.buildUpon().appendPath(dataVersion.fileName).build()
 								try {
 									responseUri = uri
-									responseText = HttpRequest(uri, holder).perform().readString()
+									responseText = HttpRequest(uri, holder).perform()!!.readString()
 									responseDataVersion = dataVersion
 									lastHttpException = null
 									break
@@ -678,7 +678,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 						} else {
 							val uri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
 							responseUri = uri
-							responseText = HttpRequest(uri, holder).perform().readString()
+							responseText = HttpRequest(uri, holder).perform()!!.readString()
 							responseDataVersion = DataVersion.LEGACY
 						}
 						val jsonObject = JSONObject(responseText)

@@ -59,7 +59,7 @@ class StormWallResolver : FirewallResolver() {
 					val calculatedCookie = calculateCookie(ce, ck)
 					val response = HttpRequest(session.getUri(), session)
 							.setHeadMethod().setSuccessOnly(false)
-							.addHeader("User-Agent", session.getIdentifier().userAgent)
+							.addHeader("User-Agent", session.getIdentifier()!!.userAgent)
 							.addCookie(COOKIE_STORMWALL, calculatedCookie)
 							.perform()
 					try {
@@ -68,7 +68,7 @@ class StormWallResolver : FirewallResolver() {
 							return true
 						}
 					} finally {
-						response.cleanupAndDisconnect()
+						response!!.cleanupAndDisconnect()
 					}
 				}
 			}
@@ -104,23 +104,23 @@ class StormWallResolver : FirewallResolver() {
 
 	private fun storeCookie(session: FirewallResolver.Session, key: FirewallResolver.Exclusive.Key,
 			cookie: String?, uri: Uri?) {
-		val chan = session.getChan()
-		chan.configuration.storeCookie(key.formatKey(COOKIE_STORMWALL), cookie,
+		val chan = session.chan
+		chan!!.configuration.storeCookie(key.formatKey(COOKIE_STORMWALL), cookie,
 				if (cookie != null) key.formatTitle("StormWall") else null)
-		chan.configuration.commit()
+		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
-			if (chan.locator.isConvertableChanHost(host)) {
-				chan.locator.setPreferredHost(host)
+			if (chan!!.locator.isConvertableChanHost(host)) {
+				chan!!.locator.setPreferredHost(host)
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())
 		}
 	}
 
 	override fun collectCookies(session: FirewallResolver.Session, cookieBuilder: CookieBuilder) {
-		val chan = session.getChan()
+		val chan = session.chan
 		val key = toKey(session)
-		val cookie = chan.configuration.getCookie(key.formatKey(COOKIE_STORMWALL))
+		val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_STORMWALL))
 		if (!StringUtils.isEmpty(cookie)) {
 			cookieBuilder.append(COOKIE_STORMWALL, cookie)
 		}

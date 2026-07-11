@@ -24,7 +24,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, getValue()).close()
+		preferences.edit().put(key, value).close()
 	}
 
 	override fun configureDialog(savedInstanceState: Bundle?,
@@ -39,7 +39,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 
 	companion object {
 		private fun getIndex(preference: ListPreference): Int {
-			var index = preference.values.indexOf(preference.getValue())
+			var index = preference.values.indexOf(preference.value)
 			if (index < 0) {
 				index = preference.values.indexOf(preference.defaultValue)
 			}

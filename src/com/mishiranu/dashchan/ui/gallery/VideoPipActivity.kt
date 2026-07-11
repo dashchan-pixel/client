@@ -270,7 +270,7 @@ class VideoPipActivity : Activity(), FlowVideoView.Callback {
 			} else {
 				view.replay()
 			}
-		} else if (Preferences.getVideoCompletionMode() == Preferences.VideoCompletionMode.LOOP) {
+		} else if (Preferences.videoCompletionMode == Preferences.VideoCompletionMode.LOOP) {
 			view.replay()
 		} else {
 			// The view already reset the clip to its start and paused.

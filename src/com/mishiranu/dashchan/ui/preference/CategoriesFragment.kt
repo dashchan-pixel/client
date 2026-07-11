@@ -15,7 +15,7 @@ class CategoriesFragment : PreferenceFragment() {
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
 
-		val chans = ChanManager.getInstance().getAvailableChans().iterator()
+		val chans = ChanManager.getInstance().availableChans.iterator()
 		val hasChan = chans.hasNext()
 		val singleChanName = if (hasChan) chans.next().name else null
 		val hasMultipleChans = hasChan && chans.hasNext()

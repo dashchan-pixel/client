@@ -66,7 +66,7 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 		recyclerView.adapter = adapter
 		recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context) { c, _ -> c.need(true) })
 		recyclerView.itemAnimator = null
-		recyclerView.pullable.setPullSides(PullableWrapper.Side.TOP)
+		recyclerView.pullable!!.setPullSides(PullableWrapper.Side.TOP)
 
 		val initRequest = getInitRequest()
 		val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
@@ -81,10 +81,10 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 			}
 			if (readViewModel.hasTaskOrValue()) {
 				if (parcelableExtra.boardNames.isEmpty()) {
-					recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+					recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 					switchProgress()
 				} else {
-					recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+					recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 				}
 			} else if (load) {
 				refreshBoards(false)
@@ -104,11 +104,11 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 	override fun obtainTitle(): String = getString(R.string.user_boards)
 
 	override fun onItemClick(boardItem: ChanDatabase.BoardItem?) {
-		getUiManager().navigator().navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
+		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
 	}
 
 	override fun onItemLongClick(boardItem: ChanDatabase.BoardItem?): Boolean {
-		showItemPopupMenu(getFragmentManager(), getPage().chanName, boardItem!!)
+		showItemPopupMenu(fragmentManager, getPage().chanName, boardItem!!)
 		return true
 	}
 
@@ -148,22 +148,22 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 		if (parcelableExtra.boardNames.isEmpty()) {
 			getAdapter().setCursor(null)
 		} else {
-			getTask = GetBoardsTask(this, getChan(), parcelableExtra.boardNames, searchQuery)
+			getTask = GetBoardsTask(this, chan, parcelableExtra.boardNames, searchQuery)
 			getTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		}
 	}
 
 	private fun refreshBoards(showPull: Boolean) {
 		val readViewModel = getViewModel(ReadViewModel::class.java)
-		val task = ReadUserBoardsTask(readViewModel.callback, getChan())
+		val task = ReadUserBoardsTask(readViewModel.callback, chan)
 		task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		readViewModel.attach(task)
 		val recyclerView = getRecyclerView()
 		if (showPull) {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 			switchList()
 		} else {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 			switchProgress()
 		}
 	}
@@ -177,7 +177,7 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 
 	override fun onReadUserBoardsSuccess(boardNames: List<String>) {
 		val recyclerView = getRecyclerView()
-		recyclerView.pullable.cancelBusyState()
+		recyclerView.pullable!!.cancelBusyState()
 		switchList()
 		val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
 		parcelableExtra.boardNames = boardNames
@@ -186,7 +186,7 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 	}
 
 	override fun onReadUserBoardsFail(errorItem: ErrorItem) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
 		if (parcelableExtra.boardNames.isEmpty()) {
 			switchError(errorItem)

@@ -128,7 +128,7 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 		addSeek(Preferences.KEY_CACHE_SIZE, Preferences.DEFAULT_CACHE_SIZE, getString(R.string.cache_size), "%d MB",
 				null, Preferences.MIN_CACHE_SIZE, Preferences.MAX_CACHE_SIZE, Preferences.STEP_CACHE_SIZE)
 		clearCachePreference = addButton(getString(R.string.clear_cache)) {
-			StringUtils.formatFileSizeMegabytes(CacheManager.getInstance().getCacheSize())
+			StringUtils.formatFileSizeMegabytes(CacheManager.getInstance().cacheSize)
 		}
 		clearCachePreference!!.setOnClickListener {
 			val dialog = ClearCacheDialog()
@@ -286,7 +286,7 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 		private const val REQUEST_UPDATE_CACHE_SIZE = "mediaUpdateCacheSize"
 
 		private val BUILDER_SUBDIRECTORY = ChanMarkup.MarkupBuilder { markup ->
-			markup.addTag("b", ChanMarkup.TAG_BOLD)
+			markup!!.addTag("b", ChanMarkup.TAG_BOLD)
 		}
 
 		private fun showSubdirectoryInfoDialog(fragmentManager: FragmentManager) {

@@ -254,7 +254,7 @@ class UpdateFragment : BaseListFragment {
 					StringUtils.formatFileSize(length, false))
 		}
 		menu.findItem(R.id.menu_download).setTitle(downloadTitle)
-		menu.findItem(R.id.menu_check_on_start).setChecked(Preferences.isCheckUpdatesOnStart())
+		menu.findItem(R.id.menu_check_on_start).setChecked(Preferences.isCheckUpdatesOnStart)
 	}
 
 	override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -360,19 +360,19 @@ class UpdateFragment : BaseListFragment {
 			when (ViewType.values()[holder.itemViewType]) {
 				ViewType.ITEM -> {
 					val viewHolder = holder.itemView.tag as CheckPreference.CheckViewHolder
-					checkPreference.setValue(listItem.willBeInstalled())
+					checkPreference.value = listItem.willBeInstalled()
 					checkPreference.setEnabled(listItem.enabled)
 					checkPreference.bindViewHolder(viewHolder)
-					viewHolder.title.text = listItem.title
+					viewHolder.title!!.text = listItem.title
 					if (listItem.warning != null) {
 						val spannable = SpannableString(listItem.target + "\n" + listItem.warning)
 						val length = spannable.length
 						spannable.setSpan(ForegroundColorSpan(ResourceUtils.getColor(holder.itemView.context,
 								R.attr.colorTextError)), length - listItem.warning!!.length, length,
 								Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-						viewHolder.summary.text = spannable
+						viewHolder.summary!!.text = spannable
 					} else {
-						viewHolder.summary.text = listItem.target
+						viewHolder.summary!!.text = listItem.target
 					}
 				}
 				ViewType.HEADER -> (holder.itemView as TextView).text = listItem.title
@@ -556,7 +556,7 @@ class UpdateFragment : BaseListFragment {
 			}
 			handledExtensionNames.add(ChanManager.EXTENSION_NAME_CLIENT)
 			val manager = ChanManager.getInstance()
-			for (extensionItem in manager.getExtensionItems()) {
+			for (extensionItem in manager.extensionItems) {
 				if (extensionItem.type == ChanManager.ExtensionItem.Type.LIBRARY) {
 					val applicationItem = updateDataMap.get(extensionItem.name, true)
 					if (applicationItem != null) {
@@ -567,7 +567,7 @@ class UpdateFragment : BaseListFragment {
 					}
 				}
 			}
-			for (chan in manager.getAvailableChans()) {
+			for (chan in manager.availableChans) {
 				val applicationItem = updateDataMap.get(chan.name, true)
 				if (applicationItem != null) {
 					val listItem = handleAddListItem(context, applicationItem,

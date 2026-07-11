@@ -79,7 +79,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				if (hideState != PostItem.HideState.UNDEFINED) {
 					postItem.setHidden(hideState, null)
 				} else {
-					val hideReason = hidePerformer.checkHidden(getChan(), postItem)
+					val hideReason = hidePerformer.checkHidden(chan, postItem)
 					if (hideReason != null) {
 						postItem.setHidden(PostItem.HideState.HIDDEN, hideReason)
 					} else {
@@ -94,7 +94,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	private fun getAdapter(): ThreadsAdapter = getRecyclerView().adapter as ThreadsAdapter
 
 	override fun onCreate() {
-		val context = getContext()
+		val context = context
 		val recyclerView = getRecyclerView()
 		if (swipeToHideThreadEnabled()) {
 			setupSwipeToHideThread(recyclerView)
@@ -103,13 +103,13 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		val layoutManager = GridLayoutManager(recyclerView.context, 1)
 		recyclerView.layoutManager = layoutManager
 		val page = getPage()
-		val chan = getChan()
+		val chan = chan
 		hidePerformer = HidePerformer(context)
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-		val uiManager = getUiManager()
-		uiManager.view().bindThreadsPostRecyclerView(recyclerView)
+		val uiManager = uiManager
+		uiManager!!.view().bindThreadsPostRecyclerView(recyclerView)
 		val adapter = ThreadsAdapter(context, this, page.chanName, uiManager,
-				postStateProvider, getFragmentManager())
+				postStateProvider, fragmentManager)
 		recyclerView.adapter = adapter
 		recyclerView.addItemDecoration(object : RecyclerView.ItemDecoration() {
 			override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView,
@@ -119,10 +119,10 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			}
 		})
 		recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, adapter::configureDivider))
-		recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
-		uiManager.observable().register(this)
-		layoutManager.spanCount = adapter.setThreadsView(Preferences.getThreadsView())
-		adapter.setCatalogSort(Preferences.getCatalogSort())
+		recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+		uiManager!!.observable().register(this)
+		layoutManager.spanCount = adapter.setThreadsView(Preferences.threadsView)
+		adapter.setCatalogSort(Preferences.catalogSort)
 		adapter.applyFilter(getInitSearch().currentQuery)
 		FavoritesStorage.getInstance().getObservable().register(this)
 
@@ -140,19 +140,19 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				listPosition?.apply(recyclerView)
 				val dialogsState = retainableExtra.dialogsState
 				if (dialogsState != null) {
-					uiManager.dialog().restoreState(adapter.configurationSet, dialogsState)
+					uiManager!!.dialog().restoreState(adapter.configurationSet, dialogsState)
 					dialogsState.dropState()
 					retainableExtra.dialogsState = null
 				}
 			}
 			if (readViewModel.hasTaskOrValue()) {
-				if (getAdapter().isRealEmpty()) {
-					recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+				if (getAdapter().isRealEmpty) {
+					recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 					switchProgress()
 				} else {
-					val task = readViewModel.getTask()
-					val bottom = task != null && task.getPageNumber() > retainableExtra.startPageNumber
-					recyclerView.pullable.startBusyState(if (bottom)
+					val task = readViewModel.task
+					val bottom = task != null && task.pageNumber > retainableExtra.startPageNumber
+					recyclerView.pullable!!.startBusyState(if (bottom)
 							PullableWrapper.Side.BOTTOM else PullableWrapper.Side.TOP)
 				}
 			} else if (load) {
@@ -166,7 +166,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		readViewModel.observe(this, this)
 	}
 
-	private fun swipeToHideThreadEnabled(): Boolean = Preferences.isSwipeToHideThreadEnabled()
+	private fun swipeToHideThreadEnabled(): Boolean = Preferences.isSwipeToHideThreadEnabled
 
 	private fun setupSwipeToHideThread(recyclerView: RecyclerView) {
 		val callback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
@@ -277,22 +277,22 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	}
 
 	override fun onDestroy() {
-		getUiManager().dialog().closeDialogs(getAdapter().configurationSet.stackInstance)
-		getUiManager().observable().unregister(this)
+		uiManager!!.dialog().closeDialogs(getAdapter().configurationSet.stackInstance)
+		uiManager!!.observable().unregister(this)
 		FavoritesStorage.getInstance().getObservable().unregister(this)
 	}
 
 	override fun onNotifyAllAdaptersChanged() {
-		getUiManager().dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
+		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
 	}
 
 	override fun onHandleNewPostDataList() {
 		val page = getPage()
-		val newPostData = PostingService.consumeNewThreadData(getContext(),
+		val newPostData = PostingService.consumeNewThreadData(context,
 				page.chanName, page.boardName)
 		if (newPostData != null) {
-			getUiManager().navigator().navigatePosts(newPostData.key.chanName, newPostData.key.boardName,
-					newPostData.key.threadNumber, null, null)
+			uiManager!!.navigator()!!.navigatePosts(newPostData.key!!.chanName, newPostData.key!!.boardName,
+					newPostData.key!!.threadNumber, null, null)
 		}
 	}
 
@@ -300,13 +300,13 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		val adapter = getAdapter()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		retainableExtra.dialogsState?.dropState()
-		retainableExtra.dialogsState = adapter.configurationSet.stackInstance.collectState()
+		retainableExtra.dialogsState = adapter.configurationSet.stackInstance!!.collectState()
 	}
 
 	override fun obtainTitleSubtitle(): Pair<String, String?> {
 		val page = getPage()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-		var title = getChan().configuration.getBoardTitle(page.boardName)
+		var title = chan.configuration.getBoardTitle(page.boardName)
 		title = StringUtils.formatBoardTitle(page.chanName, page.boardName, title)
 		var subtitle: String? = null
 		if (retainableExtra.startPageNumber > 0) {
@@ -314,7 +314,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		} else if (retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG) {
 			subtitle = getString(R.string.catalog)
 		} else if (retainableExtra.boardSpeed > 0) {
-			subtitle = getResources().getQuantityString(R.plurals.number_posts_per_hour__format,
+			subtitle = resources.getQuantityString(R.plurals.number_posts_per_hour__format,
 					retainableExtra.boardSpeed, retainableExtra.boardSpeed)
 		}
 		return Pair(title, subtitle)
@@ -327,7 +327,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				setThreadHideState(postItem, PostItem.HideState.SHOWN)
 				getAdapter().notifyThreadShown(postItem)
 			} else {
-				getUiManager().navigator().navigatePosts(page.chanName, page.boardName,
+				uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName,
 						postItem.getThreadNumber(), null, postItem.getSubjectOrComment())
 			}
 		}
@@ -335,7 +335,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 
 	override fun onItemLongClick(postItem: PostItem?): Boolean {
 		if (postItem != null) {
-			showItemPopupMenu(getFragmentManager(), postItem)
+			showItemPopupMenu(fragmentManager, postItem)
 			return true
 		}
 		return false
@@ -387,7 +387,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	override fun onPrepareOptionsMenu(menu: Menu) {
 		val page = getPage()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-		val chan = getChan()
+		val chan = chan
 		val board = chan.configuration.safe().obtainBoard(page.boardName)
 		this.allowSearch = board.allowSearch
 		val isCatalogOpen = retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG
@@ -395,13 +395,13 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		menu.findItem(R.id.menu_catalog).isVisible = board.allowCatalog && !isCatalogOpen
 		menu.findItem(R.id.menu_pages).isVisible = board.allowCatalog && isCatalogOpen
 		menu.findItem(R.id.menu_sorting).isVisible = board.allowCatalog && isCatalogOpen
-		menu.findItem(Preferences.getCatalogSort().menuItemId).isChecked = true
+		menu.findItem(Preferences.catalogSort!!.menuItemId).isChecked = true
 		menu.findItem(R.id.menu_archive).isVisible = board.allowArchive
 		menu.findItem(R.id.menu_new_thread).isVisible = board.allowPosting
-		menu.findItem(Preferences.getThreadsView().menuItemId).isChecked = true
+		menu.findItem(Preferences.threadsView!!.menuItemId).isChecked = true
 		val singleBoardMode = chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)
 		val isFavorite = FavoritesStorage.getInstance().hasFavorite(page.chanName, page.boardName, null)
-		val iconFavorite = ResourceUtils.isTabletOrLandscape(getResources().configuration)
+		val iconFavorite = ResourceUtils.isTabletOrLandscape(resources.configuration)
 		menu.findItem(R.id.menu_star_text).isVisible = !iconFavorite && !isFavorite && !singleBoardMode
 		menu.findItem(R.id.menu_unstar_text).isVisible = !iconFavorite && isFavorite
 		menu.findItem(R.id.menu_star_icon).isVisible = iconFavorite && !isFavorite && !singleBoardMode
@@ -426,15 +426,15 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				return true
 			}
 			R.id.menu_archive -> {
-				getUiManager().navigator().navigateArchive(page.chanName, page.boardName)
+				uiManager!!.navigator()!!.navigateArchive(page.chanName, page.boardName)
 				return true
 			}
 			R.id.menu_new_thread -> {
-				getUiManager().navigator().navigatePosting(page.chanName, page.boardName, null)
+				uiManager!!.navigator()!!.navigatePosting(page.chanName, page.boardName, null)
 				return true
 			}
 			R.id.menu_summary -> {
-				showSummaryDialog(getFragmentManager(), page.chanName, page.boardName)
+				showSummaryDialog(fragmentManager, page.chanName, page.boardName)
 				return true
 			}
 			R.id.menu_star_text, R.id.menu_star_icon -> {
@@ -493,7 +493,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			// Collapse search view
 			getRecyclerView().post {
 				val page = getPage()
-				getUiManager().navigator().navigateSearch(page.chanName, page.boardName, query)
+				uiManager!!.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
 			}
 			return true
 		}
@@ -518,7 +518,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 
 	override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-		refreshThreads(if (getAdapter().isRealEmpty() || retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG)
+		refreshThreads(if (getAdapter().isRealEmpty || retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG)
 				RefreshPage.CURRENT else if (side == PullableWrapper.Side.BOTTOM)
 				RefreshPage.NEXT else RefreshPage.PREVIOUS, true)
 	}
@@ -526,7 +526,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	private enum class RefreshPage { CURRENT, PREVIOUS, NEXT, CATALOG }
 
 	private fun refreshThreads(refreshPage: RefreshPage) {
-		refreshThreads(refreshPage, !getAdapter().isRealEmpty())
+		refreshThreads(refreshPage, !getAdapter().isRealEmpty)
 	}
 
 	private fun refreshThreads(refreshPage: RefreshPage, showPull: Boolean) {
@@ -541,7 +541,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			if (retainableExtra.cachedPostItems.isNotEmpty()) {
 				currentPageNumber += retainableExtra.cachedPostItems.size - 1
 			}
-			val pageByPage = Preferences.isPageByPage()
+			val pageByPage = Preferences.isPageByPage
 			if (pageByPage) {
 				var number = if (refreshPage == RefreshPage.NEXT) currentPageNumber + 1
 						else if (refreshPage == RefreshPage.PREVIOUS) currentPageNumber - 1 else currentPageNumber
@@ -561,17 +561,17 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	}
 
 	private fun loadThreadsPage(pageNumber: Int, append: Boolean): Boolean {
-		return loadThreadsPage(pageNumber, append, !getAdapter().isRealEmpty())
+		return loadThreadsPage(pageNumber, append, !getAdapter().isRealEmpty)
 	}
 
 	private fun loadThreadsPage(pageNumber: Int, append: Boolean, showPull: Boolean): Boolean {
 		val page = getPage()
-		val chan = getChan()
+		val chan = chan
 		val readViewModel = getViewModel(ReadViewModel::class.java)
 		val recyclerView = getRecyclerView()
 		if (pageNumber < PAGE_NUMBER_CATALOG || pageNumber >=
 				maxOf(chan.configuration.getPagesCount(page.boardName), 1)) {
-			recyclerView.pullable.cancelBusyState()
+			recyclerView.pullable!!.cancelBusyState()
 			ClickableToast.show(getString(R.string.number_page_doesnt_exist__format, pageNumber))
 			readViewModel.attach(null)
 			return false
@@ -584,10 +584,10 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 			readViewModel.attach(task)
 			if (showPull) {
-				recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+				recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 				switchList()
 			} else {
-				recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+				recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 				switchProgress()
 			}
 			return true
@@ -598,7 +598,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			boardSpeed: Int, append: Boolean, checkModified: Boolean, validator: HttpValidator?,
 			hiddenThreads: PostItem.HideState.Map<String>?) {
 		val recyclerView = getRecyclerView()
-		recyclerView.pullable.cancelBusyState()
+		recyclerView.pullable!!.cancelBusyState()
 		switchList()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		var items = postItems
@@ -665,13 +665,13 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			retainableExtra.cachedPostItems.add(items)
 			notifyTitleChanged()
 			updateOptionsMenu()
-			if (oldCount == 0 && !adapter.isRealEmpty()) {
+			if (oldCount == 0 && !adapter.isRealEmpty) {
 				showScaleAnimation()
 			}
 		} else if (checkModified && items == null) {
 			adapter.notifyNotModified()
 			recyclerView.scrollToPosition(0)
-		} else if (adapter.isRealEmpty()) {
+		} else if (adapter.isRealEmpty) {
 			switchError(R.string.empty_response)
 		} else {
 			ClickableToast.show(R.string.empty_response)
@@ -679,22 +679,22 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	}
 
 	override fun onReadThreadsRedirect(target: RedirectException.Target) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		if (!CommonUtils.equals(target.chanName, getPage().chanName)) {
-			if (getAdapter().isRealEmpty()) {
+			if (getAdapter().isRealEmpty) {
 				switchError(R.string.board_doesnt_exist)
 			}
-			showRedirectDialog(getFragmentManager(), target)
+			showRedirectDialog(fragmentManager, target)
 		} else {
 			handleRedirect(target.chanName, target.boardName, null, null)
 		}
 	}
 
 	override fun onReadThreadsFail(errorItem: ErrorItem?, pageNumber: Int) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		val message = if (errorItem!!.type == ErrorItem.Type.BOARD_NOT_EXISTS && pageNumber >= 1)
 				getString(R.string.number_page_doesnt_exist__format, pageNumber) else errorItem.toString()
-		if (getAdapter().isRealEmpty()) {
+		if (getAdapter().isRealEmpty) {
 			switchError(message)
 		} else {
 			ClickableToast.show(message)
@@ -711,17 +711,17 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		private fun showItemPopupMenu(fragmentManager: FragmentManager, postItem: PostItem) {
 			InstanceDialog(fragmentManager, null) { provider ->
 				val threadsPage = extract<ThreadsPage>(provider)
-				val page = threadsPage.getPage()
+				val page = threadsPage!!.getPage()
 				val dialogMenu = DialogMenu(provider.context)
 				dialogMenu.add(R.string.copy_link) {
-					val uri = threadsPage.getChan().locator.safe(true)
+					val uri = threadsPage.chan.locator.safe(true)
 							.createThreadUri(page.boardName, postItem.getThreadNumber())
 					if (uri != null) {
 						StringUtils.copyToClipboard(provider.context, uri.toString())
 					}
 				}
 				dialogMenu.add(R.string.share_link) {
-					val uri = threadsPage.getChan().locator.safe(true)
+					val uri = threadsPage.chan.locator.safe(true)
 							.createThreadUri(page.boardName, postItem.getThreadNumber())
 					var subject = postItem.getSubjectOrComment()
 					if (StringUtils.isEmptyOrWhitespace(subject)) {
@@ -731,8 +731,8 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				}
 				if (!postItem.getHideState().hidden) {
 					dialogMenu.add(R.string.hide) {
-						threadsPage.setThreadHideState(postItem, PostItem.HideState.HIDDEN)
-						threadsPage.getAdapter().notifyThreadHidden(postItem)
+						threadsPage!!.setThreadHideState(postItem, PostItem.HideState.HIDDEN)
+						threadsPage!!.getAdapter().notifyThreadHidden(postItem)
 					}
 				}
 				dialogMenu.create()
@@ -815,7 +815,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 						.setMessage(message)
 						.setNegativeButton(android.R.string.cancel, null)
 						.setPositiveButton(android.R.string.ok) { _, _ -> threadsPage
-								.handleRedirect(target.chanName, target.boardName, null, null) }
+								!!.handleRedirect(target.chanName, target.boardName, null, null) }
 						.create()
 			}
 		}

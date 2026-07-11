@@ -44,7 +44,7 @@ class Chan internal constructor(@JvmField val name: String?, @JvmField val packa
 
 		@JvmStatic
 		fun getFallback(): Chan {
-			return ChanManager.getInstance().getFallbackChan()
+			return ChanManager.getInstance().fallbackChan
 		}
 	}
 }

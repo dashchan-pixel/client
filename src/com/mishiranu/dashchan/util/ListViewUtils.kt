@@ -129,7 +129,7 @@ object ListViewUtils {
 
 	@JvmStatic
 	fun colorizeListThumbDrawable4(context: Context, drawable: Drawable): Drawable {
-		val colorDefault = ThemeEngine.getTheme(context).accent
+		val colorDefault = ThemeEngine.getTheme(context)!!.accent
 		val colorPressed = GraphicsUtils.modifyColorGain(colorDefault, 4f / 3f)
 		if (colorDefault != 0 && colorPressed != 0) {
 			val pressedState = intArrayOf(android.R.attr.state_pressed)

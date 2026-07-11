@@ -60,7 +60,7 @@ class PostBorderView(context: Context, attrs: AttributeSet?) : View(context, att
 		private val density: Float
 
 		init {
-			paint.color = ThemeEngine.getTheme(context).accent
+			paint.color = ThemeEngine.getTheme(context)!!.accent
 			paint.strokeCap = Paint.Cap.ROUND
 			density = ResourceUtils.obtainDensity(context)
 		}
@@ -91,7 +91,7 @@ class PostBorderView(context: Context, attrs: AttributeSet?) : View(context, att
 		private var dotCenterY = 0f
 
 		init {
-			paint.color = ThemeEngine.getTheme(context).accent
+			paint.color = ThemeEngine.getTheme(context)!!.accent
 		}
 
 		override fun configure(borderLeft: Int, borderTop: Int, borderRight: Int, borderBottom: Int) {

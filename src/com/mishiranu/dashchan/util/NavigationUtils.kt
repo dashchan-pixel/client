@@ -38,7 +38,7 @@ object NavigationUtils {
 		val isWeb = Chan.getFallback().locator.isWebScheme(targetUri)
 		var intent: Intent
 		var internalBrowser = isWeb && (browserType == BrowserType.INTERNAL ||
-				browserType == BrowserType.AUTO && Preferences.isUseInternalBrowser())
+				browserType == BrowserType.AUTO && Preferences.isUseInternalBrowser)
 		if (internalBrowser && browserType != BrowserType.INTERNAL) {
 			val manager = ChanManager.getInstance()
 			val packageManager = context.packageManager
@@ -142,7 +142,7 @@ object NavigationUtils {
 
 	@JvmStatic
 	fun isOpenableVideoExtension(extension: String?): Boolean {
-		return Preferences.isUseVideoPlayer() && C.OPENABLE_VIDEO_EXTENSIONS.contains(extension)
+		return Preferences.isUseVideoPlayer && C.OPENABLE_VIDEO_EXTENSIONS.contains(extension)
 	}
 
 	@JvmStatic

@@ -35,7 +35,7 @@ object ExtensionsTrustLoop {
 	@JvmStatic
 	fun handleUntrustedExtensions(context: Context, state: State) {
 		state.currentDialog?.get()?.dismiss()
-		val extensionItem = ChanManager.getInstance().getFirstUntrustedExtension()
+		val extensionItem = ChanManager.getInstance().firstUntrustedExtension
 		if (extensionItem != null) {
 			val message = SpannableStringBuilder()
 			message.append(context.getString(R.string.allow_this_extension__sentence))

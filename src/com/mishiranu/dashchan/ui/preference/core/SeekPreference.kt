@@ -14,8 +14,8 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 		private val minValue: Int, private val maxValue: Int, private val step: Int) :
 		DialogPreference<Int>(context, key, defaultValue, title,
 				SummaryProvider { p ->
-					if (specialValue != null && specialValue.first == p.getValue()) specialValue.second
-					else if (valueFormat != null) String.format(valueFormat, p.getValue()) else null
+					if (specialValue != null && specialValue.first == p!!.value) specialValue.second
+					else if (valueFormat != null) String.format(valueFormat, p!!.value) else null
 				}) {
 	private val valueFormat: String?
 	private val specialValue: Int?
@@ -32,7 +32,7 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, getValue()).close()
+		preferences.edit().put(key, value).close()
 	}
 
 	override fun configureDialog(savedInstanceState: Bundle?,
@@ -43,7 +43,7 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 			holder.isEnabled = savedInstanceState.getBoolean(STATE_ENABLED)
 			holder.value = savedInstanceState.getInt(STATE_VALUE)
 		} else {
-			val value = getValue()
+			val value = value
 			holder.isEnabled = specialValue == null || specialValue != value
 			holder.value = if (specialValue != null && specialValue == value) defaultValue else value
 		}

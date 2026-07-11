@@ -52,12 +52,12 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 		recyclerView.itemAnimator = null
 
 		val initRequest = getInitRequest()
-		recyclerView.pullable.setPullSides(PullableWrapper.Side.TOP)
+		recyclerView.pullable!!.setPullSides(PullableWrapper.Side.TOP)
 		val readViewModel = getViewModel(ReadViewModel::class.java)
 		if (initRequest.errorItem != null) {
 			switchError(initRequest.errorItem)
 		} else {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 			switchProgress()
 			updateBoards()
 		}
@@ -73,16 +73,16 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 	}
 
 	override fun obtainTitle(): String {
-		val hasUserBoards = getChan().configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
+		val hasUserBoards = chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
 		return getString(if (hasUserBoards) R.string.general_boards else R.string.boards)
 	}
 
 	override fun onItemClick(boardItem: ChanDatabase.BoardItem?) {
-		getUiManager().navigator().navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
+		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
 	}
 
 	override fun onItemLongClick(boardItem: ChanDatabase.BoardItem?): Boolean {
-		showItemPopupMenu(getFragmentManager(), getPage().chanName, boardItem!!)
+		showItemPopupMenu(fragmentManager, getPage().chanName, boardItem!!)
 		return true
 	}
 
@@ -94,7 +94,7 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 				.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
 		menu.addSubMenu(0, R.id.menu_appearance, 0, R.string.appearance)
 		menu.add(0, R.id.menu_make_home_page, 0, R.string.make_home_page)
-				.setVisible(Preferences.getDefaultBoardName(getChan()) != null)
+				.setVisible(Preferences.getDefaultBoardName(chan) != null)
 	}
 
 	override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -128,21 +128,21 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 		if (getTask != null) {
 			getTask!!.cancel()
 		}
-		getTask = GetBoardsTask(this, getChan(), null, searchQuery)
+		getTask = GetBoardsTask(this, chan, null, searchQuery)
 		getTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 	}
 
 	private fun refreshBoards(showPull: Boolean) {
 		val readViewModel = getViewModel(ReadViewModel::class.java)
-		val task = ReadBoardsTask(readViewModel.callback, getChan())
+		val task = ReadBoardsTask(readViewModel.callback, chan)
 		task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		readViewModel.attach(task)
 		val recyclerView = getRecyclerView()
 		if (showPull) {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 			switchList()
 		} else {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 			switchProgress()
 		}
 	}
@@ -170,20 +170,20 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 			val recyclerView = getRecyclerView()
 			listPosition?.apply(recyclerView)
 			if (readViewModel.hasTaskOrValue()) {
-				recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+				recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 			}
 		}
 	}
 
 	override fun onReadBoardsSuccess() {
 		val recyclerView = getRecyclerView()
-		recyclerView.pullable.cancelBusyState()
+		recyclerView.pullable!!.cancelBusyState()
 		updateBoards()
 		recyclerView.scrollToPosition(0)
 	}
 
 	override fun onReadBoardsFail(errorItem: ErrorItem) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		if (getAdapter().isRealEmpty()) {
 			switchError(errorItem)
 		} else {

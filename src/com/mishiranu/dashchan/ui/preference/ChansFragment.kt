@@ -22,7 +22,7 @@ class ChansFragment : PreferenceFragment(), FragmentHandler.Callback {
 	override fun onResume() {
 		super.onResume()
 
-		if (!ChanManager.getInstance().getAvailableChans().iterator().hasNext()) {
+		if (!ChanManager.getInstance().availableChans.iterator().hasNext()) {
 			(requireActivity() as FragmentHandler).removeFragment()
 		}
 	}
@@ -37,7 +37,7 @@ class ChansFragment : PreferenceFragment(), FragmentHandler.Callback {
 	private fun updateList(): Boolean {
 		var hasChans = false
 		val manager = ChanManager.getInstance()
-		for (chan in manager.getAvailableChans()) {
+		for (chan in manager.availableChans) {
 			val preference = addCategory(chan.configuration.getTitle(), manager.getIcon(chan))
 			preference.setOnClickListener {
 				(requireActivity() as FragmentHandler).pushFragment(ChanFragment(chan.name))

@@ -32,7 +32,7 @@ class ChanMultiChoiceDialog : DialogFragment, DialogInterface.OnMultiChoiceClick
 
 	override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
 		val chans = ArrayList<Chan>()
-		for (chan in ChanManager.getInstance().getAvailableChans()) {
+		for (chan in ChanManager.getInstance().availableChans) {
 			chans.add(chan)
 		}
 		val chanNames = arrayOfNulls<String>(chans.size)

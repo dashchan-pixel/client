@@ -68,9 +68,9 @@ class CloudFlareResolver : FirewallResolver() {
 	}
 
 	override fun collectCookies(session: FirewallResolver.Session, cookieBuilder: CookieBuilder) {
-		val chan = session.getChan()
+		val chan = session.chan
 		val key = toKey(session)
-		val cookie = chan.configuration.getCookie(key.formatKey(COOKIE_CLOUDFLARE))
+		val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_CLOUDFLARE))
 		if (!StringUtils.isEmpty(cookie)) {
 			cookieBuilder.append(COOKIE_CLOUDFLARE, cookie)
 		}
@@ -78,15 +78,15 @@ class CloudFlareResolver : FirewallResolver() {
 
 	private fun storeCookie(session: FirewallResolver.Session, key: FirewallResolver.Exclusive.Key,
 			cookie: String?, uri: Uri?) {
-		val chan = session.getChan()
-		val cookieTitle = "Cloudflare " + session.getUri().getHost()
-		chan.configuration.storeCookie(key.formatKey(COOKIE_CLOUDFLARE), cookie,
+		val chan = session.chan
+		val cookieTitle = "Cloudflare " + session.getUri()!!.getHost()
+		chan!!.configuration.storeCookie(key.formatKey(COOKIE_CLOUDFLARE), cookie,
 				if (cookie != null) key.formatTitle(cookieTitle) else null)
-		chan.configuration.commit()
+		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
-			if (chan.locator.isConvertableChanHost(host)) {
-				chan.locator.setPreferredHost(host)
+			if (chan!!.locator.isConvertableChanHost(host)) {
+				chan!!.locator.setPreferredHost(host)
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())
 		}

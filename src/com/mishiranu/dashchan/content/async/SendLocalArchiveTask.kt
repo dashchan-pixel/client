@@ -98,7 +98,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 			if (name.isEmpty()) {
 				name = defaultName
 			}
-			val charSequence = HtmlParser.spanify(comment, chan.markup.getMarkup(), null, null, this)
+			val charSequence = HtmlParser.spanify(comment, chan.markup.markup, null, null, this)
 			spanItems.clear()
 			val spannable = SpannableStringBuilder(charSequence)
 			replaceSpannable(spannable, '<', "&lt;")
@@ -163,7 +163,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 			for (icon in post.icons) {
 				if (icon.uri != null && !StringUtils.isEmpty(icon.title)) {
 					val iconUri = chan.locator.convert(icon.uri)
-					val simpleUri = iconUri.buildUpon().scheme(null).authority(null).build().toString()
+					val simpleUri = iconUri!!.buildUpon().scheme(null).authority(null).build().toString()
 					val pathHash = Base64.encodeToString(hasher.calculate(simpleUri), 0, 12,
 							Base64.NO_WRAP or Base64.URL_SAFE)
 					val iconNameWithoutExtension = "icon-$pathHash"
@@ -171,7 +171,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 					var downloadIcon = false
 					if (iconName == null) {
 						var extension: String? = null
-						if (ChanConfiguration.SCHEME_CHAN == iconUri.scheme) {
+						if (ChanConfiguration.SCHEME_CHAN == iconUri!!.scheme) {
 							val output = ByteArrayOutputStream()
 							try {
 								if (chan.configuration.readResourceUri(iconUri, output)) {
@@ -186,7 +186,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 								// Ignore
 							}
 						} else {
-							extension = StringUtils.getFileExtension(iconUri.path)
+							extension = StringUtils.getFileExtension(iconUri!!.path)
 						}
 						iconName = iconNameWithoutExtension
 						if (!StringUtils.isEmpty(extension)) {

@@ -73,20 +73,20 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 		val recyclerView = getRecyclerView()
 		recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)
 		val page = getPage()
-		val uiManager = getUiManager()
-		uiManager.view().bindThreadsPostRecyclerView(recyclerView)
-		val density = ResourceUtils.obtainDensity(getResources())
+		val uiManager = uiManager
+		uiManager!!.view().bindThreadsPostRecyclerView(recyclerView)
+		val density = ResourceUtils.obtainDensity(resources)
 		val dividerPadding = (12f * density).toInt()
-		val adapter = SearchAdapter(getContext(), this, page.chanName,
-				uiManager, getFragmentManager(), page.searchQuery)
+		val adapter = SearchAdapter(context, this, page.chanName,
+				uiManager, fragmentManager, page.searchQuery)
 		recyclerView.adapter = adapter
 		recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context) { c, position ->
 			adapter.configureDivider(c, position).horizontal(dividerPadding, dividerPadding)
 		})
 		recyclerView.addItemDecoration(HeaderItemDecoration(adapter::configureItemHeader)
 				{ _, position -> adapter.getItemHeader(position) })
-		recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
-		uiManager.observable().register(this)
+		recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+		uiManager!!.observable().register(this)
 
 		val initRequest = getInitRequest()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
@@ -107,19 +107,19 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 				listPosition?.apply(recyclerView)
 				val dialogsState = retainableExtra.dialogsState
 				if (dialogsState != null) {
-					uiManager.dialog().restoreState(adapter.configurationSet, dialogsState)
+					uiManager!!.dialog().restoreState(adapter.configurationSet, dialogsState)
 					dialogsState.dropState()
 					retainableExtra.dialogsState = null
 				}
 			}
 			if (readViewModel.hasTaskOrValue()) {
 				if (adapter.itemCount == 0) {
-					recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+					recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 					switchProgress()
 				} else {
-					val task = readViewModel.getTask()
-					val bottom = task != null && task.getPageNumber() > 0
-					recyclerView.pullable.startBusyState(if (bottom)
+					val task = readViewModel.task
+					val bottom = task != null && task.pageNumber > 0
+					recyclerView.pullable!!.startBusyState(if (bottom)
 							PullableWrapper.Side.BOTTOM else PullableWrapper.Side.TOP)
 				}
 			} else if (load) {
@@ -138,30 +138,30 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 	}
 
 	override fun onDestroy() {
-		getUiManager().observable().unregister(this)
+		uiManager!!.observable().unregister(this)
 	}
 
 	override fun onNotifyAllAdaptersChanged() {
-		getUiManager().dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
+		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
 	}
 
 	override fun onRequestStoreExtra(saveToStack: Boolean) {
 		val adapter = getAdapter()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		retainableExtra.dialogsState?.dropState()
-		retainableExtra.dialogsState = adapter.configurationSet.stackInstance.collectState()
+		retainableExtra.dialogsState = adapter.configurationSet.stackInstance!!.collectState()
 	}
 
 	override fun obtainTitle(): String = getPage().searchQuery
 
 	override fun onItemClick(postItem: PostItem?) {
 		val page = getPage()
-		getUiManager().navigator().navigatePosts(page.chanName, page.boardName,
+		uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName,
 				postItem!!.threadNumber, postItem.getPostNumber(), null)
 	}
 
 	override fun onItemLongClick(postItem: PostItem?): Boolean {
-		getUiManager().interaction().handlePostContextMenu(getAdapter().configurationSet, postItem)
+		uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, postItem)
 		return true
 	}
 
@@ -177,7 +177,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 	}
 
 	override fun onPrepareOptionsMenu(menu: Menu) {
-		val board = getChan().configuration.safe().obtainBoard(getPage().boardName)
+		val board = chan.configuration.safe().obtainBoard(getPage().boardName)
 		this.allowSearch = board.allowSearch
 		menu.findItem(R.id.menu_search).isVisible = board.allowSearch
 		menu.findItem(R.id.menu_refresh).isVisible = board.allowSearch
@@ -212,7 +212,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 			// Collapse search view
 			getRecyclerView().post {
 				val page = getPage()
-				getUiManager().navigator().navigateSearch(page.chanName, page.boardName, query)
+				uiManager!!.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
 			}
 			return true
 		}
@@ -234,22 +234,22 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 		}
 		val readViewModel = getViewModel(ReadViewModel::class.java)
 		val task = ReadSearchTask(readViewModel.callback,
-				getChan(), page.boardName, page.searchQuery, pageNumber)
+				chan, page.boardName, page.searchQuery, pageNumber)
 		task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 		readViewModel.attach(task)
 		val recyclerView = getRecyclerView()
 		if (showPull) {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
 			switchList()
 		} else {
-			recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
+			recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
 			switchProgress()
 		}
 	}
 
 	override fun onReadSearchSuccess(postItems: List<PostItem>?, pageNumber: Int) {
 		val recyclerView = getRecyclerView()
-		recyclerView.pullable.cancelBusyState()
+		recyclerView.pullable!!.cancelBusyState()
 		val adapter = getAdapter()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		if (pageNumber == 0 && postItems.isNullOrEmpty()) {
@@ -304,7 +304,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 	}
 
 	override fun onReadSearchFail(errorItem: ErrorItem) {
-		getRecyclerView().pullable.cancelBusyState()
+		getRecyclerView().pullable!!.cancelBusyState()
 		if (getAdapter().itemCount == 0) {
 			switchError(errorItem)
 		} else {

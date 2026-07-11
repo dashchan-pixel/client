@@ -75,7 +75,7 @@ class ContentsFragment : PreferenceFragment() {
 		replyNotifications = addCheck(false, "reply_notifications", false,
 				R.string.reply_notifications, R.string.reply_notifications__format)
 		replyNotifications.setOnClickListener { p ->
-			Preferences.setWatcherNotifications(if (p.value) emptySet()
+			Preferences.setWatcherNotifications(if (p!!.value) emptySet()
 					else setOf(Preferences.NotificationFeature.ENABLED))
 			invalidateReplyNotifications()
 		}
@@ -83,7 +83,7 @@ class ContentsFragment : PreferenceFragment() {
 
 		addHeader(R.string.additional)
 		clearCachePreference = addButton(getString(R.string.clear_cache)) {
-			StringUtils.formatFileSizeMegabytes(PagesDatabase.getInstance().getSize())
+			StringUtils.formatFileSizeMegabytes(PagesDatabase.getInstance().size)
 		}
 		clearCachePreference!!.setOnClickListener {
 			val dialog = ClearCacheDialog()
@@ -100,7 +100,7 @@ class ContentsFragment : PreferenceFragment() {
 	}
 
 	internal fun invalidateReplyNotifications() {
-		replyNotifications.value = Preferences.getWatcherNotifications()
+		replyNotifications.value = Preferences.watcherNotifications
 				.contains(Preferences.NotificationFeature.ENABLED)
 	}
 
@@ -116,7 +116,7 @@ class ContentsFragment : PreferenceFragment() {
 				checkedItems = savedInstanceState.getBooleanArray(EXTRA_CHECKED_ITEMS)
 			} else {
 				checkedItems = BooleanArray(Preferences.NotificationFeature.values().size)
-				val notificationFeatures = Preferences.getWatcherNotifications()
+				val notificationFeatures = Preferences.watcherNotifications
 				for (i in checkedItems!!.indices) {
 					checkedItems!![i] = notificationFeatures.contains(Preferences.NotificationFeature.values()[i])
 				}

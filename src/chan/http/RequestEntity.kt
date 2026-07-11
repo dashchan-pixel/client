@@ -23,18 +23,18 @@ import java.io.OutputStream
 @Extendable
 interface RequestEntity : Cloneable {
 	@Extendable
-	fun add(name: String, value: String?)
+	open fun add(name: String, value: String?)
 
 	@Extendable
-	fun getContentType(): String?
+	open fun getContentType(): String?
 
 	@Extendable
-	fun getContentLength(): Long
+	open fun getContentLength(): Long
 
 	@Extendable
 	@Throws(IOException::class)
 	fun write(output: OutputStream)
 
 	@Extendable
-	fun copy(): RequestEntity
+	open fun copy(): RequestEntity
 }

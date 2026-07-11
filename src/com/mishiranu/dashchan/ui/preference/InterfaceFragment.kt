@@ -76,7 +76,7 @@ class InterfaceFragment : PreferenceFragment() {
 		addCheck(true, Preferences.KEY_ADVANCED_SEARCH, Preferences.DEFAULT_ADVANCED_SEARCH,
 				R.string.advanced_search, R.string.advanced_search__summary)
 				.setOnAfterChangeListener { p ->
-					if (p.value) {
+					if (p!!.value) {
 						displayAdvancedSearchDialog(childFragmentManager)
 					}
 				}
@@ -101,12 +101,12 @@ class InterfaceFragment : PreferenceFragment() {
 		addCheck(true, Preferences.KEY_HUGE_CAPTCHA, Preferences.DEFAULT_HUGE_CAPTCHA,
 				R.string.huge_captcha, 0)
 				.setOnAfterChangeListener {
-					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(captchaAutoReloadEnabled())
+					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD)!!.setEnabled(captchaAutoReloadEnabled())
 				}
 		addCheck(true, Preferences.KEY_CAPTCHA_TIMER, Preferences.DEFAULT_CAPTCHA_TIMER,
 				R.string.captcha_show_ttl, R.string.captcha_show_ttl__summary)
 				.setOnAfterChangeListener {
-					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD).setEnabled(captchaAutoReloadEnabled())
+					findPreference(Preferences.KEY_CAPTCHA_AUTO_RELOAD)!!.setEnabled(captchaAutoReloadEnabled())
 				}
 		addDependency(Preferences.KEY_CAPTCHA_TIMER, Preferences.KEY_HUGE_CAPTCHA, true)
 		addCheck(true, Preferences.KEY_CAPTCHA_AUTO_RELOAD, Preferences.DEFAULT_CAPTCHA_AUTO_RELOAD,
@@ -119,7 +119,7 @@ class InterfaceFragment : PreferenceFragment() {
 	private fun applyAppIcon() {
 		val context = requireContext()
 		val packageManager = context.packageManager
-		val selected = Preferences.getAppIcon()
+		val selected = Preferences.appIcon
 		// Enable the new alias before disabling the old one so a launcher entry always exists.
 		for (icon in Preferences.AppIcon.values().sortedByDescending { it == selected }) {
 			packageManager.setComponentEnabledSetting(
@@ -138,7 +138,7 @@ class InterfaceFragment : PreferenceFragment() {
 
 	companion object {
 		private val BUILDER_ADVANCED_SEARCH = ChanMarkup.MarkupBuilder { markup ->
-			markup.addTag("b", ChanMarkup.TAG_BOLD)
+			markup!!.addTag("b", ChanMarkup.TAG_BOLD)
 		}
 
 		private fun displayAdvancedSearchDialog(fragmentManager: FragmentManager) {

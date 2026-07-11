@@ -4,7 +4,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.mishiranu.dashchan.content.model.PostNumber
 
-interface Replyable {
+fun interface Replyable {
 	fun onRequestReply(click: Boolean, vararg data: ReplyData): Boolean
 
 	class ReplyData(@JvmField val postNumber: PostNumber?, @JvmField val comment: String?) : Parcelable {

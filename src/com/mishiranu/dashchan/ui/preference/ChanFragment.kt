@@ -63,7 +63,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 		if (!chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
 			addEdit(Preferences.KEY_DEFAULT_BOARD_NAME.bind(chanName), null,
 					R.string.default_starting_board, { p ->
-						var text = p.value
+						var text = p!!.value
 						if (!StringUtils.isEmpty(text)) {
 							val boardName = StringUtils.validateBoardName(text!!)
 							text = if (boardName != null) {
@@ -87,9 +87,9 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 					getString(R.string.password), InputType.TYPE_CLASS_TEXT or
 					InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
 					.setOnAfterChangeListener { p ->
-						val value = p.value
+						val value = p!!.value
 						if (StringUtils.isEmpty(value)) {
-							p.setValue(Preferences.getPassword(Chan.get(chanName)))
+							p!!.value = Preferences.getPassword(Chan.get(chanName))
 							ClickableToast.show(R.string.new_password_was_generated)
 						}
 					}
@@ -110,7 +110,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 								InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD),
 						MultipleEditPreference.ListValueCodec(authorization.fieldsCount))
 				captchaPassPreference!!.setOnAfterChangeListener { p ->
-					val values = p.value
+					val values = p!!.value
 					if (Preferences.checkHasMultipleValues(values)) {
 						val dialog = AuthorizationDialog(getChanName(), AuthorizationType.CAPTCHA_PASS, values)
 						dialog.show(childFragmentManager, AuthorizationDialog::class.java.name)
@@ -128,7 +128,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 								InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD),
 						MultipleEditPreference.ListValueCodec(authorization.fieldsCount))
 				userAuthorizationPreference!!.setOnAfterChangeListener { p ->
-					val values = p.value
+					val values = p!!.value
 					if (Preferences.checkHasMultipleValues(values)) {
 						val dialog = AuthorizationDialog(getChanName(), AuthorizationType.USER, values)
 						dialog.show(childFragmentManager, AuthorizationDialog::class.java.name)
@@ -136,7 +136,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				}
 			}
 		}
-		val customPreferences = chan.configuration.getCustomPreferences()
+		val customPreferences = chan.configuration.customPreferences
 		if (customPreferences != null) {
 			for (preferenceHolder in customPreferences.entries) {
 				val key = preferenceHolder.key
@@ -145,10 +145,10 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				if (customPreference != null && customPreference.title != null) {
 					val preference = addCheck(false, key, defaultValue,
 							customPreference.title, customPreference.summary)
-					preference.setValue(chan.configuration.get(null, key, defaultValue))
+					preference.value = chan.configuration.get(null, key, defaultValue)
 					preference.setOnAfterChangeListener { p ->
 						val callbackChan = Chan.get(chanName)
-						callbackChan.configuration.set(null, preference.key, p.value)
+						callbackChan.configuration.set(null, preference.key, p!!.value)
 						callbackChan.configuration.commit()
 					}
 				}
@@ -161,14 +161,14 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 
 		val domains = chan.locator.getChanHosts(true)
 		val localMode = chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE) || domains.isEmpty()
-		val httpsConfigurable = chan.locator.isHttpsConfigurable()
+		val httpsConfigurable = chan.locator.isHttpsConfigurable
 		val canReadThreadPartially = chan.configuration.getOption(ChanConfiguration.OPTION_READ_THREAD_PARTIALLY)
 		val aiAgentsPostingSupport = chan.configuration.getOption(ChanConfiguration.OPTION_AI_POSTING)
 		if (!localMode || httpsConfigurable || canReadThreadPartially) {
 			addHeader(R.string.connection)
 		}
 		if (!localMode) {
-			anotherDomainMode = !domains.contains(chan.locator.getPreferredHost()) || domains.size == 1 ||
+			anotherDomainMode = !domains.contains(chan.locator.preferredHost) || domains.size == 1 ||
 					savedInstanceState != null && savedInstanceState.getBoolean(EXTRA_ANOTHER_DOMAIN_MODE)
 			if (anotherDomainMode) {
 				addAnotherDomainPreference(domains[0])
@@ -286,7 +286,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				R.string.domain_name, primaryDomain, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
 		preference.setOnBeforeChangeListener { p, value ->
 			if (primaryDomain == value) {
-				p.setValue("")
+				p!!.value = ""
 				false
 			} else {
 				true

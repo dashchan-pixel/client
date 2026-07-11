@@ -58,8 +58,8 @@ class AutohideFragment : BaseListFragment() {
 
 		val searchView = obtainSearchView()
 		this.searchView = searchView
-		searchView.setHint(getString(R.string.filter))
-		searchView.setOnChangeListener { query ->
+		searchView!!.setHint(getString(R.string.filter))
+		searchView!!.setOnChangeListener { query ->
 			(getRecyclerView()!!.adapter as Adapter).setSearchQuery(query)
 			if (searchQuery != null) {
 				searchQuery = query

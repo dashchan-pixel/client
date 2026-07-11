@@ -40,7 +40,7 @@ class NameEditWatcher(private val watchTripcodeWarning: Boolean, private val nam
 		if (index >= 0) {
 			val tripcodeSpan = tripcodeSpan ?: ForegroundColorSpan(if (watchTripcodeWarning)
 				ResourceUtils.getColor(nameView.context, R.attr.colorTextError)
-			else ThemeEngine.getTheme(nameView.context).tripcode).also { tripcodeSpan = it }
+			else ThemeEngine.getTheme(nameView.context)!!.tripcode).also { tripcodeSpan = it }
 			s.setSpan(tripcodeSpan, index, s.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
 		}
 	}

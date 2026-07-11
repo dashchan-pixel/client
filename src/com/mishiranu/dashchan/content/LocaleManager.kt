@@ -19,7 +19,7 @@ class LocaleManager private constructor() {
 		var context = context
 		val resources = context.resources
 		var configuration = resources.configuration
-		var locale = VALUES_LOCALE_OBJECTS[Preferences.getLocale()]
+		var locale = VALUES_LOCALE_OBJECTS[Preferences.locale]
 		if (locale != null) {
 			configuration = Configuration(configuration)
 			configuration.setLocales(if (locale != Locale.US) {

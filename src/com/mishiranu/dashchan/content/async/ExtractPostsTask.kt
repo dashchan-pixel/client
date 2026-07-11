@@ -55,24 +55,24 @@ class ExtractPostsTask(private val callback: Callback, private val cache: PagesD
 		var postItems: Map<PostNumber, PostItem> = emptyMap()
 		var removedPosts: Collection<PostNumber> = emptyList()
 		if (!isCancelled() && extractStateExtra) {
-			stateExtra = CommonDatabase.getInstance().getThreads()
+			stateExtra = CommonDatabase.getInstance().threads
 					.getStateExtra(chan.name!!, boardName, threadNumber!!)
 		}
-		if (!isCancelled() && diff.cache.isChanged(cache)) {
+		if (!isCancelled() && diff!!.cache.isChanged(cache)) {
 			val temporary = chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
 			meta = PagesDatabase.getInstance().getMeta(threadKey, temporary)
-			flags = CommonDatabase.getInstance().getPosts().getFlags(chan.name!!, boardName, threadNumber!!)
+			flags = CommonDatabase.getInstance().posts.getFlags(chan.name!!, boardName, threadNumber!!)
 			cacheChanged = true
-			val map = HashMap<PostNumber, PostItem>(diff.changed.size)
-			removedPosts = diff.removed
-			val originalPostNumber = diff.cache.originalPostNumber
-			for (post in diff.changed) {
-				map[post.number] = PostItem.createPost(post, chan, boardName, threadNumber, originalPostNumber)
+			val map = HashMap<PostNumber, PostItem>(diff!!.changed!!.size)
+			removedPosts = diff!!.removed
+			val originalPostNumber = diff!!.cache.originalPostNumber
+			for (post in diff!!.changed) {
+				map[post!!.number] = PostItem.createPost(post, chan, boardName, threadNumber, originalPostNumber)
 			}
 			postItems = map
 		}
-		return Result(diff.newPosts, diff.deletedPosts, diff.editedPosts, diff.replyPosts,
-				diff.cache, cacheChanged, postItems, removedPosts, flags, stateExtra,
+		return Result(diff!!.newPosts, diff!!.deletedPosts, diff!!.editedPosts, diff!!.replyPosts,
+				diff!!.cache, cacheChanged, postItems, removedPosts, flags, stateExtra,
 				meta?.archivedThreadUri, meta?.uniquePosters ?: 0)
 	}
 

@@ -32,10 +32,10 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 	override fun onCreate() {
 		val recyclerView = getRecyclerView()
 		recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)
-		chanName = if (Preferences.isMergeChans()) null else getPage().chanName
+		chanName = if (Preferences.isMergeChans) null else getPage().chanName
 		searchQuery = getInitSearch().currentQuery
-		CommonDatabase.getInstance().getHistory().registerObserver(updateHistoryRunnable)
-		val adapter = HistoryAdapter(getContext(), this, chanName)
+		CommonDatabase.getInstance().history.registerObserver(updateHistoryRunnable)
+		val adapter = HistoryAdapter(context, this, chanName)
 		recyclerView.adapter = adapter
 		recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, adapter::configureDivider))
 		recyclerView.addItemDecoration(HeaderItemDecoration(adapter::getItemHeader))
@@ -45,7 +45,7 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 	}
 
 	override fun onDestroy() {
-		CommonDatabase.getInstance().getHistory().unregisterObserver(updateHistoryRunnable)
+		CommonDatabase.getInstance().history.unregisterObserver(updateHistoryRunnable)
 		getAdapter().setCursor(null)
 		if (task != null) {
 			task!!.cancel()
@@ -56,12 +56,12 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 	override fun obtainTitle(): String = getString(R.string.history)
 
 	override fun onItemClick(historyItem: HistoryDatabase.HistoryItem?) {
-		getUiManager().navigator().navigatePosts(historyItem!!.chanName, historyItem.boardName,
+		uiManager!!.navigator()!!.navigatePosts(historyItem!!.chanName, historyItem.boardName,
 				historyItem.threadNumber, null, null)
 	}
 
 	override fun onItemLongClick(historyItem: HistoryDatabase.HistoryItem?): Boolean {
-		showItemPopupMenu(getFragmentManager(), historyItem!!)
+		showItemPopupMenu(fragmentManager, historyItem!!)
 		return true
 	}
 
@@ -72,7 +72,7 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 				val uri = Chan.get(historyItem.chanName).locator.safe(true)
 						.createThreadUri(historyItem.boardName, historyItem.threadNumber)
 				if (uri != null) {
-					StringUtils.copyToClipboard(getContext(), uri.toString())
+					StringUtils.copyToClipboard(context, uri.toString())
 				}
 			}
 			if (!FavoritesStorage.getInstance().hasFavorite(historyItem.chanName,
@@ -83,7 +83,7 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 				}
 			}
 			dialogMenu.add(R.string.remove_from_history) {
-				CommonDatabase.getInstance().getHistory().remove(historyItem.chanName,
+				CommonDatabase.getInstance().history.remove(historyItem.chanName,
 						historyItem.boardName, historyItem.threadNumber)
 			}
 			dialogMenu.create()
@@ -99,7 +99,7 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 
 	override fun onOptionsItemSelected(item: MenuItem): Boolean {
 		if (item.itemId == R.id.menu_clear) {
-			showClearHistoryDialog(getFragmentManager(), chanName)
+			showClearHistoryDialog(fragmentManager, chanName)
 			return true
 		}
 		return false
@@ -143,7 +143,7 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 						.setMessage(R.string.clear_history__sentence)
 						.setNegativeButton(android.R.string.cancel, null)
 						.setPositiveButton(android.R.string.ok) { _, _ ->
-							CommonDatabase.getInstance().getHistory().clearHistory(chanName)
+							CommonDatabase.getInstance().history.clearHistory(chanName)
 						}
 						.create()
 			}

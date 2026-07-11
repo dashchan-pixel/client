@@ -69,7 +69,7 @@ class ThemeDialog : DialogFragment() {
 				RecyclerView.ViewHolder(holder.view) {
 			init {
 				ViewUtils.setSelectableItemBackground(itemView)
-				holder.summary.visibility = View.GONE
+				holder.summary!!.visibility = View.GONE
 				val density = ResourceUtils.obtainDensity(itemView)
 				itemView.setPadding(itemView.paddingLeft + (8f * density).toInt(), itemView.paddingTop,
 						itemView.paddingRight + (8f * density).toInt(), itemView.paddingBottom)
@@ -89,8 +89,8 @@ class ThemeDialog : DialogFragment() {
 		override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
 			val viewHolder = (holder as ItemViewHolder).holder
 			val theme = themes[position]
-			viewHolder.icon.setImageDrawable(theme.createThemeChoiceDrawable())
-			viewHolder.title.text = theme.name
+			viewHolder.icon!!.setImageDrawable(theme.createThemeChoiceDrawable())
+			viewHolder.title!!.text = theme.name
 		}
 	}
 }
