@@ -36,7 +36,7 @@ def main():
 	package['length'] = len(data)
 	package['sha256sum'] = ':'.join(sha[i:i + 2] for i in range(0, len(sha), 2))
 	package['source'] = ('//github.com/dashchan-pixel/client/releases/download/'
-			f'{tag}/dashchan-pixel-release.apk')
+			f"{tag}/dashchan-pixel-{latest['code']}.apk")
 	with open(manifest_path, 'w') as f:
 		json.dump(manifest, f, indent='\t', ensure_ascii=False)
 		f.write('\n')
