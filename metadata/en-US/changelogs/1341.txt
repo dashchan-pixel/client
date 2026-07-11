@@ -1,0 +1,2 @@
+* New app icon: flat geometric bolt in the four Google colors with soft gradient blends
+* Fixed "Go to post" in a gallery or Flow feed reopened from the floating video player after browsing to another thread
