@@ -8,7 +8,6 @@ import chan.content.Chan
 import chan.http.HttpException
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.BuildConfig
-import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.GithubRepository
 import java.util.Locale
@@ -99,7 +98,7 @@ class ReadChangelogTask(private val callback: Callback, private val locales: Lis
 
 	override fun run(holder: HttpHolder): Pair<ErrorItem?, List<Entry>?>? {
 		val githubUri = Chan.getFallback().locator
-				.setSchemeIfEmpty(Uri.parse(Preferences.getGithubUriMetadata()), null)
+				.setSchemeIfEmpty(Uri.parse(BuildConfig.GITHUB_URI_METADATA), null)
 		val metadataPath = BuildConfig.GITHUB_PATH_METADATA
 		try {
 			val repository = GithubRepository(holder, githubUri)

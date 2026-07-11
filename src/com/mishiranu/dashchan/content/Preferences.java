@@ -903,7 +903,6 @@ public class Preferences {
 	public static final String KEY_URI_UPDATES = "uri_updates";
 	public static final String KEY_URI_UPDATES_EXTENSIONS = "uri_updates_extensions";
 	public static final String KEY_URI_THEMES = "uri_themes";
-	public static final String KEY_URI_METADATA = "uri_metadata";
 
 	private static String getRepositoryUri(String key, String defaultValue) {
 		String value = PREFERENCES.getString(key, "");
@@ -929,10 +928,6 @@ public class Preferences {
 
 	public static String getUriThemes() {
 		return getRepositoryUri(KEY_URI_THEMES, BuildConfig.URI_THEMES);
-	}
-
-	public static String getGithubUriMetadata() {
-		return getRepositoryUri(KEY_URI_METADATA, BuildConfig.GITHUB_URI_METADATA);
 	}
 
 	public static final String KEY_LOCK_DRAWER = "lock_drawer";
