@@ -1,0 +1,24 @@
+{
+	"title": "Dashchan pixel fork releases",
+	"applications": [
+		{
+			"name": "client",
+			"type": "client",
+			"title": "Dashchan",
+			"packages": [
+				{
+					"title": "Release",
+					"version_name": "26.7.4-pixel",
+					"version_code": 1341,
+					"min_api_version": 1,
+					"max_api_version": 1,
+					"min_sdk": 36,
+					"length": 4390208,
+					"source": "//github.com/dashchan-pixel/client/releases/download/26.7.4-pixel/dashchan-pixel-release.apk",
+					"fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
+					"sha256sum": "9E:5D:1A:9B:3A:A9:7E:D5:D2:33:20:30:00:8C:A4:05:34:F4:82:CB:AC:86:C1:BD:FA:93:D9:12:CB:47:69:32"
+				}
+			]
+		}
+	]
+}

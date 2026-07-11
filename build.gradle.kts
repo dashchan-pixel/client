@@ -34,11 +34,15 @@ android {
 		targetSdk = 36
 
 		buildConfigField("String", "VERSION_DATE", "\"${latestVersion["date"]}\"")
+		// Client updates come from this repo itself; extension updates from a separate,
+		// independently configurable source (see Preferences.getUriUpdatesExtensions).
 		buildConfigField("String", "URI_UPDATES", "\"//raw.githubusercontent.com/" +
-				"TrixiEther/DashchanFork/experimental/update/data.json\"")
+				"dashchan-pixel/client/rework/update/data.json\"")
+		buildConfigField("String", "URI_UPDATES_EXTENSIONS", "\"//raw.githubusercontent.com/" +
+				"TrixiEther/Dashchan-Meta/master/update/data.json\"")
 		buildConfigField("String", "URI_THEMES", "\"//raw.githubusercontent.com/" +
-				"TrixiEther/DashchanFork/experimental/update/themes.json\"")
-		buildConfigField("String", "GITHUB_URI_METADATA", "\"//github.com/dashchan-pixel/meta\"")
+				"dashchan-pixel/client/rework/update/themes.json\"")
+		buildConfigField("String", "GITHUB_URI_METADATA", "\"//github.com/dashchan-pixel/client\"")
 		buildConfigField("String", "GITHUB_PATH_METADATA", "\"metadata\"")
 	}
 

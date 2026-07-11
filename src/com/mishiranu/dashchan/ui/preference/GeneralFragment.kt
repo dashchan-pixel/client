@@ -88,6 +88,8 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 
 		addHeader(R.string.repositories)
 		addRepositoryUri(Preferences.KEY_URI_UPDATES, R.string.updates, BuildConfig.URI_UPDATES)
+		addRepositoryUri(Preferences.KEY_URI_UPDATES_EXTENSIONS, R.string.updates_extensions,
+				BuildConfig.URI_UPDATES_EXTENSIONS)
 		addRepositoryUri(Preferences.KEY_URI_THEMES, R.string.themes, BuildConfig.URI_THEMES)
 		addRepositoryUri(Preferences.KEY_URI_METADATA, R.string.metadata, BuildConfig.GITHUB_URI_METADATA)
 

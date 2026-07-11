@@ -901,6 +901,7 @@ public class Preferences {
 
 	// Repository sources. An empty stored value means "use the built-in default" (BuildConfig).
 	public static final String KEY_URI_UPDATES = "uri_updates";
+	public static final String KEY_URI_UPDATES_EXTENSIONS = "uri_updates_extensions";
 	public static final String KEY_URI_THEMES = "uri_themes";
 	public static final String KEY_URI_METADATA = "uri_metadata";
 
@@ -911,6 +912,10 @@ public class Preferences {
 
 	public static String getUriUpdates() {
 		return getRepositoryUri(KEY_URI_UPDATES, BuildConfig.URI_UPDATES);
+	}
+
+	public static String getUriUpdatesExtensions() {
+		return getRepositoryUri(KEY_URI_UPDATES_EXTENSIONS, BuildConfig.URI_UPDATES_EXTENSIONS);
 	}
 
 	public static String getUriThemes() {
