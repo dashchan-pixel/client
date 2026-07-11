@@ -374,7 +374,6 @@
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>
 	<string name="wifi_only">Somente Wi-Fi</string>
-	<string name="wifi_or_3g_plus">Wi-Fi ou 3G+</string>
 	<string name="with_name_name__format">Com nome %s</string>
 	<string name="yesterday">Ontem</string>
 	<string name="you_are_banned">Voce está banido</string>

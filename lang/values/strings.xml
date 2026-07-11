@@ -544,7 +544,6 @@
 	<string name="watch_initially__summary">Enable watcher when thread is added to favorites</string>
 	<string name="web_browser">Web browser</string>
 	<string name="wifi_only">Wi-Fi only</string>
-	<string name="wifi_or_3g_plus">Wi-Fi or 3G+</string>
 	<string name="with_name_name__format">With name %s</string>
 	<string name="yesterday">Yesterday</string>
 	<string name="you_are_banned">You are banned</string>

@@ -182,7 +182,6 @@ public class Preferences {
 
 	public enum NetworkMode {
 		ALWAYS("always", R.string.always, o -> true),
-		WIFI_3G("wifi_3g", R.string.wifi_or_3g_plus, NetworkObserver::isMobile3GConnected),
 		WIFI("wifi", R.string.wifi_only, NetworkObserver::isWifiConnected),
 		NEVER("never", R.string.never, o -> false);
 

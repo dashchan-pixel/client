@@ -560,7 +560,6 @@
 	<string name="watch_initially__summary">Включать отслеживание при добавлении в избранное</string>
 	<string name="web_browser">Браузер</string>
 	<string name="wifi_only">Только через Wi-Fi</string>
-	<string name="wifi_or_3g_plus">Через Wi-Fi или 3G+</string>
 	<string name="with_name_name__format">С именем %s</string>
 	<string name="yesterday">Вчера</string>
 	<string name="you_are_banned">Вы заблокированы</string>
