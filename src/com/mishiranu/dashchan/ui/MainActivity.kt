@@ -215,12 +215,8 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         ChanManager.getInstance().observable.register(chanManagerCallback)
         watcherServiceClient = getClient(this)
         watcherServiceClient!!.callback = this
-            .also {
-                drawerCommon = it
-            }<ViewGroup> findViewById < android . view . View ? > (R.id.drawer_common)
-            .also {
-                drawerWide = it
-            }<ViewGroup> findViewById < android . view . View ? > (R.id.drawer_wide)
+            drawerCommon = findViewById(R.id.drawer_common)
+            drawerWide = findViewById(R.id.drawer_wide)
         val theme = getTheme(this)
         val drawerContext: Context?
         val drawerBackground: Int
@@ -234,31 +230,24 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         drawerParent = FrameLayout(this)
         drawerParent!!.addView(drawerForm!!.contentView)
         drawerCommon!!.addView(drawerParent)
-            .also {
-                drawerLayout = it
-            }<CustomDrawerLayout> findViewById < android . view . View ? > (R.id.drawer_layout)
+            drawerLayout = findViewById(R.id.drawer_layout)
         drawerLayout!!.setSaveEnabled(false)
-        val drawerInterlayer: FrameLayout?
-        FrameLayout > findViewById<View?>(R.id.drawer_interlayer)
+        val drawerInterlayer = findViewById<FrameLayout>(R.id.drawer_interlayer)
         getLayoutInflater().inflate(R.layout.widget_toolbar, drawerInterlayer)
-        val toolbar: Toolbar
-        Toolbar > findViewById<View?>(R.id.toolbar)
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setActionBar(toolbar)
         setTitle(null)
         // Allow CustomSearchView to ignore content inset
         toolbar.setClipChildren(false)
         toolbarHolder = addToolbarTitle(toolbar)
-            .also {
-                toolbarExtra = it
-            }<FrameLayout> findViewById < android . view . View ? > (R.id.toolbar_extra)
+            toolbarExtra = findViewById(R.id.toolbar_extra)
         val layoutTransition = LayoutTransition()
         layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0)
         layoutTransition.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0)
         layoutTransition.setDuration(100)
         toolbarExtra!!.setLayoutTransition(layoutTransition)
 
-        val toolbarLayout: View?
-        View > findViewById<View?>(R.id.toolbar_layout)
+        val toolbarLayout = findViewById<View>(R.id.toolbar_layout)
 
         drawerToggle = DrawerToggle(
             this, if (toolbarHolder != null)
@@ -320,8 +309,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         uiManager = UiManager(this, this, this)
         uiManager!!.attach(this)
         ContentFragment.Companion.prepare(this)
-        val contentFragment: ViewGroup
-        ViewGroup > findViewById<View?>(R.id.content_fragment)
+        val contentFragment = findViewById<ViewGroup>(R.id.content_fragment)
         contentFragment.setOnHierarchyChangeListener(object : OnHierarchyChangeListener {
             override fun onChildViewAdded(parent: View?, child: View?) {
                 expandedScreen!!.addContentView(child)

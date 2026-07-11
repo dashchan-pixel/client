@@ -151,7 +151,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
 
         companion object {
-            val FACTORY: ExtraFactory<RetainableExtra?> = ExtraFactory { RetainableExtra() }
+            val FACTORY: ExtraFactory<RetainableExtra> = ExtraFactory { RetainableExtra() }
         }
     }
 
@@ -191,7 +191,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
 
         companion object {
-            val FACTORY: ExtraFactory<ParcelableExtra?> = ExtraFactory { ParcelableExtra() }
+            val FACTORY: ExtraFactory<ParcelableExtra> = ExtraFactory { ParcelableExtra() }
 
             val CREATOR: Parcelable.Creator<ParcelableExtra?> =
                 object : Parcelable.Creator<ParcelableExtra?> {
@@ -334,8 +334,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private val postStateProvider: PostStateProvider = object : PostStateProvider {
         override fun isHiddenResolve(postItem: PostItem): Boolean {
             if (postItem.getHideState() == HideState.UNDEFINED) {
-                val retainableExtra: RetainableExtra
-                RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+                val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
                 val hideState = retainableExtra.hiddenPosts.get(postItem.getPostNumber())
                 if (hideState != HideState.UNDEFINED) {
                     postItem.setHidden(hideState, null)
@@ -357,32 +356,27 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
 
         override fun isUserPost(postNumber: PostNumber?): Boolean {
-            val retainableExtra: RetainableExtra
-            RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
             return retainableExtra.userPosts.contains(postNumber)
         }
 
         override fun isExpanded(postNumber: PostNumber?): Boolean {
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             return parcelableExtra.expandedPosts.contains(postNumber)
         }
 
         override fun setExpanded(postNumber: PostNumber?) {
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             parcelableExtra.expandedPosts.add(postNumber!!)
         }
 
         override fun isRead(postNumber: PostNumber?): Boolean {
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             return !parcelableExtra.unreadPosts.contains(postNumber)
         }
 
         override fun setRead(postNumber: PostNumber?) {
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             parcelableExtra.unreadPosts.remove(postNumber)
         }
     }
@@ -400,11 +394,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val density = obtainDensity(context)
         val dividerPadding = (12f * density).toInt()
         hidePerformer = HidePerformer(context)
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
-        replyable = Replyable? { click: Boolean, data: Array<ReplyData?>? ->
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+        replyable = Replyable { click: Boolean, data: Array<ReplyData?>? ->
             val board = chan.configuration.safe().obtainBoard(page.boardName)
             if (click && board.allowPosting) {
                 uiManager.navigator()!!.navigatePosting(
@@ -524,10 +516,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         searchProcessView = searchProcessLayout
 
         val initRequest = getInitRequest()
-        val extractViewModel: ExtractViewModel
-        ExtractViewModel > getViewModel<ExtractViewModel?>(ExtractViewModel::class.java)
-        val readViewModel: ReadViewModel
-        ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+        val extractViewModel = getViewModel(ExtractViewModel::class.java)
+        val readViewModel = getViewModel(ReadViewModel::class.java)
         readViewModel.init(
             uiManager.callback()!!.watcherClient,
             page.chanName,
@@ -602,8 +592,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     override fun onResume() {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (retainableExtra.dialogsState != null) {
             retainableExtra.dialogsState!!.dropState()
             retainableExtra.dialogsState = null
@@ -653,14 +642,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     override fun onRequestStoreExtra(saveToStack: Boolean) {
         val adapter = this.adapter
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (retainableExtra.dialogsState != null) {
             retainableExtra.dialogsState!!.dropState()
         }
         retainableExtra.dialogsState = adapter!!.configurationSet.stackInstance!!.collectState()
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         parcelableExtra.selectedPosts = null
         if (selectionMode != null && !saveToStack) {
             val selected = adapter.selectedItems
@@ -672,8 +659,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     public override fun obtainTitle(): String? {
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         if (!chan.util.StringUtils.isEmptyOrWhitespace(parcelableExtra.threadTitle)) {
             return parcelableExtra.threadTitle
         } else {
@@ -718,8 +704,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun setPostUserPost(postItem: PostItem, userPost: Boolean) {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (userPost) {
             retainableExtra.userPosts.add(postItem.getPostNumber())
         } else {
@@ -733,8 +718,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun setPostHideState(postItem: PostItem, hideState: HideState) {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.hiddenPosts.set(postItem.getPostNumber(), hideState)
         CommonDatabase.getInstance().posts.setFlags(
             true, getPage().chanName, postItem.getBoardName(),
@@ -779,8 +763,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     public override fun onPrepareOptionsMenu(menu: Menu) {
         val page = getPage()
         val adapter = this.adapter
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         menu.findItem(R.id.menu_add_post)
             .setVisible(replyable != null && replyable!!.onRequestReply(false))
         menu.findItem(R.id.menu_erase).setVisible(adapter!!.getItemCount() > 0)
@@ -868,8 +851,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             showHiddenPostsDialog(fragmentManager, localFilters)
             return true
         } else if (switchItemId0 == R.id.menu_star_text || switchItemId0 == R.id.menu_star_icon) {
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             FavoritesStorage.getInstance().add(
                 page.chanName!!, page.boardName, page.threadNumber!!,
                 parcelableExtra.threadTitle, true
@@ -881,8 +863,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             updateOptionsMenu()
             return true
         } else if (switchItemId0 == R.id.menu_open_original_thread) {
-            val retainableExtra: RetainableExtra
-            RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
             val chan = getPreferred(null, retainableExtra.archivedThreadUri)
             if (chan.name != null) {
                 val uri = retainableExtra.archivedThreadUri
@@ -1068,8 +1049,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     public override fun onSearchCancel() {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (retainableExtra.searching) {
             retainableExtra.searching = false
             setCustomSearchView(null)
@@ -1083,8 +1063,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         queries: MutableSet<String?>
     ) {
         searchWorker = null
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.searchPostNumbers = foundPostNumbers
         retainableExtra.searching = true
         if (foundPostNumbers.isEmpty()) {
@@ -1115,8 +1094,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun showSearchDialog() {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (!retainableExtra.searchPostNumbers.isEmpty()) {
             uiManager!!.dialog()
                 .displayList(this.adapter!!.configurationSet, retainableExtra.searchPostNumbers)
@@ -1124,8 +1102,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun findNext(addIndex: Int) {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val count = retainableExtra.searchPostNumbers.size
         if (count > 0) {
             retainableExtra.searchLastIndex =
@@ -1142,8 +1119,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun updateSearchTitle() {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         searchResultText!!.setText(
             (retainableExtra.searchLastIndex + 1).toString() + "/" +
                     retainableExtra.searchPostNumbers.size
@@ -1185,8 +1161,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     public override fun updatePageConfiguration(postNumber: PostNumber?) {
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         parcelableExtra.scrollToPostNumber = postNumber
         if (!scrollToPostFromExtra(false)) {
             if (!hasReadTask()) {
@@ -1201,8 +1176,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun scrollToPostFromExtra(instantly: Boolean): Boolean {
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         if (parcelableExtra.scrollToPostNumber != null) {
             val position = this.adapter!!.positionOfPostNumber(parcelableExtra.scrollToPostNumber!!)
             if (position >= 0) {
@@ -1221,8 +1195,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun decodeThreadExtra() {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val localFiltersDecoded = false
         if (retainableExtra.threadExtra != null) {
             try {
@@ -1274,8 +1247,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 throw RuntimeException(e)
             }
         }
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.threadExtra = extra
         val page = getPage()
         CommonDatabase.getInstance().threads.setStateExtra(
@@ -1396,8 +1368,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private fun extractPostsWithoutIndication(cleanup: PagesDatabase.Cleanup) {
         var cleanup = cleanup
         val page = getPage()
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (cleanup == PagesDatabase.Cleanup.ERASE) {
             retainableExtra.eraseExtract = true
         }
@@ -1408,12 +1379,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
         if (retainableExtra.eraseExtract) {
             cleanup = PagesDatabase.Cleanup.ERASE
-            val readViewModel: ReadViewModel
-            ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+            val readViewModel = getViewModel(ReadViewModel::class.java)
             readViewModel.notifyEraseStarted()
         }
-        val extractViewModel: ExtractViewModel
-        ExtractViewModel > getViewModel<ExtractViewModel?>(ExtractViewModel::class.java)
+        val extractViewModel = getViewModel(ExtractViewModel::class.java)
         val task = ExtractPostsTask(
             extractViewModel.callback!!, retainableExtra.cache,
             chan, page.boardName, page.threadNumber, retainableExtra.initialExtract, cleanup
@@ -1428,11 +1397,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private val refreshRunnable = Runnable {
         val interval = this.autoRefreshInterval
         if (interval > 0 && !hasReadTask()) {
-            val retainableExtra: RetainableExtra
-            RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
             if (!retainableExtra.eraseExtract) {
-                val readViewModel: ReadViewModel
-                ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+                val readViewModel = getViewModel(ReadViewModel::class.java)
                 readViewModel.refresh(false, false, interval)
             }
         }
@@ -1461,20 +1428,17 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun refreshPostsWithoutIndication(reload: Boolean) {
-        val readViewModel: ReadViewModel
-        ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+        val readViewModel = getViewModel(ReadViewModel::class.java)
         readViewModel.refresh(reload, true, 0)
     }
 
     private fun hasExtractTask(): Boolean {
-        val extractViewModel: ExtractViewModel
-        ExtractViewModel > getViewModel<ExtractViewModel?>(ExtractViewModel::class.java)
+        val extractViewModel = getViewModel(ExtractViewModel::class.java)
         return extractViewModel.hasTaskOrValue()
     }
 
     private fun hasReadTask(): Boolean {
-        val readViewModel: ReadViewModel
-        ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+        val readViewModel = getViewModel(ReadViewModel::class.java)
         return readViewModel.hasTaskOrValue()
     }
 
@@ -1496,10 +1460,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             val recyclerView = getRecyclerView()
             recyclerView.pullable!!.cancelBusyState()
             switchList()
-            val retainableExtra: RetainableExtra
-            RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
-            val parcelableExtra: ParcelableExtra
-            ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             if (retainableExtra.errorItem != null) {
                 val errorItem = retainableExtra.errorItem
                 retainableExtra.errorItem = null
@@ -1514,8 +1476,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun handleError(errorItem: ErrorItem?) {
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.errorItem = errorItem
         if (!hasExtractTask() && !hasReadTask()) {
             retainableExtra.errorItem = null
@@ -1575,10 +1536,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return
         }
 
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         val recyclerView = getRecyclerView()
         val adapter = this.adapter
         val updateAdapters = false
@@ -1724,8 +1683,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             }
             updateImportantPostsFastScrollBarDecorationData()
 
-            val readViewModel: ReadViewModel
-            ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
+            val readViewModel = getViewModel(ReadViewModel::class.java)
             readViewModel.notifyExtracted()
         }
 
@@ -1769,8 +1727,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         if (listPosition == null) {
             listPosition = listPositionFromState
         }
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         val page = getPage()
 
         if (firstLayout && (parcelableExtra.scrollToPostNumber == null ||
@@ -1852,8 +1809,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
         val importantPostsMarksFastScrollBarDecorationData: ImportantPostsMarksFastScrollBarDecoration.Data? =
             null
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val userPosts = retainableExtra.userPosts
 
         if (!userPosts.isEmpty()) {
@@ -1905,10 +1861,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         cacheState: PagesDatabase.Cache.State?,
         consumeReplies: ConsumeReplies
     ) {
-        val readViewModel: ReadViewModel
-        ReadViewModel > getViewModel<ReadViewModel?>(ReadViewModel::class.java)
-        val retainableExtra: RetainableExtra
-        RetainableExtra > getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+        val readViewModel = getViewModel(ReadViewModel::class.java)
+        val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.cacheState = cacheState
         if ((readViewModel.visibleReadResult || this.autoRefreshInterval > 0) && !hasExtractTask() && retainableExtra.shouldExtract()) {
             consumeReplies.consume()
@@ -1931,8 +1885,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     override fun onReadPostsFail(errorItem: ErrorItem?) {
         cancelProgressIfNecessary()
         handleError(errorItem)
-        val parcelableExtra: ParcelableExtra
-        ParcelableExtra > getParcelableExtra<ParcelableExtra?>(ParcelableExtra.Companion.FACTORY)
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         parcelableExtra.scrollToPostNumber = null
         queueNextRefresh(false)
     }
@@ -2231,8 +2184,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         .setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
-                                val postsPage: PostsPage
-                                PostsPage > ListPage.Companion.extract<ListPage?>(provider)
+                                val postsPage = extract<PostsPage>(provider)!!
                                 postsPage.extractPosts(PagesDatabase.Cleanup.ERASE)
                             })
                         .setNegativeButton(android.R.string.cancel, null)
@@ -2251,8 +2203,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         .setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
-                                val postsPage: PostsPage
-                                PostsPage > ListPage.Companion.extract<ListPage?>(provider)
+                                val postsPage = extract<PostsPage>(provider)!!
                                 postsPage.extractPosts(PagesDatabase.Cleanup.DELETED)
                             })
                         .setNegativeButton(android.R.string.cancel, null)
@@ -2266,8 +2217,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     val context = provider!!.context
-                    val postsPage: PostsPage
-                    PostsPage > ListPage.Companion.extract<ListPage?>(provider)
+                    val postsPage = extract<PostsPage>(provider)!!
                     val page = postsPage.getPage()
                     val retainableExtra =
                         postsPage.getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
@@ -2347,8 +2297,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         .setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
-                                val postsPage: PostsPage
-                                PostsPage > ListPage.Companion.extract<ListPage?>(provider)
+                                val postsPage = extract<PostsPage>(provider)!!
                                 val hasDeleted = false
                                 val i = 0
                                 val j = 0

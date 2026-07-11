@@ -30,7 +30,7 @@ import java.util.Objects
 
 abstract class ListPage : LifecycleOwner, PullCallback {
     fun interface ExtraFactory<T> {
-        fun newExtra(): T?
+        fun newExtra(): T
     }
 
     interface Retainable {
@@ -145,8 +145,8 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     protected val fragmentManager: FragmentManager
         get() = fragment!!.getChildFragmentManager()
 
-    protected fun <T : ViewModel?> getViewModel(modelClass: Class<T?>): T? {
-        return ViewModelProvider(fragment!!).get<T?>(modelClass)
+    protected fun <T : ViewModel> getViewModel(modelClass: Class<T>): T {
+        return ViewModelProvider(fragment!!).get(modelClass)
     }
 
     protected val chan: Chan
@@ -236,18 +236,20 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         callback!!.closePage()
     }
 
-    protected fun <T : Retainable?> getRetainableExtra(factory: ExtraFactory<T?>?): T? {
-        if (retainableExtra == null && factory != null) {
+    protected fun <T : Retainable> getRetainableExtra(factory: ExtraFactory<T>): T {
+        if (retainableExtra == null) {
             retainableExtra = factory.newExtra()
         }
-        return retainableExtra as T?
+        @Suppress("UNCHECKED_CAST")
+        return retainableExtra as T
     }
 
-    protected fun <T : Parcelable?> getParcelableExtra(factory: ExtraFactory<T?>?): T? {
-        if (parcelableExtra == null && factory != null) {
+    protected fun <T : Parcelable> getParcelableExtra(factory: ExtraFactory<T>): T {
+        if (parcelableExtra == null) {
             parcelableExtra = factory.newExtra()
         }
-        return parcelableExtra as T?
+        @Suppress("UNCHECKED_CAST")
+        return parcelableExtra as T
     }
 
     protected open fun onCreate() {}
