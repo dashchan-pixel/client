@@ -161,7 +161,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 	}
 
 	override fun onItemLongClick(postItem: PostItem?): Boolean {
-		uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, postItem)
+		uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, postItem!!)
 		return true
 	}
 

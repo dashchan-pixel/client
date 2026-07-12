@@ -23,11 +23,11 @@ class EditPreference(context: Context, key: String, defaultValue: String?,
 	val customFilters = ArrayList<InputFilter>()
 
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getString(key, defaultValue))
+		setValue(preferences.getString(key!!, defaultValue))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, value).close()
+		preferences.edit().put(key!!, value).close()
 	}
 
 	override fun createDialog(savedInstanceState: Bundle?): AlertDialog {

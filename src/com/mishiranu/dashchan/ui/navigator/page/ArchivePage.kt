@@ -78,7 +78,7 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 	override fun obtainTitle(): String {
 		val page = getPage()
 		return getString(R.string.archive) + ": " +
-				StringUtils.formatBoardTitle(page.chanName, page.boardName, null)
+				StringUtils.formatBoardTitle(page.chanName!!, page.boardName, null)
 	}
 
 	override fun onItemClick(threadNumber: String?) {

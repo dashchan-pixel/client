@@ -87,7 +87,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                     uiManager.navigator()!!.navigateTargetAllowReturn(chan.name, navigationData)
                 } else {
                     handleLinkNavigation(
-                        configurationSet.fragmentManager,
+                        configurationSet.fragmentManager!!,
                         chan.name,
                         navigationData,
                         sameChan
@@ -96,12 +96,12 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             }
         }
         if (!handled) {
-            handleUriInternal(uiManager.context, extra.chanName, uri)
+            handleUriInternal(uiManager.context!!, extra.chanName, uri)
         }
     }
 
     fun handleLinkLongClick(configurationSet: ConfigurationSet, uri: Uri) {
-        handleLinkLongClick(configurationSet.fragmentManager, uri)
+        handleLinkLongClick(configurationSet.fragmentManager!!, uri)
     }
 
     private class ThumbnailClickListenerImpl(private val uiManager: UiManager) :
@@ -122,15 +122,15 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
 
         override fun onClick(v: View) {
             val holder =
-                ListViewUtils.getViewHolder<UiManager.Holder?>(v, UiManager.Holder::class.java)
+                ListViewUtils.getViewHolder(v, UiManager.Holder::class.java)
             val postItem = holder!!.postItem
-            val attachmentItems: MutableList<AttachmentItem?>? = postItem!!.getAttachmentItems()
+            val attachmentItems = postItem!!.getAttachmentItems()
             if (attachmentItems != null && !attachmentItems.isEmpty()) {
                 val gallerySet = holder.gallerySet
                 val startImageIndex = gallerySet.findIndex(postItem)
                 if (mayShowDialog) {
                     uiManager.dialog().openAttachmentOrDialog(
-                        holder.configurationSet, v,
+                        holder.configurationSet!!, v,
                         attachmentItems, startImageIndex, navigatePostMode, gallerySet
                     )
                 } else {
@@ -159,7 +159,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
 
         override fun onLongClick(v: View): Boolean {
             val holder =
-                ListViewUtils.getViewHolder<UiManager.Holder?>(v, UiManager.Holder::class.java)
+                ListViewUtils.getViewHolder(v, UiManager.Holder::class.java)
             Companion.showThumbnailLongClickDialogStatic(
                 holder!!.configurationSet,
                 attachmentItem!!, v as AttachmentView, holder.gallerySet.getThreadTitle()
@@ -210,7 +210,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                     }
                 }
             }
-            return uiManager.view().handlePostForDoubleClick(view)
+            return uiManager.view().handlePostForDoubleClick(view!!)
         }
     }
 
@@ -218,11 +218,11 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
         val chan = get(configurationSet.chanName)
         val context = uiManager.context
         val board = chan.configuration.safe().obtainBoard(postItem.getBoardName())
-        val postEmpty: Boolean = chan.util.StringUtils.isEmpty(postItem.getComment(chan).toString())
+        val postEmpty: Boolean = StringUtils.isEmpty(postItem.getComment(chan).toString())
         val copyText = !postEmpty
         val shareText = !postEmpty
         val userPost = configurationSet.postStateProvider!!.isUserPost(postItem.getPostNumber())
-        val dialogMenu = DialogMenu(context)
+        val dialogMenu = DialogMenu(context!!)
         if (configurationSet.replyable != null && configurationSet.replyable.onRequestReply(false)) {
             dialogMenu.add(R.string.reply, Runnable {
                 configurationSet.replyable
@@ -243,14 +243,14 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
         if (copyText) {
             dialogMenu.addMore(R.string.copy, Runnable {
                 showPostCopyDialog(
-                    configurationSet.fragmentManager,
+                    configurationSet.fragmentManager!!,
                     configurationSet.chanName, postItem
                 )
             })
         } else {
             dialogMenu.add(R.string.copy_link, Runnable {
                 handlePostContextMenuCopy(
-                    context,
+                    context!!,
                     configurationSet.chanName, postItem, PostCopyShareAction.COPY_LINK
                 )
             })
@@ -258,14 +258,14 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
         if (shareText) {
             dialogMenu.addMore(R.string.share, Runnable {
                 showPostShareDialog(
-                    configurationSet.fragmentManager,
+                    configurationSet.fragmentManager!!,
                     configurationSet.chanName, postItem
                 )
             })
         } else {
             dialogMenu.add(R.string.share_link, Runnable {
                 handlePostContextMenuCopy(
-                    context,
+                    context!!,
                     configurationSet.chanName, postItem, PostCopyShareAction.SHARE_LINK
                 )
             })
@@ -275,7 +275,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                 dialogMenu.add(R.string.report, Runnable {
                     uiManager.dialog()
                         .performSendReportPosts(
-                            configurationSet.fragmentManager,
+                            configurationSet.fragmentManager!!,
                             chan.name,
                             postItem.getBoardName(),
                             postItem.getThreadNumber(),
@@ -287,7 +287,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                 dialogMenu.add(R.string.delete, Runnable {
                     uiManager.dialog()
                         .performSendDeletePosts(
-                            configurationSet.fragmentManager,
+                            configurationSet.fragmentManager!!,
                             chan.name,
                             postItem.getBoardName(),
                             postItem.getThreadNumber(),
@@ -311,12 +311,12 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
         if (configurationSet.allowHiding && !postItem.getHideState().hidden) {
             dialogMenu.addMore(
                 R.string.hide,
-                Runnable { showPostHideDialog(configurationSet.fragmentManager, postItem) })
+                Runnable { showPostHideDialog(configurationSet.fragmentManager!!, postItem) })
         }
         if (board.allowVotes) {
             dialogMenu.add(R.string.vote_like, Runnable {
                 uiManager.dialog().performSendVotePost(
-                    configurationSet.fragmentManager,
+                    configurationSet.fragmentManager!!,
                     chan.name,
                     postItem.getBoardName(),
                     postItem.getThreadNumber(),
@@ -326,7 +326,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             })
             dialogMenu.add(R.string.vote_dislike, Runnable {
                 uiManager.dialog().performSendVotePost(
-                    configurationSet.fragmentManager,
+                    configurationSet.fragmentManager!!,
                     chan.name,
                     postItem.getBoardName(),
                     postItem.getThreadNumber(),
@@ -430,7 +430,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             val dialogMenu = DialogMenu(context)
             dialogMenu.add(
                 R.string.copy_link,
-                Runnable { chan.util.StringUtils.copyToClipboard(context, uri.toString()) })
+                Runnable { StringUtils.copyToClipboard(context, uri.toString()) })
             dialogMenu.add(R.string.share_link, Runnable { shareLink(context, null, uri) })
             if (isUseInternalBrowser && (chan.name == null || !chan.locator.safe(false)
                     .isBoardUri(uri) && !chan.locator.safe(false)
@@ -484,7 +484,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             val canLoadThumbnailManually =
                 attachmentItem.canLoadThumbnailManually(attachmentView, chan)
             InstanceDialog(
-                configurationSet.fragmentManager,
+                configurationSet.fragmentManager!!,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     Companion.createThumbnailLongClickDialog(
@@ -544,7 +544,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                 })
             }
             dialogMenu.add(R.string.copy_link, Runnable {
-                chan.util.StringUtils.copyToClipboard(
+                StringUtils.copyToClipboard(
                     context,
                     attachmentItem.getFileUri(chan).toString()
                 )
@@ -623,7 +623,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val uiManager: UiManager? = UiManager.Companion.extract(provider)
+                    val uiManager: UiManager? = UiManager.Companion.extract(provider!!)
                     val dialogMenu = DialogMenu(provider!!.context)
                     dialogMenu.add(R.string.this_post, Runnable {
                         uiManager!!
@@ -652,14 +652,14 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             val chan = get(chanName)
             when (action) {
                 PostCopyShareAction.COPY_TEXT -> {
-                    chan.util.StringUtils.copyToClipboard(
+                    StringUtils.copyToClipboard(
                         context,
                         getCopyReadyComment(postItem.getComment(chan))
                     )
                 }
 
                 PostCopyShareAction.COPY_MARKUP -> {
-                    chan.util.StringUtils.copyToClipboard(context, postItem.getCommentMarkup(chan))
+                    StringUtils.copyToClipboard(context, postItem.getCommentMarkup(chan))
                 }
 
                 PostCopyShareAction.COPY_LINK, PostCopyShareAction.SHARE_LINK, PostCopyShareAction.SHARE_TEXT -> {
@@ -673,12 +673,12 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                     if (uri != null) {
                         when (action) {
                             PostCopyShareAction.COPY_LINK -> {
-                                chan.util.StringUtils.copyToClipboard(context, uri.toString())
+                                StringUtils.copyToClipboard(context, uri.toString())
                             }
 
                             PostCopyShareAction.SHARE_LINK -> {
                                 var subject = postItem.getSubjectOrComment()
-                                if (chan.util.StringUtils.isEmptyOrWhitespace(subject)) {
+                                if (StringUtils.isEmptyOrWhitespace(subject)) {
                                     subject = uri.toString()
                                 }
                                 shareLink(context, subject, uri)
@@ -686,7 +686,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
 
                             PostCopyShareAction.SHARE_TEXT -> {
                                 var subject = postItem.getSubjectOrComment()
-                                if (chan.util.StringUtils.isEmptyOrWhitespace(subject)) {
+                                if (StringUtils.isEmptyOrWhitespace(subject)) {
                                     subject = uri.toString()
                                 }
                                 shareText(

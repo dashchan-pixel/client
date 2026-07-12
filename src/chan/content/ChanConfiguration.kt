@@ -473,7 +473,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         searchQuery: String?, signal: CancellationSignal?
     ): BoardCursor {
         return ChanDatabase.getInstance().getBoards(
-            get().name, boardNames, searchQuery,
+            get().name, boardNames!!, searchQuery,
             KEY_TITLE, KEY_DESCRIPTION, titleFallbackProvider, descriptionFallbackProvider, signal
         )
     }

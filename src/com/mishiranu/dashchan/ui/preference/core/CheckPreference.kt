@@ -11,11 +11,11 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 		title: CharSequence?, summary: CharSequence?) :
 		Preference<Boolean>(context, key, defaultValue, title, SummaryProvider { summary }) {
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getBoolean(key, defaultValue))
+		setValue(preferences.getBoolean(key!!, defaultValue!!))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, value).close()
+		preferences.edit().put(key!!, value!!).close()
 	}
 
 	override fun getViewType(): ViewType = ViewType.CHECK

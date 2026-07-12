@@ -101,7 +101,7 @@ class ReadChangelogTask(private val callback: Callback, private val locales: Lis
 				.setSchemeIfEmpty(Uri.parse(BuildConfig.GITHUB_URI_METADATA), null)
 		val metadataPath = BuildConfig.GITHUB_PATH_METADATA
 		try {
-			val repository = GithubRepository(holder, githubUri)
+			val repository = GithubRepository(holder, githubUri!!)
 			val metadataFiles = repository.listFiles(metadataPath)
 			if (isCancelled()) {
 				return null

@@ -468,7 +468,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             val targetThreadNumber: String? = if (data.threadNumber != null)
                 data.threadNumber
             else
-                chan.util.StringUtils.nullIfEmpty(threadNumber)
+                StringUtils.nullIfEmpty(threadNumber)
             val draftsStorage = DraftsStorage.getInstance()
             draftsStorage.removeCaptchaDraft()
             draftsStorage.removePostDraft(chanName, data.boardName, data.threadNumber)
@@ -714,7 +714,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
         ): String {
             val builder = StringBuilder(chan.configuration.getTitle()).append(", ")
             builder.append(
-                chan.util.StringUtils.formatThreadTitle(
+                StringUtils.formatThreadTitle(
                     chan.name,
                     boardName, if (threadNumber != null) threadNumber else "?"
                 )

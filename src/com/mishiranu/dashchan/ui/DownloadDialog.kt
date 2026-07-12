@@ -77,9 +77,9 @@ import kotlin.synchronized
 
 class DownloadDialog(context: Context?, callback: Callback) {
     interface Callback {
-        fun resolve(choiceRequest: ChoiceRequest?, directRequest: DirectRequest?)
-        fun resolve(replaceRequest: ReplaceRequest?, action: ReplaceRequest.Action?)
-        fun cancel(prepareRequest: PrepareRequest?)
+        fun resolve(choiceRequest: ChoiceRequest, directRequest: DirectRequest?)
+        fun resolve(replaceRequest: ReplaceRequest, action: ReplaceRequest.Action?)
+        fun cancel(prepareRequest: PrepareRequest)
     }
 
     private val context: Context
@@ -543,12 +543,12 @@ class DownloadDialog(context: Context?, callback: Callback) {
             ProgressDialog.BUTTON_NEGATIVE, context.getString(android.R.string.cancel),
             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                 callback.cancel(
-                    prepareRequest
+                    prepareRequest!!
                 )
             })
         dialog.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? ->
             callback.cancel(
-                prepareRequest
+                prepareRequest!!
             )
         })
         dialog.setOnDismissListener(onDismissListener)
@@ -647,7 +647,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
                                     val cachedFiles = ArrayList<DataFile?>()
                                     val items: ArrayList<DialogDirectory?> =
                                         ArrayList<DialogDirectory?>()
-                                    val files: MutableList<DataFile>? = directory.getChildren()
+                                    val files = directory.getChildren()
                                     if (files != null) {
                                         for (file in files) {
                                             if (isCancelled()) {

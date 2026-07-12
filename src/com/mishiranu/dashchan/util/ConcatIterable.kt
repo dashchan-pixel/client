@@ -1,7 +1,7 @@
 package com.mishiranu.dashchan.util
 
 class ConcatIterable<T>(private vararg val iterables: Iterable<T>) : Iterable<T> {
-	override fun iterator(): Iterator<T> {
+	override fun iterator(): MutableIterator<T> {
 		return object : MutableIterator<T> {
 			private var iterator: Iterator<T>? = null
 			private var next = 0

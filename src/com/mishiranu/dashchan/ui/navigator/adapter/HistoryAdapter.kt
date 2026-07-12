@@ -69,7 +69,7 @@ class HistoryAdapter(context: Context, private val callback: Callback, private v
 		val historyItem = this.historyItem.update(moveTo(position))
 		val viewHolder = holder.itemView.tag as ViewFactory.TwoLinesViewHolder
 		viewHolder.text1.text = if (StringUtils.isEmpty(historyItem.title)) {
-			StringUtils.formatThreadTitle(historyItem.chanName, historyItem.boardName, historyItem.threadNumber)
+			StringUtils.formatThreadTitle(historyItem.chanName!!, historyItem.boardName, historyItem.threadNumber!!)
 		} else {
 			historyItem.title
 		}
@@ -78,7 +78,7 @@ class HistoryAdapter(context: Context, private val callback: Callback, private v
 		title = if (StringUtils.isEmpty(historyItem.boardName)) {
 			title
 		} else {
-			StringUtils.formatBoardTitle(historyItem.chanName, historyItem.boardName, title)
+			StringUtils.formatBoardTitle(historyItem.chanName!!, historyItem.boardName, title)
 		}
 		if (chanName == null) {
 			title = chan.configuration.getTitle() + " — " + title

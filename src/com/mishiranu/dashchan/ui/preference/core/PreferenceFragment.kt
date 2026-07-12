@@ -356,8 +356,8 @@ abstract class PreferenceFragment : ContentFragment() {
         valueCodec: ValueCodec<T?>?
     ): MultipleEditPreference<T?> {
         val preference = MultipleEditPreference<T?>(
-            requireContext(), key,
-            getString(titleResId), summaryProvider, hints, inputTypes, valueCodec
+            requireContext(), key!!,
+            getString(titleResId), summaryProvider, hints, inputTypes, valueCodec!!
         )
         addDialogPreference(preference)
         return preference

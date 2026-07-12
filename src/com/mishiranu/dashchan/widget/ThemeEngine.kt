@@ -807,7 +807,7 @@ class ThemeEngine {
             val themeContext: ThemeContext = requireThemeContext(context)
             ensureTheme(themeContext)
             if (themeContext.colorScheme == null) {
-                themeContext.colorScheme = ColorScheme(context, themeContext.engineTheme)
+                themeContext.colorScheme = ColorScheme(context, themeContext.engineTheme!!)
             }
             return themeContext.colorScheme!!
         }

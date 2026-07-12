@@ -627,8 +627,8 @@ class CacheManager private constructor() : Runnable {
             GALLERY_SHARE_FILE_NAME_START + System.currentTimeMillis(),
             FileUriProvider { directory: File?, file: File?, type: String? ->
                 FileProvider.Companion.convertShareFile(
-                    directory,
-                    file,
+                    directory!!,
+                    file!!,
                     type
                 )
             })
@@ -641,8 +641,8 @@ class CacheManager private constructor() : Runnable {
             CLIPBOARD_FILE_NAME_START + System.currentTimeMillis(),
             FileUriProvider { directory: File?, file: File?, type: String? ->
                 FileProvider.Companion.convertClipboardFile(
-                    directory,
-                    file,
+                    directory!!,
+                    file!!,
                     type
                 )
             })

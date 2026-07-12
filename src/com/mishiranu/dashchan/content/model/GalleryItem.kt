@@ -75,7 +75,7 @@ class GalleryItem {
 
 	fun getFileName(chan: Chan): String? {
 		val fileUri = getFileUri(chan)
-		return chan.locator.createAttachmentFileName(fileUri)
+		return chan.locator.createAttachmentFileName(fileUri!!)
 	}
 
 	fun downloadStorage(binder: DownloadService.Binder, chan: Chan, threadTitle: String?) {

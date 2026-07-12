@@ -103,7 +103,7 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 						captchaState = if (CaptchaSolving.getInstance().checkActive(fallbackHolder))
 								CaptchaState.MAY_LOAD_SOLVING else CaptchaState.MAY_LOAD
 						if (!mayShowLoadButton) {
-							val response = readForegroundCaptcha(fallbackHolder, captchaData, foregroundCaptcha,
+							val response = readForegroundCaptcha(fallbackHolder, captchaData!!, foregroundCaptcha,
 									result.challengeExtra, allowSolveAutomatically && result.allowSolveAutomatically)
 							captchaData!!.put(RECAPTCHA_SKIP_RESPONSE, response)
 							captchaState = CaptchaState.SKIP
@@ -184,11 +184,11 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 			if (recaptchaChallengeExtra == null) {
 				recaptchaChallengeExtra = if (foregroundCaptcha == ForegroundCaptcha.HCAPTCHA) {
 					recaptchaReader.getChallengeHcaptcha(holder,
-							apiKey, referer, false, allowSolveAutomatically)
+							apiKey!!, referer, false, allowSolveAutomatically)
 				} else {
 					val invisible = foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE
 					recaptchaReader.getChallenge2(holder,
-							apiKey, invisible, referer, Preferences.isRecaptchaJavascript,
+							apiKey!!, invisible, referer, Preferences.isRecaptchaJavascript,
 							false, allowSolveAutomatically)
 				}
 			}

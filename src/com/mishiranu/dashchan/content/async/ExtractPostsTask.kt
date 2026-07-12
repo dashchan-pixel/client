@@ -67,7 +67,7 @@ class ExtractPostsTask(private val callback: Callback, private val cache: PagesD
 			removedPosts = diff!!.removed
 			val originalPostNumber = diff!!.cache.originalPostNumber
 			for (post in diff!!.changed) {
-				map[post!!.number] = PostItem.createPost(post, chan, boardName, threadNumber, originalPostNumber)
+				map[post!!.number] = PostItem.createPost(post, chan, boardName, threadNumber, originalPostNumber!!)
 			}
 			postItems = map
 		}

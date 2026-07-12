@@ -85,7 +85,7 @@ class CloudFlareResolver : FirewallResolver() {
 		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
-			if (chan!!.locator.isConvertableChanHost(host)) {
+			if (chan!!.locator.isConvertableChanHost(host!!)) {
 				chan!!.locator.setPreferredHost(host)
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())

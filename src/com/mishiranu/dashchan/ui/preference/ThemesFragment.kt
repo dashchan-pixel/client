@@ -354,7 +354,7 @@ class ThemesFragment : BaseListFragment() {
 					val jsonObject = JSONObject(HttpRequest(uri, holder).perform()!!.readString())
 					val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
 					if (redirect != null) {
-						uri = ReadUpdateTask.normalizeRelativeUri(uri, redirect)
+						uri = ReadUpdateTask.normalizeRelativeUri(uri!!, redirect)
 						continue
 					}
 					val jsonArray = jsonObject.getJSONArray("themes")

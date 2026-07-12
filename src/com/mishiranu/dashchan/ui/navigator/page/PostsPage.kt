@@ -396,12 +396,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         hidePerformer = HidePerformer(context)
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-        replyable = Replyable { click: Boolean, data: Array<ReplyData?>? ->
+        replyable = Replyable { click: Boolean, data: Array<out ReplyData> ->
             val board = chan.configuration.safe().obtainBoard(page.boardName)
             if (click && board.allowPosting) {
                 uiManager.navigator()!!.navigatePosting(
                     page.chanName, page.boardName,
-                    page.threadNumber, *data!!
+                    page.threadNumber, *data
                 )
             }
             board.allowPosting
@@ -660,14 +660,14 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     public override fun obtainTitle(): String? {
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-        if (!chan.util.StringUtils.isEmptyOrWhitespace(parcelableExtra.threadTitle)) {
+        if (!StringUtils.isEmptyOrWhitespace(parcelableExtra.threadTitle)) {
             return parcelableExtra.threadTitle
         } else {
             val page = getPage()
-            return chan.util.StringUtils.formatThreadTitle(
-                page.chanName,
+            return StringUtils.formatThreadTitle(
+                page.chanName!!,
                 page.boardName,
-                page.threadNumber
+                page.threadNumber!!
             )
         }
     }
@@ -712,7 +712,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
         CommonDatabase.getInstance().posts.setFlags(
             true, getPage().chanName, postItem.getBoardName(),
-            postItem.getThreadNumber(), postItem.getPostNumber(),
+            postItem.getThreadNumber()!!, postItem.getPostNumber(),
             retainableExtra.hiddenPosts.get(postItem.getPostNumber()), userPost
         )
     }
@@ -722,7 +722,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         retainableExtra.hiddenPosts.set(postItem.getPostNumber(), hideState)
         CommonDatabase.getInstance().posts.setFlags(
             true, getPage().chanName, postItem.getBoardName(),
-            postItem.getThreadNumber(), postItem.getPostNumber(),
+            postItem.getThreadNumber()!!, postItem.getPostNumber(),
             hideState, retainableExtra.userPosts.contains(postItem.getPostNumber())
         )
         postItem.setHidden(hideState, null)
@@ -882,7 +882,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             for (postItem in adapter!!) {
                 if (threadTitle == null) {
                     threadTitle =
-                        chan.util.StringUtils.emptyIfNull(postItem!!.getSubjectOrComment())
+                        StringUtils.emptyIfNull(postItem!!.getSubjectOrComment())
                 }
                 posts.add(postItem!!.getPost())
             }
@@ -1252,7 +1252,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val page = getPage()
         CommonDatabase.getInstance().threads.setStateExtra(
             true,
-            page.chanName, page.boardName, page.threadNumber, false, null, true, extra
+            page.chanName!!, page.boardName, page.threadNumber!!, false, null, true, extra
         )
     }
 
@@ -1328,7 +1328,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val page = getPage()
         CommonDatabase.getInstance().threads.setStateExtra(
             true,
-            page.chanName, page.boardName, page.threadNumber, true, state, false, null
+            page.chanName!!, page.boardName, page.threadNumber!!, true, state, false, null
         )
     }
 
@@ -1739,23 +1739,23 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         if (!parcelableExtra.isAddedToHistory) {
             parcelableExtra.isAddedToHistory = true
             CommonDatabase.getInstance().history.addHistoryAsync(
-                page.chanName,
-                page.boardName, page.threadNumber, parcelableExtra.threadTitle
+                page.chanName!!,
+                page.boardName, page.threadNumber!!, parcelableExtra.threadTitle
             )
         }
         val iterator = this.adapter!!.iterator()
         if (iterator.hasNext()) {
             var title: String? = iterator.next()!!.getSubjectOrComment()
-            if (chan.util.StringUtils.isEmptyOrWhitespace(title)) {
+            if (StringUtils.isEmptyOrWhitespace(title)) {
                 title = null
             }
             FavoritesStorage.getInstance().updateTitle(
                 page.chanName, page.boardName,
                 page.threadNumber, title, false
             )
-            if (!equals(chan.util.StringUtils.nullIfEmpty(parcelableExtra.threadTitle), title)) {
+            if (!equals(StringUtils.nullIfEmpty(parcelableExtra.threadTitle), title)) {
                 CommonDatabase.getInstance().history
-                    .updateTitleAsync(page.chanName, page.boardName, page.threadNumber, title)
+                    .updateTitleAsync(page.chanName!!, page.boardName, page.threadNumber!!, title)
                 parcelableExtra.threadTitle = title
                 notifyTitleChanged()
             }
@@ -2127,10 +2127,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     if (attachmentItems != null) {
                         for (attachmentItem in attachmentItems) {
                             val fileName = attachmentItem.getFileName(chan)
-                            if (!chan.util.StringUtils.isEmpty(fileName)) {
+                            if (!StringUtils.isEmpty(fileName)) {
                                 fileNames.add(fileName!!.lowercase(locale))
                                 val originalName = attachmentItem.getOriginalName()
-                                if (!chan.util.StringUtils.isEmpty(originalName)) {
+                                if (!StringUtils.isEmpty(originalName)) {
                                     fileNames.add(originalName!!.lowercase(locale))
                                 }
                             }

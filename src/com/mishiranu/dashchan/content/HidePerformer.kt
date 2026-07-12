@@ -131,8 +131,8 @@ class HidePerformer(context: Context?) {
             val autohideItem = autohideItems.get(i)
             // AND selection (only if chan, board, thread, op, and sage match the rule)
             if (autohideItem.chanNames == null || autohideItem.chanNames!!.contains(chan.name!!)) {
-                if (chan.util.StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
-                    if (chan.util.StringUtils.isEmpty(autohideItem.threadNumber) || autohideItem.boardName != null &&
+                if (StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
+                    if (StringUtils.isEmpty(autohideItem.threadNumber) || autohideItem.boardName != null &&
                         autohideItem.threadNumber == originalPostNumberString
                     ) {
                         if ((!autohideItem.optionOriginalPost || autohideItem.optionOriginalPost == originalPost)
@@ -165,7 +165,7 @@ class HidePerformer(context: Context?) {
                             if (autohideItem.optionName) {
                                 if (names == null) {
                                     val name = postItem.getFullName(chan).toString()
-                                    val icons: MutableList<Post.Icon> = postItem.getIcons()
+                                    val icons = postItem.getIcons()
                                     if (!icons.isEmpty()) {
                                         names = ArrayList<String>(1 + icons.size)
                                         names.add(name)
@@ -188,7 +188,7 @@ class HidePerformer(context: Context?) {
                             if (autohideItem.optionFileName && postItem.hasAttachments()) {
                                 for (attachmentItem in postItem.getAttachmentItems()!!) {
                                     val originalName: String =
-                                        chan.util.StringUtils.emptyIfNull(attachmentItem.getOriginalName())
+                                        StringUtils.emptyIfNull(attachmentItem.getOriginalName())
                                     if ((autohideItem.find(originalName)
                                             .also { result = it }) != null
                                     ) {

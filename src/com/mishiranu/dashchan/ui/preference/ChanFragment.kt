@@ -143,9 +143,9 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				val defaultValue = preferenceHolder.value
 				val customPreference = chan.configuration.safe().obtainCustomPreference(key)
 				if (customPreference != null && customPreference.title != null) {
-					val preference = addCheck(false, key, defaultValue,
+					val preference = addCheck(false, key!!, defaultValue!!,
 							customPreference.title, customPreference.summary)
-					preference.value = chan.configuration.get(null, key, defaultValue)
+					preference.value = chan.configuration.get(null, key, defaultValue!!)
 					preference.setOnAfterChangeListener { p ->
 						val callbackChan = Chan.get(chanName)
 						callbackChan.configuration.set(null, preference.key, p!!.value)

@@ -467,7 +467,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 chan.util.StringUtils
                     .getFileExtension(galleryItem.getFileName(chan))
                     .uppercase(Locale.getDefault()) +
-                        (if (galleryItem.size > 0) " " + chan.util.StringUtils.formatFileSize(
+                        (if (galleryItem.size > 0) " " + StringUtils.formatFileSize(
                             galleryItem.size.toLong(),
                             true
                         ) else "")
@@ -545,7 +545,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             val chan = get(chanName)
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
-                if (!chan.util.StringUtils.isEmpty(galleryItem.originalName))
+                if (!StringUtils.isEmpty(galleryItem.originalName))
                     galleryItem.originalName
                 else
                     galleryItem.getFileName(chan)
@@ -562,7 +562,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 })
             }
             dialogMenu.add(R.string.copy_link, Runnable {
-                chan.util.StringUtils.copyToClipboard(
+                StringUtils.copyToClipboard(
                     context,
                     galleryItem.getFileUri(chan).toString()
                 )

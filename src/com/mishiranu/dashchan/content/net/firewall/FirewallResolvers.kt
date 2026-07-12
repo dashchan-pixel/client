@@ -217,7 +217,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             } catch (e: Exception) {
                 uri = null
             }
-            val cookies: MutableMap<String?, String?> = parseCookies(cookie)
+            val cookies = parseCookies(cookie)
             try {
                 return client.onPageFinished(uri, cookies, title)
             } catch (e: LinkageError) {
@@ -323,7 +323,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallenge2(
                         holder,
-                        apiKey, invisible, referer, isRecaptchaJavascript,
+                        apiKey!!, invisible, referer, isRecaptchaJavascript,
                         true, allowSolveAutomatically
                     )
                 }
@@ -356,7 +356,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallengeHcaptcha(
                         holder,
-                        apiKey, referer, true, allowSolveAutomatically
+                        apiKey!!, referer, true, allowSolveAutomatically
                     )
                 }
             } catch (e: RecaptchaReader.CancelException) {

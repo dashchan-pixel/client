@@ -83,9 +83,8 @@ class CommentTextView @JvmOverloads constructor(
 
         companion object {
             val INITIAL: SelectionMode = object : SelectionMode {
-                override fun isActive(): Boolean {
-                    return false
-                }
+                override val isActive: Boolean
+                    get() = false
 
                 override fun invalidateMenu() {}
             }
@@ -116,8 +115,8 @@ class CommentTextView @JvmOverloads constructor(
             }
         }
 
-        fun onLinkClick(view: CommentTextView?, uri: Uri?, extra: Extra?, confirmed: Boolean)
-        fun onLinkLongClick(view: CommentTextView?, uri: Uri?, extra: Extra?)
+        fun onLinkClick(view: CommentTextView, uri: Uri, extra: Extra, confirmed: Boolean)
+        fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: Extra)
     }
 
     interface LinkConfiguration {
@@ -926,7 +925,7 @@ class CommentTextView @JvmOverloads constructor(
             val count = recyclerView.getChildCount()
             while (i < count) {
                 val view = recyclerView.getChildAt(i)
-                val holder = ListViewUtils.getViewHolder<Holder?>(view, Holder::class.java)
+                val holder = ListViewUtils.getViewHolder(view, Holder::class.java)
                 if (holder != null) {
                     val textView = holder.commentTextView
                     if (textView.isSelectionMode()) {
@@ -958,7 +957,7 @@ class CommentTextView @JvmOverloads constructor(
                     position - recyclerView.getChildLayoutPosition(recyclerView.getChildAt(0))
                 if (index >= 0 && index < childCount) {
                     val view = recyclerView.getChildAt(index)
-                    val holder = ListViewUtils.getViewHolder<Holder?>(view, Holder::class.java)
+                    val holder = ListViewUtils.getViewHolder(view, Holder::class.java)
                     if (holder != null) {
                         val textView = holder.commentTextView
                         val text = textView.getText().toString()
@@ -991,20 +990,11 @@ class CommentTextView @JvmOverloads constructor(
         }
 
         private val DEFAULT_LINK_LISTENER: LinkListener = object : LinkListener {
-            override fun onLinkClick(
-                view: CommentTextView,
-                uri: Uri,
-                extra: LinkListener.Extra,
-                confirmed: Boolean
-            ) {
+            override fun onLinkClick(view: CommentTextView, uri: Uri, extra: Extra, confirmed: Boolean) {
                 handleUri(view.getContext(), extra.chanName, uri, NavigationUtils.BrowserType.AUTO)
             }
 
-            override fun onLinkLongClick(
-                view: CommentTextView?,
-                uri: Uri?,
-                extra: LinkListener.Extra?
-            ) {
+            override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: Extra) {
             }
         }
 

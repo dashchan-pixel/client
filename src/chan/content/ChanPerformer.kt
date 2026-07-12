@@ -1100,7 +1100,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserItemMultipleChoice(
-                selected, item,
+                selected, item!!,
                 descriptionText, descriptionImage
             )
         } catch (e: InterruptedException) {
@@ -1136,7 +1136,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserImageMultipleChoice(
-                3, selected, images,
+                3, selected, images!!,
                 descriptionText, descriptionImage
             )
         } catch (e: InterruptedException) {

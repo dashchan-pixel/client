@@ -185,12 +185,7 @@ class PostsAdapter(
         return PostsIterator(true, 0)
     }
 
-    override fun onLinkClick(
-        view: CommentTextView?,
-        uri: Uri,
-        extra: LinkListener.Extra,
-        confirmed: Boolean
-    ) {
+    override fun onLinkClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra, confirmed: Boolean) {
         val originalPostItem = getItem(0)
         val chan = get(extra.chanName)
         val boardName = originalPostItem.getBoardName()
@@ -211,7 +206,7 @@ class PostsAdapter(
         }
     }
 
-    override fun onLinkLongClick(view: CommentTextView?, uri: Uri, extra: LinkListener.Extra?) {
+    override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra) {
         uiManager.interaction().handleLinkLongClick(configurationSet, uri)
     }
 

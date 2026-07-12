@@ -312,10 +312,10 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
             if (cachedFile == null) {
                 showError(holder, "Cached file not found")
             } else if (isImage) {
-                imageUnit.applyImage(uri, cachedFile, reload)
+                imageUnit.applyImage(uri!!, cachedFile, reload)
             } else if (isVideo) {
                 imageUnit.interrupt(true)
-                videoUnit.applyVideo(uri, cachedFile, reload)
+                videoUnit.applyVideo(uri!!, cachedFile, reload)
             }
         } catch (e: CacheManager.CacheException) {
             showError(holder, e.message)
@@ -654,7 +654,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
             val context = galleryInstance.callback.getWindow().getContext()
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
-                if (!chan.util.StringUtils.isEmpty(galleryItem!!.originalName))
+                if (!StringUtils.isEmpty(galleryItem!!.originalName))
                     galleryItem.originalName
                 else
                     galleryItem.getFileName(chan)
@@ -721,7 +721,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
                 })
             }
             dialogMenu.add(R.string.copy_link, Runnable {
-                chan.util.StringUtils.copyToClipboard(
+                StringUtils.copyToClipboard(
                     context,
                     galleryItem.getFileUri(chan).toString()
                 )

@@ -28,11 +28,11 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 	}
 
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getInt(key, defaultValue))
+		setValue(preferences.getInt(key!!, defaultValue!!))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, value).close()
+		preferences.edit().put(key!!, value!!).close()
 	}
 
 	override fun configureDialog(savedInstanceState: Bundle?,

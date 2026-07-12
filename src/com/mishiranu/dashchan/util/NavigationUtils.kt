@@ -106,10 +106,10 @@ object NavigationUtils {
 		var handled = false
 		if (targetChanName != null && locator.safe(false).isAttachmentUri(uri)) {
 			val internalUri = locator.convert(uri)
-			val fileName = locator.createAttachmentFileName(internalUri)
+			val fileName = locator.createAttachmentFileName(internalUri!!)
 			if (locator.isImageUri(internalUri) ||
 					locator.isVideoUri(internalUri) && isOpenableVideoPath(fileName)) {
-				openImageVideo(context, internalUri)
+				openImageVideo(context, internalUri!!)
 				handled = true
 			} else if (locator.isAudioUri(internalUri)) {
 				AudioPlayerService.start(context, targetChanName, internalUri, fileName)

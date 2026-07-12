@@ -307,7 +307,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		val page = getPage()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		var title = chan.configuration.getBoardTitle(page.boardName)
-		title = StringUtils.formatBoardTitle(page.chanName, page.boardName, title)
+		title = StringUtils.formatBoardTitle(page.chanName!!, page.boardName, title)
 		var subtitle: String? = null
 		if (retainableExtra.startPageNumber > 0) {
 			subtitle = getString(R.string.number_page__format, retainableExtra.startPageNumber)
@@ -438,7 +438,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				return true
 			}
 			R.id.menu_star_text, R.id.menu_star_icon -> {
-				FavoritesStorage.getInstance().add(page.chanName, page.boardName)
+				FavoritesStorage.getInstance().add(page.chanName!!, page.boardName)
 				return true
 			}
 			R.id.menu_unstar_text, R.id.menu_unstar_icon -> {
@@ -513,7 +513,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	}
 
 	override fun onSearchQueryChange(query: String?) {
-		getAdapter().applyFilter(query)
+		getAdapter().applyFilter(query!!)
 	}
 
 	override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {
@@ -727,7 +727,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 					if (StringUtils.isEmptyOrWhitespace(subject)) {
 						subject = uri.toString()
 					}
-					NavigationUtils.shareLink(provider.context, subject, uri)
+					NavigationUtils.shareLink(provider.context, subject, uri!!)
 				}
 				if (!postItem.getHideState().hidden) {
 					dialogMenu.add(R.string.hide) {

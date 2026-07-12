@@ -58,7 +58,7 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 
 		init {
 			val realFileUri = fileUri ?: thumbnailUri
-			val fileName = locator.createAttachmentFileName(realFileUri)
+			val fileName = locator.createAttachmentFileName(realFileUri!!)
 			val extension = StringUtils.getFileExtension(fileName)
 			this.fileUri = realFileUri
 			this.thumbnailUri = if (C.IMAGE_EXTENSIONS.contains(extension) ||
@@ -234,7 +234,7 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 			val loadThumbnails = Preferences.loadThumbnails
 					!!.isNetworkAvailable(NetworkObserver.getInstance())
 			val allowDownload = loadThumbnails || force
-			ImageLoader.getInstance().loadImage(chan, uri, key, !allowDownload, view)
+			ImageLoader.getInstance().loadImage(chan, uri!!, key, !allowDownload, view)
 		} else {
 			ImageLoader.getInstance().cancel(view)
 		}

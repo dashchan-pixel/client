@@ -241,7 +241,7 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
                 signal
             )
         })
-        return HistoryCursor(cursor, count > 0, filtered)
+        return HistoryCursor(cursor!!, count > 0, filtered)
     }
 
     fun remove(chanName: String, boardName: String?, threadNumber: String) {

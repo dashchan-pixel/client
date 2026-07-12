@@ -87,7 +87,7 @@ class ImageLoader private constructor() {
             var bitmap: Bitmap? = null
             try {
                 bitmap = if (storeExternal) CacheManager.Companion.getInstance()
-                    .loadThumbnailExternal(key) else null
+                    .loadThumbnailExternal(key!!) else null
                 if (isCancelled()) {
                     return null
                 }
@@ -142,7 +142,7 @@ class ImageLoader private constructor() {
                         MainApplication.getInstance().getResources(), bitmap!!
                     )
                     if (storeExternal) {
-                        CacheManager.Companion.getInstance().storeThumbnailExternal(key, bitmap)
+                        CacheManager.Companion.getInstance().storeThumbnailExternal(key!!, bitmap)
                     }
                 }
             } catch (e: HttpException) {

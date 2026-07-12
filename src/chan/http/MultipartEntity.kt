@@ -15,6 +15,8 @@
  */
 package chan.http
 
+import chan.util.StringUtils
+
 import chan.annotation.Extendable
 import chan.annotation.Public
 import chan.util.StringUtils.getFileExtension

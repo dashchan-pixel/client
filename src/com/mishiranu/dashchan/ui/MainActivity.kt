@@ -168,7 +168,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     private val preservedPageItems = ArrayList<SavedPageItem>()
     private var currentPageItem: PageItem? = null
 
-    private var uiManager: UiManager? = null
+    override var uiManager: UiManager? = null
     private var instanceViewModel: InstanceViewModel? = null
     private var watcherServiceClient: WatcherService.Client? = null
     private val extensionsTrustLoopState = ExtensionsTrustLoop.State()
@@ -279,8 +279,8 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 choiceRequest: ChoiceRequest,
                 directRequest: DirectRequest?
             ) {
-                if (downloadBinder != null) {
-                    downloadBinder!!.resolve(choiceRequest, directRequest)
+                if (downloadBinderField != null) {
+                    downloadBinderField!!.resolve(choiceRequest, directRequest)
                 }
             }
 
@@ -288,14 +288,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 replaceRequest: ReplaceRequest,
                 action: ReplaceRequest.Action?
             ) {
-                if (downloadBinder != null) {
-                    downloadBinder!!.resolve(replaceRequest, action)
+                if (downloadBinderField != null) {
+                    downloadBinderField!!.resolve(replaceRequest, action)
                 }
             }
 
             override fun cancel(prepareRequest: PrepareRequest) {
-                if (downloadBinder != null) {
-                    downloadBinder!!.cancel(prepareRequest)
+                if (downloadBinderField != null) {
+                    downloadBinderField!!.cancel(prepareRequest)
                 }
             }
         })
@@ -351,7 +351,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             )!!
         ) else StorageRequestState.NONE
 
-        val currentFragmentFromSaved: ContentFragment? = null
+        var currentFragmentFromSaved: ContentFragment? = null
         if (savedInstanceState == null) {
             val file = this.savedPagesFile
             if (file != null && file.exists()) {
@@ -431,7 +431,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 currentPageItem = null
             }
             if (currentFragmentFromSaved == null && !stackPageItems.isEmpty()) {
-                val pair: Pair<PageFragment?, PageItem?> =
+                val pair =
                     stackPageItems.removeAt(stackPageItems.size - 1).create()
                 currentFragmentFromSaved = pair.first
                 currentPageItem = pair.second
@@ -505,14 +505,12 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     private val savedPagesFile: File
         get() = CacheManager.getInstance().getInternalCacheFile("saved-pages")
 
-    private val openUriTreeLauncher: ActivityResultLauncher<Intent?>? = null
-    fun registerForActivityResult(
-    )
-
-    init {
-        val cancel = result.getResultCode() !== RESULT_OK
+    private val openUriTreeLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val cancel = result.resultCode != RESULT_OK
         storageRequestState = StorageRequestState.NONE
-        val data: Intent? = result.getData()
+        val data: Intent? = result.data
         if (!cancel && data != null) {
             setDownloadUriTree(this, data.getData(), data.getFlags())
         }
@@ -666,7 +664,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         view: View?, navigatePostMode: NavigatePostMode?, galleryMode: Boolean
     ) {
         var navigatePostMode = navigatePostMode
-        val galleryItems: MutableList<GalleryItem?> = gallerySet.createList()
+        val galleryItems = gallerySet.createList()
         navigatePostMode = if (gallerySet.isNavigatePostSupported())
             navigatePostMode
         else
@@ -674,7 +672,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         navigateOrCloseGallery(
             GalleryOverlay(
                 chanName, galleryItems, imageIndex, gallerySet.getThreadTitle(),
-                view, navigatePostMode, galleryMode
+                view, navigatePostMode!!, galleryMode
             )
         )
     }
@@ -837,10 +835,10 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 navigateGalleryUri(uri)
                 return true
             } else if (chan.locator.isAudioUri(uri)) {
-                start(this, chan.name, uri, chan.locator.createAttachmentFileName(uri))
+                start(this, chan.name, uri, chan.locator.createAttachmentFileName(uri!!))
                 return true
             } else if (chan.locator.isVideoUri(uri)) {
-                val fileName = chan.locator.createAttachmentFileName(uri)
+                val fileName = chan.locator.createAttachmentFileName(uri!!)
                 if (isOpenableVideoPath(fileName)) {
                     navigateGalleryUri(chan.locator.convert(uri))
                 } else {
@@ -863,7 +861,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
 
     private fun getSavedPage(savedPageItem: SavedPageItem): Page {
         REFERENCE_FRAGMENT.setArguments(savedPageItem.stackItem!!.arguments)
-        return REFERENCE_FRAGMENT.page
+        return REFERENCE_FRAGMENT.page!!
     }
 
     private fun getPagesStackSize(chanName: String?): Int {
@@ -1025,7 +1023,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             }
         }
 
-        val page = Page(content, chanName, boardName, threadNumber, searchQuery)
+        val page = Page(content!!, chanName, boardName, threadNumber, searchQuery)
         val pair: Pair<PageFragment?, PageItem?>
         if (targetSavedPageItem != null) {
             val savedPage = getSavedPage(targetSavedPageItem)
@@ -1271,17 +1269,11 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    override fun getDownloadBinder(): DownloadService.Binder? {
-        return downloadBinder
-    }
+    override val downloadBinder: DownloadService.Binder?
+        get() = downloadBinderField
 
-    override fun getWatcherClient(): WatcherService.Client {
-        return watcherServiceClient!!
-    }
-
-    override fun getUiManager(): UiManager? {
-        return uiManager
-    }
+    override val watcherClient: WatcherService.Client
+        get() = watcherServiceClient!!
 
     override fun getRetainableExtra(retainId: String?): Retainable? {
         return instanceViewModel!!.extras.get(retainId)
@@ -1342,9 +1334,9 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             }
             drawerLayout!!.setDrawerLockMode(
                 if (wideMode)
-                    CustomDrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                    androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED
                 else
-                    CustomDrawerLayout.LOCK_MODE_UNLOCKED
+                    androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED
             )
             drawerWide!!.setVisibility(if (wideMode) View.VISIBLE else View.GONE)
             ViewUtils.removeFromParent(drawerParent!!)
@@ -1403,8 +1395,8 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         // pending hand-back directly as well (no-op when there is none, or if the intent won).
         reopenInApp(this)
 
-        if (downloadBinder != null) {
-            downloadBinder!!.notifyReadyToHandleRequests()
+        if (downloadBinderField != null) {
+            downloadBinderField!!.notifyReadyToHandleRequests()
         }
     }
 
@@ -1422,9 +1414,9 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             postingBinder!!.unregister(postingGlobalCallback)
             postingBinder = null
         }
-        if (downloadBinder != null) {
-            downloadBinder!!.unregister(downloadCallback)
-            downloadBinder = null
+        if (downloadBinderField != null) {
+            downloadBinderField!!.unregister(downloadCallback)
+            downloadBinderField = null
         }
         unbindService(postingConnection)
         unbindService(downloadConnection)
@@ -2041,9 +2033,9 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         if (!wideMode) {
             drawerLayout!!.setDrawerLockMode(
                 if (dragging)
-                    CustomDrawerLayout.LOCK_MODE_LOCKED_OPEN
+                    androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_OPEN
                 else
-                    CustomDrawerLayout.LOCK_MODE_UNLOCKED
+                    androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED
             )
         }
     }
@@ -2058,7 +2050,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             if (page.isThreadsOrPosts()) {
                 drawerPages.add(
                     DrawerForm.Page(
-                        page.chanName, page.boardName, page.threadNumber,
+                        page.chanName!!, page.boardName!!, page.threadNumber,
                         savedPageItem.threadTitle, savedPageItem.createdRealtime
                     )
                 )
@@ -2210,7 +2202,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     }
 
     private fun updateHandleDownloadRequests() {
-        val binder = downloadBinder
+        val binder = downloadBinderField
         downloadDialog!!.handleRequest(if (binder != null) binder.getPrimaryRequest() else null)
     }
 
@@ -2222,7 +2214,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         override fun requestPermission() {
             if (storageRequestState == StorageRequestState.NONE) {
                 if (getDownloadUriTree(this@MainActivity) != null) {
-                    downloadBinder!!.onPermissionResult(DownloadService.PermissionResult.SUCCESS)
+                    downloadBinderField!!.onPermissionResult(DownloadService.PermissionResult.SUCCESS)
                 } else {
                     storageRequestState = StorageRequestState.INSTRUCTIONS
                     showStorageInstructionsDialog()
@@ -2231,24 +2223,24 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    private var downloadBinder: DownloadService.Binder? = null
+    private var downloadBinderField: DownloadService.Binder? = null
     private var lastStorageRequestResult: Boolean? = null
     private val downloadConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
-            downloadBinder = binder as DownloadService.Binder?
-            downloadBinder!!.register(downloadCallback)
+            downloadBinderField = binder as DownloadService.Binder?
+            downloadBinderField!!.register(downloadCallback)
             if (lastStorageRequestResult != null) {
                 val cancel = lastStorageRequestResult!!
                 lastStorageRequestResult = null
                 notifyDownloadServiceStorageRequestResult(cancel)
             }
-            downloadBinder!!.notifyReadyToHandleRequests()
+            downloadBinderField!!.notifyReadyToHandleRequests()
         }
 
         override fun onServiceDisconnected(componentName: ComponentName?) {
-            if (downloadBinder != null) {
-                downloadBinder!!.unregister(downloadCallback)
-                downloadBinder = null
+            if (downloadBinderField != null) {
+                downloadBinderField!!.unregister(downloadCallback)
+                downloadBinderField = null
             }
             updateHandleDownloadRequests()
         }
@@ -2300,9 +2292,9 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     }
 
     private fun notifyDownloadServiceStorageRequestResult(cancel: Boolean) {
-        if (downloadBinder != null) {
+        if (downloadBinderField != null) {
             val uri = getDownloadUriTree(this)
-            downloadBinder!!.onPermissionResult(
+            downloadBinderField!!.onPermissionResult(
                 if (uri != null)
                     DownloadService.PermissionResult.SUCCESS
                 else
@@ -2390,7 +2382,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         chanName: String?, boardName: String?, threadNumber: String?,
         counter: WatcherService.Counter
     ) {
-        drawerForm!!.onWatcherUpdate(chanName, boardName, threadNumber, counter)
+        drawerForm!!.onWatcherUpdate(chanName!!, boardName, threadNumber, counter)
     }
 
     override fun setPageTitle(title: String?, subtitle: String?) {

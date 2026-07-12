@@ -16,7 +16,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 	}
 
 	override fun extract(preferences: SharedPreferences) {
-		var value = preferences.getString(key, defaultValue)
+		var value = preferences.getString(key!!, defaultValue)
 		if (!values.contains(value)) {
 			value = defaultValue
 		}
@@ -24,7 +24,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 	}
 
 	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key, value).close()
+		preferences.edit().put(key!!, value).close()
 	}
 
 	override fun configureDialog(savedInstanceState: Bundle?,

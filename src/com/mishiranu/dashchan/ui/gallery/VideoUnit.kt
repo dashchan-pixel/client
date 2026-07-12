@@ -524,7 +524,7 @@ class VideoUnit(private val instance: PagerInstance) {
 
     fun viewMetadata() {
         if (this.isInitialized) {
-            val metadata: MutableMap<String?, String?> = player!!.getMetadata()
+            val metadata = player!!.getMetadata()
             showMetadata(instance.galleryInstance.callback.getChildFragmentManager(), metadata)
         }
     }

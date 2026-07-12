@@ -63,7 +63,7 @@ class StormWallResolver : FirewallResolver() {
 							.addCookie(COOKIE_STORMWALL, calculatedCookie)
 							.perform()
 					try {
-						if (!isBlocked(response)) {
+						if (!isBlocked(response!!)) {
 							storeCookie(session, key, calculatedCookie, session.getUri())
 							return true
 						}
@@ -94,7 +94,7 @@ class StormWallResolver : FirewallResolver() {
 				val contentType = response.getHeaderFields()["Content-Type"]
 				if (contentType != null && contentType.size == 1 && contentType[0].startsWith("text/html")) {
 					val responseText = response.readString()
-					return FirewallResolver.CheckResponseResult(session.getKey(), Exclusive(responseText))
+					return FirewallResolver.CheckResponseResult(session.getKey(), Exclusive(responseText!!))
 				}
 			}
 			return FirewallResolver.CheckResponseResult(session.getKey(), FirewallResolver.Exclusive.FAIL)
@@ -110,7 +110,7 @@ class StormWallResolver : FirewallResolver() {
 		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
-			if (chan!!.locator.isConvertableChanHost(host)) {
+			if (chan!!.locator.isConvertableChanHost(host!!)) {
 				chan!!.locator.setPreferredHost(host)
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())

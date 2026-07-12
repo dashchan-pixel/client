@@ -74,18 +74,18 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
     }
 
     interface Observer {
-        fun onPostItemMessage(postItem: PostItem?, message: Message?) {}
-        fun onReloadAttachmentItem(attachmentItem: AttachmentItem?) {}
+        fun onPostItemMessage(postItem: PostItem, message: Message) {}
+        fun onReloadAttachmentItem(attachmentItem: AttachmentItem) {}
     }
 
     fun sendPostItemMessage(view: View, message: Message?) {
-        val holder = ListViewUtils.getViewHolder<Holder?>(view, Holder::class.java)
+        val holder = ListViewUtils.getViewHolder(view, Holder::class.java)
         sendPostItemMessage(holder!!.postItem, message)
     }
 
     fun sendPostItemMessage(postItem: PostItem?, message: Message?) {
         for (observer in observable) {
-            observer.onPostItemMessage(postItem, message)
+            observer.onPostItemMessage(postItem!!, message!!)
         }
     }
 
@@ -96,7 +96,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
             observer = iterator.next()
         }
         if (observer != null) {
-            observer.onReloadAttachmentItem(attachmentItem)
+            observer.onReloadAttachmentItem(attachmentItem!!)
         }
     }
 
@@ -104,7 +104,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
         return observable
     }
 
-    interface PostsProvider : Iterable<PostItem?> {
+    interface PostsProvider : Iterable<PostItem> {
         fun findPostItem(postNumber: PostNumber?): PostItem?
     }
 
@@ -138,7 +138,6 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
     interface Callback {
         fun onDialogStackOpen()
         val downloadBinder: DownloadService.Binder?
-        @JvmField
         val watcherClient: WatcherService.Client?
     }
 
@@ -158,11 +157,11 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
         )
 
         fun navigateGallery(
-            chanName: String?, gallerySet: GalleryItem.Set?, imageIndex: Int,
+            chanName: String?, gallerySet: GalleryItem.Set, imageIndex: Int,
             view: View?, navigatePostMode: NavigatePostMode?, galleryMode: Boolean
         )
 
-        fun navigateSetTheme(theme: ThemeEngine.Theme?)
+        fun navigateSetTheme(theme: ThemeEngine.Theme)
     }
 
     enum class Selection {

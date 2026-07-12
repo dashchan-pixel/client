@@ -196,7 +196,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
             initRequest = InitRequest(initErrorItem)
         }
         listPage!!.init(
-            this.page, this, this, recyclerView, listPosition, this.callback.uiManager,
+            this.page!!, this, this, recyclerView!!, listPosition, this.callback.uiManager,
             this.callback.getRetainableExtra(this.retainId), parcelableExtra, initRequest,
             InitSearch(searchCurrentQuery, searchSubmitQuery)
         )

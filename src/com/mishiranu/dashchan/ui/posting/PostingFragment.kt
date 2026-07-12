@@ -460,7 +460,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         val postDraft = draftsStorage
             .getPostDraft(this.chanName, this.boardName, this.threadNumber)
         if (postDraft != null) {
-            if (!chan.util.StringUtils.isEmpty(postDraft.comment)) {
+            if (!StringUtils.isEmpty(postDraft.comment)) {
                 builder.append(postDraft.comment)
                 commentCarriage = postDraft.commentCarriage
             }
@@ -603,7 +603,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         if (!replyDataList!!.isEmpty()) {
             var onlyLinks = true
             for (data in replyDataList) {
-                if (!chan.util.StringUtils.isEmpty(data.comment)) {
+                if (!StringUtils.isEmpty(data.comment)) {
                     onlyLinks = false
                     break
                 }
@@ -650,7 +650,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                         }
                     }
                 }
-                if (!chan.util.StringUtils.isEmpty(comment)) {
+                if (!StringUtils.isEmpty(comment)) {
                     if (commentCarriage > 0 && commentCarriage <= builder.length && builder.get(
                             commentCarriage - 1
                         ) != '\n'
@@ -684,7 +684,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(
             getString(
-                if (chan.util.StringUtils.isEmpty(
+                if (StringUtils.isEmpty(
                         this.threadNumber
                     )
                 )

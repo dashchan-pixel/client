@@ -269,7 +269,7 @@ class RecaptchaReader private constructor() {
         val chan = getFallback()
         val uri = chan.locator.buildQueryWithHost(
             "www.google.com", "recaptcha/api2/payload",
-            "c", challenge, "k", apiKey, "id", chan.util.StringUtils.emptyIfNull(id)
+            "c", challenge, "k", apiKey, "id", StringUtils.emptyIfNull(id)
         )
         val image: Bitmap? = chan.http.HttpRequest(uri, holder).perform().readBitmap()
         if (transformBlackAndWhite) {

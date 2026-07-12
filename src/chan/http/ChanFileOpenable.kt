@@ -15,6 +15,8 @@
  */
 package chan.http
 
+import chan.util.StringUtils
+
 import chan.util.StringUtils.getFileExtension
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.ImageType

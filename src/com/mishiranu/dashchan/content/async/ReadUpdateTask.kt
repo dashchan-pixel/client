@@ -283,7 +283,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 				applicationItem = ApplicationItem(
 						if (extensionItem.type == ChanManager.ExtensionItem.Type.LIBRARY)
 								ApplicationItem.Type.LIBRARY else ApplicationItem.Type.CHAN,
-						extensionItem.name, extensionItem.title, ArrayList())
+						extensionItem.name!!, extensionItem.title, ArrayList())
 				applicationItem.packageItems.add(PackageItem(null, null, extensionItem.versionName,
 						extensionItem.versionCode, 0, 0, extensionItem.apiVersion, -1, null, null, null))
 				updateDataMap[extensionItem.name] = applicationItem
@@ -611,7 +611,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 					targets[targetUri] = extensionNames
 				}
 				for (extensionItem in extensionItems) {
-					extensionNames.add(extensionItem.name)
+					extensionNames.add(extensionItem.name!!)
 				}
 				val scheme = uri.scheme
 				if (!StringUtils.isEmpty(scheme)) {
@@ -626,7 +626,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 						extensionNames = HashSet()
 						targets[targetUri] = extensionNames
 					}
-					extensionNames.add(extensionItem.name)
+					extensionNames.add(extensionItem.name!!)
 					val scheme = extensionItem.updateUri.scheme
 					if (!StringUtils.isEmpty(scheme)) {
 						requestedScheme[targetUri] = scheme!!

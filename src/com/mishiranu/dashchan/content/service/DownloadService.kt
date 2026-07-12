@@ -417,7 +417,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val availableItems = ArrayList<DownloadItem>()
         val parent = obtain(directRequest.target, directRequest.path)
         val children = HashMap<String?, DataFile?>()
-        val childrenList: MutableList<DataFile>? = parent.getChildren()
+        val childrenList = parent.getChildren()
         if (childrenList != null) {
             for (file in childrenList) {
                 children.put(file.getName()!!.lowercase(Locale.getDefault()), file)
@@ -484,7 +484,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val finalItems = ArrayList<DownloadItem>(downloadItems.size)
         val parent = obtain(target, path)
         val children = HashSet<String?>()
-        val childrenList: MutableList<DataFile>? = parent.getChildren()
+        val childrenList = parent.getChildren()
         if (childrenList != null) {
             for (file in childrenList) {
                 children.add(file.getName()!!.lowercase(Locale.getDefault()))
@@ -1667,7 +1667,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         } else if (retry) {
                             downloadBinder.retry()
                         } else if (open) {
-                            downloadBinder.open(file, allowWrite)
+                            downloadBinder.open(file!!, allowWrite)
                         }
                         bindContext.unbindService(connection[0]!!)
                     }
@@ -1707,7 +1707,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             name: String?
         ): String {
             val fullPath: String =
-                (if (!chan.util.StringUtils.isEmpty(path)) path + "/" + name else name)!!
+                (if (!StringUtils.isEmpty(path)) path + "/" + name else name)!!
             return getTargetPathKey(target, fullPath)
         }
 

@@ -1390,7 +1390,7 @@ class DrawerForm(
 
     private fun getItemFromChild(child: View?): ListItem? {
         val view = getRootViewInList(child)
-        val holder = ListViewUtils.getViewHolder<ViewHolder?>(view!!, ViewHolder::class.java)
+        val holder = ListViewUtils.getViewHolder(view!!, ViewHolder::class.java)
         val position = holder!!.getBindingAdapterPosition()
         return if (position >= 0) getItem(position) else null
     }
@@ -1844,13 +1844,13 @@ class DrawerForm(
             if (uri != null) {
                 if (share) {
                     shareLink(
-                        context, if (chan.util.StringUtils.isEmptyOrWhitespace(title))
+                        context, if (StringUtils.isEmptyOrWhitespace(title))
                             uri.toString()
                         else
                             title, uri
                     )
                 } else {
-                    chan.util.StringUtils.copyToClipboard(context, uri.toString())
+                    StringUtils.copyToClipboard(context, uri.toString())
                 }
             }
         }

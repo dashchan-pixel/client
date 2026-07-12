@@ -44,7 +44,7 @@ object BackupManager {
 
     fun getAvailableBackups(context: Context?): MutableList<BackupFile?> {
         val root = obtain(DataFile.Target.DOWNLOADS, null)
-        val files: MutableList<DataFile>? = root.getChildren()
+        val files = root.getChildren()
         val backupFiles: MutableList<BackupFile?> = ArrayList<BackupFile?>()
         if (files != null) {
             val timeFormat = android.text.format.DateFormat.getTimeFormat(context)
@@ -247,7 +247,7 @@ object BackupManager {
         DATABASE(
             R.string.database, "common.db", mutableListOf<String?>(BACKUP_VERSION_1),
             BackupManager.Writer { output: OutputStream? ->
-                CommonDatabase.getInstance().writeBackup(output)
+                CommonDatabase.getInstance().writeBackup(output!!)
             }, BackupManager.Reader { restore: Restore? ->
                 if (!restore!!.test) {
                     CommonDatabase.getInstance().readBackup(restore.input)

@@ -57,7 +57,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     private val keyBackHandler: KeyBackHandler = RegularKeyBackHandler()
 
     private interface KeyBackHandler {
-        fun onBackKey(event: KeyEvent?, allowPop: Boolean): Boolean
+        fun onBackKey(event: KeyEvent, allowPop: Boolean): Boolean
     }
 
     private inner class RegularKeyBackHandler : KeyBackHandler {
@@ -121,10 +121,11 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             private val lastVisibleDialog: DialogView?
                 get() = if (visibleViews.isEmpty()) null else visibleViews.getLast().second
 
-            override fun isScrolled(): Boolean {
-                val dialogView = this.lastVisibleDialog
-                return dialogView != null && dialogView.isScrolledToTop
-            }
+            override val isScrolled: Boolean
+                get() {
+                    val dialogView = this.lastVisibleDialog
+                    return dialogView != null && dialogView.isScrolledToTop
+                }
 
             override fun onProposeShift(shift: Int, acceleration: Float): Boolean {
                 val dialogView = this.lastVisibleDialog
@@ -137,8 +138,8 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         })
         contentView.addView(
             rootView,
-            InsetsLayout.LayoutParams.MATCH_PARENT,
-            InsetsLayout.LayoutParams.MATCH_PARENT
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
         contentView.setOnApplyInsetsTarget(rootView)
         rootView.setClipToPadding(false)
@@ -698,9 +699,8 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         init {
             val container =
                 DragLayout(context, DragLayout.Side.BOTTOM, object : DragLayout.Callback {
-                    override fun isScrolled(): Boolean {
-                        return this.isScrolledToBottom
-                    }
+                    override val isScrolled: Boolean
+                        get() = this@DialogView.isScrolledToBottom
 
                     override fun onProposeShift(shift: Int, acceleration: Float): Boolean {
                         return handleShift(-shift, acceleration)
@@ -885,14 +885,14 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     }
 
     interface ViewFactory<T : ViewFactory<T?>?> {
-        fun createView(dialogStack: DialogStack<T?>?): View?
-        fun destroyView(view: View?, remove: Boolean) {}
+        fun createView(dialogStack: DialogStack<T>): View
+        fun destroyView(view: View, remove: Boolean) {}
 
-        fun isScrolledToTop(view: View?): Boolean {
+        fun isScrolledToTop(view: View): Boolean {
             return true
         }
 
-        fun isScrolledToBottom(view: View?): Boolean {
+        fun isScrolledToBottom(view: View): Boolean {
             return true
         }
     }
@@ -900,23 +900,23 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     fun getVisibleViews(): Iterable<View?> {
         return Iterable {
             val iterator: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
-            object : MutableIterator<View?> {
+            object : Iterator<View?> {
                 override fun hasNext(): Boolean {
-                    return@Iterable iterator.hasNext()
+                    return iterator.hasNext()
                 }
 
                 override fun next(): View {
                     val pair = iterator.next()
-                    return@Iterable pair.second!!.content
+                    return pair.second!!.content
                 }
             }
         }
     }
 
-    override fun iterator(): MutableIterator<Pair<T?, View?>?> {
+    override fun iterator(): Iterator<Pair<T?, View?>?> {
         val hidden = hiddenViews.iterator()
         val visible: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
-        return object : MutableIterator<Pair<T?, View?>?> {
+        return object : Iterator<Pair<T?, View?>?> {
             override fun hasNext(): Boolean {
                 return hidden.hasNext() || visible.hasNext()
             }
