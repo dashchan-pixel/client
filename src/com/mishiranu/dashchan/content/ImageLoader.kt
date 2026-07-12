@@ -50,7 +50,7 @@ class ImageLoader private constructor() {
         return executor
     }
 
-    private fun interface TaskCallback {
+    internal fun interface TaskCallback {
         fun onTaskFinished(key: String?, bitmap: Bitmap?, error: Boolean)
     }
 
@@ -68,7 +68,7 @@ class ImageLoader private constructor() {
         private var notFound = false
         internal var finished = false
 
-        override fun run(holder: HttpHolder?): Bitmap? {
+        override fun run(holder: HttpHolder): Bitmap? {
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
             // Debounce image requests, taking into account that
             // a task can be executed much later than created.
@@ -121,7 +121,7 @@ class ImageLoader private constructor() {
                                 )
                             response = if (result != null) result.response else null
                         } catch (e: ExtensionException) {
-                            e.errorItemAndHandle
+                            e.getErrorItemAndHandle()
                             return null
                         }
                         if (response != null) {
@@ -230,11 +230,11 @@ class ImageLoader private constructor() {
             }
         }
 
-        override fun onViewAttachedToWindow(v: View?) {
+        override fun onViewAttachedToWindow(v: View) {
             ConcurrentUtils.HANDLER.removeCallbacks(this)
         }
 
-        override fun onViewDetachedFromWindow(v: View?) {
+        override fun onViewDetachedFromWindow(v: View) {
             ConcurrentUtils.HANDLER.removeCallbacks(this)
             ConcurrentUtils.HANDLER.postDelayed(this, 2000L)
         }
@@ -382,8 +382,8 @@ class ImageLoader private constructor() {
             }
 
         private val WRAPPER_CALLBACK_ATTACHMENT_VIEW: WrapperCallback<AttachmentView?> =
-            WrapperCallback { obj: T?, key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean ->
-                obj.handleLoadedImage(
+            WrapperCallback { obj: AttachmentView?, key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean ->
+                obj!!.handleLoadedImage(
                     key,
                     bitmap,
                     error,

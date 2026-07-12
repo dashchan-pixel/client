@@ -302,7 +302,7 @@ class ChanDatabase private constructor() {
                 .equals(Boards.Columns.Companion.CHAN_NAME, chanName)
                 .build()
             database.delete(Boards.Companion.TABLE_NAME, filter.value, filter.args)
-            val iterator: MutableIterator<Pair<String?, String?>> = boardsList.iterator()
+            val iterator: MutableIterator<Pair<String?, String?>?> = boardsList.iterator()
             Expression.batchInsert(
                 boardsList.size, 100, 3,
                 CreateBatchInsertStatement { values: String? ->
@@ -316,7 +316,7 @@ class ChanDatabase private constructor() {
                     )
                 },
                 BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
-                    val pair = iterator.next()
+                    val pair = iterator.next()!!
                     statement!!.bindString(start + 1, chanName)
                     statement.bindString(start + 2, pair.first)
                     statement.bindString(start + 3, pair.second)
@@ -476,7 +476,7 @@ class ChanDatabase private constructor() {
         }
         return BoardCursor(
             if (cursors.isEmpty()) MatrixCursor(arrayOfNulls<String>(0), 0) else MergeCursor(
-                CommonUtils.toArray<Cursor?>(cursors, Cursor::class.java)
+                CommonUtils.toArray(cursors, Cursor::class.java)
             ),
             !boardNames.isEmpty(), filtered, provider1, provider2
         )
@@ -500,7 +500,7 @@ class ChanDatabase private constructor() {
                         totalReplace++
                     }
                 }
-                val replaceIterator: MutableIterator<MutableMap.MutableEntry<DataKey, Any>> =
+                val replaceIterator: MutableIterator<MutableMap.MutableEntry<DataKey?, Any?>> =
                     map.entries.iterator()
                 Expression.batchInsert(
                     totalReplace, 100, 4,
@@ -516,12 +516,12 @@ class ChanDatabase private constructor() {
                         )
                     },
                     BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
-                        var entry: MutableMap.MutableEntry<DataKey, Any>
+                        var entry: MutableMap.MutableEntry<DataKey?, Any?>
                         do {
                             entry = replaceIterator.next()
                         } while (entry.value == null)
-                        val dataKey = entry.key
-                        val value = entry.value
+                        val dataKey = entry.key!!
+                        val value = entry.value!!
                         statement!!.bindString(start + 1, chanName)
                         statement.bindString(start + 2, dataKey.boardName)
                         statement.bindString(start + 3, dataKey.name)
@@ -536,8 +536,8 @@ class ChanDatabase private constructor() {
                 for (entry in map.entries) {
                     if (entry.value == null) {
                         val dataKey: DataKey = entry.key!!
-                        filter!!!!!!!!!!!!!!!!!!!!.args[1] = dataKey.boardName
-                        filter!!!!!!!!!!!!!!!!!!!!.args[2] = dataKey.name
+                        filter.args!![1] = dataKey.boardName
+                        filter.args!![2] = dataKey.name
                         database.delete(Schema.Data.Companion.TABLE_NAME, filter.value, filter.args)
                     }
                 }
@@ -638,7 +638,7 @@ class ChanDatabase private constructor() {
                             "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
                             Cookies.Columns.Companion.FLAGS + " = " +
                             Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
-                            "WHERE " + filter.value, filter.args
+                            "WHERE " + filter.value, filter.args as Array<out Any?>?
                 )
                 database.delete(
                     Cookies.Companion.TABLE_NAME,
@@ -674,7 +674,7 @@ class ChanDatabase private constructor() {
                 "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
                         "SET " + Cookies.Columns.Companion.FLAGS + " = " +
                         Cookies.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                        "WHERE " + filter.value, filter.args
+                        "WHERE " + filter.value, filter.args as Array<out Any?>?
             )
             if (setFlags == 0) {
                 val delete: Boolean

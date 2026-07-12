@@ -287,7 +287,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
     }
 
     override fun onBind(intent: Intent?): Binder? {
-        return PostingService.Binder()
+        return this.Binder()
     }
 
     interface Callback {
@@ -350,7 +350,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             callbackKeys.put(callback, key)
             var callbacks = this@PostingService.callbacks.get(key)
             if (callbacks == null) {
-                callbacks = ArrayList<Callback?>(1)
+                callbacks = ArrayList(1)
                 this@PostingService.callbacks.put(key, callbacks)
             }
             callbacks.add(callback)
@@ -379,7 +379,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
         }
     }
 
-    private fun refreshNotification(type: NotificationData.Type?, taskState: TaskState) {
+    private fun refreshNotification(type: NotificationData.Type?, taskState: TaskState?) {
         val syncLatch =
             if (type == NotificationData.Type.CREATE || type == NotificationData.Type.CANCEL)
                 CountDownLatch(1)
@@ -462,8 +462,8 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
     }
 
     override fun onSendPostSuccess(
-        key: Key?, data: SendPostData,
-        chanName: String, threadNumber: String?, postNumber: PostNumber?
+        key: Key, data: SendPostData,
+        chanName: String?, threadNumber: String?, postNumber: PostNumber?
     ) {
         if (performFinish(key, false)) {
             val chan = get(chanName)
@@ -527,9 +527,9 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                 }
 
                 val newPostData = NewPostData(arrayKey, postNumber, comment, newThread)
-                var newPostDataList: ArrayList<NewPostData?>? = NEW_POST_DATA_MAP.get(arrayKey)
+                var newPostDataList: ArrayList<NewPostData>? = NEW_POST_DATA_MAP.get(arrayKey)
                 if (newPostDataList == null) {
-                    newPostDataList = ArrayList<NewPostData?>(1)
+                    newPostDataList = ArrayList(1)
                     NEW_POST_DATA_MAP.put(arrayKey, newPostDataList)
                 }
                 newPostDataList.add(newPostData)
@@ -594,7 +594,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
     }
 
     override fun onSendPostFail(
-        key: Key?, data: SendPostData, chanName: String?, errorItem: ErrorItem,
+        key: Key, data: SendPostData, chanName: String?, errorItem: ErrorItem?,
         extra: ApiException.Extra?, captchaError: Boolean, keepCaptcha: Boolean
     ) {
         if (performFinish(key, false)) {
@@ -727,7 +727,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             return builder.toString()
         }
 
-        private val PENDING_USER_POST_MAP = HashMap<Key?, HashSet<PendingUserPost?>?>()
+        private val PENDING_USER_POST_MAP = HashMap<Key?, HashSet<PendingUserPost>?>()
 
         fun getPendingUserPosts(
             chanName: String?, boardName: String?,

@@ -335,11 +335,11 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         return true
     }
 
-    override fun onScaleBegin(detector: ScaleGestureDetector?): Boolean {
+    override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
         return true
     }
 
-    override fun onScaleEnd(detector: ScaleGestureDetector?) {}
+    override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
     private var scale: Float
         get() {
@@ -706,7 +706,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         init {
             startTime = SystemClock.elapsedRealtime()
             startTransformMatrix = Matrix(transformMatrix)
-            scaleStart = this.scale
+            scaleStart = this@PhotoView.scale
         }
 
         override fun run() {
@@ -727,9 +727,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             }
         }
 
-        companion object {
-            private const val ZOOM_DURATION = 200
-        }
+        private val ZOOM_DURATION = 200
     }
 
     private inner class AnimatedRestoreSwipeRunnable(
@@ -802,11 +800,9 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             }
         }
 
-        companion object {
-            private const val RESTORE_DURATION = 150
-            private const val FINISH_DURATION_MAX = 500
-            private val FINISH_DURATION_MIN = RESTORE_DURATION
-        }
+        private val RESTORE_DURATION = 150
+        private val FINISH_DURATION_MAX = 500
+        private val FINISH_DURATION_MIN = RESTORE_DURATION
     }
 
     private inner class FlingRunnable(context: Context?) : Runnable {
@@ -907,7 +903,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         override fun onAnimationUpdate(animation: ValueAnimator) {
             baseMatrix.getValues(matrixValues)
             val baseScale = matrixValues[Matrix.MSCALE_Y]
-            val dimensions: Point? = this.dimensions
+            val dimensions: Point? = this@PhotoView.dimensions
             if (dimensions == null) {
                 return
             }
@@ -959,14 +955,12 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             } else {
                 initialScalingAnimator = null
                 initialScaleClipRect = null
-                this.scale = initialScale
+                this@PhotoView.scale = initialScale
             }
         }
 
-        companion object {
-            private const val WAIT_TIME = 100
-            private const val TRANSFER_TIME_FACTOR = 1.5f
-        }
+        private val WAIT_TIME = 100
+        private val TRANSFER_TIME_FACTOR = 1.5f
     }
 
     private fun getActiveX(event: MotionEvent): Float {

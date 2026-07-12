@@ -29,9 +29,9 @@ abstract class CursorAdapter<C : Cursor, VH : RecyclerView.ViewHolder> : Recycle
 
 	fun getCursor(): C? = cursor
 
-	protected fun moveTo(position: Int): C? {
+	protected fun moveTo(position: Int): C {
 		cursor?.moveToPosition(position)
-		return cursor
+		return cursor!!
 	}
 
 	protected open fun onCursorChanged() {}
