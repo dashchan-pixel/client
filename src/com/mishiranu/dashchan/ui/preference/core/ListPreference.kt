@@ -20,7 +20,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 		if (!values.contains(value)) {
 			value = defaultValue
 		}
-		setValue(value)
+		value = (value)
 	}
 
 	override fun persist(preferences: SharedPreferences) {
@@ -33,7 +33,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 				.setSingleChoiceItems(CommonUtils.toArray(entries, CharSequence::class.java),
 						getIndex(this)) { d, which ->
 					d.dismiss()
-					ConcurrentUtils.HANDLER.post { setValue(values[which]) }
+					ConcurrentUtils.HANDLER.post { value = (values[which]) }
 				}
 	}
 

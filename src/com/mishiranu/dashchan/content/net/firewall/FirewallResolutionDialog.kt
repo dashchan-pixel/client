@@ -76,7 +76,7 @@ abstract class FirewallResolutionDialog<T> : WebViewDialog {
 		}
 	}
 
-	protected abstract fun onFirewallResolutionFinished(firewallResolutionResult: T)
+	protected abstract fun onFirewallResolutionFinished(firewallResolutionResult: T?)
 
 	private fun checkFirewallAndDismissDialogIfResolutionFinished(url: String?, title: String?) {
 		if (!firewallResolutionFinished) {

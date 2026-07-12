@@ -225,7 +225,7 @@ class ChanManager private constructor() {
                             updateExtensions(newExtension, null, true)
                             for (callback in observable) {
                                 if (newTrusted) {
-                                    callback.onChanInstalled(newExtension.chan)
+                                    callback.onChanInstalled(newExtension.chan!!)
                                 } else {
                                     callback.onUntrustedExtensionInstalled()
                                 }
@@ -235,10 +235,10 @@ class ChanManager private constructor() {
                             updateExtensions(newExtension, null, newTrusted || oldTrusted)
                             for (callback in observable) {
                                 if (newTrusted) {
-                                    callback.onChanInstalled(newExtension.chan)
+                                    callback.onChanInstalled(newExtension.chan!!)
                                 } else {
                                     if (oldTrusted) {
-                                        callback.onChanUninstalled(oldExtension.chan)
+                                        callback.onChanUninstalled(oldExtension.chan!!)
                                     }
                                     callback.onUntrustedExtensionInstalled()
                                 }
@@ -357,7 +357,7 @@ class ChanManager private constructor() {
                 updateExtensions(newExtension, null, chan != null)
                 if (chan != null) {
                     for (callback in observable) {
-                        callback.onChanInstalled(chan)
+                        callback.onChanInstalled(chan!!)
                     }
                 }
             } else if (extension.item.type == ExtensionItem.Type.LIBRARY) {

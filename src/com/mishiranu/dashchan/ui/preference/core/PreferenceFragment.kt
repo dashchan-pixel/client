@@ -288,7 +288,7 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String,
         defaultValue: String?,
         titleResId: Int,
-        summaryProvider: SummaryProvider<String?>?,
+        summaryProvider: SummaryProvider<String>?,
         hint: CharSequence?,
         inputType: Int
     ): EditPreference {
@@ -301,7 +301,7 @@ abstract class PreferenceFragment : ContentFragment() {
     }
 
     fun createInputTypes(count: Int, inputType: Int): MutableList<Int> {
-        val inputTypes = ArrayList<Int?>(count)
+        val inputTypes = ArrayList<Int>(count)
         for (i in 0..<count) {
             inputTypes.add(inputType)
         }
@@ -377,14 +377,14 @@ abstract class PreferenceFragment : ContentFragment() {
 
     fun addSeek(
         key: String, defaultValue: Int, titleResId: Int, summaryFormatResId: Int,
-        specialValue: Pair<Int?, Int?>?, minValue: Int, maxValue: Int, step: Int
+        specialValue: Pair<Int, Int>?, minValue: Int, maxValue: Int, step: Int
     ): SeekPreference {
         return addSeek(
             key, defaultValue, if (titleResId != 0) getString(titleResId) else null,
             if (summaryFormatResId != 0) getString(summaryFormatResId) else null,
-            if (specialValue != null) Pair<Int?, String?>(
+            if (specialValue != null) Pair(
                 specialValue.first,
-                getString(specialValue.second!!)
+                getString(specialValue.second)
             ) else null,
             minValue, maxValue, step
         )
@@ -392,7 +392,7 @@ abstract class PreferenceFragment : ContentFragment() {
 
     fun addSeek(
         key: String, defaultValue: Int, title: String?, summaryFormat: String?,
-        specialValue: Pair<Int?, String?>?, minValue: Int, maxValue: Int, step: Int
+        specialValue: Pair<Int, String>?, minValue: Int, maxValue: Int, step: Int
     ): SeekPreference {
         val preference = SeekPreference(
             requireContext(), key, defaultValue, title, summaryFormat,

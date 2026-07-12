@@ -223,7 +223,7 @@ class MultipleEditPreference<T>(
 
         init {
             dropdownView = DropdownView(context)
-            dropdownView.setItems(entries)
+            dropdownView.setItems(entries.map { it ?: "" })
             this.values = values
             dropdownView.setSelection(max(0, values.indexOf(value)))
         }

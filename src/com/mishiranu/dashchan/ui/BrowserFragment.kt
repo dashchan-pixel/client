@@ -67,7 +67,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
 
     override fun onCreateView(
         inflater: LayoutInflater,
-        container: ViewGroup,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val layout = ExpandedLayout(container.getContext(), true)
@@ -116,7 +116,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
                     if (chan.locator.isWebScheme(uri) && chan.locator.isImageExtension(uri.getPath())) {
                         openImageVideo(requireContext(), uri)
                     }
-                    return@setOnLongClickListener true
+                    return@OnLongClickListener true
                 }
             }
             false
@@ -211,9 +211,8 @@ class BrowserFragment : ContentFragment, DownloadListener {
         return false
     }
 
-    override fun isBackHandled(): Boolean {
-        return webView != null && webView!!.canGoBack()
-    }
+    override val isBackHandled: Boolean
+        get() = webView != null && webView!!.canGoBack()
 
     override fun onDownloadStart(
         url: String?, userAgent: String?, contentDisposition: String?, mimetype: String?,

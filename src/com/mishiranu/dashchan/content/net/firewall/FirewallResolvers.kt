@@ -384,7 +384,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     }
 
     abstract class WebViewClientWithExtra<Result>(name: String?, internal val extra: WebViewExtra?) :
-        FirewallResolver.WebViewClient<Result?>(name)
+        FirewallResolver.WebViewClient<Result>(name)
 
     @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
     private fun <T : Any> resolveWebView(
@@ -430,7 +430,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         client: FirewallResolver.WebViewClient<T>
     ): T? {
         val firewallResolutionDialogRequest =
-            FirewallResolutionDialogRequest<T?>(initialUri.toString(), userAgent, proxyData, client)
+            FirewallResolutionDialogRequest(initialUri.toString(), userAgent, proxyData, client)
         return ForegroundManager.getInstance()
             .requireUserResolveFirewall(firewallResolutionDialogRequest)
     }
@@ -588,7 +588,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                             session.getUri(), session.holder,
                             session.chan, session.getIdentifier(), session.resolve, true
                         )
-                        checkHolder!!.success = exclusive.resolve(exclusiveSession, key)
+                        checkHolder!!.success = exclusive.resolve(exclusiveSession, key!!)
                     }
                 } catch (e: FirewallResolver.CancelException) {
                     synchronized(lastCheckCancel) {

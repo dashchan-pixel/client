@@ -960,7 +960,7 @@ class WatcherService : BaseService() {
     private fun registerSession(session: InternalSession?, threadKey: ThreadKey) {
         var sessions = sessionsMap.get(threadKey)
         if (sessions == null) {
-            sessions = HashSet<InternalSession?>(1)
+            sessions = HashSet(1)
             sessionsMap.put(threadKey, sessions)
         }
         sessions.add(session!!)

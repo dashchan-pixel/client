@@ -76,7 +76,7 @@ class CommonDatabase private constructor() {
         return callback.run(helper.database)
     }
 
-    fun enqueue(callback: ExecuteCallback<*>) {
+    fun <T> enqueue(callback: ExecuteCallback<T>) {
         executor.execute(Runnable { execute(callback) })
     }
 
@@ -172,7 +172,7 @@ class CommonDatabase private constructor() {
 
         override fun onCreate(db: SQLiteDatabase?) {
             for (instance in instances) {
-                instance.create(db)
+                instance.create(db!!)
             }
         }
 
@@ -193,7 +193,7 @@ class CommonDatabase private constructor() {
 
         override fun onOpen(db: SQLiteDatabase?) {
             for (instance in instances) {
-                instance.open(db)
+                instance.open(db!!)
             }
         }
 

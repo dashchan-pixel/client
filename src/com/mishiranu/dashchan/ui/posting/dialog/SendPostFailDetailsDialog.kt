@@ -29,7 +29,7 @@ class SendPostFailDetailsDialog() : DialogFragment() {
 			val layout = SummaryLayout(dialog)
 			val formatter = PostDateFormatter(requireContext())
 			if (!StringUtils.isEmpty(extra.id)) {
-				layout.add(getString(R.string.ban_id), extra.id)
+				layout.add(getString(R.string.ban_id), extra.id!!)
 			}
 			if (extra.startDate > 0L) {
 				layout.add(getString(R.string.filed_on), formatter.formatDateTime(extra.startDate))
@@ -39,7 +39,7 @@ class SendPostFailDetailsDialog() : DialogFragment() {
 					getString(R.string.never) else formatter.formatDateTime(extra.expireDate))
 			}
 			if (!StringUtils.isEmpty(extra.message)) {
-				layout.add(getString(R.string.reason), extra.message)
+				layout.add(getString(R.string.reason), extra.message!!)
 			}
 		} else if (extra is ApiException.WordsExtra) {
 			var message = ""
@@ -47,7 +47,7 @@ class SendPostFailDetailsDialog() : DialogFragment() {
 			for (word in extra.words) {
 				if (first) {
 					first = false
-					message = word
+					message = word!!
 				} else {
 					message = getString(R.string.__enumeration_format, message, word)
 				}

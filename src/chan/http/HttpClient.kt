@@ -106,7 +106,7 @@ class HttpClient private constructor() {
         return getProxyData(Preferences.getProxy(chan))
     }
 
-    private fun getProxyData(map: MutableMap<String?, String?>?): ProxyData? {
+    private fun getProxyData(map: Map<String, String>?): ProxyData? {
         if (map != null) {
             val host = map.get(Preferences.SUB_KEY_PROXY_HOST)
             if (!isEmpty(host)) {

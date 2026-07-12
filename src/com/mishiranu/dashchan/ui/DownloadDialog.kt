@@ -78,7 +78,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
     interface Callback {
         fun resolve(choiceRequest: ChoiceRequest, directRequest: DirectRequest?)
         fun resolve(replaceRequest: ReplaceRequest, action: ReplaceRequest.Action?)
-        fun cancel(prepareRequest: PrepareRequest)
+        fun cancel(prepareRequest: DownloadService.PrepareRequest)
     }
 
     private val context: Context

@@ -23,7 +23,7 @@ class EditPreference(context: Context, key: String, defaultValue: String?,
 	val customFilters = ArrayList<InputFilter>()
 
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getString(key!!, defaultValue))
+		value = (preferences.getString(key!!, defaultValue))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
@@ -45,7 +45,7 @@ class EditPreference(context: Context, key: String, defaultValue: String?,
 		pair.second.addView(editText, LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
 		return super.configureDialog(savedInstanceState, builder).setView(pair.first)
 				.setPositiveButton(android.R.string.ok) { _, _ ->
-					ConcurrentUtils.HANDLER.post { setValue(editText.text.toString()) }
+					ConcurrentUtils.HANDLER.post { value = (editText.text.toString()) }
 				}
 	}
 

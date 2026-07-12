@@ -99,7 +99,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
     }
 
     private class TaskState(
-        val key: Key, val task: SendPostTask<Key?>, context: Context?, chan: Chan,
+        val key: Key, val task: SendPostTask<Key>, context: Context?, chan: Chan,
         data: SendPostData
     ) {
         val builder: Notification.Builder
@@ -427,7 +427,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
     }
 
     override fun onSendPostChangeProgressState(
-        key: Key?, progressState: ProgressState,
+        key: Key, progressState: ProgressState,
         attachmentIndex: Int, attachmentsCount: Int
     ) {
         val taskState = this.taskState
@@ -446,7 +446,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
         }
     }
 
-    override fun onSendPostChangeProgressValue(key: Key?, progress: Long, progressMax: Long) {
+    override fun onSendPostChangeProgressValue(key: Key, progress: Long, progressMax: Long) {
         val taskState = this.taskState
         if (taskState != null && taskState.key == key) {
             taskState.progress = progress

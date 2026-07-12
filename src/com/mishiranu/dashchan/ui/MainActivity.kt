@@ -503,7 +503,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     }
 
     private val savedPagesFile: File
-        get() = CacheManager.getInstance().getInternalCacheFile("saved-pages")
+        get() = CacheManager.getInstance().getInternalCacheFile("saved-pages")!!
 
     private val openUriTreeLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -843,14 +843,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                     navigateGalleryUri(chan.locator.convert(uri!!)!!)
                 } else {
                     handleUri(
-                        this, chan.name, chan.locator.convert(uri!!),
+                        this, chan.name, chan.locator.convert(uri!!)!!,
                         NavigationUtils.BrowserType.EXTERNAL
                     )
                 }
                 return true
             } else if (isUseInternalBrowser) {
                 handleUri(
-                    this, chan.name, chan.locator.convert(uri!!),
+                    this, chan.name, chan.locator.convert(uri!!)!!,
                     NavigationUtils.BrowserType.INTERNAL
                 )
                 return true

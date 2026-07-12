@@ -376,7 +376,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         return file.getChild(taskData.name)
     }
 
-    private class PrepareTask<T>(internal val innerTask: Task<T?>) : ExecutorTask<Void?, T?>() {
+    internal class PrepareTask<T>(internal val innerTask: Task<T?>) : ExecutorTask<Void?, T?>() {
         interface Task<T> {
             fun cleanup()
 
@@ -1083,7 +1083,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
-            builder!!.setSmallIcon(notificationData.type.iconResId)
+            builder!!.setSmallIcon(notificationData.type!!.iconResId)
             builder!!.setColor(notificationColor)
             if (notificationData.lastSuccessFile != null) {
                 setBuilderImage(notificationData.lastSuccessFile)
@@ -1116,6 +1116,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         )
                     }
                 }
+
+                else -> {}
             }
             if (notificationData.type == NotificationData.Type.REQUEST) {
                 builder!!.setContentIntent(
@@ -1697,7 +1699,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         private const val EXTRA_ALLOW_WRITE = "allowWrite"
 
         private val savedDownloadRetryFile: File
-            get() = CacheManager.getInstance().getInternalCacheFile("saved-download-retry")
+            get() = CacheManager.getInstance().getInternalCacheFile("saved-download-retry")!!
 
         private fun getTargetPathKey(target: DataFile.Target?, path: String): String {
             return target.toString() + ":" + path.lowercase(Locale.getDefault())

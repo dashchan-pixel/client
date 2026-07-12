@@ -98,7 +98,7 @@ class AutohideFragment : BaseListFragment() {
 		return false
 	}
 
-	override fun isBackHandled(): Boolean {
+	override val isBackHandled: Boolean get() {
 		// searchQuery mirrors the action view expansion and, unlike isActionViewExpanded,
 		// is already updated when the expand listener notifies about the change.
 		return searchQuery != null

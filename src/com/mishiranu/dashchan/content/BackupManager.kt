@@ -189,12 +189,12 @@ object BackupManager {
         var version: String? = null
     }
 
-    private fun interface Writer {
+    internal fun interface Writer {
         @Throws(IOException::class)
         fun write(output: OutputStream)
     }
 
-    private fun interface Reader {
+    internal fun interface Reader {
         @Throws(IOException::class)
         fun read(restore: Restore)
     }

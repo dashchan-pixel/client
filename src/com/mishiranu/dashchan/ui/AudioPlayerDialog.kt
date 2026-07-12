@@ -47,7 +47,7 @@ class AudioPlayerDialog : DialogFragment() {
 			audioPlayerBinder.registerCallback(callback)
 			if (audioPlayerBinder.isRunning) {
 				seekBar!!.removeCallbacks(seekBarUpdate)
-				textView!!.text = audioPlayerBinder.fileName
+				textView!!.text = audioPlayerBinder.getFileName()
 				seekBar!!.max = audioPlayerBinder.duration
 				updatePlayState()
 				seekBarUpdate.run()

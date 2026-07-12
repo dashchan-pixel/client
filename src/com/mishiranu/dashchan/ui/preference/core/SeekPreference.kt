@@ -28,7 +28,7 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 	}
 
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getInt(key!!, defaultValue!!))
+		value = (preferences.getInt(key!!, defaultValue!!))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
@@ -45,12 +45,12 @@ class SeekPreference(context: Context, key: String, defaultValue: Int, title: Ch
 		} else {
 			val value = value
 			holder.isEnabled = specialValue == null || specialValue != value
-			holder.value = if (specialValue != null && specialValue == value) defaultValue else value
+			holder.value = if (specialValue != null && specialValue == value) defaultValue!! else value!!
 		}
 		return super.configureDialog(savedInstanceState, builder).setView(holder.layout)
 				.setPositiveButton(android.R.string.ok) { _, _ ->
 					ConcurrentUtils.HANDLER.post {
-						setValue(if (specialValue != null && !holder.isEnabled)
+						value = (if (specialValue != null && !holder.isEnabled)
 							specialValue else holder.value)
 					}
 				}

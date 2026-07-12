@@ -127,7 +127,7 @@ object Preferences {
 
     fun unpackOrCastMultipleValues(
         value: String?,
-        keys: MutableList<String?>
+        keys: List<String>
     ): MutableMap<String?, String?> {
         val values = HashMap<String?, String?>(keys.size)
         if (value != null) {
@@ -331,7 +331,7 @@ object Preferences {
     ): MutableList<CharSequence> {
         val entries = java.util.ArrayList<CharSequence>()
         for (captchaType in captchaTypes) {
-            entries.add(chan.configuration.safe().obtainCaptcha(captchaType).title)
+            entries.add(chan.configuration.safe().obtainCaptcha(captchaType).title!!)
         }
         return entries
     }
@@ -1099,12 +1099,13 @@ object Preferences {
         .asList<String?>(VALUE_PROXY_TYPE_HTTP, VALUE_PROXY_TYPE_SOCKS)
 
     @JvmStatic
-    fun getProxy(chan: Chan): MutableMap<String?, String?>? {
+    fun getProxy(chan: Chan): Map<String, String>? {
         if (chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)) {
             return null
         }
         val value = PREFERENCES!!.getString(KEY_PROXY.bind(chan.name), null)
-        return unpackOrCastMultipleValues(value, KEYS_PROXY)
+        @Suppress("UNCHECKED_CAST")
+        return unpackOrCastMultipleValues(value, KEYS_PROXY) as Map<String, String>?
     }
 
     const val KEY_RECAPTCHA_JAVASCRIPT: String = "recaptcha_javascript"

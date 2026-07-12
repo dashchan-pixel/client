@@ -172,10 +172,10 @@ class HidePerformer(context: Context?) {
                                         names = ArrayList<String>(1 + icons.size)
                                         names.add(name)
                                         for (icon in icons) {
-                                            names.add(icon.title)
+                                            names.add(icon.title!!)
                                         }
                                     } else {
-                                        names = mutableListOf<String?>(name)
+                                        names = mutableListOf(name)
                                     }
                                 }
                                 for (name in names) {
@@ -415,7 +415,7 @@ class HidePerformer(context: Context?) {
                         while (!reader.endStruct()) {
                             var postNumber: PostNumber? = null
                             var count = 0
-                            val words = HashSet<String?>()
+                            val words = HashSet<String>()
                             reader.startObject()
                             while (!reader.endStruct()) {
                                 when (reader.nextName()) {
@@ -430,7 +430,7 @@ class HidePerformer(context: Context?) {
                                     "words" -> {
                                         reader.startArray()
                                         while (!reader.endStruct()) {
-                                            words.add(reader.nextString())
+                                            words.add(reader.nextString()!!)
                                         }
                                     }
                                 }
@@ -493,10 +493,9 @@ class HidePerformer(context: Context?) {
                                     // Ignore exception
                                 }
                                 if (count > 0) {
-                                    val words = HashSet<String?>(
-                                        Arrays.asList<String?>(*rule).subList(3, rule.size)
+                                    val words = HashSet<String>(
+                                        Arrays.asList(*rule).subList(3, rule.size).filterNotNull()
                                     )
-                                    words.remove(null)
                                     words.remove("")
                                     if (!words.isEmpty()) {
                                         val wordsData =

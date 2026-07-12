@@ -11,7 +11,7 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 		title: CharSequence?, summary: CharSequence?) :
 		Preference<Boolean>(context, key, defaultValue, title, SummaryProvider { summary }) {
 	override fun extract(preferences: SharedPreferences) {
-		setValue(preferences.getBoolean(key!!, defaultValue!!))
+		value = (preferences.getBoolean(key!!, defaultValue!!))
 	}
 
 	override fun persist(preferences: SharedPreferences) {
@@ -38,7 +38,7 @@ class CheckPreference(context: Context, key: String, defaultValue: Boolean,
 		super.bindViewHolder(viewHolder)
 
 		if (viewHolder is CheckViewHolder) {
-			viewHolder.check.isChecked = value ?: defaultValue
+			viewHolder.check.isChecked = value ?: defaultValue!!
 			viewHolder.check.isEnabled = isEnabled()
 		}
 	}
