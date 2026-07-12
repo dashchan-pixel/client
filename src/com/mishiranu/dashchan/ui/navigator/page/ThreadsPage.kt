@@ -277,13 +277,13 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	}
 
 	override fun onDestroy() {
-		uiManager!!.dialog().closeDialogs(getAdapter().configurationSet.stackInstance)
+		uiManager!!.dialog().closeDialogs(getAdapter().configurationSet.stackInstance!!)
 		uiManager!!.observable().unregister(this)
 		FavoritesStorage.getInstance().getObservable().unregister(this)
 	}
 
 	override fun onNotifyAllAdaptersChanged() {
-		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
+		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
 	}
 
 	override fun onHandleNewPostDataList() {
@@ -303,7 +303,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		retainableExtra.dialogsState = adapter.configurationSet.stackInstance!!.collectState()
 	}
 
-	override fun obtainTitleSubtitle(): Pair<String, String?> {
+	override fun obtainTitleSubtitle(): Pair<String?, String?> {
 		val page = getPage()
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		var title = chan.configuration.getBoardTitle(page.boardName)
@@ -317,7 +317,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 			subtitle = resources.getQuantityString(R.plurals.number_posts_per_hour__format,
 					retainableExtra.boardSpeed, retainableExtra.boardSpeed)
 		}
-		return Pair(title, subtitle)
+		return Pair<String?, String?>(title, subtitle)
 	}
 
 	override fun onItemClick(postItem: PostItem?) {
@@ -344,7 +344,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 	private fun setThreadHideState(postItem: PostItem, hideState: PostItem.HideState) {
 		val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
 		retainableExtra.hiddenThreads.set(postItem.getThreadNumber()!!, hideState)
-		CommonDatabase.getInstance().threads.setFlagsAsync(getPage().chanName,
+		CommonDatabase.getInstance().threads.setFlagsAsync(getPage().chanName!!,
 				postItem.getBoardName(), postItem.getThreadNumber()!!, hideState)
 		postItem.setHidden(hideState, null)
 	}
@@ -453,14 +453,14 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		}
 		for (catalogSort in Preferences.CatalogSort.values()) {
 			if (item.itemId == catalogSort.menuItemId) {
-				Preferences.setCatalogSort(catalogSort)
+				Preferences.catalogSort = catalogSort
 				getAdapter().setCatalogSort(catalogSort)
 				return true
 			}
 		}
 		for (threadsView in Preferences.ThreadsView.values()) {
 			if (item.itemId == threadsView.menuItemId) {
-				Preferences.setThreadsView(threadsView)
+				Preferences.threadsView = threadsView
 				val gridLayoutManager = getRecyclerView().layoutManager as GridLayoutManager
 				gridLayoutManager.spanCount = getAdapter().setThreadsView(threadsView)
 				getAdapter().notifyDataSetChanged()
@@ -754,7 +754,7 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 					layout.add(context.getString(R.string.board), title)
 					val description = chan.configuration.getBoardDescription(boardName)
 					if (!StringUtils.isEmpty(description)) {
-						layout.add(context.getString(R.string.description), description)
+						layout.add(context.getString(R.string.description), description!!)
 					}
 				}
 				val pagesCount = maxOf(chan.configuration.getPagesCount(boardName), 1)
@@ -814,8 +814,8 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 				AlertDialog.Builder(provider.context)
 						.setMessage(message)
 						.setNegativeButton(android.R.string.cancel, null)
-						.setPositiveButton(android.R.string.ok) { _, _ -> threadsPage
-								!!.handleRedirect(target.chanName, target.boardName, null, null) }
+						.setPositiveButton(android.R.string.ok) { _, _ -> threadsPage!!
+								.handleRedirect(target.chanName, target.boardName, null, null) }
 						.create()
 			}
 		}

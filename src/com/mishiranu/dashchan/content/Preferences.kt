@@ -77,7 +77,7 @@ object Preferences {
         return File(application.getSharedPrefsDir(), name + ".xml")
     }
 
-    val filesForBackup: android.util.Pair<File?, File?>
+    val filesForBackup: android.util.Pair<File, File>
         get() {
             val preferences =
                 getPreferencesFile(
@@ -89,7 +89,7 @@ object Preferences {
                     MainApplication.getInstance(),
                     PREFERENCES_RESTORE_NAME
                 )
-            return android.util.Pair<File?, File?>(preferences, restore)
+            return android.util.Pair(preferences, restore)
         }
 
     val fileForRestore: File

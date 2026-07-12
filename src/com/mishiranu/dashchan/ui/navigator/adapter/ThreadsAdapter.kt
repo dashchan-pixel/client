@@ -202,7 +202,7 @@ class ThreadsAdapter(
     }
 
     fun setItems(
-        postItemsCollection: MutableCollection<MutableList<PostItem?>?>,
+        postItemsCollection: Collection<List<PostItem>>,
         catalog: Boolean
     ) {
         postItems.clear()
@@ -214,7 +214,7 @@ class ThreadsAdapter(
         notifyDataSetChanged()
     }
 
-    fun appendItems(postItems: MutableList<PostItem>?) {
+    fun appendItems(postItems: List<PostItem>?) {
         appendItemsInternal(postItems)
         applyCurrentSortingAndFilter(true, true)
         notifyDataSetChanged()
@@ -227,7 +227,7 @@ class ThreadsAdapter(
         notifyDataSetChanged()
     }
 
-    private fun appendItemsInternal(postItems: MutableList<PostItem>?) {
+    private fun appendItemsInternal(postItems: List<PostItem>?) {
         val displayHidden = isDisplayHiddenThreads
         if (postItems != null) {
             for (postItem in postItems) {
@@ -238,7 +238,7 @@ class ThreadsAdapter(
         }
     }
 
-    fun applyFilter(text: String) {
+    fun applyFilter(text: String?) {
         if (emptyIfNull(filterText) != emptyIfNull(text)) {
             filterText = text
             applyCurrentSortingAndFilter(false, true)

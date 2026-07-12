@@ -30,7 +30,7 @@ class ReadVideoTask(private val callback: Callback, private val chan: Chan,
 		fun onReadVideoProgressUpdate(progress: Long, progressMax: Long)
 		fun onReadVideoRangeUpdate(start: Long, end: Long)
 		fun onReadVideoSuccess(partial: Boolean, file: File)
-		fun onReadVideoFail(partial: Boolean, errorItem: ErrorItem?, disallowRangeRequests: Boolean)
+		fun onReadVideoFail(partial: Boolean, errorItem: ErrorItem, disallowRangeRequests: Boolean)
 	}
 
 	private val progressHandler = object : TimedProgressHandler() {

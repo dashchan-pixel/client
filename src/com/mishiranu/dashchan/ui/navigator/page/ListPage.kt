@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui.navigator.page
 
 import android.graphics.drawable.Drawable
 import android.os.Parcelable
+import android.content.res.Resources
 import android.util.Pair
 import android.view.ActionMode
 import android.view.Menu

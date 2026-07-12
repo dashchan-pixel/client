@@ -16,7 +16,7 @@ import com.mishiranu.dashchan.content.model.PostItem
 import java.net.HttpURLConnection
 
 class ReadThreadsTask(private val callback: Callback, private val chan: Chan,
-		private val boardName: String?, private val pageNumber: Int,
+		private val boardName: String?, val pageNumber: Int,
 		private val validator: HttpValidator?, private val append: Boolean) :
 		HttpHolderTask<Void, Boolean>(chan) {
 	private var postItems: List<PostItem>? = null

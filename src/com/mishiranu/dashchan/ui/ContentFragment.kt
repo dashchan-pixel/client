@@ -185,9 +185,9 @@ abstract class ContentFragment : Fragment(), MenuProvider {
     open val isValidOptionsMenuState: Boolean
         get() = true
 
-    open fun onCreateOptionsMenu(menu: Menu?, primary: Boolean) {}
+    open fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {}
 
-    open fun onPrepareOptionsMenu(menu: Menu?, primary: Boolean) {}
+    open fun onPrepareOptionsMenu(menu: Menu, primary: Boolean) {}
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
         return false

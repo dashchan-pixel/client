@@ -90,7 +90,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun onResume() {
-        if (player != null && this.isInitialized) {
+        if (player != null && this@VideoUnit.isInitialized) {
             setPlaying(wasPlaying, true)
             updatePlayState()
         } else {
@@ -99,7 +99,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun onPause() {
-        if (player != null && this.isInitialized) {
+        if (player != null && this@VideoUnit.isInitialized) {
             wasPlaying = player!!.isPlaying()
             setPlaying(false, true)
         } else {
@@ -123,13 +123,13 @@ class VideoUnit(private val instance: PagerInstance) {
         get() = player != null
 
     val isPlaying: Boolean
-        get() = this.isInitialized && player!!.isPlaying()
+        get() = this@VideoUnit.isInitialized && player!!.isPlaying()
 
     val playbackPosition: Long
-        get() = if (this.isInitialized) player!!.getPosition() else 0
+        get() = if (this@VideoUnit.isInitialized) player!!.getPosition() else 0
 
     val videoDimensions: Point?
-        get() = if (this.isInitialized) player!!.getDimensions() else null
+        get() = if (this@VideoUnit.isInitialized) player!!.getDimensions() else null
 
     fun setInitialSeekPosition(position: Long) {
         initialSeekPosition = position
@@ -140,9 +140,9 @@ class VideoUnit(private val instance: PagerInstance) {
             readVideoCallback!!.cancel()
             readVideoCallback = null
         }
-        if (this.isInitialized) {
+        if (this@VideoUnit.isInitialized) {
             audioFocus.release()
-            this.isInitialized = false
+            this@VideoUnit.isInitialized = false
         }
         invalidateControlsVisibility()
         if (player != null) {
@@ -167,7 +167,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun forcePause() {
-        if (this.isInitialized) {
+        if (this@VideoUnit.isInitialized) {
             wasPlaying = false
             setPlaying(false, true)
         }
@@ -270,7 +270,7 @@ class VideoUnit(private val instance: PagerInstance) {
         recreateVideoControls()
         playPauseButton!!.setEnabled(true)
         seekBar!!.setEnabled(true)
-        this.isInitialized = true
+        this@VideoUnit.isInitialized = true
         pausedByTransientLossOfFocus = false
         if (initialSeekPosition > 0) {
             player!!.setPosition(initialSeekPosition)
@@ -351,7 +351,7 @@ class VideoUnit(private val instance: PagerInstance) {
             }
 
             playPauseButton = ImageButton(context, null, android.R.attr.borderlessButtonStyle)
-            playPauseButton!!.setScaleType(ImageButton.ScaleType.CENTER)
+            playPauseButton!!.setScaleType(android.widget.ImageView.ScaleType.CENTER)
             playPauseButton!!.setOnClickListener(playPauseClickListener)
 
             if (longLayout) {
@@ -445,7 +445,7 @@ class VideoUnit(private val instance: PagerInstance) {
 
     private val playPauseClickListener: View.OnClickListener = object : View.OnClickListener {
         override fun onClick(v: View?) {
-            if (this.isInitialized) {
+            if (this@VideoUnit.isInitialized) {
                 if (finishedPlayback) {
                     finishedPlayback = false
                     player!!.setPosition(0)
@@ -461,7 +461,7 @@ class VideoUnit(private val instance: PagerInstance) {
 
     private val progressRunnable: Runnable = object : Runnable {
         override fun run() {
-            if (this.isInitialized) {
+            if (this@VideoUnit.isInitialized) {
                 val position: Int
                 if (trackingNow) {
                     position = seekBar!!.getProgress()
@@ -523,7 +523,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun viewMetadata() {
-        if (this.isInitialized) {
+        if (this@VideoUnit.isInitialized) {
             val metadata = player!!.getMetadata()
             showMetadata(instance.galleryInstance.callback.getChildFragmentManager(), metadata)
         }
@@ -532,7 +532,7 @@ class VideoUnit(private val instance: PagerInstance) {
     private var controlsVisible = false
 
     fun invalidateControlsVisibility() {
-        val visible = this.isInitialized && instance.galleryInstance.callback.isSystemUiVisible()
+        val visible = this@VideoUnit.isInitialized && instance.galleryInstance.callback.isSystemUiVisible()
         if (layoutConfiguration >= 0 && controlsVisible != visible) {
             controlsView.animate().cancel()
             if (visible) {
@@ -552,8 +552,8 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     private val playerListener: VideoPlayer.Listener = object : VideoPlayer.Listener {
-        override fun onReady(player: VideoPlayer?) {
-            if (player != this@VideoUnit.player || this.isInitialized) {
+        override fun onReady(player: VideoPlayer) {
+            if (player != this@VideoUnit.player || this@VideoUnit.isInitialized) {
                 return
             }
             val holder = instance.currentHolder
@@ -571,19 +571,19 @@ class VideoUnit(private val instance: PagerInstance) {
             instance.galleryInstance.callback.invalidateOptionsMenu()
         }
 
-        override fun onError(player: VideoPlayer?, message: String?) {
+        override fun onError(player: VideoPlayer, message: String?) {
             if (player != this@VideoUnit.player) {
                 return
             }
             val holder = instance.currentHolder
-            if (!this.isInitialized && initFromFile) {
+            if (!this@VideoUnit.isInitialized && initFromFile) {
                 // The cached file cannot be played, download a fresh copy
                 initFromFile = false
                 this@VideoUnit.player!!.destroy()
                 val newPlayer = VideoPlayer(playerListener, isVideoSeekAnyFrame)
                 this@VideoUnit.player = newPlayer
                 startDownload(newPlayer)
-            } else if (!this.isInitialized) {
+            } else if (!this@VideoUnit.isInitialized) {
                 if (readVideoCallback != null) {
                     readVideoCallback!!.handleInitFailure()
                 }
@@ -612,8 +612,8 @@ class VideoUnit(private val instance: PagerInstance) {
             }
         }
 
-        override fun onBusyStateChange(player: VideoPlayer?, busy: Boolean) {
-            if (this.isInitialized) {
+        override fun onBusyStateChange(player: VideoPlayer, busy: Boolean) {
+            if (this@VideoUnit.isInitialized) {
                 val holder = instance.currentHolder
                 if (busy) {
                     holder!!.progressBar!!.setIndeterminate(true)
@@ -640,7 +640,7 @@ class VideoUnit(private val instance: PagerInstance) {
             }
         }
 
-        override fun onRenderedFirstFrame(player: VideoPlayer?) {
+        override fun onRenderedFirstFrame(player: VideoPlayer) {
             removeVideoCover()
             if (backgroundDrawable != null) {
                 // The surface has content again - drop the last-frame snapshot.
@@ -677,6 +677,8 @@ class VideoUnit(private val instance: PagerInstance) {
                         }
                         updatePlayState()
                     }
+
+                    else -> {}
                 }
             })
     }
@@ -691,7 +693,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun showHideVideoView(show: Boolean) {
-        if (this.isInitialized) {
+        if (this@VideoUnit.isInitialized) {
             val videoView = player!!.getVideoView(instance.galleryInstance.context)
             if (show) {
                 // Keep the last-frame snapshot in backgroundDrawable visible until the
@@ -711,7 +713,7 @@ class VideoUnit(private val instance: PagerInstance) {
     }
 
     fun handleSwipingContent(swiping: Boolean, hideSurface: Boolean) {
-        if (this.isInitialized) {
+        if (this@VideoUnit.isInitialized) {
             playPauseButton!!.setEnabled(!swiping)
             seekBar!!.setEnabled(!swiping)
             if (swiping) {
@@ -801,7 +803,7 @@ class VideoUnit(private val instance: PagerInstance) {
                 if (instance.currentHolder!!.mediaSummary!!.updateSize(progressMax)) {
                     instance.galleryInstance.callback.updateTitle()
                 }
-                if (this.isInitialized) {
+                if (this@VideoUnit.isInitialized) {
                     val max = seekBar!!.getMax()
                     if (max > 0 && progressMax > 0) {
                         val newProgress = (max * progress / progressMax).toInt()
@@ -828,7 +830,7 @@ class VideoUnit(private val instance: PagerInstance) {
                     if (instance.currentHolder!!.mediaSummary!!.updateSize(length)) {
                         instance.galleryInstance.callback.updateTitle()
                     }
-                    if (this.isInitialized) {
+                    if (this@VideoUnit.isInitialized) {
                         seekBar!!.setSecondaryProgress(seekBar!!.getMax())
                         holder.loadState = PagerInstance.LoadState.COMPLETE
                         instance.galleryInstance.callback.invalidateOptionsMenu()
@@ -938,7 +940,7 @@ class VideoUnit(private val instance: PagerInstance) {
 
         private fun showMetadata(
             fragmentManager: FragmentManager,
-            metadata: MutableMap<String?, String?>
+            metadata: Map<String, String>
         ) {
             InstanceDialog(
                 fragmentManager,

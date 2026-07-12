@@ -19,7 +19,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.Long
 import java.util.Arrays
 import java.util.Collections
 import java.util.UUID
@@ -42,10 +41,10 @@ object BackupManager {
     private const val BACKUP_VERSION_0 = "dashchan:0"
     private const val BACKUP_VERSION_1 = "dashchan:1"
 
-    fun getAvailableBackups(context: Context?): MutableList<BackupFile?> {
+    fun getAvailableBackups(context: Context?): MutableList<BackupFile> {
         val root = obtain(DataFile.Target.DOWNLOADS, null)
         val files = root.getChildren()
-        val backupFiles: MutableList<BackupFile?> = ArrayList<BackupFile?>()
+        val backupFiles: MutableList<BackupFile> = ArrayList()
         if (files != null) {
             val timeFormat = android.text.format.DateFormat.getTimeFormat(context)
             val dateFormat = android.text.format.DateFormat.getDateFormat(context)
@@ -60,7 +59,7 @@ object BackupManager {
                     try {
                         date = name.toLong()
                     } catch (e: NumberFormatException) {
-                        date = -1
+                        date = -1L
                     }
                     if (date >= 0) {
                         name = dateFormat.format(date) + " " + timeFormat.format(date)
@@ -69,7 +68,7 @@ object BackupManager {
                 }
             }
         }
-        Collections.sort<BackupFile?>(backupFiles)
+        backupFiles.sort()
         return backupFiles
     }
 
@@ -81,7 +80,7 @@ object BackupManager {
                 var hasEntries = false
                 for (entry in Entry.entries) {
                     if (entry.writer != null) {
-                        zip.putNextEntry(ZipEntry(entry.name))
+                        zip.putNextEntry(ZipEntry(entry.entryName))
                         try {
                             entry.writer.write(zip)
                         } finally {
@@ -119,7 +118,7 @@ object BackupManager {
         }
     }
 
-    fun readBackupEntries(file: DataFile): MutableList<Entry?> {
+    fun readBackupEntries(file: DataFile): MutableList<Entry> {
         var version: String? = BACKUP_VERSION_0
         val entries = HashSet<Entry?>()
         try {
@@ -144,7 +143,7 @@ object BackupManager {
             e.printStackTrace()
             entries.clear()
         }
-        val result = ArrayList<Entry?>()
+        val result = ArrayList<Entry>()
         for (entry in Entry.entries) {
             if (entries.contains(entry)) {
                 if (entry.versions.contains(version)) {
@@ -155,7 +154,7 @@ object BackupManager {
         return result
     }
 
-    fun loadBackup(file: DataFile, entries: MutableCollection<Entry?>): Boolean {
+    fun loadBackup(file: DataFile, entries: Collection<Entry>): Boolean {
         var success = false
         try {
             ZipInputStream(file.openInputStream()).use { zip ->
@@ -180,9 +179,9 @@ object BackupManager {
     }
 
     class BackupFile(val file: DataFile?, val name: String?, val date: Long) :
-        Comparable<BackupFile?> {
-        override fun compareTo(o: BackupFile): Int {
-            return Long.compare(o.date, date)
+        Comparable<BackupFile> {
+        override fun compareTo(other: BackupFile): Int {
+            return other.date.compareTo(date)
         }
     }
 
@@ -192,12 +191,12 @@ object BackupManager {
 
     private fun interface Writer {
         @Throws(IOException::class)
-        fun write(output: OutputStream?)
+        fun write(output: OutputStream)
     }
 
     private fun interface Reader {
         @Throws(IOException::class)
-        fun read(restore: Restore?)
+        fun read(restore: Restore)
     }
 
     private class FileWriter(private val file: File) : Writer {
@@ -225,7 +224,7 @@ object BackupManager {
 
     enum class Entry(
         val titleResId: Int,
-        internal val name: String,
+        internal val entryName: String,
         versions: MutableCollection<String?>,
         internal val writer: Writer?,
         internal val reader: Reader
@@ -234,9 +233,9 @@ object BackupManager {
             0,
             "version",
             mutableListOf<String?>(),
-            BackupManager.Writer { output: OutputStream? -> output!!.write((BACKUP_VERSION_1 + "\n").toByteArray()) },
-            BackupManager.Reader { restore: Restore? ->
-                restore!!.version = null
+            BackupManager.Writer { output: OutputStream -> output.write((BACKUP_VERSION_1 + "\n").toByteArray()) },
+            BackupManager.Reader { restore: Restore ->
+                restore.version = null
                 val data = ByteArray(1024)
                 val count = restore.input.read(data)
                 if (count <= 0 || count == data.size) {
@@ -246,10 +245,10 @@ object BackupManager {
             }),
         DATABASE(
             R.string.database, "common.db", mutableListOf<String?>(BACKUP_VERSION_1),
-            BackupManager.Writer { output: OutputStream? ->
-                CommonDatabase.getInstance().writeBackup(output!!)
-            }, BackupManager.Reader { restore: Restore? ->
-                if (!restore!!.test) {
+            BackupManager.Writer { output: OutputStream ->
+                CommonDatabase.getInstance().writeBackup(output)
+            }, BackupManager.Reader { restore: Restore ->
+                if (!restore.test) {
                     CommonDatabase.getInstance().readBackup(restore.input)
                 }
             }),
@@ -282,10 +281,10 @@ object BackupManager {
 
         constructor(
             titleResId: Int,
-            backupFiles: Pair<File?, File?>,
+            backupFiles: Pair<File, File>,
             versions: MutableCollection<String?>
         ) : this(
-            titleResId, backupFiles.first!!.getName(), versions,
+            titleResId, backupFiles.first.getName(), versions,
             BackupManager.FileWriter(backupFiles.first!!), FileReader(backupFiles.second)
         )
 
@@ -297,13 +296,13 @@ object BackupManager {
         ) : this(titleResId, name, versions, null, FileReader(restoreFile))
 
         init {
-            this.versions = Collections.unmodifiableSet<String?>(HashSet<String?>(versions))
+            this.versions = Collections.unmodifiableSet(HashSet(versions))
         }
 
         companion object {
             internal fun find(name: String?): Entry? {
                 for (entry in entries) {
-                    if (entry.name == name) {
+                    if (entry.entryName == name) {
                         return entry
                     }
                 }

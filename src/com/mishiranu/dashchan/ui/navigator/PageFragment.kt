@@ -96,7 +96,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
 
     private var allowShowScale = false
     private var doOnResume: Runnable? = null
-    var isBackHandled: Boolean = false
+    override var isBackHandled: Boolean = false
         private set
     private var saveToStack = false
 
@@ -135,17 +135,17 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
 
     override fun onCreateView(
         inflater: LayoutInflater,
-        container: ViewGroup,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         actionBarLockerPull = "pull-" + UUID.randomUUID()
         actionBarLockerSearch = "search-" + UUID.randomUUID()
 
-        val layout = ExpandedLayout(container.getContext(), false)
+        val layout = ExpandedLayout(container!!.getContext(), false)
         recyclerView = PaddedRecyclerView(layout.getContext())
         layout.addView(
-            recyclerView, ExpandedLayout.LayoutParams.MATCH_PARENT,
-            ExpandedLayout.LayoutParams.MATCH_PARENT
+            recyclerView, ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
         )
         layout.setRecyclerView(recyclerView)
         recyclerView!!.setMotionEventSplittingEnabled(false)
@@ -259,8 +259,8 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     }
 
     override fun onChansChanged(
-        changed: MutableCollection<String?>,
-        removed: MutableCollection<String?>?
+        changed: Collection<String>,
+        removed: Collection<String>
     ) {
         val page = this.page
         if (changed.contains(page!!.chanName)) {
@@ -275,10 +275,10 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
                 if (listPage!!.onSearchSubmit(query!!)) {
                     searchSubmitQuery = null
                     setSearchMode(false)
-                    return@setOnSubmitListener true
+                    return@OnSubmitListener true
                 } else {
                     searchSubmitQuery = query
-                    return@setOnSubmitListener false
+                    return@OnSubmitListener false
                 }
             })
             searchView!!.setOnChangeListener(CustomSearchView.OnChangeListener { query: String? ->
@@ -364,7 +364,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         listPage!!.handleScrollToPost(postNumber)
     }
 
-    val isValidOptionsMenuState: Boolean
+    override val isValidOptionsMenuState: Boolean
         get() = listPage != null && listPage!!.isRunning
 
     public override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
@@ -459,9 +459,8 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         }
     }
 
-    override fun getToolbarContext(): Context {
-        return (requireActivity() as FragmentHandler).getToolbarContext()
-    }
+    override val toolbarContext: Context?
+        get() = (requireActivity() as FragmentHandler).getToolbarContext()
 
     override fun startActionMode(callback: ActionMode.Callback?): ActionMode? {
         return requireActivity().startActionMode(callback)
@@ -504,7 +503,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         postNumber: PostNumber?
     ) {
         if (isStateSaved()) {
-            doOnResume = Runnable? { handleRedirect(chanName, boardName, threadNumber, postNumber) }
+            doOnResume = Runnable { handleRedirect(chanName, boardName, threadNumber, postNumber) }
         } else {
             this.callback.handleRedirect(chanName, boardName, threadNumber, postNumber)
         }
@@ -512,7 +511,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
 
     override fun closePage() {
         if (isStateSaved()) {
-            doOnResume = Runnable? { this.callback.closeCurrentPage() }
+            doOnResume = Runnable { this.callback.closeCurrentPage() }
         } else {
             this.callback.closeCurrentPage()
         }

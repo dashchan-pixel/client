@@ -207,7 +207,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
     }
 
     interface ThumbnailLongClickListener : OnLongClickListener {
-        fun update(attachmentItem: AttachmentItem?)
+        fun update(attachmentItem: AttachmentItem)
     }
 
     interface Holder {

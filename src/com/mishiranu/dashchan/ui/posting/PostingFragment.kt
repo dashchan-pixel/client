@@ -824,8 +824,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     }
 
     override fun onChansChanged(
-        changed: MutableCollection<String?>,
-        removed: MutableCollection<String?>
+        changed: Collection<String>,
+        removed: Collection<String>
     ) {
         if (changed.contains(this.chanName) || removed.contains(this.chanName)) {
             updatePostingConfigurationIfNeeded()

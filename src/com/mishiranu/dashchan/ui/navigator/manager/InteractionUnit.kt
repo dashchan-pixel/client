@@ -163,7 +163,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             val holder =
                 ListViewUtils.getViewHolder(v, UiManager.Holder::class.java)
             Companion.showThumbnailLongClickDialogStatic(
-                holder!!.configurationSet,
+                holder!!.configurationSet!!,
                 attachmentItem!!, v as AttachmentView, holder.gallerySet.getThreadTitle()
             )
             return true
@@ -281,7 +281,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                             chan.name,
                             postItem.getBoardName(),
                             postItem.getThreadNumber(),
-                            mutableListOf<PostNumber?>(postItem.getPostNumber())
+                            listOf(postItem.getPostNumber())
                         )
                 })
             }
@@ -293,7 +293,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                             chan.name,
                             postItem.getBoardName(),
                             postItem.getThreadNumber(),
-                            mutableListOf<PostNumber?>(postItem.getPostNumber())
+                            listOf(postItem.getPostNumber())
                         )
                 })
             }
@@ -391,8 +391,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                         .setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
-                                UiManager.Companion.extract(provider)!!.navigator()
-                                    !!.navigateTargetAllowReturn(chanName, navigationDataFinal)
+                                UiManager.Companion.extract(provider)!!.navigator()!!.navigateTargetAllowReturn(chanName, navigationDataFinal)
                             })
                         .create()
                 })
@@ -461,8 +460,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             }
             if (threadNumber != null) {
                 dialogMenu.add(R.string.open_thread, Runnable {
-                    UiManager.Companion.extract(provider)!!.navigator()
-                        !!.navigateTargetAllowReturn(
+                    UiManager.Companion.extract(provider)!!.navigator()!!.navigateTargetAllowReturn(
                             chan.name,
                             NavigationData(
                                 NavigationData.Target.POSTS,

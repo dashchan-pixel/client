@@ -41,7 +41,7 @@ class PullableWrapper(private val listView: Wrapped) {
     }
 
     interface PullCallback {
-        fun onListPulled(wrapper: PullableWrapper?, side: Side?)
+        fun onListPulled(wrapper: PullableWrapper, side: Side)
     }
 
     fun interface PullStateListener {
