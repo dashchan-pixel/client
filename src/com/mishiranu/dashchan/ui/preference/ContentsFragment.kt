@@ -26,7 +26,7 @@ import com.mishiranu.dashchan.widget.ProgressDialog
 
 class ContentsFragment : PreferenceFragment() {
 	private lateinit var replyNotifications: CheckPreference
-	internal var clearCachePreference: Preference<Void>? = null
+	internal var clearCachePreference: Preference<Void?>? = null
 
 	companion object {
 		private const val REQUEST_UPDATE_CACHE_SIZE = "contentsUpdateCacheSize"

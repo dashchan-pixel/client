@@ -199,7 +199,7 @@ class CacheManager private constructor() : Runnable {
         var size = size
         val trimAmount = (TRIM_FACTOR * maxSize).toLong()
         var deleteAmount = size - maxSize + trimAmount
-        val iterator: MutableIterator<CacheItem> = cacheItems.values.iterator()
+        val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
         while (iterator.hasNext() && deleteAmount > 0) {
             val cacheItem = iterator.next()
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
@@ -377,7 +377,7 @@ class CacheManager private constructor() : Runnable {
             return 0L
         }
         var deleted = 0L
-        val iterator: MutableIterator<CacheItem> = cacheItems.values.iterator()
+        val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
         while (iterator.hasNext()) {
             if (Thread.interrupted()) {
                 throw InterruptedException()

@@ -438,7 +438,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                 if (parser.isUnmarkMode) {
                     val extra = parser.getExtra()
                     if (extra != null) {
-                        val boardName = extra.boardName
+                        val boardName = extra.getBoardName()
                         provider.commentEditor = safe.obtainCommentEditor(boardName)
                     }
                 }
@@ -582,8 +582,8 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                         val locator = get().locator
                         val uri = locator.validateClickedUriString(
                             uriString,
-                            extra.boardName,
-                            extra.threadNumber
+                            extra.getBoardName(),
+                            extra.getThreadNumber()
                         )
                         threadNumber = locator.safe(false).getThreadNumber(uri)
                         postNumber = locator.safe(false).getPostNumber(uri)
@@ -747,8 +747,8 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
     }
 
     interface MarkupExtra {
-        val boardName: String?
-        val threadNumber: String?
+        fun getBoardName(): String?
+        fun getThreadNumber(): String?
     }
 
     class Safe internal constructor(private val markup: ChanMarkup) {

@@ -430,10 +430,10 @@ abstract class PreferenceFragment : ContentFragment() {
     fun <T : Enum<T>> enumList(
         enumValues: Array<T>,
         callback: EnumString<T>
-    ): MutableList<String?> {
-        val list = ArrayList<String?>(enumValues.size)
+    ): MutableList<String> {
+        val list = ArrayList<String>(enumValues.size)
         for (value in enumValues) {
-            list.add(callback.getString(value))
+            list.add(callback.getString(value)!!)
         }
         return list
     }
@@ -441,8 +441,8 @@ abstract class PreferenceFragment : ContentFragment() {
     fun <T : Enum<T>> enumResList(
         enumValues: Array<T>,
         callback: EnumStringResource<T>
-    ): MutableList<CharSequence?> {
-        val list = ArrayList<CharSequence?>(enumValues.size)
+    ): MutableList<CharSequence> {
+        val list = ArrayList<CharSequence>(enumValues.size)
         for (value in enumValues) {
             list.add(getString(callback.getResourceId(value)))
         }

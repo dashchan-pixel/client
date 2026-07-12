@@ -40,8 +40,8 @@ class SearchImageDialog() : DialogFragment() {
 				.create()
 	}
 
-	private fun searchImageUri(searchUri: Uri) {
-		NavigationUtils.handleUri(requireContext(), null, searchUri, NavigationUtils.BrowserType.EXTERNAL)
+	private fun searchImageUri(searchUri: Uri?) {
+		NavigationUtils.handleUri(requireContext(), null, searchUri!!, NavigationUtils.BrowserType.EXTERNAL)
 	}
 
 	companion object {

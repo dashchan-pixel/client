@@ -29,8 +29,8 @@ import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ProgressDialog
 
 class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
-	private var downloadUriTreePreference: Preference<Void>? = null
-	internal var clearCachePreference: Preference<Void>? = null
+	private var downloadUriTreePreference: Preference<Void?>? = null
+	internal var clearCachePreference: Preference<Void?>? = null
 
 	private var inStorageRequest = false
 
@@ -267,7 +267,7 @@ class MediaFragment : PreferenceFragment(), FragmentHandler.Callback {
 			if (thumbnails) {
 				CacheManager.getInstance().eraseThumbnailsCache()
 			}
-			if (isCancelled) {
+			if (isCancelled()) {
 				return null
 			}
 			if (media) {

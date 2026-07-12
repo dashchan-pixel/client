@@ -258,18 +258,18 @@ class ExpandedScreen(
             }
         }
 
-        override fun onAnimationStart(animation: Animator?) {}
+        override fun onAnimationStart(animation: Animator) {}
 
-        override fun onAnimationEnd(animation: Animator?) {
+        override fun onAnimationEnd(animation: Animator) {
             if (toolbarView != null && !show) {
                 activity.getActionBar()!!.hide()
             }
             foregroundAnimator = null
         }
 
-        override fun onAnimationCancel(animation: Animator?) {}
+        override fun onAnimationCancel(animation: Animator) {}
 
-        override fun onAnimationRepeat(animation: Animator?) {}
+        override fun onAnimationRepeat(animation: Animator) {}
     }
 
     private fun setState(state: State, value: Boolean) {
@@ -522,7 +522,7 @@ class ExpandedScreen(
             contentForeground = null
             statusBarContentForeground = null
             statusBarDrawerForeground = null
-            foregroundDrawables = mutableListOf<ForegroundDrawable?>()
+            foregroundDrawables = mutableListOf<ForegroundDrawable>()
         }
 
         val resources = activity.getResources()

@@ -106,7 +106,7 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 		override fun getExtension(): String? = displayedExtension
 
 		override fun getFileName(chan: Chan): String? {
-			return chan.locator.createAttachmentFileName(getFileUri(chan))
+			return chan.locator.createAttachmentFileName(getFileUri(chan)!!)
 		}
 
 		override fun getOriginalName(): String? = normalizedOriginalName
@@ -231,8 +231,8 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 	private fun startLoad(view: AttachmentView, chan: Chan, key: String?, force: Boolean) {
 		if (key != null) {
 			val uri = getThumbnailUri(chan)
-			val loadThumbnails = Preferences.loadThumbnails
-					!!.isNetworkAvailable(NetworkObserver.getInstance())
+			val loadThumbnails = Preferences.loadThumbnails!!
+					.isNetworkAvailable(NetworkObserver.getInstance())
 			val allowDownload = loadThumbnails || force
 			ImageLoader.getInstance().loadImage(chan, uri!!, key, !allowDownload, view)
 		} else {

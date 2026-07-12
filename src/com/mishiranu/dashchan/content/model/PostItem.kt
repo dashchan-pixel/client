@@ -150,7 +150,7 @@ class PostItem private constructor(private val post: Post, threadDataBase: Threa
 		if (StringUtils.isEmptyOrWhitespace(defaultName)) {
 			defaultName = "Anonymous"
 		}
-		name = if (StringUtils.isEmptyOrWhitespace(name)) defaultName else name.trim()
+		name = if (StringUtils.isEmptyOrWhitespace(name)) defaultName!! else name.trim()
 		var useDefaultName = post.isDefaultName || name == defaultName
 		val hasIdentifier = !StringUtils.isEmptyOrWhitespace(identifier)
 		val hasTripcode = !StringUtils.isEmptyOrWhitespace(tripcode)

@@ -36,7 +36,7 @@ import java.net.URLConnection
 import java.util.Locale
 
 class SendLocalArchiveTask(private val callback: Callback, private val chan: Chan,
-		override val boardName: String?, override val threadNumber: String?,
+		private val boardName: String?, private val threadNumber: String?,
 		private val posts: Collection<Post>, private val saveThumbnails: Boolean,
 		private val saveFiles: Boolean) : ExecutorTask<Int, SendLocalArchiveTask.Result?>(),
 		ChanMarkup.MarkupExtra {
@@ -48,6 +48,10 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 		fun onLocalArchivationProgressUpdate(handledPostsCount: Int)
 		fun onLocalArchivationComplete(result: DownloadResult?)
 	}
+
+	override fun getBoardName(): String? = boardName
+
+	override fun getThreadNumber(): String? = threadNumber
 
 	private class SpanItem(val openTag: String, val closeTag: String) {
 		var start = 0

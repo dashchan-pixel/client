@@ -108,7 +108,7 @@ import com.mishiranu.dashchan.widget.ViewFactory.createProgressLayout
 class DialogUnit internal constructor(private val uiManager: UiManager) {
     class StackInstance internal constructor(internal val dialogStack: DialogStack<DialogFactory?>) {
         internal class AttachmentDialog(
-            val attachmentItems: MutableList<AttachmentItem>, val startImageIndex: Int,
+            val attachmentItems: List<AttachmentItem>, val startImageIndex: Int,
             val navigatePostMode: NavigatePostMode?, val gallerySet: GalleryItem.Set
         )
 
@@ -1151,7 +1151,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun showAttachmentsGrid(
-        configurationSet: ConfigurationSet, attachmentItems: MutableList<AttachmentItem>,
+        configurationSet: ConfigurationSet, attachmentItems: List<AttachmentItem>,
         startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set
     ) {
         val context = uiManager.context
@@ -1323,7 +1323,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     fun openAttachmentOrDialog(
         configurationSet: ConfigurationSet, imageView: View?,
-        attachmentItems: MutableList<AttachmentItem>, imageIndex: Int,
+        attachmentItems: List<AttachmentItem>, imageIndex: Int,
         navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set
     ) {
         if (attachmentItems.size > 1) {
@@ -1345,7 +1345,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     fun openAttachment(
         imageView: View?,
         chanName: String?,
-        attachmentItems: MutableList<AttachmentItem>,
+        attachmentItems: List<AttachmentItem>,
         index: Int,
         imageIndex: Int,
         navigatePostMode: NavigatePostMode?,

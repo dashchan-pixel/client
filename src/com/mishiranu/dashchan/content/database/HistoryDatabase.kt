@@ -211,7 +211,7 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
                 projection, filter.value, filter.args, null, null, null, null, signal
             ).use { cursor ->
                 if (cursor.moveToFirst()) {
-                    return@execute cursor.getInt(0)
+                    return@ExecuteCallback cursor.getInt(0)
                 }
             }
             0
@@ -241,7 +241,7 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
                 signal
             )
         })
-        return HistoryCursor(cursor!!, count > 0, filtered)
+        return HistoryCursor(cursor!!, count!! > 0, filtered)
     }
 
     fun remove(chanName: String, boardName: String?, threadNumber: String) {

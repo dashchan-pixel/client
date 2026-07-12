@@ -1782,22 +1782,22 @@ object Preferences {
             "created", R.id.menu_date_created, R.string.date_created,
             Comparator { lhs: Comparable?, rhs: Comparable? ->
                 java.lang.Long.compare(
-                    rhs!!.timestamp,
-                    lhs!!.timestamp
+                    rhs!!.getTimestamp(),
+                    lhs!!.getTimestamp()
                 )
             }),
         REPLIES(
             "replies", R.id.menu_replies, R.string.replies_count,
             Comparator { lhs: Comparable?, rhs: Comparable? ->
                 Integer.compare(
-                    rhs!!.threadPostsCount,
-                    lhs!!.threadPostsCount
+                    rhs!!.getThreadPostsCount(),
+                    lhs!!.getThreadPostsCount()
                 )
             });
 
         interface Comparable {
-            val timestamp: Long
-            val threadPostsCount: Int
+            fun getTimestamp(): Long
+            fun getThreadPostsCount(): Int
         }
 
         internal val value: String?

@@ -22,9 +22,9 @@ class CommonDatabase private constructor() {
     }
 
     interface Instance {
-        fun create(database: SQLiteDatabase?)
-        fun upgrade(database: SQLiteDatabase?, migration: Migration?)
-        fun open(database: SQLiteDatabase?) {}
+        fun create(database: SQLiteDatabase)
+        fun upgrade(database: SQLiteDatabase, migration: Migration)
+        fun open(database: SQLiteDatabase) {}
     }
 
     fun interface QueryCallback {

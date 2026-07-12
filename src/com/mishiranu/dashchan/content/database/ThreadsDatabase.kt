@@ -244,7 +244,7 @@ class ThreadsDatabase internal constructor(private val database: CommonDatabase)
                     i += maxCount
                 }
                 database.setTransactionSuccessful()
-                return@execute hiddenThreads
+                return@ExecuteCallback hiddenThreads
             } finally {
                 database.endTransaction()
             }

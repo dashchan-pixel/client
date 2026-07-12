@@ -78,6 +78,8 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
                         play(false)
                     }
                 }
+
+                else -> {}
             }
         })
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -249,7 +251,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
     }
 
     override fun onBind(intent: Intent?): Binder? {
-        return AudioPlayerService.Binder()
+        return this.Binder()
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
@@ -298,7 +300,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
             mediaPlayer!!.prepare()
         } catch (e: Exception) {
             audioFile!!.delete()
-            CacheManager.getInstance().handleDownloadedFile(audioFile, false)
+            CacheManager.getInstance().handleDownloadedFile(audioFile!!, false)
             ClickableToast.show(R.string.playback_error)
             cleanup(true, true)
             return
@@ -430,7 +432,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
 
     override fun onFinishDownloading(
         success: Boolean,
-        uri: Uri?,
+        uri: Uri,
         file: File,
         errorItem: ErrorItem?
     ) {

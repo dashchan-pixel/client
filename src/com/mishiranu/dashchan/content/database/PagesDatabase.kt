@@ -294,12 +294,12 @@ class PagesDatabase private constructor() {
 
     class Diff(
         val cache: Cache,
-        val changed: MutableCollection<Post?>?,
-        val removed: MutableCollection<PostNumber?>?,
-        val newPosts: MutableSet<PostNumber?>?,
-        val deletedPosts: MutableSet<PostNumber?>?,
-        val editedPosts: MutableSet<PostNumber?>?,
-        val replyPosts: MutableSet<PostNumber?>?
+        val changed: Collection<Post>,
+        val removed: Collection<PostNumber>,
+        val newPosts: Set<PostNumber>,
+        val deletedPosts: Set<PostNumber>,
+        val editedPosts: Set<PostNumber>,
+        val replyPosts: Set<PostNumber>
     )
 
     enum class Cleanup {
@@ -523,7 +523,7 @@ class PagesDatabase private constructor() {
             "UPDATE " + Schema.Meta.Companion.TABLE_NAME + " " +
                     "SET " + Schema.Meta.Columns.Companion.FLAGS + " = " +
                     Schema.Meta.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                    "WHERE " + filter.value, filter.args as Array<out Any?>?
+                    "WHERE " + filter.value, filter.args as Array<out Any?>
         )
     }
 
@@ -1113,11 +1113,11 @@ class PagesDatabase private constructor() {
             state
         )
         return Diff(
-            newCache, if (changed != null) changed else mutableListOf<Post?>(), removed,
-            if (newPosts != null) newPosts.keys else mutableSetOf<PostNumber?>(),
-            if (deletedPosts != null) deletedPosts.keys else mutableSetOf<PostNumber?>(),
-            if (editedPosts != null) editedPosts.keys else mutableSetOf<PostNumber?>(),
-            if (replyPosts != null) replyPosts.keys else mutableSetOf<PostNumber?>()
+            newCache, if (changed != null) changed else mutableListOf(), removed,
+            if (newPosts != null) newPosts.keys else mutableSetOf(),
+            if (deletedPosts != null) deletedPosts.keys else mutableSetOf(),
+            if (editedPosts != null) editedPosts.keys else mutableSetOf(),
+            if (replyPosts != null) replyPosts.keys else mutableSetOf()
         )
     }
 
