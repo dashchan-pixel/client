@@ -83,7 +83,7 @@ class WatcherService : BaseService() {
                 chanName: String?,
                 boardName: String?,
                 threadNumber: String?,
-                counter: Counter?
+                counter: Counter
             )
         }
 

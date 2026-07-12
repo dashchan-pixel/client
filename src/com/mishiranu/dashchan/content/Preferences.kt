@@ -154,7 +154,7 @@ object Preferences {
         return values
     }
 
-    fun checkHasMultipleValues(values: MutableList<String?>?): Boolean {
+    fun checkHasMultipleValues(values: List<String?>?): Boolean {
         var hasValues = false
         if (values != null) {
             for (value in values) {
@@ -317,7 +317,7 @@ object Preferences {
         return defaultCaptchaType
     }
 
-    fun getCaptchaTypeValues(captchaTypes: MutableCollection<String>): MutableList<String?> {
+    fun getCaptchaTypeValues(captchaTypes: Collection<String?>): MutableList<String?> {
         val values = java.util.ArrayList<String?>()
         for (captchaType in captchaTypes) {
             values.add(transformCaptchaTypeToValue(captchaType))
@@ -1089,13 +1089,13 @@ object Preferences {
     const val SUB_KEY_PROXY_HOST: String = "host"
     const val SUB_KEY_PROXY_PORT: String = "port"
     const val SUB_KEY_PROXY_TYPE: String = "type"
-    val KEYS_PROXY: MutableList<String?> = Arrays
+    val KEYS_PROXY: List<String> = Arrays
         .asList<String?>(SUB_KEY_PROXY_HOST, SUB_KEY_PROXY_PORT, SUB_KEY_PROXY_TYPE)
     const val VALUE_PROXY_TYPE_HTTP: String = "http"
     const val VALUE_PROXY_TYPE_SOCKS: String = "socks"
     val ENTRIES_PROXY_TYPE: MutableList<CharSequence?> =
         mutableListOf<CharSequence?>("HTTP", "SOCKS")
-    val VALUES_PROXY_TYPE: MutableList<String?> = Arrays
+    val VALUES_PROXY_TYPE: List<String> = Arrays
         .asList<String?>(VALUE_PROXY_TYPE_HTTP, VALUE_PROXY_TYPE_SOCKS)
 
     @JvmStatic

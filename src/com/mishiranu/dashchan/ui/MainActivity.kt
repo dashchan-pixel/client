@@ -843,14 +843,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                     navigateGalleryUri(chan.locator.convert(uri)!!)
                 } else {
                     handleUri(
-                        this, chan.name, chan.locator.convert(uri),
+                        this, chan.name, chan.locator.convert(uri!!),
                         NavigationUtils.BrowserType.EXTERNAL
                     )
                 }
                 return true
             } else if (isUseInternalBrowser) {
                 handleUri(
-                    this, chan.name, chan.locator.convert(uri),
+                    this, chan.name, chan.locator.convert(uri!!),
                     NavigationUtils.BrowserType.INTERNAL
                 )
                 return true
@@ -1035,7 +1035,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         } else {
             val pageFragment = PageFragment(page, UUID.randomUUID().toString())
             val pageItem = PageItem()
-            pair = Pair<PageFragment?, PageItem?>(pageFragment, pageItem)
+            pair = Pair(pageFragment, pageItem)
         }
         if (initRequest != null) {
             pair.first!!.setInitRequest(initRequest)
@@ -2062,7 +2062,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             if (page!!.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
-                        page!!.chanName, page!!.boardName, page!!.threadNumber,
+                        page!!.chanName!!, page!!.boardName!!, page!!.threadNumber,
                         currentPageItem!!.threadTitle, currentPageItem!!.createdRealtime
                     )
                 )
@@ -2367,15 +2367,17 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         notificationManager.notify(C.NOTIFICATION_ID_UPDATES, builder.build())
     }
 
-    override fun onFavoritesUpdate(favoriteItem: FavoriteItem?, action: FavoritesStorage.Action) {
+    override fun onFavoritesUpdate(favoriteItem: FavoritesStorage.FavoriteItem, action: FavoritesStorage.Action) {
         when (action) {
             FavoritesStorage.Action.ADD, FavoritesStorage.Action.REMOVE, FavoritesStorage.Action.MODIFY_TITLE -> {
                 drawerForm!!.updateItems(false, true)
             }
+
+            else -> {}
         }
     }
 
-    val isWatcherClientForeground: Boolean
+    override val isWatcherClientForeground: Boolean
         get() = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
 
     override fun onWatcherUpdate(
@@ -2434,7 +2436,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    override fun setActionBarLocked(locker: String?, locked: Boolean) {
+    override fun setActionBarLocked(locker: String, locked: Boolean) {
         if (locked) {
             expandedScreen!!.addLocker(locker)
         } else {
@@ -2442,7 +2444,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    override fun setNavigationAreaLocked(locker: String?, locked: Boolean) {
+    override fun setNavigationAreaLocked(locker: String, locked: Boolean) {
         if (locked) {
             navigationAreaLockers.add(locker)
         } else {

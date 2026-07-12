@@ -14,7 +14,7 @@ import android.widget.TextView
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ThemeEngine
 
-abstract class DialogPreference<T>(context: Context, key: String, defaultValue: T,
+abstract class DialogPreference<T>(context: Context, key: String, defaultValue: T?,
 		title: CharSequence?, summaryProvider: SummaryProvider<T>?) :
 		Preference<T>(context, key, defaultValue, title, summaryProvider) {
 	private var neutralButtonText: CharSequence? = null

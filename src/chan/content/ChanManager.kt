@@ -180,8 +180,8 @@ class ChanManager private constructor() {
     interface Callback {
         fun onRestartRequiredChanged()
         fun onUntrustedExtensionInstalled()
-        fun onChanInstalled(chan: Chan?)
-        fun onChanUninstalled(chan: Chan?)
+        fun onChanInstalled(chan: Chan)
+        fun onChanUninstalled(chan: Chan)
     }
 
     private class Extension(val item: ExtensionItem, val chan: Chan?)

@@ -26,12 +26,12 @@ class MultipleEditPreference<T>(
     context: Context,
     key: String,
     title: CharSequence?,
-    summaryProvider: SummaryProvider<T?>?,
-    val hints: MutableList<CharSequence?>?,
-    val inputTypes: MutableList<Int?>?,
-    private val valueCodec: ValueCodec<T?>
-) : DialogPreference<T?>(context, key, null, title, summaryProvider) {
-    private val values = SparseArray<Pair<MutableList<CharSequence?>?, MutableList<String?>?>?>()
+    summaryProvider: SummaryProvider<T>?,
+    val hints: List<CharSequence?>?,
+    val inputTypes: List<Int>?,
+    private val valueCodec: ValueCodec<T>
+) : DialogPreference<T>(context, key, null, title, summaryProvider) {
+    private val values = SparseArray<Pair<List<CharSequence?>, List<String?>>?>()
     private var lastFocusIndex = 0
 
     override fun extract(preferences: SharedPreferences) {
@@ -42,15 +42,12 @@ class MultipleEditPreference<T>(
         preferences.edit().put(key!!, valueCodec.toString(value)).close()
     }
 
-    fun setValues(index: Int, entries: MutableList<CharSequence?>?, values: MutableList<String?>?) {
+    fun setValues(index: Int, entries: List<CharSequence?>?, values: List<String?>?) {
         if (entries == null || values == null) {
             this.values.remove(index)
         } else {
             require(entries.size == values.size)
-            this.values.put(
-                index,
-                Pair<MutableList<CharSequence?>?, MutableList<String?>?>(entries, values)
-            )
+            this.values.put(index, Pair(entries, values))
         }
     }
 
@@ -73,7 +70,7 @@ class MultipleEditPreference<T>(
             val viewHolder: ViewHolder?
             if (values != null) {
                 viewHolder =
-                    DropdownViewHolder(builder.getContext(), values.first!!, values.second!!, value)
+                    DropdownViewHolder(builder.getContext(), values.first, values.second, value)
             } else {
                 val hint = if (hints != null && hints.size > i) hints.get(i) else null
                 val inputType = (if (inputTypes != null && inputTypes.size > i)
@@ -217,12 +214,12 @@ class MultipleEditPreference<T>(
 
     private class DropdownViewHolder(
         context: Context,
-        entries: MutableList<CharSequence?>,
-        values: MutableList<String?>,
+        entries: List<CharSequence?>,
+        values: List<String?>,
         value: String?
     ) : ViewHolder {
         private val dropdownView: DropdownView
-        private val values: MutableList<String?>
+        private val values: List<String?>
 
         init {
             dropdownView = DropdownView(context)
@@ -254,34 +251,37 @@ class MultipleEditPreference<T>(
         fun createValue(values: MutableList<String?>?): T?
     }
 
-    class ListValueCodec(override val count: Int) : ValueCodec<MutableList<String?>?> {
-        override fun fromString(value: String?): MutableList<String?> {
-            return unpackOrCastMultipleValues(value, count)
+    class ListValueCodec(override val count: Int) : ValueCodec<List<String>> {
+        override fun fromString(value: String?): List<String>? {
+            @Suppress("UNCHECKED_CAST")
+            return unpackOrCastMultipleValues(value, count) as List<String>
         }
 
-        override fun toString(value: MutableList<String?>?): String {
+        override fun toString(value: List<String>?): String {
             return JSONArray(value).toString()
         }
 
-        override fun getValueAt(value: MutableList<String?>?, index: Int): String? {
+        override fun getValueAt(value: List<String>?, index: Int): String? {
             return value!!.get(index)
         }
 
-        override fun createValue(values: MutableList<String?>?): MutableList<String?>? {
-            return values
+        override fun createValue(values: MutableList<String?>?): List<String>? {
+            @Suppress("UNCHECKED_CAST")
+            return values as List<String>?
         }
     }
 
-    class MapValueCodec(private val keys: MutableList<String?>) :
-        ValueCodec<MutableMap<String?, String?>?> {
+    class MapValueCodec(private val keys: List<String>) :
+        ValueCodec<Map<String, String>> {
         override val count: Int
             get() = keys.size
 
-        override fun fromString(value: String?): MutableMap<String?, String?> {
-            return unpackOrCastMultipleValues(value, keys)
+        override fun fromString(value: String?): Map<String, String>? {
+            @Suppress("UNCHECKED_CAST")
+            return unpackOrCastMultipleValues(value, keys) as Map<String, String>
         }
 
-        override fun toString(value: MutableMap<String?, String?>?): String {
+        override fun toString(value: Map<String, String>?): String {
             val jsonObject = JSONObject()
             for (entry in value!!.entries) {
                 try {
@@ -293,16 +293,16 @@ class MultipleEditPreference<T>(
             return jsonObject.toString()
         }
 
-        override fun getValueAt(value: MutableMap<String?, String?>?, index: Int): String? {
+        override fun getValueAt(value: Map<String, String>?, index: Int): String? {
             return value!!.get(keys.get(index))
         }
 
-        override fun createValue(values: MutableList<String?>?): MutableMap<String?, String?> {
-            val map = HashMap<String?, String?>()
+        override fun createValue(values: MutableList<String?>?): Map<String, String> {
+            val map = HashMap<String, String>()
             for (i in keys.indices) {
                 val value = values!!.get(i)
                 if (!isEmpty(value)) {
-                    map.put(keys.get(i), value)
+                    map.put(keys.get(i), value!!)
                 }
             }
             return map
@@ -312,7 +312,7 @@ class MultipleEditPreference<T>(
     companion object {
         private const val EXTRA_FOCUS = "focus"
 
-        fun <T> formatValues(valueCodec: ValueCodec<T?>, format: String?, value: T?): String? {
+        fun <T> formatValues(valueCodec: ValueCodec<T>, format: String?, value: T?): String? {
             val builder = StringBuilder(format!!)
             var index = 0
             var i = 0

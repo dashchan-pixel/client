@@ -140,7 +140,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
 
     interface Callback {
         fun onDialogStackOpen()
-        val downloadBinder: DownloadService.Binder?
+        fun getDownloadBinder(): DownloadService.Binder?
         val watcherClient: WatcherService.Client?
     }
 
@@ -153,7 +153,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
 
         fun navigateSearch(chanName: String?, boardName: String?, searchQuery: String?)
         fun navigateArchive(chanName: String?, boardName: String?)
-        fun navigateTargetAllowReturn(chanName: String?, data: NavigationData?)
+        fun navigateTargetAllowReturn(chanName: String?, data: NavigationData)
         fun navigatePosting(
             chanName: String?, boardName: String?, threadNumber: String?,
             vararg data: ReplyData?

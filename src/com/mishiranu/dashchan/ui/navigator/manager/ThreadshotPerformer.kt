@@ -137,7 +137,7 @@ class ThreadshotPerformer(
 			viewModel.observe(provider.lifecycleOwner) { result ->
 				provider.dismiss()
 				if (result != null) {
-					val binder = UiManager.extract(provider)!!.callback()!!.downloadBinder
+					val binder = UiManager.extract(provider)!!.callback()!!.getDownloadBinder()
 					binder?.downloadStorage(result, chanName, boardName, threadNumber, threadTitle,
 							"threadshot-" + System.currentTimeMillis() + ".png", true, false)
 				} else {

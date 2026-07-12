@@ -312,14 +312,14 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String?,
         titleResId: Int,
         summaryResId: Int,
-        hints: MutableList<CharSequence?>?,
-        inputTypes: MutableList<Int?>?,
-        valueCodec: ValueCodec<T?>?
-    ): MultipleEditPreference<T?> {
+        hints: List<CharSequence?>?,
+        inputTypes: List<Int>?,
+        valueCodec: ValueCodec<T>
+    ): MultipleEditPreference<T> {
         return addMultipleEdit(
             key,
             titleResId,
-            SummaryProvider { p: Preference<T?>? -> if (summaryResId != 0) getString(summaryResId) else null },
+            SummaryProvider { p: Preference<T>? -> if (summaryResId != 0) getString(summaryResId) else null },
             hints,
             inputTypes,
             valueCodec
@@ -330,13 +330,13 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String?,
         titleResId: Int,
         summaryPattern: String?,
-        hints: MutableList<CharSequence?>?,
-        inputTypes: MutableList<Int?>?,
-        valueCodec: ValueCodec<T?>
-    ): MultipleEditPreference<T?> {
+        hints: List<CharSequence?>?,
+        inputTypes: List<Int>?,
+        valueCodec: ValueCodec<T>
+    ): MultipleEditPreference<T> {
         return addMultipleEdit(
             key, titleResId,
-            SummaryProvider { p: Preference<T?>? ->
+            SummaryProvider { p: Preference<T>? ->
                 MultipleEditPreference.formatValues(
                     valueCodec,
                     summaryPattern,
@@ -350,14 +350,14 @@ abstract class PreferenceFragment : ContentFragment() {
     fun <T> addMultipleEdit(
         key: String?,
         titleResId: Int,
-        summaryProvider: SummaryProvider<T?>?,
-        hints: MutableList<CharSequence?>?,
-        inputTypes: MutableList<Int?>?,
-        valueCodec: ValueCodec<T?>?
-    ): MultipleEditPreference<T?> {
-        val preference = MultipleEditPreference<T?>(
+        summaryProvider: SummaryProvider<T>?,
+        hints: List<CharSequence?>?,
+        inputTypes: List<Int>?,
+        valueCodec: ValueCodec<T>
+    ): MultipleEditPreference<T> {
+        val preference = MultipleEditPreference<T>(
             requireContext(), key!!,
-            getString(titleResId), summaryProvider, hints, inputTypes, valueCodec!!
+            getString(titleResId), summaryProvider, hints, inputTypes, valueCodec
         )
         addDialogPreference(preference)
         return preference

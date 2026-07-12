@@ -450,7 +450,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             if (isAttachment) {
                 dialogMenu.add(R.string.download_file, Runnable {
                     val binder: DownloadService.Binder? =
-                        UiManager.Companion.extract(provider)!!.callback()!!.downloadBinder
+                        UiManager.Companion.extract(provider)!!.callback()!!.getDownloadBinder()
                     if (binder != null) {
                         binder.downloadStorage(
                             uri, finalFileName!!, null,
@@ -510,7 +510,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
             if (attachmentItem.canDownloadToStorage()) {
                 dialogMenu.add(R.string.download_file, Runnable {
                     val uiManager: UiManager? = UiManager.Companion.extract(provider)
-                    val binder = uiManager!!.callback()!!.downloadBinder
+                    val binder = uiManager!!.callback()!!.getDownloadBinder()
                     if (binder != null) {
                         binder.downloadStorage(
                             attachmentItem.getFileUri(chan),

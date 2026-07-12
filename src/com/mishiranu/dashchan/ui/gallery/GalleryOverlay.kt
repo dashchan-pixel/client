@@ -67,7 +67,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         DISABLED, MANUALLY, ENABLED
     }
 
-    internal var queuedGalleryItems: MutableList<GalleryItem>? = null
+    internal var queuedGalleryItems: List<GalleryItem>? = null
     private var queuedFromView: WeakReference<View?>? = null
 
     internal var rootView: InsetsLayout? = null
@@ -92,7 +92,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     internal class Retained {
         internal var current: GalleryOverlay? = null
 
-        internal var queuedGalleryItems: MutableList<GalleryItem>? = null
+        internal var queuedGalleryItems: List<GalleryItem>? = null
 
         internal var rootView: InsetsLayout? = null
         internal var instance: GalleryInstance? = null
@@ -127,7 +127,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
 
     constructor(
         chanName: String?,
-        galleryItems: MutableList<GalleryItem?>?,
+        galleryItems: List<GalleryItem>?,
         imageIndex: Int,
         threadTitle: String?,
         fromView: View?,
@@ -144,7 +144,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     private constructor(
         uri: Uri?,
         chanName: String?,
-        galleryItems: MutableList<GalleryItem?>?,
+        galleryItems: List<GalleryItem>?,
         imageIndex: Int,
         threadTitle: String?,
         fromView: View?,
@@ -360,7 +360,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 get(chanNameFromArguments)
             val defaultLocator = chan.name == null
 
-            val galleryItems: MutableList<GalleryItem?>?
+            val galleryItems: List<GalleryItem>?
             val imagePosition: Int
             if (uri != null) {
                 var boardName: String? = null

@@ -50,7 +50,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 
 	private fun getChanName(): String = requireArguments().getString(EXTRA_CHAN_NAME)!!
 
-	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)

@@ -97,7 +97,7 @@ class HttpClient private constructor() {
         }
     }
 
-    fun checkProxyValid(map: MutableMap<String?, String?>?): Boolean {
+    fun checkProxyValid(map: Map<String, String>?): Boolean {
         val proxyData = getProxyData(map)
         return proxyData == null || proxyData.proxy != null
     }

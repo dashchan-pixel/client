@@ -2063,7 +2063,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                 show(R.string.unknown_error)
                             } else {
                                 val uiManager: UiManager? = UiManager.Companion.extract(provider)
-                                result!!.run(uiManager!!.callback()!!.downloadBinder!!)
+                                result!!.run(uiManager!!.callback()!!.getDownloadBinder()!!)
                             }
                         })
                     viewModel.progress.observe(
