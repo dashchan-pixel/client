@@ -16,18 +16,18 @@ abstract class FirewallResolver {
     abstract class Implementation {
         @Throws(HttpException::class, InterruptedException::class)
         abstract fun checkResponse(
-            chan: Chan?,
-            uri: Uri?,
-            holder: HttpHolder?,
+            chan: Chan,
+            uri: Uri,
+            holder: HttpHolder,
             response: HttpResponse?,
-            identifier: Identifier?,
+            identifier: Identifier,
             resolve: Boolean
         ): CheckResult?
 
         abstract fun collectCookies(
-            chan: Chan?,
+            chan: Chan,
             uri: Uri?,
-            identifier: Identifier?,
+            identifier: Identifier,
             safe: Boolean
         ): CookieBuilder
 
@@ -81,7 +81,7 @@ abstract class FirewallResolver {
         @Extendable
         open fun onPageFinished(
             uri: Uri?,
-            cookies: MutableMap<String?, String?>?,
+            cookies: Map<String, String>?,
             title: String?
         ): Boolean {
             return true
@@ -109,14 +109,14 @@ abstract class FirewallResolver {
         fun getIdentifier(): Identifier?
 
         @Public
-        fun getKey(vararg flags: Identifier.Flag?): Exclusive.Key?
+        fun getKey(vararg flags: Identifier.Flag): Exclusive.Key?
 
         @Public
         fun isResolveRequest(): Boolean
 
         @Public
         @Throws(CancelException::class, InterruptedException::class)
-        fun <Result> resolveWebView(webViewClient: WebViewClient<Result?>?): Result?
+        fun <Result> resolveWebView(webViewClient: WebViewClient<Result?>): Result?
     }
 
     @Public

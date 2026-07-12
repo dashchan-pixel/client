@@ -228,7 +228,7 @@ class PostsAdapter(
     }
 
     fun insertItems(
-        changed: Map<PostNumber?, PostItem>,
+        changed: Map<out PostNumber?, PostItem>,
         removed: Collection<PostNumber?>
     ) {
         cancelPreloading()

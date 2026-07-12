@@ -70,7 +70,7 @@ class CaptchaForm(
 
         fun onCaptchaLifetimeEnded()
 
-        fun showCaptchaOptionsDialog(dialog: CaptchaOptionsDialog?)
+        fun showCaptchaOptionsDialog(dialog: CaptchaOptionsDialog)
     }
 
     class Captcha : Parcelable {

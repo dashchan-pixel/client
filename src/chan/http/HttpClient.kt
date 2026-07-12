@@ -564,7 +564,7 @@ class HttpClient private constructor() {
         var cookieBuilder = cookieBuilder
         val appendCookieBuilder: CookieBuilder =
             FirewallResolver.Implementation.getInstance()
-                .collectCookies(chan, uri, resolverIdentifier, false)
+                .collectCookies(chan!!, uri, resolverIdentifier!!, false)
         if (!appendCookieBuilder.isEmpty) {
             cookieBuilder = CookieBuilder(cookieBuilder)
             cookieBuilder.append(appendCookieBuilder)

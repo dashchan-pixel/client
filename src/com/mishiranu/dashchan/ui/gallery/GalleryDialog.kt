@@ -27,9 +27,9 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
     interface Callback {
         fun onBackPressed(): Boolean
         fun onCreateActionContextBarView()
-        fun onCreateDialogMenu(menu: Menu?)
-        fun onPrepareDialogMenu(menu: Menu?)
-        fun onDialogMenuItemSelected(item: MenuItem?): Boolean
+        fun onCreateDialogMenu(menu: Menu)
+        fun onPrepareDialogMenu(menu: Menu)
+        fun onDialogMenuItemSelected(item: MenuItem): Boolean
     }
 
     private var toolbarHolder: ToolbarHolder? = null

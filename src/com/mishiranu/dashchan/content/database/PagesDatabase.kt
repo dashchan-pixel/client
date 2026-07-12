@@ -712,8 +712,8 @@ class PagesDatabase private constructor() {
             val hash = hasher.calculate(data)
             serializedMap.put(post.number, Serialized(post, data, hash, newThread))
         }
-        val userPosts: MutableSet<PostNumber?> = CommonDatabase.Companion.getInstance().posts
-            .getFlags(threadKey.chanName, threadKey.boardName, threadKey.threadNumber).userPosts
+        val userPosts: MutableSet<PostNumber> = CommonDatabase.Companion.getInstance().posts
+            .getFlags(threadKey.chanName, threadKey.boardName, threadKey.threadNumber).userPosts!!
         return insertLocks.lock<InsertResult?, IOException?>(threadKey, KeyLock.Callback {
             insertNewPostsLocked(
                 threadKey,
@@ -726,7 +726,7 @@ class PagesDatabase private constructor() {
     private fun insertNewPostsLocked(
         threadKey: ThreadKey,
         meta: Meta, temporary: Boolean, newThread: Boolean, partial: Boolean,
-        serializedMap: HashMap<PostNumber?, Serialized>, userPosts: MutableSet<PostNumber?>
+        serializedMap: HashMap<PostNumber?, Serialized>, userPosts: MutableSet<PostNumber>
     ): InsertResult {
         var deleted: LongSparseArray<Void?>? = null
         var restored: LongSparseArray<Void?>? = null

@@ -109,10 +109,10 @@ class WatcherService : BaseService() {
 
             fun onReadPostsSuccess(
                 cacheState: PagesDatabase.Cache.State?,
-                consumeReplies: ConsumeReplies?
+                consumeReplies: ConsumeReplies
             )
 
-            fun onReadPostsRedirect(target: RedirectException.Target?)
+            fun onReadPostsRedirect(target: RedirectException.Target)
             fun onReadPostsFail(errorItem: ErrorItem?)
         }
 
@@ -349,13 +349,13 @@ class WatcherService : BaseService() {
 
         override fun onReadPostsSuccess(
             cacheState: PagesDatabase.Cache.State?,
-            consumeReplies: ConsumeReplies?
+            consumeReplies: ConsumeReplies
         ) {
             running = Running.NONE
             callback.onReadPostsSuccess(cacheState, consumeReplies)
         }
 
-        override fun onReadPostsRedirect(target: RedirectException.Target?) {
+        override fun onReadPostsRedirect(target: RedirectException.Target) {
             running = Running.NONE
             callback.onReadPostsRedirect(target)
         }
@@ -963,7 +963,7 @@ class WatcherService : BaseService() {
             sessions = HashSet<InternalSession?>(1)
             sessionsMap.put(threadKey, sessions)
         }
-        sessions.add(session)
+        sessions.add(session!!)
         addWatcherItem(threadKey, true)
     }
 

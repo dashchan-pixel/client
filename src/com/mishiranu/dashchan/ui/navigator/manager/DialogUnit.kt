@@ -401,7 +401,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     internal abstract class DialogProvider<T>(
         uiManager: UiManager,
         configurationSetProvider: ConfigurationSetProvider<T>
-    ) : UiManager.Observer, Iterable<PostItem>, ClickCallback<PostItem, RecyclerView.ViewHolder> {
+    ) : UiManager.Observer, Iterable<PostItem>, ClickCallback<PostItem?, RecyclerView.ViewHolder> {
         fun interface ConfigurationSetProvider<T> {
             fun create(dialogProvider: T): ConfigurationSet
         }
@@ -586,7 +586,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             postItem.setOrdinalIndex(0)
             postItem.clearReferencesFrom()
             postItems.add(postItem)
-            val childPostItems: MutableList<PostItem> =
+            val childPostItems: List<PostItem> =
                 postItem.getThreadPosts(get(configurationSet.chanName))
             if (!childPostItems.isEmpty()) {
                 for (i in childPostItems.indices) {
@@ -1425,7 +1425,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: MutableList<PostNumber?>?
+        postNumbers: List<PostNumber>?
     ) {
         val chan = get(chanName)
         val deleting = chan.configuration.safe().obtainDeleting(boardName)
@@ -1433,11 +1433,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return
         }
         val context = uiManager.context
-        var options: ArrayList<Pair<String?, String?>?>? = null
+        var options: ArrayList<Pair<String, String>>? = null
         if (deleting.optionFilesOnly) {
-            options = ArrayList<Pair<String?, String?>?>()
+            options = ArrayList<Pair<String, String>>()
             options.add(
-                Pair<String?, String?>(
+                Pair(
                     SendMultifunctionalTask.OPTION_FILES_ONLY,
                     context!!.getString(R.string.files_only)
                 )
@@ -1470,7 +1470,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: MutableList<PostNumber?>?
+        postNumbers: List<PostNumber>?
     ) {
         val chan = get(chanName)
         val reporting = chan.configuration.safe().obtainReporting(boardName)
@@ -1492,7 +1492,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         boardName: String?,
         threadNumber: String?,
         threadTitle: String?,
-        posts: MutableCollection<Post?>
+        posts: Collection<Post>?
     ) {
         performSendArchiveThread(
             uiManager.context!!, fragmentManager,
@@ -1517,17 +1517,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             SendMultifunctionalTask
                 .Operation.VOTE, chanName, boardName, threadNumber, null, null, false
         )
-        state.postNumbers = ArrayList<PostNumber?>()
-        state.postNumbers.add(postNumber)
+        state.postNumbers = listOf(postNumber!!)
         state.like = isLike
         state.dislike = !isLike
         startMultifunctionalProcess(fragmentManager, state, null, null, null)
     }
 
     class MultifunctionalViewModel :
-        TaskViewModel.Proxy<SendMultifunctionalTask?, SendMultifunctionalTask.Callback?>()
+        TaskViewModel.Proxy<SendMultifunctionalTask, SendMultifunctionalTask.Callback?>()
 
-    class LocalArchiveViewModel : TaskViewModel<SendLocalArchiveTask?, DownloadResult?>(),
+    class LocalArchiveViewModel : TaskViewModel<SendLocalArchiveTask, DownloadResult?>(),
         SendLocalArchiveTask.Callback {
         val progress: MutableLiveData<Int?> = MutableLiveData<Int?>()
 
@@ -1628,7 +1627,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             boardName: String?,
             threadNumber: String?,
             threadTitle: String?,
-            posts: MutableCollection<Post?>
+            posts: Collection<Post>?
         ) {
             val chan = get(chanName)
             val canArchiveLocal = !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
@@ -1684,19 +1683,19 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             fragmentManager: FragmentManager,
             state: SendMultifunctionalTask.State,
             archiveChanName: String?,
-            posts: MutableCollection<Post?>
+            posts: Collection<Post>?
         ) {
             val archivation: Archivation?
             if (archiveChanName == null) {
                 archivation = Archivation()
                 archivation.options.add(
-                    Pair<String?, String?>(
+                    Pair(
                         OPTION_THUMBNAILS,
                         context.getString(R.string.save_thumbnails)
                     )
                 )
                 archivation.options.add(
-                    Pair<String?, String?>(
+                    Pair(
                         OPTION_FILES,
                         context.getString(R.string.save_files)
                     )
@@ -1723,8 +1722,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             state: SendMultifunctionalTask.State,
             defaultType: String?,
             defaultText: String?,
-            defaultOptions: MutableList<String?>?,
-            posts: MutableCollection<Post?>,
+            defaultOptions: List<String>?,
+            posts: Collection<Post>?,
             firstTime: Boolean
         ) {
             InstanceDialog(
@@ -1743,8 +1742,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             state: SendMultifunctionalTask.State,
             defaultType: String?,
             defaultText: String?,
-            defaultOptions: MutableList<String?>?,
-            posts: MutableCollection<Post?>,
+            defaultOptions: List<String>?,
+            posts: Collection<Post>?,
             firstTime: Boolean
         ): Dialog? {
             val context = provider.context
@@ -1832,8 +1831,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             if (linearLayout.getChildCount() > 0) {
                 val scrollView = ScrollView(context)
                 scrollView.addView(
-                    linearLayout, ScrollView.LayoutParams.MATCH_PARENT,
-                    ScrollView.LayoutParams.WRAP_CONTENT
+                    linearLayout, ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
                 )
                 var resId = 0
                 when (state.operation) {
@@ -1848,6 +1847,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     SendMultifunctionalTask.Operation.ARCHIVE -> {
                         resId = R.string.archive__verb
                     }
+
+                    else -> {}
                 }
                 builder.setTitle(resId)
                 builder.setView(scrollView)
@@ -1868,6 +1869,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     SendMultifunctionalTask.Operation.ARCHIVE -> {
                         resId = R.string.confirm_archivation__sentence
                     }
+
+                    else -> {}
                 }
                 builder.setMessage(resId)
             }
@@ -1878,18 +1881,18 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     val type =
                         if (radioGroup != null) state.types!!.get(radioGroup.getCheckedRadioButtonId()).first else null
                     val text = if (editText != null) editText.getText().toString() else null
-                    var options: ArrayList<String?>? = null
+                    var options: ArrayList<String>? = null
                     if (checkBoxGroup != null) {
-                        options = ArrayList<String?>()
+                        options = ArrayList<String>()
                         for (i in 0..<checkBoxGroup.getChildCount()) {
                             val checkBox = checkBoxGroup.getChildAt(i) as CheckBox
                             if (checkBox.isChecked()) {
-                                options.add(checkBox.getTag() as String?)
+                                options.add(checkBox.getTag()!! as String?)
                             }
                         }
                     }
                     if (state.operation == SendMultifunctionalTask.Operation.ARCHIVE && state.archiveChanName == null) {
-                        if (posts.isEmpty()) {
+                        if (posts!!.isEmpty()) {
                             show(R.string.cache_is_unavailable)
                         } else {
                             startLocalArchiveProcess(
@@ -1919,7 +1922,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             state: SendMultifunctionalTask.State,
             type: String?,
             text: String?,
-            options: MutableList<String?>?
+            options: List<String>?
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1987,8 +1990,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                                         false,
                                                         Runnable {
                                                             uiManager!!
-                                                                .navigator()
-                                                                !!.navigateTargetAllowReturn(
+                                                                .navigator()!!.navigateTargetAllowReturn(
                                                                     chanName,
                                                                     navigationData
                                                                 )
@@ -2031,7 +2033,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             chanName: String?,
             boardName: String?,
             threadNumber: String?,
-            posts: MutableCollection<Post?>,
+            posts: Collection<Post>?,
             saveThumbnails: Boolean,
             saveFiles: Boolean
         ) {
@@ -2042,13 +2044,13 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     val context = provider!!.context
                     val dialog = ProgressDialog(context, "%d / %d")
                     dialog.setMessage(context.getString(R.string.processing_data__ellipsis))
-                    dialog.setMax(posts.size)
+                    dialog.setMax(posts!!.size)
                     val viewModel =
                         provider.getViewModel<LocalArchiveViewModel>(LocalArchiveViewModel::class.java)
                     if (!viewModel.hasTaskOrValue()) {
                         val task = SendLocalArchiveTask(
                             viewModel, get(chanName),
-                            boardName, threadNumber, posts, saveThumbnails, saveFiles
+                            boardName, threadNumber, posts!!, saveThumbnails, saveFiles
                         )
                         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                         viewModel.attach(task)
@@ -2061,7 +2063,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                 show(R.string.unknown_error)
                             } else {
                                 val uiManager: UiManager? = UiManager.Companion.extract(provider)
-                                result!!.run(uiManager!!.callback()!!.downloadBinder)
+                                result!!.run(uiManager!!.callback()!!.downloadBinder!!)
                             }
                         })
                     viewModel.progress.observe(

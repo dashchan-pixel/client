@@ -44,7 +44,7 @@ class PostsDatabase internal constructor(private val database: CommonDatabase) :
         }
     }
 
-    class Flags(@JvmField val hiddenPosts: HideState.Map<PostNumber?>?, @JvmField val userPosts: HashSet<PostNumber?>?)
+    class Flags(@JvmField val hiddenPosts: HideState.Map<PostNumber?>?, @JvmField val userPosts: HashSet<PostNumber>?)
 
     override fun create(database: SQLiteDatabase) {
         database.execSQL(
@@ -226,7 +226,7 @@ class PostsDatabase internal constructor(private val database: CommonDatabase) :
             .raw(Schema.Posts.Columns.Companion.FLAGS)
             .build()
         val hiddenPosts = HideState.Map<PostNumber?>()
-        val userPosts = HashSet<PostNumber?>()
+        val userPosts = HashSet<PostNumber>()
         database.query(QueryCallback { database: SQLiteDatabase? ->
             database!!
                 .query(

@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModelProvider
 import chan.content.Chan.Companion.getFallback
 import chan.http.HttpException
 import chan.http.HttpHolder
+import chan.http.HttpRequest
 import chan.http.UrlEncodedEntity
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
@@ -138,7 +139,7 @@ class RecaptchaReader private constructor() {
                 }
             }
         } else {
-            val chan = fallback
+            val chan = getFallback()
             val uri = chan.locator.buildQueryWithHost(
                 "www.google.com",
                 "recaptcha/api/fallback",
@@ -150,7 +151,7 @@ class RecaptchaReader private constructor() {
                 .addCookie(getGoogleCookie())
                 .addHeader("Accept-Language", acceptLanguage)
                 .addHeader("Referer", refererFinal)
-                .perform().readString()
+                .perform()!!.readString()
             if (initialResponseText == null) {
                 throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
             }
@@ -172,11 +173,11 @@ class RecaptchaReader private constructor() {
                 var captchaImage: Bitmap? = null
                 var response: Pair<String?, String?>?
                 if (consumed[0]) {
-                    val responseText: String = HttpRequest(uri, holder)
+                    val responseText: String = HttpRequest(uri, holder!!)
                         .addCookie(getGoogleCookie())
                         .addHeader("Accept-Language", acceptLanguage)
                         .addHeader("Referer", refererFinal)
-                        .perform().readString()
+                        .perform()!!.readString()
                     response = parseResponse2(responseText)
                 } else {
                     consumed[0] = true
@@ -205,12 +206,12 @@ class RecaptchaReader private constructor() {
                                 continue
                             }
                             val responseText: String =
-                                HttpRequest(uri, holder).setPostMethod(entity)
+                                HttpRequest(uri, holder!!).setPostMethod(entity)
                                     .addCookie(getGoogleCookie())
                                     .setRedirectHandler(HttpRequest.RedirectHandler.STRICT)
                                     .addHeader("Accept-Language", acceptLanguage)
                                     .addHeader("Referer", referer)
-                                    .perform().readString()
+                                    .perform()!!.readString()
                             val matcher: Matcher = RECAPTCHA_RESULT_PATTERN.matcher(responseText)
                             if (matcher.find()) {
                                 return@ForegroundSolver matcher.group(1)
@@ -223,6 +224,8 @@ class RecaptchaReader private constructor() {
                         throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
                     }
                 }
+                @Suppress("UNREACHABLE_CODE")
+                throw CancelException()
             }
             return ChallengeExtra(solver, null, null)
         }
@@ -268,16 +271,16 @@ class RecaptchaReader private constructor() {
         transformBlackAndWhite: Boolean
     ): Pair<Bitmap?, Boolean?> {
         var transformBlackAndWhite = transformBlackAndWhite
-        val chan = fallback
+        val chan = getFallback()
         val uri = chan.locator.buildQueryWithHost(
             "www.google.com", "recaptcha/api2/payload",
             "c", challenge, "k", apiKey, "id", StringUtils.emptyIfNull(id)
         )
-        val image: Bitmap? = HttpRequest(uri, holder).perform().readBitmap()
+        val image: Bitmap? = HttpRequest(uri, holder!!).perform()!!.readBitmap()
         if (transformBlackAndWhite) {
             transformBlackAndWhite = isBlackAndWhiteCaptchaImage(image)
         }
-        return if (transformBlackAndWhite) handleBlackAndWhiteCaptchaImage(image!!) else Pair<Bitmap?, Boolean?>(
+        return if (transformBlackAndWhite) handleBlackAndWhiteCaptchaImage(image!!) else Pair(
             image,
             false
         )
@@ -342,7 +345,7 @@ class RecaptchaReader private constructor() {
             var minScaleMultiplier = Float.MAX_VALUE
             for (size in Arrays.asList(screenWidthDp, screenHeightDp)) {
                 for (max in Arrays.asList(widthUnscaled, maxHeightUnscaled)) {
-                    minScaleMultiplier = min(minScaleMultiplier, size / max)
+                    minScaleMultiplier = min(minScaleMultiplier, size.toFloat() / max)
                 }
             }
             val scaleMultiplier = min(
@@ -655,7 +658,7 @@ class RecaptchaReader private constructor() {
         internal var destroyCallback: Runnable? = null
         internal var published = false
 
-        fun initHolder(holder: WebViewHolder?) {
+        internal fun initHolder(holder: WebViewHolder?) {
             this.holder = if (holder != null) holder else WebViewHolder()
         }
 
@@ -716,7 +719,7 @@ class RecaptchaReader private constructor() {
             if (webView!!.holder == null) {
                 webView!!.initHolder(challengeExtra!!.holder)
                 if (challengeExtra != null) {
-                    challengeExtra.holder = null
+                    challengeExtra!!.holder = null
                     challengeExtra = null
                 }
             }
@@ -735,7 +738,7 @@ class RecaptchaReader private constructor() {
                 performClick()
             }
 
-            webView!!.destroyCallback = Runnable? { this.publishDestroyInternal() }
+            webView!!.destroyCallback = Runnable { this.publishDestroyInternal() }
             webView!!.holder!!.obtainWebView(
                 requireContext().getApplicationContext(),
                 layout,
@@ -769,8 +772,8 @@ class RecaptchaReader private constructor() {
             super.onResume()
 
             if (webView != null) {
-                webView.holder!!.setCallback(callback)
-                if (!shown && webView.holder.loaded) {
+                webView!!.holder!!.setCallback(callback)
+                if (!shown && webView!!.holder!!.loaded) {
                     showDialog()
                     performClick()
                 }
@@ -781,7 +784,7 @@ class RecaptchaReader private constructor() {
             super.onPause()
 
             if (webView != null) {
-                webView.holder!!.setCallback(null)
+                webView!!.holder!!.setCallback(null)
             }
         }
 
@@ -806,21 +809,21 @@ class RecaptchaReader private constructor() {
                     ConcurrentUtils.HANDLER.postDelayed(Runnable {
                         if (webView != null) {
                             val x =
-                                (webView.holder!!.totalScale * (Math.random() * 100 + 10)).toInt()
+                                (webView!!.holder!!.totalScale * (Math.random() * 100 + 10)).toInt()
                             val y =
-                                (webView.holder!!.totalScale * (Math.random() * 30 + 20)).toInt()
+                                (webView!!.holder!!.totalScale * (Math.random() * 30 + 20)).toInt()
                             var motionEvent: MotionEvent
                             motionEvent = MotionEvent.obtain(
                                 0, SystemClock.uptimeMillis(),
                                 MotionEvent.ACTION_DOWN, x.toFloat(), y.toFloat(), 0
                             )
-                            webView.holder.webView!!.onTouchEvent(motionEvent)
+                            webView!!.holder!!.webView!!.onTouchEvent(motionEvent)
                             motionEvent.recycle()
                             motionEvent = MotionEvent.obtain(
                                 0, SystemClock.uptimeMillis(),
                                 MotionEvent.ACTION_UP, x.toFloat(), y.toFloat(), 0
                             )
-                            webView.holder.webView!!.onTouchEvent(motionEvent)
+                            webView!!.holder!!.webView!!.onTouchEvent(motionEvent)
                             motionEvent.recycle()
                         }
                     }, 500)
@@ -834,17 +837,17 @@ class RecaptchaReader private constructor() {
         }
 
         private fun publishResponseInternal(response: String?, exception: HttpException?) {
-            if (webView != null && !webView.published) {
-                webView.published = true
-                webView.holder!!.setCallback(null)
+            if (webView != null && !webView!!.published) {
+                webView!!.published = true
+                webView!!.holder!!.setCallback(null)
                 webView = null
                 publishResult(response, exception)
             }
         }
 
         private fun publishDestroyInternal() {
-            if (webView != null && !webView.published) {
-                webView.published = true
+            if (webView != null && !webView!!.published) {
+                webView!!.published = true
                 publishResult(null, null)
             }
         }

@@ -25,7 +25,7 @@ import chan.http.HttpHolder
 import chan.http.HttpResponse
 import chan.util.StringUtils.formatHex
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.MainApplication.Companion.getInstance
+import com.mishiranu.dashchan.content.MainApplication
 import com.mishiranu.dashchan.content.Preferences.FirewallResolutionMethod
 import com.mishiranu.dashchan.content.Preferences.firewallResolutionMethod
 import com.mishiranu.dashchan.content.Preferences.isRecaptchaJavascript
@@ -96,7 +96,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
 
     private abstract class BaseSession(
         private val uri: Uri?,
-        val chan: Chan,
+        override val chan: Chan,
         private val identifier: FirewallResolver.Identifier
     ) : FirewallResolver.Session {
         override fun getUri(): Uri? {
@@ -180,7 +180,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             return false
         }
 
-        override fun <Result> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result?>?): Result? {
+        override fun <Result> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result?>): Result? {
             throw IllegalStateException()
         }
     }
@@ -194,7 +194,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         private val apiKey: String?, private val referer: String?,
         private val challengeExtra: Any?, private val allowSolveAutomatically: Boolean
     ) : CaptchaReader {
-        override fun onReadCaptcha(data: ReadCaptchaData?): RemoteResult {
+        override fun onReadCaptcha(data: ReadCaptchaData): RemoteResult {
             val captchaData = CaptchaData()
             captchaData.put(CaptchaData.API_KEY, apiKey)
             captchaData.put(CaptchaData.REFERER, referer)
@@ -273,7 +273,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             captchaType: String?, apiKey: String?, referer: String?,
             challengeExtra: Any?, allowSolveAutomatically: Boolean, retry: Boolean
         ): String? {
-            val description = getInstance().localizedContext.getString(
+            val description = MainApplication.getInstance().localizedContext.getString(
                 R.string.firewall_block__format_sentence,
                 client.name + " (" + chanTitle + ")"
             )
@@ -318,7 +318,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             else
                 ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2
             val challengeExtra: ChallengeExtra?
-            val holder = HttpHolder(fallback)
+            val holder = HttpHolder(getFallback())
             try {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallenge2(
@@ -351,7 +351,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             val retry = this.isRetry
             val allowSolveAutomatically = !retry
             val challengeExtra: ChallengeExtra?
-            val holder = HttpHolder(fallback)
+            val holder = HttpHolder(getFallback())
             try {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallengeHcaptcha(
@@ -388,9 +388,9 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         session: FirewallResolver.Session,
         client: FirewallResolver.WebViewClient<T?>
     ): T? {
-        val initialUri = session.uri!!.buildUpon().clearQuery().encodedFragment(null).build()
-        val chan: Chan = session.chan
-        val userAgent = session.identifier!!.userAgent
+        val initialUri = session.getUri()!!.buildUpon().clearQuery().encodedFragment(null).build()
+        val chan: Chan = session.chan!!
+        val userAgent = session.getIdentifier()!!.userAgent
         val proxyData: HttpClient.ProxyData? = HttpClient.getInstance().getProxyData(chan)
         val firewallResolutionMethod = firewallResolutionMethod
         var firewallResolutionResult: T? = null
@@ -413,6 +413,8 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                         resolveWebViewForeground<T?>(initialUri, userAgent, proxyData, client)
                 }
             }
+
+            else -> {}
         }
         return firewallResolutionResult
     }
@@ -438,7 +440,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         client: FirewallResolver.WebViewClient<T?>,
         chan: Chan
     ): T? {
-        val context: Context = getInstance()
+        val context: Context = MainApplication.getInstance()
 
         class Status {
             var established: Boolean = false
@@ -609,8 +611,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         return checkHolder.success
     }
 
-    private val resolvers: MutableList<FirewallResolver> = Arrays
-        .asList<FirewallResolver?>(CloudFlareResolver(), StormWallResolver())
+    private val resolvers: List<FirewallResolver> = listOf(CloudFlareResolver(), StormWallResolver())
 
     @Throws(HttpException::class, InterruptedException::class)
     public override fun checkResponse(
@@ -631,7 +632,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 }
             }
             if (result == null) {
-                val resolvers: MutableList<FirewallResolver> = chan.performer.getFirewallResolvers()
+                val resolvers: List<FirewallResolver> = chan.performer.getFirewallResolvers()
                 for (resolver in resolvers) {
                     result = resolver.checkResponse(session, response)
                     if (result != null) {
@@ -658,7 +659,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         for (resolver in resolvers) {
             resolver.collectCookies(session, cookieBuilder)
         }
-        val resolvers: MutableList<FirewallResolver> = chan.performer.getFirewallResolvers()
+        val resolvers: List<FirewallResolver> = chan.performer.getFirewallResolvers()
         if (!resolvers.isEmpty()) {
             try {
                 for (resolver in resolvers) {

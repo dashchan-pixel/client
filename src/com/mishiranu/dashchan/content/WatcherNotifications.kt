@@ -51,7 +51,7 @@ object WatcherNotifications {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: MutableCollection<PostNumber?>
+        postNumbers: Collection<PostNumber>
     ) {
         EXECUTOR.execute(
             WatcherNotifications.Task(
@@ -72,7 +72,7 @@ object WatcherNotifications {
         val boardName: String?,
         val threadNumber: String?,
         val replies: List<Reply>,
-        val removePostNumbers: MutableCollection<PostNumber?>
+        val removePostNumbers: Collection<PostNumber>
     ) : Runnable {
         val context: Context
 

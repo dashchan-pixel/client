@@ -121,7 +121,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         var cacheState: PagesDatabase.Cache.State? = null
         var initialExtract: Boolean = true
         var eraseExtract: Boolean = false
-        val postItems: HashMap<PostNumber?, PostItem?> = HashMap<PostNumber?, PostItem?>()
+        val postItems: HashMap<PostNumber?, PostItem> = HashMap()
         val hiddenPosts: HideState.Map<PostNumber?> = HideState.Map<PostNumber?>()
         val userPosts: HashSet<PostNumber> = HashSet<PostNumber>()
         var importantPostsMarksFastScrollBarDecorationData: ImportantPostsMarksFastScrollBarDecoration.Data? =
@@ -133,7 +133,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         var archivedThreadUri: Uri? = null
         var uniquePosters: Int = 0
 
-        var searchPostNumbers: MutableList<PostNumber?> = mutableListOf<PostNumber?>()
+        var searchPostNumbers: MutableList<PostNumber> = mutableListOf()
         var searching: Boolean = false
         var searchLastIndex: Int = 0
 
@@ -242,7 +242,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     class ReadViewModel : ViewModel() {
         private var session: WatcherService.Session? = null
         private val result =
-            MutableLiveData<Pair<CallbackProxy<WatcherService.Session.Callback?>?, Boolean?>?>()
+            MutableLiveData<Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>?>()
 
         private var visibleRefresh = false
         var visibleReadResult: Boolean = false
@@ -261,7 +261,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         val visible = visibleRefresh
                         visibleRefresh = false
                         this.result.setValue(
-                            Pair<CallbackProxy<WatcherService.Session.Callback?>?, Boolean?>(
+                            Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>(
                                 result,
                                 visible
                             )
@@ -300,11 +300,11 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         fun observe(owner: LifecycleOwner, callback: WatcherService.Session.Callback?) {
             result.observe(
                 owner,
-                Observer { result: Pair<CallbackProxy<WatcherService.Session.Callback?>?, Boolean?>? ->
+                Observer { result: Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>? ->
                     if (result != null) {
                         this.result.setValue(null)
                         visibleReadResult = result.second!!
-                        result.first!!.invoke(callback)
+                        result.first!!.invoke(callback!!)
                     }
                 })
         }
@@ -519,7 +519,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val extractViewModel = getViewModel(ExtractViewModel::class.java)
         val readViewModel = getViewModel(ReadViewModel::class.java)
         readViewModel.init(
-            uiManager.callback()!!.watcherClient,
+            uiManager.callback()!!.watcherClient!!,
             page.chanName,
             page.boardName,
             page.threadNumber
@@ -711,7 +711,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             retainableExtra.userPosts.remove(postItem.getPostNumber())
         }
         CommonDatabase.getInstance().posts.setFlags(
-            true, getPage().chanName, postItem.getBoardName(),
+            true, getPage().chanName!!, postItem.getBoardName(),
             postItem.getThreadNumber()!!, postItem.getPostNumber(),
             retainableExtra.hiddenPosts.get(postItem.getPostNumber()), userPost
         )
@@ -721,7 +721,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.hiddenPosts.set(postItem.getPostNumber(), hideState)
         CommonDatabase.getInstance().posts.setFlags(
-            true, getPage().chanName, postItem.getBoardName(),
+            true, getPage().chanName!!, postItem.getBoardName(),
             postItem.getThreadNumber()!!, postItem.getPostNumber(),
             hideState, retainableExtra.userPosts.contains(postItem.getPostNumber())
         )
@@ -969,9 +969,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             mode.finish()
             return true
         } else if (switchItemId2 == R.id.menu_reply) {
-            val data = ArrayList<ReplyData?>()
+            val data = ArrayList<ReplyData>()
             for (postItem in adapter!!.selectedItems) {
-                data.add(ReplyData(postItem!!.getPostNumber(), null))
+                data.add(ReplyData(postItem.getPostNumber(), null))
             }
             if (data.size > 0) {
                 replyable!!.onRequestReply(
@@ -1056,13 +1056,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             retainableExtra.searching = false
             setCustomSearchView(null)
             updateOptionsMenu()
-            this.adapter!!.setHighlightText(mutableListOf<String?>())
+            this.adapter!!.setHighlightText(mutableListOf())
         }
     }
 
     private fun onSearchResult(
-        foundPostNumbers: MutableList<PostNumber?>,
-        queries: MutableSet<String?>
+        foundPostNumbers: MutableList<PostNumber>,
+        queries: MutableSet<String>
     ) {
         searchWorker = null
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
@@ -1070,7 +1070,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         retainableExtra.searching = true
         if (foundPostNumbers.isEmpty()) {
             setCustomSearchView(null)
-            this.adapter!!.setHighlightText(mutableListOf<String?>())
+            this.adapter!!.setHighlightText(mutableListOf())
             show(R.string.not_found)
             updateSearchTitle()
         } else {
@@ -1817,8 +1817,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
         if (!userPosts.isEmpty()) {
             val adapter = this.adapter
-            val userPostsPositions: MutableSet<Int?> = HashSet<Int?>()
-            val repliesPositions: MutableSet<Int?> = HashSet<Int?>()
+            val userPostsPositions: MutableSet<Int> = HashSet()
+            val repliesPositions: MutableSet<Int> = HashSet()
 
             for (userPostNumber in userPosts) {
                 val userPostPosition = adapter!!.positionOfPostNumber(userPostNumber)
@@ -1830,7 +1830,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 if (showUserPostOnScrollBar) {
                     userPostsPositions.add(userPostPosition)
                 }
-                val repliesPostNumbers: MutableSet<PostNumber> =
+                val repliesPostNumbers: Set<PostNumber> =
                     adapter.getItem(userPostPosition).getReferencesFrom()
                 for (replyPostNumber in repliesPostNumbers) {
                     val replyPosition = adapter.positionOfPostNumber(replyPostNumber)
@@ -1905,7 +1905,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         when (message) {
             UiManager.Message.POST_INVALIDATE_ALL_VIEWS -> {
                 if (postNotifyDataSetChanged == null) {
-                    postNotifyDataSetChanged = Runnable? {
+                    postNotifyDataSetChanged = Runnable {
                         this.adapter!!.notifyDataSetChanged()
                         if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
                             updateImportantPostsFastScrollBarDecorationData()
@@ -2049,13 +2049,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         private val callback: Callback
     ) : Runnable {
         fun interface Callback {
-            fun onResult(foundPostNumbers: MutableList<PostNumber?>?, queries: MutableSet<String?>?)
+            fun onResult(foundPostNumbers: MutableList<PostNumber>, queries: MutableSet<String>)
         }
 
         private val helper: SearchHelper
-        private val queries: MutableSet<String?>
+        private val queries: MutableSet<String>
         private val fileNames = HashSet<String>()
-        private val foundPostNumbers = ArrayList<PostNumber?>()
+        private val foundPostNumbers = ArrayList<PostNumber>()
 
         private var start = 0
 
@@ -2077,7 +2077,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 }
                 val index = start++
                 if (index >= postItems.size) {
-                    Collections.sort<PostNumber?>(foundPostNumbers)
+                    foundPostNumbers.sort()
                     callback.onResult(foundPostNumbers, queries)
                     break
                 }
@@ -2125,7 +2125,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     val subject = postItem.getSubject().lowercase(locale)
                     val name = postItem.getFullName(chan).toString().lowercase(locale)
                     fileNames.clear()
-                    val attachmentItems: MutableList<AttachmentItem>? =
+                    val attachmentItems: List<AttachmentItem>? =
                         postItem.getAttachmentItems()
                     if (attachmentItems != null) {
                         for (attachmentItem in attachmentItems) {
@@ -2223,12 +2223,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     val postsPage = extract<PostsPage>(provider)!!
                     val page = postsPage.getPage()
                     val retainableExtra =
-                        postsPage.getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
+                        postsPage.getRetainableExtra(RetainableExtra.Companion.FACTORY)
                     var files = 0
                     var postsWithFiles = 0
                     var links = 0
                     for (postItem in postsPage.adapter!!) {
-                        val attachmentItems: MutableList<AttachmentItem>? =
+                        val attachmentItems: List<AttachmentItem>? =
                             postItem!!.getAttachmentItems()
                         if (attachmentItems != null) {
                             var itFiles = 0
@@ -2292,7 +2292,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     AlertDialog.Builder(provider!!.context)
                         .setTitle(R.string.remove_rules)
                         .setMultiChoiceItems(
-                            CommonUtils.toArray<String?>(localFilters, String::class.java),
+                            CommonUtils.toArray(localFilters, String::class.java),
                             checked,
                             OnMultiChoiceClickListener { d: DialogInterface?, which: Int, isChecked: Boolean ->
                                 checked[which] = isChecked

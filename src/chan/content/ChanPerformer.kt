@@ -45,7 +45,7 @@ import java.util.Objects
 @Extendable
 open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Chan.Linked {
     private val chanProvider: Chan.Provider?
-    private val firewallResolvers = ArrayList<FirewallResolver?>(0)
+    private val firewallResolvers = ArrayList<FirewallResolver>(0)
 
     private var isInitialized = false
 
@@ -68,10 +68,10 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     protected fun registerFirewallResolver(firewallResolver: FirewallResolver?) {
         Objects.requireNonNull<FirewallResolver?>(firewallResolver)
         checkInit()
-        firewallResolvers.add(firewallResolver)
+        firewallResolvers.add(firewallResolver!!)
     }
 
-    fun getFirewallResolvers(): MutableList<FirewallResolver?> {
+    fun getFirewallResolvers(): List<FirewallResolver> {
         return firewallResolvers
     }
 

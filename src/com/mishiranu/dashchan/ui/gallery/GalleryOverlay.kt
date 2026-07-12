@@ -67,7 +67,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         DISABLED, MANUALLY, ENABLED
     }
 
-    internal var queuedGalleryItems: MutableList<GalleryItem?>? = null
+    internal var queuedGalleryItems: MutableList<GalleryItem>? = null
     private var queuedFromView: WeakReference<View?>? = null
 
     internal var rootView: InsetsLayout? = null
@@ -89,10 +89,10 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     // ViewModel, and re-adopted by the recreated fragment in onCreate. "current" points
     // at the live fragment so listeners installed on the retained rootView never call
     // into a destroyed fragment instance.
-    private class Retained {
+    internal class Retained {
         internal var current: GalleryOverlay? = null
 
-        internal var queuedGalleryItems: MutableList<GalleryItem?>? = null
+        internal var queuedGalleryItems: MutableList<GalleryItem>? = null
 
         internal var rootView: InsetsLayout? = null
         internal var instance: GalleryInstance? = null
@@ -285,20 +285,20 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             // The listeners below live as long as the retained rootView: route them through
             // retained.current so they always talk to the fragment instance that is alive.
             rootView!!.addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View?) {
+                override fun onViewAttachedToWindow(v: View) {
                     val current = retained.current
                     if (current != null && !current.galleryMode) {
                         current.displayShowcase()
                     }
                 }
 
-                override fun onViewDetachedFromWindow(v: View?) {}
+                override fun onViewDetachedFromWindow(v: View) {}
             })
             rootView!!.setOnApplyInsetsListener(OnApplyInsetsListener { apply: Apply? ->
                 val insets = apply!!.get()
                 val current = retained.current
                 if (current == null) {
-                    return@setOnApplyInsetsListener
+                    return@OnApplyInsetsListener
                 }
                 if (current.listUnit != null) {
                     val invalidate = current.listUnit!!.onApplyWindowInsets(insets)
@@ -370,7 +370,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                     threadNumber = chan.locator.safe(true).getThreadNumber(uri)
                 }
                 galleryItems =
-                    mutableListOf<GalleryItem?>(GalleryItem(uri, boardName, threadNumber))
+                    mutableListOf(GalleryItem(uri, boardName, threadNumber))
                 imagePosition = 0
             } else {
                 galleryItems = retained.queuedGalleryItems
@@ -382,9 +382,9 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             }
             instance = GalleryInstance(
                 rootView!!.getContext(), this, ACTION_BAR_COLOR, chan.name,
-                if (galleryItems != null) galleryItems else mutableListOf<GalleryItem>()
+                galleryItems ?: mutableListOf()
             )
-            retained.instance = instance
+            retained.instance = instance!!
             if (!instance!!.galleryItems.isEmpty()) {
                 listUnit = ListUnit(instance)
                 pagerUnit = PagerUnit(instance)
@@ -395,13 +395,13 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 }
                 retained.listUnit = listUnit
                 retained.pagerUnit = pagerUnit
-                rootView.addView(
-                    listUnit!!.getRecyclerView(), InsetsLayout.LayoutParams.MATCH_PARENT,
-                    InsetsLayout.LayoutParams.MATCH_PARENT
+                rootView!!.addView(
+                    listUnit!!.getRecyclerView(), ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                rootView.addView(
-                    pagerUnit!!.view, InsetsLayout.LayoutParams.MATCH_PARENT,
-                    InsetsLayout.LayoutParams.MATCH_PARENT
+                rootView!!.addView(
+                    pagerUnit!!.view, ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 pagerUnit!!.addAndInitViews(rootView, imagePosition)
             }
@@ -562,7 +562,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
 
     override fun onDialogMenuItemSelected(item: MenuItem): Boolean {
         val holder: PagerInstance.ViewHolder =
-            (if (pagerUnit != null) pagerUnit.currentHolder else null)!!
+            (if (pagerUnit != null) pagerUnit!!.currentHolder else null)!!
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == android.R.id.home) {
             dismiss()
@@ -618,11 +618,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    override fun downloadGalleryItems(galleryItems: MutableList<GalleryItem>) {
+    override fun downloadGalleryItems(galleryItems: List<GalleryItem>) {
         var boardName: String? = null
         var threadNumber: String? = null
         val chan = get(instance!!.chanName)
-        val requestItems = ArrayList<RequestItem?>()
+        val requestItems = ArrayList<RequestItem>()
         for (galleryItem in galleryItems) {
             if (requestItems.size == 0) {
                 boardName = galleryItem.boardName
@@ -749,9 +749,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             }
         }
 
-        companion object {
-            private const val INTERVAL = 200
-        }
+        private val INTERVAL = 200
     }
 
     override fun onCreateActionContextBarView() {
@@ -997,7 +995,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
 
         windowManager.addView(frameLayout, layoutParams)
 
-        showcaseDestroy = Runnable? { windowManager.removeViewImmediate(frameLayout) }
+        showcaseDestroy = Runnable { windowManager.removeViewImmediate(frameLayout) }
         button.setOnClickListener(View.OnClickListener { v: View? -> destroyShowcase(true) })
     }
 

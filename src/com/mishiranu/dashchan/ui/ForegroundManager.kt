@@ -60,6 +60,7 @@ import com.mishiranu.dashchan.ui.CaptchaOptionsDialog.CaptchaImageDownloadParame
 import com.mishiranu.dashchan.ui.ForegroundManager.PendingDataDialog.StoreResultCallback
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.GraphicsUtils.isLight
+import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.getDialogBackground
 import com.mishiranu.dashchan.util.ResourceUtils.obtainAlertDialogLayoutResId
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
@@ -80,7 +81,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private val handler = Handler(Looper.getMainLooper(), this)
     private val pendingDataMap: HashMap<String?, PendingData?> = HashMap<String?, PendingData?>()
-    private val delayedMessages: ArrayList<DelayedMessage?> = ArrayList<DelayedMessage?>()
+    private val delayedMessages: ArrayList<DelayedMessage> = ArrayList()
 
     private var activity: WeakReference<FragmentActivity?>? = null
     private var viewModel: WeakReference<InstanceViewModel?>? = null
@@ -117,7 +118,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class InstanceViewModel : ViewModel() {
         override fun onCleared() {
-            instance.handleCleared(this)
+            getInstance().handleCleared(this)
         }
     }
 
@@ -187,7 +188,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         val pendingData: T?
             get() {
                 val result =
-                    instance.getPendingData(this.pendingDataId) as T?
+                    getInstance().getPendingData(this.pendingDataId) as T?
                 return result
             }
 
@@ -390,7 +391,7 @@ class ForegroundManager private constructor() : Handler.Callback {
             }
         }
 
-        override fun onReadCaptchaError(errorItem: ErrorItem?) {
+        override fun onReadCaptchaError(errorItem: ErrorItem) {
             if (this.pendingDataOrDismiss != null) {
                 show(errorItem)
                 captchaForm!!.showError()
@@ -588,7 +589,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class ItemChoiceDialog : DialogFragment, PendingDataDialog<ChoicePendingData?>,
         DialogInterface.OnClickListener, OnItemClickListener {
-        private var selected: BooleanArray
+        private lateinit var selected: BooleanArray
         private var hasImage = false
 
         constructor()
@@ -733,7 +734,7 @@ class ForegroundManager private constructor() : Handler.Callback {
     class ImageChoiceDialog : DialogFragment, PendingDataDialog<ChoicePendingData?>,
         View.OnClickListener, DialogInterface.OnClickListener {
         private var selectionViews: Array<FrameLayout?>? = null
-        private var selected: BooleanArray
+        private lateinit var selected: BooleanArray
 
         constructor()
 
@@ -1110,9 +1111,10 @@ class ForegroundManager private constructor() : Handler.Callback {
                         MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL -> {
                             val firewallHandlerData: FirewallHandlerData<*> =
                                 handlerData as FirewallHandlerData<*>
-                            FirewallResolutionDialogImpl<Any?>(
+                            @Suppress("UNCHECKED_CAST")
+                            FirewallResolutionDialogImpl(
                                 firewallHandlerData.pendingDataId,
-                                firewallHandlerData.request
+                                firewallHandlerData.request as FirewallResolutionDialogRequest<Any?>
                             ).show(activity)
                         }
                     }
@@ -1365,7 +1367,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     @Throws(InterruptedException::class)
     private fun requireUserChoice(
-        columns: Int, selected: BooleanArray?, items: Array<CharSequence?>, images: Array<Bitmap?>,
+        columns: Int, selected: BooleanArray?, items: Array<CharSequence?>?, images: Array<Bitmap?>?,
         descriptionText: String?, descriptionImage: Bitmap?, multiple: Boolean, imageChoice: Boolean
     ): BooleanArray? {
         if (imageChoice && images == null) {
@@ -1408,7 +1410,7 @@ class ForegroundManager private constructor() : Handler.Callback {
                 return null
             }
             if (pendingData.exception != null) {
-                throw pendingData.exception
+                throw pendingData.exception!!
             }
             return pendingData.response
         } finally {
@@ -1442,7 +1444,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         }
         this.activity = WeakReference<FragmentActivity?>(activity)
         this.viewModel = WeakReference<InstanceViewModel?>(
-            ViewModelProvider(activity).get<InstanceViewModel?>(
+            ViewModelProvider(activity).get(
                 InstanceViewModel::class.java
             )
         )

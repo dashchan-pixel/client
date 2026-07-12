@@ -127,7 +127,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     protected val toolbarContext: Context?
         get() = callback!!.toolbarContext
 
-    protected val resources: Resources?
+    protected val resources: Resources
         get() = this.context.resources
 
     protected fun getString(resId: Int): String {
@@ -264,7 +264,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     protected open fun onHandleNewPostDataList() {}
 
-    protected open fun onScrollToPost(postNumber: PostNumber?) {}
+    protected open fun onScrollToPost(postNumber: PostNumber) {}
 
     protected open fun onRequestStoreExtra(saveToStack: Boolean) {}
 
@@ -345,7 +345,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     }
 
     fun handleScrollToPost(postNumber: PostNumber?) {
-        if (this.state == Lifecycle.State.RESUMED) {
+        if (this.state == Lifecycle.State.RESUMED && postNumber != null) {
             onScrollToPost(postNumber)
         }
     }

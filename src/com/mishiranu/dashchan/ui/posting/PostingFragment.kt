@@ -166,7 +166,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
     private var postingConfiguration: Posting? = null
     private var userIconItems: MutableList<Pair<String?, String?>>? = null
-    private var attachmentRatingItems: MutableList<Pair<String?, String?>>? = null
+    private var attachmentRatingItems: MutableList<Pair<String, String>>? = null
 
     private var captchaType: String? = null
     private var captchaState: ReadCaptchaTask.CaptchaState? = null
@@ -230,7 +230,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val rootView = ExpandedLayout(container.getContext(), true)
+        val rootView = ExpandedLayout(container!!.getContext(), true)
         rootView.setLayoutParams(
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1276,10 +1276,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                     ProgressDialog(requireContext(), if (progressMode) "%1\$d / %2\$d kB" else null)
                 progressDialog!!.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? -> onSendPostCancel() })
                 progressDialog!!.setButton(
-                    ProgressDialog.BUTTON_POSITIVE, getString(R.string.minimize),
+                    DialogInterface.BUTTON_POSITIVE, getString(R.string.minimize),
                     DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostMinimize() })
                 progressDialog!!.setButton(
-                    ProgressDialog.BUTTON_NEGATIVE, getString(android.R.string.cancel),
+                    DialogInterface.BUTTON_NEGATIVE, getString(android.R.string.cancel),
                     DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostCancel() })
                 progressDialog!!.show()
             }
@@ -1398,7 +1398,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         updatePostingConfigurationIfNeeded()
     }
 
-    override fun onReadCaptchaError(errorItem: ErrorItem?) {
+    override fun onReadCaptchaError(errorItem: ErrorItem) {
         show(errorItem)
         captchaForm!!.showError()
         updatePostingConfigurationIfNeeded()
@@ -1517,7 +1517,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         return if (index >= 0 && index < attachments.size) attachments.get(index) else null
     }
 
-    override fun getAttachmentRatingItems(): MutableList<Pair<String?, String?>>? {
+    override fun getAttachmentRatingItems(): List<Pair<String, String>>? {
         return attachmentRatingItems
     }
 
