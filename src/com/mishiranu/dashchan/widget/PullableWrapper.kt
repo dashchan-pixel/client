@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.widget
 
 import android.annotation.TargetApi
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
@@ -181,7 +182,7 @@ class PullableWrapper(private val listView: Wrapped) {
                     ) {
                         pull = true
                         resetTop = false
-                        val pullStrain = topView.andResetIdlePullStrain
+                        val pullStrain = topView.getAndResetIdlePullStrain()
                         if (pullStrain > 0) {
                             startY -= pullStrainToDelta(pullStrain).toFloat()
                             dy = ev!!.getY() - startY
@@ -198,7 +199,7 @@ class PullableWrapper(private val listView: Wrapped) {
                     ) {
                         pull = true
                         resetBottom = false
-                        val pullStrain = bottomView.andResetIdlePullStrain
+                        val pullStrain = bottomView.getAndResetIdlePullStrain()
                         if (pullStrain > 0) {
                             startY += pullStrainToDelta(pullStrain).toFloat()
                             dy = ev!!.getY() - startY
@@ -212,8 +213,8 @@ class PullableWrapper(private val listView: Wrapped) {
                         }
                     }
                 }
-                val topPullStrain = topView.pullStrain
-                val bottomPullStrain = bottomView.pullStrain
+                val topPullStrain = topView.getPullStrain()
+                val bottomPullStrain = bottomView.getPullStrain()
                 if (resetTop && resetBottom && (topPullStrain > 0 || bottomPullStrain > 0)) {
                     if (topPullStrain > bottomPullStrain) {
                         topJumpStartTime = topView.calculateJumpStartTime()
@@ -297,11 +298,11 @@ class PullableWrapper(private val listView: Wrapped) {
         }
 
         fun setColor(color: Int)
-        fun setState(state: State?, padding: Int)
+        fun setState(state: State, padding: Int)
         fun setPullStrain(pullStrain: Int, padding: Int)
-        val pullStrain: Int
-        val andResetIdlePullStrain: Int
-        fun draw(canvas: Canvas?, padding: Int)
+        fun getPullStrain(): Int
+        fun getAndResetIdlePullStrain(): Int
+        fun draw(canvas: Canvas, padding: Int)
         fun calculateJumpStartTime(): Long
         fun calculateJumpValue(jumpStartTime: Long): Int
 

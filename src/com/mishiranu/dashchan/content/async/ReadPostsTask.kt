@@ -168,7 +168,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 				}
 				meta = PagesDatabase.Meta(validator, archivedThreadUri, uniquePosters, false, false)
 				insertResult = PagesDatabase.getInstance().insertNewPosts(threadKey,
-						posts, meta, temporary, newThread, partial)
+						posts, meta, temporary, newThread, partial)!!
 			} catch (e: IOException) {
 				updateMeta = UpdateMeta(false, true)
 				return Result.Fail(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY))

@@ -105,13 +105,13 @@ class StormWallResolver : FirewallResolver() {
 	private fun storeCookie(session: FirewallResolver.Session, key: FirewallResolver.Exclusive.Key,
 			cookie: String?, uri: Uri?) {
 		val chan = session.chan
-		chan!!.configuration.storeCookie(key.formatKey(COOKIE_STORMWALL), cookie,
+		chan!!.configuration.storeCookie(key.formatKey(COOKIE_STORMWALL)!!, cookie,
 				if (cookie != null) key.formatTitle("StormWall") else null)
 		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
 			if (chan!!.locator.isConvertableChanHost(host!!)) {
-				chan!!.locator.setPreferredHost(host)
+				chan.locator.preferredHost = host
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())
 		}
@@ -120,7 +120,7 @@ class StormWallResolver : FirewallResolver() {
 	override fun collectCookies(session: FirewallResolver.Session, cookieBuilder: CookieBuilder) {
 		val chan = session.chan
 		val key = toKey(session)
-		val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_STORMWALL))
+		val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_STORMWALL)!!)
 		if (!StringUtils.isEmpty(cookie)) {
 			cookieBuilder.append(COOKIE_STORMWALL, cookie)
 		}
@@ -145,7 +145,7 @@ class StormWallResolver : FirewallResolver() {
 		}
 
 		private fun toKey(session: FirewallResolver.Session): FirewallResolver.Exclusive.Key {
-			return session.getKey(FirewallResolver.Identifier.Flag.USER_AGENT)
+			return session.getKey(FirewallResolver.Identifier.Flag.USER_AGENT)!!
 		}
 	}
 }

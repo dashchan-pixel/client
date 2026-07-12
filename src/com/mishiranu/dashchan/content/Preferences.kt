@@ -351,11 +351,12 @@ object Preferences {
     val KEY_CAPTCHA_PASS: ChanKey = ChanKey("captcha_pass")
 
     @JvmStatic
-    fun getCaptchaPass(chan: Chan): MutableList<String?>? {
+    fun getCaptchaPass(chan: Chan): List<String>? {
         val authorization = chan.configuration.safe().obtainCaptchaPass()
         if (authorization != null && authorization.fieldsCount > 0) {
             val value = PREFERENCES!!.getString(KEY_CAPTCHA_PASS.bind(chan.name), null)
-            return unpackOrCastMultipleValues(value, authorization.fieldsCount)
+            @Suppress("UNCHECKED_CAST")
+            return unpackOrCastMultipleValues(value, authorization.fieldsCount) as List<String>?
         } else {
             return null
         }

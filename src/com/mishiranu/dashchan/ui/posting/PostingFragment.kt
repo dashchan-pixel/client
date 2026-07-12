@@ -42,6 +42,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
+import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getFallback
 import chan.content.ChanConfiguration
@@ -165,7 +166,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private var commentEditor: CommentEditor? = null
 
     private var postingConfiguration: Posting? = null
-    private var userIconItems: MutableList<Pair<String?, String?>>? = null
+    private var userIconItems: MutableList<Pair<String, String>>? = null
     private var attachmentRatingItems: MutableList<Pair<String, String>>? = null
 
     private var captchaType: String? = null
@@ -596,8 +597,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
 
         val replyDataList: MutableList<ReplyData>? =
-            if (savedInstanceState != null) mutableListOf<ReplyData?>() else
-                BundleCompat.getParcelableArrayList<ReplyData?>(
+            if (savedInstanceState != null) mutableListOf() else
+                BundleCompat.getParcelableArrayList<ReplyData>(
                     requireArguments(),
                     EXTRA_REPLY_DATA_LIST,
                     ReplyData::class.java
@@ -739,9 +740,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     }
 
     private fun obtainPostDraft(): PostDraft {
-        var attachmentDrafts: ArrayList<AttachmentDraft?>? = null
+        var attachmentDrafts: ArrayList<AttachmentDraft>? = null
         if (attachments.size > 0) {
-            attachmentDrafts = ArrayList<AttachmentDraft?>(attachments.size)
+            attachmentDrafts = ArrayList<AttachmentDraft>(attachments.size)
             for (holder in attachments) {
                 attachmentDrafts.add(
                     AttachmentDraft(
@@ -916,7 +917,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             if (userIconItems != null) {
                 val lastUserIcon = this.userIcon
                 var lastUserIconIndex = -1
-                val items = ArrayList<String?>()
+                val items = ArrayList<String>()
                 items.add(getString(R.string.no_icon))
                 for (i in userIconItems!!.indices) {
                     val iconItem = userIconItems!!.get(i)
@@ -1059,8 +1060,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
     }
 
-    private fun buildMimeTypeList(mimeTypes: MutableCollection<String>): ArrayList<String?> {
-        val list = ArrayList<String?>()
+    private fun buildMimeTypeList(mimeTypes: MutableCollection<String>): ArrayList<String> {
+        val list = ArrayList<String>()
         handleMimeTypeGroup(list, mimeTypes, "image/")
         handleMimeTypeGroup(list, mimeTypes, "video/")
         handleMimeTypeGroup(list, mimeTypes, "audio/")
@@ -1084,7 +1085,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 intent.setType("*/*")
                 intent.putExtra(
                     Intent.EXTRA_MIME_TYPES,
-                    CommonUtils.toArray<String?>(mimeTypes, String::class.java)
+                    CommonUtils.toArray(mimeTypes, String::class.java)
                 )
             } else if (mimeTypes.size == 1) {
                 intent.setType(mimeTypes.get(0))
@@ -1194,9 +1195,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 )
             }
         }
-        var attachments: Array<SendPostData.Attachment?>? = null
+        var attachments: Array<SendPostData.Attachment>? = null
         if (array.size > 0) {
-            attachments = CommonUtils.toArray<SendPostData.Attachment?>(
+            attachments = CommonUtils.toArray(
                 array,
                 SendPostData.Attachment::class.java
             )

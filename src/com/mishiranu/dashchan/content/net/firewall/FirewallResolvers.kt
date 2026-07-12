@@ -157,9 +157,9 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         }
 
         @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
-        override fun <Result> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result?>): Result? {
+        override fun <Result : Any> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result>): Result? {
             if (exclusive) {
-                return this@FirewallResolvers.resolveWebView<Result?>(this, webViewClient)
+                return this@FirewallResolvers.resolveWebView(this, webViewClient)
             } else {
                 throw IllegalStateException()
             }
@@ -180,7 +180,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             return false
         }
 
-        override fun <Result> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result?>): Result? {
+        override fun <Result : Any> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result>): Result? {
             throw IllegalStateException()
         }
     }
@@ -216,6 +216,9 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 uri = Uri.parse(uriString)
             } catch (e: Exception) {
                 uri = null
+            }
+            if (uri == null) {
+                return true
             }
             val cookies = parseCookies(cookie)
             try {
@@ -384,9 +387,9 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         FirewallResolver.WebViewClient<Result?>(name)
 
     @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
-    private fun <T> resolveWebView(
+    private fun <T : Any> resolveWebView(
         session: FirewallResolver.Session,
-        client: FirewallResolver.WebViewClient<T?>
+        client: FirewallResolver.WebViewClient<T>
     ): T? {
         val initialUri = session.getUri()!!.buildUpon().clearQuery().encodedFragment(null).build()
         val chan: Chan = session.chan!!
@@ -397,20 +400,20 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         when (firewallResolutionMethod) {
             FirewallResolutionMethod.MANUAL -> {
                 firewallResolutionResult =
-                    resolveWebViewForeground<T?>(initialUri, userAgent, proxyData, client)
+                    resolveWebViewForeground(initialUri, userAgent, proxyData, client)
             }
 
             FirewallResolutionMethod.AUTO -> {
                 firewallResolutionResult =
-                    resolveWebViewBackground<T?>(initialUri, userAgent, proxyData, client, chan)
+                    resolveWebViewBackground(initialUri, userAgent, proxyData, client, chan)
             }
 
             FirewallResolutionMethod.AUTO_THEN_MANUAL -> {
                 firewallResolutionResult =
-                    resolveWebViewBackground<T?>(initialUri, userAgent, proxyData, client, chan)
+                    resolveWebViewBackground(initialUri, userAgent, proxyData, client, chan)
                 if (firewallResolutionResult == null) {
                     firewallResolutionResult =
-                        resolveWebViewForeground<T?>(initialUri, userAgent, proxyData, client)
+                        resolveWebViewForeground(initialUri, userAgent, proxyData, client)
                 }
             }
 
@@ -420,7 +423,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     }
 
     @Throws(InterruptedException::class)
-    private fun <T> resolveWebViewForeground(
+    private fun <T : Any> resolveWebViewForeground(
         initialUri: Uri,
         userAgent: String?,
         proxyData: HttpClient.ProxyData?,
@@ -433,11 +436,11 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     }
 
     @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
-    private fun <T> resolveWebViewBackground(
+    private fun <T : Any> resolveWebViewBackground(
         initialUri: Uri,
         userAgent: String?,
         proxyData: HttpClient.ProxyData?,
-        client: FirewallResolver.WebViewClient<T?>,
+        client: FirewallResolver.WebViewClient<T>,
         chan: Chan
     ): T? {
         val context: Context = MainApplication.getInstance()
@@ -626,7 +629,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             val session = CheckSession(uri, holder, chan, identifier, resolve, false)
             var result: CheckResponseResult? = null
             for (resolver in resolvers) {
-                result = resolver.checkResponse(session, response)
+                result = resolver.checkResponse(session, response!!)
                 if (result != null) {
                     break
                 }
@@ -634,7 +637,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             if (result == null) {
                 val resolvers: List<FirewallResolver> = chan.performer.getFirewallResolvers()
                 for (resolver in resolvers) {
-                    result = resolver.checkResponse(session, response)
+                    result = resolver.checkResponse(session, response!!)
                     if (result != null) {
                         break
                     }

@@ -376,7 +376,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         return file.getChild(taskData.name)
     }
 
-    private class PrepareTask<T>(private val task: Task<T?>) : ExecutorTask<Void?, T?>() {
+    private class PrepareTask<T>(internal val innerTask: Task<T?>) : ExecutorTask<Void?, T?>() {
         interface Task<T> {
             fun cleanup()
 
@@ -388,14 +388,14 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
         override fun run(): T? {
             try {
-                return task.run()
+                return innerTask.run()
             } catch (e: InterruptedException) {
                 return null
             }
         }
 
         override fun onComplete(result: T?) {
-            task.onResult(result)
+            innerTask.onResult(result)
         }
     }
 
@@ -774,7 +774,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     target,
                     path,
                     true,
-                    mutableListOf<DownloadItem?>(DownloadItem(null, null, name, null, null)),
+                    mutableListOf<DownloadItem>(DownloadItem(null, null, name, null, null)),
                     input,
                     false
                 )
@@ -797,7 +797,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
         ) {
             downloadStorage(
-                mutableListOf<RequestItem?>(requestItem), false,
+                mutableListOf<RequestItem>(requestItem!!), false,
                 chanName, boardName, threadNumber, threadTitle
             )
         }
@@ -838,11 +838,11 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     override fun onBind(intent: Intent?): Binder? {
-        return DownloadService.Binder()
+        return this.Binder()
     }
 
     private class NotificationData(
-        val type: Type,
+        val type: Type?,
         val allowHeadsUp: Boolean,
         val queuedTasks: Int,
         val successTasks: Int,
@@ -1333,8 +1333,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
     override fun onFinishDownloading(
         success: Boolean,
-        uri: Uri?,
-        file: DataFile?,
+        uri: Uri,
+        file: DataFile,
         errorItem: ErrorItem?
     ) {
         val taskData =
@@ -1399,7 +1399,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val listener: OnScanCompletedListener?
         if (callback != null) {
             val handled = booleanArrayOf(false)
-            listener = OnScanCompletedListener? { f: String?, uri: Uri? ->
+            listener = OnScanCompletedListener { f: String?, uri: Uri? ->
                 synchronized(handled) {
                     if (!handled[0]) {
                         handled[0] = true
@@ -1488,9 +1488,9 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-    class PrepareRequest(private val task: PrepareTask<*>) : Request {
+    internal class PrepareRequest(internal val task: PrepareTask<*>) : Request {
         override fun cleanup() {
-            task.task.cleanup()
+            task.innerTask.cleanup()
             task.cancel()
         }
     }
@@ -1564,7 +1564,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             val downloadItem = DownloadItem(chanName, null, fileName, null, null)
             return DirectRequest(
                 DataFile.Target.DOWNLOADS, path, true,
-                mutableListOf<DownloadItem?>(downloadItem), input, allowWrite
+                mutableListOf<DownloadItem>(downloadItem), input, allowWrite
             )
         }
 

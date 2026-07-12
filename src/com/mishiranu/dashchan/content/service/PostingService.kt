@@ -292,7 +292,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
 
     interface Callback {
         fun onState(
-            progressMode: Boolean, progressState: ProgressState?,
+            progressMode: Boolean, progressState: ProgressState,
             attachmentIndex: Int, attachmentsCount: Int
         )
 

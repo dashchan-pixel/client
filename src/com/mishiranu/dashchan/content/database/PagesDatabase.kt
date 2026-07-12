@@ -234,12 +234,12 @@ class PagesDatabase private constructor() {
         }
     }
 
-    private class DiffItem(val hash: ByteArray?, val deleted: Boolean)
+    internal class DiffItem(val hash: ByteArray?, val deleted: Boolean)
 
     private class Extracted(val data: ByteArray, val postNumber: PostNumber, val deleted: Boolean)
 
     class Cache internal constructor(
-		internal val diffItems: MutableMap<PostNumber?, DiffItem?>,
+		internal val diffItems: MutableMap<PostNumber, DiffItem>,
 	    val originalPostNumber: PostNumber?,
 	    @JvmField val state: State
     ) {
@@ -286,7 +286,7 @@ class PagesDatabase private constructor() {
 
     class InsertResult(
         val cacheState: Cache.State?,
-        val replies: MutableList<Reply?>?,
+        val replies: List<Reply>?,
         val newCount: Int
     ) {
         class Reply(val postNumber: PostNumber?, val comment: String?, val timestamp: Long)
@@ -431,7 +431,7 @@ class PagesDatabase private constructor() {
         }
     }
 
-    fun erase(keepThreads: MutableCollection<ThreadKey?>?) {
+    fun erase(keepThreads: Collection<ThreadKey>?) {
         val mainExcludeThreads = mainGet<HashSet<ThreadKey?>?>(Callable {
             val excludeThreads = HashSet<ThreadKey?>()
             for (favoriteItem in FavoritesStorage.getInstance().getThreads(null)) {
@@ -523,7 +523,7 @@ class PagesDatabase private constructor() {
             "UPDATE " + Schema.Meta.Companion.TABLE_NAME + " " +
                     "SET " + Schema.Meta.Columns.Companion.FLAGS + " = " +
                     Schema.Meta.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                    "WHERE " + filter.value, filter.args
+                    "WHERE " + filter.value, filter.args as Array<out Any?>?
         )
     }
 
@@ -694,10 +694,7 @@ class PagesDatabase private constructor() {
         threadKey: ThreadKey, posts: MutableList<Post>, meta: Meta,
         temporary: Boolean, newThread: Boolean, partial: Boolean
     ): InsertResult? {
-        Objects.requireNonNull<ThreadKey?>(threadKey)
-        Objects.requireNonNull<MutableList<Post?>?>(posts)
-        Objects.requireNonNull<Meta?>(meta)
-        val dataArray: Array<ByteArray> = arrayOfNulls<ByteArray>(posts.size)
+        val dataArray: Array<ByteArray?> = arrayOfNulls(posts.size)
         for (i in posts.indices) {
             writer().use { writer ->
                 posts.get(i).serialize(writer)
@@ -708,7 +705,7 @@ class PagesDatabase private constructor() {
         val hasher = getInstanceSha256()
         for (i in dataArray.indices) {
             val post = posts.get(i)
-            val data = dataArray[i]
+            val data = dataArray[i]!!
             val hash = hasher.calculate(data)
             serializedMap.put(post.number, Serialized(post, data, hash, newThread))
         }
@@ -784,7 +781,7 @@ class PagesDatabase private constructor() {
             }
         }
 
-        val replies = ArrayList<Reply?>()
+        val replies = ArrayList<Reply>()
         database.beginTransaction()
         try {
             upsertMeta(threadKey, if (temporary) 0 else System.currentTimeMillis(), meta)
@@ -803,7 +800,7 @@ class PagesDatabase private constructor() {
             }
             if (!serializedMap.isEmpty()) {
                 val iterator = serializedMap.values.iterator()
-                val referencesTo = if (userPosts.isEmpty()) null else HashSet<PostNumber?>()
+                val referencesTo = if (userPosts.isEmpty()) null else HashSet<PostNumber>()
                 Expression.batchInsert(
                     serializedMap.size, 10, 8,
                     CreateBatchInsertStatement { values: String? ->
@@ -959,11 +956,11 @@ class PagesDatabase private constructor() {
         }
 
         var extractedList: MutableList<Extracted>? = null
-        var newItems: MutableMap<PostNumber?, DiffItem?>? = null
+        var newItems: MutableMap<PostNumber, DiffItem>? = null
         var originalPostNumber = if (cache != null) cache.originalPostNumber else null
-        val oldItems: MutableMap<PostNumber?, DiffItem?> =
-            if (cache != null) cache.diffItems else mutableMapOf<PostNumber?, DiffItem?>()
-        var existing: ArrayList<PostNumber?>? = null
+        val oldItems: MutableMap<PostNumber, DiffItem> =
+            if (cache != null) cache.diffItems else mutableMapOf()
+        var existing: ArrayList<PostNumber>? = null
         var newPosts: MutableMap<PostNumber?, Long?>? = null
         var deletedPosts: MutableMap<PostNumber?, Long?>? = null
         var editedPosts: MutableMap<PostNumber?, Long?>? = null
@@ -984,7 +981,7 @@ class PagesDatabase private constructor() {
                 val id = cursor.getLong(0)
                 val postNumber = PostNumber(cursor.getInt(1), cursor.getInt(2))
                 if (existing == null) {
-                    existing = ArrayList<PostNumber?>(cursor.getCount())
+                    existing = ArrayList(cursor.getCount())
                 }
                 existing.add(postNumber)
                 val flags = cursor.getInt(3)
@@ -1026,7 +1023,7 @@ class PagesDatabase private constructor() {
                         extractedList = ArrayList<Extracted>()
                     }
                     if (newItems == null) {
-                        newItems = HashMap<PostNumber?, DiffItem?>(oldItems)
+                        newItems = HashMap(oldItems)
                     }
                     extractedList.add(Extracted(cursor.getBlob(4), postNumber, deleted))
                     newItems.put(postNumber, DiffItem(hash, deleted))
@@ -1050,26 +1047,26 @@ class PagesDatabase private constructor() {
             }
             changed = unsafeChanged
         }
-        var removed: MutableCollection<PostNumber?> = mutableListOf<PostNumber?>()
+        var removed: MutableCollection<PostNumber> = mutableListOf()
         if (existing != null) {
             val cacheSize = (if (newItems != null) newItems else oldItems).size
             if (cacheSize > existing.size) {
-                Collections.sort<PostNumber?>(existing)
-                removed = ArrayList<PostNumber?>(cacheSize - existing.size)
+                existing.sort()
+                removed = ArrayList(cacheSize - existing.size)
                 if (newItems == null) {
-                    newItems = HashMap<PostNumber?, DiffItem?>(oldItems)
+                    newItems = HashMap(oldItems)
                 }
-                val iterator: MutableIterator<PostNumber> = newItems.keys.iterator()
+                val iterator: MutableIterator<PostNumber> = newItems!!.keys.iterator()
                 while (iterator.hasNext()) {
                     val postNumber = iterator.next()
-                    if (Collections.binarySearch<PostNumber?>(existing, postNumber) < 0) {
+                    if (Collections.binarySearch(existing, postNumber) < 0) {
                         iterator.remove()
                         removed.add(postNumber)
                     }
                 }
             }
         } else if (!oldItems.isEmpty()) {
-            newItems = mutableMapOf<PostNumber?, DiffItem?>()
+            newItems = mutableMapOf()
             removed = oldItems.keys
         }
 
@@ -1343,9 +1340,9 @@ class PagesDatabase private constructor() {
                                 Collections.unmodifiableSet<MigrationRequest?>(newRequests)
                             )
                         }
-                        return@lock true
+                        return@Callback true
                     } else {
-                        return@lock false
+                        return@Callback false
                     }
                 }
             }
@@ -1473,7 +1470,7 @@ class PagesDatabase private constructor() {
             builder.capcode = legacyPost.mCapcode
             builder.email = legacyPost.mEmail
             if (legacyPost.mAttachments != null && legacyPost.mAttachments!!.size > 0) {
-                builder.attachments = ArrayList<Post.Attachment?>(legacyPost.mAttachments!!.size)
+                builder.attachments = ArrayList<Post.Attachment>(legacyPost.mAttachments!!.size)
                 for (legacyAttachment in legacyPost.mAttachments) {
                     if (legacyAttachment is Legacy.FileAttachment) {
                         val legacyFile = legacyAttachment
@@ -1529,7 +1526,7 @@ class PagesDatabase private constructor() {
                 }
             }
             if (legacyPost.mIcons != null && legacyPost.mIcons!!.size > 0) {
-                builder.icons = ArrayList<Post.Icon?>(legacyPost.mIcons!!.size)
+                builder.icons = ArrayList<Post.Icon>(legacyPost.mIcons!!.size)
                 for (legacyIcon in legacyPost.mIcons) {
                     if (legacyIcon != null) {
                         val uri = if (isEmpty(legacyIcon.mUriString))

@@ -61,7 +61,6 @@ import com.mishiranu.dashchan.util.MimeTypes.forExtension
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.ProgressDialog
-import java.lang.Long
 import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -292,11 +291,11 @@ class DownloadDialog(context: Context?, callback: Callback) {
             editText.setHint(text)
         }
 
-        editText.setOnItemClickListener(OnItemClickListener { parent: AdapterView<*>?, v: View?, position: Int, id: Long ->
-            v!!.post(
+        editText.setOnItemClickListener(OnItemClickListener { parent: AdapterView<*>, v: View, position: Int, id: Long ->
+            v.post(
                 Runnable {
                     val adapter = editText.getAdapter() as Adapter
-                    adapter.items = mutableListOf<DialogDirectory?>()
+                    adapter.items = mutableListOf<DialogDirectory>()
                     adapter.notifyDataSetChanged()
                     refreshDropDownContents(editText)
                     editText.showDropDown()
@@ -540,7 +539,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
         val dialog = ProgressDialog(context, null)
         dialog.setMessage(context.getString(R.string.processing_data__ellipsis))
         dialog.setButton(
-            ProgressDialog.BUTTON_NEGATIVE, context.getString(android.R.string.cancel),
+            DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel),
             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                 callback.cancel(
                     prepareRequest!!
@@ -558,7 +557,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private class Adapter(private val root: DataFile, private val refresh: Runnable) :
         BaseAdapter(), Filterable {
-        internal var items: MutableList<DialogDirectory> = mutableListOf<DialogDirectory?>()
+        internal var items: MutableList<DialogDirectory> = mutableListOf<DialogDirectory>()
 
         override fun getCount(): Int {
             return items.size
@@ -569,7 +568,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
         }
 
         override fun getItemId(position: Int): Long {
-            return 0
+            return 0L
         }
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -612,7 +611,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
                     val directoryPath: String = buildPath(segments, 0)
                     if (lastDirectoryPath == null || !equals(lastDirectoryPath, directoryPath)) {
                         lastDirectoryPath = directoryPath
-                        lastDirectoryItems = mutableListOf<DialogDirectory?>()
+                        lastDirectoryItems = mutableListOf<DialogDirectory>()
 
                         if (lastDirectoryTask != null) {
                             lastDirectoryTask!!.cancel()
@@ -636,17 +635,17 @@ class DownloadDialog(context: Context?, callback: Callback) {
                             }
                             val cachedDirectoryFinal = cachedDirectory
                             lastDirectoryTask = object :
-                                ExecutorTask<Void?, Pair<MutableList<DataFile?>?, MutableList<DialogDirectory?>?>?>() {
-                                override fun run(): Pair<MutableList<DataFile?>?, MutableList<DialogDirectory?>?>? {
+                                ExecutorTask<Void?, Pair<MutableList<DataFile>, MutableList<DialogDirectory>>>() {
+                                override fun run(): Pair<MutableList<DataFile>, MutableList<DialogDirectory>> {
                                     val directory = if (cachedDirectoryFinal != null)
                                         cachedDirectoryFinal.first!!.getChild(cachedDirectoryFinal.second)
                                     else
                                         if (isEmpty(directoryPath)) root else root.getChild(
                                             directoryPath
                                         )
-                                    val cachedFiles = ArrayList<DataFile?>()
-                                    val items: ArrayList<DialogDirectory?> =
-                                        ArrayList<DialogDirectory?>()
+                                    val cachedFiles = ArrayList<DataFile>()
+                                    val items: ArrayList<DialogDirectory> =
+                                        ArrayList<DialogDirectory>()
                                     val files = directory.getChildren()
                                     if (files != null) {
                                         for (file in files) {
@@ -668,15 +667,13 @@ class DownloadDialog(context: Context?, callback: Callback) {
                                         }
                                     }
                                     if (!isCancelled()) {
-                                        Collections.sort<DialogDirectory?>(items)
+                                        items.sort()
                                     }
-                                    return Pair<MutableList<DataFile?>?, MutableList<DialogDirectory?>?>(
-                                        cachedFiles,
-                                        items
-                                    )
+                                    return Pair(cachedFiles, items)
                                 }
 
-                                override fun onComplete(items: Pair<MutableList<DataFile>?, MutableList<DialogDirectory>>) {
+                                override fun onComplete(result: Pair<MutableList<DataFile>, MutableList<DialogDirectory>>) {
+                                    val items = result
                                     synchronized(lastDirectoryLock) {
                                         if (items.first != null) {
                                             for (file in items.first) {
@@ -746,7 +743,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
     }
 
     private class DialogDirectory(val segments: MutableList<String?>, val lastModified: Long) :
-        Comparable<DialogDirectory?> {
+        Comparable<DialogDirectory> {
         fun filter(name: String): Boolean {
             var name = name
             val locale = Locale.getDefault()
@@ -790,8 +787,8 @@ class DownloadDialog(context: Context?, callback: Callback) {
             return convert(false)
         }
 
-        override fun compareTo(another: DialogDirectory): Int {
-            return Long.compare(another.lastModified, lastModified)
+        override fun compareTo(other: DialogDirectory): Int {
+            return other.lastModified.compareTo(lastModified)
         }
     }
 

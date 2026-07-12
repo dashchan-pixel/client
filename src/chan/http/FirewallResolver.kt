@@ -80,15 +80,15 @@ abstract class FirewallResolver {
 
         @Extendable
         open fun onPageFinished(
-            uri: Uri?,
-            cookies: Map<String, String>?,
+            uri: Uri,
+            cookies: Map<String, String>,
             title: String?
         ): Boolean {
             return true
         }
 
         @Extendable
-        open fun onLoad(initialUri: Uri?, uri: Uri?): Boolean {
+        open fun onLoad(initialUri: Uri, uri: Uri): Boolean {
             return true
         }
     }
@@ -116,7 +116,7 @@ abstract class FirewallResolver {
 
         @Public
         @Throws(CancelException::class, InterruptedException::class)
-        fun <Result> resolveWebView(webViewClient: WebViewClient<Result?>): Result?
+        fun <Result : Any> resolveWebView(webViewClient: WebViewClient<Result>): Result?
     }
 
     @Public
@@ -135,11 +135,11 @@ abstract class FirewallResolver {
 
         @Extendable
         @Throws(CancelException::class, HttpException::class, InterruptedException::class)
-        fun resolve(session: Session?, key: Key?): Boolean
+        fun resolve(session: Session, key: Key): Boolean
 
         companion object {
             val FAIL: Exclusive =
-                Exclusive { session: Session?, key: Key? -> false }
+                Exclusive { session: Session, key: Key -> false }
         }
     }
 
@@ -160,9 +160,9 @@ abstract class FirewallResolver {
 
     @Extendable
     @Throws(HttpException::class)
-    abstract fun checkResponse(session: Session?, response: HttpResponse?): CheckResponseResult?
+    abstract fun checkResponse(session: Session, response: HttpResponse): CheckResponseResult?
 
     @Extendable
-    open fun collectCookies(session: Session?, cookieBuilder: CookieBuilder?) {
+    open fun collectCookies(session: Session, cookieBuilder: CookieBuilder) {
     }
 }

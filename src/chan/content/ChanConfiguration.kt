@@ -176,12 +176,12 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
 
         @JvmField
         @Public
-        val attachmentMimeTypes: MutableSet<String?> = HashSet<String?>()
+        val attachmentMimeTypes: MutableSet<String> = HashSet()
 
         @JvmField
         @Public
-        val attachmentRatings: MutableList<Pair<String?, String?>?> =
-            ArrayList<Pair<String?, String?>?>()
+        val attachmentRatings: MutableList<Pair<String, String>> =
+            ArrayList()
 
         @JvmField
         @Public
@@ -189,7 +189,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
 
         @JvmField
         @Public
-        val userIcons: MutableList<Pair<String?, String?>?> = ArrayList<Pair<String?, String?>?>()
+        val userIcons: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
         var hasCountryFlags: Boolean = false
