@@ -27,7 +27,7 @@ class CaptchaSolving private constructor() {
 	private fun createUri(endpoint: String): Uri {
 		var uri = Uri.parse(endpoint)
 		if (StringUtils.isEmpty(uri.scheme)) {
-			uri = uri.buildUpon().scheme(if (Chan.getFallback().locator.isUseHttps) "https" else "http").build()
+			uri = uri.buildUpon().scheme(if (Chan.getFallback().locator.isUseHttps()) "https" else "http").build()
 		}
 		return uri
 	}

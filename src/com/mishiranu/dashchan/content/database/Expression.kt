@@ -157,7 +157,7 @@ object Expression {
                 } else {
                     return Filter(
                         builder.toString(),
-                        CommonUtils.toArray<String?>(args, String::class.java)
+                        args.toTypedArray()
                     )
                 }
             }

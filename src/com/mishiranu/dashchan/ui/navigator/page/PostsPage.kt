@@ -448,7 +448,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         FavoritesStorage.getInstance().getObservable().register(this)
         hidePerformer!!.setPostsProvider(adapter)
 
-        val toolbarContext: Context = toolbarContext
+        val toolbarContext: Context = toolbarContext!!
         val searchControlLayout = LinearLayout(toolbarContext)
         this.searchControlView = searchControlLayout
         searchControlLayout.setOrientation(LinearLayout.HORIZONTAL)
@@ -1172,7 +1172,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
     }
 
-    public override fun onListPulled(wrapper: PullableWrapper?, side: PullableWrapper.Side?) {
+    public override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {
         switchList()
         refreshPostsWithoutIndication(false)
     }

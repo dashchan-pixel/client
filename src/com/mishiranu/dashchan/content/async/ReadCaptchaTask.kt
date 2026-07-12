@@ -62,7 +62,7 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 		try {
 			chanHolder.use().use {
 				result = captchaReader.onReadCaptcha(ChanPerformer.ReadCaptchaData(captchaType,
-						CommonUtils.toArray(captchaPass, String::class.java), mayShowLoadButton,
+						@Suppress("UNCHECKED_CAST") (CommonUtils.toArray(captchaPass, String::class.java) as Array<String?>?), mayShowLoadButton,
 						requirement, boardName, threadNumber, chanHolder))
 			}
 		} catch (e: ExtensionException) {

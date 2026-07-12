@@ -1490,7 +1490,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-    internal class PrepareRequest(internal val task: PrepareTask<*>) : Request {
+    class PrepareRequest internal constructor(internal val task: PrepareTask<*>) : Request {
         override fun cleanup() {
             task.innerTask.cleanup()
             task.cancel()

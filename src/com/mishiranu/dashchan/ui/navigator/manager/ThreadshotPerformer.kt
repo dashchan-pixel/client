@@ -71,7 +71,7 @@ class ThreadshotPerformer(
 				}
 				height += measuredHeight
 			}
-			if (isCancelled) {
+			if (isCancelled()) {
 				return null
 			}
 			var input: InputStream? = null
@@ -80,7 +80,7 @@ class ThreadshotPerformer(
 				val canvas = Canvas(bitmap)
 				canvas.drawColor(background)
 				for (postItem in postItems) {
-					if (isCancelled) {
+					if (isCancelled()) {
 						return null
 					}
 					ConcurrentUtils.mainGet<Any?> {

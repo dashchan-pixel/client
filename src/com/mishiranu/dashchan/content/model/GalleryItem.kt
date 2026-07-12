@@ -79,7 +79,7 @@ class GalleryItem {
 	}
 
 	fun downloadStorage(binder: DownloadService.Binder, chan: Chan, threadTitle: String?) {
-		binder.downloadStorage(getFileUri(chan), getFileName(chan), originalName,
+		binder.downloadStorage(getFileUri(chan), getFileName(chan)!!, originalName,
 				chan.name, boardName, threadNumber, threadTitle)
 	}
 

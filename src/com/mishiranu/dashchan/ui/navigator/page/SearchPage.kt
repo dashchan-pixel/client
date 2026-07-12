@@ -142,7 +142,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 	}
 
 	override fun onNotifyAllAdaptersChanged() {
-		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance)
+		uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
 	}
 
 	override fun onRequestStoreExtra(saveToStack: Boolean) {

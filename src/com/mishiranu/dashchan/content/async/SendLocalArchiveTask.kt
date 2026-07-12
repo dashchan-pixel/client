@@ -96,7 +96,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 			val deleted = post.deleted
 			val useDefaultName = name == defaultName || name.isEmpty()
 			if (name.isEmpty()) {
-				name = defaultName
+				name = defaultName!!
 			}
 			val charSequence = HtmlParser.spanify(comment, chan.markup.markup, null, null, this)
 			spanItems.clear()
@@ -212,7 +212,7 @@ class SendLocalArchiveTask(private val callback: Callback, private val chan: Cha
 					}
 					if (fileUri != null) {
 						var fileName = chan.locator.createAttachmentFileName(fileUri)
-						fileName = chooseFileName(existFilesLc, fileName)
+						fileName = chooseFileName(existFilesLc, fileName)!!
 						val filePath = archiveName + "/" + DIRECTORY_FILES + "/" + fileName
 						var thumbnailName: String? = null
 						var thumbnailPath: String? = null

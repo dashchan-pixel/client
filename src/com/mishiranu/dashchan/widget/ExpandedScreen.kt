@@ -73,8 +73,7 @@ class ExpandedScreen(
     private val minItemsCount: Int
 
     interface Layout {
-        val recyclerView: RecyclerView?
-            get() = null
+        fun getRecyclerView(): RecyclerView? = null
 
         fun setVerticalInsets(top: Int, bottom: Int, useGesture29: Boolean)
     }
@@ -392,7 +391,7 @@ class ExpandedScreen(
         var recyclerView: RecyclerView? = null
         if (view is Layout) {
             recyclerView =
-                (view as Layout).recyclerView
+                (view as Layout).getRecyclerView()
         }
         contentViews.put(view!!, recyclerView)
         if (recyclerView != null && expandingEnabled) {

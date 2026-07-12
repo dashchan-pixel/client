@@ -1887,7 +1887,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                         for (i in 0..<checkBoxGroup.getChildCount()) {
                             val checkBox = checkBoxGroup.getChildAt(i) as CheckBox
                             if (checkBox.isChecked()) {
-                                options.add(checkBox.getTag()!! as String?)
+                                options.add(checkBox.getTag() as String)
                             }
                         }
                     }

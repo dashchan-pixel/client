@@ -77,7 +77,7 @@ class UpdaterActivity : StateActivity() {
     private fun performInstallation() {
         val files = this.files
         if (files != null && files.size > index) {
-            val file: File? = FileProvider.Companion.getUpdatesFile(files.get(index))
+            val file: File? = FileProvider.Companion.getUpdatesFile(files.get(index)!!)
             if (file == null) {
                 index++
                 performInstallation()

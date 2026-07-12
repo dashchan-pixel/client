@@ -261,7 +261,7 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String, defaultValue: String?,
         titleResId: Int, hint: CharSequence?, inputType: Int
     ): EditPreference {
-        return addEdit(key, defaultValue, titleResId, SummaryProvider { p: Preference<String?>? ->
+        return addEdit(key, defaultValue, titleResId, SummaryProvider { p: Preference<String>? ->
             var summary: CharSequence? = p!!.value
             if (summary == null || summary.length == 0) {
                 summary = (p as EditPreference).hint
@@ -276,7 +276,7 @@ abstract class PreferenceFragment : ContentFragment() {
     ): EditPreference {
         return addEdit(
             key, defaultValue, titleResId,
-            SummaryProvider { p: Preference<String?>? ->
+            SummaryProvider { p: Preference<String>? ->
                 if (summaryResId != 0) getString(
                     summaryResId
                 ) else null

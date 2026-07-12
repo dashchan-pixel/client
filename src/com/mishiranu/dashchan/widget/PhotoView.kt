@@ -735,6 +735,10 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         finish: Boolean,
         velocity: Float
     ) : Runnable {
+        private val RESTORE_DURATION = 150
+        private val FINISH_DURATION_MAX = 500
+        private val FINISH_DURATION_MIN = RESTORE_DURATION
+
         private val startTime: Long
         private val deltaY: Float
         private val finish: Boolean
@@ -800,9 +804,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             }
         }
 
-        private val RESTORE_DURATION = 150
-        private val FINISH_DURATION_MAX = 500
-        private val FINISH_DURATION_MIN = RESTORE_DURATION
+
     }
 
     private inner class FlingRunnable(context: Context?) : Runnable {

@@ -26,7 +26,7 @@ class PostLinearLayout : LinearLayout {
 	@SuppressLint("ClickableViewAccessibility")
 	override fun onTouchEvent(event: MotionEvent): Boolean {
 		val focusedView = findFocus()
-		if (focusedView is CommentTextView && focusedView.isSelectionMode) {
+		if (focusedView is CommentTextView && focusedView.isSelectionMode()) {
 			// Don't draw selection background
 			return false
 		}

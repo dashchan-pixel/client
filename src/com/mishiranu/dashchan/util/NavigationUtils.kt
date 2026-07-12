@@ -33,7 +33,7 @@ object NavigationUtils {
 	fun handleUri(context: Context, chanName: String?, uri: Uri, browserType: BrowserType) {
 		var targetUri = uri
 		if (chanName != null) {
-			targetUri = Chan.get(chanName).locator.convert(targetUri)
+			targetUri = Chan.get(chanName).locator.convert(targetUri)!!
 		}
 		val isWeb = Chan.getFallback().locator.isWebScheme(targetUri)
 		var intent: Intent

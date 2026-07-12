@@ -201,7 +201,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     class ReadThreadsResult @Public constructor(threads: MutableCollection<Posts?>?) {
         class Thread(
-            val posts: MutableList<Post?>?, val threadNumber: String?,
+            val posts: List<Post>?, val threadNumber: String?,
             val postsCount: Int, val filesCount: Int, val postsWithFilesCount: Int
         )
 
@@ -222,7 +222,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                         val postsArray = thread.getPosts()
                         if (postsArray != null) {
                             var threadNumber: String? = null
-                            val posts: MutableList<Post?> = ArrayList<Post?>()
+                            val posts: MutableList<Post> = ArrayList()
                             for (post in postsArray) {
                                 if (post != null) {
                                     if (posts.isEmpty()) {
@@ -419,7 +419,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadBoardsResult @Public constructor(vararg boardCategories: BoardCategory?) {
-        val boardCategories: Array<BoardCategory?>?
+        val boardCategories: Array<BoardCategory>?
 
         init {
             val categories: Array<BoardCategory?> = arrayOf(*boardCategories)
@@ -845,7 +845,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
                 fun notify(count: Int) {
                     progress += count.toLong()
-                    listener!!.onOutputProgressChange(openable, progress, progressMax)
+                    listener!!.onOutputProgressChange(openable!!, progress, progressMax)
                 }
 
                 @Throws(IOException::class)
@@ -1084,7 +1084,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             return ForegroundManager.getInstance().requireUserItemSingleChoice(
                 selected, item,
                 descriptionText, descriptionImage
-            )
+            )!!
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1102,7 +1102,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             return ForegroundManager.getInstance().requireUserItemMultipleChoice(
                 selected, item!!,
                 descriptionText, descriptionImage
-            )
+            )!!
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1120,7 +1120,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             return ForegroundManager.getInstance().requireUserImageSingleChoice(
                 3, selected, images,
                 descriptionText, descriptionImage
-            )
+            )!!
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1138,7 +1138,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             return ForegroundManager.getInstance().requireUserImageMultipleChoice(
                 3, selected, images!!,
                 descriptionText, descriptionImage
-            )
+            )!!
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)

@@ -70,7 +70,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val layout = ExpandedLayout(container.getContext(), true)
+        val layout = ExpandedLayout(container!!.getContext(), true)
         webView = WebView(layout.getContext().getApplicationContext())
         layout.addView(
             webView,

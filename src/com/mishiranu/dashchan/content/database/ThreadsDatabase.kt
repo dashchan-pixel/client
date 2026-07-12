@@ -174,10 +174,9 @@ class ThreadsDatabase internal constructor(private val database: CommonDatabase)
 
     internal fun getFlags(
         chanName: String, boardName: String?,
-        threadNumbers: MutableList<String?>, hiddenThreads: HideState.Map<String?>
+        threadNumbers: List<String>, hiddenThreads: HideState.Map<String>
     ) {
         Objects.requireNonNull<String?>(chanName)
-        Objects.requireNonNull<MutableList<String?>?>(threadNumbers)
         var update = false
         val projection = arrayOf<String?>(
             Schema.Threads.Columns.Companion.THREAD_NUMBER,
@@ -230,12 +229,12 @@ class ThreadsDatabase internal constructor(private val database: CommonDatabase)
 
     fun getFlags(
         chanName: String, boardName: String?,
-        threadNumbers: MutableList<String?>
-    ): HideState.Map<String?>? {
-        return database.execute<HideState.Map<String?>?>(ExecuteCallback { database: SQLiteDatabase? ->
+        threadNumbers: List<String>
+    ): HideState.Map<String>? {
+        return database.execute<HideState.Map<String>?>(ExecuteCallback { database: SQLiteDatabase? ->
             database!!.beginTransaction()
             try {
-                val hiddenThreads = HideState.Map<String?>()
+                val hiddenThreads = HideState.Map<String>()
                 val maxCount = 50
                 var i = 0
                 while (i < threadNumbers.size) {

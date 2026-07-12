@@ -10,7 +10,7 @@ import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.model.ErrorItem
 
 class ReadThreadSummariesTask(private val callback: Callback, private val chan: Chan,
-		private val boardName: String?, private val pageNumber: Int,
+		private val boardName: String?, val pageNumber: Int,
 		private val type: Int) : HttpHolderTask<Void, List<ThreadSummary>?>(chan) {
 	private var errorItem: ErrorItem? = null
 
@@ -28,7 +28,7 @@ class ReadThreadSummariesTask(private val callback: Callback, private val chan: 
 							.ReadThreadSummariesData(boardName, pageNumber, type, holder))
 			val threadSummaries = result?.threadSummaries
 			return if (threadSummaries != null && threadSummaries.isNotEmpty())
-				threadSummaries.asList() else emptyList()
+				threadSummaries.filterNotNull() else emptyList()
 		} catch (e: ExtensionException) {
 			errorItem = e.getErrorItemAndHandle()
 			return null

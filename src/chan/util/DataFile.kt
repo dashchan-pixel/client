@@ -26,8 +26,8 @@ import java.io.OutputStream
 abstract class DataFile protected constructor(val target: Target, private val path: String) {
 	enum class Target(internal val safTarget: SafFile.SafTarget?,
 			internal val legacyDirectory: LegacyDirectory) {
-		CACHE(null, LegacyDirectory { CacheManager.getInstance().mediaDirectory }),
-		UPDATES(null, LegacyDirectory { FileProvider.updatesDirectory }),
+		CACHE(null, LegacyDirectory { CacheManager.getInstance().mediaDirectory!! }),
+		UPDATES(null, LegacyDirectory { FileProvider.updatesDirectory!! }),
 		DOWNLOADS(SafFile.SafTarget.DOWNLOADS, LegacyDirectory { Preferences.downloadDirectoryLegacy });
 
 		internal fun interface LegacyDirectory {

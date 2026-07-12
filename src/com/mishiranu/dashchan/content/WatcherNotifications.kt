@@ -41,7 +41,7 @@ object WatcherNotifications {
         EXECUTOR.execute(
             Task(
                 context, color, important, sound, vibration, title,
-                chanName, boardName, threadNumber, replies, mutableListOf<PostNumber?>()
+                chanName, boardName, threadNumber, replies, mutableListOf()
             )
         )
     }

@@ -391,7 +391,7 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                         .setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
-                                UiManager.Companion.extract(provider)!!.navigator()!!.navigateTargetAllowReturn(chanName, navigationDataFinal)
+                                UiManager.Companion.extract(provider)!!.navigator()!!.navigateTargetAllowReturn(chanName, navigationDataFinal!!)
                             })
                         .create()
                 })
@@ -694,6 +694,8 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                                     getCopyReadyComment(postItem.getComment(chan)), uri
                                 )
                             }
+
+                            else -> {}
                         }
                     }
                 }

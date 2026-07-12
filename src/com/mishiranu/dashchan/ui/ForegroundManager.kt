@@ -1419,7 +1419,7 @@ class ForegroundManager private constructor() : Handler.Callback {
     }
 
     @Throws(InterruptedException::class)
-    fun <T> requireUserResolveFirewall(request: FirewallResolutionDialogRequest<T?>): T? {
+    fun <T> requireUserResolveFirewall(request: FirewallResolutionDialogRequest<T>): T? {
         val pendingData = FirewallResolutionPendingData<T?>()
         val pendingDataId = putPendingData(pendingData)
         try {

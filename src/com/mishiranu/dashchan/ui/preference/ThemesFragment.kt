@@ -226,7 +226,7 @@ class ThemesFragment : BaseListFragment() {
 			}
 		}
 		if (!installed || theme.name != Preferences.theme) {
-			Preferences.setTheme(theme.name)
+			Preferences.theme = theme.name
 			requireActivity().recreate()
 		}
 	}

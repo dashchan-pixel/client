@@ -177,7 +177,7 @@ class ThemeEngine {
             return WeakIterator(stackItems.iterator(), this)
         }
 
-        override fun getWeakReference(data: StackItem): WeakReference<View?> {
+        override fun getWeakReference(data: StackItem): WeakReference<View>? {
             return data.decorView
         }
 

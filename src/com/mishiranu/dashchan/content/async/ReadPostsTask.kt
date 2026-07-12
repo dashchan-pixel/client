@@ -228,7 +228,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 		}
 	}
 
-	override fun onCancel(result: Result) {
+	override fun onCancel(result: Result?) {
 		if (result is Result.Success) {
 			if (result.removedPendingUserPosts != null) {
 				callback.onPendingUserPostsConsumed(result.removedPendingUserPosts)

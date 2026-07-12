@@ -980,8 +980,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     }
 
     private fun compareListOfPairs(
-        first: MutableList<Pair<String?, String?>?>,
-        second: MutableList<Pair<String?, String?>?>
+        first: List<Pair<String, String>>,
+        second: List<Pair<String, String>>
     ): Boolean {
         if (first.size != second.size) {
             return false
@@ -1045,7 +1045,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     }
 
     private fun handleMimeTypeGroup(
-        list: ArrayList<String?>,
+        list: ArrayList<String>,
         mimeTypes: MutableCollection<String>,
         mimeTypeGroup: String
     ) {
@@ -1157,7 +1157,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         val optionSpoiler = isCheckedIfVisible(spoilerCheckBox!!)
         val optionOriginalPoster = isCheckedIfVisible(originalPosterCheckBox!!)
         val userIcon = if (iconView!!.getVisibility() == View.VISIBLE) this.userIcon else null
-        val array = ArrayList<SendPostData.Attachment?>()
+        val array = ArrayList<SendPostData.Attachment>()
         val draftsStorage = getInstance()
         for (i in attachments.indices) {
             val data = attachments.get(i)
@@ -1195,12 +1195,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 )
             }
         }
-        var attachments: Array<SendPostData.Attachment>? = null
+        var attachments: Array<SendPostData.Attachment?>? = null
         if (array.size > 0) {
-            attachments = CommonUtils.toArray(
-                array,
-                SendPostData.Attachment::class.java
-            )
+            @Suppress("UNCHECKED_CAST")
+            attachments = array.toTypedArray() as Array<SendPostData.Attachment?>
         }
         val captchaType = if (loadedCaptchaType != null) loadedCaptchaType else this.captchaType
         var captchaData = this.captchaData

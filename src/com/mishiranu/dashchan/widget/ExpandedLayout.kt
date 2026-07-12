@@ -13,13 +13,13 @@ class ExpandedLayout(context: Context, private val self: Boolean) :
 	private var bottom = 0
 	private var useGesture29 = false
 	private var extraTop = 0
-	private var recyclerView: RecyclerView? = null
+	private var recyclerViewField: RecyclerView? = null
 
 	fun setRecyclerView(recyclerView: RecyclerView?) {
-		this.recyclerView = recyclerView
+		this.recyclerViewField = recyclerView
 	}
 
-	override fun getRecyclerView(): RecyclerView? = recyclerView
+	override fun getRecyclerView(): RecyclerView? = recyclerViewField
 
 	override fun setVerticalInsets(top: Int, bottom: Int, useGesture29: Boolean) {
 		if (this.top != top || this.bottom != bottom || this.useGesture29 != useGesture29) {

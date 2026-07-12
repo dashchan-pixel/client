@@ -258,7 +258,7 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 		fingerprintsMap[ChanManager.EXTENSION_NAME_CLIENT] =
 				ChanManager.getInstance().applicationFingerprints
 		for (extensionItem in extensionItems) {
-			fingerprintsMap[extensionItem.name] = extensionItem.fingerprints
+			fingerprintsMap[extensionItem.name!!] = extensionItem.fingerprints
 		}
 		val applicationTitle: String
 		val applicationVersionName: String?

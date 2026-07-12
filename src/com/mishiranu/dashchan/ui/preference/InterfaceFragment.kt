@@ -76,7 +76,7 @@ class InterfaceFragment : PreferenceFragment() {
 		addCheck(true, Preferences.KEY_ADVANCED_SEARCH, Preferences.DEFAULT_ADVANCED_SEARCH,
 				R.string.advanced_search, R.string.advanced_search__summary)
 				.setOnAfterChangeListener { p ->
-					if (p!!.value) {
+					if (p!!.value!!) {
 						displayAdvancedSearchDialog(childFragmentManager)
 					}
 				}
@@ -133,7 +133,7 @@ class InterfaceFragment : PreferenceFragment() {
 	private fun captchaAutoReloadEnabled(): Boolean {
 		val hugeCaptchaEnabled = (findPreference(Preferences.KEY_HUGE_CAPTCHA) as CheckPreference).value
 		val captchaTimerEnabled = (findPreference(Preferences.KEY_CAPTCHA_TIMER) as CheckPreference).value
-		return hugeCaptchaEnabled && captchaTimerEnabled
+		return hugeCaptchaEnabled!! && captchaTimerEnabled!!
 	}
 
 	companion object {

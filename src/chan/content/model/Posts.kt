@@ -139,7 +139,7 @@ class Posts {
 					posts = this.posts
 					if (posts == null) {
 						val postNumbers = PagesDatabase.getInstance().getPostNumbers(threadKey)
-						posts = Array(postNumbers.size) { Post(postNumbers[it]) as Post? }
+						posts = Array(postNumbers.size) { Post(postNumbers[it]!!) as Post? }
 						this.posts = posts
 					}
 				}

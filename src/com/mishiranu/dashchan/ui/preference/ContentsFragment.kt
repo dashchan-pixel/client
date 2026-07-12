@@ -75,7 +75,7 @@ class ContentsFragment : PreferenceFragment() {
 		replyNotifications = addCheck(false, "reply_notifications", false,
 				R.string.reply_notifications, R.string.reply_notifications__format)
 		replyNotifications.setOnClickListener { p ->
-			Preferences.setWatcherNotifications(if (p!!.value) emptySet()
+			Preferences.setWatcherNotifications(if (p!!.value!!) emptySet()
 					else setOf(Preferences.NotificationFeature.ENABLED))
 			invalidateReplyNotifications()
 		}

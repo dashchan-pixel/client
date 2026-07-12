@@ -330,7 +330,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             dialogBackgroundResId,
             dialogElevation,
             dialogDimAmount,
-            viewFactory!!.createView(this),
+            @Suppress("UNCHECKED_CAST") viewFactory!!.createView(this as DialogStack<T?>),
             viewFactory,
             PopSelf { dialogView: DialogView? -> this.handlePopSelf(dialogView) })
         rootView.addView(

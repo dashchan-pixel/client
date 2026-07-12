@@ -185,7 +185,7 @@ object BackupManager {
         }
     }
 
-    private class Restore(val test: Boolean, val input: InputStream) {
+    internal class Restore(val test: Boolean, val input: InputStream) {
         var version: String? = null
     }
 

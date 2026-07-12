@@ -167,7 +167,7 @@ class ReadVideoTask(private val callback: Callback, private val chan: Chan,
 		if (success) {
 			callback.onReadVideoSuccess(start > 0, file!!)
 		} else {
-			callback.onReadVideoFail(start > 0, errorItem, disallowRangeRequests)
+			callback.onReadVideoFail(start > 0, errorItem!!, disallowRangeRequests)
 		}
 	}
 

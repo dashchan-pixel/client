@@ -29,7 +29,7 @@ class ReadSearchTask(private val callback: Callback, private val chan: Chan,
 					.ReadSearchPostsData(boardName, searchQuery, pageNumber, holder))
 			val posts = ArrayList<SinglePost>()
 			if (result != null) {
-				posts.addAll(result.posts)
+				posts.addAll(result.posts.filterNotNull())
 			}
 			if (posts.isNotEmpty()) {
 				posts.sortWith(TIME_COMPARATOR)

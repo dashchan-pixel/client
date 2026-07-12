@@ -52,7 +52,7 @@ enum class EmbeddedType(
 	fun get(locator: ChanLocator, text: String?): String? =
 			if (test(text)) locator.getGroupValue(text, pattern, index) else null
 
-	fun getAll(locator: ChanLocator, text: String?): Array<String>? =
+	fun getAll(locator: ChanLocator, text: String?): Array<String?>? =
 			if (test(text)) locator.getUniqueGroupValues(text, pattern, index) else null
 
 	fun obtainAttachment(locator: ChanLocator, embeddedCode: String): Post.Attachment.Embedded? =

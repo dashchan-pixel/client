@@ -283,7 +283,7 @@ class UpdateFragment : BaseListFragment {
 			}
 			return true
 		} else if (itemId == R.id.menu_check_on_start) {
-			Preferences.setCheckUpdatesOnStart(!item.isChecked)
+			Preferences.checkUpdatesOnStart = !item.isChecked
 		}
 		return false
 	}

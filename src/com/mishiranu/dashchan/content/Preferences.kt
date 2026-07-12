@@ -366,7 +366,7 @@ object Preferences {
     const val SUB_KEY_CAPTCHA_SOLVING_ENDPOINT: String = "endpoint"
     const val SUB_KEY_CAPTCHA_SOLVING_TOKEN: String = "token"
     const val SUB_KEY_CAPTCHA_SOLVING_TIMEOUT: String = "timeout"
-    val KEYS_CAPTCHA_SOLVING: MutableList<String?> = Arrays
+    val KEYS_CAPTCHA_SOLVING: List<String> = Arrays
         .asList<String?>(
             SUB_KEY_CAPTCHA_SOLVING_ENDPOINT,
             SUB_KEY_CAPTCHA_SOLVING_TOKEN,
@@ -1559,7 +1559,7 @@ object Preferences {
             }
         }
 
-    fun setWatcherNotifications(notificationFeatures: MutableCollection<NotificationFeature>?) {
+    fun setWatcherNotifications(notificationFeatures: Collection<NotificationFeature>?) {
         val strings: MutableSet<String>
         if (notificationFeatures == null || notificationFeatures.isEmpty()) {
             strings = mutableSetOf()

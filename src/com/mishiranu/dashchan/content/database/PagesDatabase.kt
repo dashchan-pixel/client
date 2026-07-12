@@ -691,7 +691,7 @@ class PagesDatabase private constructor() {
 
     @Throws(IOException::class)
     fun insertNewPosts(
-        threadKey: ThreadKey, posts: MutableList<Post>, meta: Meta,
+        threadKey: ThreadKey, posts: List<Post>, meta: Meta,
         temporary: Boolean, newThread: Boolean, partial: Boolean
     ): InsertResult? {
         val dataArray: Array<ByteArray?> = arrayOfNulls(posts.size)

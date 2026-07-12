@@ -219,10 +219,10 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         var multiplePosts: Boolean = false
 
         @Public
-        val types: MutableList<Pair<String?, String?>?> = ArrayList<Pair<String?, String?>?>()
+        val types: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
-        val options: MutableList<Pair<String?, String?>?> = ArrayList<Pair<String?, String?>?>()
+        val options: MutableList<Pair<String, String>> = ArrayList()
     }
 
     @Public
@@ -249,7 +249,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         val hosts: MutableList<String?> = ArrayList<String?>()
 
         @Public
-        val options: MutableList<Pair<String?, String?>?> = ArrayList<Pair<String?, String?>?>()
+        val options: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
         var queryOnly: Boolean = false
@@ -469,7 +469,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     fun getUserBoards(
-        boardNames: MutableList<String?>?,
+        boardNames: List<String>?,
         searchQuery: String?, signal: CancellationSignal?
     ): BoardCursor {
         return ChanDatabase.getInstance().getBoards(

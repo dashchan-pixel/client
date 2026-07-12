@@ -184,7 +184,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
     class ConfigurationSet(
         @JvmField val chanName: String?, val replyable: Replyable?,
         val postsProvider: PostsProvider?, @JvmField val postStateProvider: PostStateProvider?,
-        val galleryProvider: GalleryItem.Provider, val fragmentManager: FragmentManager?,
+        val galleryProvider: GalleryItem.Provider?, val fragmentManager: FragmentManager?,
         @JvmField val stackInstance: StackInstance?, val linkListener: LinkListener?,
         val clickCallback: ClickCallback<PostItem?, RecyclerView.ViewHolder>?,
         val mayCollapse: Boolean, val isDialog: Boolean, val allowMyMarkEdit: Boolean,
@@ -215,7 +215,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
         val configurationSet: ConfigurationSet?
 
         val gallerySet: GalleryItem.Set
-            get() = this.configurationSet!!.galleryProvider.getGallerySet(this.postItem!!)
+            get() = this.configurationSet!!.galleryProvider!!.getGallerySet(this.postItem!!)
     }
 
     class UiManagerViewModel : ViewModel() {
