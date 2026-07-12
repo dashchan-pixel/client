@@ -364,8 +364,8 @@ abstract class PreferenceFragment : ContentFragment() {
     }
 
     fun addList(
-        key: String, values: MutableList<String?>,
-        defaultValue: String?, titleResId: Int, entries: MutableList<CharSequence?>
+        key: String, values: List<String>,
+        defaultValue: String?, titleResId: Int, entries: List<CharSequence>
     ): ListPreference {
         val preference = ListPreference(
             requireContext(), key, defaultValue, getString(titleResId),

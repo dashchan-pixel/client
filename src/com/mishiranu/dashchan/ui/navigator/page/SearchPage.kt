@@ -152,7 +152,7 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 		retainableExtra.dialogsState = adapter.configurationSet.stackInstance!!.collectState()
 	}
 
-	override fun obtainTitle(): String = getPage().searchQuery
+	override fun obtainTitle(): String = getPage().searchQuery!!
 
 	override fun onItemClick(postItem: PostItem?) {
 		val page = getPage()

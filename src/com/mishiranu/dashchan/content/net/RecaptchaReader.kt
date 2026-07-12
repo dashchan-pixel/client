@@ -147,7 +147,7 @@ class RecaptchaReader private constructor() {
                 apiKey
             )
             val acceptLanguage = "en-US,en;q=0.5"
-            val initialResponseText: String = HttpRequest(uri, initialHolder)
+            val initialResponseText: String? = HttpRequest(uri, initialHolder)
                 .addCookie(getGoogleCookie())
                 .addHeader("Accept-Language", acceptLanguage)
                 .addHeader("Referer", refererFinal)

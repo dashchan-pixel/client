@@ -840,7 +840,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             } else if (chan.locator.isVideoUri(uri)) {
                 val fileName = chan.locator.createAttachmentFileName(uri!!)
                 if (isOpenableVideoPath(fileName)) {
-                    navigateGalleryUri(chan.locator.convert(uri)!!)
+                    navigateGalleryUri(chan.locator.convert(uri!!)!!)
                 } else {
                     handleUri(
                         this, chan.name, chan.locator.convert(uri!!),
@@ -1010,7 +1010,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         content: Page.Content?,
         chanName: String?, boardName: String?, threadNumber: String?, searchQuery: String?,
         initRequest: InitRequest?
-    ): Pair<PageFragment?, PageItem?> {
+    ): Pair<PageFragment, PageItem> {
         var targetSavedPageItem: SavedPageItem? = null
         val iterator: MutableIterator<SavedPageItem?> =
             ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
@@ -1269,8 +1269,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    override val downloadBinder: DownloadService.Binder?
-        get() = downloadBinderField
+    override fun getDownloadBinder(): DownloadService.Binder? = downloadBinderField
 
     override val watcherClient: WatcherService.Client
         get() = watcherServiceClient!!

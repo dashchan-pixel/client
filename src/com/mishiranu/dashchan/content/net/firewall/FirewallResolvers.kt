@@ -240,7 +240,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 uri = null
             }
             try {
-                return client.onLoad(initialUri, uri)
+                return client.onLoad(initialUri!!, uri ?: return false)
             } catch (e: LinkageError) {
                 e.printStackTrace()
                 return false
@@ -427,7 +427,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         initialUri: Uri,
         userAgent: String?,
         proxyData: HttpClient.ProxyData?,
-        client: FirewallResolver.WebViewClient<T?>
+        client: FirewallResolver.WebViewClient<T>
     ): T? {
         val firewallResolutionDialogRequest =
             FirewallResolutionDialogRequest<T?>(initialUri.toString(), userAgent, proxyData, client)
@@ -644,7 +644,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 }
             }
             if (result != null && result.key != null && result.exclusive != null) {
-                val resolved = resolve && runExclusive(session, result.key, result.exclusive)
+                val resolved = resolve && runExclusive(session, result.key!!, result.exclusive!!)
                 return FirewallResolver.CheckResult(resolved, result.retransmitOnSuccess)
             }
         }

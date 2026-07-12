@@ -20,7 +20,7 @@ abstract class ExecutorTask<Progress, Result> {
     ) {
         fun handle() {
             if (!task.isCancelled()) {
-                task.onProgress(progress)
+                task.onProgress(progress!!)
             }
         }
     }
@@ -30,7 +30,7 @@ abstract class ExecutorTask<Progress, Result> {
             if (task.isCancelled()) {
                 task.onCancel(result)
             } else {
-                task.onComplete(result)
+                task.onComplete(result!!)
             }
         }
     }
@@ -125,9 +125,9 @@ abstract class ExecutorTask<Progress, Result> {
 
     @Throws(InterruptedException::class)
     protected abstract fun run(): Result?
-    protected open fun onProgress(progress: Progress?) {}
+    protected open fun onProgress(progress: Progress) {}
     protected open fun onCancel(result: Result?) {}
-    protected open fun onComplete(result: Result?) {}
+    protected open fun onComplete(result: Result) {}
 
     companion object {
         private val HANDLER =

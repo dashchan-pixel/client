@@ -391,8 +391,8 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 			}
 		}
 
-		override fun onComplete(result: ErrorItem?) {
-			viewModel.handleResult(result!!)
+		override fun onComplete(result: ErrorItem) {
+			viewModel.handleResult(result)
 		}
 
 		companion object {

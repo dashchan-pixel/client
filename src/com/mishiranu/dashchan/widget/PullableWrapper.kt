@@ -143,11 +143,11 @@ class PullableWrapper(private val listView: Wrapped) {
     private var startY = 0f
 
     private fun deltaToPullStrain(delta: Float): Int {
-        return (pullDeltaGain * delta / listView.height * PullView.MAX_STRAIN).toInt()
+        return (pullDeltaGain * delta / listView.getHeight() * PullView.MAX_STRAIN).toInt()
     }
 
     private fun pullStrainToDelta(pullStrain: Int): Int {
-        return (pullStrain * listView.height / (pullDeltaGain * PullView.MAX_STRAIN)).toInt()
+        return (pullStrain * listView.getHeight() / (pullDeltaGain * PullView.MAX_STRAIN)).toInt()
     }
 
     // Used to calculate list transition animation.
@@ -157,7 +157,7 @@ class PullableWrapper(private val listView: Wrapped) {
     fun onTouchEventOrNull(ev: MotionEvent?): Boolean {
         var pull = false
         val action = if (ev != null) ev.getAction() else MotionEvent.ACTION_CANCEL
-        if (action == MotionEvent.ACTION_DOWN || !listView.isScrolledToTop && !listView.isScrolledToBottom) {
+        if (action == MotionEvent.ACTION_DOWN || !listView.isScrolledToTop() && !listView.isScrolledToBottom()) {
             startY = if (ev != null) ev.getY() else 0f
         } else if (updateStartY) {
             val hsize = if (ev != null) ev.getHistorySize() else 0
@@ -165,7 +165,7 @@ class PullableWrapper(private val listView: Wrapped) {
         }
         updateStartY = action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL
         if (busySide == Side.NONE) {
-            val edgeEffectHandler = listView.edgeEffectHandler
+            val edgeEffectHandler = listView.getEdgeEffectHandler()
             if (action == MotionEvent.ACTION_DOWN) {
                 if (edgeEffectHandler != null) {
                     edgeEffectHandler.setPullable(EdgeEffectHandler.Side.TOP, true)
@@ -177,7 +177,7 @@ class PullableWrapper(private val listView: Wrapped) {
                 var resetBottom = true
                 if (action == MotionEvent.ACTION_MOVE) {
                     // Call getIdlePullStrain to get previous transient value
-                    if (dy > 0 && listView.isScrolledToTop &&
+                    if (dy > 0 && listView.isScrolledToTop() &&
                         (pullSides == Side.BOTH || pullSides == Side.TOP)
                     ) {
                         pull = true
@@ -194,7 +194,7 @@ class PullableWrapper(private val listView: Wrapped) {
                             edgeEffectHandler.finish(EdgeEffectHandler.Side.TOP)
                             edgeEffectHandler.setPullable(EdgeEffectHandler.Side.TOP, false)
                         }
-                    } else if (dy < 0 && listView.isScrolledToBottom &&
+                    } else if (dy < 0 && listView.isScrolledToBottom() &&
                         (pullSides == Side.BOTH || pullSides == Side.BOTTOM)
                     ) {
                         pull = true
@@ -256,11 +256,11 @@ class PullableWrapper(private val listView: Wrapped) {
     private var beforeRestoreCanvas = false
 
     init {
-        val context = listView.context
+        val context = listView.getContext()
         topView = LollipopView(listView, true)
         bottomView = LollipopView(listView, false)
         pullDeltaGain = if (isTablet(context.getResources().getConfiguration())) 6f else 4f
-        setColor(ThemeEngine.Companion.getTheme(listView.context)!!.accent)
+        setColor(ThemeEngine.Companion.getTheme(listView.getContext())!!.accent)
     }
 
     fun drawBefore(canvas: Canvas) {
@@ -269,7 +269,7 @@ class PullableWrapper(private val listView: Wrapped) {
         val shift = if (top > bottom) top else -bottom
         if (shift != 0) {
             canvas.save()
-            val height = listView.height.toFloat()
+            val height = listView.getHeight().toFloat()
             val dy = ((abs(pullStrainToDelta(shift)) / height).toDouble()
                 .pow(2.5)).toFloat() * height * sign(shift.toFloat())
             canvas.translate(0f, dy)
@@ -330,7 +330,7 @@ class PullableWrapper(private val listView: Wrapped) {
 
         init {
             this.wrapped = WeakReference<Wrapped?>(wrapped)
-            this.height = (3f * ResourceUtils.obtainDensity(wrapped.context) + 0.5f).toInt()
+            this.height = (3f * ResourceUtils.obtainDensity(wrapped.getContext()) + 0.5f).toInt()
         }
 
         override fun setColor(color: Int) {
@@ -340,8 +340,8 @@ class PullableWrapper(private val listView: Wrapped) {
         fun invalidate(padding: Int) {
             val wrapped = this.wrapped.get()
             if (wrapped != null) {
-                val offset = if (top) padding else wrapped.height - height - padding
-                invalidate(0, offset, wrapped.width, offset + height)
+                val offset = if (top) padding else wrapped.getHeight() - height - padding
+                invalidate(0, offset, wrapped.getWidth(), offset + height)
             }
         }
 
@@ -428,9 +428,9 @@ class PullableWrapper(private val listView: Wrapped) {
             }
             val paint = this.paint
             val time = SystemClock.elapsedRealtime()
-            val width = wrapped.width
+            val width = wrapped.getWidth()
             val height = this.height
-            val offset = if (top) padding else wrapped.height - height - padding
+            val offset = if (top) padding else wrapped.getHeight() - height - padding
             val state = this.state
             val previousState = this.previousState
             val primaryColor = color
@@ -615,7 +615,7 @@ class PullableWrapper(private val listView: Wrapped) {
         init {
             this.wrapped = WeakReference<Wrapped?>(wrapped)
             val density = ResourceUtils.obtainDensity(
-                wrapped.context
+                wrapped.getContext()
             )
             radius = (CIRCLE_RADIUS * density).toInt()
             commonShift = (DEFAULT_CIRCLE_TARGET * density).toInt()
@@ -660,7 +660,7 @@ class PullableWrapper(private val listView: Wrapped) {
         fun invalidate(padding: Int) {
             val wrapped = this.wrapped.get()
             if (wrapped != null) {
-                invalidate(wrapped, wrapped.width, padding)
+                invalidate(wrapped, wrapped.getWidth(), padding)
             }
         }
 
@@ -674,7 +674,7 @@ class PullableWrapper(private val listView: Wrapped) {
             var t = padding - 2 * radius - shadowSize + shadowShift - 1
             var b = padding + 2 * commonShift + shadowSize + shadowShift + 1
             if (!top) {
-                val height = wrapped.height
+                val height = wrapped.getHeight()
                 val nt = height - t
                 val nb = height - b
                 t = nb
@@ -769,8 +769,8 @@ class PullableWrapper(private val listView: Wrapped) {
             val circlePaint = this.circlePaint
             val ringPaint = this.ringPaint
             val time = SystemClock.elapsedRealtime()
-            val width = wrapped.width
-            val height = wrapped.height
+            val width = wrapped.getWidth()
+            val height = wrapped.getHeight()
             val state = this.state
             val previousState = this.previousState
             var needInvalidate = false
@@ -922,15 +922,15 @@ class PullableWrapper(private val listView: Wrapped) {
     }
 
     interface Wrapped : Shift {
-        val context: Context
-        val resources: Resources?
-        val edgeEffectHandler: EdgeEffectHandler?
-        val isScrolledToTop: Boolean
-        val isScrolledToBottom: Boolean
+        fun getContext(): Context
+        fun getResources(): Resources
+        fun getEdgeEffectHandler(): EdgeEffectHandler?
+        fun isScrolledToTop(): Boolean
+        fun isScrolledToBottom(): Boolean
         fun invalidate(l: Int, t: Int, r: Int, b: Int)
         fun invalidate()
-        val width: Int
-        val height: Int
+        fun getWidth(): Int
+        fun getHeight(): Int
     }
 
     companion object {

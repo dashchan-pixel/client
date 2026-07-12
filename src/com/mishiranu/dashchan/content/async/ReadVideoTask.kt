@@ -153,7 +153,8 @@ class ReadVideoTask(private val callback: Callback, private val chan: Chan,
 		}
 	}
 
-	override fun onProgress(values: LongArray) {
+	override fun onProgress(progress: LongArray) {
+		val values = progress
 		if (start > 0) {
 			callback.onReadVideoRangeUpdate(start, start + values[0])
 		} else {
@@ -161,7 +162,8 @@ class ReadVideoTask(private val callback: Callback, private val chan: Chan,
 		}
 	}
 
-	override fun onComplete(success: Boolean) {
+	override fun onComplete(result: Boolean) {
+		val success = result
 		if (success) {
 			callback.onReadVideoSuccess(start > 0, file!!)
 		} else {

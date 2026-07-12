@@ -13,7 +13,7 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 
 class ReadSearchTask(private val callback: Callback, private val chan: Chan,
 		private val boardName: String?, private val searchQuery: String?,
-		private val pageNumber: Int) : HttpHolderTask<Void, List<PostItem>?>(chan) {
+		val pageNumber: Int) : HttpHolderTask<Void, List<PostItem>?>(chan) {
 	private var errorItem: ErrorItem? = null
 
 	interface Callback {

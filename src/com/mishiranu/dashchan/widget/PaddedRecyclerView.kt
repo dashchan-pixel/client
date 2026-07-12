@@ -29,7 +29,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
-    private val edgeEffectHandler = bind(this, this)
+    private val edgeEffectHandlerField = bind(this, this)
     private var shift: Shift? = null
     private var pullableWrapper: PullableWrapper? = null
 
@@ -72,7 +72,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
     /* init */
     init {
         val theme: ThemeEngine.Theme = ThemeEngine.Companion.getTheme(getContext())
-        edgeEffectHandler.setColor(theme.accent)
+        edgeEffectHandlerField.setColor(theme.accent)
 
         val density = obtainDensity(this)
         val thumbDrawable = getDrawable(getContext(), android.R.attr.fastScrollThumbDrawable, 0)
@@ -187,7 +187,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
     }
 
     override fun getEdgeEffectHandler(): EdgeEffectHandler {
-        return edgeEffectHandler
+        return edgeEffectHandlerField
     }
 
     override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int {

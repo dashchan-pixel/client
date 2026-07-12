@@ -178,11 +178,13 @@ class ReadFileTask private constructor(private val callback: Callback, private v
 		}
 	}
 
-	override fun onProgress(values: LongArray) {
+	override fun onProgress(progress: LongArray) {
+		val values = progress
 		callback.onUpdateProgress(values[0], values[1])
 	}
 
-	override fun onComplete(success: Boolean) {
+	override fun onComplete(result: Boolean) {
+		val success = result
 		callback.onFinishDownloading(success, fromUri, toFile, errorItem)
 	}
 

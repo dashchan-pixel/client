@@ -59,7 +59,7 @@ import com.mishiranu.dashchan.widget.ThemeEngine
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 
-class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?> {
+class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> {
     private val callbacks = HashMap<Key?, ArrayList<Callback>?>()
     private val globalCallbacks = WeakObservable<GlobalCallback>()
     private val callbackKeys = HashMap<Callback?, Key?>()
@@ -385,7 +385,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                 CountDownLatch(1)
             else
                 null
-        notificationsQueue.add(NotificationData(type, taskState, syncLatch))
+        notificationsQueue.add(NotificationData(type, taskState!!, syncLatch))
         if (syncLatch != null) {
             try {
                 syncLatch.await()
@@ -508,8 +508,8 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                 var pendingUserPost: PendingUserPost? = null
                 if (postNumber != null) {
                     CommonDatabase.getInstance().posts.setFlags(
-                        true, chanName, data.boardName,
-                        targetThreadNumber, postNumber, PostItem.HideState.UNDEFINED, true
+                        true, chanName!!, data.boardName,
+                        targetThreadNumber!!, postNumber, PostItem.HideState.UNDEFINED, true
                     )
                 } else if (newThread) {
                     pendingUserPost = PendingUserPost.NewThread.INSTANCE
@@ -517,10 +517,10 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                     pendingUserPost = SimilarComment(comment, System.currentTimeMillis())
                 }
                 if (pendingUserPost != null) {
-                    var pendingUserPosts: HashSet<PendingUserPost?>? =
+                    var pendingUserPosts: HashSet<PendingUserPost>? =
                         PENDING_USER_POST_MAP.get(arrayKey)
                     if (pendingUserPosts == null) {
-                        pendingUserPosts = HashSet<PendingUserPost?>(1)
+                        pendingUserPosts = HashSet(1)
                         PENDING_USER_POST_MAP.put(arrayKey, pendingUserPosts)
                     }
                     pendingUserPosts.add(pendingUserPost)
@@ -578,9 +578,9 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             if (targetThreadNumber != null && favoriteOnReply!!.isEnabled(data.optionSage)) {
                 // Add to favorites after processing the response to ensure watcher is not triggered too early
                 FavoritesStorage.getInstance()
-                    .add(chanName, data.boardName, targetThreadNumber, null, true)
+                    .add(chanName!!, data.boardName, targetThreadNumber, null, true)
             }
-            StatisticsStorage.getInstance().incrementPostsSent(chanName, data.threadNumber == null)
+            StatisticsStorage.getInstance().incrementPostsSent(chanName!!, data.threadNumber == null)
             val callbacks = this.callbacks.get(key)
             if (callbacks != null) {
                 for (callback in callbacks) {
@@ -611,7 +611,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                     .putExtra(C.EXTRA_THREAD_NUMBER, data.threadNumber)
                     .putExtra(
                         C.EXTRA_FAIL_RESULT,
-                        FailResult(errorItem, extra, captchaError, keepCaptcha)
+                        FailResult(errorItem!!, extra, captchaError, keepCaptcha)
                     )
             )
         }
@@ -677,7 +677,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
                         )
                         val captchaError = `in`.readByte().toInt() != 0
                         val keepCaptcha = `in`.readByte().toInt() != 0
-                        return FailResult(errorItem, extra, captchaError, keepCaptcha)
+                        return FailResult(errorItem!!, extra, captchaError, keepCaptcha)
                     }
 
                     override fun newArray(size: Int): Array<FailResult?> {
@@ -741,7 +741,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             consumePendingUserPosts: Collection<PendingUserPost>
         ) {
             val key = PostingService.Key(chanName, boardName, threadNumber)
-            val pendingUserPosts: HashSet<PendingUserPost?>? = PENDING_USER_POST_MAP.remove(key)
+            val pendingUserPosts: HashSet<PendingUserPost>? = PENDING_USER_POST_MAP.remove(key)
             if (pendingUserPosts != null) {
                 pendingUserPosts.removeAll(consumePendingUserPosts)
                 if (!pendingUserPosts.isEmpty()) {

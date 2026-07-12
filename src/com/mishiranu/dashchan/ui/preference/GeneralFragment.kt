@@ -171,7 +171,7 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	}
 
 	override fun onChansSelected(chanNames: Collection<String>) {
-		Preferences.setCaptchaSolvingChans(chanNames)
+		Preferences.captchaSolvingChans = HashSet(chanNames)
 	}
 
 	private fun configureCaptchaSolvingNeutralButton() {

@@ -34,10 +34,10 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
     private var innerPadding = 0
 
     interface Adapter {
-        fun onCreateView(parent: ViewGroup?): View?
-        fun getPhotoView(view: View?): PhotoView?
+        fun onCreateView(parent: ViewGroup?): View
+        fun getPhotoView(view: View): PhotoView?
         fun onPositionChange(
-            view: PhotoViewPager?, index: Int, centerView: View?, leftView: View?, rightView: View?,
+            view: PhotoViewPager?, index: Int, centerView: View, leftView: View?, rightView: View?,
             manually: Boolean
         )
 

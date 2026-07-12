@@ -197,14 +197,16 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 		fallbackHolder.interrupt()
 	}
 
-	override fun onProgress(values: LongArray) {
+	override fun onProgress(progress: LongArray) {
+		val values = progress
 		val index = values[0].toInt()
 		val progress = values[1]
 		val progressMax = values[2]
 		updateProgressValue(index, progress, progressMax)
 	}
 
-	override fun onComplete(success: Boolean) {
+	override fun onComplete(result: Boolean) {
+		val success = result
 		if (callback != null) {
 			if (success) {
 				callback.onSendPostSuccess(key, data, chan.name,

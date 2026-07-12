@@ -186,7 +186,7 @@ class DecoderDrawable @Throws(IOException::class) constructor(private val scaled
 	private fun calculateKey(x: Int, y: Int, scale: Int): Int = x shl 18 or (y shl 4) or scale
 
 	private inner class DecodeTask(private val key: Int, x: Int, y: Int, scale: Int) :
-			ExecutorTask<Void, Bitmap>() {
+			ExecutorTask<Void, Bitmap?>() {
 		private val rect: Rect
 		private val options = BitmapFactory.Options()
 
@@ -236,7 +236,8 @@ class DecoderDrawable @Throws(IOException::class) constructor(private val scaled
 			bitmap?.recycle()
 		}
 
-		override fun onComplete(bitmap: Bitmap?) {
+		override fun onComplete(result: Bitmap?) {
+			val bitmap: Bitmap? = result
 			tasks.remove(key)
 			if (error) {
 				recycle(false)

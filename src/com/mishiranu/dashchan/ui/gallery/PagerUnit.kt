@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Point
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -253,7 +254,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
         )
         for (holder in holders) {
             if (holder != null && holder.thumbnailTarget != null) {
-                ImageLoader.getInstance().cancel(holder.thumbnailTarget)
+                ImageLoader.getInstance().cancel(holder.thumbnailTarget!!)
             }
         }
         interrupt(true)
@@ -338,7 +339,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
         }
 
         public override fun onResult(
-            key: String,
+            key: String?,
             bitmap: Bitmap?,
             error: Boolean,
             instantly: Boolean
@@ -500,7 +501,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
         }
     }
 
-    private inner class PagerAdapter(private val galleryItems: MutableList<GalleryItem>) :
+    private inner class PagerAdapter(private val galleryItems: List<GalleryItem>) :
         PhotoViewPager.Adapter {
         private var waitBeforeVideo = 0
 
@@ -628,7 +629,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
             galleryInstance.context
         )
         viewPagerParent = FrameLayout(galleryInstance.context)
-        pagerAdapter = PagerUnit.PagerAdapter(galleryInstance.galleryItems)
+        pagerAdapter = PagerAdapter(galleryInstance.galleryItems)
         pagerAdapter.setWaitBeforeNextVideo(PhotoView.INITIAL_SCALE_TRANSITION_TIME + 100)
         viewPager = PhotoViewPager(galleryInstance.context, pagerAdapter)
         viewPager.setInnerPadding((16f * density).toInt())

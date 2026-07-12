@@ -120,7 +120,8 @@ class SendMultifunctionalTask(private val callback: Callback, private val state:
 		}
 	}
 
-	override fun onComplete(success: Boolean) {
+	override fun onComplete(result: Boolean) {
+		val success = result
 		if (success) {
 			callback.onSendSuccess(archiveBoardName, archiveThreadNumber)
 		} else {

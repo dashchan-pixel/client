@@ -64,7 +64,7 @@ class CloudFlareResolver : FirewallResolver() {
 	}
 
 	private fun toKey(session: FirewallResolver.Session): FirewallResolver.Exclusive.Key {
-		return session.getKey(FirewallResolver.Identifier.Flag.USER_AGENT, FirewallResolver.Identifier.Flag.HOST)
+		return session.getKey(FirewallResolver.Identifier.Flag.USER_AGENT, FirewallResolver.Identifier.Flag.HOST)!!
 	}
 
 	override fun collectCookies(session: FirewallResolver.Session, cookieBuilder: CookieBuilder) {
@@ -80,13 +80,13 @@ class CloudFlareResolver : FirewallResolver() {
 			cookie: String?, uri: Uri?) {
 		val chan = session.chan
 		val cookieTitle = "Cloudflare " + session.getUri()!!.getHost()
-		chan!!.configuration.storeCookie(key.formatKey(COOKIE_CLOUDFLARE), cookie,
+		chan!!.configuration.storeCookie(key.formatKey(COOKIE_CLOUDFLARE)!!, cookie,
 				if (cookie != null) key.formatTitle(cookieTitle) else null)
 		chan!!.configuration.commit()
 		if (uri != null) {
 			val host = uri.getHost()
 			if (chan!!.locator.isConvertableChanHost(host!!)) {
-				chan!!.locator.setPreferredHost(host)
+				chan.locator.preferredHost = host
 			}
 			Preferences.setUseHttps(chan, "https" == uri.getScheme())
 		}
@@ -125,7 +125,7 @@ class CloudFlareResolver : FirewallResolver() {
 	private inner class Exclusive : FirewallResolver.Exclusive {
 		@Throws(FirewallResolver.CancelException::class, HttpException::class, InterruptedException::class)
 		override fun resolve(session: FirewallResolver.Session, key: FirewallResolver.Exclusive.Key): Boolean {
-			val result = session.resolveWebView(WebViewClient())
+			val result = session.resolveWebView<CookieResult>(WebViewClient())
 			if (result != null) {
 				storeCookie(session, key, result.cookie, result.uri)
 				return true

@@ -72,7 +72,7 @@ class StormWallResolver : FirewallResolver() {
 					}
 				}
 			}
-			val result = session.resolveWebView(WebViewClient())
+			val result = session.resolveWebView<CookieResult>(WebViewClient())
 			if (result != null) {
 				storeCookie(session, key, result.cookie, result.uri)
 				return true

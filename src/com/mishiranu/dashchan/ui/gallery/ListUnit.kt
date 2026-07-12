@@ -272,7 +272,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             updateAllGalleryItemsChecked()
             return true
         } else if (switchItemId0 == R.id.menu_download) {
-            val galleryItems = ArrayList<GalleryItem?>()
+            val galleryItems = ArrayList<GalleryItem>()
             val adapter = this.adapter
             for (i in 0..<adapter!!.getItemCount()) {
                 if (callback.isItemChecked(i)) {
@@ -376,11 +376,11 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
     private class GridAdapter(
         private val callback: Callback,
         private val chanName: String?,
-        private val galleryItems: MutableList<GalleryItem>
-    ) : RecyclerView.Adapter<GridAdapter.ViewHolder?>() {
-        interface Callback : ClickCallback<Void?, ViewHolder?> {
+        private val galleryItems: List<GalleryItem>
+    ) : RecyclerView.Adapter<GridAdapter.ViewHolder>() {
+        interface Callback : ClickCallback<Void?, ViewHolder> {
             fun isItemChecked(position: Int): Boolean
-            fun onItemClick(view: View?, position: Int)
+            fun onItemClick(view: View, position: Int)
             fun onItemLongClick(position: Int): Boolean
 
             override fun onItemClick(
@@ -398,7 +398,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             }
         }
 
-        private class ViewHolder(parent: ViewGroup, callback: Callback) :
+        internal class ViewHolder(parent: ViewGroup, callback: Callback) :
             RecyclerView.ViewHolder(object : FrameLayout(parent.getContext()) {
                 override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
                     super.onMeasure(widthMeasureSpec, widthMeasureSpec)
@@ -466,8 +466,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             val galleryItem = getItem(position)
             val chan = get(chanName)
             holder.attachmentInfo.setText(
-                chan.util.StringUtils
-                    .getFileExtension(galleryItem.getFileName(chan))
+                getFileExtension(galleryItem.getFileName(chan))
                     .uppercase(Locale.getDefault()) +
                         (if (galleryItem.size > 0) " " + StringUtils.formatFileSize(
                             galleryItem.size.toLong(),

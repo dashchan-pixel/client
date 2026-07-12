@@ -317,8 +317,8 @@ object Preferences {
         return defaultCaptchaType
     }
 
-    fun getCaptchaTypeValues(captchaTypes: Collection<String?>): MutableList<String?> {
-        val values = java.util.ArrayList<String?>()
+    fun getCaptchaTypeValues(captchaTypes: Collection<String?>): MutableList<String> {
+        val values = java.util.ArrayList<String>()
         for (captchaType in captchaTypes) {
             values.add(transformCaptchaTypeToValue(captchaType))
         }
@@ -327,9 +327,9 @@ object Preferences {
 
     fun getCaptchaTypeEntries(
         chan: Chan,
-        captchaTypes: MutableCollection<String?>
-    ): MutableList<CharSequence?> {
-        val entries = java.util.ArrayList<CharSequence?>()
+        captchaTypes: Collection<String?>
+    ): MutableList<CharSequence> {
+        val entries = java.util.ArrayList<CharSequence>()
         for (captchaType in captchaTypes) {
             entries.add(chan.configuration.safe().obtainCaptcha(captchaType).title)
         }
@@ -388,7 +388,7 @@ object Preferences {
 
     const val KEY_CAPTCHA_SOLVING_CHANS: String = "captcha_solving_chans"
 
-    var captchaSolvingChans: MutableCollection<String?>?
+    var captchaSolvingChans: MutableCollection<String>
         get() {
             val value =
                 PREFERENCES!!.getString(
@@ -396,12 +396,11 @@ object Preferences {
                     null
                 )
             if (isEmpty(value)) {
-                return mutableSetOf<String?>()
+                return mutableSetOf()
             }
             try {
                 val jsonArray = JSONArray(value)
-                val chanNames =
-                    HashSet<String?>(jsonArray.length())
+                val chanNames = HashSet<String>(jsonArray.length())
                 for (i in 0..<jsonArray.length()) {
                     val chanName = jsonArray.optString(i)
                     if (!isEmpty(chanName)) {
@@ -410,11 +409,11 @@ object Preferences {
                 }
                 return chanNames
             } catch (e: JSONException) {
-                return mutableSetOf<String?>()
+                return mutableSetOf()
             }
         }
         set(chanNames) {
-            if (chanNames == null || chanNames.isEmpty()) {
+            if (chanNames.isEmpty()) {
                 PREFERENCES!!.edit()
                     .remove(KEY_CAPTCHA_SOLVING_CHANS)
                     .close()

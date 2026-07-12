@@ -113,9 +113,9 @@ abstract class ListPage : LifecycleOwner, PullCallback {
             this.initRequest = initRequest
             this.initSearch = initSearch
             getViewModel(fragment).update(this)
-            lifecycle!!.currentState = Lifecycle.State.INITIALIZED
+            lifecycleRegistry!!.currentState = Lifecycle.State.INITIALIZED
             onCreate()
-            lifecycle!!.currentState = Lifecycle.State.STARTED
+            lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
             this.initRequest = null
             this.initSearch = null
         }
@@ -124,7 +124,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     private val state: Lifecycle.State?
         get() = if (lifecycleRegistry != null) lifecycleRegistry!!.currentState else null
 
-    protected val context: Context?
+    protected val context: Context
         get() = recyclerView!!.getContext()
 
     protected val toolbarContext: Context?
@@ -179,7 +179,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     }
 
     protected fun getActionBarIcon(attr: Int): Drawable {
-        return getActionBarIcon(this.toolbarContext, attr)
+        return getActionBarIcon(this.toolbarContext!!, attr)
     }
 
     protected fun notifyTitleChanged() {
@@ -318,14 +318,14 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     fun resume() {
         if (this.state == Lifecycle.State.STARTED) {
-            lifecycle!!.currentState = Lifecycle.State.RESUMED
+            lifecycleRegistry!!.currentState = Lifecycle.State.RESUMED
             performResume()
         }
     }
 
     fun pause() {
         if (this.state == Lifecycle.State.RESUMED) {
-            lifecycle!!.currentState = Lifecycle.State.STARTED
+            lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
             onPause()
         }
     }
@@ -333,10 +333,10 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     fun destroy() {
         if (this.isRunning) {
             if (this.state == Lifecycle.State.RESUMED) {
-                lifecycle!!.currentState = Lifecycle.State.STARTED
+                lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
                 onPause()
             }
-            lifecycle!!.currentState = Lifecycle.State.DESTROYED
+            lifecycleRegistry!!.currentState = Lifecycle.State.DESTROYED
             onDestroy()
         }
     }

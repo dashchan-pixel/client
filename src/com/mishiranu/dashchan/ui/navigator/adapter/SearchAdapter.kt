@@ -81,7 +81,7 @@ class SearchAdapter(
         }
     }
 
-    fun setItems(postItems: MutableList<PostItem?>?) {
+    fun setItems(postItems: List<PostItem>?) {
         this.postItems.clear()
         if (postItems != null) {
             this.postItems.addAll(postItems)
@@ -96,7 +96,7 @@ class SearchAdapter(
         }
     }
 
-    fun isGroupMode(): Boolean {
+    val isGroupMode: Boolean get() {
         return groupMode
     }
 
