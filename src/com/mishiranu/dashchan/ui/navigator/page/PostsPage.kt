@@ -31,7 +31,7 @@ import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getPreferred
 import chan.content.ChanConfiguration
-import chan.content.ChanManager.Companion.instance
+import chan.content.ChanManager
 import chan.content.RedirectException
 import chan.text.JsonSerial
 import chan.text.JsonSerial.reader
@@ -255,7 +255,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         ) {
             if (session == null) {
                 val callback: WatcherService.Session.Callback?
-                callback = CallbackProxy.create<WatcherService.Session.Callback?>(
+                callback = CallbackProxy.create(
                     WatcherService.Session.Callback::class.java,
                     CallbackProxy.Handler { result: CallbackProxy<WatcherService.Session.Callback?>? ->
                         val visible = visibleRefresh
@@ -282,7 +282,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 return true
             }
             val result = this.result.getValue()
-            return result != null && result.second
+            return result != null && result.second == true
         }
 
         fun notifyExtracted() {
@@ -347,7 +347,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     }
                 }
                 if (!isDisplayHiddenPostsEnabled && postItem.isHidden()) {
-                    this.adapter.removeHiddenPost(postItem)
+                    adapter!!.removeHiddenPost(postItem)
                     setPostHideState(postItem, postItem.getHideState())
                     notifyTitleChanged()
                 }
@@ -428,10 +428,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                                 position
                             ).getPostNumber()
                         )
-                    ) return@setSkipCallback true
+                    ) return@SkipCallback true
                 }
                 if ((position + 1) < adapter.getItemCount()) {
-                    return@setSkipCallback adapter.configurationSet.postStateProvider!!.isUserPost(
+                    return@SkipCallback adapter.configurationSet.postStateProvider!!.isUserPost(
                         adapter.getItem(position + 1).getPostNumber()
                     )
                 }
@@ -485,7 +485,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             (48f * density).toInt(),
             (48f * density).toInt()
         )
-        val i = 0
+        var i = 0
         val last = searchControlLayout.getChildCount() - 1
         while (i <= last) {
             val view = searchControlLayout.getChildAt(i)
@@ -681,9 +681,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         return Pair<String?, String?>(this.obtainTitle(), subtitle)
     }
 
-    override fun onItemClick(view: View?, postItem: PostItem) {
+    override fun onItemClick(view: View?, postItem: PostItem?) {
         if (selectionMode != null) {
-            this.adapter!!.toggleItemSelected(postItem)
+            this.adapter!!.toggleItemSelected(postItem!!)
             selectionMode!!.setTitle(
                 getColonString(
                     resources, R.string.selected,
@@ -692,14 +692,14 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             )
             return
         }
-        uiManager!!.interaction().handlePostClick(view, postStateProvider, postItem, this.adapter)
+        uiManager!!.interaction().handlePostClick(view!!, postStateProvider, postItem!!, this.adapter!!)
     }
 
-    override fun onItemLongClick(postItem: PostItem): Boolean {
+    override fun onItemLongClick(postItem: PostItem?): Boolean {
         if (selectionMode != null) {
             return false
         }
-        uiManager!!.interaction().handlePostContextMenu(this.adapter!!.configurationSet, postItem)
+        uiManager!!.interaction().handlePostContextMenu(this.adapter!!.configurationSet, postItem!!)
         return true
     }
 
@@ -774,14 +774,14 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             page.chanName, page.boardName,
             page.threadNumber
         )
-        val iconFavorite = isTabletOrLandscape(resources.configuration)
+        val iconFavorite = isTabletOrLandscape(resources.getConfiguration())
         menu.findItem(R.id.menu_star_text).setVisible(!iconFavorite && !isFavorite)
         menu.findItem(R.id.menu_unstar_text).setVisible(!iconFavorite && isFavorite)
         menu.findItem(R.id.menu_star_icon).setVisible(iconFavorite && !isFavorite)
         menu.findItem(R.id.menu_unstar_icon).setVisible(iconFavorite && isFavorite)
         menu.findItem(R.id.menu_open_original_thread)
             .setVisible(getPreferred(null, retainableExtra.archivedThreadUri).name != null)
-        val canBeArchived = !instance.getArchiveChanNames(page.chanName).isEmpty() ||
+        val canBeArchived = !ChanManager.getInstance().getArchiveChanNames(page.chanName).isEmpty() ||
                 !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
         menu.findItem(R.id.menu_archive).setVisible(canBeArchived)
     }
@@ -903,6 +903,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     updateOptionsMenu()
                 }
             }
+
+            else -> {}
         }
     }
 
@@ -974,7 +976,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             if (data.size > 0) {
                 replyable!!.onRequestReply(
                     true,
-                    *CommonUtils.toArray<ReplyData?>(data, ReplyData::class.java)
+                    *(CommonUtils.toArray(data, ReplyData::class.java) ?: emptyArray())
                 )
             }
             mode.finish()
@@ -1196,7 +1198,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private fun decodeThreadExtra() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        val localFiltersDecoded = false
+        var localFiltersDecoded = false
         if (retainableExtra.threadExtra != null) {
             try {
                 JsonSerial.reader(retainableExtra.threadExtra!!).use { reader ->
@@ -1233,7 +1235,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun encodeAndStoreThreadExtra() {
-        val extra: ByteArray? = null
+        var extra: ByteArray? = null
         if (hidePerformer!!.hasLocalFilters()) {
             try {
                 writer().use { writer ->
@@ -1526,7 +1528,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private val lastToast = LastToast()
 
-    override fun onExtractPostsComplete(result: ExtractPostsTask.Result, cancelled: Boolean) {
+    override fun onExtractPostsComplete(result: ExtractPostsTask.Result?, cancelled: Boolean) {
+        @Suppress("NAME_SHADOWING") val result = result!!
         val page = getPage()
         WatcherNotifications.cancelReplies(
             context,
@@ -1540,9 +1543,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         val recyclerView = getRecyclerView()
         val adapter = this.adapter
-        val updateAdapters = false
-        val listPositionFromState: ListPosition? = null
-        val keepPositionPair: Pair<PostNumber?, Int?>? = null
+        var updateAdapters = false
+        var listPositionFromState: ListPosition? = null
+        var keepPositionPair: Pair<PostNumber?, Int?>? = null
         val initial = retainableExtra.initialExtract
         retainableExtra.initialExtract = false
         val erase = retainableExtra.eraseExtract
@@ -1723,7 +1726,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         listPositionFromState: ListPosition?
     ) {
         val adapter = this.adapter
-        val listPosition = takeListPosition()
+        var listPosition = takeListPosition()
         if (listPosition == null) {
             listPosition = listPositionFromState
         }
@@ -1807,7 +1810,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return
         }
 
-        val importantPostsMarksFastScrollBarDecorationData: ImportantPostsMarksFastScrollBarDecoration.Data? =
+        var importantPostsMarksFastScrollBarDecorationData: ImportantPostsMarksFastScrollBarDecoration.Data? =
             null
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val userPosts = retainableExtra.userPosts
@@ -2221,9 +2224,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     val page = postsPage.getPage()
                     val retainableExtra =
                         postsPage.getRetainableExtra<RetainableExtra?>(RetainableExtra.Companion.FACTORY)
-                    val files = 0
-                    val postsWithFiles = 0
-                    val links = 0
+                    var files = 0
+                    var postsWithFiles = 0
+                    var links = 0
                     for (postItem in postsPage.adapter!!) {
                         val attachmentItems: MutableList<AttachmentItem>? =
                             postItem!!.getAttachmentItems()
@@ -2298,9 +2301,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
                                 val postsPage = extract<PostsPage>(provider)!!
-                                val hasDeleted = false
-                                val i = 0
-                                val j = 0
+                                var hasDeleted = false
+                                var i = 0
+                                var j = 0
                                 while (i < checked.size) {
                                     if (checked[i]) {
                                         postsPage.hidePerformer!!.removeLocalFilter(j--)

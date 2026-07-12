@@ -272,7 +272,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         if (searchView == null && required) {
             searchView = obtainSearchView()
             searchView!!.setOnSubmitListener(OnSubmitListener { query: String? ->
-                if (listPage!!.onSearchSubmit(query)) {
+                if (listPage!!.onSearchSubmit(query!!)) {
                     searchSubmitQuery = null
                     setSearchMode(false)
                     return@setOnSubmitListener true

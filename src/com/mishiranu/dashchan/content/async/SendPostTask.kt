@@ -156,7 +156,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 						val estimator = SimilarTextEstimator(Int.MAX_VALUE, true)
 						val wordsData1 = estimator.getWords<Void>(postComment)
 						for (thread in threads) {
-							val post = thread!!!!!!!!!!!!!!.posts[0]
+							val post = thread!!!!!!!!!!!!!!!!.posts[0]
 							val comment = HtmlParser.clear(post!!.comment)
 							val wordsData2 = estimator.getWords<Void>(comment)
 							if (estimator.checkSimiliar(wordsData1, wordsData2)

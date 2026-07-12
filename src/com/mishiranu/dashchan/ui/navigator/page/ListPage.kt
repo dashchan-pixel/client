@@ -276,11 +276,11 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         return Pair<String?, String?>(obtainTitle(), null)
     }
 
-    open fun onCreateOptionsMenu(menu: Menu?) {}
+    open fun onCreateOptionsMenu(menu: Menu) {}
 
-    open fun onPrepareOptionsMenu(menu: Menu?) {}
+    open fun onPrepareOptionsMenu(menu: Menu) {}
 
-    open fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    open fun onOptionsItemSelected(item: MenuItem): Boolean {
         return false
     }
 
@@ -288,7 +288,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     open fun onSearchQueryChange(query: String?) {}
 
-    open fun onSearchSubmit(query: String?): Boolean {
+    open fun onSearchSubmit(query: String): Boolean {
         return false
     }
 

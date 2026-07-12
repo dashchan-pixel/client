@@ -110,7 +110,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             val navigatePostMode: NavigatePostMode?, val gallerySet: GalleryItem.Set
         )
 
-        class State(
+        class State internal constructor(
             internal val factories: MutableList<DialogProvider.Factory<*>>,
             internal val attachmentDialog: AttachmentDialog?,
             internal val postContextMenu: PostNumber?
@@ -388,11 +388,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         }
     }
 
-    private enum class State {
+    internal enum class State {
         LIST, LOADING, ERROR
     }
 
-    private fun interface StateListener {
+    internal fun interface StateListener {
         fun onStateChanged(state: State?): Boolean
     }
 
@@ -432,7 +432,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
         protected abstract fun getThis(): T
 
-        open fun onRequestUpdateDemandSet(demandSet: DemandSet?, index: Int) {}
+        open fun onRequestUpdateDemandSet(demandSet: DemandSet, index: Int) {}
 
         open fun onRequestUpdate() {}
 
@@ -610,16 +610,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return this
         }
 
-        override fun findPostItem(postNumber: PostNumber): PostItem? {
+        override fun findPostItem(postNumber: PostNumber?): PostItem? {
             for (postItem in postItems) {
-                if (postNumber.equals(postItem.getPostNumber())) {
+                if (postItem.getPostNumber() == postNumber) {
                     return postItem
                 }
             }
             return null
         }
 
-        override fun iterator(): MutableIterator<PostItem?> {
+        override fun iterator(): MutableIterator<PostItem> {
             return postItems.iterator()
         }
 
@@ -682,7 +682,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             }
         }
 
-        private val postItems = ArrayList<PostItem?>()
+        private val postItems = ArrayList<PostItem>()
 
         init {
             onRequestUpdate()
@@ -692,7 +692,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return this
         }
 
-        override fun iterator(): MutableIterator<PostItem?> {
+        override fun iterator(): MutableIterator<PostItem> {
             return postItems.iterator()
         }
 
@@ -701,8 +701,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             postItems.clear()
             val referencesFrom = postItem.getReferencesFrom()
             if (!referencesFrom.isEmpty()) {
-                for (postItem in configurationSet.postsProvider) {
-                    if (referencesFrom.contains(postItem!!.getPostNumber())) {
+                for (postItem in configurationSet.postsProvider!!) {
+                    if (referencesFrom.contains(postItem.getPostNumber())) {
                         postItems.add(postItem)
                     }
                 }
@@ -738,7 +738,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             }
         }
 
-        private val postItems = ArrayList<PostItem?>()
+        private val postItems = ArrayList<PostItem>()
 
         init {
             onRequestUpdate()
@@ -748,15 +748,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return this
         }
 
-        override fun iterator(): MutableIterator<PostItem?> {
+        override fun iterator(): MutableIterator<PostItem> {
             return postItems.iterator()
         }
 
         override fun onRequestUpdate() {
             super.onRequestUpdate()
             postItems.clear()
-            for (postItem in configurationSet.postsProvider) {
-                if (postNumbers.contains(postItem!!.getPostNumber())) {
+            for (postItem in configurationSet.postsProvider!!) {
+                if (postNumbers.contains(postItem.getPostNumber())) {
                     postItems.add(postItem)
                 }
             }
@@ -836,13 +836,13 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 }
             }
 
-            override fun onReadSinglePostSuccess(postItem: PostItem?) {
+            override fun onReadSinglePostSuccess(postItem: PostItem) {
                 readTask = null
                 this.postItem = postItem
                 notifyObservers()
             }
 
-            override fun onReadSinglePostFail(errorItem: ErrorItem?) {
+            override fun onReadSinglePostFail(errorItem: ErrorItem) {
                 readTask = null
                 this.errorItem = errorItem
                 notifyObservers()
@@ -869,12 +869,12 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 null
         }
 
-        override fun iterator(): MutableIterator<PostItem?> {
-            val list: MutableList<PostItem?>?
+        override fun iterator(): MutableIterator<PostItem> {
+            val list: MutableList<PostItem>
             if (factory.postItem != null) {
-                list = mutableListOf<PostItem?>(factory.postItem)
+                list = mutableListOf(factory.postItem!!)
             } else {
-                list = mutableListOf<PostItem?>()
+                list = mutableListOf()
             }
             return list.iterator()
         }
@@ -905,8 +905,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 show(
                     errorItem.toString(), null,
                     ClickableToast.Button(R.string.open_thread, false, Runnable {
-                        uiManager.navigator()
-                            !!.navigatePosts(chanName, boardName, threadNumber, postNumber, null)
+                        uiManager.navigator()!!.navigatePosts(chanName, boardName, threadNumber, postNumber, null)
                     })
                 )
             })
@@ -1031,7 +1030,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     private class DialogPostsAdapter<T>(
         private val uiManager: UiManager,
-        private val dialogProvider: DialogProvider<T?>,
+        private val dialogProvider: DialogProvider<T>,
         recyclerView: RecyclerView
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder?>() {
         private val demandSet = DemandSet()
@@ -1124,6 +1123,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     uiManager.view()
                         .bindPostHiddenView(holder, postItem, dialogProvider.configurationSet)
                 }
+            
+                else -> {}
             }
         }
 
@@ -1166,7 +1167,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         dialog.setOnKeyListener(DialogInterface.OnKeyListener { d: DialogInterface?, keyCode: Int, event: KeyEvent? ->
             if (keyCode == KeyEvent.KEYCODE_BACK && event!!.getAction() == KeyEvent.ACTION_DOWN && event.isLongPress()) {
                 closeDialogs(configurationSet.stackInstance!!)
-                return@setOnKeyListener true
+                return@OnKeyListener true
             }
             false
         })
@@ -1187,8 +1188,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         rootView.setOnApplyInsetsTarget(scrollView)
         rootView.addView(
             scrollView, FrameLayout.LayoutParams(
-                InsetsLayout.LayoutParams.WRAP_CONTENT,
-                InsetsLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER
             )
         )
         val container = LinearLayout(styledContext)

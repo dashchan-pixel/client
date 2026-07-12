@@ -536,8 +536,8 @@ class ChanDatabase private constructor() {
                 for (entry in map.entries) {
                     if (entry.value == null) {
                         val dataKey: DataKey = entry.key!!
-                        filter!!!!!!!!!!!!.args[1] = dataKey.boardName
-                        filter!!!!!!!!!!!!.args[2] = dataKey.name
+                        filter!!!!!!!!!!!!!!.args[1] = dataKey.boardName
+                        filter!!!!!!!!!!!!!!.args[2] = dataKey.name
                         database.delete(Schema.Data.Companion.TABLE_NAME, filter.value, filter.args)
                     }
                 }

@@ -53,7 +53,7 @@ class PostsAdapter(
     hiddenPosts: PostItem.HideState.Map<PostNumber?>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(), LinkListener, UiManager.PostsProvider,
     HidePerformer.PostsProvider {
-    interface Callback : ClickCallback<PostItem?, RecyclerView.ViewHolder?> {
+    interface Callback : ClickCallback<PostItem?, RecyclerView.ViewHolder> {
         fun onItemClick(view: View?, postItem: PostItem?)
         fun onItemLongClick(postItem: PostItem?): Boolean
 
@@ -155,8 +155,8 @@ class PostsAdapter(
         }
     }
 
-    fun copyItems(): MutableList<PostItem?> {
-        return java.util.ArrayList<PostItem?>(postItemsMap.values)
+    fun copyItems(): MutableList<PostItem> {
+        return java.util.ArrayList(postItemsMap.values)
     }
 
     fun getItem(position: Int): PostItem {
@@ -181,7 +181,7 @@ class PostsAdapter(
         return postItemsMap.get(postNumber)
     }
 
-    override fun iterator(): MutableIterator<PostItem?> {
+    override fun iterator(): MutableIterator<PostItem> {
         return PostsIterator(true, 0)
     }
 
@@ -226,8 +226,8 @@ class PostsAdapter(
     }
 
     fun insertItems(
-        changed: MutableMap<PostNumber?, PostItem>,
-        removed: MutableCollection<PostNumber?>
+        changed: Map<PostNumber?, PostItem>,
+        removed: Collection<PostNumber?>
     ) {
         cancelPreloading()
 
