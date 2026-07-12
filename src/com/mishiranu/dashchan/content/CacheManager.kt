@@ -201,7 +201,7 @@ class CacheManager private constructor() : Runnable {
         var deleteAmount = size - maxSize + trimAmount
         val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
         while (iterator.hasNext() && deleteAmount > 0) {
-            val cacheItem = iterator.next()
+            val cacheItem = iterator.next()!!
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
                 deleteAmount -= cacheItem.length
                 size -= cacheItem.length
@@ -382,7 +382,7 @@ class CacheManager private constructor() : Runnable {
             if (Thread.interrupted()) {
                 throw InterruptedException()
             }
-            val cacheItem = iterator.next()
+            val cacheItem = iterator.next()!!
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
                 deleted += cacheItem.length
                 File(directory, cacheItem.name).delete()
@@ -574,7 +574,7 @@ class CacheManager private constructor() : Runnable {
         return tempDirectory
     }
 
-    fun getInternalCacheFile(fileName: String): File {
+    fun getInternalCacheFile(fileName: String): File? {
         val cacheDirectory = MainApplication.getInstance().getCacheDir()
         if (cacheDirectory != null) {
             return File(cacheDirectory, fileName)

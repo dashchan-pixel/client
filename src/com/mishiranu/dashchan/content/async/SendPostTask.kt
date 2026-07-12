@@ -68,7 +68,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 
 	init {
 		if (progressMode) {
-			for (attachment in data.attachments) {
+			for (attachment in data.attachments!!) {
 				attachment!!.listener = progressHandler
 			}
 		}
@@ -156,7 +156,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 						val estimator = SimilarTextEstimator(Int.MAX_VALUE, true)
 						val wordsData1 = estimator.getWords<Void>(postComment)
 						for (thread in threads) {
-							val post = thread!!!!!!!!!!!!!!!!!!!!!!.posts[0]
+							val post = thread!!.posts!![0]
 							val comment = HtmlParser.clear(post!!.comment)
 							val wordsData2 = estimator.getWords<Void>(comment)
 							if (estimator.checkSimiliar(wordsData1, wordsData2)
@@ -181,7 +181,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 			return false
 		} catch (e: ApiException) {
 			errorItem = e.errorItem
-			extra = e.extra
+			extra = e.extra as ApiException.Extra?
 			val errorType = e.errorType
 			captchaError = errorType == ApiException.SEND_ERROR_CAPTCHA
 			keepCaptcha = !captchaError && e.checkFlag(ApiException.FLAG_KEEP_CAPTCHA)
@@ -205,8 +205,7 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 		updateProgressValue(index, progress, progressMax)
 	}
 
-	override fun onComplete(result: Boolean) {
-		val success = result
+	override fun onComplete(success: Boolean) {
 		if (callback != null) {
 			if (success) {
 				callback.onSendPostSuccess(key, data, chan.name,

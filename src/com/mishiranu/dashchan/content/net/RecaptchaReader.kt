@@ -173,7 +173,7 @@ class RecaptchaReader private constructor() {
                 var captchaImage: Bitmap? = null
                 var response: Pair<String?, String?>?
                 if (consumed[0]) {
-                    val responseText: String = HttpRequest(uri, holder!!)
+                    val responseText: String? = HttpRequest(uri, holder!!)
                         .addCookie(getGoogleCookie())
                         .addHeader("Accept-Language", acceptLanguage)
                         .addHeader("Referer", refererFinal)
@@ -205,7 +205,7 @@ class RecaptchaReader private constructor() {
                             if (!hasSelected) {
                                 continue
                             }
-                            val responseText: String =
+                            val responseText: String? =
                                 HttpRequest(uri, holder!!).setPostMethod(entity)
                                     .addCookie(getGoogleCookie())
                                     .setRedirectHandler(HttpRequest.RedirectHandler.STRICT)
@@ -269,7 +269,7 @@ class RecaptchaReader private constructor() {
     private fun getImage2(
         holder: HttpHolder?, apiKey: String?, challenge: String?, id: String?,
         transformBlackAndWhite: Boolean
-    ): Pair<Bitmap?, Boolean?> {
+    ): Pair<Bitmap?, Boolean> {
         var transformBlackAndWhite = transformBlackAndWhite
         val chan = getFallback()
         val uri = chan.locator.buildQueryWithHost(

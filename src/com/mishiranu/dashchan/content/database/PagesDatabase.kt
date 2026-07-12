@@ -1030,9 +1030,10 @@ class PagesDatabase private constructor() {
                 }
             }
         }
-        var changed: MutableList<Post?>? = null
+        var changed: MutableList<Post>? = null
         if (extractedList != null) {
-            val unsafeChanged = extractedList as MutableList<*> as MutableList<Post?>
+            @Suppress("UNCHECKED_CAST")
+            val unsafeChanged = extractedList as MutableList<*> as MutableList<Post>
             for (i in extractedList.indices) {
                 val extracted = extractedList.get(i)
                 val post: Post?
@@ -1043,7 +1044,7 @@ class PagesDatabase private constructor() {
                 } catch (e: IOException) {
                     throw RuntimeException(e)
                 }
-                unsafeChanged.set(i, post)
+                unsafeChanged.set(i, post!!)
             }
             changed = unsafeChanged
         }
@@ -1324,7 +1325,7 @@ class PagesDatabase private constructor() {
                 return false
             }
         }
-        return migrateLocks.lock<Boolean?, RuntimeException?>(threadKey, KeyLock.Callback {
+        return migrateLocks.lock<Boolean, RuntimeException?>(threadKey, KeyLock.Callback {
             synchronized(migrated) {
                 val requests = migrated.get(threadKey)
                 if (requests != null) {
@@ -1361,7 +1362,7 @@ class PagesDatabase private constructor() {
                 }
             }
             success
-        })
+        })!!
     }
 
     private fun getPostsFile(

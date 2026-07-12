@@ -247,7 +247,7 @@ open class MultipartEntity @Public constructor() : RequestEntity {
     }
 
     interface OpenableOutputListener {
-        fun onOutputProgressChange(openable: Openable?, progress: Long, progressMax: Long)
+        fun onOutputProgressChange(openable: Openable, progress: Long, progressMax: Long)
     }
 
     companion object {

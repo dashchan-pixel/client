@@ -936,7 +936,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class SendDeletePostsData(
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
-        @field:Public val postNumbers: MutableList<String?>?,
+        @field:Public val postNumbers: List<String>?,
         @field:Public val password: String?,
         @field:Public val optionFilesOnly: Boolean,
         val holder: HttpHolder?
@@ -953,18 +953,18 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class SendReportPostsData(
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
-        @field:Public val postNumbers: MutableList<String?>?,
+        @field:Public val postNumbers: List<String>?,
         @field:Public val type: String?,
-        options: MutableList<String?>?,
+        options: List<String>?,
         @field:Public val comment: String?,
         val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
-        val options: MutableList<String?>?
+        val options: List<String>?
 
         init {
             this.options =
-                if (options != null) Collections.unmodifiableList<String?>(options) else null
+                if (options != null) Collections.unmodifiableList(options) else null
         }
 
         override fun getHolder(): HttpHolder? {
@@ -979,16 +979,16 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val postNumber: String?,
         @field:Public val isLike: Boolean,
         @field:Public val type: String?,
-        options: MutableList<String?>?,
+        options: List<String>?,
         comment: String?,
         val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
-        val options: MutableList<String?>?
+        val options: List<String>?
 
         init {
             this.options =
-                if (options != null) Collections.unmodifiableList<String?>(options) else null
+                if (options != null) Collections.unmodifiableList(options) else null
         }
 
         override fun getHolder(): HttpHolder? {
@@ -1007,15 +1007,15 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val uri: Uri?,
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
-        options: MutableList<String?>?,
+        options: List<String>?,
         val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
-        val options: MutableList<String?>?
+        val options: List<String>?
 
         init {
             this.options =
-                if (options != null) Collections.unmodifiableList<String?>(options) else null
+                if (options != null) Collections.unmodifiableList(options) else null
         }
 
         override fun getHolder(): HttpHolder? {

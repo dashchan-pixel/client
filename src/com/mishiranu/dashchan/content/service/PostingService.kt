@@ -316,7 +316,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
                 )
                 wakeLock!!.acquire()
                 val chan = get(chanName)
-                val task = SendPostTask<Key?>(key, this@PostingService, chan, data)
+                val task = SendPostTask(key, this@PostingService, chan, data)
                 task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                 val taskState = TaskState(key, task, this@PostingService, chan, data)
                 refreshNotification(NotificationData.Type.CREATE, taskState)
