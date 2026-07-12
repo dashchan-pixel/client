@@ -57,12 +57,12 @@ import kotlin.math.min
 class RecaptchaReader private constructor() {
     private val accessLock = Any()
 
-    class ChallengeExtra(
-		private val solver: ForegroundSolver,
+    class ChallengeExtra internal constructor(
+		private val solver: ForegroundSolver?,
 	    @JvmField val response: String?,
 	    internal var holder: WebViewHolder?
     ) {
-        private fun interface ForegroundSolver {
+        internal fun interface ForegroundSolver {
             @Throws(CancelException::class, HttpException::class, InterruptedException::class)
             fun solve(holder: HttpHolder?, challengeExtra: ChallengeExtra?): String?
         }
@@ -72,7 +72,7 @@ class RecaptchaReader private constructor() {
             if (response != null) {
                 return response
             } else {
-                return solver.solve(holder, this)
+                return solver!!.solve(holder, this)
             }
         }
 
@@ -136,7 +136,7 @@ class RecaptchaReader private constructor() {
                 }
             }
         } else {
-            val chan = getFallback()
+            val chan = fallback
             val uri = chan.locator.buildQueryWithHost(
                 "www.google.com",
                 "recaptcha/api/fallback",
@@ -144,13 +144,13 @@ class RecaptchaReader private constructor() {
                 apiKey
             )
             val acceptLanguage = "en-US,en;q=0.5"
-            val initialResponseText: String = chan.http.HttpRequest(uri, initialHolder)
+            val initialResponseText: String = HttpRequest(uri, initialHolder)
                 .addCookie(getGoogleCookie())
                 .addHeader("Accept-Language", acceptLanguage)
                 .addHeader("Referer", refererFinal)
                 .perform().readString()
             if (initialResponseText == null) {
-                throw chan.http.HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
+                throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
             }
             val initialResponse: Pair<String?, String?>? = parseResponse2(initialResponseText)
             if (initialResponse == null) {
@@ -162,7 +162,7 @@ class RecaptchaReader private constructor() {
                         true, solveInBackground, false
                     )
                 } else {
-                    throw chan.http.HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
+                    throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
                 }
             }
             val consumed = booleanArrayOf(false)
@@ -170,7 +170,7 @@ class RecaptchaReader private constructor() {
                 var captchaImage: Bitmap? = null
                 var response: Pair<String?, String?>?
                 if (consumed[0]) {
-                    val responseText: String = chan.http.HttpRequest(uri, holder)
+                    val responseText: String = HttpRequest(uri, holder)
                         .addCookie(getGoogleCookie())
                         .addHeader("Accept-Language", acceptLanguage)
                         .addHeader("Referer", refererFinal)
@@ -203,9 +203,9 @@ class RecaptchaReader private constructor() {
                                 continue
                             }
                             val responseText: String =
-                                chan.http.HttpRequest(uri, holder).setPostMethod(entity)
+                                HttpRequest(uri, holder).setPostMethod(entity)
                                     .addCookie(getGoogleCookie())
-                                    .setRedirectHandler(chan.http.HttpRequest.RedirectHandler.STRICT)
+                                    .setRedirectHandler(HttpRequest.RedirectHandler.STRICT)
                                     .addHeader("Accept-Language", acceptLanguage)
                                     .addHeader("Referer", referer)
                                     .perform().readString()
@@ -218,7 +218,7 @@ class RecaptchaReader private constructor() {
                         }
                         throw CancelException()
                     } else {
-                        throw chan.http.HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
+                        throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
                     }
                 }
             }
@@ -266,16 +266,16 @@ class RecaptchaReader private constructor() {
         transformBlackAndWhite: Boolean
     ): Pair<Bitmap?, Boolean?> {
         var transformBlackAndWhite = transformBlackAndWhite
-        val chan = getFallback()
+        val chan = fallback
         val uri = chan.locator.buildQueryWithHost(
             "www.google.com", "recaptcha/api2/payload",
             "c", challenge, "k", apiKey, "id", StringUtils.emptyIfNull(id)
         )
-        val image: Bitmap? = chan.http.HttpRequest(uri, holder).perform().readBitmap()
+        val image: Bitmap? = HttpRequest(uri, holder).perform().readBitmap()
         if (transformBlackAndWhite) {
             transformBlackAndWhite = isBlackAndWhiteCaptchaImage(image)
         }
-        return if (transformBlackAndWhite) handleBlackAndWhiteCaptchaImage(image) else Pair<Bitmap?, Boolean?>(
+        return if (transformBlackAndWhite) handleBlackAndWhiteCaptchaImage(image!!) else Pair<Bitmap?, Boolean?>(
             image,
             false
         )
@@ -283,7 +283,7 @@ class RecaptchaReader private constructor() {
 
     class CancelException : Exception()
 
-    private class WebViewHolder {
+    internal class WebViewHolder {
         class Arguments(
             val referer: String?,
             val apiKey: String,
@@ -338,8 +338,8 @@ class RecaptchaReader private constructor() {
             val screenWidthDp = configuration.screenWidthDp - 2 * dialogPaddingDp
             val screenHeightDp = configuration.screenHeightDp - 2 * dialogPaddingDp
             var minScaleMultiplier = Float.MAX_VALUE
-            for (size in Arrays.asList<Int?>(screenWidthDp, screenHeightDp)) {
-                for (max in Arrays.asList<Int?>(widthUnscaled, maxHeightUnscaled)) {
+            for (size in Arrays.asList(screenWidthDp, screenHeightDp)) {
+                for (max in Arrays.asList(widthUnscaled, maxHeightUnscaled)) {
                     minScaleMultiplier = min(minScaleMultiplier, size / max)
                 }
             }
@@ -480,9 +480,9 @@ class RecaptchaReader private constructor() {
                             lastWidthUnscaled = width
                             lastHeightUnscaled = height
                             extraScale = min(1f, 300f / width)
-                            val newWidth = (this.totalScale * width).toInt()
-                            val newHeight = (this.totalScale * height).toInt()
-                            webView!!.setScale(this.totalScale)
+                            val newWidth = (this@WebViewHolder.totalScale * width).toInt()
+                            val newHeight = (this@WebViewHolder.totalScale * height).toInt()
+                            webView!!.setScale(this@WebViewHolder.totalScale)
                             val layoutParams = webView!!.getLayoutParams()
                             if (layoutParams.width != newWidth || layoutParams.height != newHeight) {
                                 layoutParams.width = newWidth
@@ -710,7 +710,7 @@ class RecaptchaReader private constructor() {
         }
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            webView = ViewModelProvider(this).get<WebViewViewModel?>(WebViewViewModel::class.java)
+            webView = ViewModelProvider(this).get(WebViewViewModel::class.java)
             if (webView!!.holder == null) {
                 webView!!.initHolder(challengeExtra!!.holder)
                 if (challengeExtra != null) {

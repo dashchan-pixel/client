@@ -683,7 +683,7 @@ class DrawerForm(
                     if (!(isFavoritesHidedDeleted && watcherServiceClient.getCounter(
                             favoriteItem.chanName,
                             favoriteItem.boardName,
-                            favoriteItem.threadNumber
+                            favoriteItem.threadNumber!!
                         )!!.deleted)
                     ) {
                         val listItem = DrawerForm.ListItem(
@@ -1424,7 +1424,7 @@ class DrawerForm(
         return watcherServiceClient.getCounter(
             listItem.chanName,
             listItem.boardName,
-            listItem.threadNumber
+            listItem.threadNumber!!
         )
     }
 

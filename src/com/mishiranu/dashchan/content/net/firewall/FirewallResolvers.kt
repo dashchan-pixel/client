@@ -116,13 +116,13 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             val generator = Key.Generator()
             for (flag in flags) {
                 when (flag) {
-                    chan.http.FirewallResolver.Identifier.Flag.USER_AGENT -> {
+                    FirewallResolver.Identifier.Flag.USER_AGENT -> {
                         if (!identifier.defaultUserAgent) {
                             generator.append("user_agent", identifier.userAgent)
                         }
                     }
 
-                    chan.http.FirewallResolver.Identifier.Flag.HOST -> generator.append(
+                    FirewallResolver.Identifier.Flag.HOST -> generator.append(
                         "host",
                         identifier.host
                     )
@@ -156,7 +156,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             return resolve
         }
 
-        @Throws(chan.http.FirewallResolver.CancelException::class, InterruptedException::class)
+        @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
         override fun <Result> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result?>): Result? {
             if (exclusive) {
                 return this@FirewallResolvers.resolveWebView<Result?>(this, webViewClient)
@@ -318,7 +318,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             else
                 ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2
             val challengeExtra: ChallengeExtra?
-            val holder = HttpHolder(getFallback())
+            val holder = HttpHolder(fallback)
             try {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallenge2(
@@ -351,7 +351,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             val retry = this.isRetry
             val allowSolveAutomatically = !retry
             val challengeExtra: ChallengeExtra?
-            val holder = HttpHolder(getFallback())
+            val holder = HttpHolder(fallback)
             try {
                 holder.use().use { ignored ->
                     challengeExtra = RecaptchaReader.getInstance().getChallengeHcaptcha(
@@ -388,10 +388,10 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         session: FirewallResolver.Session,
         client: FirewallResolver.WebViewClient<T?>
     ): T? {
-        val initialUri = session.getUri()!!.buildUpon().clearQuery().encodedFragment(null).build()
+        val initialUri = session.uri!!.buildUpon().clearQuery().encodedFragment(null).build()
         val chan: Chan = session.chan
-        val userAgent = session.getIdentifier()!!.userAgent
-        val proxyData: HttpClient.ProxyData? = chan.http.HttpClient.getInstance().getProxyData(chan)
+        val userAgent = session.identifier!!.userAgent
+        val proxyData: HttpClient.ProxyData? = HttpClient.getInstance().getProxyData(chan)
         val firewallResolutionMethod = firewallResolutionMethod
         var firewallResolutionResult: T? = null
         when (firewallResolutionMethod) {
@@ -534,12 +534,12 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                         return null
                     }
                 }
-                val result = client.getResult()
+                val result = client.result
                 if (result != null) {
                     return result
                 }
                 if (status.cancel) {
-                    throw chan.http.FirewallResolver.CancelException()
+                    throw FirewallResolver.CancelException()
                 }
             }
             return null
@@ -641,7 +641,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             }
             if (result != null && result.key != null && result.exclusive != null) {
                 val resolved = resolve && runExclusive(session, result.key, result.exclusive)
-                return chan.http.FirewallResolver.CheckResult(resolved, result.retransmitOnSuccess)
+                return FirewallResolver.CheckResult(resolved, result.retransmitOnSuccess)
             }
         }
         return null

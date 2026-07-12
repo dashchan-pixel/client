@@ -548,25 +548,25 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 var canLoadState = false
 
                 when (captchaValidity) {
-                    chan.content.ChanConfiguration.Captcha.Validity.SHORT_LIFETIME -> {
+                    ChanConfiguration.Captcha.Validity.SHORT_LIFETIME -> {
                         canLoadState = captchaFromDraftHasLifetime && captchaFromDraft.alive()
                     }
 
-                    chan.content.ChanConfiguration.Captcha.Validity.IN_THREAD -> {
+                    ChanConfiguration.Captcha.Validity.IN_THREAD -> {
                         canLoadState = equals(this.boardName, captchaDraft.boardName)
                                 && equals(this.threadNumber, captchaDraft.threadNumber)
                     }
 
-                    chan.content.ChanConfiguration.Captcha.Validity.IN_BOARD_SEPARATELY -> {
+                    ChanConfiguration.Captcha.Validity.IN_BOARD_SEPARATELY -> {
                         canLoadState = equals(this.boardName, captchaDraft.boardName)
                                 && ((this.threadNumber == null) == (captchaDraft.threadNumber == null))
                     }
 
-                    chan.content.ChanConfiguration.Captcha.Validity.IN_BOARD -> {
+                    ChanConfiguration.Captcha.Validity.IN_BOARD -> {
                         canLoadState = equals(this.boardName, captchaDraft.boardName)
                     }
 
-                    chan.content.ChanConfiguration.Captcha.Validity.LONG_LIFETIME -> {
+                    ChanConfiguration.Captcha.Validity.LONG_LIFETIME -> {
                         canLoadState = !captchaFromDraftHasLifetime || captchaFromDraft.alive()
                     }
                 }
@@ -1774,7 +1774,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 fileSize += " " + fileHolder.imageWidth + '×' + fileHolder.imageHeight
             }
             if (bitmap == null) {
-                if (getFallback().locator.isVideoExtension(fileHolder.name)) {
+                if (fallback.locator.isVideoExtension(fileHolder.name)) {
                     val retriever = MediaMetadataRetriever()
                     try {
                         fileHolder.openFileDescriptor().use { descriptor ->

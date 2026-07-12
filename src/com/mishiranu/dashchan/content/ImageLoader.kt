@@ -95,7 +95,7 @@ class ImageLoader private constructor() {
                     if (chanScheme) {
                         val output = ByteArrayOutputStream()
                         if (!chan.configuration.readResourceUri(uri, output)) {
-                            throw chan.http.HttpException.createNotFoundException()
+                            throw HttpException.createNotFoundException()
                         }
                         val bytes = output.toByteArray()
                         bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
@@ -121,7 +121,7 @@ class ImageLoader private constructor() {
                                 )
                             response = if (result != null) result.response else null
                         } catch (e: ExtensionException) {
-                            e.getErrorItemAndHandle()
+                            e.errorItemAndHandle
                             return null
                         }
                         if (response != null) {
@@ -132,7 +132,7 @@ class ImageLoader private constructor() {
                             }
                         }
                         if (bitmap == null) {
-                            throw chan.http.HttpException(ErrorItem.Type.DOWNLOAD, false, false)
+                            throw HttpException(ErrorItem.Type.DOWNLOAD, false, false)
                         }
                     }
                     if (isCancelled()) {
@@ -146,7 +146,7 @@ class ImageLoader private constructor() {
                     }
                 }
             } catch (e: HttpException) {
-                val responseCode = e.getResponseCode()
+                val responseCode = e.responseCode
                 if (responseCode == HttpURLConnection.HTTP_NOT_FOUND ||
                     responseCode == HttpURLConnection.HTTP_GONE
                 ) {

@@ -59,7 +59,6 @@ import kotlin.collections.minus
 import kotlin.compareTo
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.sequences.minus
 
 class WatcherService : BaseService() {
     class Counter(
@@ -89,19 +88,18 @@ class WatcherService : BaseService() {
             )
         }
 
-        @JvmField
         var callback: Callback?
         fun updateConfiguration(chanName: String?)
         fun notifyForeground()
         fun refreshAll(chanName: String?)
-        fun isWatcherSupported(chan: Chan?): Boolean
-        fun getCounter(chanName: String?, boardName: String?, threadNumber: String?): Counter?
+        fun isWatcherSupported(chan: Chan): Boolean
+        fun getCounter(chanName: String, boardName: String?, threadNumber: String): Counter
         fun newSession(
-            chanName: String?,
+            chanName: String,
             boardName: String?,
-            threadNumber: String?,
-            callback: Session.Callback?
-        ): Session?
+            threadNumber: String,
+            callback: Session.Callback
+        ): Session
     }
 
     interface Session {
@@ -159,7 +157,7 @@ class WatcherService : BaseService() {
         }
     }
 
-    private class Binder(val service: WatcherService) : android.os.Binder()
+    class Binder internal constructor(internal val service: WatcherService) : android.os.Binder()
 
     override fun onBind(intent: Intent?): Binder? {
         return Binder(this)
@@ -168,7 +166,7 @@ class WatcherService : BaseService() {
     class ViewModel : ServiceViewModel<Binder>(WatcherService::class.java), Client {
         private val sessions: HashSet<ViewModelSession> = HashSet<ViewModelSession>()
 
-        private var callback: Client.Callback? = null
+        override var callback: Client.Callback? = null
         private var chanName: String? = null
 
         internal val service: WatcherService?
@@ -201,14 +199,6 @@ class WatcherService : BaseService() {
                 session.handleUnregister(binder.service)
             }
             binder.service.unregisterClient(this)
-        }
-
-        override fun getCallback(): Client.Callback? {
-            return callback
-        }
-
-        override fun setCallback(callback: Client.Callback?) {
-            this.callback = callback
         }
 
         override fun updateConfiguration(chanName: String?) {
@@ -349,9 +339,8 @@ class WatcherService : BaseService() {
             viewModel.destroySession(this)
         }
 
-        override fun isUpdateBlocked(): Boolean {
-            return erasing
-        }
+        override val isUpdateBlocked: Boolean
+            get() = erasing
 
         override fun notifyRefreshStarted() {
             if (running == Running.NONE) {
@@ -447,6 +436,10 @@ class WatcherService : BaseService() {
                     override fun next(): T? {
                         return iterator.next()
                     }
+
+                    override fun remove() {
+                        throw UnsupportedOperationException()
+                    }
                 }
             }
         }
@@ -459,6 +452,10 @@ class WatcherService : BaseService() {
 
                 override fun next(): Any? {
                     throw IndexOutOfBoundsException()
+                }
+
+                override fun remove() {
+                    throw UnsupportedOperationException()
                 }
             }
         }
@@ -522,7 +519,7 @@ class WatcherService : BaseService() {
         IDLE, ENQUEUED, UNAVAILABLE
     }
 
-    private inner class WatcherItem(val threadKey: ThreadKey) : Comparable<WatcherItem?>,
+    private inner class WatcherItem(val threadKey: ThreadKey) : Comparable<WatcherItem>,
         ReadPostsTask.Callback {
         var resolved: Boolean = false
         var newCount: Int = 0
@@ -542,7 +539,7 @@ class WatcherService : BaseService() {
 
         fun createAndExecuteTask(worker: Worker, reload: Boolean, notifyBeforeStart: Boolean) {
             cancel()
-            val pendingUserPosts: MutableSet<PendingUserPost?>? =
+            val pendingUserPosts =
                 PostingService.Companion.getPendingUserPosts(
                     threadKey.chanName,
                     threadKey.boardName, threadKey.threadNumber
@@ -565,12 +562,12 @@ class WatcherService : BaseService() {
             return lastUpdate + interval - 1000 <= now
         }
 
-        override fun compareTo(o: WatcherItem): Int {
-            return Long.compare(lastUpdate, o.lastUpdate)
+        override fun compareTo(other: WatcherItem): Int {
+            return lastUpdate.compareTo(other.lastUpdate)
         }
 
-        override fun onPendingUserPostsConsumed(pendingUserPosts: MutableSet<PendingUserPost?>?) {
-            if (pendingUserPosts != null && !pendingUserPosts.isEmpty()) {
+        override fun onPendingUserPostsConsumed(pendingUserPosts: Set<PendingUserPost>) {
+            if (!pendingUserPosts.isEmpty()) {
                 PostingService.Companion.consumePendingUserPosts(
                     threadKey.chanName, threadKey.boardName,
                     threadKey.threadNumber, pendingUserPosts
@@ -580,7 +577,7 @@ class WatcherService : BaseService() {
 
         override fun onReadPostsSuccess(
             cacheState: PagesDatabase.Cache.State?,
-            replies: MutableList<Reply?>, newCount: Int?
+            replies: List<Reply>?, newCount: Int?
         ) {
             if (newCount != null) {
                 resolved = true
@@ -589,14 +586,14 @@ class WatcherService : BaseService() {
             deleted = false
             error = false
             onTaskFinished()
-            val notify = if (replies.isEmpty()) null else booleanArrayOf(true)
+            val notify = if (replies!!.isEmpty()) null else booleanArrayOf(true)
             var consumeReplies: ConsumeReplies? = null
             if (notify == null) {
                 consumeReplies = CONSUME_REPLIES_EMPTY
             }
             for (session in getSessionConcurrentIterable(threadKey)) {
                 if (consumeReplies == null) {
-                    consumeReplies = ConsumeReplies? { notify!![0] = false }
+                    consumeReplies = ConsumeReplies { notify!![0] = false }
                 }
                 session.onReadPostsSuccess(cacheState, consumeReplies)
             }

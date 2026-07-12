@@ -267,7 +267,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             )
                         )
                     })
-                session = client.newSession(chanName, boardName, threadNumber, callback)
+                session = client.newSession(chanName!!, boardName, threadNumber!!, callback!!)
             }
         }
 

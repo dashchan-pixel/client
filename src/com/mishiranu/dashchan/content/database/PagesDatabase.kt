@@ -1235,7 +1235,7 @@ class PagesDatabase private constructor() {
 
             init {
                 TRANSFORM = HashMap<String?, Class<*>?>()
-                TRANSFORM.put("chan.http.HttpValidator", Legacy.HttpValidator::class.java)
+                TRANSFORM.put("HttpValidator", Legacy.HttpValidator::class.java)
                 TRANSFORM.put("chan.content.model.Posts", Legacy.Posts::class.java)
                 TRANSFORM.put("chan.content.model.Post", Legacy.Post::class.java)
                 TRANSFORM.put("[Lchan.content.model.Post;", Array<Legacy.Post>::class.java)
