@@ -196,17 +196,17 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         return httpsMode == HttpsMode.HTTPS_ONLY
     }
 
-    fun getChanHosts(configurableOnly: Boolean): ArrayList<String?> {
+    fun getChanHosts(configurableOnly: Boolean): ArrayList<String> {
         if (configurableOnly) {
-            val hosts = ArrayList<String?>()
+            val hosts = ArrayList<String>()
             for (entry in this.hosts.entries) {
                 if (entry.value == HOST_TYPE_CONFIGURABLE) {
-                    hosts.add(entry.key)
+                    hosts.add(entry.key!!)
                 }
             }
             return hosts
         } else {
-            return ArrayList<String?>(hosts.keys)
+            return hosts.keys.mapTo(ArrayList()) { it!! }
         }
     }
 

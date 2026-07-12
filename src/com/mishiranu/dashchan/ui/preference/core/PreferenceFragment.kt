@@ -300,7 +300,7 @@ abstract class PreferenceFragment : ContentFragment() {
         return preference
     }
 
-    fun createInputTypes(count: Int, inputType: Int): MutableList<Int?> {
+    fun createInputTypes(count: Int, inputType: Int): MutableList<Int> {
         val inputTypes = ArrayList<Int?>(count)
         for (i in 0..<count) {
             inputTypes.add(inputType)

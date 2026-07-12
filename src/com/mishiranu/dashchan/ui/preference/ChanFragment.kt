@@ -145,10 +145,10 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				if (customPreference != null && customPreference.title != null) {
 					val preference = addCheck(false, key!!, defaultValue!!,
 							customPreference.title, customPreference.summary)
-					preference.value = chan.configuration.get(null, key, defaultValue!!)
+					preference.value = chan.configuration.get(null, key!!, defaultValue!!)
 					preference.setOnAfterChangeListener { p ->
 						val callbackChan = Chan.get(chanName)
-						callbackChan.configuration.set(null, preference.key, p!!.value)
+						callbackChan.configuration.set(null, preference.key!!, p!!.value!!)
 						callbackChan.configuration.commit()
 					}
 				}
@@ -208,7 +208,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 			proxyPreference.setValues(Preferences.KEYS_PROXY.indexOf(Preferences.SUB_KEY_PROXY_TYPE),
 					Preferences.ENTRIES_PROXY_TYPE, Preferences.VALUES_PROXY_TYPE)
 			proxyPreference.setOnAfterChangeListener { p ->
-				val success = HttpClient.getInstance().checkProxyValid(p.value)
+				val success = HttpClient.getInstance().checkProxyValid(p!!.value)
 				if (!success) {
 					ClickableToast.show(R.string.enter_valid_data)
 					proxyPreference.performClick()
@@ -377,7 +377,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 				}
 				val result = chan.performer.safe()
 						.onCheckAuthorization(ChanPerformer.CheckAuthorizationData(type,
-								CommonUtils.toArray(authorizationData, String::class.java), holder))
+								@Suppress("UNCHECKED_CAST") (authorizationData?.toTypedArray() as Array<String?>?), holder))
 				return if (result != null && result.success) SUCCESS
 						else ErrorItem(ErrorItem.Type.INVALID_AUTHORIZATION_DATA)
 			} catch (e: ExtensionException) {
@@ -391,8 +391,8 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 			}
 		}
 
-		override fun onComplete(result: ErrorItem) {
-			viewModel.handleResult(result)
+		override fun onComplete(result: ErrorItem?) {
+			viewModel.handleResult(result!!)
 		}
 
 		companion object {

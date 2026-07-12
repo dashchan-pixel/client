@@ -717,7 +717,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         configurationSetProvider: ConfigurationSetProvider<ListDialogProvider>,
         private val postNumbers: HashSet<PostNumber?>
     ) : DialogProvider<ListDialogProvider>(uiManager, configurationSetProvider) {
-        class Factory(postNumbers: MutableCollection<PostNumber?>) :
+        class Factory(postNumbers: Collection<PostNumber>) :
             DialogProvider.Factory<ListDialogProvider>() {
             private val postNumbers: HashSet<PostNumber?>
 
@@ -977,7 +977,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     fun displayList(
         configurationSet: ConfigurationSet,
-        postNumbers: MutableCollection<PostNumber?>
+        postNumbers: Collection<PostNumber>
     ) {
         display(configurationSet, ListDialogProvider.Factory(postNumbers))
     }

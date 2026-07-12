@@ -37,7 +37,7 @@ class GeneralFragment : PreferenceFragment(), FragmentHandler.Callback, ChanMult
 	/** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
 	private val anotherUriKeys = HashSet<String>()
 
-	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)

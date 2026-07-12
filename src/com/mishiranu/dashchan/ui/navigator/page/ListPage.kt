@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.ui.navigator.page
 
+import android.content.Context
 import android.graphics.drawable.Drawable
 import android.os.Parcelable
 import android.content.res.Resources
@@ -9,6 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -76,7 +78,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     private var page: Page? = null
     private var callback: Callback? = null
     private var fragment: Fragment? = null
-    private var lifecycle: LifecycleRegistry? = null
+    private var lifecycleRegistry: LifecycleRegistry? = null
     private var recyclerView: PaddedRecyclerView? = null
     private var listPosition: ListPosition? = null
     protected var uiManager: UiManager? = null
@@ -98,8 +100,8 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         initRequest: InitRequest?,
         initSearch: InitSearch?
     ) {
-        if (lifecycle == null) {
-            lifecycle = LifecycleRegistry(this)
+        if (lifecycleRegistry == null) {
+            lifecycleRegistry = LifecycleRegistry(this)
             this.callback = callback
             this.fragment = fragment
             this.page = page
@@ -120,7 +122,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     }
 
     private val state: Lifecycle.State?
-        get() = if (lifecycle != null) lifecycle!!.currentState else null
+        get() = if (lifecycleRegistry != null) lifecycleRegistry!!.currentState else null
 
     protected val context: Context?
         get() = recyclerView!!.getContext()
@@ -295,7 +297,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     open fun onSearchCancel() {}
 
-    override fun onListPulled(wrapper: PullableWrapper?, side: PullableWrapper.Side?) {}
+    override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {}
 
     open fun onDrawerNumberEntered(number: Int): Int {
         return 0
@@ -360,9 +362,8 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         return Pair<Retainable?, Parcelable?>(retainableExtra, parcelableExtra)
     }
 
-    override fun getLifecycle(): Lifecycle {
-        return Objects.requireNonNull<LifecycleRegistry>(lifecycle)
-    }
+    override val lifecycle: Lifecycle
+        get() = lifecycleRegistry!!
 
     class PageViewModel : ViewModel() {
         internal var listPage: WeakReference<ListPage?>? = null

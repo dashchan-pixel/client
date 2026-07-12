@@ -878,7 +878,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return true
         } else if (switchItemId0 == R.id.menu_archive) {
             var threadTitle: String? = null
-            val posts = ArrayList<Post?>()
+            val posts = ArrayList<Post>()
             for (postItem in adapter!!) {
                 if (threadTitle == null) {
                     threadTitle =
@@ -983,7 +983,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return true
         } else if (switchItemId2 == R.id.menu_delete) {
             val postItems = adapter!!.selectedItems
-            val postNumbers = ArrayList<PostNumber?>()
+            val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
                 if (!postItem!!.isDeleted()) {
                     postNumbers.add(postItem.getPostNumber())
@@ -1000,7 +1000,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return true
         } else if (switchItemId2 == R.id.menu_report) {
             val postItems = adapter!!.selectedItems
-            val postNumbers = ArrayList<PostNumber?>()
+            val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
                 if (!postItem!!.isDeleted()) {
                     postNumbers.add(postItem.getPostNumber())
@@ -1040,7 +1040,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             query,
             lastEditedPostNumbers,
             lastNewPostNumbers,
-            SearchWorker.Callback { foundPostNumbers: MutableList<PostNumber?>?, queries: MutableSet<String?>? ->
+            SearchWorker.Callback { foundPostNumbers: MutableList<PostNumber>, queries: MutableSet<String> ->
                 this.onSearchResult(
                     foundPostNumbers!!,
                     queries!!
@@ -1592,7 +1592,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 retainableExtra.hiddenPosts.clear()
                 retainableExtra.hiddenPosts.addAll(result.flags.hiddenPosts!!)
                 retainableExtra.userPosts.clear()
-                retainableExtra.userPosts.addAll(result.flags.userPosts)
+                retainableExtra.userPosts.addAll(result.flags.userPosts!!)
             }
             if (result.stateExtra != null) {
                 listPositionFromState =
@@ -2292,7 +2292,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     AlertDialog.Builder(provider!!.context)
                         .setTitle(R.string.remove_rules)
                         .setMultiChoiceItems(
-                            CommonUtils.toArray(localFilters, String::class.java),
+                            localFilters.toTypedArray(),
                             checked,
                             OnMultiChoiceClickListener { d: DialogInterface?, which: Int, isChecked: Boolean ->
                                 checked[which] = isChecked

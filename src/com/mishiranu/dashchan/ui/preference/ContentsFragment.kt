@@ -32,7 +32,7 @@ class ContentsFragment : PreferenceFragment() {
 		private const val REQUEST_UPDATE_CACHE_SIZE = "contentsUpdateCacheSize"
 	}
 
-	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)

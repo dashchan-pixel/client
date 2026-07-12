@@ -22,7 +22,7 @@ import com.mishiranu.dashchan.widget.ClickableToast
 class AboutFragment : PreferenceFragment(), FragmentHandler.Callback {
 	private var inStorageRequest = false
 
-	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)

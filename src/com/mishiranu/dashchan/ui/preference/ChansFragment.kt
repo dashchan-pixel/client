@@ -10,7 +10,7 @@ import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.SharedPreferences
 
 class ChansFragment : PreferenceFragment(), FragmentHandler.Callback {
-	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES
+	override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)

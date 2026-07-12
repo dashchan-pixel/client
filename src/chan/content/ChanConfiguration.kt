@@ -279,7 +279,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     fun commit() {
         if (editData != null) {
             synchronized(editData) {
-                ChanDatabase.getInstance().setData(get().name, editData)
+                ChanDatabase.getInstance().setData(get().name!!, editData)
                 editData.clear()
             }
         }
@@ -298,7 +298,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
             }
         }
         val value: String? =
-            ChanDatabase.getInstance().getData(get().name, dataKey.boardName, dataKey.name)
+            ChanDatabase.getInstance().getData(get().name!!, dataKey.boardName, dataKey.name)
         return if (value != null) ("0" != value) else defaultValue
     }
 
@@ -314,10 +314,10 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
                 return if (result is Int) result else defaultValue
             }
         }
-        val value: String =
-            ChanDatabase.getInstance().getData(get().name, dataKey.boardName, dataKey.name)
+        val value: String? =
+            ChanDatabase.getInstance().getData(get().name!!, dataKey.boardName, dataKey.name)
         try {
-            return value.toInt()
+            return value!!.toInt()
         } catch (e: Exception) {
             return defaultValue
         }
@@ -336,7 +336,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
             }
         }
         val value: String? =
-            ChanDatabase.getInstance().getData(get().name, dataKey.boardName, dataKey.name)
+            ChanDatabase.getInstance().getData(get().name!!, dataKey.boardName, dataKey.name)
         return if (value != null) value else defaultValue
     }
 
@@ -465,7 +465,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
 
     fun getBoards(searchQuery: String?, signal: CancellationSignal?): BoardCursor {
         return ChanDatabase.getInstance()
-            .getBoards(get().name, searchQuery, KEY_TITLE, titleFallbackProvider, signal)
+            .getBoards(get().name!!, searchQuery, KEY_TITLE, titleFallbackProvider, signal)
     }
 
     fun getUserBoards(
@@ -473,7 +473,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         searchQuery: String?, signal: CancellationSignal?
     ): BoardCursor {
         return ChanDatabase.getInstance().getBoards(
-            get().name, boardNames!!, searchQuery,
+            get().name!!, boardNames!!, searchQuery,
             KEY_TITLE, KEY_DESCRIPTION, titleFallbackProvider, descriptionFallbackProvider, signal
         )
     }
@@ -801,7 +801,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         return if (editData == null || cookie == null)
             null
         else
-            ChanDatabase.getInstance().getCookieChecked(get().name, cookie)
+            ChanDatabase.getInstance().getCookieChecked(get().name!!, cookie)
     }
 
     @Public
@@ -811,7 +811,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
                 throw NullPointerException("Сookie must not be null")
             }
             ChanDatabase.getInstance().setCookie(
-                get().name, cookie, value,
+                get().name!!, cookie, value,
                 if (isEmptyOrWhitespace(displayName)) null else displayName
             )
         }
