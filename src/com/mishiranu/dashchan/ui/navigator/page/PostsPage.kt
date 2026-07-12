@@ -257,7 +257,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 val callback: WatcherService.Session.Callback?
                 callback = CallbackProxy.create(
                     WatcherService.Session.Callback::class.java,
-                    CallbackProxy.Handler { result: CallbackProxy<WatcherService.Session.Callback?>? ->
+                    CallbackProxy.Handler { result: CallbackProxy<WatcherService.Session.Callback> ->
                         val visible = visibleRefresh
                         visibleRefresh = false
                         this.result.setValue(
@@ -774,7 +774,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             page.chanName, page.boardName,
             page.threadNumber
         )
-        val iconFavorite = isTabletOrLandscape(resources.getConfiguration())
+        val iconFavorite = isTabletOrLandscape(resources.configuration)
         menu.findItem(R.id.menu_star_text).setVisible(!iconFavorite && !isFavorite)
         menu.findItem(R.id.menu_unstar_text).setVisible(!iconFavorite && isFavorite)
         menu.findItem(R.id.menu_star_icon).setVisible(iconFavorite && !isFavorite)

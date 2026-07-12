@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import java.lang.reflect.ParameterizedType
 
 open class TaskViewModel<Task : ExecutorTask<*, *>, Result> : ViewModel() {
-	private var task: Task? = null
+	internal var task: Task? = null
 	private val result = MutableLiveData<Result?>()
 
 	fun hasTaskOrValue(): Boolean {

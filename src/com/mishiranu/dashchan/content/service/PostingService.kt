@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.content.service
 
+import chan.util.StringUtils
+
 import android.app.Notification
 import android.app.Notification.ProgressStyle
 import android.app.NotificationChannel
@@ -715,7 +717,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
             val builder = StringBuilder(chan.configuration.getTitle()).append(", ")
             builder.append(
                 StringUtils.formatThreadTitle(
-                    chan.name,
+                    chan.name!!,
                     boardName, if (threadNumber != null) threadNumber else "?"
                 )
             )
@@ -730,13 +732,13 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key?>
         fun getPendingUserPosts(
             chanName: String?, boardName: String?,
             threadNumber: String?
-        ): MutableSet<PendingUserPost?>? {
+        ): Set<PendingUserPost>? {
             return PENDING_USER_POST_MAP.get(PostingService.Key(chanName, boardName, threadNumber))
         }
 
         fun consumePendingUserPosts(
             chanName: String?, boardName: String?, threadNumber: String?,
-            consumePendingUserPosts: MutableCollection<PendingUserPost?>
+            consumePendingUserPosts: Collection<PendingUserPost>
         ) {
             val key = PostingService.Key(chanName, boardName, threadNumber)
             val pendingUserPosts: HashSet<PendingUserPost?>? = PENDING_USER_POST_MAP.remove(key)

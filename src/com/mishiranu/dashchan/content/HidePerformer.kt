@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.content
 
+import chan.util.StringUtils
+
 import android.content.Context
 import chan.content.Chan
 import chan.content.ChanConfiguration

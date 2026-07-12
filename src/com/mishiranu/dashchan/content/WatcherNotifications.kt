@@ -36,7 +36,7 @@ object WatcherNotifications {
     fun notifyReplies(
         context: Context, color: Int, important: Boolean, sound: Boolean, vibration: Boolean,
         title: String?, chanName: String?, boardName: String?, threadNumber: String?,
-        replies: MutableList<Reply>
+        replies: List<Reply>
     ) {
         EXECUTOR.execute(
             Task(
@@ -56,7 +56,7 @@ object WatcherNotifications {
         EXECUTOR.execute(
             WatcherNotifications.Task(
                 context, 0, false, false, false, null,
-                chanName, boardName, threadNumber, mutableListOf<Reply?>(), postNumbers
+                chanName, boardName, threadNumber, listOf<Reply>(), postNumbers
             )
         )
     }
@@ -71,7 +71,7 @@ object WatcherNotifications {
         val chanName: String?,
         val boardName: String?,
         val threadNumber: String?,
-        val replies: MutableList<Reply>,
+        val replies: List<Reply>,
         val removePostNumbers: MutableCollection<PostNumber?>
     ) : Runnable {
         val context: Context

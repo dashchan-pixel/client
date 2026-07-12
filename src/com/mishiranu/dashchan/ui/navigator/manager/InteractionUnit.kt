@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.navigator.manager
 
+import chan.util.StringUtils
+
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface

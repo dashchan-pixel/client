@@ -37,7 +37,6 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ConcurrentUtils.newThreadPool
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ThemeEngine
-import java.lang.Long
 import java.util.Collections
 import java.util.concurrent.Executor
 import kotlin.Any
@@ -129,7 +128,7 @@ class WatcherService : BaseService() {
         fun notifyRefreshStarted()
     }
 
-    private class ThreadKey(
+    internal class ThreadKey(
         val chanName: String,
         val boardName: String?,
         val threadNumber: String
@@ -267,7 +266,7 @@ class WatcherService : BaseService() {
         }
     }
 
-    private class ViewModelSession(
+    internal class ViewModelSession(
         private val viewModel: ViewModel,
         private val threadKey: ThreadKey,
         private val callback: Session.Callback
@@ -399,16 +398,16 @@ class WatcherService : BaseService() {
         }
     }
 
-    private class ConcurrentIterable<T>(private val provider: Provider<T?>?) : Iterable<T?> {
+    private class ConcurrentIterable<T : Any>(private val provider: Provider<T>?) : Iterable<T> {
         fun interface Provider<T> {
-            fun getValues(): Collection<T?>?
+            fun getValues(): Collection<T>?
         }
 
-        private val workList = ArrayList<T?>()
-        internal var valuesOnce: MutableCollection<T?>? = null
+        private val workList = ArrayList<T>()
+        internal var valuesOnce: Collection<T>? = null
 
-        override fun iterator(): MutableIterator<T?> {
-            val values: Collection<T?>?
+        override fun iterator(): MutableIterator<T> {
+            val values: Collection<T>?
             if (valuesOnce != null) {
                 values = valuesOnce
                 valuesOnce = null
@@ -418,13 +417,14 @@ class WatcherService : BaseService() {
                 values = null
             }
             if (values == null || values.isEmpty()) {
-                val result = EMPTY as MutableIterator<T?>
+                @Suppress("UNCHECKED_CAST")
+                val result = EMPTY as MutableIterator<T>
                 return result
             } else {
                 workList.clear()
                 workList.addAll(values)
                 val iterator = workList.iterator()
-                return object : MutableIterator<T?> {
+                return object : MutableIterator<T> {
                     override fun hasNext(): Boolean {
                         val hasNext = iterator.hasNext()
                         if (!hasNext) {
@@ -433,7 +433,7 @@ class WatcherService : BaseService() {
                         return hasNext
                     }
 
-                    override fun next(): T? {
+                    override fun next(): T {
                         return iterator.next()
                     }
 
@@ -464,9 +464,9 @@ class WatcherService : BaseService() {
     private class ResolveItemsTask(
         private val callback: Callback,
         private val threads: MutableSet<ThreadKey>
-    ) : ExecutorTask<Void?, MutableList<ResolveItemsTask.Item?>?>() {
+    ) : ExecutorTask<Void?, MutableList<ResolveItemsTask.Item>>() {
         fun interface Callback {
-            fun onResolveItemsResult(items: MutableList<Item?>?)
+            fun onResolveItemsResult(items: MutableList<Item>)
         }
 
         class Item(
@@ -477,8 +477,8 @@ class WatcherService : BaseService() {
             val lastUpdate: Long
         )
 
-        override fun run(): MutableList<Item?> {
-            val items = ArrayList<Item?>(threads.size)
+        override fun run(): MutableList<Item> {
+            val items = ArrayList<Item>(threads.size)
             for (threadKey in threads) {
                 val watcherState: PagesDatabase.WatcherState = PagesDatabase.getInstance()
                     .getWatcherState(
@@ -499,7 +499,7 @@ class WatcherService : BaseService() {
             return items
         }
 
-        override fun onComplete(result: MutableList<Item?>?) {
+        override fun onComplete(result: MutableList<Item>) {
             callback.onResolveItemsResult(result)
         }
     }
@@ -631,7 +631,7 @@ class WatcherService : BaseService() {
             }
         }
 
-        override fun onReadPostsRedirect(target: RedirectException.Target?) {
+        override fun onReadPostsRedirect(target: RedirectException.Target) {
             deleted = true
             error = false
             onTaskFinished()
@@ -667,11 +667,11 @@ class WatcherService : BaseService() {
         }
     }
 
-    private val clients = HashMap<Client?, String?>()
-    private val sessionsMap: HashMap<ThreadKey?, HashSet<InternalSession?>?> =
-        HashMap<ThreadKey?, HashSet<InternalSession?>?>()
-    private val watcherItems: HashMap<ThreadKey?, WatcherItem> = HashMap<ThreadKey?, WatcherItem>()
-    private val enqueuedWatcherItems: ArrayList<WatcherItem?> = ArrayList<WatcherItem?>()
+    private val clients = HashMap<Client, String?>()
+    private val sessionsMap: HashMap<ThreadKey, HashSet<InternalSession>> =
+        HashMap()
+    private val watcherItems: HashMap<ThreadKey, WatcherItem> = HashMap()
+    private val enqueuedWatcherItems: ArrayList<WatcherItem> = ArrayList()
 
     private val workWatcherKeys: Iterable<ThreadKey> = ConcurrentIterable<ThreadKey>(
         ConcurrentIterable.Provider { watcherItems.keys })
@@ -750,7 +750,7 @@ class WatcherService : BaseService() {
                     if (watcherItem!!.state != WatcherState.ENQUEUED) {
                         watcherItem.state = WatcherState.ENQUEUED
                         enqueuedWatcherItems.add(watcherItem)
-                        Collections.sort<WatcherItem?>(enqueuedWatcherItems)
+                        enqueuedWatcherItems.sort()
                     }
                     if (watcherItem != null) {
                         notifyWatcherUpdate(watcherItem)
@@ -764,6 +764,8 @@ class WatcherService : BaseService() {
                         notifyWatcherUpdate(watcherItem)
                     }
                 }
+
+                else -> {}
             }
         }
 
@@ -780,7 +782,7 @@ class WatcherService : BaseService() {
             }
             if (resolveThreads != null && !resolveThreads.isEmpty()) {
                 resolveItemsTask =
-                    ResolveItemsTask(ResolveItemsTask.Callback { items: MutableList<ResolveItemsTask.Item?>? ->
+                    ResolveItemsTask(ResolveItemsTask.Callback { items: MutableList<ResolveItemsTask.Item> ->
                         this.onResolveWatcherItemResult(items)
                     }, resolveThreads)
                 resolveItemsTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
@@ -801,7 +803,7 @@ class WatcherService : BaseService() {
                 notifyWatcherUpdate(watcherItem)
             }
         }
-        Collections.sort<WatcherItem?>(enqueuedWatcherItems)
+        enqueuedWatcherItems.sort()
         resolveWatcherItems()
         startNext()
     }
@@ -943,7 +945,7 @@ class WatcherService : BaseService() {
         return watcherItem
     }
 
-    private fun registerClient(client: Client?, chanName: String?) {
+    private fun registerClient(client: Client, chanName: String?) {
         val newClient = !clients.containsKey(client)
         val oldChanName = clients.put(client, chanName)
         if (newClient || !equals(oldChanName, chanName)) {
@@ -1016,7 +1018,7 @@ class WatcherService : BaseService() {
                 }
             }
         }
-        Collections.sort<WatcherItem?>(enqueuedWatcherItems)
+        enqueuedWatcherItems.sort()
         startNext()
     }
 

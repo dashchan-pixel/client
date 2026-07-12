@@ -86,7 +86,6 @@ import com.mishiranu.dashchan.widget.SortableHelper.DragState
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import com.mishiranu.dashchan.widget.WatcherView
 import com.mishiranu.dashchan.widget.WatcherView.ColorSet
-import java.lang.Long
 import java.util.Collections
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -109,8 +108,8 @@ class DrawerForm(
     private val callback: Callback,
     private val fragmentManager: FragmentManager,
     private val watcherServiceClient: WatcherService.Client
-) : RecyclerView.Adapter<DrawerForm.ViewHolder?>(), Shift, DrawerListener, OnEditorActionListener,
-    SortableHelper.Callback<DrawerForm.ViewHolder?> {
+) : RecyclerView.Adapter<DrawerForm.ViewHolder>(), Shift, DrawerListener, OnEditorActionListener,
+    SortableHelper.Callback<DrawerForm.ViewHolder> {
     private val watcherViewColorSet: ColorSet
     private val sortableHelper: SortableHelper<ViewHolder>
     private val drawerIconColor: Int
@@ -129,7 +128,7 @@ class DrawerForm(
     private val watcherSupportSet = HashSet<String?>()
 
     private val chans = ArrayList<ListItem>()
-    private val pages = ArrayList<ListItem?>()
+    private val pages = ArrayList<ListItem>()
     private val favorites = ArrayList<ListItem>()
     private val menu = ArrayList<ListItem>()
 
@@ -148,9 +147,9 @@ class DrawerForm(
     class Page(
         val chanName: String, val boardName: String, val threadNumber: String?,
         val threadTitle: String?, val createRealtime: Long
-    ) : Comparable<Page?> {
-        override fun compareTo(page: Page): Int {
-            return Long.compare(page.createRealtime, createRealtime)
+    ) : Comparable<Page> {
+        override fun compareTo(other: Page): Int {
+            return other.createRealtime.compareTo(createRealtime)
         }
     }
 
@@ -167,7 +166,7 @@ class DrawerForm(
         fun onEnterNumber(number: Int): Int
         fun onSelectDrawerMenuItem(item: Int)
         fun onDraggingStateChanged(dragging: Boolean)
-        fun obtainDrawerPages(): MutableCollection<Page>
+        fun obtainDrawerPages(): Collection<Page>
         fun restartApplication()
     }
 
@@ -305,7 +304,7 @@ class DrawerForm(
         return false
     }
 
-    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side?): Int {
+    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int {
         val shift = recyclerView.obtainEdgeEffectShift(side)
         return if (side == EdgeEffectHandler.Side.TOP) shift + headerView.getPaddingTop() else shift
     }
@@ -333,6 +332,8 @@ class DrawerForm(
                 callback.onSelectChan(listItem.chanName)
                 setChanSelectMode(false)
             }
+
+            else -> {}
         }
     }
 
@@ -353,10 +354,12 @@ class DrawerForm(
                 showPageFavoriteMenu(
                     fragmentManager, listItem.type == ListItem.Type.FAVORITE,
                     listItem.isThreadItem,
-                    listItem.chanName, listItem.boardName, listItem.threadNumber, listItem.title
+                    listItem.chanName!!, listItem.boardName, listItem.threadNumber, listItem.title
                 )
                 return true
             }
+
+            else -> {}
         }
         return false
     }
@@ -606,7 +609,7 @@ class DrawerForm(
             }
         }
         if (pages.size > 0) {
-            Collections.sort<Page?>(pages)
+            pages.sort()
             this.pages.add(
                 ListItem(
                     ListItem.Type.SECTION, SECTION_ACTION_CLOSE_ALL,
@@ -741,7 +744,7 @@ class DrawerForm(
 
     private class ListItem(
         val type: Type, val data: Int, val iconChan: Boolean, val iconResId: Int,
-        val chanName: String, val boardName: String, val threadNumber: String?, val title: String?
+        val chanName: String?, val boardName: String?, val threadNumber: String?, val title: String?
     ) {
         enum class Type {
             HEADER, RESTART, SECTION, PAGE, FAVORITE, MENU, CHAN
@@ -755,22 +758,22 @@ class DrawerForm(
 
         constructor(
             type: Type, data: Int, iconResId: Int,
-            chanName: String, boardName: String, threadNumber: String?, title: String?
+            chanName: String?, boardName: String?, threadNumber: String?, title: String?
         ) : this(type, data, false, iconResId, chanName, boardName, threadNumber, title)
 
         constructor(
             type: Type,
             data: Int,
-            chanName: String,
-            boardName: String,
+            chanName: String?,
+            boardName: String?,
             threadNumber: String?,
             title: String?
         ) : this(type, data, true, 0, chanName, boardName, threadNumber, title)
 
         constructor(
             type: Type,
-            chanName: String,
-            boardName: String,
+            chanName: String?,
+            boardName: String?,
             threadNumber: String?,
             title: String?
         ) : this(type, 0, 0, chanName, boardName, threadNumber, title)
@@ -879,7 +882,7 @@ class DrawerForm(
                                     } else if (chanName != null) {
                                         watcherServiceClient.refreshAll(chanName)
                                     }
-                                    return@setOnMenuItemClickListener true
+                                    return@OnMenuItemClickListener true
                                 }
 
                                 FAVORITES_MENU_CLEAR_DELETED -> {
@@ -903,7 +906,7 @@ class DrawerForm(
                                         builder,
                                         deleteFavoriteItems
                                     )
-                                    return@setOnMenuItemClickListener true
+                                    return@OnMenuItemClickListener true
                                 }
 
                                 FAVORITES_MENU_HIDE_DELETED -> {
@@ -923,7 +926,7 @@ class DrawerForm(
                                         updateListFavorites()
                                     }
                                     notifyDataSetChanged()
-                                    return@setOnMenuItemClickListener true
+                                    return@OnMenuItemClickListener true
                                 }
 
                                 FAVORITES_MENU_HIDE_ALL -> {
@@ -938,7 +941,7 @@ class DrawerForm(
                                         favorites.removeIf { fav: ListItem? -> fav!!.type == ListItem.Type.FAVORITE && fav.isThreadItem }
                                     } else updateListFavorites()
                                     notifyDataSetChanged()
-                                    return@setOnMenuItemClickListener true
+                                    return@OnMenuItemClickListener true
                                 }
                             }
                             false
@@ -1015,7 +1018,7 @@ class DrawerForm(
         return viewType.ordinal
     }
 
-    private val categoriesArray: Array<MutableList<ListItem>> = arrayOfNulls<MutableList<*>>(2)
+    private val categoriesArray: Array<MutableList<ListItem>> = Array(2) { ArrayList() }
 
     private fun prepareCategoriesArray(): Int {
         when (categoriesOrder) {
@@ -1232,9 +1235,9 @@ class DrawerForm(
     }
 
     private val clickCallback =
-        ClickCallback { holder: ViewHolder?, position: Int, item: Void?, longClick: Boolean ->
+        ClickCallback { holder: ViewHolder, position: Int, item: Void?, longClick: Boolean ->
             if (longClick) {
-                return@ClickCallback onItemLongClick(holder!!)
+                return@ClickCallback onItemLongClick(holder)
             } else {
                 onItemClick(position)
                 return@ClickCallback true
@@ -1277,7 +1280,7 @@ class DrawerForm(
         when (listItem.type) {
             ListItem.Type.HEADER, ListItem.Type.RESTART -> {}
             ListItem.Type.PAGE, ListItem.Type.FAVORITE -> {
-                holder.text.setText(
+                holder.text!!.setText(
                     formatBoardThreadTitle(
                         listItem.isThreadItem,
                         listItem.boardName, listItem.threadNumber!!, listItem.title
@@ -1286,12 +1289,12 @@ class DrawerForm(
                 if (listItem.type == ListItem.Type.FAVORITE && listItem.isThreadItem &&
                     watcherSupportSet.contains(listItem.chanName)
                 ) {
-                    holder.watcher.update(getCounter(listItem)!!)
+                    holder.watcher!!.update(getCounter(listItem)!!)
                 }
             }
 
             ListItem.Type.SECTION, ListItem.Type.MENU, ListItem.Type.CHAN -> {
-                holder.text.setText(listItem.title)
+                holder.text!!.setText(listItem.title)
             }
         }
         if (holder != null && holder.icon != null) {
@@ -1313,8 +1316,8 @@ class DrawerForm(
     class ViewHolder(
         itemView: View,
         val icon: ImageView?,
-        val text: TextView,
-        val watcher: WatcherView
+        val text: TextView?,
+        val watcher: WatcherView?
     ) : RecyclerView.ViewHolder(itemView), OnTouchListener {
         private var originalTextColors: ColorStateList? = null
         private var originalTintColors: ColorStateList? = null
@@ -1323,9 +1326,9 @@ class DrawerForm(
         fun setDragging(dragging: Boolean, activeColor: Int) {
             if (dragging) {
                 if (originalTextColors == null) {
-                    originalTextColors = text.getTextColors()
+                    originalTextColors = text!!.getTextColors()
                 }
-                text.setTextColor(activeColor)
+                text!!.setTextColor(activeColor)
                 if (icon != null) {
                     if (originalTintColors == null) {
                         originalTintColors = icon.getImageTintList()
@@ -1334,7 +1337,7 @@ class DrawerForm(
                 }
             } else {
                 if (originalTextColors != null) {
-                    text.setTextColor(originalTextColors)
+                    text!!.setTextColor(originalTextColors)
                 }
                 if (icon != null && originalTintColors != null) {
                     icon.setImageTintList(originalTintColors)
@@ -1422,7 +1425,7 @@ class DrawerForm(
 
     private fun getCounter(listItem: ListItem): WatcherService.Counter? {
         return watcherServiceClient.getCounter(
-            listItem.chanName,
+            listItem.chanName!!,
             listItem.boardName,
             listItem.threadNumber!!
         )
@@ -1464,7 +1467,7 @@ class DrawerForm(
                         if (listItem.type == ListItem.Type.FAVORITE &&
                             listItem.compare(chanName, boardName, threadNumber)
                         ) {
-                            holder.watcher.update(counter)
+                            holder.watcher!!.update(counter)
                             break
                         }
                     }
@@ -1666,7 +1669,7 @@ class DrawerForm(
         )
 
         val restartButtonViewHolder = createItem(ViewType.ITEM, density)
-        restartButtonViewHolder.text.setText(R.string.restart)
+        restartButtonViewHolder.text!!.setText(R.string.restart)
         restartButtonViewHolder.itemView.setOnClickListener(View.OnClickListener { v: View? -> callback.restartApplication() })
         restartView.addView(
             restartButtonViewHolder.itemView, LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1688,7 +1691,7 @@ class DrawerForm(
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    override fun onDragFinish(holder: ViewHolder, cancelled: Boolean) {
+    override fun onDragFinish(holder: ViewHolder?, cancelled: Boolean) {
         if (!cancelled) {
             val chanMovedTo = chanDragState.getMovedTo()
             val favoriteMovedTo = favoriteDragState.getMovedTo()
@@ -1723,7 +1726,7 @@ class DrawerForm(
                 favoritesStorage.moveAfter(favoriteItem!!, afterFavoriteItem)
             }
         }
-        holder.setDragging(false, 0)
+        holder!!.setDragging(false, 0)
         callback.onDraggingStateChanged(false)
     }
 

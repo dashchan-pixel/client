@@ -1,5 +1,7 @@
 package chan.util
 
+import chan.util.StringUtils
+
 import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor

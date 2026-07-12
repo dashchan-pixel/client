@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.posting
 
+import chan.util.StringUtils
+
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -209,9 +211,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             postingBinder = service as PostingService.Binder?
             postingBinder!!.register(
                 postingCallback,
-                this.chanName,
-                this.boardName,
-                this.threadNumber
+                this@PostingFragment.chanName,
+                this@PostingFragment.boardName,
+                this@PostingFragment.threadNumber
             )
         }
 
@@ -225,7 +227,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
     override fun onCreateView(
         inflater: LayoutInflater,
-        container: ViewGroup,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         val rootView = ExpandedLayout(container.getContext(), true)
@@ -1451,13 +1453,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         updateSendButtonState()
     }
 
-    private val attachLauncher: ActivityResultLauncher<Intent?>? = null
-    fun registerForActivityResult(
-    )
-
-    init {
+    private val attachLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
         val data: Intent? = result.getData()
-        if (result.getResultCode() === Activity.RESULT_OK && data != null) {
+        if (result.getResultCode() == Activity.RESULT_OK && data != null) {
             val uris = LinkedHashSet<Uri>()
             val dataUri = data.getData()
             if (dataUri != null) {
@@ -1774,7 +1774,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 fileSize += " " + fileHolder.imageWidth + '×' + fileHolder.imageHeight
             }
             if (bitmap == null) {
-                if (fallback.locator.isVideoExtension(fileHolder.name)) {
+                if (Chan.getFallback().locator.isVideoExtension(fileHolder.name)) {
                     val retriever = MediaMetadataRetriever()
                     try {
                         fileHolder.openFileDescriptor().use { descriptor ->
@@ -1908,9 +1908,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             val maxButtonsWidth =
                 lastWidth - textFormatView!!.getPaddingLeft() - textFormatView!!.getPaddingRight()
             val buttonMarginLeft = ((-4f) * density).toInt()
-            val supportedAndDisplayedTags: Pair<Int?, Int?> = obtainSupportedAndDisplayedTags(
-                if (allowPosting) get(this.chanName).markup else null,
-                this.boardName, density, maxButtonsWidth, buttonMarginLeft
+            val supportedAndDisplayedTags: Pair<Int, Int> = obtainSupportedAndDisplayedTags(
+                if (allowPosting) get(this@PostingFragment.chanName).markup else null,
+                this@PostingFragment.boardName, density, maxButtonsWidth, buttonMarginLeft
             )
             val supportedTags: Int = supportedAndDisplayedTags.first!!
             val displayedTags: Int = supportedAndDisplayedTags.second!!

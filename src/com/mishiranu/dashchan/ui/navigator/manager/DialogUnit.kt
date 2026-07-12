@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.navigator.manager
 
+import chan.util.StringUtils
+
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.annotation.TargetApi

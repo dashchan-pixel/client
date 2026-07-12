@@ -152,6 +152,8 @@ class PostsAdapter(
             ViewUnit.ViewType.POST_HIDDEN -> {
                 uiManager.view().bindPostHiddenView(holder, postItem, configurationSet)
             }
+
+            else -> {}
         }
     }
 
@@ -210,7 +212,7 @@ class PostsAdapter(
         uiManager.interaction().handleLinkLongClick(configurationSet, uri)
     }
 
-    private fun removeOldReferences(changedOrRemoved: MutableCollection<PostNumber?>) {
+    private fun removeOldReferences(changedOrRemoved: Collection<PostNumber?>) {
         for (postNumber in changedOrRemoved) {
             val oldPostItem = postItemsMap.get(postNumber)
             if (oldPostItem != null) {
@@ -248,7 +250,7 @@ class PostsAdapter(
         postItemsMap.keys.removeAll(removed)
         postNumbers.clear()
         postNumbers.addAll(postItemsMap.keys)
-        Collections.sort<PostNumber?>(postNumbers)
+        postNumbers.sortWith(nullsFirst(naturalOrder()))
 
         for (postItem in changed.values) {
             if (postItem.isOriginalPost()) {
@@ -321,7 +323,7 @@ class PostsAdapter(
                     postItemsMap.remove(post.getPostNumber())
                     postNumbers.clear()
                     postNumbers.addAll(postItemsMap.keys)
-                    Collections.sort<PostNumber?>(postNumbers)
+                    postNumbers.sortWith(nullsFirst(naturalOrder()))
                     notifyDataSetChanged()
                 }
             )
@@ -351,7 +353,7 @@ class PostsAdapter(
         if (removed) {
             postNumbers.clear()
             postNumbers.addAll(postItemsMap.keys)
-            Collections.sort<PostNumber?>(postNumbers)
+            postNumbers.sortWith(nullsFirst(naturalOrder()))
             notifyDataSetChanged()
         }
         return removed
@@ -391,17 +393,17 @@ class PostsAdapter(
         notifyItemChanged(position, SimpleViewHolder.EMPTY_PAYLOAD)
     }
 
-    val selectedItems: ArrayList<PostItem?>
+    val selectedItems: ArrayList<PostItem>
         get() {
             val selected =
-                java.util.ArrayList<PostItem?>(this.selected.size)
+                java.util.ArrayList<PostItem>(this.selected.size)
             for (postNumber in this.selected) {
                 val postItem = postItemsMap.get(postNumber)
                 if (postItem != null) {
                     selected.add(postItem)
                 }
             }
-            Collections.sort<PostItem?>(selected)
+            selected.sortWith(naturalOrder())
             return selected
         }
 
@@ -469,7 +471,7 @@ class PostsAdapter(
         this.postItemsMap = postItemsMap
         this.hiddenPosts = hiddenPosts
         postNumbers.addAll(postItemsMap.keys)
-        Collections.sort<PostNumber?>(postNumbers)
+        postNumbers.sortWith(nullsFirst(naturalOrder()))
         preloadPosts(0)
         for (postItem in postItemsMap.values) {
             if (postItem.isOriginalPost()) {
@@ -504,7 +506,7 @@ class PostsAdapter(
         }
     }
 
-    fun setHighlightText(highlightText: MutableCollection<String?>) {
+    fun setHighlightText(highlightText: MutableCollection<String>) {
         demandSet.highlightText = highlightText
         notifyDataSetChanged()
     }
@@ -572,7 +574,7 @@ class PostsAdapter(
     }
 
     private inner class PostsIterator(private val ascending: Boolean, private var position: Int) :
-        MutableIterator<PostItem?> {
+        MutableIterator<PostItem> {
         override fun hasNext(): Boolean {
             val count = getItemCount()
             return if (ascending) position < count else position >= 0

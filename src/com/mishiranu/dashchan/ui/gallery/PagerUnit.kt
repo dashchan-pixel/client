@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.gallery
 
+import chan.util.StringUtils
+
 import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.content.res.Configuration

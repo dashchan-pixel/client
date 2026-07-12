@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.content.service
 
+import chan.util.StringUtils
+
 import android.app.Notification
 import android.app.Notification.ProgressStyle
 import android.app.NotificationChannel

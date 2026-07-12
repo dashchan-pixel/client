@@ -6,7 +6,7 @@ import java.net.HttpURLConnection
 
 @Public
 class HttpException : Exception, ErrorItem.Holder {
-	private val responseCode: Int
+	internal val responseCode: Int
 	private val responseText: String?
 	private val errorItemType: ErrorItem.Type?
 

@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.navigator.manager
 
+import chan.util.StringUtils
+
 import android.animation.Animator
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
@@ -116,25 +118,25 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             val holder =
                 ListViewUtils.getViewHolder(view, UiManager.Holder::class.java)
             uiManager.interaction()
-                .handleLinkClick(holder!!.configurationSet, uri, extra, confirmed)
+                .handleLinkClick(holder!!.configurationSet!!, uri, extra, confirmed)
         }
 
         override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra) {
             val holder =
                 ListViewUtils.getViewHolder(view, UiManager.Holder::class.java)
-            uiManager.interaction().handleLinkLongClick(holder!!.configurationSet, uri)
+            uiManager.interaction().handleLinkLongClick(holder!!.configurationSet!!, uri)
         }
     }
 
-    private fun onSpanStateChanged(view: CommentTextView?) {
+    private fun onSpanStateChanged(view: CommentTextView) {
         uiManager.sendPostItemMessage(view, UiManager.Message.INVALIDATE_COMMENT_VIEW)
     }
 
     private val spanStateListener: SpanStateListener =
-        SpanStateListener { view: CommentTextView? -> this.onSpanStateChanged(view) }
+        SpanStateListener { view: CommentTextView -> this.onSpanStateChanged(view) }
 
     private val prepareToCopyListener: PrepareToCopyListener =
-        PrepareToCopyListener { view: CommentTextView?, text: Spannable?, start: Int, end: Int ->
+        PrepareToCopyListener { view: CommentTextView, text: Spannable, start: Int, end: Int ->
             InteractionUnit.Companion.getCopyReadyComment(
                 text,
                 start,
@@ -207,7 +209,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         val stateData = PostState.Predicate.Data(postItem, configurationSet, bumpLimitReached)
         for (i in PostState.THREAD_ITEM_STATES.indices) {
             val visible = PostState.THREAD_ITEM_STATES.get(i).predicate.apply(stateData)
-            holder.stateImages!![i].setVisibility(if (visible) View.VISIBLE else View.GONE)
+            holder.stateImages!![i]!!.setVisibility(if (visible) View.VISIBLE else View.GONE)
         }
 
         val subject = postItem.getSubject()
@@ -327,10 +329,10 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         attachmentItem: AttachmentItem
     ) {
         val holder: ThreadViewHolder = viewHolder as ThreadViewHolder
-        val attachmentItems: MutableList<AttachmentItem>? =
-            holder.getPostItem().getAttachmentItems()
+        val attachmentItems: List<AttachmentItem>? =
+            holder.postItem.getAttachmentItems()
         if (attachmentItems != null && !attachmentItems.isEmpty() && attachmentItems.get(0) === attachmentItem) {
-            val chan = get(holder.getConfigurationSet().chanName)
+            val chan = get(holder.configurationSet.chanName)
             attachmentItem.startLoad(holder.thumbnail, chan, true)
         }
     }
@@ -340,7 +342,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         postItem: PostItem, configurationSet: ConfigurationSet?
     ) {
         val holder: HiddenViewHolder = viewHolder as HiddenViewHolder
-        holder.configure(postItem, configurationSet)
+        holder.configure(postItem, configurationSet!!)
         var description = postItem.getHideReason()
         if (description == null) {
             description = postItem.getSubjectOrComment()
@@ -380,7 +382,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         val stateData = PostState.Predicate.Data(postItem, configurationSet, bumpLimitReached)
         for (i in PostState.POST_ITEM_STATES.indices) {
             val visible = PostState.POST_ITEM_STATES.get(i).predicate.apply(stateData)
-            holder.stateImages[i].setVisibility(if (visible) View.VISIBLE else View.GONE)
+            holder.stateImages[i]!!.setVisibility(if (visible) View.VISIBLE else View.GONE)
         }
         viewHolder.itemView.setAlpha(if (postItem.isDeleted()) ALPHA_DELETED_POST else 1f)
 
@@ -535,8 +537,8 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         attachmentItem: AttachmentItem
     ) {
         val holder: PostViewHolder = viewHolder as PostViewHolder
-        val attachmentItems: MutableList<AttachmentItem>? =
-            holder.getPostItem().getAttachmentItems()
+        val attachmentItems: List<AttachmentItem>? =
+            holder.postItem.getAttachmentItems()
         var attachmentView: AttachmentView? = null
         if (attachmentItems != null) {
             val index = attachmentItems.indexOf(attachmentItem)
@@ -549,7 +551,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             }
         }
         if (attachmentView != null) {
-            val chan = get(holder.getConfigurationSet().chanName)
+            val chan = get(holder.configurationSet.chanName)
             attachmentItem.startLoad(attachmentView, chan, true)
         }
     }
@@ -572,8 +574,8 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
 
     @SuppressLint("InflateParams")
     private fun handlePostViewAttachments(holder: PostViewHolder) {
-        val postItem = holder.getPostItem()
-        val configurationSet = holder.getConfigurationSet()
+        val postItem = holder.postItem
+        val configurationSet = holder.configurationSet
         val context = uiManager.context
         val chan = get(configurationSet.chanName)
         val attachmentItems = postItem.getAttachmentItems()
@@ -597,7 +599,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                     for (i in holders..<size) {
                         val view = LayoutInflater.from(context)
                             .inflate(R.layout.list_item_post_attachment, null)
-                        val attachmentHolder: AttachmentHolder = ViewUnit.AttachmentHolder()
+                        val attachmentHolder = AttachmentHolder()
                         attachmentHolder.container = view
                         attachmentHolder.thumbnail =
                             view.findViewById<AttachmentView>(R.id.thumbnail)
@@ -653,7 +655,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                 }
                 for (i in size..<holders) {
                     val attachmentHolder = attachmentHolders.get(i)
-                    ImageLoader.getInstance().cancel(attachmentHolder.thumbnail)
+                    ImageLoader.getInstance().cancel(attachmentHolder.thumbnail!!)
                     attachmentHolder.thumbnail!!.resetImage(null)
                     attachmentHolder.container!!.setVisibility(View.GONE)
                 }
@@ -692,8 +694,8 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
     }
 
     private fun handlePostViewIcons(holder: PostViewHolder) {
-        val postItem = holder.getPostItem()
-        val configurationSet = holder.getConfigurationSet()
+        val postItem = holder.postItem
+        val configurationSet = holder.configurationSet
         val context = uiManager.context
         val chan = get(configurationSet.chanName)
         val icons = postItem.getIcons()
@@ -730,7 +732,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                     imageView.setVisibility(View.VISIBLE)
                     var uri = icons.get(i).uri
                     if (uri != null) {
-                        uri = if (uri.isRelative()) chan.locator.convert(uri) else uri
+                        uri = if (uri.isRelative) chan.locator.convert(uri) else uri
                         ImageLoader.getInstance().loadImage(chan, uri!!, false, imageView)
                     } else {
                         ImageLoader.getInstance().cancel(imageView)
@@ -827,7 +829,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             val holder: PostViewHolder? =
                 ListViewUtils.getViewHolder(v, PostViewHolder::class.java)
             uiManager.dialog()
-                .displayReplies(holder!!.getConfigurationSet(), holder.getPostItem())
+                .displayReplies(holder!!.configurationSet, holder.postItem)
         }
     }
 
@@ -835,10 +837,10 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         override fun onClick(v: View) {
             val holder: PostViewHolder? =
                 ListViewUtils.getViewHolder(v, PostViewHolder::class.java)
-            val postItem = holder!!.getPostItem()
+            val postItem = holder!!.postItem
             val postNumber = if (postItem.isOriginalPost()) null else postItem.getPostNumber()
             uiManager.navigator()!!.navigatePosts(
-                holder.getConfigurationSet().chanName, postItem.getBoardName(),
+                holder.configurationSet.chanName, postItem.getBoardName(),
                 postItem.getThreadNumber(), postNumber, null
             )
         }
@@ -850,7 +852,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                 val holder: ThreadViewHolder? =
                     ListViewUtils.getViewHolder(v, ThreadViewHolder::class.java)
                 uiManager.dialog()
-                    .displayThread(holder!!.getConfigurationSet(), holder.getPostItem())
+                    .displayThread(holder!!.configurationSet, holder.postItem)
             }
         }
 
@@ -919,13 +921,13 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                             v,
                             PostViewHolder::class.java
                         )
-                        val postItem = holder!!.getPostItem()
-                        val configurationSet = holder.getConfigurationSet()
+                        val postItem = holder!!.postItem
+                        val configurationSet = holder.configurationSet
                         val touchSlop = ViewConfiguration.get(context!!).getScaledTouchSlop()
                         if (abs(event.getX() - startX) <= touchSlop &&
                             abs(event.getY() - startY) <= touchSlop
                         ) {
-                            val icons = ArrayList<IconData?>()
+                            val icons = ArrayList<IconData>()
                             val emailToCopy: String? = null
                             when (type) {
                                 TYPE_BADGES -> {
@@ -935,7 +937,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                                         var uri = postIcon.uri
                                         if (uri != null) {
                                             uri =
-                                                if (uri.isRelative()) chan.locator.convert(uri) else uri
+                                                if (uri.isRelative) chan.locator.convert(uri) else uri
                                         }
                                         icons.add(IconData(postIcon.title, uri))
                                     }
@@ -944,7 +946,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                                 TYPE_STATES -> {
                                     var i = 0
                                     while (i < PostState.POST_ITEM_STATES.size) {
-                                        if (holder.stateImages[i].getVisibility() == View.VISIBLE) {
+                                        if (holder.stateImages[i]!!.getVisibility() == View.VISIBLE) {
                                             val postState = PostState.POST_ITEM_STATES.get(i)
                                             val title = postState.titleProvider
                                                 .get(uiManager.context, postItem)
@@ -982,7 +984,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                             view!!,
                             PostViewHolder::class.java
                         )
-                        val configurationSet = holder!!.getConfigurationSet()
+                        val configurationSet = holder!!.configurationSet
                         if (configurationSet.replyable != null && configurationSet.replyable.onRequestReply(
                                 false
                             )
@@ -991,7 +993,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                                 configurationSet.replyable.onRequestReply(
                                     true,
                                     ReplyData(
-                                        holder.getPostItem().getPostNumber(),
+                                        holder.postItem.getPostNumber(),
                                         text!!.toPreparedString(view)
                                     )
                                 )
@@ -1011,7 +1013,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                                         view!!,
                                         PostViewHolder::class.java
                                     )
-                                val configurationSet = holder!!.getConfigurationSet()
+                                val configurationSet = holder!!.configurationSet
                                 val linkListener = if (configurationSet.linkListener != null)
                                     configurationSet.linkListener
                                 else
@@ -1045,8 +1047,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         USER_POST(
             R.attr.iconPostUserPost, R.string.my_post,
             PostState.Predicate { data: Predicate.Data? ->
-                isShowMyPosts && data!!.configurationSet.postStateProvider
-                    !!.isUserPost(data!!.postItem.getPostNumber())
+                isShowMyPosts && data!!.configurationSet.postStateProvider!!.isUserPost(data.postItem.getPostNumber())
             }),
         ORIGINAL_POSTER(
             R.attr.iconPostOriginalPoster, R.string.original_poster,
@@ -1159,36 +1160,34 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
     }
 
     private open class BasePostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
-        UiManager.Holder, ClickCallback<Void?, BasePostViewHolder?> {
-        private var postItem: WeakReference<PostItem?>? = null
-        private var configurationSet: WeakReference<ConfigurationSet?>? = null
+        UiManager.Holder, ClickCallback<Void?, BasePostViewHolder> {
+        private var postItemRef: WeakReference<PostItem>? = null
+        private var configurationSetRef: WeakReference<ConfigurationSet>? = null
 
-        protected open fun onConfigure(postItem: PostItem?, configurationSet: ConfigurationSet?) {}
+        protected open fun onConfigure(postItem: PostItem, configurationSet: ConfigurationSet) {}
 
-        fun configure(postItem: PostItem?, configurationSet: ConfigurationSet?) {
-            this.postItem = WeakReference<PostItem?>(postItem)
-            this.configurationSet = WeakReference<ConfigurationSet?>(configurationSet)
+        fun configure(postItem: PostItem, configurationSet: ConfigurationSet) {
+            this.postItemRef = WeakReference(postItem)
+            this.configurationSetRef = WeakReference(configurationSet)
             onConfigure(postItem, configurationSet)
         }
 
-        override fun getPostItem(): PostItem {
-            return Objects.requireNonNull<PostItem>(postItem!!.get())
-        }
+        override val postItem: PostItem
+            get() = postItemRef!!.get()!!
 
-        override fun getConfigurationSet(): ConfigurationSet {
-            return Objects.requireNonNull<ConfigurationSet>(configurationSet!!.get())
-        }
+        override val configurationSet: ConfigurationSet
+            get() = configurationSetRef!!.get()!!
 
         override fun onItemClick(
-            holder: BasePostViewHolder?,
+            holder: BasePostViewHolder,
             position: Int,
             item: Void?,
             longClick: Boolean
         ): Boolean {
-            return getConfigurationSet().clickCallback!!.onItemClick(
+            return configurationSet.clickCallback!!.onItemClick(
                 holder,
                 position,
-                getPostItem(),
+                postItem,
                 longClick
             )
         }
@@ -1210,7 +1209,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         val subject: TextView
         val comment: TextView
         val description: ThreadDescriptionView
-        val stateImages: Array<ImageView>?
+        val stateImages: Array<ImageView?>?
         val threadContent: View
         val showOriginalPost: View?
 
@@ -1261,7 +1260,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                 stateImages = null
                 description.setToEnd(true)
             } else {
-                stateImages = arrayOfNulls<ImageView>(PostState.THREAD_ITEM_STATES.size)
+                stateImages = arrayOfNulls(PostState.THREAD_ITEM_STATES.size)
                 Companion.fillStateImages(
                     showOriginalPost!!, if (threadViewType == ThreadViewType.CARD) 1 else 0,
                     stateImages, PostState.THREAD_ITEM_STATES, 0.5f,
@@ -1300,7 +1299,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             }
         }
 
-        override fun onConfigure(postItem: PostItem?, configurationSet: ConfigurationSet) {
+        override fun onConfigure(postItem: PostItem, configurationSet: ConfigurationSet) {
             val thumbnailBackground = if (cardView != null)
                 cardView.getBackgroundColor()
             else
@@ -1350,8 +1349,8 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
     }
 
     private class VoteState {
-        val votingImages: Array<ImageView> = arrayOfNulls<ImageView>(2)
-        val votingText: Array<TextView> = arrayOfNulls<TextView>(2)
+        val votingImages: Array<ImageView?> = arrayOfNulls(2)
+        val votingText: Array<TextView?> = arrayOfNulls(2)
         var likeImage: ImageView? = null
         var dislikeImage: ImageView? = null
         var likeText: TextView? = null
@@ -1392,7 +1391,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         val attachments: ViewGroup
         val thumbnail: AttachmentView
         val attachmentInfo: TextView
-        val commentTextView: CommentTextView
+        override val commentTextView: CommentTextView
         val textSelectionPadding: View?
         val textBarPadding: View
         val bottomBar: View
@@ -1404,7 +1403,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         var attachmentHolders: ArrayList<AttachmentHolder>? = null
         var attachmentViewCount: Int = 1
         var badgeImages: ArrayList<ImageView>? = null
-        val stateImages: Array<ImageView> = arrayOfNulls<ImageView>(PostState.POST_ITEM_STATES.size)
+        val stateImages: Array<ImageView?> = arrayOfNulls(PostState.POST_ITEM_STATES.size)
         val highlightBackgroundColor: Int
         val highlightUserPostBackgroundColor: Int
 
@@ -1538,8 +1537,8 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                 newPostAnimation!!.cancel()
                 newPostAnimation = null
             }
-            val postItem = getPostItem()
-            val configurationSet = getConfigurationSet()
+            val postItem = postItem
+            val configurationSet = configurationSet
             val highlightUserPost = isHighlightUserPosts &&
                     configurationSet.postStateProvider!!.isUserPost(postItem.getPostNumber())
             if (selection == UiManager.Selection.DISABLED &&
@@ -1611,11 +1610,11 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
                 ((if (needBar) 0f else if (hasText) 10f else 6f) * density).toInt()
         }
 
-        override fun onViewAttachedToWindow(v: View?) {
+        override fun onViewAttachedToWindow(v: View) {
             installBackgroundUnchecked()
         }
 
-        override fun onViewDetachedFromWindow(v: View?) {
+        override fun onViewDetachedFromWindow(v: View) {
             resetAnimations()
         }
 
@@ -1628,7 +1627,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
 
         val linkListener: LinkListener?
             get() {
-                val configurationSet = getConfigurationSet()
+                val configurationSet = configurationSet
                 return if (configurationSet.linkListener != null) configurationSet.linkListener else defaultLinkListener
             }
 
@@ -1640,19 +1639,19 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             this.linkListener!!.onLinkLongClick(view, uri, extra)
         }
 
-        val chanName: String?
-            get() = getConfigurationSet().chanName
+        override val chanName: String?
+            get() = configurationSet.chanName
 
-        val boardName: String?
-            get() = getPostItem().getBoardName()
+        override val boardName: String?
+            get() = postItem.getBoardName()
 
-        val threadNumber: String?
-            get() = getPostItem().getThreadNumber()
+        override val threadNumber: String?
+            get() = postItem.getThreadNumber()
 
         override fun onClick(v: View?) {
-            val postItem = getPostItem()
+            val postItem = postItem
             val postNumber = postItem.getPostNumber()
-            val configurationSet = getConfigurationSet()
+            val configurationSet = configurationSet
             if (v === bottomBarExpand && !configurationSet.postStateProvider!!.isExpanded(postNumber)) {
                 configurationSet.postStateProvider!!.setExpanded(postNumber)
                 commentTextView.setLinesLimit(0, 0)
@@ -1691,7 +1690,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             }
         }
 
-        override fun onConfigure(postItem: PostItem?, configurationSet: ConfigurationSet) {
+        override fun onConfigure(postItem: PostItem, configurationSet: ConfigurationSet) {
             thumbnail.applyRoundedCorners(
                 getPostBackgroundColor(
                     itemView.getContext(),
@@ -1808,7 +1807,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         private fun fillStateImages(
             parent: ViewGroup,
             anchorIndex: Int,
-            images: Array<ImageView>,
+            images: Array<ImageView?>,
             states: MutableList<PostState>,
             topDp: Float,
             startDp: Float,
@@ -1842,9 +1841,9 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             }
             typedArray.recycle()
             if (images.size > 0) {
-                val tint = ColorStateList.valueOf(getTheme(images[0].getContext())!!.meta)
+                val tint = ColorStateList.valueOf(getTheme(images[0]!!.getContext())!!.meta)
                 for (image in images) {
-                    image.setImageTintList(tint)
+                    image!!.setImageTintList(tint)
                 }
             }
         }

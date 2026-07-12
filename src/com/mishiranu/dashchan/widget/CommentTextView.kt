@@ -100,11 +100,11 @@ class CommentTextView @JvmOverloads constructor(
     }
 
     fun interface SpanStateListener {
-        fun onSpanStateChanged(view: CommentTextView?)
+        fun onSpanStateChanged(view: CommentTextView)
     }
 
     fun interface PrepareToCopyListener {
-        fun onPrepareToCopy(view: CommentTextView?, text: Spannable?, start: Int, end: Int): String?
+        fun onPrepareToCopy(view: CommentTextView, text: Spannable, start: Int, end: Int): String?
     }
 
     interface LinkListener {
@@ -281,11 +281,11 @@ class CommentTextView @JvmOverloads constructor(
         return selectionMode != null
     }
 
-    private fun setSelectionMode(selectionMode: SelectionMode) {
+    private fun setSelectionMode(selectionMode: SelectionMode?) {
         val oldSelection = isSelectionMode()
         this.selectionMode = selectionMode
         val newSelection = isSelectionMode()
-        if (!newSelection || selectionMode.isActive) {
+        if (!newSelection || selectionMode!!.isActive) {
             // Stop selection fixing when selection is disabled or becomes active
             restoreSelectionRunnable = null
         }
@@ -391,7 +391,7 @@ class CommentTextView @JvmOverloads constructor(
             val newText = this.spannableText
             if (newText == null) {
                 resetSelectionRunnable.run()
-                return@post
+                return@Runnable
             }
             val max = newText.length
             val restoreSelectionRunnable = Runnable {
@@ -443,9 +443,8 @@ class CommentTextView @JvmOverloads constructor(
 
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             val selectionMode: SelectionMode = object : SelectionMode {
-                override fun isActive(): Boolean {
-                    return true
-                }
+                override val isActive: Boolean
+                    get() = true
 
                 override fun invalidateMenu() {
                     // Call "onPrepareActionMode" instead of "invalidate"
@@ -668,7 +667,7 @@ class CommentTextView @JvmOverloads constructor(
         val layout = getLayout()
         val text = this.spannedText
         if (layout != null && text != null) {
-            val spans = findSpansToClick<Any?>(layout, text, Any::class.java, layoutPosition)
+            val spans = findSpansToClick(layout, text, Any::class.java, layoutPosition)
             for (span in spans) {
                 if (span === spanToClick) {
                     return true
@@ -695,7 +694,7 @@ class CommentTextView @JvmOverloads constructor(
         ThemeEngine.Companion.applyStyle(this)
         val density = obtainDensity(this)
         val delta = (RING_RADIUS * density).toInt()
-        deltaAttempts = Array<IntArray?>(1 + RINGS * BASE_POINTS.size) { IntArray(2) }
+        deltaAttempts = Array(1 + RINGS * BASE_POINTS.size) { IntArray(2) }
         deltaAttempts[0][0] = 0
         deltaAttempts[0][1] = 0
         var add = 1
@@ -772,7 +771,7 @@ class CommentTextView @JvmOverloads constructor(
                 // 1st priority: show spoiler
                 var spoilerSpans: ArrayList<SpoilerSpan>? = null
                 if (spoilersEnabled) {
-                    spoilerSpans = findSpansToClick<SpoilerSpan?>(
+                    spoilerSpans = findSpansToClick(
                         layout,
                         text,
                         SpoilerSpan::class.java,
@@ -787,7 +786,7 @@ class CommentTextView @JvmOverloads constructor(
                 }
                 // 2nd priority: open link
                 val linkSpans =
-                    findSpansToClick<LinkSpan?>(layout, text, LinkSpan::class.java, layoutPosition)
+                    findSpansToClick(layout, text, LinkSpan::class.java, layoutPosition)
                 if (!linkSpans.isEmpty()) {
                     setSpanToClick(linkSpans.get(0), x, y)
                     postDelayed(
@@ -825,18 +824,18 @@ class CommentTextView @JvmOverloads constructor(
         spanStartY = y
     }
 
-    private fun <T> findSpansToClick(
+    private fun <T : Any> findSpansToClick(
         layout: Layout,
         spanned: Spanned,
-        type: Class<T?>?,
+        type: Class<T>,
         layoutPosition: Point
-    ): ArrayList<T?> {
-        val result = ArrayList<T?>()
+    ): ArrayList<T> {
+        val result = ArrayList<T>()
         // Find spans around touch point for better click treatment
         for (deltaAttempt in deltaAttempts) {
             val startX = layoutPosition.x + deltaAttempt[0]
             val startY = layoutPosition.y + deltaAttempt[1]
-            val spans = findSpansToClickSingle<T?>(layout, spanned, type, startX, startY)
+            val spans = findSpansToClickSingle(layout, spanned, type, startX, startY)
             if (spans != null) {
                 for (span in spans) {
                     if (span != null) {
@@ -848,16 +847,17 @@ class CommentTextView @JvmOverloads constructor(
         return result
     }
 
-    private fun <T> findSpansToClickSingle(
+    private fun <T : Any> findSpansToClickSingle(
         layout: Layout,
         spanned: Spanned,
-        type: Class<T?>?,
+        type: Class<T>,
         x: Int,
         y: Int
     ): Array<T?>? {
         val line = layout.getLineForVertical(y)
         val off = layout.getOffsetForHorizontal(line, x.toFloat())
-        val spans = spanned.getSpans<T?>(off, off, type)
+        @Suppress("UNCHECKED_CAST")
+        val spans = spanned.getSpans(off, off, type) as Array<T?>?
         if (spans != null) {
             for (i in spans.indices) {
                 val end = spanned.getSpanEnd(spans[i])
@@ -990,11 +990,11 @@ class CommentTextView @JvmOverloads constructor(
         }
 
         private val DEFAULT_LINK_LISTENER: LinkListener = object : LinkListener {
-            override fun onLinkClick(view: CommentTextView, uri: Uri, extra: Extra, confirmed: Boolean) {
+            override fun onLinkClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra, confirmed: Boolean) {
                 handleUri(view.getContext(), extra.chanName, uri, NavigationUtils.BrowserType.AUTO)
             }
 
-            override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: Extra) {
+            override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra) {
             }
         }
 

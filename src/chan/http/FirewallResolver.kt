@@ -67,7 +67,7 @@ abstract class FirewallResolver {
     @Extendable
     abstract class WebViewClient<Result> @Public constructor(@JvmField val name: String?) {
         @Volatile
-        private var result: Result? = null
+        internal var result: Result? = null
 
         @Public
         fun setResult(result: Result?) {

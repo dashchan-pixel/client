@@ -189,7 +189,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     private var wideMode = false
 
     private var navigateIntentOnResume: Intent? = null
-    private var storageRequestState: StorageRequestState
+    private var storageRequestState: StorageRequestState = StorageRequestState.NONE
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(attach(LocaleManager.getInstance().apply(newBase)))
@@ -226,7 +226,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         drawerCommon!!.setBackgroundColor(drawerBackground)
         drawerWide!!.setBackgroundColor(drawerBackground)
         drawerForm =
-            DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient)
+            DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient!!)
         drawerParent = FrameLayout(this)
         drawerParent!!.addView(drawerForm!!.contentView)
         drawerCommon!!.addView(drawerParent)
@@ -840,7 +840,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             } else if (chan.locator.isVideoUri(uri)) {
                 val fileName = chan.locator.createAttachmentFileName(uri!!)
                 if (isOpenableVideoPath(fileName)) {
-                    navigateGalleryUri(chan.locator.convert(uri))
+                    navigateGalleryUri(chan.locator.convert(uri)!!)
                 } else {
                     handleUri(
                         this, chan.name, chan.locator.convert(uri),
@@ -909,14 +909,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             val page = getSavedPage(savedPageItem)
             if (mergeChans || page.chanName == chanName) {
                 iterator.remove()
-                if (!(page.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts())) {
+                if (!(page.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts)) {
                     preservedPageItems.add(savedPageItem)
                 }
             }
         }
         val page = currentFragment.page
         if (mergeChans || page!!.chanName == chanName) {
-            if (!(page!!.canDestroyIfNotInStack() || closeOnBack && page!!.isThreadsOrPosts())) {
+            if (!(page!!.canDestroyIfNotInStack() || closeOnBack && page!!.isThreadsOrPosts)) {
                 preservedPageItems.add(
                     currentPageItem!!.toSaved(
                         getSupportFragmentManager(),
@@ -1024,7 +1024,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
 
         val page = Page(content!!, chanName, boardName, threadNumber, searchQuery)
-        val pair: Pair<PageFragment?, PageItem?>
+        val pair: Pair<PageFragment, PageItem>
         if (targetSavedPageItem != null) {
             val savedPage = getSavedPage(targetSavedPageItem)
             if (savedPage == page) {
@@ -1105,7 +1105,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 return
             }
         }
-        val pair: Pair<PageFragment?, PageItem?>
+        val pair: Pair<PageFragment, PageItem>
         val fromCache = get(pageFlags, FLAG_PAGE_FROM_CACHE)
         when (content) {
             Page.Content.THREADS -> {
@@ -1145,8 +1145,8 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     }
 
     private fun navigateSavedPage(savedPageItem: SavedPageItem, closeOverlays: Boolean) {
-        val pair: Pair<PageFragment?, PageItem?> = savedPageItem.create()
-        navigateFragment(pair.first!!, pair.second, closeOverlays)
+        val pair = savedPageItem.create()
+        navigateFragment(pair.first, pair.second, closeOverlays)
     }
 
     override fun pushFragment(fragment: ContentFragment) {
@@ -1513,7 +1513,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 if (savedPageItem != null) {
                     if (currentFragment is PageFragment) {
                         val page = currentFragment.page
-                        if (!(page!!.isThreadsOrPosts() && isCloseOnBack)) {
+                        if (!(page!!.isThreadsOrPosts && isCloseOnBack)) {
                             preservedPageItems.add(
                                 currentPageItem!!.toSaved(
                                     getSupportFragmentManager(),
@@ -1907,7 +1907,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 chanName, boardName, singleBoardMode, singleBoardName
             )
             val mergeChans = isMergeChans
-            val addPreserved = ArrayList<SavedPageItem?>()
+            val addPreserved = ArrayList<SavedPageItem>()
             val iterator: MutableIterator<SavedPageItem?> =
                 ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
             while (iterator.hasNext()) {
@@ -1922,7 +1922,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                         singleBoardName
                     )
                     iterator.remove()
-                    if (!(savedPage.isThreadsOrPosts() || savedPage.canDestroyIfNotInStack())) {
+                    if (!(savedPage.isThreadsOrPosts || savedPage.canDestroyIfNotInStack())) {
                         addPreserved.add(savedPageItem)
                     }
                 }
@@ -1949,14 +1949,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 )
             }
         } else {
-            val addPreserved = ArrayList<SavedPageItem?>()
+            val addPreserved = ArrayList<SavedPageItem>()
             val iterator: MutableIterator<SavedPageItem?> =
                 ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
             while (iterator.hasNext()) {
                 val savedPageItem: SavedPageItem = iterator.next()!!
                 val savedPage = getSavedPage(savedPageItem)
                 iterator.remove()
-                if (!(savedPage.isThreadsOrPosts() || savedPage.canDestroyIfNotInStack())) {
+                if (!(savedPage.isThreadsOrPosts || savedPage.canDestroyIfNotInStack())) {
                     addPreserved.add(savedPageItem)
                 }
             }
@@ -2040,14 +2040,14 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         }
     }
 
-    override fun obtainDrawerPages(): MutableCollection<DrawerForm.Page?> {
-        val drawerPages = ArrayList<DrawerForm.Page?>(
+    override fun obtainDrawerPages(): Collection<DrawerForm.Page> {
+        val drawerPages = ArrayList<DrawerForm.Page>(
             1 +
                     stackPageItems.size + preservedPageItems.size
         )
         for (savedPageItem in ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems)) {
             val page = getSavedPage(savedPageItem!!)
-            if (page.isThreadsOrPosts()) {
+            if (page.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
                         page.chanName!!, page.boardName!!, page.threadNumber,
@@ -2059,7 +2059,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         val currentFragment = this.currentFragment
         if (currentFragment is PageFragment) {
             val page = currentFragment.page
-            if (page!!.isThreadsOrPosts()) {
+            if (page!!.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
                         page!!.chanName, page!!.boardName, page!!.threadNumber,
@@ -2401,7 +2401,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
     ) {
         val currentFragment = this.currentFragment as PageFragment?
         val page = currentFragment!!.page
-        if (page!!.isThreadsOrPosts()) {
+        if (page!!.isThreadsOrPosts) {
             currentPageItem = null
             if (threadNumber == null) {
                 navigateBoardsOrThreads(chanName, boardName, false, false)

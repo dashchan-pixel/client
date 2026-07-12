@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.content.net
 
+import chan.util.StringUtils
+
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context

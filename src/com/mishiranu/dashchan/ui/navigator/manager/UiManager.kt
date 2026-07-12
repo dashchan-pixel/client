@@ -1,5 +1,8 @@
 package com.mishiranu.dashchan.ui.navigator.manager
 
+import com.mishiranu.dashchan.content.service.DownloadService
+import com.mishiranu.dashchan.content.service.WatcherService
+
 import android.content.Context
 import android.view.View
 import android.view.View.OnLongClickListener
@@ -90,7 +93,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
     }
 
     fun reloadAttachmentItem(attachmentItem: AttachmentItem?) {
-        val iterator: MutableIterator<Observer?> = observable.iterator()
+        val iterator = observable.iterator()
         var observer: Observer? = null
         while (iterator.hasNext()) {
             observer = iterator.next()
@@ -175,7 +178,7 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
         var selection: Selection = Selection.DISABLED
         var showOpenThreadButton: Boolean = false
         @JvmField
-        var highlightText: MutableCollection<String?> = mutableListOf<String?>()
+        var highlightText: MutableCollection<String> = mutableListOf()
     }
 
     class ConfigurationSet(
@@ -183,12 +186,12 @@ class UiManager(val context: Context?, callback: Callback?, localNavigator: Loca
         val postsProvider: PostsProvider?, @JvmField val postStateProvider: PostStateProvider?,
         val galleryProvider: GalleryItem.Provider, val fragmentManager: FragmentManager?,
         @JvmField val stackInstance: StackInstance?, val linkListener: LinkListener?,
-        val clickCallback: ClickCallback<PostItem?, RecyclerView.ViewHolder?>?,
+        val clickCallback: ClickCallback<PostItem?, RecyclerView.ViewHolder>?,
         val mayCollapse: Boolean, val isDialog: Boolean, val allowMyMarkEdit: Boolean,
         val allowHiding: Boolean, val allowGoToPost: Boolean, val repliesToPost: PostNumber?
     ) {
         fun copy(
-            clickCallback: ClickCallback<PostItem?, RecyclerView.ViewHolder?>?,
+            clickCallback: ClickCallback<PostItem?, RecyclerView.ViewHolder>?,
             mayCollapse: Boolean, isDialog: Boolean, repliesToPost: PostNumber?
         ): ConfigurationSet {
             return ConfigurationSet(
