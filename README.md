@@ -1,20 +1,41 @@
-# Dashchan (pixel fork)
+# Dashchan Pixel
 
 Android client for imageboards.
+
+> [!IMPORTANT]
+> **Dashchan Pixel runs on Android 16 or newer only.** Devices on older
+> Android versions are not supported and cannot install the app.
 
 A fork of [TrixiEther/DashchanFork](https://github.com/TrixiEther/DashchanFork),
 itself a fork of [Mishiranu/Dashchan](https://github.com/Mishiranu/Dashchan).
 
 ## Features
 
-* Supports multiple forums using extensions
-* Threads watcher and reply notifications
-* Automatic filter using regular expressions
-* Image gallery and video player
-* Picture-in-picture video playback
-* Archiving in HTML format
-* Configurable themes
-* Fullscreen layout
+### Browsing
+
+* Supports many imageboards through installable extensions
+* Fullscreen layout with configurable themes
+* Thread watcher with reply notifications
+* Automatic post filtering using regular expressions
+* Hide threads with a swipe
+* Your posts and replies to them are highlighted and marked on the scrollbar
+* Thread archiving in HTML format
+
+### Media
+
+* Built-in image gallery and video player — no separate video player extension needed
+* Picture-in-picture video playback with a video feed mode
+* Optional multi-threaded video playback for better performance
+* Reverse image search, including Google Lens
+
+### Posting
+
+* Voting on boards that support it (for example 2ch.hk/news/, requires an updated extension)
+* Captcha timer with automatic reload on imageboards that support it
+* Smarter image attaching: remembers your settings, lets you rename files
+
+Version history with changelogs lives in [metadata/versions.json](metadata/versions.json)
+and [metadata/en/changelogs](metadata/en/changelogs).
 
 ## Screenshots
 
@@ -33,23 +54,6 @@ itself a fork of [Mishiranu/Dashchan](https://github.com/Mishiranu/Dashchan).
 <img src="metadata/en/images/phoneScreenshots/12.png" width="20%" />
 <img src="metadata/en/images/phoneScreenshots/13.png" width="20%" />
 </p>
-
-## Changes over the original Dashchan
-
-* Support for voting on boards that provide it, for example 2ch.hk/news/ (requires an updated extension)
-* Hiding threads with a swipe (activated in the settings)
-* Fixed app freezes while downloading when the download folder contains many files
-* Reworked ClickableToast, may fix display on some Android systems
-* Google Search now uses Google Lens
-* Optional multi-threaded video playback (may improve performance)
-* Captcha timer support with automatic reload for imageboards that support it
-* Hiding the list of favorite threads
-* Interface improvements: border highlight for your posts, your posts and replies marked on the scrollbar
-* Additional functionality when attaching pictures (remembering settings, renaming a file)
-* Picture-in-picture video playback with a video feed mode
-
-Version history with changelogs lives in [metadata/versions.json](metadata/versions.json)
-and [metadata/en/changelogs](metadata/en/changelogs).
 
 ## Building Guide
 
@@ -79,9 +83,6 @@ The source code of extensions is available in the
 (the fork with new modules and included updates); the original is
 [Mishiranu/Dashchan-Extensions](https://github.com/Mishiranu/Dashchan-Extensions).
 
-The video player libraries are built into the client in this fork and no longer
-require a separate extension.
-
 ## License
 
-Dashchan is available under the [GNU General Public License, version 3 or later](COPYING).
+Dashchan Pixel is available under the [GNU General Public License, version 3 or later](COPYING).
