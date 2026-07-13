@@ -275,14 +275,14 @@ class ThreadsAdapter(
             }
         }
         if (sorting || filter) {
-            var text = filterText!!
+            var text = filterText
             if (!isEmpty(text)) {
                 if (filteredPostItems == null) {
                     filteredPostItems = ArrayList()
                 } else {
                     filteredPostItems!!.clear()
                 }
-                text = text.lowercase(Locale.getDefault())
+                text = text!!.lowercase(Locale.getDefault())
                 val chan = get(configurationSet.chanName)
                 val locale = Locale.getDefault()
                 for (postItem in ((if (catalogSortedPostItems != null) catalogSortedPostItems else postItems)!!)) {
