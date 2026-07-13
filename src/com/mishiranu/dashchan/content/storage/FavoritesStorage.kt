@@ -206,7 +206,10 @@ class FavoritesStorage private constructor() :
 				}
 				if (fromUser) {
 					val modifiedTitle = !empty
-					stateChanged = favoriteItem.modifiedTitle != modifiedTitle
+					// Must not clobber titleChanged: renaming an already-renamed favorite leaves
+					// modifiedTitle true, so the plain assignment the Java original used dropped
+					// the rename — never sorted, never notified, never serialized.
+					stateChanged = stateChanged || favoriteItem.modifiedTitle != modifiedTitle
 					favoriteItem.modifiedTitle = modifiedTitle
 				}
 				if (stateChanged) {
