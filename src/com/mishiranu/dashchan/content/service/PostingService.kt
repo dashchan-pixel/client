@@ -120,7 +120,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
 
     private class NotificationData(
         val type: Type?,
-        val taskState: TaskState,
+        val taskState: TaskState?,
         val syncLatch: CountDownLatch?
     ) {
         enum class Type {
@@ -204,7 +204,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             } else {
-                val taskState = notificationData.taskState
+                val taskState = notificationData.taskState!!
                 val builder = taskState.builder
                 if (notificationData.type == NotificationData.Type.CREATE) {
                     builder.setSmallIcon(android.R.drawable.stat_sys_upload)
@@ -385,7 +385,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
                 CountDownLatch(1)
             else
                 null
-        notificationsQueue.add(NotificationData(type, taskState!!, syncLatch))
+        notificationsQueue.add(NotificationData(type, taskState, syncLatch))
         if (syncLatch != null) {
             try {
                 syncLatch.await()

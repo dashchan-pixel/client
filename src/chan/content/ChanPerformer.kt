@@ -77,7 +77,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class, RedirectException::class)
-    protected fun onReadThreads(data: ReadThreadsData?): ReadThreadsResult? {
+    protected open fun onReadThreads(data: ReadThreadsData?): ReadThreadsResult? {
         throw UnsupportedOperationException()
     }
 
@@ -94,85 +94,85 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadSinglePost(data: ReadSinglePostData?): ReadSinglePostResult? {
+    protected open fun onReadSinglePost(data: ReadSinglePostData?): ReadSinglePostResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadSearchPosts(data: ReadSearchPostsData?): ReadSearchPostsResult? {
+    protected open fun onReadSearchPosts(data: ReadSearchPostsData?): ReadSearchPostsResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadBoards(data: ReadBoardsData?): ReadBoardsResult? {
+    protected open fun onReadBoards(data: ReadBoardsData?): ReadBoardsResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadUserBoards(data: ReadUserBoardsData?): ReadUserBoardsResult? {
+    protected open fun onReadUserBoards(data: ReadUserBoardsData?): ReadUserBoardsResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadThreadSummaries(data: ReadThreadSummariesData?): ReadThreadSummariesResult? {
+    protected open fun onReadThreadSummaries(data: ReadThreadSummariesData?): ReadThreadSummariesResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadPostsCount(data: ReadPostsCountData?): ReadPostsCountResult? {
+    protected open fun onReadPostsCount(data: ReadPostsCountData?): ReadPostsCountResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadContent(data: ReadContentData): ReadContentResult {
+    protected open fun onReadContent(data: ReadContentData): ReadContentResult {
         return ReadContentResult(HttpRequest(data.uri, data.direct).perform())
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onCheckAuthorization(data: CheckAuthorizationData?): CheckAuthorizationResult? {
+    protected open fun onCheckAuthorization(data: CheckAuthorizationData?): CheckAuthorizationResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected fun onReadCaptcha(data: ReadCaptchaData?): ReadCaptchaResult {
+    protected open fun onReadCaptcha(data: ReadCaptchaData?): ReadCaptchaResult {
         return ReadCaptchaResult(CaptchaState.SKIP, null)
     }
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected fun onSendPost(data: SendPostData?): SendPostResult? {
+    protected open fun onSendPost(data: SendPostData?): SendPostResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? {
+    protected open fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? {
+    protected open fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? {
+    protected open fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? {
         throw UnsupportedOperationException()
     }
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? {
+    protected open fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? {
         throw UnsupportedOperationException()
     }
 

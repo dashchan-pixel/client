@@ -442,7 +442,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     @Extendable
     @Throws(NotImplementedException::class)
-    protected fun obtainPostLinkThreadPostNumbers(uriString: String?): Pair<String?, String?>? {
+    protected open fun obtainPostLinkThreadPostNumbers(uriString: String?): Pair<String?, String?>? {
         throw NotImplementedException()
     }
 
