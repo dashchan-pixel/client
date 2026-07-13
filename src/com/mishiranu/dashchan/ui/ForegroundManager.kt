@@ -1111,7 +1111,6 @@ class ForegroundManager private constructor() : Handler.Callback {
                         MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL -> {
                             val firewallHandlerData: FirewallHandlerData<*> =
                                 handlerData as FirewallHandlerData<*>
-                            @Suppress("UNCHECKED_CAST")
                             FirewallResolutionDialogImpl(
                                 firewallHandlerData.pendingDataId,
                                 firewallHandlerData.request as FirewallResolutionDialogRequest<Any?>

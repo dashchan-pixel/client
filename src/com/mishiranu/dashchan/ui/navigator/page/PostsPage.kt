@@ -1529,7 +1529,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private val lastToast = LastToast()
 
     override fun onExtractPostsComplete(result: ExtractPostsTask.Result?, cancelled: Boolean) {
-        @Suppress("NAME_SHADOWING") val result = result!!
+        val result = result!!
         val page = getPage()
         WatcherNotifications.cancelReplies(
             context,

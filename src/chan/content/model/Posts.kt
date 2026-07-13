@@ -38,14 +38,12 @@ class Posts {
 
 	@Public
 	fun setPosts(vararg posts: Post?): Posts {
-		@Suppress("UNCHECKED_CAST")
 		builder!!.posts = CommonUtils.removeNullItems(posts as Array<Post?>, Post::class.java)
 		return this
 	}
 
 	@Public
 	fun setPosts(posts: Collection<Post>?): Posts {
-		@Suppress("UNCHECKED_CAST")
 		return setPosts(*(CommonUtils.toArray(posts, Post::class.java) ?: emptyArray()))
 	}
 

@@ -856,7 +856,6 @@ class CommentTextView @JvmOverloads constructor(
     ): Array<T?>? {
         val line = layout.getLineForVertical(y)
         val off = layout.getOffsetForHorizontal(line, x.toFloat())
-        @Suppress("UNCHECKED_CAST")
         val spans = spanned.getSpans(off, off, type) as Array<T?>?
         if (spans != null) {
             for (i in spans.indices) {

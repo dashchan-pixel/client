@@ -64,6 +64,6 @@ class ChanIconDrawable(private val drawable: Drawable) : BaseDrawable() {
 		}
 	}
 
-	@Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
+	@Suppress("DEPRECATION")
 	override fun getOpacity(): Int = drawable.opacity
 }

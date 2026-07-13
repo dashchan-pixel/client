@@ -70,7 +70,6 @@ class WebViewDecoder private constructor(private val fileHolder: FileHolder,
 		notifyExtract(view)
 	}
 
-	@Suppress("DEPRECATION")
 	private val pictureListener = WebView.PictureListener { view, _ ->
 		if (pageFinished) {
 			notifyExtract(view)

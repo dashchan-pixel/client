@@ -224,7 +224,6 @@ class RecaptchaReader private constructor() {
                         throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
                     }
                 }
-                @Suppress("UNREACHABLE_CODE")
                 throw CancelException()
             }
             return ChallengeExtra(solver, null, null)
