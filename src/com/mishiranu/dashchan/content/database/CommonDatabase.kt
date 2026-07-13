@@ -76,7 +76,7 @@ class CommonDatabase private constructor() {
         return callback.run(helper.database)
     }
 
-    fun <T> enqueue(callback: ExecuteCallback<T>) {
+    fun <T> enqueue(callback: ExecuteCallback<T?>) {
         executor.execute(Runnable { execute(callback) })
     }
 

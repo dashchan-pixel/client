@@ -43,7 +43,7 @@ class ThreadsAdapter(
 
     private val postItems = ArrayList<PostItem>()
     private var catalogSortedPostItems: ArrayList<PostItem>? = null
-    private var filteredPostItems: ArrayList<PostItem?>? = null
+    private var filteredPostItems: ArrayList<PostItem>? = null
     private var catalog = false
 
     val configurationSet: ConfigurationSet
@@ -105,6 +105,8 @@ class ThreadsAdapter(
                     }
                 }
             }
+
+            else -> {}
         }
     }
 
@@ -127,8 +129,8 @@ class ThreadsAdapter(
     }
 
     private fun getPostItems(): MutableList<PostItem> {
-        return if (filteredPostItems != null) filteredPostItems else if (catalogSortedPostItems != null)
-            catalogSortedPostItems
+        return if (filteredPostItems != null) filteredPostItems!! else if (catalogSortedPostItems != null)
+            catalogSortedPostItems!!
         else
             postItems
     }
@@ -276,7 +278,7 @@ class ThreadsAdapter(
             var text = filterText!!
             if (!isEmpty(text)) {
                 if (filteredPostItems == null) {
-                    filteredPostItems = ArrayList<PostItem?>()
+                    filteredPostItems = ArrayList()
                 } else {
                     filteredPostItems!!.clear()
                 }

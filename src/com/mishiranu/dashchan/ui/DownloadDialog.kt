@@ -44,6 +44,7 @@ import chan.util.StringUtils.isEmpty
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.FileProvider
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.MediaLoadingAction
 import com.mishiranu.dashchan.content.Preferences.formatSubdir
 import com.mishiranu.dashchan.content.Preferences.getSubdir

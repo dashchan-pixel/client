@@ -521,7 +521,7 @@ class FlowVideoView(context: Context) : FrameLayout(context),
 		}
 	}
 
-	override fun onReadVideoFail(partial: Boolean, errorItem: ErrorItem?, disallowRangeRequests: Boolean) {
+	override fun onReadVideoFail(partial: Boolean, errorItem: ErrorItem, disallowRangeRequests: Boolean) {
 		if (partial) {
 			rangeTask = null
 			if (disallowRangeRequests) {

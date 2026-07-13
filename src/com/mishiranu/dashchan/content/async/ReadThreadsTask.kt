@@ -35,7 +35,6 @@ class ReadThreadsTask(private val callback: Callback, private val chan: Chan,
 		fun onReadThreadsFail(errorItem: ErrorItem?, pageNumber: Int)
 	}
 
-	fun getPageNumber(): Int = pageNumber
 
 	override fun run(holder: HttpHolder): Boolean {
 		try {

@@ -275,7 +275,7 @@ class ChanDatabase private constructor() {
         }
     }
 
-    fun setBoards(chanName: String, boardCategories: Array<BoardCategory?>?): Boolean {
+    fun setBoards(chanName: String, boardCategories: Array<out BoardCategory?>?): Boolean {
         Objects.requireNonNull<String?>(chanName)
         val boardsList = ArrayList<Pair<String?, String?>?>()
         if (boardCategories != null) {
@@ -378,7 +378,7 @@ class ChanDatabase private constructor() {
     }
 
     private fun getBoards(
-        chanName: String, boardNames: MutableList<String?>, filter: Expression.Filter,
+        chanName: String, boardNames: List<String>, filter: Expression.Filter,
         extra1Name: String, extra2Name: String, signal: CancellationSignal?
     ): Cursor? {
         val args =
@@ -438,7 +438,7 @@ class ChanDatabase private constructor() {
 
     @Throws(OperationCanceledException::class)
     fun getBoards(
-        chanName: String, boardNames: MutableList<String?>,
+        chanName: String, boardNames: List<String>,
         searchQuery: String?, extra1Name: String, extra2Name: String,
         provider1: BoardExtraFallbackProvider?, provider2: BoardExtraFallbackProvider?,
         signal: CancellationSignal?
@@ -638,7 +638,7 @@ class ChanDatabase private constructor() {
                             "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
                             Cookies.Columns.Companion.FLAGS + " = " +
                             Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
-                            "WHERE " + filter.value, filter.args as Array<out Any?>?
+                            "WHERE " + filter.value, filter.args as Array<out Any?>
                 )
                 database.delete(
                     Cookies.Companion.TABLE_NAME,
@@ -674,7 +674,7 @@ class ChanDatabase private constructor() {
                 "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
                         "SET " + Cookies.Columns.Companion.FLAGS + " = " +
                         Cookies.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                        "WHERE " + filter.value, filter.args as Array<out Any?>?
+                        "WHERE " + filter.value, filter.args as Array<out Any?>
             )
             if (setFlags == 0) {
                 val delete: Boolean

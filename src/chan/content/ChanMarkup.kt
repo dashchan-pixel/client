@@ -81,21 +81,13 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         var preformattedDefined: Boolean = false
         var preformatted: Boolean = false
 
-        fun setTag(tag: Int) {
-            this.tag = tag
-        }
-
-        fun setColorable(colorable: Boolean) {
-            this.colorable = colorable
-        }
-
         fun setBlock(block: Boolean, spaced: Boolean) {
             blockDefined = true
             this.block = block
             this.spaced = spaced
         }
 
-        fun setPreformatted(preformatted: Boolean) {
+        fun definePreformatted(preformatted: Boolean) {
             preformattedDefined = true
             this.preformatted = preformatted
         }
@@ -188,32 +180,32 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     @Public
     fun addTag(tagName: String, tag: Int) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.setTag(tag)
+        obtainTagItem(tagName, false, null, false, null, null)!!.tag = tag
     }
 
     @Public
     fun addTag(tagName: String, cssClass: String, tag: Int) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.setTag(tag)
+        obtainTagItem(tagName, true, cssClass, false, null, null)!!.tag = tag
     }
 
     @Public
     fun addTag(tagName: String, attribute: String, value: String, tag: Int) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.setTag(tag)
+        obtainTagItem(tagName, false, null, true, attribute, value)!!.tag = tag
     }
 
     @Public
     fun addColorable(tagName: String) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.setColorable(true)
+        obtainTagItem(tagName, false, null, false, null, null)!!.colorable = true
     }
 
     @Public
     fun addColorable(tagName: String, cssClass: String) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.setColorable(true)
+        obtainTagItem(tagName, true, cssClass, false, null, null)!!.colorable = true
     }
 
     @Public
     fun addColorable(tagName: String, attribute: String, value: String) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.setColorable(true)
+        obtainTagItem(tagName, false, null, true, attribute, value)!!.colorable = true
     }
 
     @Public
@@ -239,17 +231,17 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     @Public
     fun addPreformatted(tagName: String, preformatted: Boolean) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.setPreformatted(preformatted)
+        obtainTagItem(tagName, false, null, false, null, null)!!.definePreformatted(preformatted)
     }
 
     @Public
     fun addPreformatted(tagName: String, cssClass: String, preformatted: Boolean) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.setPreformatted(preformatted)
+        obtainTagItem(tagName, true, cssClass, false, null, null)!!.definePreformatted(preformatted)
     }
 
     @Public
     fun addPreformatted(tagName: String, attribute: String, value: String, preformatted: Boolean) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.setPreformatted(preformatted)
+        obtainTagItem(tagName, false, null, true, attribute, value)!!.definePreformatted(preformatted)
     }
 
     val markup: HtmlParser.Markup<MarkupExtra?, *, ChanSpanProvider> =

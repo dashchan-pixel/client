@@ -21,7 +21,6 @@ class ReadSearchTask(private val callback: Callback, private val chan: Chan,
 		fun onReadSearchFail(errorItem: ErrorItem)
 	}
 
-	fun getPageNumber(): Int = pageNumber
 
 	override fun run(holder: HttpHolder): List<PostItem>? {
 		try {

@@ -440,7 +440,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
         open fun onCancel() {}
 
-        protected var stateListener: StateListener? = null
+        protected var stateListenerField: StateListener? = null
 
         private var queuedState: State? = null
         private var queuedChangeCallback: Runnable? = null
@@ -453,7 +453,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         }
 
         fun setStateListener(listener: StateListener?) {
-            stateListener = listener
+            stateListenerField = listener
             if (queuedState != null) {
                 invokeStateChanged(queuedState, queuedChangeCallback)
                 queuedState = null
@@ -462,7 +462,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         }
 
         protected fun switchState(state: State?, changeCallback: Runnable?) {
-            if (stateListener != null) {
+            if (stateListenerField != null) {
                 invokeStateChanged(state, changeCallback)
             } else {
                 queuedState = state
@@ -471,7 +471,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         }
 
         fun invokeStateChanged(state: State?, changeCallback: Runnable?) {
-            val success = stateListener!!.onStateChanged(state)
+            val success = stateListenerField!!.onStateChanged(state)
             if (success && changeCallback != null) {
                 changeCallback.run()
             }

@@ -1160,7 +1160,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private class FirewallHandlerData<T>(
         pendingDataId: String?,
-        internal val request: FirewallResolutionDialogRequest<T?>
+        internal val request: FirewallResolutionDialogRequest<T>
     ) : HandlerData(pendingDataId)
 
     private abstract class PendingData {
@@ -1423,7 +1423,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         val pendingData = FirewallResolutionPendingData<T?>()
         val pendingDataId = putPendingData(pendingData)
         try {
-            val handlerData = FirewallHandlerData<T?>(pendingDataId, request)
+            val handlerData = FirewallHandlerData(pendingDataId, request)
             handler.obtainMessage(MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL, handlerData).sendToTarget()
             return if (pendingData.await(handler, handlerData)) pendingData.result else null
         } finally {

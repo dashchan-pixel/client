@@ -19,7 +19,6 @@ class ReadThreadSummariesTask(private val callback: Callback, private val chan: 
 		fun onReadThreadSummariesFail(errorItem: ErrorItem)
 	}
 
-	fun getPageNumber(): Int = pageNumber
 
 	override fun run(holder: HttpHolder): List<ThreadSummary>? {
 		try {

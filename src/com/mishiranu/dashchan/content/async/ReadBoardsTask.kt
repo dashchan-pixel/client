@@ -24,7 +24,7 @@ class ReadBoardsTask(private val callback: Callback,
 				boardCategories = null
 			}
 			if (boardCategories != null) {
-				chan.configuration.updateFromBoards(boardCategories)
+				chan.configuration.updateFromBoards(boardCategories!!)
 			}
 			if (!ChanDatabase.getInstance().setBoards(chan.name!!, boardCategories)) {
 				return ErrorItem(ErrorItem.Type.EMPTY_RESPONSE)

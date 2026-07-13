@@ -108,10 +108,10 @@ class ExpandedScreen(
     }
 
     private open class AlphaForegroundDrawable : ForegroundDrawable() {
-        protected var alpha: Int = 0xff
+        protected var alphaValue: Int = 0xff
 
         override fun applyAlpha(alpha: Int) {
-            this.alpha = alpha
+            this.alphaValue = alpha
             invalidateSelf()
         }
     }
@@ -121,7 +121,7 @@ class ExpandedScreen(
 
         public override fun draw(canvas: Canvas) {
             val statusBarHeight = windowInsets.top
-            if (statusBarHeight > 0 && alpha != 0x00 && alpha != 0xff) {
+            if (statusBarHeight > 0 && alphaValue != 0x00 && alphaValue != 0xff) {
                 // Black while action bar animated
                 paint.setColor(Color.BLACK)
                 canvas.drawRect(
@@ -150,9 +150,9 @@ class ExpandedScreen(
                 if (statusBarHeight > 0) {
                     paint.setColor(ViewUtils.STATUS_OVERLAY_TRANSPARENT)
                     canvas.drawRect(0f, 0f, width.toFloat(), statusBarHeight.toFloat(), paint)
-                    if (alpha > 0) {
+                    if (alphaValue > 0) {
                         paint.setColor(statusBarColor)
-                        paint.setAlpha(alpha)
+                        paint.setAlpha(alphaValue)
                         canvas.drawRect(0f, 0f, width.toFloat(), statusBarHeight.toFloat(), paint)
                     }
                 }
@@ -183,9 +183,9 @@ class ExpandedScreen(
                     height.toFloat(),
                     paint
                 )
-                if (alpha > 0) {
+                if (alphaValue > 0) {
                     paint.setColor(navigationBarColor)
-                    paint.setAlpha(alpha)
+                    paint.setAlpha(alphaValue)
                     canvas.drawRect(
                         0f,
                         (height - navigationBarBottom).toFloat(),
@@ -216,9 +216,9 @@ class ExpandedScreen(
             if (statusBarHeight > 0) {
                 paint.setColor(ViewUtils.STATUS_OVERLAY_TRANSPARENT)
                 canvas.drawRect(0f, 0f, width.toFloat(), statusBarHeight.toFloat(), paint)
-                if (alpha > 0) {
+                if (alphaValue > 0) {
                     paint.setColor(statusBarColor)
-                    paint.setAlpha(alpha)
+                    paint.setAlpha(alphaValue)
                     canvas.drawRect(0f, 0f, width.toFloat(), statusBarHeight.toFloat(), paint)
                 }
                 if (Color.alpha(statusBarColor) > 0) {

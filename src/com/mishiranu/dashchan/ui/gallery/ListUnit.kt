@@ -466,7 +466,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             val galleryItem = getItem(position)
             val chan = get(chanName)
             holder.attachmentInfo.setText(
-                getFileExtension(galleryItem.getFileName(chan))
+                getFileExtension(galleryItem.getFileName(chan))!!
                     .uppercase(Locale.getDefault()) +
                         (if (galleryItem.size > 0) " " + StringUtils.formatFileSize(
                             galleryItem.size.toLong(),

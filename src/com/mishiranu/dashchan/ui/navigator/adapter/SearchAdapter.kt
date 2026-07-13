@@ -43,7 +43,7 @@ class SearchAdapter(
             gallerySet, fragmentManager, uiManager.dialog().createStackInstance(), null, callback,
             true, false, false, false, false, null
         )
-        demandSet.highlightText = mutableSetOf<String?>(searchQuery)
+        demandSet.highlightText = mutableSetOf(searchQuery!!)
     }
 
     override fun getItemCount(): Int {

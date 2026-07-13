@@ -178,7 +178,7 @@ class RecaptchaReader private constructor() {
                         .addHeader("Accept-Language", acceptLanguage)
                         .addHeader("Referer", refererFinal)
                         .perform()!!.readString()
-                    response = parseResponse2(responseText)
+                    response = parseResponse2(responseText!!)
                 } else {
                     consumed[0] = true
                     response = initialResponse
@@ -216,7 +216,7 @@ class RecaptchaReader private constructor() {
                             if (matcher.find()) {
                                 return@ForegroundSolver matcher.group(1)
                             }
-                            response = parseResponse2(responseText)
+                            response = parseResponse2(responseText!!)
                             continue
                         }
                         throw CancelException()

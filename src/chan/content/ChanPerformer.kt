@@ -180,7 +180,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class ReadThreadsData(
         @field:Public val boardName: String?,
         @field:Public val pageNumber: Int,
-        val holder: HttpHolder?,
+        override val holder: HttpHolder?,
         @field:Public val validator: HttpValidator?
     ) : HttpRequest.Preset {
         @Public
@@ -188,9 +188,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             return pageNumber == PAGE_NUMBER_CATALOG
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
         companion object {
             @Public
@@ -280,7 +277,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
         @Public
         val cachedPosts: Posts?
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
 
         @Public
         val validator: HttpValidator?
@@ -296,9 +293,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             this.validator = validator
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -357,11 +351,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class ReadSinglePostData(
         @field:Public val boardName: String?,
         @field:Public val postNumber: String?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -378,11 +369,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val boardName: String?,
         @field:Public val searchQuery: String?,
         @field:Public val pageNumber: Int,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -411,10 +399,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class ReadBoardsData(val holder: HttpHolder?) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
+    class ReadBoardsData(override val holder: HttpHolder?) : HttpRequest.Preset {
     }
 
     @Public
@@ -431,7 +416,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                     }
                 }
             }
-            this.boardCategories = CommonUtils.removeNullItems(categories, BoardCategory::class.java)
+            @Suppress("UNCHECKED_CAST")
+            this.boardCategories = CommonUtils.removeNullItems(categories, BoardCategory::class.java) as Array<BoardCategory>?
         }
 
         @Public
@@ -441,10 +427,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class ReadUserBoardsData(val holder: HttpHolder?) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
+    class ReadUserBoardsData(override val holder: HttpHolder?) : HttpRequest.Preset {
     }
 
     @Public
@@ -466,11 +449,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val boardName: String?,
         @field:Public val pageNumber: Int,
         @field:Public val type: Int,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
         companion object {
             @Public
@@ -496,22 +476,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class ReadPostsCountData(
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
-        val connectTimeout: Int,
-        val readTimeout: Int,
-        val holder: HttpHolder?,
+        override val connectTimeout: Int,
+        override val readTimeout: Int,
+        override val holder: HttpHolder?,
         @field:Public val validator: HttpValidator?
     ) : TimeoutsPreset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
-        override fun getConnectTimeout(): Int {
-            return connectTimeout
-        }
 
-        override fun getReadTimeout(): Int {
-            return readTimeout
-        }
     }
 
     @Public
@@ -526,28 +497,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     private class ReadContentDirectPreset(
-        val connectTimeout: Int, val readTimeout: Int, val holder: HttpHolder?,
-        val rangeStart: Long, val rangeEnd: Long
+        override val connectTimeout: Int, override val readTimeout: Int, override val holder: HttpHolder?,
+        override val rangeStart: Long, override val rangeEnd: Long
     ) : TimeoutsPreset, RangePreset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
-        override fun getConnectTimeout(): Int {
-            return connectTimeout
-        }
 
-        override fun getReadTimeout(): Int {
-            return readTimeout
-        }
 
-        override fun getRangeStart(): Long {
-            return rangeStart
-        }
 
-        override fun getRangeEnd(): Long {
-            return rangeEnd
-        }
     }
 
     @Public
@@ -563,17 +519,14 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 ReadContentDirectPreset(connectTimeout, readTimeout, holder, rangeStart, rangeEnd)
         }
 
-        override fun getHolder(): HttpHolder? {
-            return direct.getHolder()
-        }
+        override val holder: HttpHolder?
+            get() = direct.holder
 
-        override fun getConnectTimeout(): Int {
-            return (direct as ReadContentDirectPreset).getConnectTimeout()
-        }
+        override val connectTimeout: Int
+            get() = (direct as ReadContentDirectPreset).connectTimeout
 
-        override fun getReadTimeout(): Int {
-            return (direct as ReadContentDirectPreset).getReadTimeout()
-        }
+        override val readTimeout: Int
+            get() = (direct as ReadContentDirectPreset).readTimeout
     }
 
     @Public
@@ -583,11 +536,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class CheckAuthorizationData(
         @field:Public val type: Int,
         @field:Public val authorizationData: Array<String?>?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
         companion object {
             @Public
@@ -609,11 +559,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val requirement: String?,
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -753,16 +700,16 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val captchaType: String?,
         @field:Public val captchaData: CaptchaData?,
         val captchaNeedLoad: Boolean,
-        val connectTimeout: Int,
-        val readTimeout: Int
+        override val connectTimeout: Int,
+        override val readTimeout: Int
     ) : TimeoutsPreset, OutputListenerPreset {
-        var holder: HttpHolder? = null
+        override var holder: HttpHolder? = null
         var listener: HttpRequest.OutputListener? = null
 
         @Public
         class Attachment(
             val fileHolder: FileHolder,
-            val fileName: String?,
+            private val fileName: String?,
             @field:Public val rating: String?,
             val optionUniqueHash: Boolean,
             val optionRemoveMetadata: Boolean,
@@ -905,21 +852,11 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             }
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
 
-        override fun getConnectTimeout(): Int {
-            return connectTimeout
-        }
 
-        override fun getReadTimeout(): Int {
-            return readTimeout
-        }
 
-        override fun getOutputListener(): HttpRequest.OutputListener? {
-            return listener
-        }
+        override val outputListener: HttpRequest.OutputListener?
+            get() = listener
     }
 
     @Public
@@ -939,11 +876,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val postNumbers: List<String>?,
         @field:Public val password: String?,
         @field:Public val optionFilesOnly: Boolean,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -957,7 +891,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val type: String?,
         options: List<String>?,
         @field:Public val comment: String?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
         val options: List<String>?
@@ -967,9 +901,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 if (options != null) Collections.unmodifiableList(options) else null
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -981,7 +912,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val type: String?,
         options: List<String>?,
         comment: String?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
         val options: List<String>?
@@ -991,9 +922,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 if (options != null) Collections.unmodifiableList(options) else null
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public
@@ -1008,7 +936,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public val boardName: String?,
         @field:Public val threadNumber: String?,
         options: List<String>?,
-        val holder: HttpHolder?
+        override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
         val options: List<String>?
@@ -1018,9 +946,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 if (options != null) Collections.unmodifiableList(options) else null
         }
 
-        override fun getHolder(): HttpHolder? {
-            return holder
-        }
     }
 
     @Public

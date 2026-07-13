@@ -386,8 +386,8 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             )
             retained.instance = instance!!
             if (!instance!!.galleryItems.isEmpty()) {
-                listUnit = ListUnit(instance)
-                pagerUnit = PagerUnit(instance)
+                listUnit = ListUnit(instance!!)
+                pagerUnit = PagerUnit(instance!!)
                 val initialVideoPosition = requireArguments().getLong(EXTRA_INITIAL_VIDEO_POSITION)
                 if (initialVideoPosition > 0) {
                     requireArguments().remove(EXTRA_INITIAL_VIDEO_POSITION)
@@ -403,7 +403,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                     pagerUnit!!.view, ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-                pagerUnit!!.addAndInitViews(rootView, imagePosition)
+                pagerUnit!!.addAndInitViews(rootView!!, imagePosition)
             }
             newImagePosition = imagePosition
         }

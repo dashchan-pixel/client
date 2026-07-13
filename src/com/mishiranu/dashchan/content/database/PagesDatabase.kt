@@ -961,10 +961,10 @@ class PagesDatabase private constructor() {
         val oldItems: MutableMap<PostNumber, DiffItem> =
             if (cache != null) cache.diffItems else mutableMapOf()
         var existing: ArrayList<PostNumber>? = null
-        var newPosts: MutableMap<PostNumber?, Long?>? = null
-        var deletedPosts: MutableMap<PostNumber?, Long?>? = null
-        var editedPosts: MutableMap<PostNumber?, Long?>? = null
-        var replyPosts: MutableMap<PostNumber?, Long?>? = null
+        var newPosts: MutableMap<PostNumber, Long>? = null
+        var deletedPosts: MutableMap<PostNumber, Long>? = null
+        var editedPosts: MutableMap<PostNumber, Long>? = null
+        var replyPosts: MutableMap<PostNumber, Long>? = null
         val state = getCacheState(threadKey)
 
         val projection = arrayOf<String?>(
@@ -987,25 +987,25 @@ class PagesDatabase private constructor() {
                 val flags = cursor.getInt(3)
                 if (get(flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
                     if (newPosts == null) {
-                        newPosts = HashMap<PostNumber?, Long?>()
+                        newPosts = HashMap()
                     }
                     newPosts.put(postNumber, id)
                 }
                 if (get(flags, Schema.Posts.Flags.Companion.MARK_DELETED)) {
                     if (deletedPosts == null) {
-                        deletedPosts = HashMap<PostNumber?, Long?>()
+                        deletedPosts = HashMap()
                     }
                     deletedPosts.put(postNumber, id)
                 }
                 if (get(flags, Schema.Posts.Flags.Companion.MARK_EDITED)) {
                     if (editedPosts == null) {
-                        editedPosts = HashMap<PostNumber?, Long?>()
+                        editedPosts = HashMap()
                     }
                     editedPosts.put(postNumber, id)
                 }
                 if (get(flags, Schema.Posts.Flags.Companion.MARK_REPLY)) {
                     if (replyPosts == null) {
-                        replyPosts = HashMap<PostNumber?, Long?>()
+                        replyPosts = HashMap()
                     }
                     replyPosts.put(postNumber, id)
                 }

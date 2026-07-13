@@ -757,7 +757,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
         fun downloadDirect(
             target: DataFile.Target, path: String?, overwrite: Boolean,
-            downloadItems: MutableList<DownloadItem>
+            downloadItems: List<DownloadItem>
         ) {
             directRequests.add(DirectRequest(target, path, overwrite, downloadItems, null, false))
             handleRequestsOrAccumulate()
@@ -1460,7 +1460,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val target: DataFile.Target,
         val path: String?,
         val overwrite: Boolean,
-        val downloadItems: MutableList<DownloadItem>,
+        val downloadItems: List<DownloadItem>,
         val input: InputStream?,
         val allowWrite: Boolean
     ) {

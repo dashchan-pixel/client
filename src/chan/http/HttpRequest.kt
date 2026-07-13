@@ -11,21 +11,21 @@ import java.util.Objects
 class HttpRequest {
     @Public
     interface Preset {
-        fun getHolder(): HttpHolder?
+        val holder: HttpHolder?
     }
 
     interface TimeoutsPreset : Preset {
-        fun getConnectTimeout(): Int
-        fun getReadTimeout(): Int
+        val connectTimeout: Int
+        val readTimeout: Int
     }
 
     interface OutputListenerPreset : Preset {
-        fun getOutputListener(): OutputListener?
+        val outputListener: OutputListener?
     }
 
     interface RangePreset : Preset {
-        fun getRangeStart(): Long
-        fun getRangeEnd(): Long
+        val rangeStart: Long
+        val rangeEnd: Long
     }
 
     interface OutputListener {
@@ -116,20 +116,20 @@ class HttpRequest {
 
     @Public
     constructor(uri: Uri?, preset: Preset?) {
-        val holder: HttpHolder = (if (preset != null) preset.getHolder() else null)!!
+        val holder: HttpHolder = (if (preset != null) preset.holder else null)!!
         Objects.requireNonNull<HttpHolder?>(holder)
         this.uri = uri
         this.holder = holder
         client = HttpClient.getInstance()
         if (preset is TimeoutsPreset) {
-            setTimeouts(preset.getConnectTimeout(), preset.getReadTimeout())
+            setTimeouts(preset.connectTimeout, preset.readTimeout)
         }
         if (preset is OutputListenerPreset) {
-            setOutputListener(preset.getOutputListener())
+            setOutputListener(preset.outputListener)
         }
         if (preset is RangePreset) {
             val rangePreset = preset
-            setRange(rangePreset.getRangeStart(), rangePreset.getRangeEnd())
+            setRange(rangePreset.rangeStart, rangePreset.rangeEnd)
         }
     }
 

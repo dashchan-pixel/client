@@ -118,7 +118,7 @@ object Expression {
                 return this
             }
 
-            fun `in`(name: String, values: MutableCollection<*>): Builder {
+            fun `in`(name: String, values: Collection<*>): Builder {
                 Objects.requireNonNull<String?>(name)
                 Objects.requireNonNull(values)
                 append()

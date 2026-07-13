@@ -156,9 +156,9 @@ class ImageUnit(private val instance: PagerInstance) {
 
         override fun onFinishDownloading(
             success: Boolean,
-            uri: Uri?,
+            uri: Uri,
             file: File,
-            errorItem: ErrorItem
+            errorItem: ErrorItem?
         ) {
             readFileTask = null
             readBitmapCallback = null

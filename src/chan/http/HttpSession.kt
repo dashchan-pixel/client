@@ -25,10 +25,10 @@ class HttpSession internal constructor(
     var forceGet: Boolean = false
     var executing: Boolean = false
 
-    var call: Call? = null
+    var currentCall: Call? = null
     var okResponse: Response? = null
     var deadResponse: Response? = null
-    var callback: HttpHolder.Callback? = null
+    var currentCallback: HttpHolder.Callback? = null
 
     init {
         requestedUris.add(uri)
@@ -61,12 +61,12 @@ class HttpSession internal constructor(
     @Throws(InterruptedHttpException::class)
     private fun setCallInternal(call: Call?, callback: HttpHolder.Callback?) {
         checkThread()
-        this.call = call
-        this.callback = callback
+        this.currentCall = call
+        this.currentCallback = callback
         redirectedUri = null
         if (holder.isInterrupted) {
-            this.call = null
-            this.callback = null
+            this.currentCall = null
+            this.currentCallback = null
             throw InterruptedHttpException()
         }
         if (call != null) {
@@ -93,12 +93,12 @@ class HttpSession internal constructor(
 
     fun disconnectAndClear() {
         checkThread()
-        val call = this.call
-        this.call = null
+        val call = this.currentCall
+        this.currentCall = null
         val okResponse = this.okResponse
         this.okResponse = null
-        val callback = this.callback
-        this.callback = null
+        val callback = this.currentCallback
+        this.currentCallback = null
         if (response != null) {
             // HttpResponse will call disconnectAndClear if the response is still active
             response!!.cleanupAndDisconnect()

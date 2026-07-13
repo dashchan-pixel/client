@@ -306,7 +306,7 @@ abstract class AttachmentItem protected constructor(private val master: Master) 
 			if (embeddedCodes != null && embeddedCodes.isNotEmpty()) {
 				for (embeddedCode in embeddedCodes) {
 					val attachmentItem = obtainEmbeddedAttachmentItem(master, locator,
-							embeddedType.obtainAttachment(locator, embeddedCode), true)
+							embeddedType.obtainAttachment(locator, embeddedCode!!), true)
 					if (attachmentItem != null) {
 						attachmentItems.add(attachmentItem)
 					}

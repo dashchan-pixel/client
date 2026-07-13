@@ -138,19 +138,20 @@ class FirewallResolvers : FirewallResolver.Implementation() {
 
     private inner class CheckSession(
         uri: Uri?,
-        internal val holder: HttpHolder,
+        internal val checkHolder: HttpHolder,
         chan: Chan,
         identifier: FirewallResolver.Identifier,
         internal val resolve: Boolean,
         private val exclusive: Boolean
     ) : BaseSession(uri, chan, identifier) {
-        override fun getHolder(): HttpHolder {
-            if (exclusive) {
-                return holder
-            } else {
-                throw IllegalStateException()
+        override val holder: HttpHolder
+            get() {
+                if (exclusive) {
+                    return checkHolder
+                } else {
+                    throw IllegalStateException()
+                }
             }
-        }
 
         override fun isResolveRequest(): Boolean {
             return resolve
@@ -172,9 +173,8 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             throw IllegalStateException()
         }
 
-        override fun getHolder(): HttpHolder? {
-            throw IllegalStateException()
-        }
+        override val holder: HttpHolder?
+            get() = throw IllegalStateException()
 
         override fun isResolveRequest(): Boolean {
             return false
@@ -562,7 +562,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         session: CheckSession, key: FirewallResolver.Exclusive.Key?,
         exclusive: FirewallResolver.Exclusive
     ): Boolean {
-        checkNotNull(session.holder)
+        checkNotNull(session.checkHolder)
         var checkHolder: CheckHolder?
         var handle = false
         synchronized(lastCheckCancel) {
@@ -583,9 +583,9 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         if (handle) {
             try {
                 try {
-                    session.holder.use().use { ignored ->
+                    session.checkHolder.use().use { ignored ->
                         val exclusiveSession = CheckSession(
-                            session.getUri(), session.holder,
+                            session.getUri(), session.checkHolder,
                             session.chan, session.getIdentifier(), session.resolve, true
                         )
                         checkHolder!!.success = exclusive.resolve(exclusiveSession, key!!)
