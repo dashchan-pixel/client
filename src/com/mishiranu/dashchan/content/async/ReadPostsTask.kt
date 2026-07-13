@@ -79,7 +79,7 @@ class ReadPostsTask(private val callback: Callback, private val chan: Chan,
 			val result: ChanPerformer.ReadPostsResult?
 			try {
 				val lastPostNumber = lastExistingPostNumber?.toString()
-				result = chan.performer.safe().onReadPosts(ChanPerformer.ReadPostsData(chan.name, boardName!!,
+				result = chan.performer.safe().onReadPosts(ChanPerformer.ReadPostsData(chan.name, boardName,
 						threadNumber, lastPostNumber, partial, lastPostNumber != null, holder, useValidator))
 			} catch (e: ThreadRedirectException) {
 				val target = e.obtainTarget(chan.name, boardName)

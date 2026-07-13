@@ -26,7 +26,7 @@ class Posts {
 		setPosts(posts)
 	}
 
-	constructor(chanName: String, boardName: String, threadNumber: String) {
+	constructor(chanName: String, boardName: String?, threadNumber: String) {
 		builder = null
 		provider = LazyProvider(PagesDatabase.ThreadKey(chanName, boardName, threadNumber))
 	}

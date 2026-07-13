@@ -145,7 +145,7 @@ class DrawerForm(
     }
 
     class Page(
-        val chanName: String, val boardName: String, val threadNumber: String?,
+        val chanName: String, val boardName: String?, val threadNumber: String?,
         val threadTitle: String?, val createRealtime: Long
     ) : Comparable<Page> {
         override fun compareTo(other: Page): Int {

@@ -516,13 +516,10 @@ class HttpClient private constructor() {
             if (okResponse == null) {
                 throw InterruptedHttpException()
             }
-            var input: InputStream =
-                (if (okResponse.body != null) okResponse.body.byteStream() else null)!!
+            var input: InputStream = okResponse.body?.byteStream()
+                ?: throw HttpException(ErrorItem.Type.EMPTY_RESPONSE, false, false)
             var success = false
             try {
-                if (input == null) {
-                    throw HttpException(ErrorItem.Type.EMPTY_RESPONSE, false, false)
-                }
                 response.session.holder.checkInterrupted()
                 input = BufferedInputStream(input, 8192)
                 when (Encoding.Companion.get(okResponse.headers)) {

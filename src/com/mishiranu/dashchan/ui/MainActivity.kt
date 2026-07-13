@@ -2049,7 +2049,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             if (page.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
-                        page.chanName!!, page.boardName!!, page.threadNumber,
+                        page.chanName!!, page.boardName, page.threadNumber,
                         savedPageItem.threadTitle, savedPageItem.createdRealtime
                     )
                 )
@@ -2061,7 +2061,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             if (page!!.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
-                        page!!.chanName!!, page!!.boardName!!, page!!.threadNumber,
+                        page.chanName!!, page.boardName, page.threadNumber,
                         currentPageItem!!.threadTitle, currentPageItem!!.createdRealtime
                     )
                 )

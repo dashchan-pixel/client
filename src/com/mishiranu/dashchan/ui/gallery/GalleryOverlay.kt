@@ -561,13 +561,12 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     }
 
     override fun onDialogMenuItemSelected(item: MenuItem): Boolean {
-        val holder: PagerInstance.ViewHolder =
-            (if (pagerUnit != null) pagerUnit!!.currentHolder else null)!!
+        val holder = pagerUnit?.currentHolder
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == android.R.id.home) {
             dismiss()
         } else if (switchItemId0 == R.id.menu_save) {
-            downloadGalleryItem(holder.galleryItem!!)
+            holder?.galleryItem?.let { downloadGalleryItem(it) }
         } else if (switchItemId0 == R.id.menu_refresh) {
             pagerUnit!!.refreshCurrent()
         } else if (switchItemId0 == R.id.menu_select) {

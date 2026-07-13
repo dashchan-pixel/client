@@ -1006,6 +1006,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<TaskData?> = object : Parcelable.Creator<TaskData?> {
                 override fun createFromParcel(source: Parcel): TaskData {
                     val chanName = source.readString()
@@ -1522,7 +1523,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         chanName, requestItem.uri, Companion.getDesiredFileName(
                             requestItem.uri,
                             requestItem.fileName,
-                            (if (originalName) requestItem.originalName else null)!!,
+                            (if (originalName) requestItem.originalName else null),
                             detailName,
                             chanName,
                             boardName,
@@ -1619,6 +1620,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<DownloadItem?> =
                 object : Parcelable.Creator<DownloadItem?> {
                     override fun newArray(size: Int): Array<DownloadItem?> {
@@ -1742,12 +1744,12 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
 
         private fun getDesiredFileName(
-            uri: Uri?, fileName: String, originalName: String, detailName: Boolean,
+            uri: Uri?, fileName: String, originalName: String?, detailName: Boolean,
             chanName: String?, boardName: String?, threadNumber: String?
         ): String {
             var fileName = fileName
             if (isFileNameModifyingAllowed(chanName, uri)) {
-                if (!isEmpty(originalName) && isDownloadOriginalName) {
+                if (!originalName.isNullOrEmpty() && isDownloadOriginalName) {
                     fileName = originalName
                 }
                 if (detailName) {

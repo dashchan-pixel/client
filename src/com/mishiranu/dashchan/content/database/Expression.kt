@@ -81,7 +81,7 @@ object Expression {
                 "UPDATE " + table + " SET " + set + " " +
                         "WHERE " + idColumn + " IN (" + builder + ") AND " +
                         (if (filter != null && filter.value != null) filter.value else "1"),
-                (if (filter != null) filter.args else null)!!
+                filter?.args ?: arrayOfNulls<String>(0)
             )
         }
     }
