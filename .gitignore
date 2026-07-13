@@ -1,8 +1,6 @@
 /*
-!/.gitattributes
 !/.gitignore
 !/AndroidManifest.xml
-!/build.gradle
 !/build.gradle.kts
 !/settings.gradle.kts
 !/COPYING
@@ -11,7 +9,6 @@
 !/gradlew
 !/gradlew.bat
 !/icon.svg
-!/jni
 !/lang
 !/metadata
 !/proguard-rules.pro
