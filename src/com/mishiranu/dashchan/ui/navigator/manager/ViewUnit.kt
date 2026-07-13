@@ -265,7 +265,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
 
         val attachmentItems = postItem.getAttachmentItems()
         val hidden = postItem.getHideState().hidden
-        (holder.threadContent.getParent() as View).setAlpha(if (hidden) ALPHA_HIDDEN_POST else 1f)
+        (holder.threadContent!!.getParent() as View).setAlpha(if (hidden) ALPHA_HIDDEN_POST else 1f)
         val subject = postItem.getSubject()
         if (!StringUtils.isEmptyOrWhitespace(subject) && !hidden) {
             holder.subject.setVisibility(View.VISIBLE)
@@ -321,7 +321,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         holder.thumbnail.setOnClickListener(holder.thumbnailClickListener)
         holder.thumbnail.setOnLongClickListener(holder.thumbnailLongClickListener)
 
-        holder.threadContent.getLayoutParams().height = contentHeight
+        holder.threadContent!!.getLayoutParams().height = contentHeight
     }
 
     fun bindThreadViewReloadAttachment(
@@ -1210,7 +1210,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         val comment: TextView
         val description: ThreadDescriptionView
         val stateImages: Array<ImageView?>?
-        val threadContent: View
+        val threadContent: View?
         val showOriginalPost: View?
 
         val thumbnailClickListener: ThumbnailClickListener
