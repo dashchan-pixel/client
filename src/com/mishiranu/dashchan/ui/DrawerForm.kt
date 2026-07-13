@@ -728,14 +728,14 @@ class DrawerForm(
     private fun formatBoardThreadTitle(
         threadItem: Boolean,
         boardName: String?,
-        threadNumber: String,
+        threadNumber: String?,
         title: String?
     ): String? {
         if (threadItem) {
             if (!isEmptyOrWhitespace(title)) {
                 return title
             } else {
-                return StringUtils.formatThreadTitle(chanName!!, boardName, threadNumber)
+                return StringUtils.formatThreadTitle(chanName!!, boardName, threadNumber!!)
             }
         } else {
             return StringUtils.formatBoardTitle(chanName!!, boardName, title)
@@ -1283,7 +1283,7 @@ class DrawerForm(
                 holder.text!!.setText(
                     formatBoardThreadTitle(
                         listItem.isThreadItem,
-                        listItem.boardName, listItem.threadNumber!!, listItem.title
+                        listItem.boardName, listItem.threadNumber, listItem.title
                     )
                 )
                 if (listItem.type == ListItem.Type.FAVORITE && listItem.isThreadItem &&
