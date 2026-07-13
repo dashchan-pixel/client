@@ -56,6 +56,10 @@ class ErrorItem private constructor(@JvmField val type: Type?, @JvmField val spe
 		if (!message.isNullOrEmpty()) {
 			return if (httpResponseCode != 0) "HTTP $httpResponseCode: $message" else message
 		}
+		if (httpResponseCode != 0) {
+			// HTTP/2 responses carry no reason phrase; still better than "unknown error"
+			return "HTTP $httpResponseCode"
+		}
 		if (resId != 0) {
 			return MainApplication.getInstance().localizedContext.getString(resId)
 		}
