@@ -1,0 +1,3 @@
+* The entire app is now written in Kotlin (26.7.5 was the last release with Java code)
+* Fixed crashes introduced by the Kotlin conversion: saving media, failed post send, opening threads and pages of the local chan, gallery dialog menu
+* HTTP errors without a status message now show the status code instead of "unknown error"
