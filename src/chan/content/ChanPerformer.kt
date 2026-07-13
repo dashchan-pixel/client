@@ -88,7 +88,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         RedirectException::class,
         ThreadRedirectException::class
     )
-    protected fun onReadPosts(data: ReadPostsData?): ReadPostsResult? {
+    protected open fun onReadPosts(data: ReadPostsData?): ReadPostsResult? {
         throw UnsupportedOperationException()
     }
 
