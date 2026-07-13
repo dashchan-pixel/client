@@ -1351,7 +1351,7 @@ class ForegroundManager private constructor() : Handler.Callback {
             selectedArray[selected] = true
         }
         val result = requireUserChoice(
-            columns, selectedArray, items!!, images!!, descriptionText, descriptionImage,
+            columns, selectedArray, items, images, descriptionText, descriptionImage,
             false, imageChoice
         )
         if (result != null) {

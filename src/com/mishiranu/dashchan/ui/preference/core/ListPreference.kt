@@ -20,7 +20,7 @@ class ListPreference(context: Context, key: String, defaultValue: String?, title
 		if (!values.contains(value)) {
 			value = defaultValue
 		}
-		value = (value)
+		this.value = value
 	}
 
 	override fun persist(preferences: SharedPreferences) {

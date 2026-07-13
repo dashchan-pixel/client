@@ -134,7 +134,7 @@ class TextFragment : BaseListFragment {
 		when (Type.valueOf(requireArguments().getString(EXTRA_TYPE)!!)) {
 			Type.CHANGELOG -> {
 				outState.putParcelable(EXTRA_ERROR_ITEM, errorItem)
-				outState.putParcelableArrayList(EXTRA_CHANGELOG_ENTRIES, ArrayList(changelogEntries!!))
+				outState.putParcelableArrayList(EXTRA_CHANGELOG_ENTRIES, changelogEntries?.let { ArrayList(it) })
 			}
 			Type.LICENSES -> {}
 		}
