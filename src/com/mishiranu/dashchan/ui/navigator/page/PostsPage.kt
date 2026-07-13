@@ -193,6 +193,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         companion object {
             val FACTORY: ExtraFactory<ParcelableExtra> = ExtraFactory { ParcelableExtra() }
 
+            @JvmField
             val CREATOR: Parcelable.Creator<ParcelableExtra?> =
                 object : Parcelable.Creator<ParcelableExtra?> {
                     override fun createFromParcel(source: Parcel): ParcelableExtra {

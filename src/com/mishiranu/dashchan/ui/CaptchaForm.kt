@@ -130,6 +130,7 @@ class CaptchaForm(
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<Captcha?> = object : Parcelable.Creator<Captcha?> {
                 override fun createFromParcel(`in`: Parcel): Captcha {
                     return Captcha(`in`)

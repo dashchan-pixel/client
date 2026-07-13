@@ -115,6 +115,7 @@ class ApiException : Exception {
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<BanExtra?> = object : Parcelable.Creator<BanExtra?> {
                 override fun createFromParcel(`in`: Parcel): BanExtra {
                     val id = `in`.readString()
@@ -151,6 +152,7 @@ class ApiException : Exception {
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<WordsExtra?> =
                 object : Parcelable.Creator<WordsExtra?> {
                     override fun createFromParcel(`in`: Parcel): WordsExtra {

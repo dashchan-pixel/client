@@ -139,6 +139,7 @@ class Page(
     }
 
     companion object {
+        @JvmField
         val CREATOR: Parcelable.Creator<Page?> = object : Parcelable.Creator<Page?> {
             override fun createFromParcel(`in`: Parcel): Page {
                 val content = Content.valueOf(`in`.readString()!!)

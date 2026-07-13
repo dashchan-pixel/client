@@ -666,6 +666,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
         }
 
         companion object {
+            @JvmField
             val CREATOR: Parcelable.Creator<FailResult?> =
                 object : Parcelable.Creator<FailResult?> {
                     override fun createFromParcel(`in`: Parcel): FailResult {

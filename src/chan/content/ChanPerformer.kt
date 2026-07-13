@@ -260,7 +260,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadPostsData(
-        chanName: String, boardName: String, threadNumber: String,
+        chanName: String, boardName: String?, threadNumber: String,
         lastPostNumber: String?, partialThreadLoading: Boolean,
         hasCachedPosts: Boolean, holder: HttpHolder?, validator: HttpValidator?
     ) : HttpRequest.Preset {
@@ -673,6 +673,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             @Public
             const val REFERER: String = "referer"
 
+            @JvmField
             val CREATOR: Parcelable.Creator<CaptchaData?> =
                 object : Parcelable.Creator<CaptchaData?> {
                     override fun createFromParcel(source: Parcel): CaptchaData {

@@ -120,6 +120,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
                 }
             }
 
+            @JvmField
             val CREATOR: Parcelable.Creator<NavigationData?> =
                 object : Parcelable.Creator<NavigationData?> {
                     override fun createFromParcel(source: Parcel): NavigationData {
