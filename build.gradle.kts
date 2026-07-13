@@ -89,6 +89,12 @@ android {
 	}
 
 	buildTypes {
+		debug {
+			// Tag test builds with the git revision so the installed version is identifiable.
+			versionNameSuffix = "-r" + providers.exec {
+				commandLine("git", "rev-parse", "--short", "HEAD")
+			}.standardOutput.asText.get().trim()
+		}
 		release {
 			isMinifyEnabled = true
 			proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
