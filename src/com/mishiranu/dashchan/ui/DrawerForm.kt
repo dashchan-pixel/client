@@ -1189,7 +1189,7 @@ class DrawerForm(
                 RecyclerView.LayoutParams.WRAP_CONTENT
             )
         )
-        return DrawerForm.ViewHolder(linearLayout, iconView, textView, watcherView!!)
+        return DrawerForm.ViewHolder(linearLayout, iconView, textView, watcherView)
     }
 
     private fun createSection(parent: ViewGroup?, button: Boolean, density: Float): ViewHolder {
