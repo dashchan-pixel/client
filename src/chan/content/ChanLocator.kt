@@ -747,6 +747,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
 
         @Public
+        @JvmStatic
         fun get(`object`: Any): ChanLocator {
             return (`object` as Chan.Linked).get().locator
         }

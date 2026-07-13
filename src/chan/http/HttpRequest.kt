@@ -52,14 +52,17 @@ class HttpRequest {
 
         companion object {
             @Public
+            @JvmField
             val NONE: RedirectHandler =
                 RedirectHandler { response: HttpResponse? -> Action.CANCEL }
 
             @Public
+            @JvmField
             val BROWSER: RedirectHandler =
                 RedirectHandler { response: HttpResponse? -> Action.GET }
 
             @Public
+            @JvmField
             val STRICT: RedirectHandler = RedirectHandler { response: HttpResponse? ->
                 when (response!!.getResponseCode()) {
                     HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP -> {

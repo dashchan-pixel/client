@@ -30,7 +30,10 @@ abstract class ExecutorTask<Progress, Result> {
             if (task.isCancelled()) {
                 task.onCancel(result)
             } else {
-                task.onComplete(result!!)
+                // Result may itself be a nullable type argument (e.g. List<PostItem>?);
+                // generics are erased, so the cast lets null through like the Java original.
+                @Suppress("UNCHECKED_CAST")
+                task.onComplete(result as Result)
             }
         }
     }

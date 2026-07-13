@@ -788,6 +788,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
 
         @Public
+        @JvmStatic
         fun get(`object`: Any): ChanMarkup {
             return (`object` as Chan.Linked).get().markup
         }

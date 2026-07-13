@@ -178,10 +178,10 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadThreadsData(
-        @field:Public val boardName: String?,
-        @field:Public val pageNumber: Int,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val pageNumber: Int,
         override val holder: HttpHolder?,
-        @field:Public val validator: HttpValidator?
+        @field:Public @JvmField val validator: HttpValidator?
     ) : HttpRequest.Preset {
         @Public
         fun isCatalog(): Boolean {
@@ -191,6 +191,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
         companion object {
             @Public
+            @JvmField
             val PAGE_NUMBER_CATALOG: Int = -1
         }
     }
@@ -264,22 +265,28 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         hasCachedPosts: Boolean, holder: HttpHolder?, validator: HttpValidator?
     ) : HttpRequest.Preset {
         @Public
+        @JvmField
         val boardName: String?
 
         @Public
+        @JvmField
         val threadNumber: String?
 
         @Public
+        @JvmField
         val lastPostNumber: String?
 
         @Public
+        @JvmField
         val partialThreadLoading: Boolean
 
         @Public
+        @JvmField
         val cachedPosts: Posts?
         override val holder: HttpHolder?
 
         @Public
+        @JvmField
         val validator: HttpValidator?
 
         init {
@@ -349,8 +356,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadSinglePostData(
-        @field:Public val boardName: String?,
-        @field:Public val postNumber: String?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val postNumber: String?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
     }
@@ -366,9 +373,9 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadSearchPostsData(
-        @field:Public val boardName: String?,
-        @field:Public val searchQuery: String?,
-        @field:Public val pageNumber: Int,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val searchQuery: String?,
+        @field:Public @JvmField val pageNumber: Int,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
     }
@@ -446,9 +453,9 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadThreadSummariesData(
-        @field:Public val boardName: String?,
-        @field:Public val pageNumber: Int,
-        @field:Public val type: Int,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val pageNumber: Int,
+        @field:Public @JvmField val type: Int,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
 
@@ -474,12 +481,12 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadPostsCountData(
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
         override val connectTimeout: Int,
         override val readTimeout: Int,
         override val holder: HttpHolder?,
-        @field:Public val validator: HttpValidator?
+        @field:Public @JvmField val validator: HttpValidator?
     ) : TimeoutsPreset {
 
 
@@ -508,10 +515,11 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadContentData(
-        @field:Public val uri: Uri?, connectTimeout: Int, readTimeout: Int, holder: HttpHolder?,
+        @field:Public @JvmField val uri: Uri?, connectTimeout: Int, readTimeout: Int, holder: HttpHolder?,
         rangeStart: Long, rangeEnd: Long
     ) : TimeoutsPreset {
         @Public
+        @JvmField
         val direct: HttpRequest.Preset
 
         init {
@@ -534,8 +542,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class CheckAuthorizationData(
-        @field:Public val type: Int,
-        @field:Public val authorizationData: Array<String?>?,
+        @field:Public @JvmField val type: Int,
+        @field:Public @JvmField val authorizationData: Array<String?>?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
 
@@ -553,12 +561,12 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class ReadCaptchaData(
-        @field:Public val captchaType: String?,
-        @field:Public val captchaPass: Array<String?>?,
-        @field:Public val mayShowLoadButton: Boolean,
-        @field:Public val requirement: String?,
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
+        @field:Public @JvmField val captchaType: String?,
+        @field:Public @JvmField val captchaPass: Array<String?>?,
+        @field:Public @JvmField val mayShowLoadButton: Boolean,
+        @field:Public @JvmField val requirement: String?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
     }
@@ -685,20 +693,20 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class SendPostData(
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
-        @field:Public val subject: String?,
-        @field:Public val comment: String?,
-        @field:Public val name: String?,
-        @field:Public val email: String?,
-        @field:Public val password: String?,
-        @field:Public val attachments: Array<Attachment?>?,
-        @field:Public val optionSage: Boolean,
-        @field:Public val optionSpoiler: Boolean,
-        @field:Public val optionOriginalPoster: Boolean,
-        @field:Public val userIcon: String?,
-        @field:Public val captchaType: String?,
-        @field:Public val captchaData: CaptchaData?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
+        @field:Public @JvmField val subject: String?,
+        @field:Public @JvmField val comment: String?,
+        @field:Public @JvmField val name: String?,
+        @field:Public @JvmField val email: String?,
+        @field:Public @JvmField val password: String?,
+        @field:Public @JvmField val attachments: Array<Attachment?>?,
+        @field:Public @JvmField val optionSage: Boolean,
+        @field:Public @JvmField val optionSpoiler: Boolean,
+        @field:Public @JvmField val optionOriginalPoster: Boolean,
+        @field:Public @JvmField val userIcon: String?,
+        @field:Public @JvmField val captchaType: String?,
+        @field:Public @JvmField val captchaData: CaptchaData?,
         val captchaNeedLoad: Boolean,
         override val connectTimeout: Int,
         override val readTimeout: Int
@@ -710,11 +718,11 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         class Attachment(
             val fileHolder: FileHolder,
             private val fileName: String?,
-            @field:Public val rating: String?,
+            @field:Public @JvmField val rating: String?,
             val optionUniqueHash: Boolean,
             val optionRemoveMetadata: Boolean,
             val optionRemoveFileName: Boolean,
-            @field:Public val optionSpoiler: Boolean,
+            @field:Public @JvmField val optionSpoiler: Boolean,
             val reencoding: Reencoding?
         ) {
             var listener: OpenableOutputListener? = null
@@ -871,11 +879,11 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class SendDeletePostsData(
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
-        @field:Public val postNumbers: List<String>?,
-        @field:Public val password: String?,
-        @field:Public val optionFilesOnly: Boolean,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
+        @field:Public @JvmField val postNumbers: List<String>?,
+        @field:Public @JvmField val password: String?,
+        @field:Public @JvmField val optionFilesOnly: Boolean,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
     }
@@ -885,15 +893,16 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class SendReportPostsData(
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
-        @field:Public val postNumbers: List<String>?,
-        @field:Public val type: String?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
+        @field:Public @JvmField val postNumbers: List<String>?,
+        @field:Public @JvmField val type: String?,
         options: List<String>?,
-        @field:Public val comment: String?,
+        @field:Public @JvmField val comment: String?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
+        @JvmField
         val options: List<String>?
 
         init {
@@ -905,16 +914,17 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class SendVotePostData(
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
-        @field:Public val postNumber: String?,
-        @field:Public val isLike: Boolean,
-        @field:Public val type: String?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
+        @field:Public @JvmField val postNumber: String?,
+        @field:Public @JvmField val isLike: Boolean,
+        @field:Public @JvmField val type: String?,
         options: List<String>?,
         comment: String?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
+        @JvmField
         val options: List<String>?
 
         init {
@@ -932,13 +942,14 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
     @Public
     class SendAddToArchiveData(
-        @field:Public val uri: Uri?,
-        @field:Public val boardName: String?,
-        @field:Public val threadNumber: String?,
+        @field:Public @JvmField val uri: Uri?,
+        @field:Public @JvmField val boardName: String?,
+        @field:Public @JvmField val threadNumber: String?,
         options: List<String>?,
         override val holder: HttpHolder?
     ) : HttpRequest.Preset {
         @Public
+        @JvmField
         val options: List<String>?
 
         init {
@@ -1003,13 +1014,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     fun requireUserItemSingleChoice(
         selected: Int, item: Array<CharSequence?>?, descriptionText: String?,
         descriptionImage: Bitmap?
-    ): Int {
+    ): Int? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserItemSingleChoice(
                 selected, item,
                 descriptionText, descriptionImage
-            )!!
+            )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1021,13 +1032,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     fun requireUserItemMultipleChoice(
         selected: BooleanArray?, item: Array<CharSequence?>?,
         descriptionText: String?, descriptionImage: Bitmap?
-    ): BooleanArray {
+    ): BooleanArray? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserItemMultipleChoice(
                 selected, item!!,
                 descriptionText, descriptionImage
-            )!!
+            )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1039,13 +1050,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     fun requireUserImageSingleChoice(
         selected: Int, images: Array<Bitmap?>?, descriptionText: String?,
         descriptionImage: Bitmap?
-    ): Int {
+    ): Int? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserImageSingleChoice(
                 3, selected, images,
                 descriptionText, descriptionImage
-            )!!
+            )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1057,13 +1068,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     fun requireUserImageMultipleChoice(
         selected: BooleanArray?, images: Array<Bitmap?>?,
         descriptionText: String?, descriptionImage: Bitmap?
-    ): BooleanArray {
+    ): BooleanArray? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserImageMultipleChoice(
                 3, selected, images!!,
                 descriptionText, descriptionImage
-            )!!
+            )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
@@ -1351,6 +1362,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
 
         @Public
+        @JvmStatic
         fun get(`object`: Any): ChanPerformer {
             return (`object` as Chan.Linked).get().performer
         }

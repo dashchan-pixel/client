@@ -60,12 +60,15 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     @Public
     class Board @Public constructor() {
         @Public
+        @JvmField
         var allowSearch: Boolean = false
 
         @Public
+        @JvmField
         var allowCatalog: Boolean = false
 
         @Public
+        @JvmField
         var allowArchive: Boolean = false
 
         @JvmField
@@ -81,6 +84,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         var allowReporting: Boolean = false
 
         @Public
+        @JvmField
         var allowVotes: Boolean = false
     }
 
@@ -117,6 +121,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         }
 
         @Public
+        @JvmField
         var title: String? = null
 
         @JvmField
@@ -192,6 +197,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         val userIcons: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
+        @JvmField
         var hasCountryFlags: Boolean = false
     }
 
@@ -206,12 +212,14 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         var multiplePosts: Boolean = false
 
         @Public
+        @JvmField
         var optionFilesOnly: Boolean = false
     }
 
     @Public
     class Reporting @Public constructor() {
         @Public
+        @JvmField
         var comment: Boolean = false
 
         @JvmField
@@ -219,60 +227,74 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         var multiplePosts: Boolean = false
 
         @Public
+        @JvmField
         val types: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
+        @JvmField
         val options: MutableList<Pair<String, String>> = ArrayList()
     }
 
     @Public
     class Voting @Public constructor() {
         @Public
+        @JvmField
         var allowLike: Boolean = true
 
         @Public
+        @JvmField
         var allowDislike: Boolean = true
     }
 
     @Public
     class Authorization @Public constructor() {
         @Public
+        @JvmField
         var fieldsCount: Int = 0
 
         @Public
+        @JvmField
         var hints: Array<String?>? = null
     }
 
     @Public
     class Archivation @Public constructor() {
         @Public
+        @JvmField
         val hosts: MutableList<String?> = ArrayList<String?>()
 
         @Public
+        @JvmField
         val options: MutableList<Pair<String, String>> = ArrayList()
 
         @Public
+        @JvmField
         var queryOnly: Boolean = false
     }
 
     @Public
     class Statistics @Public constructor() {
         @Public
+        @JvmField
         var threadsViewed: Boolean = true
 
         @Public
+        @JvmField
         var postsSent: Boolean = true
 
         @Public
+        @JvmField
         var threadsCreated: Boolean = true
     }
 
     @Public
     class CustomPreference @Public constructor() {
         @Public
+        @JvmField
         var title: String? = null
 
         @Public
+        @JvmField
         var summary: String? = null
     }
 
@@ -1067,6 +1089,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         const val CAPTCHA_TYPE_HCAPTCHA: String = "hcaptcha"
 
         @Public
+        @JvmStatic
         fun get(`object`: Any): ChanConfiguration {
             return (`object` as Chan.Linked).get().configuration
         }

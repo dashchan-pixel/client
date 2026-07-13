@@ -851,8 +851,8 @@ class PullableWrapper(private val listView: Wrapped) {
                 } else {
                     val alphaThreshold = 0.95f
                     ringAlpha = lerp(
-                        TODO("Could not convert float literal '0x7f' to Kotlin"),
-                        TODO("Could not convert float literal '0xff' to Kotlin"),
+                        0x7f.toFloat(),
+                        0xff.toFloat(),
                         (min(
                             1f,
                             max(value, alphaThreshold)
