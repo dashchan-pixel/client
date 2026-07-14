@@ -5,11 +5,11 @@ import chan.annotation.Public
 
 @Extendable
 open class ParseException : Exception {
-	@Public
-	constructor() : super()
+    @Public
+    constructor() : super()
 
-	constructor(detailMessage: String?) : super(detailMessage)
+    constructor(detailMessage: String?) : super(detailMessage)
 
-	@Public
-	constructor(throwable: Throwable?) : super(throwable)
+    @Public
+    constructor(throwable: Throwable?) : super(throwable)
 }

@@ -6,12 +6,12 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 
 open class BaseDrawable : Drawable() {
-	override fun draw(canvas: Canvas) {}
+    override fun draw(canvas: Canvas) {}
 
-	override fun setAlpha(alpha: Int) {}
+    override fun setAlpha(alpha: Int) {}
 
-	override fun setColorFilter(colorFilter: ColorFilter?) {}
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
 
-	@Suppress("OVERRIDE_DEPRECATION")
-	override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }

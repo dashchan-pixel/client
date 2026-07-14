@@ -46,15 +46,20 @@ object BackupManager {
         val files = root.getChildren()
         val backupFiles: MutableList<BackupFile> = ArrayList()
         if (files != null) {
-            val timeFormat = android.text.format.DateFormat.getTimeFormat(context)
-            val dateFormat = android.text.format.DateFormat.getDateFormat(context)
+            val timeFormat =
+                android.text.format.DateFormat
+                    .getTimeFormat(context)
+            val dateFormat =
+                android.text.format.DateFormat
+                    .getDateFormat(context)
             for (file in files) {
                 var name = file.getName()
                 if (name!!.startsWith(FILE_NAME_PREFIX) && name.endsWith(FILE_NAME_SUFFIX)) {
-                    name = name.substring(
-                        FILE_NAME_PREFIX.length,
-                        name.length - FILE_NAME_SUFFIX.length
-                    )
+                    name =
+                        name.substring(
+                            FILE_NAME_PREFIX.length,
+                            name.length - FILE_NAME_SUFFIX.length,
+                        )
                     var date: Long
                     try {
                         date = name.toLong()
@@ -72,7 +77,10 @@ object BackupManager {
         return backupFiles
     }
 
-    fun makeBackup(binder: DownloadService.Binder, context: Context) {
+    fun makeBackup(
+        binder: DownloadService.Binder,
+        context: Context,
+    ) {
         val backupFile = File(context.getCacheDir(), "backup-" + UUID.randomUUID())
         var success = false
         try {
@@ -110,8 +118,14 @@ object BackupManager {
         backupFile.delete()
         if (success) {
             binder.downloadStorage(
-                input, null, null, null, null,
-                FILE_NAME_PREFIX + System.currentTimeMillis() + FILE_NAME_SUFFIX, false, false
+                input,
+                null,
+                null,
+                null,
+                null,
+                FILE_NAME_PREFIX + System.currentTimeMillis() + FILE_NAME_SUFFIX,
+                false,
+                false,
             )
         } else {
             ClickableToast.show(R.string.no_access)
@@ -154,7 +168,10 @@ object BackupManager {
         return result
     }
 
-    fun loadBackup(file: DataFile, entries: Collection<Entry>): Boolean {
+    fun loadBackup(
+        file: DataFile,
+        entries: Collection<Entry>,
+    ): Boolean {
         var success = false
         try {
             ZipInputStream(file.openInputStream()).use { zip ->
@@ -178,14 +195,18 @@ object BackupManager {
         return success
     }
 
-    class BackupFile(val file: DataFile?, val name: String?, val date: Long) :
-        Comparable<BackupFile> {
-        override fun compareTo(other: BackupFile): Int {
-            return other.date.compareTo(date)
-        }
+    class BackupFile(
+        val file: DataFile?,
+        val name: String?,
+        val date: Long,
+    ) : Comparable<BackupFile> {
+        override fun compareTo(other: BackupFile): Int = other.date.compareTo(date)
     }
 
-    internal class Restore(val test: Boolean, val input: InputStream) {
+    internal class Restore(
+        val test: Boolean,
+        val input: InputStream,
+    ) {
         var version: String? = null
     }
 
@@ -199,7 +220,9 @@ object BackupManager {
         fun read(restore: Restore)
     }
 
-    private class FileWriter(private val file: File) : Writer {
+    private class FileWriter(
+        private val file: File,
+    ) : Writer {
         @Throws(IOException::class)
         override fun write(output: OutputStream) {
             if (file.exists()) {
@@ -210,7 +233,9 @@ object BackupManager {
         }
     }
 
-    private class FileReader(private val file: File?) : Reader {
+    private class FileReader(
+        private val file: File?,
+    ) : Reader {
         @Throws(IOException::class)
         override fun read(restore: Restore) {
             if (!restore.test) {
@@ -227,7 +252,7 @@ object BackupManager {
         internal val entryName: String,
         versions: MutableCollection<String?>,
         internal val writer: Writer?,
-        internal val reader: Reader
+        internal val reader: Reader,
     ) {
         VERSION(
             0,
@@ -242,57 +267,73 @@ object BackupManager {
                     throw IOException("Invalid version file")
                 }
                 restore.version = String(data).trim { it <= ' ' }
-            }),
+            },
+        ),
         DATABASE(
-            R.string.database, "common.db", mutableListOf<String?>(BACKUP_VERSION_1),
+            R.string.database,
+            "common.db",
+            mutableListOf<String?>(BACKUP_VERSION_1),
             BackupManager.Writer { output: OutputStream ->
                 CommonDatabase.getInstance().writeBackup(output)
-            }, BackupManager.Reader { restore: Restore ->
+            },
+            BackupManager.Reader { restore: Restore ->
                 if (!restore.test) {
                     CommonDatabase.getInstance().readBackup(restore.input)
                 }
-            }),
+            },
+        ),
         PREFERENCES_0(
-            R.string.preferences, "com.mishiranu.dashchan_preferences.xml",
-            Preferences.fileForRestore, mutableListOf<String?>(BACKUP_VERSION_0)
+            R.string.preferences,
+            "com.mishiranu.dashchan_preferences.xml",
+            Preferences.fileForRestore,
+            mutableListOf<String?>(BACKUP_VERSION_0),
         ),
         PREFERENCES_1(
-            R.string.preferences, Preferences.filesForBackup,
-            mutableListOf<String?>(BACKUP_VERSION_1)
+            R.string.preferences,
+            Preferences.filesForBackup,
+            mutableListOf<String?>(BACKUP_VERSION_1),
         ),
         FAVORITES(
-            R.string.favorites, FavoritesStorage.getInstance().getFilesForBackup(),
-            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1)
+            R.string.favorites,
+            FavoritesStorage.getInstance().getFilesForBackup(),
+            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
         ),
         AUTOHIDE(
-            R.string.autohide, AutohideStorage.getInstance().getFilesForBackup(),
-            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1)
+            R.string.autohide,
+            AutohideStorage.getInstance().getFilesForBackup(),
+            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
         ),
         STATISTICS(
-            R.string.statistics, StatisticsStorage.getInstance().getFilesForBackup(),
-            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1)
+            R.string.statistics,
+            StatisticsStorage.getInstance().getFilesForBackup(),
+            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
         ),
         THEMES(
-            R.string.themes, ThemesStorage.getInstance().getFilesForBackup(),
-            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1)
-        );
+            R.string.themes,
+            ThemesStorage.getInstance().getFilesForBackup(),
+            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
+        ),
+        ;
 
         internal val versions: MutableSet<String?>
 
         constructor(
             titleResId: Int,
             backupFiles: Pair<File, File>,
-            versions: MutableCollection<String?>
+            versions: MutableCollection<String?>,
         ) : this(
-            titleResId, backupFiles.first.getName(), versions,
-            BackupManager.FileWriter(backupFiles.first!!), FileReader(backupFiles.second)
+            titleResId,
+            backupFiles.first.getName(),
+            versions,
+            BackupManager.FileWriter(backupFiles.first!!),
+            FileReader(backupFiles.second),
         )
 
         constructor(
             titleResId: Int,
             name: String,
             restoreFile: File?,
-            versions: MutableCollection<String?>
+            versions: MutableCollection<String?>,
         ) : this(titleResId, name, versions, null, FileReader(restoreFile))
 
         init {

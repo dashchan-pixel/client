@@ -37,7 +37,6 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ConcurrentUtils.newThreadPool
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ThemeEngine
-import java.util.Collections
 import java.util.concurrent.Executor
 import kotlin.Any
 import kotlin.Boolean
@@ -50,7 +49,6 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 import kotlin.collections.Iterable
-import kotlin.collections.MutableCollection
 import kotlin.collections.MutableIterator
 import kotlin.collections.MutableList
 import kotlin.collections.MutableSet
@@ -61,14 +59,16 @@ import kotlin.math.min
 
 class WatcherService : BaseService() {
     class Counter(
-		val state: State?,
-	    val running: Boolean,
-	    val newCount: Int,
-	    @JvmField val deleted: Boolean,
-	    val error: Boolean
+        val state: State?,
+        val running: Boolean,
+        val newCount: Int,
+        @JvmField val deleted: Boolean,
+        val error: Boolean,
     ) {
         enum class State {
-            ENABLED, UNAVAILABLE, DISABLED
+            ENABLED,
+            UNAVAILABLE,
+            DISABLED,
         }
 
         companion object {
@@ -79,25 +79,36 @@ class WatcherService : BaseService() {
     interface Client {
         interface Callback {
             val isWatcherClientForeground: Boolean
+
             fun onWatcherUpdate(
                 chanName: String?,
                 boardName: String?,
                 threadNumber: String?,
-                counter: Counter
+                counter: Counter,
             )
         }
 
         var callback: Callback?
+
         fun updateConfiguration(chanName: String?)
+
         fun notifyForeground()
+
         fun refreshAll(chanName: String?)
+
         fun isWatcherSupported(chan: Chan): Boolean
-        fun getCounter(chanName: String, boardName: String?, threadNumber: String): Counter
+
+        fun getCounter(
+            chanName: String,
+            boardName: String?,
+            threadNumber: String,
+        ): Counter
+
         fun newSession(
             chanName: String,
             boardName: String?,
             threadNumber: String,
-            callback: Session.Callback
+            callback: Session.Callback,
         ): Session
     }
 
@@ -109,29 +120,38 @@ class WatcherService : BaseService() {
 
             fun onReadPostsSuccess(
                 cacheState: PagesDatabase.Cache.State?,
-                consumeReplies: ConsumeReplies
+                consumeReplies: ConsumeReplies,
             )
 
             fun onReadPostsRedirect(target: RedirectException.Target)
+
             fun onReadPostsFail(errorItem: ErrorItem?)
         }
 
-        fun refresh(reload: Boolean, checkInterval: Int): Boolean
+        fun refresh(
+            reload: Boolean,
+            checkInterval: Int,
+        ): Boolean
+
         fun notifyExtracted()
+
         fun notifyEraseStarted()
+
         fun hasTask(): Boolean
+
         fun destroy()
     }
 
     private interface InternalSession : Session.Callback {
         val isUpdateBlocked: Boolean
+
         fun notifyRefreshStarted()
     }
 
     internal class ThreadKey(
         val chanName: String,
         val boardName: String?,
-        val threadNumber: String
+        val threadNumber: String,
     ) {
         override fun equals(other: Any?): Boolean {
             if (other === this) {
@@ -139,8 +159,8 @@ class WatcherService : BaseService() {
             }
             if (other is ThreadKey) {
                 return chanName == other.chanName &&
-                        equals(boardName, other.boardName) &&
-                        threadNumber == other.threadNumber
+                    equals(boardName, other.boardName) &&
+                    threadNumber == other.threadNumber
             }
             return false
         }
@@ -155,13 +175,15 @@ class WatcherService : BaseService() {
         }
     }
 
-    class Binder internal constructor(internal val service: WatcherService) : android.os.Binder()
+    class Binder internal constructor(
+        internal val service: WatcherService,
+    ) : android.os.Binder()
 
-    override fun onBind(intent: Intent?): Binder? {
-        return Binder(this)
-    }
+    override fun onBind(intent: Intent?): Binder? = Binder(this)
 
-    class ViewModel : ServiceViewModel<Binder>(WatcherService::class.java), Client {
+    class ViewModel :
+        ServiceViewModel<Binder>(WatcherService::class.java),
+        Client {
         private val sessions: HashSet<ViewModelSession> = HashSet<ViewModelSession>()
 
         override var callback: Client.Callback? = null
@@ -186,7 +208,7 @@ class WatcherService : BaseService() {
                         threadKey.chanName,
                         threadKey.boardName,
                         threadKey.threadNumber,
-                        counter
+                        counter,
                     )
                 }
             }
@@ -221,14 +243,12 @@ class WatcherService : BaseService() {
             }
         }
 
-        override fun isWatcherSupported(chan: Chan): Boolean {
-            return Companion.isWatcherSupported(chan)
-        }
+        override fun isWatcherSupported(chan: Chan): Boolean = Companion.isWatcherSupported(chan)
 
         override fun getCounter(
             chanName: String,
             boardName: String?,
-            threadNumber: String
+            threadNumber: String,
         ): Counter {
             val service = this.service
             if (service != null) {
@@ -243,7 +263,7 @@ class WatcherService : BaseService() {
             chanName: String,
             boardName: String?,
             threadNumber: String,
-            callback: Session.Callback
+            callback: Session.Callback,
         ): Session {
             val threadKey = ThreadKey(chanName, boardName, threadNumber)
             val session = ViewModelSession(this, threadKey, callback)
@@ -268,10 +288,13 @@ class WatcherService : BaseService() {
     internal class ViewModelSession(
         private val viewModel: ViewModel,
         private val threadKey: ThreadKey,
-        private val callback: Session.Callback
-    ) : Session, InternalSession {
+        private val callback: Session.Callback,
+    ) : Session,
+        InternalSession {
         private enum class Running {
-            NONE, REFRESH, RELOAD
+            NONE,
+            REFRESH,
+            RELOAD,
         }
 
         private var running = Running.NONE
@@ -279,15 +302,19 @@ class WatcherService : BaseService() {
         private var notifyEraseStarted = false
         private var erasing = false
 
-        override fun refresh(reload: Boolean, checkInterval: Int): Boolean {
+        override fun refresh(
+            reload: Boolean,
+            checkInterval: Int,
+        ): Boolean {
             val service = viewModel.service
             if (service != null) {
                 var shouldStart = checkInterval <= 0 || reload
                 val hasTask = service.hasTask(threadKey)
                 if (!shouldStart && !hasTask) {
-                    val watcherItem = service.watcherItems.get(threadKey)
-                    shouldStart = watcherItem != null && watcherItem
-                        .checkInterval(SystemClock.elapsedRealtime(), checkInterval)
+                    val watcherItem = service.watcherItems[threadKey]
+                    shouldStart = watcherItem != null &&
+                        watcherItem
+                            .checkInterval(SystemClock.elapsedRealtime(), checkInterval)
                 }
                 if (shouldStart) {
                     running = if (reload) Running.RELOAD else Running.REFRESH
@@ -348,7 +375,7 @@ class WatcherService : BaseService() {
 
         override fun onReadPostsSuccess(
             cacheState: PagesDatabase.Cache.State?,
-            consumeReplies: ConsumeReplies
+            consumeReplies: ConsumeReplies,
         ) {
             running = Running.NONE
             callback.onReadPostsSuccess(cacheState, consumeReplies)
@@ -364,7 +391,10 @@ class WatcherService : BaseService() {
             callback.onReadPostsFail(errorItem)
         }
 
-        fun handleRegister(service: WatcherService, immediate: Boolean) {
+        fun handleRegister(
+            service: WatcherService,
+            immediate: Boolean,
+        ) {
             service.registerSession(this, threadKey)
             if (immediate) {
                 running = Running.NONE
@@ -397,7 +427,9 @@ class WatcherService : BaseService() {
         }
     }
 
-    private class ConcurrentIterable<T : Any>(private val provider: Provider<T>?) : Iterable<T> {
+    private class ConcurrentIterable<T : Any>(
+        private val provider: Provider<T>?,
+    ) : Iterable<T> {
         fun interface Provider<T> {
             fun getValues(): Collection<T>?
         }
@@ -415,7 +447,7 @@ class WatcherService : BaseService() {
             } else {
                 values = null
             }
-            if (values == null || values.isEmpty()) {
+            if (values.isNullOrEmpty()) {
                 @Suppress("UNCHECKED_CAST")
                 val result = EMPTY as MutableIterator<T>
                 return result
@@ -432,38 +464,29 @@ class WatcherService : BaseService() {
                         return hasNext
                     }
 
-                    override fun next(): T {
-                        return iterator.next()
-                    }
+                    override fun next(): T = iterator.next()
 
-                    override fun remove() {
-                        throw UnsupportedOperationException()
-                    }
+                    override fun remove(): Unit = throw UnsupportedOperationException()
                 }
             }
         }
 
         companion object {
-            private val EMPTY: MutableIterator<*> = object : MutableIterator<Any?> {
-                override fun hasNext(): Boolean {
-                    return false
-                }
+            private val EMPTY: MutableIterator<*> =
+                object : MutableIterator<Any?> {
+                    override fun hasNext(): Boolean = false
 
-                override fun next(): Any? {
-                    throw IndexOutOfBoundsException()
-                }
+                    override fun next(): Any? = throw IndexOutOfBoundsException()
 
-                override fun remove() {
-                    throw UnsupportedOperationException()
+                    override fun remove(): Unit = throw UnsupportedOperationException()
                 }
-            }
         }
     }
 
     private class ResolveItemsTask(
         private val callback: Callback,
-        private val threads: MutableSet<ThreadKey>
-    ) : ExecutorTask<Void?, MutableList<ResolveItemsTask.Item>>() {
+        private val threads: MutableSet<ThreadKey>,
+    ) : ExecutorTask<Unit?, MutableList<ResolveItemsTask.Item>>() {
         fun interface Callback {
             fun onResolveItemsResult(items: MutableList<Item>)
         }
@@ -473,26 +496,32 @@ class WatcherService : BaseService() {
             val newCount: Int,
             val deleted: Boolean,
             val error: Boolean,
-            val lastUpdate: Long
+            val lastUpdate: Long,
         )
 
         override fun run(): MutableList<Item> {
             val items = ArrayList<Item>(threads.size)
             for (threadKey in threads) {
-                val watcherState: PagesDatabase.WatcherState = PagesDatabase.getInstance()
-                    .getWatcherState(
-                        PagesDatabase.ThreadKey(
-                            threadKey.chanName,
-                            threadKey.boardName, threadKey.threadNumber
+                val watcherState: PagesDatabase.WatcherState =
+                    PagesDatabase
+                        .getInstance()
+                        .getWatcherState(
+                            PagesDatabase.ThreadKey(
+                                threadKey.chanName,
+                                threadKey.boardName,
+                                threadKey.threadNumber,
+                            ),
                         )
-                    )
                 val now = SystemClock.elapsedRealtime()
                 val lastUpdate = min(now, watcherState.time - System.currentTimeMillis() + now)
                 items.add(
                     Item(
-                        threadKey, watcherState.newCount,
-                        watcherState.deleted, watcherState.error, lastUpdate
-                    )
+                        threadKey,
+                        watcherState.newCount,
+                        watcherState.deleted,
+                        watcherState.error,
+                        lastUpdate,
+                    ),
                 )
             }
             return items
@@ -503,7 +532,10 @@ class WatcherService : BaseService() {
         }
     }
 
-    private class WatcherTask(val task: ReadPostsTask, val worker: Worker) {
+    private class WatcherTask(
+        val task: ReadPostsTask,
+        val worker: Worker,
+    ) {
         init {
             worker.acquire()
         }
@@ -515,10 +547,14 @@ class WatcherService : BaseService() {
     }
 
     enum class WatcherState {
-        IDLE, ENQUEUED, UNAVAILABLE
+        IDLE,
+        ENQUEUED,
+        UNAVAILABLE,
     }
 
-    private inner class WatcherItem(val threadKey: ThreadKey) : Comparable<WatcherItem>,
+    private inner class WatcherItem(
+        val threadKey: ThreadKey,
+    ) : Comparable<WatcherItem>,
         ReadPostsTask.Callback {
         var resolved: Boolean = false
         var newCount: Int = 0
@@ -536,17 +572,27 @@ class WatcherService : BaseService() {
             }
         }
 
-        fun createAndExecuteTask(worker: Worker, reload: Boolean, notifyBeforeStart: Boolean) {
+        fun createAndExecuteTask(
+            worker: Worker,
+            reload: Boolean,
+            notifyBeforeStart: Boolean,
+        ) {
             cancel()
             val pendingUserPosts =
                 PostingService.Companion.getPendingUserPosts(
                     threadKey.chanName,
-                    threadKey.boardName, threadKey.threadNumber
+                    threadKey.boardName,
+                    threadKey.threadNumber,
                 )
-            val task = ReadPostsTask(
-                this, get(threadKey.chanName),
-                threadKey.boardName, threadKey.threadNumber, reload, pendingUserPosts
-            )
+            val task =
+                ReadPostsTask(
+                    this,
+                    get(threadKey.chanName),
+                    threadKey.boardName,
+                    threadKey.threadNumber,
+                    reload,
+                    pendingUserPosts,
+                )
             task.execute(worker.executor)
             if (notifyBeforeStart) {
                 for (session in getSessionConcurrentIterable(threadKey)) {
@@ -557,26 +603,28 @@ class WatcherService : BaseService() {
             notifyWatcherUpdate(this)
         }
 
-        fun checkInterval(now: Long, interval: Int): Boolean {
-            return lastUpdate + interval - 1000 <= now
-        }
+        fun checkInterval(
+            now: Long,
+            interval: Int,
+        ): Boolean = lastUpdate + interval - 1000 <= now
 
-        override fun compareTo(other: WatcherItem): Int {
-            return lastUpdate.compareTo(other.lastUpdate)
-        }
+        override fun compareTo(other: WatcherItem): Int = lastUpdate.compareTo(other.lastUpdate)
 
         override fun onPendingUserPostsConsumed(pendingUserPosts: Set<PendingUserPost>) {
             if (!pendingUserPosts.isEmpty()) {
                 PostingService.Companion.consumePendingUserPosts(
-                    threadKey.chanName, threadKey.boardName,
-                    threadKey.threadNumber, pendingUserPosts
+                    threadKey.chanName,
+                    threadKey.boardName,
+                    threadKey.threadNumber,
+                    pendingUserPosts,
                 )
             }
         }
 
         override fun onReadPostsSuccess(
             cacheState: PagesDatabase.Cache.State?,
-            replies: List<Reply>?, newCount: Int?
+            replies: List<Reply>?,
+            newCount: Int?,
         ) {
             if (newCount != null) {
                 resolved = true
@@ -599,17 +647,19 @@ class WatcherService : BaseService() {
             if (notify != null && notify[0] && !replies.isEmpty()) {
                 val notificationFeatures = watcherNotifications
                 if (notificationFeatures.contains(NotificationFeature.ENABLED)) {
-                    val favoriteItem = FavoritesStorage.getInstance()
-                        .getFavorite(
-                            threadKey.chanName,
-                            threadKey.boardName,
-                            threadKey.threadNumber
-                        )
+                    val favoriteItem =
+                        FavoritesStorage
+                            .getInstance()
+                            .getFavorite(
+                                threadKey.chanName,
+                                threadKey.boardName,
+                                threadKey.threadNumber,
+                            )
                     var title = if (favoriteItem != null) emptyIfNull(favoriteItem.title) else ""
                     if (title.trim { it <= ' ' }.isEmpty()) {
                         val chan = get(threadKey.chanName)
                         title = chan.configuration.getTitle() + " / " +
-                                threadKey.boardName + " / " + threadKey.threadNumber
+                            threadKey.boardName + " / " + threadKey.threadNumber
                     }
                     val important = notificationFeatures.contains(NotificationFeature.IMPORTANT)
                     val sound = notificationFeatures.contains(NotificationFeature.SOUND)
@@ -624,7 +674,7 @@ class WatcherService : BaseService() {
                         threadKey.chanName,
                         threadKey.boardName,
                         threadKey.threadNumber,
-                        replies
+                        replies,
                     )
                 }
             }
@@ -658,7 +708,9 @@ class WatcherService : BaseService() {
             if (deleted) {
                 FavoritesStorage.getInstance().setWatcherEnabled(
                     threadKey.chanName,
-                    threadKey.boardName, threadKey.threadNumber, false
+                    threadKey.boardName,
+                    threadKey.threadNumber,
+                    false,
                 )
             }
             startNext()
@@ -672,8 +724,8 @@ class WatcherService : BaseService() {
     private val watcherItems: HashMap<ThreadKey, WatcherItem> = HashMap()
     private val enqueuedWatcherItems: ArrayList<WatcherItem> = ArrayList()
 
-    private val workWatcherKeys: Iterable<ThreadKey> = ConcurrentIterable<ThreadKey>(
-        ConcurrentIterable.Provider { watcherItems.keys })
+    private val workWatcherKeys: Iterable<ThreadKey> =
+        ConcurrentIterable<ThreadKey>(ConcurrentIterable.Provider { watcherItems.keys })
     private val workClients: Iterable<Client> =
         ConcurrentIterable<Client>(ConcurrentIterable.Provider { clients.keys })
     private val workSessions: ConcurrentIterable<InternalSession> =
@@ -693,10 +745,12 @@ class WatcherService : BaseService() {
         Preferences.PREFERENCES!!.register(preferencesListener)
         FavoritesStorage.getInstance().getObservable().register(favoritesObserver)
         for (favoriteItem in FavoritesStorage.getInstance().getThreads(null)) {
-            val threadKey = WatcherService.ThreadKey(
-                favoriteItem.chanName,
-                favoriteItem.boardName, favoriteItem.threadNumber!!
-            )
+            val threadKey =
+                WatcherService.ThreadKey(
+                    favoriteItem.chanName,
+                    favoriteItem.boardName,
+                    favoriteItem.threadNumber!!,
+                )
             addWatcherItem(threadKey, false)
         }
         resolveWatcherItems()
@@ -728,11 +782,12 @@ class WatcherService : BaseService() {
             if (favoriteItem!!.threadNumber == null) {
                 return@Observer
             }
-            val threadKey = ThreadKey(
-                favoriteItem.chanName,
-                favoriteItem.boardName,
-                favoriteItem.threadNumber
-            )
+            val threadKey =
+                ThreadKey(
+                    favoriteItem.chanName,
+                    favoriteItem.boardName,
+                    favoriteItem.threadNumber,
+                )
             when (action) {
                 FavoritesStorage.Action.ADD -> {
                     val watcherItem = addWatcherItem(threadKey, true)
@@ -745,7 +800,7 @@ class WatcherService : BaseService() {
                 }
 
                 FavoritesStorage.Action.WATCHER_ENABLE -> {
-                    val watcherItem = checkNotNull(watcherItems.get(threadKey))
+                    val watcherItem = checkNotNull(watcherItems[threadKey])
                     if (watcherItem.state != WatcherState.ENQUEUED) {
                         watcherItem.state = WatcherState.ENQUEUED
                         enqueuedWatcherItems.add(watcherItem)
@@ -779,9 +834,12 @@ class WatcherService : BaseService() {
             }
             if (resolveThreads != null && !resolveThreads.isEmpty()) {
                 resolveItemsTask =
-                    ResolveItemsTask(ResolveItemsTask.Callback { items: MutableList<ResolveItemsTask.Item> ->
-                        this.onResolveWatcherItemResult(items)
-                    }, resolveThreads)
+                    ResolveItemsTask(
+                        ResolveItemsTask.Callback { items: MutableList<ResolveItemsTask.Item> ->
+                            this.onResolveWatcherItemResult(items)
+                        },
+                        resolveThreads,
+                    )
                 resolveItemsTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
             }
         }
@@ -812,30 +870,30 @@ class WatcherService : BaseService() {
         val iterator = enqueuedWatcherItems.iterator()
         while (iterator.hasNext()) {
             val watcherItem = iterator.next()
-            if (watcherItem!!.resolved) {
-                if (watcherItem!!.state != WatcherState.ENQUEUED) {
+            if (watcherItem.resolved) {
+                if (watcherItem.state != WatcherState.ENQUEUED) {
                     iterator.remove()
-                } else if (watcherItem!!.task == null) {
-                    val chan = get(watcherItem!!.threadKey.chanName)
-                    if (isWatcherSupported(chan) && !isBlocked(watcherItem!!.threadKey)) {
-                        val sessions = sessionsMap.get(watcherItem!!.threadKey)
+                } else if (watcherItem.task == null) {
+                    val chan = get(watcherItem.threadKey.chanName)
+                    if (isWatcherSupported(chan) && !isBlocked(watcherItem.threadKey)) {
+                        val sessions = sessionsMap[watcherItem.threadKey]
                         val worker: Worker?
                         if (sessions != null && !sessions.isEmpty()) {
                             worker = WORKER_FOREGROUND
-                        } else if (isEnabled(watcherItem!!.threadKey)) {
+                        } else if (isEnabled(watcherItem.threadKey)) {
                             val priority =
-                                priorityChanNames.contains(watcherItem!!.threadKey.chanName)
+                                priorityChanNames.contains(watcherItem.threadKey.chanName)
                             worker = if (priority) WORKER_PRIORITY else WORKER_BACKGROUND
                         } else {
-                            watcherItem!!.state = WatcherState.IDLE
+                            watcherItem.state = WatcherState.IDLE
                             iterator.remove()
                             worker = null
                         }
                         if (worker != null && worker.isAvailable) {
-                            watcherItem!!.createAndExecuteTask(worker, false, true)
+                            watcherItem.createAndExecuteTask(worker, false, true)
                         }
                     } else {
-                        watcherItem!!.state = WatcherState.IDLE
+                        watcherItem.state = WatcherState.IDLE
                         iterator.remove()
                     }
                 }
@@ -876,8 +934,10 @@ class WatcherService : BaseService() {
                 client.callback
             if (callback != null) {
                 callback.onWatcherUpdate(
-                    threadKey.chanName, threadKey.boardName,
-                    threadKey.threadNumber, getCounter(watcherItem)
+                    threadKey.chanName,
+                    threadKey.boardName,
+                    threadKey.threadNumber,
+                    getCounter(watcherItem),
                 )
             }
         }
@@ -895,21 +955,28 @@ class WatcherService : BaseService() {
     }
 
     private fun isEnabled(threadKey: ThreadKey): Boolean {
-        val favoriteItem = FavoritesStorage.getInstance()
-            .getFavorite(threadKey.chanName, threadKey.boardName, threadKey.threadNumber)
+        val favoriteItem =
+            FavoritesStorage
+                .getInstance()
+                .getFavorite(threadKey.chanName, threadKey.boardName, threadKey.threadNumber)
         return favoriteItem != null && favoriteItem.watcherEnabled
     }
 
-    private fun isNeeded(watcherItem: WatcherItem, enabledOnly: Boolean): Boolean {
+    private fun isNeeded(
+        watcherItem: WatcherItem,
+        enabledOnly: Boolean,
+    ): Boolean {
         val threadKey = watcherItem.threadKey
-        val sessions = sessionsMap.get(threadKey)
+        val sessions = sessionsMap[threadKey]
         if (sessions != null && !sessions.isEmpty()) {
             return true
         }
-        val favoriteItem = FavoritesStorage.getInstance().getFavorite(
-            threadKey.chanName,
-            threadKey.boardName, threadKey.threadNumber
-        )
+        val favoriteItem =
+            FavoritesStorage.getInstance().getFavorite(
+                threadKey.chanName,
+                threadKey.boardName,
+                threadKey.threadNumber,
+            )
         return favoriteItem != null && (!enabledOnly || favoriteItem.watcherEnabled)
     }
 
@@ -930,11 +997,14 @@ class WatcherService : BaseService() {
         }
     }
 
-    private fun addWatcherItem(threadKey: ThreadKey, resolve: Boolean): WatcherItem {
-        var watcherItem = watcherItems.get(threadKey)
+    private fun addWatcherItem(
+        threadKey: ThreadKey,
+        resolve: Boolean,
+    ): WatcherItem {
+        var watcherItem = watcherItems[threadKey]
         if (watcherItem == null) {
             watcherItem = WatcherItem(threadKey)
-            watcherItems.put(threadKey, watcherItem)
+            watcherItems[threadKey] = watcherItem
             if (resolve) {
                 resolveWatcherItems()
             }
@@ -942,7 +1012,10 @@ class WatcherService : BaseService() {
         return watcherItem
     }
 
-    private fun registerClient(client: Client, chanName: String?) {
+    private fun registerClient(
+        client: Client,
+        chanName: String?,
+    ) {
         val newClient = !clients.containsKey(client)
         val oldChanName = clients.put(client, chanName)
         if (newClient || !equals(oldChanName, chanName)) {
@@ -954,17 +1027,23 @@ class WatcherService : BaseService() {
         clients.remove(client)
     }
 
-    private fun registerSession(session: InternalSession?, threadKey: ThreadKey) {
-        var sessions = sessionsMap.get(threadKey)
+    private fun registerSession(
+        session: InternalSession?,
+        threadKey: ThreadKey,
+    ) {
+        var sessions = sessionsMap[threadKey]
         if (sessions == null) {
             sessions = HashSet(1)
-            sessionsMap.put(threadKey, sessions)
+            sessionsMap[threadKey] = sessions
         }
         sessions.add(session!!)
         addWatcherItem(threadKey, true)
     }
 
-    private fun unregisterSession(session: InternalSession?, threadKey: ThreadKey?) {
+    private fun unregisterSession(
+        session: InternalSession?,
+        threadKey: ThreadKey?,
+    ) {
         val sessions = sessionsMap.get(threadKey)
         if (sessions != null) {
             val removed = sessions.remove(session)
@@ -982,12 +1061,17 @@ class WatcherService : BaseService() {
         return workSessions
     }
 
-    private val refreshAllRunnable = Runnable {
-        lastRefreshAll = 0
-        refreshAll(null, false, false)
-    }
+    private val refreshAllRunnable =
+        Runnable {
+            lastRefreshAll = 0
+            refreshAll(null, false, false)
+        }
 
-    private fun refreshAll(chanName: String?, forceNetwork: Boolean, forceNow: Boolean) {
+    private fun refreshAll(
+        chanName: String?,
+        forceNetwork: Boolean,
+        forceNow: Boolean,
+    ) {
         val now = SystemClock.elapsedRealtime()
         val interval = getRefreshInterval(true)
         val unavailable =
@@ -995,7 +1079,8 @@ class WatcherService : BaseService() {
         for (watcherItem in watcherItems.values) {
             if (chanName == null || chanName == watcherItem.threadKey.chanName) {
                 val chan = get(watcherItem.threadKey.chanName)
-                if (isWatcherSupported(chan) && !isBlocked(watcherItem.threadKey) &&
+                if (isWatcherSupported(chan) &&
+                    !isBlocked(watcherItem.threadKey) &&
                     isEnabled(watcherItem.threadKey)
                 ) {
                     if (unavailable) {
@@ -1019,7 +1104,10 @@ class WatcherService : BaseService() {
         startNext()
     }
 
-    private fun refreshForeground(threadKey: ThreadKey?, reload: Boolean) {
+    private fun refreshForeground(
+        threadKey: ThreadKey?,
+        reload: Boolean,
+    ) {
         val watcherItem = watcherItems.get(threadKey)
         if (watcherItem != null) {
             watcherItem.createAndExecuteTask(WORKER_FOREGROUND, reload, false)
@@ -1055,13 +1143,22 @@ class WatcherService : BaseService() {
     private fun getCounter(watcherItem: WatcherItem): Counter {
         val threadKey = watcherItem.threadKey
         val enabled = isEnabled(threadKey)
-        val state = if (enabled) if (watcherItem.state == WatcherState.UNAVAILABLE)
-            Counter.State.UNAVAILABLE
-        else
-            Counter.State.ENABLED else Counter.State.DISABLED
+        val state =
+            if (enabled) {
+                if (watcherItem.state == WatcherState.UNAVAILABLE) {
+                    Counter.State.UNAVAILABLE
+                } else {
+                    Counter.State.ENABLED
+                }
+            } else {
+                Counter.State.DISABLED
+            }
         return Counter(
-            state, watcherItem.task != null,
-            watcherItem.newCount, watcherItem.deleted, watcherItem.error
+            state,
+            watcherItem.task != null,
+            watcherItem.newCount,
+            watcherItem.deleted,
+            watcherItem.error,
         )
     }
 
@@ -1075,28 +1172,32 @@ class WatcherService : BaseService() {
         }
     }
 
-    private val preferencesListener = SharedPreferences.Listener { key: String? ->
-        if (Preferences.KEY_WATCHER_REFRESH_INTERVAL == key) {
-            ConcurrentUtils.HANDLER.removeCallbacks(refreshAllRunnable)
-            startNext()
-        } else if (Preferences.KEY_THEME == key) {
-            updateNotificationColor()
+    private val preferencesListener =
+        SharedPreferences.Listener { key: String? ->
+            if (Preferences.KEY_WATCHER_REFRESH_INTERVAL == key) {
+                ConcurrentUtils.HANDLER.removeCallbacks(refreshAllRunnable)
+                startNext()
+            } else if (Preferences.KEY_THEME == key) {
+                updateNotificationColor()
+            }
         }
-    }
 
     private fun updateNotificationColor() {
         val theme = ThemeEngine.attachAndApply(this)
-        notificationColor = theme!!.accent
+        notificationColor = theme.accent
     }
 
-    private class Worker(internal val executor: Executor, private val limit: Int) {
+    private class Worker(
+        internal val executor: Executor,
+        private val limit: Int,
+    ) {
         private var count = 0
 
         constructor(executor: Executor) : this(executor, 0)
 
         constructor(name: String?, limit: Int) : this(
             newThreadPool(limit, limit, 0, name, null),
-            limit
+            limit,
         )
 
         val isAvailable: Boolean
@@ -1113,13 +1214,9 @@ class WatcherService : BaseService() {
 
     companion object {
         @JvmStatic
-        fun getClient(activity: ComponentActivity): Client {
-            return ViewModelProvider(activity).get<ViewModel>(ViewModel::class.java)
-        }
+        fun getClient(activity: ComponentActivity): Client = ViewModelProvider(activity).get<ViewModel>(ViewModel::class.java)
 
-        private fun isWatcherSupported(chan: Chan): Boolean {
-            return chan.name != null && !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
-        }
+        private fun isWatcherSupported(chan: Chan): Boolean = chan.name != null && !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
 
         private val CONSUME_REPLIES_EMPTY = ConsumeReplies {}
 

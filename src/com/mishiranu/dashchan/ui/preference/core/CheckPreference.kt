@@ -7,39 +7,49 @@ import android.widget.CheckBox
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ThemeEngine
 
-class CheckPreference(context: Context, key: String, defaultValue: Boolean,
-		title: CharSequence?, summary: CharSequence?) :
-		Preference<Boolean>(context, key, defaultValue, title, SummaryProvider { summary }) {
-	override fun extract(preferences: SharedPreferences) {
-		value = (preferences.getBoolean(key!!, defaultValue!!))
-	}
+class CheckPreference(
+    context: Context,
+    key: String,
+    defaultValue: Boolean,
+    title: CharSequence?,
+    summary: CharSequence?,
+) : Preference<Boolean>(context, key, defaultValue, title, SummaryProvider { summary }) {
+    override fun extract(preferences: SharedPreferences) {
+        value = (preferences.getBoolean(key!!, defaultValue!!))
+    }
 
-	override fun persist(preferences: SharedPreferences) {
-		preferences.edit().put(key!!, value!!).close()
-	}
+    override fun persist(preferences: SharedPreferences) {
+        preferences.edit().put(key!!, value!!).close()
+    }
 
-	override fun getViewType(): ViewType = ViewType.CHECK
+    override fun getViewType(): ViewType = ViewType.CHECK
 
-	class CheckViewHolder(viewHolder: ViewHolder, @JvmField val check: CheckBox) : ViewHolder(viewHolder)
+    class CheckViewHolder(
+        viewHolder: ViewHolder,
+        @JvmField val check: CheckBox,
+    ) : ViewHolder(viewHolder)
 
-	override fun createViewHolder(parent: ViewGroup): CheckViewHolder {
-		val viewHolder = super.createViewHolder(parent)
-		viewHolder.widgetFrame!!.visibility = View.VISIBLE
-		val check = CheckBox(viewHolder.widgetFrame!!.context)
-		ThemeEngine.applyStyle(check)
-		check.isClickable = false
-		check.isFocusable = false
-		viewHolder.widgetFrame!!.addView(check, ViewGroup.LayoutParams.WRAP_CONTENT,
-				ViewGroup.LayoutParams.WRAP_CONTENT)
-		return CheckViewHolder(viewHolder, check)
-	}
+    override fun createViewHolder(parent: ViewGroup): CheckViewHolder {
+        val viewHolder = super.createViewHolder(parent)
+        viewHolder.widgetFrame!!.visibility = View.VISIBLE
+        val check = CheckBox(viewHolder.widgetFrame.context)
+        ThemeEngine.applyStyle(check)
+        check.isClickable = false
+        check.isFocusable = false
+        viewHolder.widgetFrame.addView(
+            check,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        return CheckViewHolder(viewHolder, check)
+    }
 
-	override fun bindViewHolder(viewHolder: ViewHolder) {
-		super.bindViewHolder(viewHolder)
+    override fun bindViewHolder(viewHolder: ViewHolder) {
+        super.bindViewHolder(viewHolder)
 
-		if (viewHolder is CheckViewHolder) {
-			viewHolder.check.isChecked = value ?: defaultValue!!
-			viewHolder.check.isEnabled = isEnabled()
-		}
-	}
+        if (viewHolder is CheckViewHolder) {
+            viewHolder.check.isChecked = value ?: defaultValue!!
+            viewHolder.check.isEnabled = isEnabled()
+        }
+    }
 }

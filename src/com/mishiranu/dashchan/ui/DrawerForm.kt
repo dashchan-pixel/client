@@ -86,7 +86,6 @@ import com.mishiranu.dashchan.widget.SortableHelper.DragState
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import com.mishiranu.dashchan.widget.WatcherView
 import com.mishiranu.dashchan.widget.WatcherView.ColorSet
-import java.util.Collections
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlin.Array
@@ -99,7 +98,6 @@ import kotlin.IndexOutOfBoundsException
 import kotlin.Int
 import kotlin.NumberFormatException
 import kotlin.String
-import kotlin.arrayOfNulls
 import kotlin.intArrayOf
 import kotlin.run
 
@@ -107,8 +105,11 @@ class DrawerForm(
     private val context: Context,
     private val callback: Callback,
     private val fragmentManager: FragmentManager,
-    private val watcherServiceClient: WatcherService.Client
-) : RecyclerView.Adapter<DrawerForm.ViewHolder>(), Shift, DrawerListener, OnEditorActionListener,
+    private val watcherServiceClient: WatcherService.Client,
+) : RecyclerView.Adapter<DrawerForm.ViewHolder>(),
+    Shift,
+    DrawerListener,
+    OnEditorActionListener,
     SortableHelper.Callback<DrawerForm.ViewHolder> {
     private val watcherViewColorSet: ColorSet
     private val sortableHelper: SortableHelper<ViewHolder>
@@ -141,81 +142,116 @@ class DrawerForm(
     private var chanName: String? = null
 
     private enum class CategoriesOrder {
-        PAGES_FIRST, FAVORITES_FIRST, HIDE_PAGES
+        PAGES_FIRST,
+        FAVORITES_FIRST,
+        HIDE_PAGES,
     }
 
     class Page(
-        val chanName: String, val boardName: String?, val threadNumber: String?,
-        val threadTitle: String?, val createRealtime: Long
+        val chanName: String,
+        val boardName: String?,
+        val threadNumber: String?,
+        val threadTitle: String?,
+        val createRealtime: Long,
     ) : Comparable<Page> {
-        override fun compareTo(other: Page): Int {
-            return other.createRealtime.compareTo(createRealtime)
-        }
+        override fun compareTo(other: Page): Int = other.createRealtime.compareTo(createRealtime)
     }
 
     interface Callback {
         fun onSelectChan(chanName: String?)
-        fun onSelectBoard(chanName: String?, boardName: String?, fromCache: Boolean)
+
+        fun onSelectBoard(
+            chanName: String?,
+            boardName: String?,
+            fromCache: Boolean,
+        )
+
         fun onSelectThread(
-            chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?,
-            threadTitle: String?, fromCache: Boolean
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            postNumber: PostNumber?,
+            threadTitle: String?,
+            fromCache: Boolean,
         ): Boolean
 
-        fun onClosePage(chanName: String?, boardName: String?, threadNumber: String?)
+        fun onClosePage(
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+        )
+
         fun onCloseAllPages()
+
         fun onEnterNumber(number: Int): Int
+
         fun onSelectDrawerMenuItem(item: Int)
+
         fun onDraggingStateChanged(dragging: Boolean)
+
         fun obtainDrawerPages(): Collection<Page>
+
         fun restartApplication()
     }
 
-    private fun updateConfigurationInternal(chanName: String?, force: Boolean) {
+    private fun updateConfigurationInternal(
+        chanName: String?,
+        force: Boolean,
+    ) {
         if (!equals(chanName, this.chanName) || force || menu.isEmpty()) {
             this.chanName = chanName
             val chan = get(chanName)
             chanNameView.setText(chan.configuration.getTitle())
             menu.clear()
             val context = this.context
-            val typedArray = context.obtainStyledAttributes(
-                intArrayOf(
-                    R.attr.iconDrawerMenuBoards,
-                    R.attr.iconDrawerMenuUserBoards,
-                    R.attr.iconDrawerMenuHistory,
-                    R.attr.iconDrawerMenuPreferences
+            val typedArray =
+                context.obtainStyledAttributes(
+                    intArrayOf(
+                        R.attr.iconDrawerMenuBoards,
+                        R.attr.iconDrawerMenuUserBoards,
+                        R.attr.iconDrawerMenuHistory,
+                        R.attr.iconDrawerMenuPreferences,
+                    ),
                 )
-            )
             val hasUserBoards =
                 chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
             if (chanName != null && !chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
                 menu.add(
                     ListItem(
-                        ListItem.Type.MENU, MENU_ITEM_BOARDS, typedArray.getResourceId(0, 0),
-                        context.getString(if (hasUserBoards) R.string.general_boards else R.string.boards)
-                    )
+                        ListItem.Type.MENU,
+                        MENU_ITEM_BOARDS,
+                        typedArray.getResourceId(0, 0),
+                        context.getString(if (hasUserBoards) R.string.general_boards else R.string.boards),
+                    ),
                 )
             }
             if (chanName != null && hasUserBoards) {
                 menu.add(
                     ListItem(
-                        ListItem.Type.MENU, MENU_ITEM_USER_BOARDS, typedArray.getResourceId(1, 0),
-                        context.getString(R.string.user_boards)
-                    )
+                        ListItem.Type.MENU,
+                        MENU_ITEM_USER_BOARDS,
+                        typedArray.getResourceId(1, 0),
+                        context.getString(R.string.user_boards),
+                    ),
                 )
             }
             if (chanName != null && isRememberHistory) {
                 menu.add(
                     ListItem(
-                        ListItem.Type.MENU, MENU_ITEM_HISTORY, typedArray.getResourceId(2, 0),
-                        context.getString(R.string.history)
-                    )
+                        ListItem.Type.MENU,
+                        MENU_ITEM_HISTORY,
+                        typedArray.getResourceId(2, 0),
+                        context.getString(R.string.history),
+                    ),
                 )
             }
             menu.add(
                 ListItem(
-                    ListItem.Type.MENU, MENU_ITEM_PREFERENCES, typedArray.getResourceId(3, 0),
-                    context.getString(R.string.preferences)
-                )
+                    ListItem.Type.MENU,
+                    MENU_ITEM_PREFERENCES,
+                    typedArray.getResourceId(3, 0),
+                    context.getString(R.string.preferences),
+                ),
             )
             typedArray.recycle()
             updateItems(true, true)
@@ -239,9 +275,7 @@ class DrawerForm(
         }
     }
 
-    fun isChanSelectMode(): Boolean {
-        return chanSelectMode
-    }
+    fun isChanSelectMode(): Boolean = chanSelectMode
 
     fun updateRestartViewVisibility() {
         val showRestartButton = !chanSelectMode && ChanManager.getInstance().isRestartRequired
@@ -274,8 +308,8 @@ class DrawerForm(
                     chan.name!!,
                     null,
                     null,
-                    chan.configuration.getTitle()
-                )
+                    chan.configuration.getTitle(),
+                ),
             )
         }
         selectorContainer.setVisibility(if (availableChansCount >= 2) View.VISIBLE else View.GONE)
@@ -318,8 +352,12 @@ class DrawerForm(
                     callback.onSelectBoard(listItem.chanName, listItem.boardName, fromCache)
                 } else {
                     callback.onSelectThread(
-                        listItem.chanName, listItem.boardName, listItem.threadNumber, null,
-                        listItem.title, fromCache
+                        listItem.chanName,
+                        listItem.boardName,
+                        listItem.threadNumber,
+                        null,
+                        listItem.title,
+                        fromCache,
                     )
                 }
             }
@@ -343,8 +381,10 @@ class DrawerForm(
             return true
         }
         val listItem = getItem(holder.getBindingAdapterPosition())
-        if (listItem.type == ListItem.Type.FAVORITE && listItem.threadNumber != null &&
-            FavoritesStorage.getInstance().canSortManually() && holder.isMultipleFingers
+        if (listItem.type == ListItem.Type.FAVORITE &&
+            listItem.threadNumber != null &&
+            FavoritesStorage.getInstance().canSortManually() &&
+            holder.isMultipleFingers
         ) {
             sortableHelper.start(holder)
             return true
@@ -352,9 +392,13 @@ class DrawerForm(
         when (listItem.type) {
             ListItem.Type.PAGE, ListItem.Type.FAVORITE -> {
                 showPageFavoriteMenu(
-                    fragmentManager, listItem.type == ListItem.Type.FAVORITE,
+                    fragmentManager,
+                    listItem.type == ListItem.Type.FAVORITE,
                     listItem.isThreadItem,
-                    listItem.chanName!!, listItem.boardName, listItem.threadNumber, listItem.title
+                    listItem.chanName!!,
+                    listItem.boardName,
+                    listItem.threadNumber,
+                    listItem.title,
                 )
                 return true
             }
@@ -364,7 +408,10 @@ class DrawerForm(
         return false
     }
 
-    override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+    override fun onDrawerSlide(
+        drawerView: View,
+        slideOffset: Float,
+    ) {}
 
     override fun onDrawerOpened(drawerView: View) {}
 
@@ -429,14 +476,15 @@ class DrawerForm(
                         callback.onSelectBoard(chanName, boardName, false)
                         success = true
                     } else {
-                        success = callback.onSelectThread(
-                            chanName,
-                            boardName,
-                            threadNumber,
-                            null,
-                            null,
-                            false
-                        )
+                        success =
+                            callback.onSelectThread(
+                                chanName,
+                                boardName,
+                                threadNumber,
+                                null,
+                                null,
+                                false,
+                            )
                     }
                     if (success) {
                         clearTextAndHideKeyboard()
@@ -472,7 +520,7 @@ class DrawerForm(
                             threadNumber,
                             postNumber,
                             null,
-                            false
+                            false,
                         )
                     }
                     clearTextAndHideKeyboard()
@@ -518,7 +566,11 @@ class DrawerForm(
         show(R.string.enter_valid_data)
     }
 
-    override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
+    override fun onEditorAction(
+        v: TextView?,
+        actionId: Int,
+        event: KeyEvent?,
+    ): Boolean {
         onSearchClick()
         return true
     }
@@ -526,16 +578,21 @@ class DrawerForm(
     private class SearchHelpFormat(
         val boardName: String,
         val threadNumber: String,
-        val threadUrl: String
+        val threadUrl: String,
     ) {
         companion object {
-            fun obtain(chan: Chan, allowEmptyBoardName: Boolean): SearchHelpFormat? {
+            fun obtain(
+                chan: Chan,
+                allowEmptyBoardName: Boolean,
+            ): SearchHelpFormat? {
                 var boardName = getDefaultBoardName(chan)
                 if (boardName == null) {
-                    val favoriteItems = FavoritesStorage
-                        .getInstance().getBoards(chan.name)
+                    val favoriteItems =
+                        FavoritesStorage
+                            .getInstance()
+                            .getBoards(chan.name)
                     if (!favoriteItems.isEmpty()) {
-                        boardName = favoriteItems.get(0).boardName
+                        boardName = favoriteItems[0].boardName
                     }
                 }
                 if (boardName == null) {
@@ -546,10 +603,12 @@ class DrawerForm(
                     }
                 }
                 var threadNumber: String? = null
-                val favoriteItems = FavoritesStorage
-                    .getInstance().getThreads(chan.name)
+                val favoriteItems =
+                    FavoritesStorage
+                        .getInstance()
+                        .getThreads(chan.name)
                 if (!favoriteItems.isEmpty()) {
-                    threadNumber = favoriteItems.get(0).threadNumber
+                    threadNumber = favoriteItems[0].threadNumber
                 }
                 if (threadNumber == null) {
                     return null
@@ -563,7 +622,10 @@ class DrawerForm(
         }
     }
 
-    fun updateItems(pages: Boolean, favorites: Boolean) {
+    fun updateItems(
+        pages: Boolean,
+        favorites: Boolean,
+    ) {
         if (pages && pagesListMode != PagesListMode.HIDE_PAGES) {
             updateListPages()
         }
@@ -587,7 +649,7 @@ class DrawerForm(
                 }
 
                 else -> {
-                    throw IllegalStateException()
+                    error("Unexpected pages list mode: $pagesListMode")
                 }
             }
         }
@@ -601,7 +663,9 @@ class DrawerForm(
         val pages = ArrayList<Page>()
         for (page in allPages) {
             if (mergeChans || page.chanName == chanName) {
-                if (page.threadNumber != null || !get(page.chanName).configuration
+                if (page.threadNumber != null ||
+                    !get(page.chanName)
+                        .configuration
                         .getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)
                 ) {
                     pages.add(page)
@@ -612,25 +676,34 @@ class DrawerForm(
             pages.sort()
             this.pages.add(
                 ListItem(
-                    ListItem.Type.SECTION, SECTION_ACTION_CLOSE_ALL,
+                    ListItem.Type.SECTION,
+                    SECTION_ACTION_CLOSE_ALL,
                     getResourceId(context, R.attr.iconButtonCancel, 0),
-                    context.getString(R.string.open_pages__noun)
-                )
+                    context.getString(R.string.open_pages__noun),
+                ),
             )
             for (page in pages) {
                 if (page.threadNumber != null) {
                     this.pages.add(
                         ListItem(
-                            ListItem.Type.PAGE, 0, page.chanName, page.boardName,
-                            page.threadNumber, page.threadTitle
-                        )
+                            ListItem.Type.PAGE,
+                            0,
+                            page.chanName,
+                            page.boardName,
+                            page.threadNumber,
+                            page.threadTitle,
+                        ),
                     )
                 } else {
                     this.pages.add(
                         ListItem(
-                            ListItem.Type.PAGE, 0, page.chanName, page.boardName,
-                            null, get(page.chanName).configuration.getBoardTitle(page.boardName)
-                        )
+                            ListItem.Type.PAGE,
+                            0,
+                            page.chanName,
+                            page.boardName,
+                            null,
+                            get(page.chanName).configuration.getBoardTitle(page.boardName),
+                        ),
                     )
                 }
             }
@@ -641,58 +714,77 @@ class DrawerForm(
         this.favorites.clear()
         val mergeChans = this.mergeChans
         val favoritesStorage = FavoritesStorage.getInstance()
-        val favoriteBoards = favoritesStorage.getBoards(
-            if (mergeChans)
-                null
-            else
-                chanName
-        )
-        val favoriteThreads = favoritesStorage.getThreads(
-            if (mergeChans)
-                null
-            else
-                chanName
-        )
+        val favoriteBoards =
+            favoritesStorage.getBoards(
+                if (mergeChans) {
+                    null
+                } else {
+                    chanName
+                },
+            )
+        val favoriteThreads =
+            favoritesStorage.getThreads(
+                if (mergeChans) {
+                    null
+                } else {
+                    chanName
+                },
+            )
         var addSection = true
         for (i in favoriteThreads.indices) {
-            val favoriteItem = favoriteThreads.get(i)
+            val favoriteItem = favoriteThreads[i]
             val chan = get(favoriteItem.chanName)
             if (chan.name == null) {
                 continue
             }
             if (mergeChans || favoriteItem.chanName == chanName) {
                 if (addSection) {
-                    if (watcherSupportSet.contains(favoriteItem.chanName)
-                        || mergeChans && !watcherSupportSet.isEmpty()
+                    if (watcherSupportSet.contains(favoriteItem.chanName) ||
+                        mergeChans &&
+                        !watcherSupportSet.isEmpty()
                     ) {
                         favorites.add(
                             ListItem(
-                                ListItem.Type.SECTION, SECTION_ACTION_FAVORITES_MENU,
+                                ListItem.Type.SECTION,
+                                SECTION_ACTION_FAVORITES_MENU,
                                 getResourceId(context, R.attr.iconButtonMore, 0),
-                                context.getString(R.string.favorite_threads)
-                            )
+                                context.getString(R.string.favorite_threads),
+                            ),
                         )
                     } else {
                         favorites.add(
                             DrawerForm.ListItem(
-                                ListItem.Type.SECTION, null, null, null,
-                                context.getString(R.string.favorite_threads)
-                            )
+                                ListItem.Type.SECTION,
+                                null,
+                                null,
+                                null,
+                                context.getString(R.string.favorite_threads),
+                            ),
                         )
                     }
                     addSection = false
                 }
                 if (!isFavoritesHidedAll) {
-                    if (!(isFavoritesHidedDeleted && watcherServiceClient.getCounter(
-                            favoriteItem.chanName,
-                            favoriteItem.boardName,
-                            favoriteItem.threadNumber!!
-                        )!!.deleted)
-                    ) {
-                        val listItem = DrawerForm.ListItem(
-                            ListItem.Type.FAVORITE, 0, favoriteItem.chanName,
-                            favoriteItem.boardName!!, favoriteItem.threadNumber, favoriteItem.title
+                    if (!(
+                            isFavoritesHidedDeleted &&
+                                watcherServiceClient
+                                    .getCounter(
+                                        favoriteItem.chanName,
+                                        favoriteItem.boardName,
+                                        favoriteItem.threadNumber!!,
+                                    )!!
+                                    .deleted
                         )
+                    ) {
+                        val listItem =
+                            DrawerForm.ListItem(
+                                ListItem.Type.FAVORITE,
+                                0,
+                                favoriteItem.chanName,
+                                favoriteItem.boardName!!,
+                                favoriteItem.threadNumber,
+                                favoriteItem.title,
+                            )
                         favorites.add(listItem)
                     }
                 }
@@ -700,7 +792,7 @@ class DrawerForm(
         }
         addSection = true
         for (i in favoriteBoards.indices) {
-            val favoriteItem = favoriteBoards.get(i)
+            val favoriteItem = favoriteBoards[i]
             val chan = get(favoriteItem.chanName)
             if (chan.name == null) {
                 continue
@@ -709,17 +801,24 @@ class DrawerForm(
                 if (addSection) {
                     favorites.add(
                         DrawerForm.ListItem(
-                            ListItem.Type.SECTION, null, null, null,
-                            context.getString(R.string.favorite_boards)
-                        )
+                            ListItem.Type.SECTION,
+                            null,
+                            null,
+                            null,
+                            context.getString(R.string.favorite_boards),
+                        ),
                     )
                     addSection = false
                 }
                 favorites.add(
                     DrawerForm.ListItem(
-                        ListItem.Type.FAVORITE, 0, favoriteItem.chanName, favoriteItem.boardName!!,
-                        null, chan.configuration.getBoardTitle(favoriteItem.boardName)
-                    )
+                        ListItem.Type.FAVORITE,
+                        0,
+                        favoriteItem.chanName,
+                        favoriteItem.boardName!!,
+                        null,
+                        chan.configuration.getBoardTitle(favoriteItem.boardName),
+                    ),
                 )
             }
         }
@@ -729,7 +828,7 @@ class DrawerForm(
         threadItem: Boolean,
         boardName: String?,
         threadNumber: String?,
-        title: String?
+        title: String?,
     ): String? {
         if (threadItem) {
             if (!isEmptyOrWhitespace(title)) {
@@ -743,11 +842,23 @@ class DrawerForm(
     }
 
     private class ListItem(
-        val type: Type, val data: Int, val iconChan: Boolean, val iconResId: Int,
-        val chanName: String?, val boardName: String?, val threadNumber: String?, val title: String?
+        val type: Type,
+        val data: Int,
+        val iconChan: Boolean,
+        val iconResId: Int,
+        val chanName: String?,
+        val boardName: String?,
+        val threadNumber: String?,
+        val title: String?,
     ) {
         enum class Type {
-            HEADER, RESTART, SECTION, PAGE, FAVORITE, MENU, CHAN
+            HEADER,
+            RESTART,
+            SECTION,
+            PAGE,
+            FAVORITE,
+            MENU,
+            CHAN,
         }
 
         val id: kotlin.Long
@@ -757,8 +868,13 @@ class DrawerForm(
         }
 
         constructor(
-            type: Type, data: Int, iconResId: Int,
-            chanName: String?, boardName: String?, threadNumber: String?, title: String?
+            type: Type,
+            data: Int,
+            iconResId: Int,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            title: String?,
         ) : this(type, data, false, iconResId, chanName, boardName, threadNumber, title)
 
         constructor(
@@ -767,7 +883,7 @@ class DrawerForm(
             chanName: String?,
             boardName: String?,
             threadNumber: String?,
-            title: String?
+            title: String?,
         ) : this(type, data, true, 0, chanName, boardName, threadNumber, title)
 
         constructor(
@@ -775,7 +891,7 @@ class DrawerForm(
             chanName: String?,
             boardName: String?,
             threadNumber: String?,
-            title: String?
+            title: String?,
         ) : this(type, 0, 0, chanName, boardName, threadNumber, title)
 
         constructor(type: Type, data: Int, iconResId: Int, title: String?) : this(
@@ -786,16 +902,20 @@ class DrawerForm(
             null,
             null,
             null,
-            title
+            title,
         )
 
         val isThreadItem: Boolean
             get() = threadNumber != null
 
-        fun compare(chanName: String?, boardName: String?, threadNumber: String?): Boolean {
-            return equals(this.chanName, chanName) && equals(this.boardName, boardName)
-                    && equals(this.threadNumber, threadNumber)
-        }
+        fun compare(
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+        ): Boolean =
+            equals(this.chanName, chanName) &&
+                equals(this.boardName, boardName) &&
+                equals(this.threadNumber, threadNumber)
 
         companion object {
             val HEADER: ListItem = DrawerForm.ListItem(Type.HEADER, null, null, null, null)
@@ -806,18 +926,17 @@ class DrawerForm(
         }
     }
 
-    private val closeButtonListener: View.OnClickListener = object : View.OnClickListener {
-        override fun onClick(v: View?) {
+    private val closeButtonListener: View.OnClickListener =
+        View.OnClickListener { v ->
             val listItem = getItemFromChild(v)
             if (listItem != null && listItem.type == ListItem.Type.PAGE) {
                 callback.onClosePage(listItem.chanName, listItem.boardName, listItem.threadNumber)
             }
         }
-    }
 
-    private val sectionButtonListener: View.OnClickListener = object : View.OnClickListener {
-        @SuppressLint("NewApi")
-        override fun onClick(v: View) {
+    @SuppressLint("NewApi")
+    private val sectionButtonListener: View.OnClickListener =
+        View.OnClickListener { v ->
             val listItem = getItemFromChild(v)
             if (listItem != null && listItem.type == ListItem.Type.SECTION) {
                 when (listItem.data) {
@@ -831,11 +950,12 @@ class DrawerForm(
                         val favoritesStorage = FavoritesStorage.getInstance()
                         for (itListItem in favorites) {
                             if (itListItem.isThreadItem) {
-                                val favoriteItem = favoritesStorage.getFavorite(
-                                    itListItem.chanName,
-                                    itListItem.boardName,
-                                    itListItem.threadNumber
-                                )
+                                val favoriteItem =
+                                    favoritesStorage.getFavorite(
+                                        itListItem.chanName,
+                                        itListItem.boardName,
+                                        itListItem.threadNumber,
+                                    )
                                 if (favoriteItem != null) {
                                     hasEnabled = hasEnabled or favoriteItem.watcherEnabled
                                     if (getCounter(itListItem)!!.deleted) {
@@ -845,115 +965,140 @@ class DrawerForm(
                             }
                         }
                         val popupMenu: PopupMenu?
-                        val resId = getResourceId(
-                            context, android.R.attr.popupTheme, 0
-                        )
+                        val resId =
+                            getResourceId(
+                                context,
+                                android.R.attr.popupTheme,
+                                0,
+                            )
                         val context = v.getContext()
                         val popupContext: Context? =
                             if (resId != 0) ContextThemeWrapper(context, resId) else context
-                        popupMenu = PopupMenu(
-                            popupContext,
-                            v,
-                            Gravity.END,
-                            0,
-                            R.style.Widget_OverlapPopupMenu
-                        )
+                        popupMenu =
+                            PopupMenu(
+                                popupContext,
+                                v,
+                                Gravity.END,
+                                0,
+                                R.style.Widget_OverlapPopupMenu,
+                            )
 
-                        popupMenu.getMenu().add(0, FAVORITES_MENU_REFRESH, 0, R.string.refresh)
+                        popupMenu
+                            .getMenu()
+                            .add(0, FAVORITES_MENU_REFRESH, 0, R.string.refresh)
                             .setEnabled(hasEnabled)
-                        popupMenu.getMenu()
+                        popupMenu
+                            .getMenu()
                             .add(0, FAVORITES_MENU_CLEAR_DELETED, 0, R.string.clear_deleted)
                             .setEnabled(!deleteFavoriteItems.isEmpty())
-                        popupMenu.getMenu().add(
-                            0, FAVORITES_MENU_HIDE_DELETED, 0,
-                            if (isFavoritesHidedDeleted) R.string.favorites_show_deleted else R.string.favorites_hide_deleted
-                        )
-                            .setEnabled(!isFavoritesHidedAll)
-                        popupMenu.getMenu().add(
-                            0, FAVORITES_MENU_HIDE_ALL, 0,
-                            if (isFavoritesHidedAll) R.string.favorites_show_all else R.string.favorites_hide_all
-                        )
-                            .setEnabled(true)
-                        popupMenu.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
-                            when (item!!.getItemId()) {
-                                FAVORITES_MENU_REFRESH -> {
-                                    if (mergeChans) {
-                                        watcherServiceClient.refreshAll(null)
-                                    } else if (chanName != null) {
-                                        watcherServiceClient.refreshAll(chanName)
-                                    }
-                                    return@OnMenuItemClickListener true
-                                }
-
-                                FAVORITES_MENU_CLEAR_DELETED -> {
-                                    val builder = StringBuilder(
-                                        context
-                                            .getString(R.string.threads_will_be_deleted__sentence)
-                                    )
-                                    builder.append("\n")
-                                    for (favoriteItem in deleteFavoriteItems) {
-                                        builder.append("\n\u2022 ").append(
-                                            formatBoardThreadTitle(
-                                                true,
-                                                favoriteItem.boardName,
-                                                favoriteItem.threadNumber!!,
-                                                favoriteItem.title
-                                            )
-                                        )
-                                    }
-                                    showDeleteFavoritesDialog(
-                                        fragmentManager,
-                                        builder,
-                                        deleteFavoriteItems
-                                    )
-                                    return@OnMenuItemClickListener true
-                                }
-
-                                FAVORITES_MENU_HIDE_DELETED -> {
-                                    if (isFavoritesHidedDeleted) {
-                                        item.setTitle(R.string.favorites_show_deleted)
-                                    } else {
-                                        item.setTitle(R.string.favorites_hide_deleted)
-                                    }
-                                    setFavoritesHideDeleted(!isFavoritesHidedDeleted)
-                                    if (isFavoritesHidedDeleted) {
-                                        favorites.removeIf { fav: ListItem? ->
-                                            fav!!.isThreadItem && getCounter(
-                                                fav
-                                            )!!.deleted
+                        popupMenu
+                            .getMenu()
+                            .add(
+                                0,
+                                FAVORITES_MENU_HIDE_DELETED,
+                                0,
+                                if (isFavoritesHidedDeleted) R.string.favorites_show_deleted else R.string.favorites_hide_deleted,
+                            ).setEnabled(!isFavoritesHidedAll)
+                        popupMenu
+                            .getMenu()
+                            .add(
+                                0,
+                                FAVORITES_MENU_HIDE_ALL,
+                                0,
+                                if (isFavoritesHidedAll) R.string.favorites_show_all else R.string.favorites_hide_all,
+                            ).setEnabled(true)
+                        popupMenu.setOnMenuItemClickListener(
+                            PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
+                                when (item!!.getItemId()) {
+                                    FAVORITES_MENU_REFRESH -> {
+                                        if (mergeChans) {
+                                            watcherServiceClient.refreshAll(null)
+                                        } else if (chanName != null) {
+                                            watcherServiceClient.refreshAll(chanName)
                                         }
-                                    } else {
-                                        updateListFavorites()
+                                        return@OnMenuItemClickListener true
                                     }
-                                    notifyDataSetChanged()
-                                    return@OnMenuItemClickListener true
-                                }
 
-                                FAVORITES_MENU_HIDE_ALL -> {
-                                    if (isFavoritesHidedAll) {
-                                        item.setTitle(R.string.favorites_show_all)
-                                        setFavoritesHideDeleted(false)
-                                    } else {
-                                        item.setTitle(R.string.favorites_hide_all)
+                                    FAVORITES_MENU_CLEAR_DELETED -> {
+                                        val builder =
+                                            StringBuilder(
+                                                context
+                                                    .getString(R.string.threads_will_be_deleted__sentence),
+                                            )
+                                        builder.append("\n")
+                                        for (favoriteItem in deleteFavoriteItems) {
+                                            builder.append("\n\u2022 ").append(
+                                                formatBoardThreadTitle(
+                                                    true,
+                                                    favoriteItem.boardName,
+                                                    favoriteItem.threadNumber!!,
+                                                    favoriteItem.title,
+                                                ),
+                                            )
+                                        }
+                                        showDeleteFavoritesDialog(
+                                            fragmentManager,
+                                            builder,
+                                            deleteFavoriteItems,
+                                        )
+                                        return@OnMenuItemClickListener true
                                     }
-                                    setFavoritesHideAll(!isFavoritesHidedAll)
-                                    if (isFavoritesHidedAll) {
-                                        favorites.removeIf { fav: ListItem? -> fav!!.type == ListItem.Type.FAVORITE && fav.isThreadItem }
-                                    } else updateListFavorites()
-                                    notifyDataSetChanged()
-                                    return@OnMenuItemClickListener true
+
+                                    FAVORITES_MENU_HIDE_DELETED -> {
+                                        if (isFavoritesHidedDeleted) {
+                                            item.setTitle(R.string.favorites_show_deleted)
+                                        } else {
+                                            item.setTitle(R.string.favorites_hide_deleted)
+                                        }
+                                        setFavoritesHideDeleted(!isFavoritesHidedDeleted)
+                                        if (isFavoritesHidedDeleted) {
+                                            favorites.removeIf { fav: ListItem? ->
+                                                fav!!.isThreadItem &&
+                                                    getCounter(
+                                                        fav,
+                                                    )!!.deleted
+                                            }
+                                        } else {
+                                            updateListFavorites()
+                                        }
+                                        notifyDataSetChanged()
+                                        return@OnMenuItemClickListener true
+                                    }
+
+                                    FAVORITES_MENU_HIDE_ALL -> {
+                                        if (isFavoritesHidedAll) {
+                                            item.setTitle(R.string.favorites_show_all)
+                                            setFavoritesHideDeleted(false)
+                                        } else {
+                                            item.setTitle(R.string.favorites_hide_all)
+                                        }
+                                        setFavoritesHideAll(!isFavoritesHidedAll)
+                                        if (isFavoritesHidedAll) {
+                                            favorites.removeIf { fav: ListItem? ->
+                                                fav!!.type == ListItem.Type.FAVORITE &&
+                                                    fav.isThreadItem
+                                            }
+                                        } else {
+                                            updateListFavorites()
+                                        }
+                                        notifyDataSetChanged()
+                                        return@OnMenuItemClickListener true
+                                    }
                                 }
-                            }
-                            false
-                        })
+                                false
+                            },
+                        )
                         popupMenu.show()
                     }
                 }
             }
         }
-    }
 
-    private enum class ViewType(val icon: Boolean, val watcher: Boolean, val closeable: Boolean) {
+    private enum class ViewType(
+        val icon: Boolean,
+        val watcher: Boolean,
+        val closeable: Boolean,
+    ) {
         HEADER(false, false, false),
         RESTART(false, false, false),
         SECTION(false, false, false),
@@ -963,52 +1108,54 @@ class DrawerForm(
         WATCHER(false, true, false),
         WATCHER_ICON(true, true, false),
         CLOSEABLE(false, false, true),
-        CLOSEABLE_ICON(true, false, true)
+        CLOSEABLE_ICON(true, false, true),
     }
 
     override fun getItemViewType(position: Int): Int {
         val listItem = getItem(position)
-        val viewType: ViewType = when (listItem.type) {
-            ListItem.Type.HEADER -> {
-                ViewType.HEADER
-            }
+        val viewType: ViewType =
+            when (listItem.type) {
+                ListItem.Type.HEADER -> {
+                    ViewType.HEADER
+                }
 
-            ListItem.Type.RESTART -> {
-                ViewType.RESTART
-            }
+                ListItem.Type.RESTART -> {
+                    ViewType.RESTART
+                }
 
-            ListItem.Type.SECTION -> {
-                if (listItem.iconChan || listItem.iconResId != 0)
-                    ViewType.SECTION_BUTTON
-                else
-                    ViewType.SECTION
-            }
-
-            ListItem.Type.PAGE -> {
-                if (mergeChans) ViewType.CLOSEABLE_ICON else ViewType.CLOSEABLE
-            }
-
-            ListItem.Type.FAVORITE -> {
-                if (listItem.threadNumber != null) {
-                    val watcherSupported = watcherSupportSet.contains(listItem.chanName)
-                    if (mergeChans) {
-                        if (watcherSupported) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
+                ListItem.Type.SECTION -> {
+                    if (listItem.iconChan || listItem.iconResId != 0) {
+                        ViewType.SECTION_BUTTON
                     } else {
-                        if (watcherSupported) ViewType.WATCHER else ViewType.ITEM
+                        ViewType.SECTION
                     }
-                } else {
-                    if (mergeChans) ViewType.ITEM_ICON else ViewType.ITEM
+                }
+
+                ListItem.Type.PAGE -> {
+                    if (mergeChans) ViewType.CLOSEABLE_ICON else ViewType.CLOSEABLE
+                }
+
+                ListItem.Type.FAVORITE -> {
+                    if (listItem.threadNumber != null) {
+                        val watcherSupported = watcherSupportSet.contains(listItem.chanName)
+                        if (mergeChans) {
+                            if (watcherSupported) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
+                        } else {
+                            if (watcherSupported) ViewType.WATCHER else ViewType.ITEM
+                        }
+                    } else {
+                        if (mergeChans) ViewType.ITEM_ICON else ViewType.ITEM
+                    }
+                }
+
+                ListItem.Type.MENU -> {
+                    ViewType.ITEM_ICON
+                }
+
+                ListItem.Type.CHAN -> {
+                    ViewType.ITEM_ICON
                 }
             }
-
-            ListItem.Type.MENU -> {
-                ViewType.ITEM_ICON
-            }
-
-            ListItem.Type.CHAN -> {
-                ViewType.ITEM_ICON
-            }
-        }
         return viewType.ordinal
     }
 
@@ -1092,9 +1239,7 @@ class DrawerForm(
         throw IndexOutOfBoundsException()
     }
 
-    override fun getItemId(position: Int): kotlin.Long {
-        return getItem(position).id
-    }
+    override fun getItemId(position: Int): kotlin.Long = getItem(position).id
 
     private fun makeCommonTextView(section: Boolean): TextView {
         val textView = TextView(context, null, android.R.attr.textAppearanceListItem)
@@ -1114,7 +1259,10 @@ class DrawerForm(
         return textView
     }
 
-    private fun createItem(viewType: ViewType, density: Float): ViewHolder {
+    private fun createItem(
+        viewType: ViewType,
+        density: Float,
+    ): ViewHolder {
         val size = (48f * density).toInt()
         val linearLayout = LinearLayout(context)
         linearLayout.setOrientation(LinearLayout.HORIZONTAL)
@@ -1141,15 +1289,17 @@ class DrawerForm(
             closeView.setImageTintList(
                 getColorStateList(
                     closeView.getContext(),
-                    android.R.attr.textColorPrimary
-                )
+                    android.R.attr.textColorPrimary,
+                ),
             )
 
             closeView.setBackgroundResource(
                 getResourceId(
                     context,
-                    android.R.attr.borderlessButtonStyle, android.R.attr.background, 0
-                )
+                    android.R.attr.borderlessButtonStyle,
+                    android.R.attr.background,
+                    0,
+                ),
             )
             linearLayout.addView(closeView, size, size)
             closeView.setOnClickListener(closeButtonListener)
@@ -1173,33 +1323,40 @@ class DrawerForm(
             (layoutLeftDp * density).toInt(),
             0,
             (layoutRightDp * density).toInt(),
-            0
+            0,
         )
         textView.setPadding((textLeftDp * density).toInt(), 0, (textRightDp * density).toInt(), 0)
         setSelectableItemBackground(linearLayout)
         linearLayout.setLayoutParams(
             RecyclerView.LayoutParams(
                 RecyclerView.LayoutParams.MATCH_PARENT,
-                RecyclerView.LayoutParams.WRAP_CONTENT
-            )
+                RecyclerView.LayoutParams.WRAP_CONTENT,
+            ),
         )
         return DrawerForm.ViewHolder(linearLayout, iconView, textView, watcherView)
     }
 
-    private fun createSection(parent: ViewGroup?, button: Boolean, density: Float): ViewHolder {
+    private fun createSection(
+        parent: ViewGroup?,
+        button: Boolean,
+        density: Float,
+    ): ViewHolder {
         val linearLayout = LinearLayout(context)
         linearLayout.setOrientation(LinearLayout.VERTICAL)
         val linearLayout2 = LinearLayout(context)
         linearLayout2.setOrientation(LinearLayout.HORIZONTAL)
         linearLayout.addView(
-            linearLayout2, LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            linearLayout2,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         val textView = makeCommonTextView(true)
         var layoutParams = LinearLayout.LayoutParams(0, (32f * density).toInt(), 1f)
         layoutParams.setMargins(
-            (16f * density).toInt(), (8f * density).toInt(),
-            (16f * density).toInt(), (8f * density).toInt()
+            (16f * density).toInt(),
+            (8f * density).toInt(),
+            (16f * density).toInt(),
+            (8f * density).toInt(),
         )
         linearLayout2.addView(textView, layoutParams)
         var imageView: ImageView? = null
@@ -1209,8 +1366,10 @@ class DrawerForm(
             imageView.setBackgroundResource(
                 getResourceId(
                     context,
-                    android.R.attr.borderlessButtonStyle, android.R.attr.background, 0
-                )
+                    android.R.attr.borderlessButtonStyle,
+                    android.R.attr.background,
+                    0,
+                ),
             )
             imageView.setOnClickListener(sectionButtonListener)
             imageView.setImageTintList(textView.getTextColors())
@@ -1222,8 +1381,8 @@ class DrawerForm(
         linearLayout.setLayoutParams(
             RecyclerView.LayoutParams(
                 RecyclerView.LayoutParams.MATCH_PARENT,
-                RecyclerView.LayoutParams.WRAP_CONTENT
-            )
+                RecyclerView.LayoutParams.WRAP_CONTENT,
+            ),
         )
         return DrawerForm.ViewHolder(linearLayout, imageView, textView, null)
     }
@@ -1238,7 +1397,10 @@ class DrawerForm(
             }
         }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder {
         val density = obtainDensity(context)
         val enumViewType = ViewType.entries[viewType]
         return when (enumViewType) {
@@ -1259,24 +1421,31 @@ class DrawerForm(
                     createItem(enumViewType, density),
                     true,
                     null,
-                    clickCallback
+                    clickCallback,
                 )
             }
         }
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         val listItem = getItem(position)
         when (listItem.type) {
             ListItem.Type.HEADER, ListItem.Type.RESTART -> {}
+
             ListItem.Type.PAGE, ListItem.Type.FAVORITE -> {
                 holder.text!!.setText(
                     formatBoardThreadTitle(
                         listItem.isThreadItem,
-                        listItem.boardName, listItem.threadNumber, listItem.title
-                    )
+                        listItem.boardName,
+                        listItem.threadNumber,
+                        listItem.title,
+                    ),
                 )
-                if (listItem.type == ListItem.Type.FAVORITE && listItem.isThreadItem &&
+                if (listItem.type == ListItem.Type.FAVORITE &&
+                    listItem.isThreadItem &&
                     watcherSupportSet.contains(listItem.chanName)
                 ) {
                     holder.watcher!!.update(getCounter(listItem)!!)
@@ -1307,13 +1476,17 @@ class DrawerForm(
         itemView: View,
         val icon: ImageView?,
         val text: TextView?,
-        val watcher: WatcherView?
-    ) : RecyclerView.ViewHolder(itemView), OnTouchListener {
+        val watcher: WatcherView?,
+    ) : RecyclerView.ViewHolder(itemView),
+        OnTouchListener {
         private var originalTextColors: ColorStateList? = null
         private var originalTintColors: ColorStateList? = null
 
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-        fun setDragging(dragging: Boolean, activeColor: Int) {
+        fun setDragging(
+            dragging: Boolean,
+            activeColor: Int,
+        ) {
             if (dragging) {
                 if (originalTextColors == null) {
                     originalTextColors = text!!.getTextColors()
@@ -1344,7 +1517,10 @@ class DrawerForm(
         }
 
         @SuppressLint("ClickableViewAccessibility")
-        override fun onTouch(v: View?, event: MotionEvent): Boolean {
+        override fun onTouch(
+            v: View?,
+            event: MotionEvent,
+        ): Boolean {
             when (event.getActionMasked()) {
                 MotionEvent.ACTION_DOWN -> {
                     multipleFingersCountingTime = false
@@ -1388,15 +1564,25 @@ class DrawerForm(
         return if (position >= 0) getItem(position) else null
     }
 
-    private fun needDivider(current: ListItem, next: ListItem): Boolean {
-        return current.type == ListItem.Type.HEADER || current.type == ListItem.Type.RESTART || current.type != ListItem.Type.CHAN && next.type == ListItem.Type.CHAN || current.type != ListItem.Type.MENU && next.type == ListItem.Type.MENU ||
-                current.type == ListItem.Type.MENU && current.data == MENU_ITEM_BOARDS &&
-                (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS) || current.type == ListItem.Type.MENU && current.data == MENU_ITEM_USER_BOARDS
-    }
+    private fun needDivider(
+        current: ListItem,
+        next: ListItem,
+    ): Boolean =
+        current.type == ListItem.Type.HEADER ||
+            current.type == ListItem.Type.RESTART ||
+            current.type != ListItem.Type.CHAN &&
+            next.type == ListItem.Type.CHAN ||
+            current.type != ListItem.Type.MENU &&
+            next.type == ListItem.Type.MENU ||
+            current.type == ListItem.Type.MENU &&
+            current.data == MENU_ITEM_BOARDS &&
+            (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS) ||
+            current.type == ListItem.Type.MENU &&
+            current.data == MENU_ITEM_USER_BOARDS
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
-        position: Int
+        position: Int,
     ): DividerItemDecoration.Configuration {
         val density = obtainDensity(context)
         val padding = (8f * density).toInt()
@@ -1413,34 +1599,42 @@ class DrawerForm(
         }
     }
 
-    private fun getCounter(listItem: ListItem): WatcherService.Counter? {
-        return watcherServiceClient.getCounter(
+    private fun getCounter(listItem: ListItem): WatcherService.Counter? =
+        watcherServiceClient.getCounter(
             listItem.chanName!!,
             listItem.boardName,
-            listItem.threadNumber!!
+            listItem.threadNumber!!,
         )
-    }
 
-    private val watcherClickListener = View.OnClickListener { v: View? ->
-        val listItem = getItemFromChild(v)
-        if (listItem != null) {
-            FavoritesStorage.getInstance().setWatcherEnabled(
-                listItem.chanName,
-                listItem.boardName, listItem.threadNumber, null
-            )
+    private val watcherClickListener =
+        View.OnClickListener { v: View? ->
+            val listItem = getItemFromChild(v)
+            if (listItem != null) {
+                FavoritesStorage.getInstance().setWatcherEnabled(
+                    listItem.chanName,
+                    listItem.boardName,
+                    listItem.threadNumber,
+                    null,
+                )
+            }
         }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
     fun onWatcherUpdate(
-        chanName: String, boardName: String?, threadNumber: String?,
-        counter: WatcherService.Counter
+        chanName: String,
+        boardName: String?,
+        threadNumber: String?,
+        counter: WatcherService.Counter,
     ) {
         if (counter.deleted && isFavoritesHidedDeleted) {
             favorites.removeIf { fav ->
                 fav.type == ListItem.Type.FAVORITE &&
-                        (fav.chanName == chanName &&
-                                fav.boardName == boardName && fav.threadNumber != null && fav.threadNumber == threadNumber)
+                    (
+                        fav.chanName == chanName &&
+                            fav.boardName == boardName &&
+                            fav.threadNumber != null &&
+                            fav.threadNumber == threadNumber
+                    )
             }
             notifyDataSetChanged()
         } else if (!isFavoritesHidedAll) {
@@ -1478,53 +1672,67 @@ class DrawerForm(
         recyclerView.setMotionEventSplittingEnabled(false)
         recyclerView.setClipToPadding(false)
         recyclerView.setEdgeEffectShift(this)
-        recyclerView.setLayoutManager(object : LinearLayoutManager(recyclerView.getContext()) {
-            override fun requestChildRectangleOnScreen(
-                parent: RecyclerView, child: View,
-                rect: Rect, immediate: Boolean, focusedChildVisible: Boolean
-            ): Boolean {
-                if (child === headerView) {
-                    // Keep EditText on top and don't allow LinearLayoutManager weird scrolls
-                    val dy = child.getTop() - parent.getPaddingTop()
-                    if (dy != 0) {
-                        if (immediate) {
-                            parent.scrollBy(0, dy)
-                        } else {
-                            parent.smoothScrollBy(0, dy)
+        recyclerView.setLayoutManager(
+            object : LinearLayoutManager(recyclerView.getContext()) {
+                override fun requestChildRectangleOnScreen(
+                    parent: RecyclerView,
+                    child: View,
+                    rect: Rect,
+                    immediate: Boolean,
+                    focusedChildVisible: Boolean,
+                ): Boolean {
+                    if (child === headerView) {
+                        // Keep EditText on top and don't allow LinearLayoutManager weird scrolls
+                        val dy = child.getTop() - parent.getPaddingTop()
+                        if (dy != 0) {
+                            if (immediate) {
+                                parent.scrollBy(0, dy)
+                            } else {
+                                parent.smoothScrollBy(0, dy)
+                            }
+                            return true
                         }
-                        return true
+                    }
+                    return false
+                }
+            },
+        )
+        recyclerView.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(
+                    recyclerView: RecyclerView,
+                    newState: Int,
+                ) {
+                    // Hide keyboard when list is scrolled
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                        val focusView = recyclerView.getFocusedChild()
+                        if (focusView != null) {
+                            focusView.clearFocus()
+                            hideKeyboard()
+                        }
                     }
                 }
-                return false
-            }
-        })
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                // Hide keyboard when list is scrolled
-                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                    val focusView = recyclerView.getFocusedChild()
-                    if (focusView != null) {
-                        focusView.clearFocus()
-                        hideKeyboard()
-                    }
-                }
-            }
-        })
+            },
+        )
         setHasStableIds(true)
         recyclerView.setAdapter(this)
-        val dividerItemDecoration = DividerItemDecoration(
-            recyclerView.getContext(),
-            DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
-                configureDivider(
-                    c!!,
-                    position
-                ).translate(false)
-            })
+        val dividerItemDecoration =
+            DividerItemDecoration(
+                recyclerView.getContext(),
+                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
+                    configureDivider(
+                        c!!,
+                        position,
+                    ).translate(false)
+                },
+            )
         recyclerView.addItemDecoration(dividerItemDecoration)
-        dividerItemDecoration.setAboveCallback(AboveCallback { position: Int ->
-            val listItem = getItem(position)
-            listItem.type == ListItem.Type.SECTION || listItem.type == ListItem.Type.MENU
-        })
+        dividerItemDecoration.setAboveCallback(
+            AboveCallback { position: Int ->
+                val listItem = getItem(position)
+                listItem.type == ListItem.Type.SECTION || listItem.type == ListItem.Type.MENU
+            },
+        )
         recyclerView.setItemAnimator(null)
         sortableHelper = SortableHelper<ViewHolder>(recyclerView, this)
         drawerIconColor = getColor(context, android.R.attr.textColorSecondary)
@@ -1536,8 +1744,8 @@ class DrawerForm(
         headerView.setLayoutParams(
             RecyclerView.LayoutParams(
                 RecyclerView.LayoutParams.MATCH_PARENT,
-                RecyclerView.LayoutParams.WRAP_CONTENT
-            )
+                RecyclerView.LayoutParams.WRAP_CONTENT,
+            ),
         )
         this.headerView = headerView
 
@@ -1548,12 +1756,14 @@ class DrawerForm(
         headerView.addView(editTextContainer)
 
         searchEdit = SafePasteEditText(context)
-        searchEdit.setOnKeyListener(View.OnKeyListener { v: View?, keyCode: Int, event: KeyEvent? ->
-            if (event!!.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
-                v!!.clearFocus()
-            }
-            false
-        })
+        searchEdit.setOnKeyListener(
+            View.OnKeyListener { v: View?, keyCode: Int, event: KeyEvent? ->
+                if (event!!.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
+                    v!!.clearFocus()
+                }
+                false
+            },
+        )
         searchEdit.setHint(context.getString(R.string.code_number_address))
         searchEdit.setOnEditorActionListener(this)
         searchEdit.setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
@@ -1564,80 +1774,89 @@ class DrawerForm(
         searchIcon.setImageTintList(
             getColorStateList(
                 searchIcon.getContext(),
-                android.R.attr.textColorPrimary
-            )
+                android.R.attr.textColorPrimary,
+            ),
         )
 
         searchIcon.setScaleType(ImageView.ScaleType.CENTER)
         searchIcon.setOnClickListener(View.OnClickListener { v: View? -> onSearchClick() })
         editTextContainer.addView(
-            searchEdit, LinearLayout.LayoutParams(
+            searchEdit,
+            LinearLayout.LayoutParams(
                 0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f
-            )
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f,
+            ),
         )
         editTextContainer.addView(searchIcon, (40f * density).toInt(), (40f * density).toInt())
         editTextContainer.setPadding(
             (12f * density).toInt(),
             (8f * density).toInt(),
             (8f * density).toInt(),
-            0
+            0,
         )
-
 
         val selectorContainer = LinearLayout(context)
         this.selectorContainer = selectorContainer
         selectorContainer.setBackgroundResource(
             getResourceId(
                 context,
-                android.R.attr.selectableItemBackground, 0
-            )
+                android.R.attr.selectableItemBackground,
+                0,
+            ),
         )
         selectorContainer.setOrientation(LinearLayout.HORIZONTAL)
         selectorContainer.setGravity(Gravity.CENTER_VERTICAL)
-        selectorContainer.setOnClickListener(View.OnClickListener { v: View? ->
-            hideKeyboard()
-            setChanSelectMode(!chanSelectMode)
-        })
+        selectorContainer.setOnClickListener(
+            View.OnClickListener { v: View? ->
+                hideKeyboard()
+                setChanSelectMode(!chanSelectMode)
+            },
+        )
         headerView.addView(selectorContainer)
         selectorContainer.setMinimumHeight((40f * density).toInt())
         selectorContainer.setPadding((16f * density).toInt(), 0, (16f * density).toInt(), 0)
         (selectorContainer.getLayoutParams() as LinearLayout.LayoutParams).topMargin =
             (4f * density).toInt()
 
-
         chanNameView = TextView(context, null, android.R.attr.textAppearanceListItem)
         setTextSizeScaled(chanNameView, 14)
         chanNameView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM)
 
         selectorContainer.addView(
-            chanNameView, LinearLayout.LayoutParams(
+            chanNameView,
+            LinearLayout.LayoutParams(
                 0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f
-            )
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f,
+            ),
         )
 
         chanSelectorIcon = ImageView(context)
         chanSelectorIcon.setImageResource(
             getResourceId(
-                context, R.attr.iconButtonDropDown, 0
-            )
+                context,
+                R.attr.iconButtonDropDown,
+                0,
+            ),
         )
         chanSelectorIcon.setImageTintList(
             getColorStateList(
                 context,
-                android.R.attr.textColorPrimary
-            )
+                android.R.attr.textColorPrimary,
+            ),
         )
 
         selectorContainer.addView(
             chanSelectorIcon,
             (24f * density).toInt(),
-            (24f * density).toInt()
+            (24f * density).toInt(),
         )
         (chanSelectorIcon.getLayoutParams() as LinearLayout.LayoutParams).gravity =
-            (Gravity.CENTER_VERTICAL
-                    or Gravity.END)
+            (
+                Gravity.CENTER_VERTICAL
+                    or Gravity.END
+            )
 
         val restartView = LinearLayout(context)
         restartView.setOrientation(LinearLayout.VERTICAL)
@@ -1647,21 +1866,25 @@ class DrawerForm(
         restartTextView.setText(R.string.new_extensions_installed__sentence)
         restartTextView.setTextColor(getColor(context, android.R.attr.textColorPrimary))
         restartTextView.setPadding(
-            (16f * density).toInt(), (8f * density).toInt(),
-            (16f * density).toInt(), (8f * density).toInt()
+            (16f * density).toInt(),
+            (8f * density).toInt(),
+            (16f * density).toInt(),
+            (8f * density).toInt(),
         )
 
         restartView.addView(
-            restartTextView, LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            restartTextView,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
 
         val restartButtonViewHolder = createItem(ViewType.ITEM, density)
         restartButtonViewHolder.text!!.setText(R.string.restart)
         restartButtonViewHolder.itemView.setOnClickListener(View.OnClickListener { v: View? -> callback.restartApplication() })
         restartView.addView(
-            restartButtonViewHolder.itemView, LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            restartButtonViewHolder.itemView,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
 
         inputMethodManager =
@@ -1679,7 +1902,10 @@ class DrawerForm(
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    override fun onDragFinish(holder: ViewHolder?, cancelled: Boolean) {
+    override fun onDragFinish(
+        holder: ViewHolder?,
+        cancelled: Boolean,
+    ) {
         if (!cancelled) {
             val chanMovedTo = chanDragState.getMovedTo()
             val favoriteMovedTo = favoriteDragState.getMovedTo()
@@ -1698,19 +1924,25 @@ class DrawerForm(
                 val listItem = favorites.get(favoriteMovedTo)
                 val afterListItem = favorites.get(favoriteMovedTo - 1)
                 val favoritesStorage = FavoritesStorage.getInstance()
-                val favoriteItem = favoritesStorage.getFavorite(
-                    listItem.chanName,
-                    listItem.boardName, listItem.threadNumber
-                )
-                val afterFavoriteItem = if (afterListItem.type ==
-                    ListItem.Type.FAVORITE && afterListItem.chanName == favoriteItem!!.chanName
-                )
+                val favoriteItem =
                     favoritesStorage.getFavorite(
-                        afterListItem.chanName, afterListItem.boardName,
-                        afterListItem.threadNumber
+                        listItem.chanName,
+                        listItem.boardName,
+                        listItem.threadNumber,
                     )
-                else
-                    null
+                val afterFavoriteItem =
+                    if (afterListItem.type ==
+                        ListItem.Type.FAVORITE &&
+                        afterListItem.chanName == favoriteItem!!.chanName
+                    ) {
+                        favoritesStorage.getFavorite(
+                            afterListItem.chanName,
+                            afterListItem.boardName,
+                            afterListItem.threadNumber,
+                        )
+                    } else {
+                        null
+                    }
                 favoritesStorage.moveAfter(favoriteItem!!, afterFavoriteItem)
             }
         }
@@ -1718,17 +1950,28 @@ class DrawerForm(
         callback.onDraggingStateChanged(false)
     }
 
-    override fun onDragCanMove(fromHolder: ViewHolder, toHolder: ViewHolder): Boolean {
+    override fun onDragCanMove(
+        fromHolder: ViewHolder,
+        toHolder: ViewHolder,
+    ): Boolean {
         val from = getItem(fromHolder.getBindingAdapterPosition())
         val to = getItem(toHolder.getBindingAdapterPosition())
-        return from.type == to.type && (from.type == ListItem.Type.CHAN ||
-                from.type == ListItem.Type.FAVORITE && equals(
-            from.chanName,
-            to.chanName
-        ) && (from.threadNumber == null) == (to.threadNumber == null))
+        return from.type == to.type &&
+            (
+                from.type == ListItem.Type.CHAN ||
+                    from.type == ListItem.Type.FAVORITE &&
+                    equals(
+                        from.chanName,
+                        to.chanName,
+                    ) &&
+                    (from.threadNumber == null) == (to.threadNumber == null)
+            )
     }
 
-    override fun onDragMove(fromHolder: ViewHolder, toHolder: ViewHolder): Boolean {
+    override fun onDragMove(
+        fromHolder: ViewHolder,
+        toHolder: ViewHolder,
+    ): Boolean {
         val fromIndex = fromHolder.getBindingAdapterPosition()
         val toIndex = toHolder.getBindingAdapterPosition()
         val from = getItem(fromIndex)
@@ -1771,8 +2014,13 @@ class DrawerForm(
         const val MENU_ITEM_PREFERENCES: Int = 4
 
         private fun showPageFavoriteMenu(
-            fragmentManager: FragmentManager, isFavorite: Boolean, isThread: Boolean,
-            chanName: String, boardName: String?, threadNumber: String?, title: String?
+            fragmentManager: FragmentManager,
+            isFavorite: Boolean,
+            isThread: Boolean,
+            chanName: String,
+            boardName: String?,
+            threadNumber: String?,
+            title: String?,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1780,65 +2028,107 @@ class DrawerForm(
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     val context = provider!!.context
                     val dialogMenu = DialogMenu(provider.context)
-                    dialogMenu.add(R.string.copy_link, Runnable {
-                        onCopyShareLink(
-                            context, isThread, false,
-                            chanName, boardName, threadNumber, title
-                        )
-                    })
-                    if (isThread) {
-                        dialogMenu.add(R.string.share_link, Runnable {
+                    dialogMenu.add(
+                        R.string.copy_link,
+                        Runnable {
                             onCopyShareLink(
-                                context, isThread, true,
-                                chanName, boardName, threadNumber, title
+                                context,
+                                isThread,
+                                false,
+                                chanName,
+                                boardName,
+                                threadNumber,
+                                title,
                             )
-                        })
+                        },
+                    )
+                    if (isThread) {
+                        dialogMenu.add(
+                            R.string.share_link,
+                            Runnable {
+                                onCopyShareLink(
+                                    context,
+                                    isThread,
+                                    true,
+                                    chanName,
+                                    boardName,
+                                    threadNumber,
+                                    title,
+                                )
+                            },
+                        )
                     }
                     if (isFavorite) {
-                        dialogMenu.add(R.string.remove_from_favorites, Runnable {
-                            FavoritesStorage.getInstance()
-                                .remove(chanName, boardName, threadNumber)
-                        })
+                        dialogMenu.add(
+                            R.string.remove_from_favorites,
+                            Runnable {
+                                FavoritesStorage
+                                    .getInstance()
+                                    .remove(chanName, boardName, threadNumber)
+                            },
+                        )
                         if (threadNumber != null) {
-                            dialogMenu.add(R.string.rename, Runnable {
-                                showRenameFragment(
-                                    provider.fragmentManager,
-                                    chanName, boardName, threadNumber, title
-                                )
-                            })
+                            dialogMenu.add(
+                                R.string.rename,
+                                Runnable {
+                                    showRenameFragment(
+                                        provider.fragmentManager,
+                                        chanName,
+                                        boardName,
+                                        threadNumber,
+                                        title,
+                                    )
+                                },
+                            )
                         }
-                    } else if (!FavoritesStorage.getInstance()
+                    } else if (!FavoritesStorage
+                            .getInstance()
                             .hasFavorite(chanName, boardName, threadNumber)
                     ) {
-                        dialogMenu.add(R.string.add_to_favorites, Runnable {
-                            if (isThread) {
-                                FavoritesStorage.getInstance()
-                                    .add(chanName, boardName, threadNumber!!, title, true)
-                            } else {
-                                FavoritesStorage.getInstance().add(chanName, boardName)
-                            }
-                        })
+                        dialogMenu.add(
+                            R.string.add_to_favorites,
+                            Runnable {
+                                if (isThread) {
+                                    FavoritesStorage
+                                        .getInstance()
+                                        .add(chanName, boardName, threadNumber!!, title, true)
+                                } else {
+                                    FavoritesStorage.getInstance().add(chanName, boardName)
+                                }
+                            },
+                        )
                     }
                     dialogMenu.create()
-                })
+                },
+            )
         }
 
         private fun onCopyShareLink(
-            context: Context, isThread: Boolean, share: Boolean,
-            chanName: String?, boardName: String?, threadNumber: String?, title: String?
+            context: Context,
+            isThread: Boolean,
+            share: Boolean,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            title: String?,
         ) {
             val chan = get(chanName)
-            val uri = if (isThread)
-                chan.locator.safe(true).createThreadUri(boardName, threadNumber)
-            else
-                chan.locator.safe(true).createBoardUri(boardName, 0)
+            val uri =
+                if (isThread) {
+                    chan.locator.safe(true).createThreadUri(boardName, threadNumber)
+                } else {
+                    chan.locator.safe(true).createBoardUri(boardName, 0)
+                }
             if (uri != null) {
                 if (share) {
                     shareLink(
-                        context, if (StringUtils.isEmptyOrWhitespace(title))
+                        context,
+                        if (StringUtils.isEmptyOrWhitespace(title)) {
                             uri.toString()
-                        else
-                            title, uri
+                        } else {
+                            title
+                        },
+                        uri,
                     )
                 } else {
                     StringUtils.copyToClipboard(context, uri.toString())
@@ -1848,7 +2138,10 @@ class DrawerForm(
 
         private fun showRenameFragment(
             fragmentManager: FragmentManager,
-            chanName: String?, boardName: String?, threadNumber: String?, title: String?
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            title: String?,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1863,28 +2156,37 @@ class DrawerForm(
                     val linearLayout = LinearLayout(context)
                     linearLayout.setOrientation(LinearLayout.HORIZONTAL)
                     linearLayout.addView(
-                        editText, LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
+                        editText,
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
                     )
-                    val padding = context.getResources().getDimensionPixelSize(
-                        R.dimen
-                            .dialog_padding_view
-                    )
+                    val padding =
+                        context.getResources().getDimensionPixelSize(
+                            R.dimen
+                                .dialog_padding_view,
+                        )
                     linearLayout.setPadding(padding, padding, padding, padding)
-                    val dialog = AlertDialog.Builder(context)
-                        .setView(linearLayout).setTitle(R.string.rename)
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .setPositiveButton(
-                            android.R.string.ok,
-                            DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
-                                val newTitle = editText.getText().toString()
-                                FavoritesStorage.getInstance()
-                                    .updateTitle(chanName, boardName, threadNumber, newTitle, true)
-                            }).create()
-                    dialog.getWindow()!!
+                    val dialog =
+                        AlertDialog
+                            .Builder(context)
+                            .setView(linearLayout)
+                            .setTitle(R.string.rename)
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .setPositiveButton(
+                                android.R.string.ok,
+                                DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
+                                    val newTitle = editText.getText().toString()
+                                    FavoritesStorage
+                                        .getInstance()
+                                        .updateTitle(chanName, boardName, threadNumber, newTitle, true)
+                                },
+                            ).create()
+                    dialog
+                        .getWindow()!!
                         .setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                     dialog
-                })
+                },
+            )
         }
 
         private val PATTERN_NAVIGATION_BOARD_THREAD: Pattern = Pattern.compile("([\\w_-]+) (\\d+)")
@@ -1893,7 +2195,7 @@ class DrawerForm(
 
         private fun showSearchHelp(
             fragmentManager: FragmentManager,
-            searchHelpFormat: SearchHelpFormat
+            searchHelpFormat: SearchHelpFormat,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1905,19 +2207,23 @@ class DrawerForm(
                             .replace("__REPLACE_BOARD_NAME__", searchHelpFormat.boardName)
                             .replace("__REPLACE_THREAD_NUMBER__", searchHelpFormat.threadNumber)
                             .replace("__REPLACE_THREAD_URL__", searchHelpFormat.threadUrl)
-                    AlertDialog.Builder(context)
+                    AlertDialog
+                        .Builder(context)
                         .setTitle(R.string.code_number_address)
                         .setMessage(BUILDER_SEARCH_HELP.fromHtmlReduced(html))
                         .setPositiveButton(android.R.string.ok, null)
                         .create()
-                })
+                },
+            )
         }
 
         private val BUILDER_SEARCH_HELP =
-            ChanMarkup.MarkupBuilder(ChanMarkup.MarkupBuilder.Constructor { markup: ChanMarkup? ->
-                markup!!.addTag("h1", ChanMarkup.TAG_BOLD)
-                markup.addTag("u", ChanMarkup.TAG_UNDERLINE)
-            })
+            ChanMarkup.MarkupBuilder(
+                ChanMarkup.MarkupBuilder.Constructor { markup: ChanMarkup? ->
+                    markup!!.addTag("h1", ChanMarkup.TAG_BOLD)
+                    markup.addTag("u", ChanMarkup.TAG_UNDERLINE)
+                },
+            )
 
         private const val SECTION_ACTION_CLOSE_ALL = 0
         private const val SECTION_ACTION_FAVORITES_MENU = 1
@@ -1929,13 +2235,15 @@ class DrawerForm(
 
         private fun showDeleteFavoritesDialog(
             fragmentManager: FragmentManager,
-            message: CharSequence?, deleteFavoriteItems: MutableList<FavoriteItem>
+            message: CharSequence?,
+            deleteFavoriteItems: MutableList<FavoriteItem>,
         ) {
             InstanceDialog(
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    AlertDialog.Builder(provider!!.context)
+                    AlertDialog
+                        .Builder(provider!!.context)
                         .setMessage(message)
                         .setNegativeButton(android.R.string.cancel, null)
                         .setPositiveButton(
@@ -1945,12 +2253,14 @@ class DrawerForm(
                                 for (favoriteItem in deleteFavoriteItems) {
                                     favoritesStorage.remove(
                                         favoriteItem.chanName,
-                                        favoriteItem.boardName, favoriteItem.threadNumber
+                                        favoriteItem.boardName,
+                                        favoriteItem.threadNumber,
                                     )
                                 }
-                            })
-                        .create()
-                })
+                            },
+                        ).create()
+                },
+            )
         }
     }
 }

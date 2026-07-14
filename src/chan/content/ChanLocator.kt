@@ -24,7 +24,9 @@ import com.mishiranu.dashchan.content.model.PostNumber.Companion.validateThreadN
 import java.util.regex.Pattern
 
 @Extendable
-open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan.Linked {
+open class ChanLocator internal constructor(
+    chanProvider: Chan.Provider?,
+) : Chan.Linked {
     private val chanProvider: Chan.Provider?
 
     private val hosts = LinkedHashMap<String?, Int?>()
@@ -39,7 +41,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         HTTPS_ONLY,
 
         @Public
-        CONFIGURABLE
+        CONFIGURABLE,
     }
 
     @Public
@@ -48,30 +50,41 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         val boardName: String?,
         val threadNumber: String?,
         val postNumber: PostNumber?,
-        val searchQuery: String?
+        val searchQuery: String?,
     ) : Parcelable {
         enum class Target {
-            THREADS, POSTS, SEARCH
+            THREADS,
+            POSTS,
+            SEARCH,
         }
 
         @Public
         constructor(
-            target: Int, boardName: String?, threadNumber: String?, postNumber: String?,
-            searchQuery: String?
+            target: Int,
+            boardName: String?,
+            threadNumber: String?,
+            postNumber: String?,
+            searchQuery: String?,
         ) : this(
-            transformTarget(target), boardName, threadNumber, if (postNumber != null)
+            transformTarget(target),
+            boardName,
+            threadNumber,
+            if (postNumber != null) {
                 parseOrThrow(postNumber)
-            else
-                null, searchQuery
+            } else {
+                null
+            },
+            searchQuery,
         ) {
             validateThreadNumber(threadNumber, true)
         }
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeString(target.name)
             dest.writeString(boardName)
             dest.writeString(threadNumber)
@@ -84,9 +97,12 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
 
         init {
             require(
-                !(target == Target.POSTS && isEmpty(
-                    threadNumber
-                ))
+                !(
+                    target == Target.POSTS &&
+                        isEmpty(
+                            threadNumber,
+                        )
+                ),
             ) { "threadNumber must not be empty!" }
         }
 
@@ -128,22 +144,24 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
                         val boardName = source.readString()
                         val threadNumber = source.readString()
                         val postNumber =
-                            if (source.readByte().toInt() != 0) PostNumber.CREATOR.createFromParcel(
-                                source
-                            ) else null
+                            if (source.readByte().toInt() != 0) {
+                                PostNumber.CREATOR.createFromParcel(
+                                    source,
+                                )
+                            } else {
+                                null
+                            }
                         val searchQuery = source.readString()
                         return NavigationData(
                             target,
                             boardName,
                             threadNumber,
                             postNumber,
-                            searchQuery
+                            searchQuery,
                         )
                     }
 
-                    override fun newArray(size: Int): Array<NavigationData?> {
-                        return arrayOfNulls<NavigationData>(size)
-                    }
+                    override fun newArray(size: Int): Array<NavigationData?> = arrayOfNulls<NavigationData>(size)
                 }
         }
     }
@@ -157,23 +175,21 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         }
     }
 
-    override fun get(): Chan {
-        return chanProvider!!.get()
-    }
+    override fun get(): Chan = chanProvider!!.get()
 
     @Public
     fun addChanHost(host: String?) {
-        hosts.put(host, HOST_TYPE_CONFIGURABLE)
+        hosts[host] = HOST_TYPE_CONFIGURABLE
     }
 
     @Public
     fun addConvertableChanHost(host: String?) {
-        hosts.put(host, HOST_TYPE_CONVERTABLE)
+        hosts[host] = HOST_TYPE_CONVERTABLE
     }
 
     @Public
     fun addSpecialChanHost(host: String?) {
-        hosts.put(host, HOST_TYPE_SPECIAL)
+        hosts[host] = HOST_TYPE_SPECIAL
     }
 
     @Public
@@ -212,8 +228,9 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         if (isEmpty(host)) {
             return false
         }
-        return hosts.containsKey(host) || host == getDomainUnhandled(get())
-                || getHostTransition(this.preferredHost, host) != null
+        return hosts.containsKey(host) ||
+            host == getDomainUnhandled(get()) ||
+            getHostTransition(this.preferredHost, host) != null
     }
 
     @Public
@@ -235,7 +252,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         if (host == getDomainUnhandled(get())) {
             return true
         }
-        val hostType = hosts.get(host)
+        val hostType = hosts[host]
         return hostType != null && (hostType == HOST_TYPE_CONFIGURABLE || hostType == HOST_TYPE_CONVERTABLE)
     }
 
@@ -264,7 +281,9 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
                 }
             }
             if (isEmpty(uri.getScheme()) ||
-                webScheme && (preferredScheme != uri.getScheme()) && isChanHost(host!!)
+                webScheme &&
+                (preferredScheme != uri.getScheme()) &&
+                isChanHost(host!!)
             ) {
                 if (builder == null) {
                     builder = uri.buildUpon().scheme(preferredScheme)
@@ -279,14 +298,19 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     fun makeRelative(uri: Uri): Uri {
-        var uri = uri
-        if (isWebScheme(uri)) {
-            val host = uri.getHost()
+        var relativeUri = uri
+        if (isWebScheme(relativeUri)) {
+            val host = relativeUri.getHost()
             if (isConvertableChanHost(host!!)) {
-                uri = uri.buildUpon().scheme(null).authority(null).build()
+                relativeUri =
+                    relativeUri
+                        .buildUpon()
+                        .scheme(null)
+                        .authority(null)
+                        .build()
             }
         }
-        return uri
+        return relativeUri
     }
 
     fun fixRelativeFileUri(uri: Uri?): Uri? {
@@ -314,80 +338,61 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     @Extendable
-    protected open fun getHostTransition(chanHost: String?, requiredHost: String?): String? {
-        return null
-    }
+    protected open fun getHostTransition(
+        chanHost: String?,
+        requiredHost: String?,
+    ): String? = null
 
     @Extendable
-    open fun isBoardUri(uri: Uri?): Boolean {
-        throw UnsupportedOperationException()
-    }
+    open fun isBoardUri(uri: Uri?): Boolean = throw UnsupportedOperationException()
 
     @Extendable
-    open fun isThreadUri(uri: Uri?): Boolean {
-        throw UnsupportedOperationException()
-    }
+    open fun isThreadUri(uri: Uri?): Boolean = throw UnsupportedOperationException()
 
     @Extendable
-    protected open fun isAttachmentUri(uri: Uri?): Boolean {
-        throw UnsupportedOperationException()
-    }
+    protected open fun isAttachmentUri(uri: Uri?): Boolean = throw UnsupportedOperationException()
 
-    fun isImageUri(uri: Uri?): Boolean {
-        return uri != null && isImageExtension(uri.getPath()) && safe.isAttachmentUri(uri)
-    }
+    fun isImageUri(uri: Uri?): Boolean = uri != null && isImageExtension(uri.getPath()) && safe.isAttachmentUri(uri)
 
-    fun isAudioUri(uri: Uri?): Boolean {
-        return uri != null && isAudioExtension(uri.getPath()) && safe.isAttachmentUri(uri)
-    }
+    fun isAudioUri(uri: Uri?): Boolean = uri != null && isAudioExtension(uri.getPath()) && safe.isAttachmentUri(uri)
 
-    fun isVideoUri(uri: Uri?): Boolean {
-        return uri != null && isVideoExtension(uri.getPath()) && safe.isAttachmentUri(uri)
-    }
+    fun isVideoUri(uri: Uri?): Boolean = uri != null && isVideoExtension(uri.getPath()) && safe.isAttachmentUri(uri)
 
     @Extendable
-    open fun getBoardName(uri: Uri?): String? {
-        throw UnsupportedOperationException()
-    }
+    open fun getBoardName(uri: Uri?): String? = throw UnsupportedOperationException()
 
     @Extendable
-    open fun getThreadNumber(uri: Uri?): String? {
-        throw UnsupportedOperationException()
-    }
+    open fun getThreadNumber(uri: Uri?): String? = throw UnsupportedOperationException()
 
     @Extendable
-    open fun getPostNumber(uri: Uri?): String? {
-        throw UnsupportedOperationException()
-    }
+    open fun getPostNumber(uri: Uri?): String? = throw UnsupportedOperationException()
 
     @Extendable
-    protected open fun createBoardUri(boardName: String?, pageNumber: Int): Uri? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun createBoardUri(
+        boardName: String?,
+        pageNumber: Int,
+    ): Uri? = throw UnsupportedOperationException()
 
     @Extendable
-    protected open fun createThreadUri(boardName: String?, threadNumber: String?): Uri? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun createThreadUri(
+        boardName: String?,
+        threadNumber: String?,
+    ): Uri? = throw UnsupportedOperationException()
 
     @Extendable
     protected open fun createPostUri(
         boardName: String?,
         threadNumber: String?,
-        postNumber: String?
-    ): Uri? {
-        throw UnsupportedOperationException()
-    }
+        postNumber: String?,
+    ): Uri? = throw UnsupportedOperationException()
 
     @Extendable
-    protected open fun createAttachmentForcedName(fileUri: Uri?): String? {
-        return null
-    }
+    protected open fun createAttachmentForcedName(fileUri: Uri?): String? = null
 
     @JvmOverloads
     fun createAttachmentFileName(
         fileUri: Uri,
-        forcedName: String? = safe.createAttachmentForcedName(fileUri)
+        forcedName: String? = safe.createAttachmentForcedName(fileUri),
     ): String {
         val fileName: String?
         if (isEmpty(forcedName)) {
@@ -403,7 +408,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     fun validateClickedUriString(
         uriString: String?,
         boardName: String?,
-        threadNumber: String?
+        threadNumber: String?,
     ): Uri? {
         val uri = if (uriString != null) Uri.parse(uriString) else null
         if (uri != null && uri.isRelative()) {
@@ -423,9 +428,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     @Extendable
-    protected open fun handleUriClickSpecial(uri: Uri?): NavigationData? {
-        return null
-    }
+    protected open fun handleUriClickSpecial(uri: Uri?): NavigationData? = null
 
     fun isWebScheme(uri: Uri): Boolean {
         val scheme = uri.getScheme()
@@ -433,24 +436,16 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     @Public
-    fun isImageExtension(path: String?): Boolean {
-        return C.IMAGE_EXTENSIONS.contains(getFileExtension(path))
-    }
+    fun isImageExtension(path: String?): Boolean = C.IMAGE_EXTENSIONS.contains(getFileExtension(path))
 
     @Public
-    fun isAudioExtension(path: String?): Boolean {
-        return C.AUDIO_EXTENSIONS.contains(getFileExtension(path))
-    }
+    fun isAudioExtension(path: String?): Boolean = C.AUDIO_EXTENSIONS.contains(getFileExtension(path))
 
     @Public
-    fun isVideoExtension(path: String?): Boolean {
-        return C.VIDEO_EXTENSIONS.contains(getFileExtension(path))
-    }
+    fun isVideoExtension(path: String?): Boolean = C.VIDEO_EXTENSIONS.contains(getFileExtension(path))
 
     @Public
-    fun getFileExtension(path: String?): String? {
-        return StringUtils.getFileExtension(path)
-    }
+    fun getFileExtension(path: String?): String? = StringUtils.getFileExtension(path)
 
     var preferredHost: String?
         get() {
@@ -467,28 +462,31 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
             return host
         }
         set(host) {
-            var host = host
-            if (host == null || getChanHosts(true).get(0) == host) {
-                host = ""
+            var newHost = host
+            if (newHost == null || getChanHosts(true)[0] == newHost) {
+                newHost = ""
             }
-            setDomainUnhandled(get(), host)
+            setDomainUnhandled(get(), newHost)
         }
 
     private val preferredScheme: String
         get() = getPreferredScheme(isUseHttps())
 
     @Public
-    fun buildPath(vararg segments: String?): Uri? {
-        return buildPathWithHost(this.preferredHost, *segments)
-    }
+    fun buildPath(vararg segments: String?): Uri? = buildPathWithHost(this.preferredHost, *segments)
 
     @Public
-    fun buildPathWithHost(host: String?, vararg segments: String?): Uri? {
-        return buildPathWithSchemeHost(isUseHttps(), host, *segments)
-    }
+    fun buildPathWithHost(
+        host: String?,
+        vararg segments: String?,
+    ): Uri? = buildPathWithSchemeHost(isUseHttps(), host, *segments)
 
     @Public
-    fun buildPathWithSchemeHost(useHttps: Boolean, host: String?, vararg segments: String?): Uri? {
+    fun buildPathWithSchemeHost(
+        useHttps: Boolean,
+        host: String?,
+        vararg segments: String?,
+    ): Uri? {
         val builder = Uri.Builder().scheme(getPreferredScheme(useHttps)).authority(host)
         for (i in segments.indices) {
             val segment: String? = segments[i]
@@ -500,21 +498,24 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     @Public
-    fun buildQuery(path: String?, vararg alternation: String?): Uri? {
-        return buildQueryWithHost(this.preferredHost, path, *alternation)
-    }
+    fun buildQuery(
+        path: String?,
+        vararg alternation: String?,
+    ): Uri? = buildQueryWithHost(this.preferredHost, path, *alternation)
 
     @Public
-    fun buildQueryWithHost(host: String?, path: String?, vararg alternation: String?): Uri? {
-        return buildQueryWithSchemeHost(isUseHttps(), host, path, *alternation)
-    }
+    fun buildQueryWithHost(
+        host: String?,
+        path: String?,
+        vararg alternation: String?,
+    ): Uri? = buildQueryWithSchemeHost(isUseHttps(), host, path, *alternation)
 
     @Public
     fun buildQueryWithSchemeHost(
         useHttps: Boolean,
         host: String?,
         path: String?,
-        vararg alternation: String?
+        vararg alternation: String?,
     ): Uri? {
         val builder = Uri.Builder().scheme(getPreferredScheme(useHttps)).authority(host)
         if (path != null) {
@@ -529,16 +530,24 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         return builder.build()
     }
 
-    fun setSchemeIfEmpty(uri: Uri?, fallback: String?): Uri? {
+    fun setSchemeIfEmpty(
+        uri: Uri?,
+        fallback: String?,
+    ): Uri? {
         if (uri != null && isEmpty(uri.getScheme())) {
-            return uri.buildUpon().scheme(if (fallback != null) fallback else this.preferredScheme)
+            return uri
+                .buildUpon()
+                .scheme(if (fallback != null) fallback else this.preferredScheme)
                 .build()
         }
         return uri
     }
 
     @Public
-    fun isPathMatches(uri: Uri?, pattern: Pattern): Boolean {
+    fun isPathMatches(
+        uri: Uri?,
+        pattern: Pattern,
+    ): Boolean {
         if (uri != null) {
             val path = uri.getPath()
             if (path != null) {
@@ -549,7 +558,11 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
     }
 
     @Public
-    fun getGroupValue(from: String?, pattern: Pattern, groupIndex: Int): String? {
+    fun getGroupValue(
+        from: String?,
+        pattern: Pattern,
+        groupIndex: Int,
+    ): String? {
         if (from == null) {
             return null
         }
@@ -560,7 +573,11 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         return null
     }
 
-    fun getUniqueGroupValues(from: String?, pattern: Pattern, groupIndex: Int): Array<String?>? {
+    fun getUniqueGroupValues(
+        from: String?,
+        pattern: Pattern,
+        groupIndex: Int,
+    ): Array<String?>? {
         if (from == null) {
             return null
         }
@@ -575,7 +592,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
 
     class Safe internal constructor(
         private val locator: ChanLocator,
-        private val showToastOnError: Boolean
+        private val showToastOnError: Boolean,
     ) {
         fun isBoardUri(uri: Uri?): Boolean {
             try {
@@ -652,7 +669,10 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
             }
         }
 
-        fun createBoardUri(boardName: String?, pageNumber: Int): Uri? {
+        fun createBoardUri(
+            boardName: String?,
+            pageNumber: Int,
+        ): Uri? {
             try {
                 return locator.createBoardUri(boardName, pageNumber)
             } catch (e: LinkageError) {
@@ -664,7 +684,10 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
             }
         }
 
-        fun createThreadUri(boardName: String?, threadNumber: String?): Uri? {
+        fun createThreadUri(
+            boardName: String?,
+            threadNumber: String?,
+        ): Uri? {
             try {
                 return locator.createThreadUri(boardName, threadNumber)
             } catch (e: LinkageError) {
@@ -679,12 +702,13 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         fun createPostUri(
             boardName: String?,
             threadNumber: String?,
-            postNumber: PostNumber?
+            postNumber: PostNumber?,
         ): Uri? {
             try {
                 return locator.createPostUri(
-                    boardName, threadNumber,
-                    if (postNumber != null) postNumber.toString() else null
+                    boardName,
+                    threadNumber,
+                    if (postNumber != null) postNumber.toString() else null,
                 )
             } catch (e: LinkageError) {
                 logException(e, showToastOnError)
@@ -733,9 +757,7 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
         }
     }
 
-    fun safe(showToastOnError: Boolean): Safe {
-        return if (showToastOnError) safeToast else safe
-    }
+    fun safe(showToastOnError: Boolean): Safe = if (showToastOnError) safeToast else safe
 
     companion object {
         private const val HOST_TYPE_CONFIGURABLE = 0
@@ -746,12 +768,8 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
 
         @Public
         @JvmStatic
-        fun get(`object`: Any): ChanLocator {
-            return (`object` as Chan.Linked).get().locator
-        }
+        fun get(`object`: Any): ChanLocator = (`object` as Chan.Linked).get().locator
 
-        private fun getPreferredScheme(useHttps: Boolean): String {
-            return if (useHttps) "https" else "http"
-        }
+        private fun getPreferredScheme(useHttps: Boolean): String = if (useHttps) "https" else "http"
     }
 }

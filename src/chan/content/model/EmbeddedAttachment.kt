@@ -7,58 +7,75 @@ import com.mishiranu.dashchan.content.net.EmbeddedType
 
 @Public
 class EmbeddedAttachment : Attachment {
-	@Public
-	enum class ContentType {
-		@Public AUDIO,
-		@Public VIDEO
-	}
+    @Public
+    enum class ContentType {
+        @Public AUDIO,
 
-	internal val embedded: Post.Attachment.Embedded
+        @Public VIDEO,
+    }
 
-	private constructor(embedded: Post.Attachment.Embedded) {
-		this.embedded = embedded
-	}
+    internal val embedded: Post.Attachment.Embedded
 
-	@Public
-	constructor(fileUri: Uri?, thumbnailUri: Uri?, embeddedType: String?, contentType: ContentType?,
-			canDownload: Boolean, forcedName: String?) {
-		val embeddedContentType = when (contentType) {
-			ContentType.AUDIO -> Post.Attachment.Embedded.ContentType.AUDIO
-			ContentType.VIDEO -> Post.Attachment.Embedded.ContentType.VIDEO
-			else -> null
-		}
-		embedded = Post.Attachment.Embedded.createExternal(true, fileUri, thumbnailUri, embeddedType,
-				embeddedContentType, canDownload, forcedName)!!
-	}
+    private constructor(embedded: Post.Attachment.Embedded) {
+        this.embedded = embedded
+    }
 
-	@Public
-	fun getFileUri(): Uri? = embedded.fileUri
+    @Public
+    constructor(
+        fileUri: Uri?,
+        thumbnailUri: Uri?,
+        embeddedType: String?,
+        contentType: ContentType?,
+        canDownload: Boolean,
+        forcedName: String?,
+    ) {
+        val embeddedContentType =
+            when (contentType) {
+                ContentType.AUDIO -> Post.Attachment.Embedded.ContentType.AUDIO
+                ContentType.VIDEO -> Post.Attachment.Embedded.ContentType.VIDEO
+                else -> null
+            }
+        embedded =
+            Post.Attachment.Embedded.createExternal(
+                true,
+                fileUri,
+                thumbnailUri,
+                embeddedType,
+                embeddedContentType,
+                canDownload,
+                forcedName,
+            )!!
+    }
 
-	@Public
-	fun getThumbnailUri(): Uri? = embedded.thumbnailUri
+    @Public
+    fun getFileUri(): Uri? = embedded.fileUri
 
-	@Public
-	fun getEmbeddedType(): String? = embedded.embeddedType
+    @Public
+    fun getThumbnailUri(): Uri? = embedded.thumbnailUri
 
-	@Public
-	fun getContentType(): ContentType? = when (embedded.contentType) {
-		Post.Attachment.Embedded.ContentType.AUDIO -> ContentType.AUDIO
-		Post.Attachment.Embedded.ContentType.VIDEO -> ContentType.VIDEO
-		else -> null
-	}
+    @Public
+    fun getEmbeddedType(): String? = embedded.embeddedType
 
-	@Public
-	fun isCanDownload(): Boolean = embedded.canDownload
+    @Public
+    fun getContentType(): ContentType? =
+        when (embedded.contentType) {
+            Post.Attachment.Embedded.ContentType.AUDIO -> ContentType.AUDIO
+            Post.Attachment.Embedded.ContentType.VIDEO -> ContentType.VIDEO
+            else -> null
+        }
 
-	@Public
-	fun getForcedName(): String? = embedded.forcedName
+    @Public
+    fun isCanDownload(): Boolean = embedded.canDownload
 
-	companion object {
-		@Public
-		@JvmStatic
-		fun obtain(data: String?): EmbeddedAttachment? {
-			val embedded = EmbeddedType.extractAttachment(data)
-			return if (embedded != null) EmbeddedAttachment(embedded) else null
-		}
-	}
+    @Public
+    fun getForcedName(): String? = embedded.forcedName
+
+    companion object {
+        @Public
+        @JvmStatic
+        fun obtain(data: String?): EmbeddedAttachment? {
+            val embedded = EmbeddedType.extractAttachment(data)
+            return if (embedded != null) EmbeddedAttachment(embedded) else null
+        }
+    }
 }

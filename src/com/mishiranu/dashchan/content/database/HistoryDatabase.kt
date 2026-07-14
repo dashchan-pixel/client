@@ -16,8 +16,9 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.WeakObservable
 import java.util.Objects
 
-class HistoryDatabase internal constructor(private val database: CommonDatabase) :
-    CommonDatabase.Instance {
+class HistoryDatabase internal constructor(
+    private val database: CommonDatabase,
+) : CommonDatabase.Instance {
     private interface Schema {
         interface History {
             interface Columns {
@@ -39,7 +40,7 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
     class HistoryCursor internal constructor(
         cursor: Cursor,
         val hasItems: Boolean,
-        val filtered: Boolean
+        val filtered: Boolean,
     ) : CursorWrapper(cursor) {
         internal val chanNameIndex: Int
         internal val boardNameIndex: Int
@@ -87,38 +88,41 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
     override fun create(database: SQLiteDatabase) {
         database.execSQL(
             "CREATE TABLE " + Schema.History.Companion.TABLE_NAME + " (" +
-                    Schema.History.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                    Schema.History.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                    Schema.History.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
-                    Schema.History.Columns.Companion.TIME + " INTEGER NOT NULL, " +
-                    Schema.History.Columns.Companion.TITLE + " TEXT, " +
-                    "PRIMARY KEY (" + Schema.History.Columns.Companion.CHAN_NAME + ", " +
-                    Schema.History.Columns.Companion.BOARD_NAME + ", " +
-                    Schema.History.Columns.Companion.THREAD_NUMBER + "))"
+                Schema.History.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                Schema.History.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                Schema.History.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
+                Schema.History.Columns.Companion.TIME + " INTEGER NOT NULL, " +
+                Schema.History.Columns.Companion.TITLE + " TEXT, " +
+                "PRIMARY KEY (" + Schema.History.Columns.Companion.CHAN_NAME + ", " +
+                Schema.History.Columns.Companion.BOARD_NAME + ", " +
+                Schema.History.Columns.Companion.THREAD_NUMBER + "))",
         )
         database.execSQL(
             "CREATE INDEX " + Schema.History.Companion.TABLE_NAME + "_order " +
-                    "ON " + Schema.History.Companion.TABLE_NAME + " (" +
-                    Schema.History.Columns.Companion.CHAN_NAME + ", " +
-                    Schema.History.Columns.Companion.TIME + ")"
+                "ON " + Schema.History.Companion.TABLE_NAME + " (" +
+                Schema.History.Columns.Companion.CHAN_NAME + ", " +
+                Schema.History.Columns.Companion.TIME + ")",
         )
     }
 
-    override fun upgrade(database: SQLiteDatabase, migration: Migration) {
+    override fun upgrade(
+        database: SQLiteDatabase,
+        migration: Migration,
+    ) {
         when (migration) {
             Migration.FROM_8_TO_9 -> {
                 // Change "history" table structure
                 database.execSQL("ALTER TABLE history RENAME TO history_old")
                 database.execSQL(
                     "CREATE TABLE history (chan_name TEXT NOT NULL, board_name TEXT NOT NULL, " +
-                            "thread_number TEXT NOT NULL, time INTEGER NOT NULL, title TEXT, " +
-                            "PRIMARY KEY (chan_name, board_name, thread_number))"
+                        "thread_number TEXT NOT NULL, time INTEGER NOT NULL, title TEXT, " +
+                        "PRIMARY KEY (chan_name, board_name, thread_number))",
                 )
                 database.execSQL(
                     "INSERT INTO history " +
-                            "SELECT chan_name, COALESCE(board_name, ''), thread_number, COALESCE(created, 0), title " +
-                            "FROM history_old WHERE chan_name IS NOT NULL AND thread_number IS NOT NULL " +
-                            "GROUP BY chan_name, COALESCE(board_name, ''), thread_number"
+                        "SELECT chan_name, COALESCE(board_name, ''), thread_number, COALESCE(created, 0), title " +
+                        "FROM history_old WHERE chan_name IS NOT NULL AND thread_number IS NOT NULL " +
+                        "GROUP BY chan_name, COALESCE(board_name, ''), thread_number",
                 )
                 database.execSQL("CREATE INDEX history_order ON history (chan_name, time)")
                 database.execSQL("DROP TABLE history_old")
@@ -136,82 +140,106 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
         observable.unregister(runnable)
     }
 
-    private val onChanged = Runnable {
-        for (runnable in observable) {
-            runnable.run()
+    private val onChanged =
+        Runnable {
+            for (runnable in observable) {
+                runnable.run()
+            }
         }
-    }
 
     fun addHistoryAsync(
-        chanName: String, boardName: String?,
-        threadNumber: String, title: String?
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+        title: String?,
     ) {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(threadNumber)
         if (isRememberHistory) {
-            database.enqueue(ExecuteCallback { database: SQLiteDatabase? ->
-                val values = ContentValues()
-                values.put(Schema.History.Columns.Companion.CHAN_NAME, chanName)
-                values.put(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-                values.put(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
-                values.put(Schema.History.Columns.Companion.TIME, System.currentTimeMillis())
-                values.put(Schema.History.Columns.Companion.TITLE, title)
-                database!!.replace(Schema.History.Companion.TABLE_NAME, null, values)
-                ConcurrentUtils.HANDLER.post(onChanged)
-                null
-            })
+            database.enqueue(
+                ExecuteCallback { database: SQLiteDatabase? ->
+                    val values = ContentValues()
+                    values.put(Schema.History.Columns.Companion.CHAN_NAME, chanName)
+                    values.put(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                    values.put(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
+                    values.put(Schema.History.Columns.Companion.TIME, System.currentTimeMillis())
+                    values.put(Schema.History.Columns.Companion.TITLE, title)
+                    database!!.replace(Schema.History.Companion.TABLE_NAME, null, values)
+                    ConcurrentUtils.HANDLER.post(onChanged)
+                    null
+                },
+            )
         }
     }
 
     fun updateTitleAsync(
-        chanName: String, boardName: String?,
-        threadNumber: String, title: String?
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+        title: String?,
     ) {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(threadNumber)
         if (!isEmpty(title)) {
-            database.enqueue(ExecuteCallback { database: SQLiteDatabase? ->
-                val filter = Expression.filter()
-                    .equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
-                    .equals(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-                    .equals(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
-                    .build()
-                val values = ContentValues()
-                values.put(Schema.History.Columns.Companion.TITLE, title)
-                database!!.update(
-                    Schema.History.Companion.TABLE_NAME,
-                    values,
-                    filter.value,
-                    filter.args
-                )
-                ConcurrentUtils.HANDLER.post(onChanged)
-                null
-            })
+            database.enqueue(
+                ExecuteCallback { database: SQLiteDatabase? ->
+                    val filter =
+                        Expression
+                            .filter()
+                            .equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
+                            .equals(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                            .equals(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
+                            .build()
+                    val values = ContentValues()
+                    values.put(Schema.History.Columns.Companion.TITLE, title)
+                    database!!.update(
+                        Schema.History.Companion.TABLE_NAME,
+                        values,
+                        filter.value,
+                        filter.args,
+                    )
+                    ConcurrentUtils.HANDLER.post(onChanged)
+                    null
+                },
+            )
         }
     }
 
     @Throws(OperationCanceledException::class)
     fun getHistory(
-        chanName: String?, searchQuery: String?,
-        signal: CancellationSignal?
+        chanName: String?,
+        searchQuery: String?,
+        signal: CancellationSignal?,
     ): HistoryCursor {
-        val count = database.execute<Int?>(ExecuteCallback { database: SQLiteDatabase? ->
-            val projection = arrayOf<String?>("COUNT(*)")
-            val filterBuilder = Expression.filter()
-            if (chanName != null) {
-                filterBuilder.equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
-            }
-            val filter = filterBuilder.build()
-            database!!.query(
-                false, Schema.History.Companion.TABLE_NAME,
-                projection, filter.value, filter.args, null, null, null, null, signal
-            ).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    return@ExecuteCallback cursor.getInt(0)
-                }
-            }
-            0
-        })
+        val count =
+            database.execute<Int?>(
+                ExecuteCallback { database: SQLiteDatabase? ->
+                    val projection = arrayOf<String?>("COUNT(*)")
+                    val filterBuilder = Expression.filter()
+                    if (chanName != null) {
+                        filterBuilder.equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
+                    }
+                    val filter = filterBuilder.build()
+                    database!!
+                        .query(
+                            false,
+                            Schema.History.Companion.TABLE_NAME,
+                            projection,
+                            filter.value,
+                            filter.args,
+                            null,
+                            null,
+                            null,
+                            null,
+                            signal,
+                        ).use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                return@ExecuteCallback cursor.getInt(0)
+                            }
+                        }
+                    0
+                },
+            )
         val projection = arrayOf<String?>("rowid", "*")
         val filterBuilder = Expression.filter()
         if (chanName != null) {
@@ -223,36 +251,49 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
             filtered = true
         }
         val filter = filterBuilder.build()
-        val cursor = database.query(QueryCallback { database: SQLiteDatabase? ->
-            database!!.query(
-                false,
-                Schema.History.Companion.TABLE_NAME,
-                projection,
-                filter.value,
-                filter.args,
-                null,
-                null,
-                Schema.History.Columns.Companion.TIME + " DESC",
-                null,
-                signal
+        val cursor =
+            database.query(
+                QueryCallback { database: SQLiteDatabase? ->
+                    database!!.query(
+                        false,
+                        Schema.History.Companion.TABLE_NAME,
+                        projection,
+                        filter.value,
+                        filter.args,
+                        null,
+                        null,
+                        Schema.History.Columns.Companion.TIME + " DESC",
+                        null,
+                        signal,
+                    )
+                },
             )
-        })
         return HistoryCursor(cursor!!, count!! > 0, filtered)
     }
 
-    fun remove(chanName: String, boardName: String?, threadNumber: String) {
+    fun remove(
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+    ) {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(threadNumber)
-        val filter = Expression.filter()
-            .equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
-            .equals(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-            .equals(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
-            .build()
-        database.execute<Int?>(ExecuteCallback { database: SQLiteDatabase? ->
-            database!!.delete(
-                Schema.History.Companion.TABLE_NAME, filter.value, filter.args
-            )
-        })
+        val filter =
+            Expression
+                .filter()
+                .equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                .equals(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
+                .build()
+        database.execute<Int?>(
+            ExecuteCallback { database: SQLiteDatabase? ->
+                database!!.delete(
+                    Schema.History.Companion.TABLE_NAME,
+                    filter.value,
+                    filter.args,
+                )
+            },
+        )
         ConcurrentUtils.HANDLER.post(onChanged)
     }
 
@@ -262,11 +303,15 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
             filterBuilder.equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
         }
         val filter = filterBuilder.build()
-        database.execute<Int?>(ExecuteCallback { database: SQLiteDatabase? ->
-            database!!.delete(
-                Schema.History.Companion.TABLE_NAME, filter.value, filter.args
-            )
-        })
+        database.execute<Int?>(
+            ExecuteCallback { database: SQLiteDatabase? ->
+                database!!.delete(
+                    Schema.History.Companion.TABLE_NAME,
+                    filter.value,
+                    filter.args,
+                )
+            },
+        )
         ConcurrentUtils.HANDLER.post(onChanged)
     }
 }

@@ -42,7 +42,6 @@ import chan.util.CommonUtils.equals
 import chan.util.StringUtils
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.formatThreadTitle
-import chan.util.StringUtils.isEmptyOrWhitespace
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.HidePerformer
@@ -114,8 +113,13 @@ import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.Locale
 
-class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, UiManager.Observer,
-    ExtractPostsTask.Callback, WatcherService.Session.Callback {
+class PostsPage :
+    ListPage(),
+    PostsAdapter.Callback,
+    FavoritesStorage.Observer,
+    UiManager.Observer,
+    ExtractPostsTask.Callback,
+    WatcherService.Session.Callback {
     private class RetainableExtra : Retainable {
         var cache: PagesDatabase.Cache? = null
         var cacheState: PagesDatabase.Cache.State? = null
@@ -139,9 +143,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
         var dialogsState: DialogUnit.StackInstance.State? = null
 
-        fun shouldExtract(): Boolean {
-            return cache == null || !cache!!.state.equals(cacheState)
-        }
+        fun shouldExtract(): Boolean = cache == null || !cache!!.state.equals(cacheState)
 
         override fun clear() {
             if (dialogsState != null) {
@@ -163,11 +165,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         var scrollToPostNumber: PostNumber? = null
         var selectedPosts: MutableSet<PostNumber>? = null
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeInt(expandedPosts.size)
             for (number in expandedPosts) {
                 number.writeToParcel(dest, flags)
@@ -202,16 +205,16 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         for (i in 0..<expandedPostsCount) {
                             parcelableExtra.expandedPosts.add(
                                 PostNumber.CREATOR.createFromParcel(
-                                    source
-                                )
+                                    source,
+                                ),
                             )
                         }
                         val unreadPostsCount = source.readInt()
                         for (i in 0..<unreadPostsCount) {
                             parcelableExtra.unreadPosts.add(
                                 PostNumber.CREATOR.createFromParcel(
-                                    source
-                                )
+                                    source,
+                                ),
                             )
                         }
                         parcelableExtra.isAddedToHistory = source.readByte().toInt() != 0
@@ -231,9 +234,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         return parcelableExtra
                     }
 
-                    override fun newArray(size: Int): Array<ParcelableExtra?> {
-                        return arrayOfNulls<ParcelableExtra>(size)
-                    }
+                    override fun newArray(size: Int): Array<ParcelableExtra?> = arrayOfNulls<ParcelableExtra>(size)
                 }
         }
     }
@@ -252,27 +253,33 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             client: WatcherService.Client,
             chanName: String?,
             boardName: String?,
-            threadNumber: String?
+            threadNumber: String?,
         ) {
             if (session == null) {
                 val callback: WatcherService.Session.Callback?
-                callback = CallbackProxy.create(
-                    WatcherService.Session.Callback::class.java,
-                    CallbackProxy.Handler { result: CallbackProxy<WatcherService.Session.Callback> ->
-                        val visible = visibleRefresh
-                        visibleRefresh = false
-                        this.result.setValue(
-                            Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>(
-                                result,
-                                visible
+                callback =
+                    CallbackProxy.create(
+                        WatcherService.Session.Callback::class.java,
+                        CallbackProxy.Handler { result: CallbackProxy<WatcherService.Session.Callback> ->
+                            val visible = visibleRefresh
+                            visibleRefresh = false
+                            this.result.setValue(
+                                Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>(
+                                    result,
+                                    visible,
+                                ),
                             )
-                        )
-                    })
-                session = client.newSession(chanName!!, boardName, threadNumber!!, callback!!)
+                        },
+                    )
+                session = client.newSession(chanName!!, boardName, threadNumber!!, callback)
             }
         }
 
-        fun refresh(reload: Boolean, visible: Boolean, checkInterval: Int) {
+        fun refresh(
+            reload: Boolean,
+            visible: Boolean,
+            checkInterval: Int,
+        ) {
             if (session != null && session!!.refresh(reload, checkInterval)) {
                 visibleRefresh = visible
             }
@@ -298,7 +305,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             }
         }
 
-        fun observe(owner: LifecycleOwner, callback: WatcherService.Session.Callback?) {
+        fun observe(
+            owner: LifecycleOwner,
+            callback: WatcherService.Session.Callback?,
+        ) {
             result.observe(
                 owner,
                 Observer { result: Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>? ->
@@ -307,7 +317,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         visibleReadResult = result.second!!
                         result.first!!.invoke(callback!!)
                     }
-                })
+                },
+            )
         }
 
         override fun onCleared() {
@@ -332,55 +343,56 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private var importantPostsMarksFastScrollBarDecoration: ImportantPostsMarksFastScrollBarDecoration? =
         null
 
-    private val postStateProvider: PostStateProvider = object : PostStateProvider {
-        override fun isHiddenResolve(postItem: PostItem): Boolean {
-            if (postItem.getHideState() == HideState.UNDEFINED) {
-                val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-                val hideState = retainableExtra.hiddenPosts.get(postItem.getPostNumber())
-                if (hideState != HideState.UNDEFINED) {
-                    postItem.setHidden(hideState, null)
-                } else {
-                    val hideReason = hidePerformer!!.checkHidden(chan, postItem)
-                    if (hideReason != null) {
-                        postItem.setHidden(HideState.HIDDEN, hideReason)
+    private val postStateProvider: PostStateProvider =
+        object : PostStateProvider {
+            override fun isHiddenResolve(postItem: PostItem): Boolean {
+                if (postItem.getHideState() == HideState.UNDEFINED) {
+                    val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+                    val hideState = retainableExtra.hiddenPosts.get(postItem.getPostNumber())
+                    if (hideState != HideState.UNDEFINED) {
+                        postItem.setHidden(hideState, null)
                     } else {
-                        postItem.setHidden(HideState.SHOWN, null)
+                        val hideReason = hidePerformer!!.checkHidden(chan, postItem)
+                        if (hideReason != null) {
+                            postItem.setHidden(HideState.HIDDEN, hideReason)
+                        } else {
+                            postItem.setHidden(HideState.SHOWN, null)
+                        }
+                    }
+                    if (!isDisplayHiddenPostsEnabled && postItem.isHidden()) {
+                        adapter!!.removeHiddenPost(postItem)
+                        setPostHideState(postItem, postItem.getHideState())
+                        notifyTitleChanged()
                     }
                 }
-                if (!isDisplayHiddenPostsEnabled && postItem.isHidden()) {
-                    adapter!!.removeHiddenPost(postItem)
-                    setPostHideState(postItem, postItem.getHideState())
-                    notifyTitleChanged()
-                }
+                return postItem.getHideState().hidden
             }
-            return postItem.getHideState().hidden
-        }
 
-        override fun isUserPost(postNumber: PostNumber?): Boolean {
-            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-            return retainableExtra.userPosts.contains(postNumber)
-        }
+            override fun isUserPost(postNumber: PostNumber?): Boolean {
+                val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+                return retainableExtra.userPosts.contains(postNumber)
+            }
 
-        override fun isExpanded(postNumber: PostNumber?): Boolean {
-            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-            return parcelableExtra.expandedPosts.contains(postNumber)
-        }
+            override fun isExpanded(postNumber: PostNumber?): Boolean {
+                val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+                return parcelableExtra.expandedPosts.contains(postNumber)
+            }
 
-        override fun setExpanded(postNumber: PostNumber?) {
-            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-            parcelableExtra.expandedPosts.add(postNumber!!)
-        }
+            override fun setExpanded(postNumber: PostNumber?) {
+                val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+                parcelableExtra.expandedPosts.add(postNumber!!)
+            }
 
-        override fun isRead(postNumber: PostNumber?): Boolean {
-            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-            return !parcelableExtra.unreadPosts.contains(postNumber)
-        }
+            override fun isRead(postNumber: PostNumber?): Boolean {
+                val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+                return !parcelableExtra.unreadPosts.contains(postNumber)
+            }
 
-        override fun setRead(postNumber: PostNumber?) {
-            val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-            parcelableExtra.unreadPosts.remove(postNumber)
+            override fun setRead(postNumber: PostNumber?) {
+                val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+                parcelableExtra.unreadPosts.remove(postNumber)
+            }
         }
-    }
 
     private val adapter: PostsAdapter?
         get() = getRecyclerView().getAdapter() as PostsAdapter?
@@ -397,47 +409,65 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         hidePerformer = HidePerformer(context)
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-        replyable = Replyable { click: Boolean, data: Array<out ReplyData> ->
-            val board = chan.configuration.safe().obtainBoard(page.boardName)
-            if (click && board.allowPosting) {
-                uiManager.navigator()!!.navigatePosting(
-                    page.chanName, page.boardName,
-                    page.threadNumber, *data
-                )
-            }
-            board.allowPosting
-        }
-        val adapter = PostsAdapter(
-            this, page.chanName, uiManager,
-            replyable, postStateProvider, fragmentManager,
-            recyclerView, retainableExtra.postItems, retainableExtra.hiddenPosts
-        )
-        recyclerView.setAdapter(adapter)
-        val divider = DividerItemDecoration(
-            recyclerView.getContext(),
-            DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
-                adapter.configureDivider(
-                    c!!,
-                    position
-                ).horizontal(dividerPadding, dividerPadding)
-            })
-        if (isHighlightUserPosts) {
-            divider.setSkipCallback(SkipCallback { position: Int ->
-                if (position >= 0) {
-                    if (adapter.configurationSet.postStateProvider!!.isUserPost(
-                            adapter.getItem(
-                                position
-                            ).getPostNumber()
-                        )
-                    ) return@SkipCallback true
-                }
-                if ((position + 1) < adapter.getItemCount()) {
-                    return@SkipCallback adapter.configurationSet.postStateProvider!!.isUserPost(
-                        adapter.getItem(position + 1).getPostNumber()
+        replyable =
+            Replyable { click: Boolean, data: Array<out ReplyData> ->
+                val board = chan.configuration.safe().obtainBoard(page.boardName)
+                if (click && board.allowPosting) {
+                    uiManager.navigator()!!.navigatePosting(
+                        page.chanName,
+                        page.boardName,
+                        page.threadNumber,
+                        *data,
                     )
                 }
-                false
-            })
+                board.allowPosting
+            }
+        val adapter =
+            PostsAdapter(
+                this,
+                page.chanName,
+                uiManager,
+                replyable,
+                postStateProvider,
+                fragmentManager,
+                recyclerView,
+                retainableExtra.postItems,
+                retainableExtra.hiddenPosts,
+            )
+        recyclerView.setAdapter(adapter)
+        val divider =
+            DividerItemDecoration(
+                recyclerView.getContext(),
+                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
+                    adapter
+                        .configureDivider(
+                            c!!,
+                            position,
+                        ).horizontal(dividerPadding, dividerPadding)
+                },
+            )
+        if (isHighlightUserPosts) {
+            divider.setSkipCallback(
+                SkipCallback { position: Int ->
+                    if (position >= 0) {
+                        if (adapter.configurationSet.postStateProvider!!.isUserPost(
+                                adapter
+                                    .getItem(
+                                        position,
+                                    ).getPostNumber(),
+                            )
+                        ) {
+                            return@SkipCallback true
+                        }
+                    }
+                    if ((position + 1) < adapter.getItemCount()) {
+                        return@SkipCallback adapter.configurationSet.postStateProvider!!.isUserPost(
+                            adapter.getItem(position + 1).getPostNumber(),
+                        )
+                    }
+                    false
+                },
+            )
         }
         recyclerView.addItemDecoration(divider)
         recyclerView.addItemDecoration(adapter.createPostItemDecoration(context, dividerPadding))
@@ -462,8 +492,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         searchResultText!!.setMinWidth(0)
         searchResultText!!.setOnClickListener(View.OnClickListener { v: View? -> showSearchDialog() })
         searchControlLayout.addView(
-            searchResultText, LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            searchResultText,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         val backButtonView = ImageView(toolbarContext, null, android.R.attr.borderlessButtonStyle)
         backButtonView.setScaleType(ImageView.ScaleType.CENTER_INSIDE)
@@ -473,7 +504,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         searchControlLayout.addView(
             backButtonView,
             (48f * density).toInt(),
-            (48f * density).toInt()
+            (48f * density).toInt(),
         )
         val forwardButtonView =
             ImageView(toolbarContext, null, android.R.attr.borderlessButtonStyle)
@@ -484,7 +515,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         searchControlLayout.addView(
             forwardButtonView,
             (48f * density).toInt(),
-            (48f * density).toInt()
+            (48f * density).toInt(),
         )
         var i = 0
         val last = searchControlLayout.getChildCount() - 1
@@ -509,7 +540,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         searchProcessLayout.addView(
             searchProgress,
             (20f * density).toInt(),
-            (20f * density).toInt()
+            (20f * density).toInt(),
         )
         (searchProgress.getLayoutParams() as FrameLayout.LayoutParams).gravity = Gravity.CENTER
         setNewMarginRelative(searchProgress, (12f * density).toInt(), 0, (16f * density).toInt(), 0)
@@ -523,7 +554,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             uiManager.callback()!!.watcherClient!!,
             page.chanName,
             page.boardName,
-            page.threadNumber
+            page.threadNumber,
         )
         if (initRequest.threadTitle != null && parcelableExtra.threadTitle == null) {
             parcelableExtra.threadTitle = initRequest.threadTitle
@@ -550,7 +581,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 }
                 decodeThreadExtra()
                 if (retainableExtra.dialogsState != null) {
-                    uiManager.dialog()
+                    uiManager
+                        .dialog()
                         .restoreState(adapter.configurationSet, retainableExtra.dialogsState!!)
                     retainableExtra.dialogsState!!.dropState()
                     retainableExtra.dialogsState = null
@@ -623,7 +655,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     override fun onNotifyAllAdaptersChanged() {
-        uiManager!!.dialog()
+        uiManager!!
+            .dialog()
             .notifyDataSetChangedToAll(this.adapter!!.configurationSet.stackInstance!!)
     }
 
@@ -654,7 +687,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             val selected = adapter.selectedItems
             parcelableExtra.selectedPosts = HashSet<PostNumber>(selected.size)
             for (postItem in selected) {
-                parcelableExtra.selectedPosts!!.add(postItem!!.getPostNumber())
+                parcelableExtra.selectedPosts!!.add(postItem.getPostNumber())
             }
         }
     }
@@ -668,7 +701,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             return StringUtils.formatThreadTitle(
                 page.chanName!!,
                 page.boardName,
-                page.threadNumber!!
+                page.threadNumber!!,
             )
         }
     }
@@ -682,14 +715,18 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         return Pair<String?, String?>(this.obtainTitle(), subtitle)
     }
 
-    override fun onItemClick(view: View?, postItem: PostItem?) {
+    override fun onItemClick(
+        view: View?,
+        postItem: PostItem?,
+    ) {
         if (selectionMode != null) {
             this.adapter!!.toggleItemSelected(postItem!!)
             selectionMode!!.setTitle(
                 getColonString(
-                    resources, R.string.selected,
-                    this.adapter!!.selectedCount
-                )
+                    resources,
+                    R.string.selected,
+                    this.adapter!!.selectedCount,
+                ),
             )
             return
         }
@@ -704,7 +741,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         return true
     }
 
-    private fun setPostUserPost(postItem: PostItem, userPost: Boolean) {
+    private fun setPostUserPost(
+        postItem: PostItem,
+        userPost: Boolean,
+    ) {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (userPost) {
             retainableExtra.userPosts.add(postItem.getPostNumber())
@@ -712,34 +752,49 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             retainableExtra.userPosts.remove(postItem.getPostNumber())
         }
         CommonDatabase.getInstance().posts.setFlags(
-            true, getPage().chanName!!, postItem.getBoardName(),
-            postItem.getThreadNumber()!!, postItem.getPostNumber(),
-            retainableExtra.hiddenPosts.get(postItem.getPostNumber()), userPost
+            true,
+            getPage().chanName!!,
+            postItem.getBoardName(),
+            postItem.getThreadNumber()!!,
+            postItem.getPostNumber(),
+            retainableExtra.hiddenPosts.get(postItem.getPostNumber()),
+            userPost,
         )
     }
 
-    private fun setPostHideState(postItem: PostItem, hideState: HideState) {
+    private fun setPostHideState(
+        postItem: PostItem,
+        hideState: HideState,
+    ) {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.hiddenPosts.set(postItem.getPostNumber(), hideState)
         CommonDatabase.getInstance().posts.setFlags(
-            true, getPage().chanName!!, postItem.getBoardName(),
-            postItem.getThreadNumber()!!, postItem.getPostNumber(),
-            hideState, retainableExtra.userPosts.contains(postItem.getPostNumber())
+            true,
+            getPage().chanName!!,
+            postItem.getBoardName(),
+            postItem.getThreadNumber()!!,
+            postItem.getPostNumber(),
+            hideState,
+            retainableExtra.userPosts.contains(postItem.getPostNumber()),
         )
         postItem.setHidden(hideState, null)
     }
 
     public override fun onCreateOptionsMenu(menu: Menu) {
-        menu.add(0, R.id.menu_add_post, 0, R.string.reply)
+        menu
+            .add(0, R.id.menu_add_post, 0, R.string.reply)
             .setIcon(getActionBarIcon(R.attr.iconActionAddPost))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-        menu.add(0, R.id.menu_search, 0, R.string.search)
+        menu
+            .add(0, R.id.menu_search, 0, R.string.search)
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
         menu.add(0, R.id.menu_gallery, 0, R.string.gallery)
         menu.add(0, R.id.menu_flow, 0, R.string.flow)
         menu.add(0, R.id.menu_select, 0, R.string.select)
         val contentsMenu = menu.addSubMenu(0, R.id.menu_contents, 0, R.string.contents)
-        contentsMenu.getItem().setIcon(getActionBarIcon(R.attr.iconActionSync))
+        contentsMenu
+            .getItem()
+            .setIcon(getActionBarIcon(R.attr.iconActionSync))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         contentsMenu.add(0, R.id.menu_refresh, 0, R.string.refresh)
         contentsMenu.add(0, R.id.menu_reload, 0, R.string.reload)
@@ -751,10 +806,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         menu.addSubMenu(0, R.id.menu_appearance, 0, R.string.appearance)
         menu.add(0, R.id.menu_star_text, 0, R.string.add_to_favorites)
         menu.add(0, R.id.menu_unstar_text, 0, R.string.remove_from_favorites)
-        menu.add(0, R.id.menu_star_icon, 0, R.string.add_to_favorites)
+        menu
+            .add(0, R.id.menu_star_icon, 0, R.string.add_to_favorites)
             .setIcon(getActionBarIcon(R.attr.iconActionAddToFavorites))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(0, R.id.menu_unstar_icon, 0, R.string.remove_from_favorites)
+        menu
+            .add(0, R.id.menu_unstar_icon, 0, R.string.remove_from_favorites)
             .setIcon(getActionBarIcon(R.attr.iconActionRemoveFromFavorites))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.add(0, R.id.menu_open_original_thread, 0, R.string.open_original)
@@ -765,24 +822,29 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val page = getPage()
         val adapter = this.adapter
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        menu.findItem(R.id.menu_add_post)
+        menu
+            .findItem(R.id.menu_add_post)
             .setVisible(replyable != null && replyable!!.onRequestReply(false))
         menu.findItem(R.id.menu_erase).setVisible(adapter!!.getItemCount() > 0)
         menu.findItem(R.id.menu_clear_old).setVisible(adapter.hasOldPosts())
         menu.findItem(R.id.menu_clear_deleted).setVisible(adapter.hasDeletedPosts())
         menu.findItem(R.id.menu_hidden_posts).setVisible(hidePerformer!!.hasLocalFilters())
-        val isFavorite = FavoritesStorage.getInstance().hasFavorite(
-            page.chanName, page.boardName,
-            page.threadNumber
-        )
+        val isFavorite =
+            FavoritesStorage.getInstance().hasFavorite(
+                page.chanName,
+                page.boardName,
+                page.threadNumber,
+            )
         val iconFavorite = isTabletOrLandscape(resources.configuration)
         menu.findItem(R.id.menu_star_text).setVisible(!iconFavorite && !isFavorite)
         menu.findItem(R.id.menu_unstar_text).setVisible(!iconFavorite && isFavorite)
         menu.findItem(R.id.menu_star_icon).setVisible(iconFavorite && !isFavorite)
         menu.findItem(R.id.menu_unstar_icon).setVisible(iconFavorite && isFavorite)
-        menu.findItem(R.id.menu_open_original_thread)
+        menu
+            .findItem(R.id.menu_open_original_thread)
             .setVisible(getPreferred(null, retainableExtra.archivedThreadUri).name != null)
-        val canBeArchived = !ChanManager.getInstance().getArchiveChanNames(page.chanName).isEmpty() ||
+        val canBeArchived =
+            !ChanManager.getInstance().getArchiveChanNames(page.chanName).isEmpty() ||
                 !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
         menu.findItem(R.id.menu_archive).setVisible(canBeArchived)
     }
@@ -793,8 +855,9 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_add_post) {
             uiManager!!.navigator()!!.navigatePosting(
-                page.chanName, page.boardName,
-                page.threadNumber
+                page.chanName,
+                page.boardName,
+                page.threadNumber,
             )
             return true
         } else if (switchItemId0 == R.id.menu_gallery) {
@@ -814,16 +877,23 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 }
             }
             uiManager!!.navigator()!!.navigateGallery(
-                page.chanName, gallerySet, imageIndex,
-                null, GalleryOverlay.NavigatePostMode.ENABLED, true
+                page.chanName,
+                gallerySet,
+                imageIndex,
+                null,
+                GalleryOverlay.NavigatePostMode.ENABLED,
+                true,
             )
             return true
         } else if (switchItemId0 == R.id.menu_flow) {
             val chan = chan
             val gallerySet = adapter!!.gallerySet
             show(
-                fragmentManager, chan, gallerySet.createList(), null,
-                gallerySet.getThreadTitle()
+                fragmentManager,
+                chan,
+                gallerySet.createList(),
+                null,
+                gallerySet.getThreadTitle(),
             )
             return true
         } else if (switchItemId0 == R.id.menu_select) {
@@ -854,8 +924,11 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         } else if (switchItemId0 == R.id.menu_star_text || switchItemId0 == R.id.menu_star_icon) {
             val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
             FavoritesStorage.getInstance().add(
-                page.chanName!!, page.boardName, page.threadNumber!!,
-                parcelableExtra.threadTitle, true
+                page.chanName!!,
+                page.boardName,
+                page.threadNumber!!,
+                parcelableExtra.threadTitle,
+                true,
             )
             updateOptionsMenu()
             return true
@@ -872,7 +945,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 val threadNumber = chan.locator.safe(true).getThreadNumber(uri)
                 if (threadNumber != null) {
                     val threadTitle = adapter!!.getItem(0).getSubjectOrComment()
-                    uiManager!!.navigator()!!
+                    uiManager!!
+                        .navigator()!!
                         .navigatePosts(chan.name, boardName, threadNumber, null, threadTitle)
                 }
             }
@@ -883,20 +957,27 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             for (postItem in adapter!!) {
                 if (threadTitle == null) {
                     threadTitle =
-                        StringUtils.emptyIfNull(postItem!!.getSubjectOrComment())
+                        StringUtils.emptyIfNull(postItem.getSubjectOrComment())
                 }
-                posts.add(postItem!!.getPost())
+                posts.add(postItem.getPost())
             }
             uiManager!!.dialog().performSendArchiveThread(
                 fragmentManager,
-                page.chanName, page.boardName, page.threadNumber, threadTitle, posts
+                page.chanName,
+                page.boardName,
+                page.threadNumber,
+                threadTitle,
+                posts,
             )
             return true
         }
         return false
     }
 
-    override fun onFavoritesUpdate(favoriteItem: FavoriteItem, action: FavoritesStorage.Action) {
+    override fun onFavoritesUpdate(
+        favoriteItem: FavoriteItem,
+        action: FavoritesStorage.Action,
+    ) {
         when (action) {
             FavoritesStorage.Action.ADD, FavoritesStorage.Action.REMOVE -> {
                 val page = getPage()
@@ -916,29 +997,36 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
     }
 
-    private fun onCreateSelection(mode: ActionMode, menu: Menu): Boolean {
+    private fun onCreateSelection(
+        mode: ActionMode,
+        menu: Menu,
+    ): Boolean {
         val page = getPage()
         val chan = chan
         this.adapter!!.setSelectionModeEnabled(true)
         mode.setTitle(
             getColonString(
                 resources,
-                R.string.selected, this.adapter!!.selectedCount
-            )
+                R.string.selected,
+                this.adapter!!.selectedCount,
+            ),
         )
         val board = chan.configuration.safe().obtainBoard(page.boardName)
-        menu.add(0, R.id.menu_make_threadshot, 0, R.string.make_threadshot)
+        menu
+            .add(0, R.id.menu_make_threadshot, 0, R.string.make_threadshot)
             .setIcon(getActionBarIcon(R.attr.iconActionMakeThreadshot))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         if (replyable != null && replyable!!.onRequestReply(false)) {
-            menu.add(0, R.id.menu_reply, 0, R.string.reply)
+            menu
+                .add(0, R.id.menu_reply, 0, R.string.reply)
                 .setIcon(getActionBarIcon(R.attr.iconActionPaste))
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
         if (board.allowDeleting) {
             val deleting = chan.configuration.safe().obtainDeleting(page.boardName)
             if (deleting != null && deleting.multiplePosts) {
-                menu.add(0, R.id.menu_delete, 0, R.string.delete)
+                menu
+                    .add(0, R.id.menu_delete, 0, R.string.delete)
                     .setIcon(getActionBarIcon(R.attr.iconActionDelete))
                     .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
@@ -946,7 +1034,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         if (board.allowReporting) {
             val reporting = chan.configuration.safe().obtainReporting(page.boardName)
             if (reporting != null && reporting.multiplePosts) {
-                menu.add(0, R.id.menu_report, 0, R.string.report)
+                menu
+                    .add(0, R.id.menu_report, 0, R.string.report)
                     .setIcon(getActionBarIcon(R.attr.iconActionReport))
                     .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
@@ -954,7 +1043,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         return true
     }
 
-    private fun onSelectionItemSelected(mode: ActionMode, item: MenuItem): Boolean {
+    private fun onSelectionItemSelected(
+        mode: ActionMode,
+        item: MenuItem,
+    ): Boolean {
         val adapter = this.adapter
         val switchItemId2 = item.getItemId()
         if (switchItemId2 == R.id.menu_make_threadshot) {
@@ -963,8 +1055,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 val page = getPage()
                 val threadTitle = adapter.getItem(0).getSubjectOrComment()
                 ThreadshotPerformer(
-                    fragmentManager, page.chanName!!, page.boardName, page.threadNumber,
-                    threadTitle, postItems, getRecyclerView().getWidth()
+                    fragmentManager,
+                    page.chanName!!,
+                    page.boardName,
+                    page.threadNumber,
+                    threadTitle,
+                    postItems,
+                    getRecyclerView().getWidth(),
                 )
             }
             mode.finish()
@@ -977,7 +1074,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             if (data.size > 0) {
                 replyable!!.onRequestReply(
                     true,
-                    *(CommonUtils.toArray(data, ReplyData::class.java) ?: emptyArray())
+                    *CommonUtils.toArray(data, ReplyData::class.java).orEmpty(),
                 )
             }
             mode.finish()
@@ -986,7 +1083,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             val postItems = adapter!!.selectedItems
             val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
-                if (!postItem!!.isDeleted()) {
+                if (!postItem.isDeleted()) {
                     postNumbers.add(postItem.getPostNumber())
                 }
             }
@@ -994,7 +1091,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 val page = getPage()
                 uiManager!!.dialog().performSendDeletePosts(
                     fragmentManager,
-                    page.chanName, page.boardName, page.threadNumber, postNumbers
+                    page.chanName,
+                    page.boardName,
+                    page.threadNumber,
+                    postNumbers,
                 )
             }
             mode.finish()
@@ -1003,7 +1103,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             val postItems = adapter!!.selectedItems
             val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
-                if (!postItem!!.isDeleted()) {
+                if (!postItem.isDeleted()) {
                     postNumbers.add(postItem.getPostNumber())
                 }
             }
@@ -1011,7 +1111,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 val page = getPage()
                 uiManager!!.dialog().performSendReportPosts(
                     fragmentManager,
-                    page.chanName, page.boardName, page.threadNumber, postNumbers
+                    page.chanName,
+                    page.boardName,
+                    page.threadNumber,
+                    postNumbers,
                 )
             }
             mode.finish()
@@ -1034,19 +1137,21 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         if (searchWorker != null) {
             searchWorker!!.cancel()
         }
-        searchWorker = SearchWorker(
-            postStateProvider,
-            chan,
-            postItems,
-            query,
-            lastEditedPostNumbers,
-            lastNewPostNumbers,
-            SearchWorker.Callback { foundPostNumbers: MutableList<PostNumber>, queries: MutableSet<String> ->
-                this.onSearchResult(
-                    foundPostNumbers!!,
-                    queries!!
-                )
-            })
+        searchWorker =
+            SearchWorker(
+                postStateProvider,
+                chan,
+                postItems,
+                query,
+                lastEditedPostNumbers,
+                lastNewPostNumbers,
+                SearchWorker.Callback { foundPostNumbers: MutableList<PostNumber>, queries: MutableSet<String> ->
+                    this.onSearchResult(
+                        foundPostNumbers,
+                        queries,
+                    )
+                },
+            )
         setCustomSearchView(searchProcessView)
         return false
     }
@@ -1063,7 +1168,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private fun onSearchResult(
         foundPostNumbers: MutableList<PostNumber>,
-        queries: MutableSet<String>
+        queries: MutableSet<String>,
     ) {
         searchWorker = null
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
@@ -1077,15 +1182,22 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         } else {
             setCustomSearchView(searchControlView)
             this.adapter!!.setHighlightText(queries)
-            val listPosition = (getRecyclerView().getLayoutManager() as LinearLayoutManager)
-                .findFirstVisibleItemPosition()
+            val listPosition =
+                (getRecyclerView().getLayoutManager() as LinearLayoutManager)
+                    .findFirstVisibleItemPosition()
             clearSearchFocus()
-            val postNumber = if (listPosition >= 0) this.adapter!!.getItem(listPosition)
-                .getPostNumber() else null
+            val postNumber =
+                if (listPosition >= 0) {
+                    this.adapter!!
+                        .getItem(listPosition)
+                        .getPostNumber()
+                } else {
+                    null
+                }
             var index = 0
             if (postNumber != null) {
                 for (i in foundPostNumbers.indices) {
-                    if (foundPostNumbers.get(i)!!.compareTo(postNumber) >= 0) {
+                    if (foundPostNumbers[i].compareTo(postNumber) >= 0) {
                         index = i
                         break
                     }
@@ -1099,7 +1211,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private fun showSearchDialog() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (!retainableExtra.searchPostNumbers.isEmpty()) {
-            uiManager!!.dialog()
+            uiManager!!
+                .dialog()
                 .displayList(this.adapter!!.configurationSet, retainableExtra.searchPostNumbers)
         }
     }
@@ -1110,10 +1223,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         if (count > 0) {
             retainableExtra.searchLastIndex =
                 (retainableExtra.searchLastIndex + addIndex + count) % count
-            val position = this.adapter!!.positionOfPostNumber(
-                retainableExtra.searchPostNumbers
-                    .get(retainableExtra.searchLastIndex)!!
-            )
+            val position =
+                this.adapter!!.positionOfPostNumber(
+                    retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex]!!,
+                )
             if (position >= 0) {
                 smoothScrollToPosition(getRecyclerView(), position)
             }
@@ -1125,7 +1238,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         searchResultText!!.setText(
             (retainableExtra.searchLastIndex + 1).toString() + "/" +
-                    retainableExtra.searchPostNumbers.size
+                retainableExtra.searchPostNumbers.size,
         )
     }
 
@@ -1173,7 +1286,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
     }
 
-    public override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {
+    public override fun onListPulled(
+        wrapper: PullableWrapper,
+        side: PullableWrapper.Side,
+    ) {
         switchList()
         refreshPostsWithoutIndication(false)
     }
@@ -1255,7 +1371,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val page = getPage()
         CommonDatabase.getInstance().threads.setStateExtra(
             true,
-            page.chanName!!, page.boardName, page.threadNumber!!, false, null, true, extra
+            page.chanName!!,
+            page.boardName,
+            page.threadNumber!!,
+            false,
+            null,
+            true,
+            extra,
         )
     }
 
@@ -1299,59 +1421,83 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 throw RuntimeException(e)
             }
         }
-        return if (positionPostNumber != null) Pair<PostNumber?, Int?>(
-            positionPostNumber,
-            positionOffset
-        ) else null
+        return if (positionPostNumber != null) {
+            Pair<PostNumber?, Int?>(
+                positionPostNumber,
+                positionOffset,
+            )
+        } else {
+            null
+        }
     }
 
-    private val storePositionRunnable = Runnable {
-        val listPosition = obtain(getRecyclerView(), null)
-        var state: ByteArray? = null
-        if (listPosition != null) {
-            try {
-                writer().use { writer ->
-                    writer.startObject()
-                    writer.name("position")
-                    writer.startObject()
-                    writer.name("number")
-                    writer.value(
-                        this.adapter!!.getItem(listPosition.position).getPostNumber().toString()
-                    )
-                    writer.name("offset")
-                    writer.value(listPosition.offset)
-                    writer.endObject()
-                    writer.endObject()
-                    state = writer.build()
+    private val storePositionRunnable =
+        Runnable {
+            val listPosition = obtain(getRecyclerView(), null)
+            var state: ByteArray? = null
+            if (listPosition != null) {
+                try {
+                    writer().use { writer ->
+                        writer.startObject()
+                        writer.name("position")
+                        writer.startObject()
+                        writer.name("number")
+                        writer.value(
+                            this.adapter!!
+                                .getItem(listPosition.position)
+                                .getPostNumber()
+                                .toString(),
+                        )
+                        writer.name("offset")
+                        writer.value(listPosition.offset)
+                        writer.endObject()
+                        writer.endObject()
+                        state = writer.build()
+                    }
+                } catch (e: IOException) {
+                    throw RuntimeException(e)
                 }
-            } catch (e: IOException) {
-                throw RuntimeException(e)
             }
+            val page = getPage()
+            CommonDatabase.getInstance().threads.setStateExtra(
+                true,
+                page.chanName!!,
+                page.boardName,
+                page.threadNumber!!,
+                true,
+                state,
+                false,
+                null,
+            )
         }
-        val page = getPage()
-        CommonDatabase.getInstance().threads.setStateExtra(
-            true,
-            page.chanName!!, page.boardName, page.threadNumber!!, true, state, false, null
-        )
-    }
 
     private val scrollListener: RecyclerView.OnScrollListener =
         object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(
+                recyclerView: RecyclerView,
+                dx: Int,
+                dy: Int,
+            ) {
                 ConcurrentUtils.HANDLER.removeCallbacks(storePositionRunnable)
                 ConcurrentUtils.HANDLER.postDelayed(storePositionRunnable, 2000L)
             }
         }
 
     private fun transformListPositionToPair(listPosition: ListPosition?): Pair<PostNumber?, Int?>? {
-        val postNumber = if (listPosition != null)
-            this.adapter!!.getItem(listPosition.position).getPostNumber()
-        else
+        val postNumber =
+            if (listPosition != null) {
+                this.adapter!!.getItem(listPosition.position).getPostNumber()
+            } else {
+                null
+            }
+        return if (postNumber != null) {
+            Pair<PostNumber?, Int?>(
+                postNumber,
+                listPosition!!.offset,
+            )
+        } else {
             null
-        return if (postNumber != null) Pair<PostNumber?, Int?>(
-            postNumber,
-            listPosition!!.offset
-        ) else null
+        }
     }
 
     private fun transformPairToListPosition(positionPair: Pair<PostNumber?, Int?>?): ListPosition? {
@@ -1369,27 +1515,34 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     }
 
     private fun extractPostsWithoutIndication(cleanup: PagesDatabase.Cleanup) {
-        var cleanup = cleanup
+        var currentCleanup = cleanup
         val page = getPage()
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        if (cleanup == PagesDatabase.Cleanup.ERASE) {
+        if (currentCleanup == PagesDatabase.Cleanup.ERASE) {
             retainableExtra.eraseExtract = true
         }
-        if (cleanup == PagesDatabase.Cleanup.NONE && cyclicalRefreshMode ==
+        if (currentCleanup == PagesDatabase.Cleanup.NONE &&
+            cyclicalRefreshMode ==
             Preferences.CyclicalRefreshMode.FULL_LOAD_CLEANUP
         ) {
-            cleanup = PagesDatabase.Cleanup.OLD
+            currentCleanup = PagesDatabase.Cleanup.OLD
         }
         if (retainableExtra.eraseExtract) {
-            cleanup = PagesDatabase.Cleanup.ERASE
+            currentCleanup = PagesDatabase.Cleanup.ERASE
             val readViewModel = getViewModel(ReadViewModel::class.java)
             readViewModel.notifyEraseStarted()
         }
         val extractViewModel = getViewModel(ExtractViewModel::class.java)
-        val task = ExtractPostsTask(
-            extractViewModel.callback!!, retainableExtra.cache,
-            chan, page.boardName, page.threadNumber, retainableExtra.initialExtract, cleanup
-        )
+        val task =
+            ExtractPostsTask(
+                extractViewModel.callback!!,
+                retainableExtra.cache,
+                chan,
+                page.boardName,
+                page.threadNumber,
+                retainableExtra.initialExtract,
+                currentCleanup,
+            )
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         extractViewModel.attach(task)
     }
@@ -1397,17 +1550,18 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private val autoRefreshInterval: Int
         get() = Preferences.autoRefreshInterval * 1000
 
-    private val refreshRunnable = Runnable {
-        val interval = this.autoRefreshInterval
-        if (interval > 0 && !hasReadTask()) {
-            val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-            if (!retainableExtra.eraseExtract) {
-                val readViewModel = getViewModel(ReadViewModel::class.java)
-                readViewModel.refresh(false, false, interval)
+    private val refreshRunnable =
+        Runnable {
+            val interval = this.autoRefreshInterval
+            if (interval > 0 && !hasReadTask()) {
+                val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
+                if (!retainableExtra.eraseExtract) {
+                    val readViewModel = getViewModel(ReadViewModel::class.java)
+                    readViewModel.refresh(false, false, interval)
+                }
             }
+            queueNextRefresh(false)
         }
-        queueNextRefresh(false)
-    }
 
     private fun queueNextRefresh(instant: Boolean) {
         ConcurrentUtils.HANDLER.removeCallbacks(refreshRunnable)
@@ -1510,7 +1664,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             newCount: Int,
             deletedCount: Int,
             hasEdited: Boolean,
-            replyCount: Int
+            replyCount: Int,
         ): Boolean {
             if (toastVisible) {
                 this.newCount += newCount
@@ -1529,12 +1683,18 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private val lastToast = LastToast()
 
-    override fun onExtractPostsComplete(result: ExtractPostsTask.Result?, cancelled: Boolean) {
+    override fun onExtractPostsComplete(
+        result: ExtractPostsTask.Result?,
+        cancelled: Boolean,
+    ) {
         val page = getPage()
         if (result != null) {
             WatcherNotifications.cancelReplies(
                 context,
-                page.chanName, page.boardName, page.threadNumber, result.replyPosts
+                page.chanName,
+                page.boardName,
+                page.threadNumber,
+                result.replyPosts,
             )
         }
         if (cancelled) {
@@ -1556,7 +1716,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
         if (result != null) {
             if (erase && result.cache.isEmpty) {
-                FavoritesStorage.getInstance()
+                FavoritesStorage
+                    .getInstance()
                     .remove(page.chanName, page.boardName, page.threadNumber)
                 closePage()
                 return
@@ -1579,9 +1740,11 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             }
             if (!result.postItems.isEmpty() || !result.removedPosts.isEmpty()) {
                 if (adapter.getItemCount() > 0) {
-                    var listPosition = obtain(
-                        recyclerView,
-                        PositionTest { position: Int -> !adapter.getItem(position).isDeleted() })
+                    var listPosition =
+                        obtain(
+                            recyclerView,
+                            PositionTest { position: Int -> !adapter.getItem(position).isDeleted() },
+                        )
                     if (listPosition == null) {
                         listPosition = obtain(recyclerView, null)
                     }
@@ -1612,33 +1775,43 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 updateAdapters = true
                 var message: String?
                 if (lastToast.replyCount > 0 || lastToast.deletedCount > 0) {
-                    message = resources.getQuantityString(
-                        R.plurals.number_new__format,
-                        lastToast.newCount, lastToast.newCount
-                    )
-                    if (lastToast.replyCount > 0) {
-                        message = getString(
-                            R.string.__enumeration_format, message,
-                            resources.getQuantityString(
-                                R.plurals.number_replies__format,
-                                lastToast.replyCount, lastToast.replyCount
-                            )
+                    message =
+                        resources.getQuantityString(
+                            R.plurals.number_new__format,
+                            lastToast.newCount,
+                            lastToast.newCount,
                         )
+                    if (lastToast.replyCount > 0) {
+                        message =
+                            getString(
+                                R.string.__enumeration_format,
+                                message,
+                                resources.getQuantityString(
+                                    R.plurals.number_replies__format,
+                                    lastToast.replyCount,
+                                    lastToast.replyCount,
+                                ),
+                            )
                     }
                     if (lastToast.deletedCount > 0) {
-                        message = getString(
-                            R.string.__enumeration_format, message,
-                            resources.getQuantityString(
-                                R.plurals.number_deleted__format,
-                                lastToast.deletedCount, lastToast.deletedCount
+                        message =
+                            getString(
+                                R.string.__enumeration_format,
+                                message,
+                                resources.getQuantityString(
+                                    R.plurals.number_deleted__format,
+                                    lastToast.deletedCount,
+                                    lastToast.deletedCount,
+                                ),
                             )
-                        )
                     }
                 } else if (lastToast.newCount > 0) {
-                    message = resources.getQuantityString(
-                        R.plurals.number_new_posts__format,
-                        lastToast.newCount, lastToast.newCount
-                    )
+                    message =
+                        resources.getQuantityString(
+                            R.plurals.number_new_posts__format,
+                            lastToast.newCount,
+                            lastToast.newCount,
+                        )
                 } else {
                     message = getString(R.string.some_posts_have_been_edited)
                 }
@@ -1652,35 +1825,45 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                         adapter.preloadPosts(showPostNumber)
                         lastToast.postNumber = showPostNumber
                     }
-                    lastToast.id = show(
-                        message, lastToast.id,
-                        ClickableToast.Button(R.string.show, true, Runnable {
-                            if (isRunning) {
-                                val newPostIndex = adapter.positionOfPostNumber(showPostNumber!!)
-                                if (newPostIndex >= 0) {
-                                    smoothScrollToPosition(getRecyclerView(), newPostIndex)
-                                }
-                            }
-                        })
-                    )
+                    lastToast.id =
+                        show(
+                            message,
+                            lastToast.id,
+                            ClickableToast.Button(
+                                R.string.show,
+                                true,
+                                Runnable {
+                                    if (isRunning) {
+                                        val newPostIndex = adapter.positionOfPostNumber(showPostNumber!!)
+                                        if (newPostIndex >= 0) {
+                                            smoothScrollToPosition(getRecyclerView(), newPostIndex)
+                                        }
+                                    }
+                                },
+                            ),
+                        )
                 } else {
                     lastToast.id = show(message, lastToast.id, null)
                 }
 
                 if (deletedCount > 0 || hasEdited) {
-                    val editedPostNumbers = if (toastVisible)
-                        HashSet<PostNumber?>(lastEditedPostNumbers)
-                    else
-                        HashSet<PostNumber?>()
+                    val editedPostNumbers =
+                        if (toastVisible) {
+                            HashSet<PostNumber?>(lastEditedPostNumbers)
+                        } else {
+                            HashSet<PostNumber?>()
+                        }
                     editedPostNumbers.addAll(result.deletedPosts)
                     editedPostNumbers.addAll(result.editedPosts)
                     lastEditedPostNumbers = editedPostNumbers
                 }
                 if (newCount > 0) {
-                    val newPostNumbers = if (toastVisible)
-                        HashSet<PostNumber?>(lastNewPostNumbers)
-                    else
-                        HashSet<PostNumber?>()
+                    val newPostNumbers =
+                        if (toastVisible) {
+                            HashSet<PostNumber?>(lastNewPostNumbers)
+                        } else {
+                            HashSet<PostNumber?>()
+                        }
                     newPostNumbers.addAll(result.newPosts)
                     lastNewPostNumbers = newPostNumbers
                 }
@@ -1725,7 +1908,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private fun onExtractPostsCompleteInternal(
         firstLayout: Boolean,
-        listPositionFromState: ListPosition?
+        listPositionFromState: ListPosition?,
     ) {
         val adapter = this.adapter
         var listPosition = takeListPosition()
@@ -1735,8 +1918,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         val page = getPage()
 
-        if (firstLayout && (parcelableExtra.scrollToPostNumber == null ||
-                    !scrollToPostFromExtra(true)) && listPosition != null
+        if (firstLayout &&
+            (
+                parcelableExtra.scrollToPostNumber == null ||
+                    !scrollToPostFromExtra(true)
+            ) &&
+            listPosition != null
         ) {
             listPosition.apply(getRecyclerView())
         }
@@ -1745,21 +1932,28 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             parcelableExtra.isAddedToHistory = true
             CommonDatabase.getInstance().history.addHistoryAsync(
                 page.chanName!!,
-                page.boardName, page.threadNumber!!, parcelableExtra.threadTitle
+                page.boardName,
+                page.threadNumber!!,
+                parcelableExtra.threadTitle,
             )
         }
         val iterator = this.adapter!!.iterator()
         if (iterator.hasNext()) {
-            var title: String? = iterator.next()!!.getSubjectOrComment()
+            var title: String? = iterator.next().getSubjectOrComment()
             if (StringUtils.isEmptyOrWhitespace(title)) {
                 title = null
             }
             FavoritesStorage.getInstance().updateTitle(
-                page.chanName, page.boardName,
-                page.threadNumber, title, false
+                page.chanName,
+                page.boardName,
+                page.threadNumber,
+                title,
+                false,
             )
             if (!equals(StringUtils.nullIfEmpty(parcelableExtra.threadTitle), title)) {
-                CommonDatabase.getInstance().history
+                CommonDatabase
+                    .getInstance()
+                    .history
                     .updateTitleAsync(page.chanName!!, page.boardName, page.threadNumber!!, title)
                 parcelableExtra.threadTitle = title
                 notifyTitleChanged()
@@ -1784,7 +1978,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
 
     private fun initializeImportantPostsMarksFastScrollBarDecoration(
         recyclerView: PaddedRecyclerView,
-        retainableExtra: RetainableExtra
+        retainableExtra: RetainableExtra,
     ) {
         val showImportantPostsOnFastScrollBar =
             isShowImportantPostsOnFastScrollBar && isActiveScrollbar
@@ -1792,7 +1986,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
             importantPostsMarksFastScrollBarDecoration =
                 ImportantPostsMarksFastScrollBarDecoration(context)
             recyclerView.setImportantPostsMarksFastScrollBarDecoration(
-                importantPostsMarksFastScrollBarDecoration
+                importantPostsMarksFastScrollBarDecoration,
             )
             val fastScrollBarDecorationData =
                 retainableExtra.importantPostsMarksFastScrollBarDecorationData
@@ -1837,9 +2031,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 for (replyPostNumber in repliesPostNumbers) {
                     val replyPosition = adapter.positionOfPostNumber(replyPostNumber)
                     val showReplyOnScrollBar =
-                        replyPosition >= 0 && !postStateProvider.isHiddenResolve(
-                            adapter.getItem(replyPosition)
-                        )
+                        replyPosition >= 0 &&
+                            !postStateProvider.isHiddenResolve(
+                                adapter.getItem(replyPosition),
+                            )
                     if (showReplyOnScrollBar) {
                         repliesPositions.add(replyPosition)
                     }
@@ -1850,21 +2045,21 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 ImportantPostsMarksFastScrollBarDecoration.Data(
                     userPostsPositions,
                     repliesPositions,
-                    adapter!!.getItemCount()
+                    adapter!!.getItemCount(),
                 )
         }
 
         retainableExtra.importantPostsMarksFastScrollBarDecorationData =
             importantPostsMarksFastScrollBarDecorationData
         importantPostsMarksFastScrollBarDecoration!!.setData(
-            importantPostsMarksFastScrollBarDecorationData
+            importantPostsMarksFastScrollBarDecorationData,
         )
         getRecyclerView().invalidateItemDecorations()
     }
 
     override fun onReadPostsSuccess(
         cacheState: PagesDatabase.Cache.State?,
-        consumeReplies: ConsumeReplies
+        consumeReplies: ConsumeReplies,
     ) {
         val readViewModel = getViewModel(ReadViewModel::class.java)
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
@@ -1898,7 +2093,10 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private var postNotifyDataSetChanged: Runnable? = null
     private var updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = false
 
-    override fun onPostItemMessage(postItem: PostItem, message: UiManager.Message) {
+    override fun onPostItemMessage(
+        postItem: PostItem,
+        message: UiManager.Message,
+    ) {
         val position = this.adapter!!.positionOfPostNumber(postItem.getPostNumber())
         if (position < 0) {
             return
@@ -1907,14 +2105,15 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         when (message) {
             UiManager.Message.POST_INVALIDATE_ALL_VIEWS -> {
                 if (postNotifyDataSetChanged == null) {
-                    postNotifyDataSetChanged = Runnable {
-                        this.adapter!!.notifyDataSetChanged()
-                        if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
-                            updateImportantPostsFastScrollBarDecorationData()
-                            updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews =
-                                false
+                    postNotifyDataSetChanged =
+                        Runnable {
+                            this.adapter!!.notifyDataSetChanged()
+                            if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
+                                updateImportantPostsFastScrollBarDecorationData()
+                                updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews =
+                                    false
+                            }
                         }
-                    }
                 }
                 recyclerView.removeCallbacks(postNotifyDataSetChanged)
                 recyclerView.post(postNotifyDataSetChanged)
@@ -1929,16 +2128,18 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
                 uiManager!!.sendPostItemMessage(
                     postItem,
-                    UiManager.Message.POST_INVALIDATE_ALL_VIEWS
+                    UiManager.Message.POST_INVALIDATE_ALL_VIEWS,
                 )
             }
 
             UiManager.Message.PERFORM_SWITCH_HIDE -> {
                 setPostHideState(
-                    postItem, if (!postItem.getHideState().hidden)
+                    postItem,
+                    if (!postItem.getHideState().hidden) {
                         HideState.HIDDEN
-                    else
+                    } else {
                         HideState.SHOWN
+                    },
                 )
                 if (postItem.getHideState() == HideState.HIDDEN) {
                     if (!isDisplayHiddenPostsEnabled) this.adapter!!.removeHiddenPost(postItem)
@@ -1947,7 +2148,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
                 uiManager!!.sendPostItemMessage(
                     postItem,
-                    UiManager.Message.POST_INVALIDATE_ALL_VIEWS
+                    UiManager.Message.POST_INVALIDATE_ALL_VIEWS,
                 )
             }
 
@@ -1989,16 +2190,19 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 }
                 adapter.preloadPosts(
                     (recyclerView.getLayoutManager() as LinearLayoutManager)
-                        .findFirstVisibleItemPosition()
+                        .findFirstVisibleItemPosition(),
                 )
             }
 
             UiManager.Message.PERFORM_GO_TO_POST -> {
                 // Avoid concurrent modification
-                recyclerView.post(Runnable {
-                    uiManager!!.dialog()
-                        .closeDialogs(this.adapter!!.configurationSet.stackInstance!!)
-                })
+                recyclerView.post(
+                    Runnable {
+                        uiManager!!
+                            .dialog()
+                            .closeDialogs(this.adapter!!.configurationSet.stackInstance!!)
+                    },
+                )
                 smoothScrollToPosition(recyclerView, position)
             }
         }
@@ -2012,23 +2216,32 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         }
     }
 
-    private class SelectionCallback(postsPage: PostsPage?) : ActionMode.Callback {
+    private class SelectionCallback(
+        postsPage: PostsPage?,
+    ) : ActionMode.Callback {
         private val postsPage: WeakReference<PostsPage?>
 
         init {
             this.postsPage = WeakReference<PostsPage?>(postsPage)
         }
 
-        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+        override fun onCreateActionMode(
+            mode: ActionMode,
+            menu: Menu,
+        ): Boolean {
             val postsPage = this.postsPage.get()
             return postsPage != null && postsPage.onCreateSelection(mode, menu)
         }
 
-        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-            return false
-        }
+        override fun onPrepareActionMode(
+            mode: ActionMode?,
+            menu: Menu?,
+        ): Boolean = false
 
-        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+        override fun onActionItemClicked(
+            mode: ActionMode,
+            item: MenuItem,
+        ): Boolean {
             val postsPage = this.postsPage.get()
             return postsPage != null && postsPage.onSelectionItemSelected(mode, item)
         }
@@ -2048,10 +2261,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
         query: String,
         private val editedPostNumbers: MutableSet<PostNumber?>,
         private val newPostNumbers: MutableSet<PostNumber?>,
-        private val callback: Callback
+        private val callback: Callback,
     ) : Runnable {
         fun interface Callback {
-            fun onResult(foundPostNumbers: MutableList<PostNumber>, queries: MutableSet<String>)
+            fun onResult(
+                foundPostNumbers: MutableList<PostNumber>,
+                queries: MutableSet<String>,
+            )
         }
 
         private val helper: SearchHelper
@@ -2083,7 +2299,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     callback.onResult(foundPostNumbers, queries)
                     break
                 }
-                val postItem = postItems.get(index)
+                val postItem = postItems[index]
                 if (!postStateProvider.isHiddenResolve(postItem)) {
                     val postNumber = postItem.getPostNumber()
                     val comment = postItem.getComment(chan).toString().lowercase(locale)
@@ -2114,7 +2330,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             "n",
                             newPost,
                             "op",
-                            originalPoster
+                            originalPoster,
                         )
                     ) {
                         continue
@@ -2183,7 +2399,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    AlertDialog.Builder(provider!!.context)
+                    AlertDialog
+                        .Builder(provider!!.context)
                         .setTitle(R.string.erase)
                         .setMessage(R.string.thread_will_be_deleted_from_cache__sentence)
                         .setPositiveButton(
@@ -2191,10 +2408,11 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                                 val postsPage = extract<PostsPage>(provider)!!
                                 postsPage.extractPosts(PagesDatabase.Cleanup.ERASE)
-                            })
-                        .setNegativeButton(android.R.string.cancel, null)
+                            },
+                        ).setNegativeButton(android.R.string.cancel, null)
                         .create()
-                })
+                },
+            )
         }
 
         private fun showClearDeletedDialog(fragmentManager: FragmentManager) {
@@ -2202,7 +2420,8 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    AlertDialog.Builder(provider!!.context)
+                    AlertDialog
+                        .Builder(provider!!.context)
                         .setTitle(R.string.clear_deleted)
                         .setMessage(R.string.deleted_posts_will_be_deleted__sentence)
                         .setPositiveButton(
@@ -2210,10 +2429,11 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                                 val postsPage = extract<PostsPage>(provider)!!
                                 postsPage.extractPosts(PagesDatabase.Cleanup.DELETED)
-                            })
-                        .setNegativeButton(android.R.string.cancel, null)
+                            },
+                        ).setNegativeButton(android.R.string.cancel, null)
                         .create()
-                })
+                },
+            )
         }
 
         private fun showSummaryDialog(fragmentManager: FragmentManager) {
@@ -2231,7 +2451,7 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     var links = 0
                     for (postItem in postsPage.adapter!!) {
                         val attachmentItems: List<AttachmentItem>? =
-                            postItem!!.getAttachmentItems()
+                            postItem.getAttachmentItems()
                         if (attachmentItems != null) {
                             var itFiles = 0
                             for (attachmentItem in attachmentItems) {
@@ -2252,10 +2472,12 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                             }
                         }
                     }
-                    val dialog = AlertDialog.Builder(context)
-                        .setTitle(R.string.summary)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .create()
+                    val dialog =
+                        AlertDialog
+                            .Builder(context)
+                            .setTitle(R.string.summary)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .create()
                     val layout = SummaryLayout(dialog)
                     val boardName = page.boardName
                     if (boardName != null) {
@@ -2266,40 +2488,42 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                     layout.add(context.getString(R.string.files__genitive), files.toString())
                     layout.add(
                         context.getString(R.string.posts_with_files__genitive),
-                        postsWithFiles.toString()
+                        postsWithFiles.toString(),
                     )
                     layout.add(
                         context.getString(R.string.links_attachments__genitive),
-                        links.toString()
+                        links.toString(),
                     )
-                    if (retainableExtra!!.uniquePosters > 0) {
+                    if (retainableExtra.uniquePosters > 0) {
                         layout.add(
                             context.getString(R.string.unique_posters__genitive),
-                            retainableExtra.uniquePosters.toString()
+                            retainableExtra.uniquePosters.toString(),
                         )
                     }
                     dialog
-                })
+                },
+            )
         }
 
         private fun showHiddenPostsDialog(
             fragmentManager: FragmentManager,
-            localFilters: MutableList<String?>
+            localFilters: MutableList<String?>,
         ) {
             val checked = BooleanArray(localFilters.size)
             InstanceDialog(
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    AlertDialog.Builder(provider!!.context)
+                    AlertDialog
+                        .Builder(provider!!.context)
                         .setTitle(R.string.remove_rules)
                         .setMultiChoiceItems(
                             localFilters.toTypedArray(),
                             checked,
                             OnMultiChoiceClickListener { d: DialogInterface?, which: Int, isChecked: Boolean ->
                                 checked[which] = isChecked
-                            })
-                        .setPositiveButton(
+                            },
+                        ).setPositiveButton(
                             android.R.string.ok,
                             DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
                                 val postsPage = extract<PostsPage>(provider)!!
@@ -2320,14 +2544,18 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
                                     postsPage.notifyAllAdaptersChanged()
                                     postsPage.encodeAndStoreThreadExtra()
                                     adapter.preloadPosts(
-                                        (postsPage.getRecyclerView()
-                                            .getLayoutManager() as LinearLayoutManager).findFirstVisibleItemPosition()
+                                        (
+                                            postsPage
+                                                .getRecyclerView()
+                                                .getLayoutManager() as LinearLayoutManager
+                                        ).findFirstVisibleItemPosition(),
                                     )
                                 }
-                            })
-                        .setNegativeButton(android.R.string.cancel, null)
+                            },
+                        ).setNegativeButton(android.R.string.cancel, null)
                         .create()
-                })
+                },
+            )
         }
     }
 }

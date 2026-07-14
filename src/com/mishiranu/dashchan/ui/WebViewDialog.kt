@@ -24,197 +24,234 @@ import androidx.fragment.app.DialogFragment
 import com.mishiranu.dashchan.R
 
 abstract class WebViewDialog : DialogFragment() {
-	@JvmField
-	protected var webView: WebView? = null
-	@JvmField
-	protected var titleTextView: TextView? = null
-	@JvmField
-	protected var pageLoadingProgressBar: ProgressBar? = null
+    @JvmField
+    protected var webView: WebView? = null
 
-	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-		val dialog = super.onCreateDialog(savedInstanceState)
-		dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
-		return dialog
-	}
+    @JvmField
+    protected var titleTextView: TextView? = null
 
-	override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-			savedInstanceState: Bundle?): View? {
-		val rootView = inflater.inflate(R.layout.dialog_webview, container)
-		webView = rootView.findViewById(R.id.dialog_webview_webview)
-		titleTextView = rootView.findViewById(R.id.dialog_webview_title)
-		pageLoadingProgressBar = rootView.findViewById(R.id.dialog_webview_progressbar)
+    @JvmField
+    protected var pageLoadingProgressBar: ProgressBar? = null
 
-		webView!!.webChromeClient = WebChromeClientWrapper()
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.window!!.requestFeature(Window.FEATURE_NO_TITLE)
+        return dialog
+    }
 
-		val closeIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_close)
-		closeIcon.setOnClickListener { dismiss() }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
+        val rootView = inflater.inflate(R.layout.dialog_webview, container)
+        webView = rootView.findViewById(R.id.dialog_webview_webview)
+        titleTextView = rootView.findViewById(R.id.dialog_webview_title)
+        pageLoadingProgressBar = rootView.findViewById(R.id.dialog_webview_progressbar)
 
-		val refreshIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_refresh)
-		refreshIcon.setOnClickListener { webView!!.reload() }
+        webView!!.webChromeClient = WebChromeClientWrapper()
 
-		return rootView
-	}
+        val closeIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_close)
+        closeIcon.setOnClickListener { dismiss() }
 
-	override fun onStart() {
-		super.onStart()
-		val dialog = dialog
-		dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-	}
+        val refreshIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_refresh)
+        refreshIcon.setOnClickListener { webView!!.reload() }
 
-	protected fun setWebChromeClient(webChromeClient: WebChromeClient) {
-		webView!!.webChromeClient = WebChromeClientWrapper(webChromeClient)
-	}
+        return rootView
+    }
 
-	override fun onDestroyView() {
-		super.onDestroyView()
-		webView!!.stopLoading()
-		webView!!.webChromeClient = null
-		webView!!.destroy()
-	}
+    override fun onStart() {
+        super.onStart()
+        val dialog = dialog
+        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+    }
 
-	private inner class WebChromeClientWrapper : WebChromeClient {
-		private val delegate: WebChromeClient
-		private val progressBarVisibilityAnimator =
-				ObjectAnimator.ofFloat(pageLoadingProgressBar, "alpha", 1f)
-		private var lastProgress = 0
+    protected fun setWebChromeClient(webChromeClient: WebChromeClient) {
+        webView!!.webChromeClient = WebChromeClientWrapper(webChromeClient)
+    }
 
-		constructor() {
-			delegate = WebChromeClient()
-		}
+    override fun onDestroyView() {
+        super.onDestroyView()
+        webView!!.stopLoading()
+        webView!!.webChromeClient = null
+        webView!!.destroy()
+    }
 
-		constructor(delegate: WebChromeClient) {
-			this.delegate = delegate
-		}
+    private inner class WebChromeClientWrapper : WebChromeClient {
+        private val delegate: WebChromeClient
+        private val progressBarVisibilityAnimator =
+            ObjectAnimator.ofFloat(pageLoadingProgressBar, "alpha", 1f)
+        private var lastProgress = 0
 
-		override fun onProgressChanged(view: WebView, newProgress: Int) {
-			delegate.onProgressChanged(view, newProgress)
-			animateProgressBarVisibility(newProgress)
-			pageLoadingProgressBar!!.setProgress(newProgress, true)
+        constructor() {
+            delegate = WebChromeClient()
+        }
 
-			lastProgress = newProgress
-		}
+        constructor(delegate: WebChromeClient) {
+            this.delegate = delegate
+        }
 
-		private fun animateProgressBarVisibility(newProgress: Int) {
-			val animateHide = newProgress == 100 && lastProgress != 100
-			val animateShow = lastProgress == 0 || (newProgress != 100 && lastProgress == 100)
-			val animate = animateHide || animateShow
-			if (animate) {
-				if (progressBarVisibilityAnimator.isRunning) {
-					progressBarVisibilityAnimator.cancel()
-				}
-				val finalAlphaValue: Float
-				val animationDurationMillis: Int
-				if (animateHide) {
-					finalAlphaValue = 0f
-					animationDurationMillis = 200
-				} else {
-					finalAlphaValue = 1f
-					animationDurationMillis = 250
-				}
-				progressBarVisibilityAnimator.setFloatValues(finalAlphaValue)
-				progressBarVisibilityAnimator.duration = animationDurationMillis.toLong()
-				progressBarVisibilityAnimator.start()
-			}
-		}
+        override fun onProgressChanged(
+            view: WebView,
+            newProgress: Int,
+        ) {
+            delegate.onProgressChanged(view, newProgress)
+            animateProgressBarVisibility(newProgress)
+            pageLoadingProgressBar!!.setProgress(newProgress, true)
 
-		override fun onReceivedTitle(view: WebView, title: String) {
-			delegate.onReceivedTitle(view, title)
-			titleTextView!!.text = title
-		}
+            lastProgress = newProgress
+        }
 
-		override fun onReceivedIcon(view: WebView, icon: Bitmap) {
-			delegate.onReceivedIcon(view, icon)
-		}
+        private fun animateProgressBarVisibility(newProgress: Int) {
+            val animateHide = newProgress == 100 && lastProgress != 100
+            val animateShow = lastProgress == 0 || (newProgress != 100 && lastProgress == 100)
+            val animate = animateHide || animateShow
+            if (animate) {
+                if (progressBarVisibilityAnimator.isRunning) {
+                    progressBarVisibilityAnimator.cancel()
+                }
+                val finalAlphaValue: Float
+                val animationDurationMillis: Int
+                if (animateHide) {
+                    finalAlphaValue = 0f
+                    animationDurationMillis = 200
+                } else {
+                    finalAlphaValue = 1f
+                    animationDurationMillis = 250
+                }
+                progressBarVisibilityAnimator.setFloatValues(finalAlphaValue)
+                progressBarVisibilityAnimator.duration = animationDurationMillis.toLong()
+                progressBarVisibilityAnimator.start()
+            }
+        }
 
-		override fun onReceivedTouchIconUrl(view: WebView, url: String, precomposed: Boolean) {
-			delegate.onReceivedTouchIconUrl(view, url, precomposed)
-		}
+        override fun onReceivedTitle(
+            view: WebView,
+            title: String,
+        ) {
+            delegate.onReceivedTitle(view, title)
+            titleTextView!!.text = title
+        }
 
-		override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-			delegate.onShowCustomView(view, callback)
-		}
+        override fun onReceivedIcon(
+            view: WebView,
+            icon: Bitmap,
+        ) {
+            delegate.onReceivedIcon(view, icon)
+        }
 
-		@Deprecated("Deprecated in Java")
-		override fun onShowCustomView(view: View, requestedOrientation: Int, callback: CustomViewCallback) {
-			@Suppress("DEPRECATION")
-			delegate.onShowCustomView(view, requestedOrientation, callback)
-		}
+        override fun onReceivedTouchIconUrl(
+            view: WebView,
+            url: String,
+            precomposed: Boolean,
+        ) {
+            delegate.onReceivedTouchIconUrl(view, url, precomposed)
+        }
 
-		override fun onHideCustomView() {
-			delegate.onHideCustomView()
-		}
+        override fun onShowCustomView(
+            view: View,
+            callback: CustomViewCallback,
+        ) {
+            delegate.onShowCustomView(view, callback)
+        }
 
-		override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean,
-				resultMsg: Message): Boolean {
-			return delegate.onCreateWindow(view, isDialog, isUserGesture, resultMsg)
-		}
+        @Deprecated("Deprecated in Java")
+        override fun onShowCustomView(
+            view: View,
+            requestedOrientation: Int,
+            callback: CustomViewCallback,
+        ) {
+            @Suppress("DEPRECATION")
+            delegate.onShowCustomView(view, requestedOrientation, callback)
+        }
 
-		override fun onRequestFocus(view: WebView) {
-			delegate.onRequestFocus(view)
-		}
+        override fun onHideCustomView() {
+            delegate.onHideCustomView()
+        }
 
-		override fun onCloseWindow(window: WebView) {
-			delegate.onCloseWindow(window)
-		}
+        override fun onCreateWindow(
+            view: WebView,
+            isDialog: Boolean,
+            isUserGesture: Boolean,
+            resultMsg: Message,
+        ): Boolean = delegate.onCreateWindow(view, isDialog, isUserGesture, resultMsg)
 
-		override fun onJsAlert(view: WebView, url: String, message: String, result: JsResult): Boolean {
-			return delegate.onJsAlert(view, url, message, result)
-		}
+        override fun onRequestFocus(view: WebView) {
+            delegate.onRequestFocus(view)
+        }
 
-		override fun onJsConfirm(view: WebView, url: String, message: String, result: JsResult): Boolean {
-			return delegate.onJsConfirm(view, url, message, result)
-		}
+        override fun onCloseWindow(window: WebView) {
+            delegate.onCloseWindow(window)
+        }
 
-		override fun onJsPrompt(view: WebView, url: String, message: String, defaultValue: String,
-				result: JsPromptResult): Boolean {
-			return delegate.onJsPrompt(view, url, message, defaultValue, result)
-		}
+        override fun onJsAlert(
+            view: WebView,
+            url: String,
+            message: String,
+            result: JsResult,
+        ): Boolean = delegate.onJsAlert(view, url, message, result)
 
-		override fun onJsBeforeUnload(view: WebView, url: String, message: String, result: JsResult): Boolean {
-			return delegate.onJsBeforeUnload(view, url, message, result)
-		}
+        override fun onJsConfirm(
+            view: WebView,
+            url: String,
+            message: String,
+            result: JsResult,
+        ): Boolean = delegate.onJsConfirm(view, url, message, result)
 
-		override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
-			delegate.onGeolocationPermissionsShowPrompt(origin, callback)
-		}
+        override fun onJsPrompt(
+            view: WebView,
+            url: String,
+            message: String,
+            defaultValue: String,
+            result: JsPromptResult,
+        ): Boolean = delegate.onJsPrompt(view, url, message, defaultValue, result)
 
-		override fun onGeolocationPermissionsHidePrompt() {
-			delegate.onGeolocationPermissionsHidePrompt()
-		}
+        override fun onJsBeforeUnload(
+            view: WebView,
+            url: String,
+            message: String,
+            result: JsResult,
+        ): Boolean = delegate.onJsBeforeUnload(view, url, message, result)
 
-		override fun onPermissionRequest(request: PermissionRequest) {
-			delegate.onPermissionRequest(request)
-		}
+        override fun onGeolocationPermissionsShowPrompt(
+            origin: String,
+            callback: GeolocationPermissions.Callback,
+        ) {
+            delegate.onGeolocationPermissionsShowPrompt(origin, callback)
+        }
 
-		override fun onPermissionRequestCanceled(request: PermissionRequest) {
-			delegate.onPermissionRequestCanceled(request)
-		}
+        override fun onGeolocationPermissionsHidePrompt() {
+            delegate.onGeolocationPermissionsHidePrompt()
+        }
 
-		@Deprecated("Deprecated in Java")
-		override fun onJsTimeout(): Boolean {
-			@Suppress("DEPRECATION")
-			return delegate.onJsTimeout()
-		}
+        override fun onPermissionRequest(request: PermissionRequest) {
+            delegate.onPermissionRequest(request)
+        }
 
-		override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-			return delegate.onConsoleMessage(consoleMessage)
-		}
+        override fun onPermissionRequestCanceled(request: PermissionRequest) {
+            delegate.onPermissionRequestCanceled(request)
+        }
 
-		override fun getDefaultVideoPoster(): Bitmap? {
-			return delegate.defaultVideoPoster
-		}
+        @Deprecated("Deprecated in Java")
+        override fun onJsTimeout(): Boolean {
+            @Suppress("DEPRECATION")
+            return delegate.onJsTimeout()
+        }
 
-		override fun getVideoLoadingProgressView(): View? {
-			return delegate.videoLoadingProgressView
-		}
+        override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean = delegate.onConsoleMessage(consoleMessage)
 
-		override fun getVisitedHistory(callback: ValueCallback<Array<String>>) {
-			delegate.getVisitedHistory(callback)
-		}
+        override fun getDefaultVideoPoster(): Bitmap? = delegate.defaultVideoPoster
 
-		override fun onShowFileChooser(webView: WebView, filePathCallback: ValueCallback<Array<Uri>>,
-				fileChooserParams: FileChooserParams): Boolean {
-			return delegate.onShowFileChooser(webView, filePathCallback, fileChooserParams)
-		}
-	}
+        override fun getVideoLoadingProgressView(): View? = delegate.videoLoadingProgressView
+
+        override fun getVisitedHistory(callback: ValueCallback<Array<String>>) {
+            delegate.getVisitedHistory(callback)
+        }
+
+        override fun onShowFileChooser(
+            webView: WebView,
+            filePathCallback: ValueCallback<Array<Uri>>,
+            fileChooserParams: FileChooserParams,
+        ): Boolean = delegate.onShowFileChooser(webView, filePathCallback, fileChooserParams)
+    }
 }

@@ -15,8 +15,6 @@
  */
 package chan.http
 
-import chan.util.StringUtils
-
 import chan.annotation.Extendable
 import chan.annotation.Public
 import chan.util.StringUtils.getFileExtension
@@ -31,233 +29,252 @@ import java.io.UnsupportedEncodingException
 import java.util.Random
 
 @Extendable
-open class MultipartEntity @Public constructor() : RequestEntity {
-    private val parts = ArrayList<Part>()
-    private val boundary: String
-
-    private var charsetName = "UTF-8"
-
+open class MultipartEntity
     @Public
-    constructor(vararg alternation: String?) : this() {
-        var i = 0
-        while (i < alternation.size) {
-            add(alternation[i]!!, alternation[i + 1])
-            i += 2
-        }
-    }
+    constructor() : RequestEntity {
+        private val parts = ArrayList<Part>()
+        private val boundary: String
 
-    @Public
-    fun setEncoding(charsetName: String) {
-        this.charsetName = charsetName
-    }
+        private var charsetName = "UTF-8"
 
-    override fun add(name: String, value: String?) {
-        if (value != null) {
-            parts.add(StringPart(name, value, charsetName))
-        }
-    }
-
-    @Extendable
-    open fun add(name: String, file: File) {
-        add(name, FileHolderOpenable(obtain(file)), null)
-    }
-
-    fun add(name: String?, openable: Openable?, listener: OpenableOutputListener?) {
-        if (name == null) {
-            throw NullPointerException("Name is null")
-        }
-        parts.add(OpenablePart(name, openable!!, listener))
-    }
-
-    override fun getContentType(): String? {
-        return "multipart/form-data; boundary=" + boundary
-    }
-
-    override fun getContentLength(): Long {
-        try {
-            var contentLength = 0L
-            val boundaryLength = boundary.length
-            val dashesLength: Int = BYTES_TWO_DASHES.size
-            val lineLength: Int = BYTES_NEW_LINE.size
-            for (part in parts) {
-                contentLength += (dashesLength + boundaryLength + lineLength).toLong()
-                contentLength += (39 + part.name!!.toByteArray(charset(charsetName)).size).toLong()
-                val fileName = part.fileName
-                if (fileName != null) {
-                    contentLength += (13 + fileName.toByteArray(charset(charsetName)).size).toLong()
-                }
-                contentLength += lineLength.toLong()
-                val contentType = part.contentType
-                if (contentType != null) {
-                    contentLength += (14 + contentType.length + lineLength).toLong()
-                }
-                contentLength += lineLength + part.contentLength + lineLength
+        @Public
+        constructor(vararg alternation: String?) : this() {
+            var i = 0
+            while (i < alternation.size) {
+                add(alternation[i]!!, alternation[i + 1])
+                i += 2
             }
-            contentLength += (dashesLength + boundaryLength + dashesLength + lineLength).toLong()
-            return contentLength
-        } catch (e: UnsupportedEncodingException) {
-            throw RuntimeException(e)
         }
-    }
 
-    init {
-        val builder = StringBuilder()
-        for (i in 0..26) {
-            builder.append('-')
+        @Public
+        fun setEncoding(charsetName: String) {
+            this.charsetName = charsetName
         }
-        for (i in 0..10) {
-            builder.append(RANDOM.nextInt(10))
-        }
-        boundary = builder.toString()
-    }
 
-    @Throws(IOException::class)
-    override fun write(output: OutputStream) {
-        val boundary = this.boundary.toByteArray(charset("ISO-8859-1"))
-        for (part in parts) {
-            output.write(BYTES_TWO_DASHES)
-            output.write(boundary)
-            output.write(BYTES_NEW_LINE)
-            output.write("Content-Disposition: form-data; name=\"".toByteArray())
-            output.write(part.name!!.toByteArray(charset(charsetName)))
-            output.write('"'.code)
-            val fileName = part.fileName
-            if (fileName != null) {
-                output.write("; filename=\"".toByteArray())
-                output.write(fileName.toByteArray(charset(charsetName)))
-                output.write('"'.code)
+        override fun add(
+            name: String,
+            value: String?,
+        ) {
+            if (value != null) {
+                parts.add(StringPart(name, value, charsetName))
             }
-            output.write(BYTES_NEW_LINE)
-            val contentType = part.contentType
-            if (contentType != null) {
-                output.write(("Content-Type: " + contentType).toByteArray(charset("ISO-8859-1")))
-                output.write(BYTES_NEW_LINE)
-            }
-            output.write(BYTES_NEW_LINE)
-            part.write(output)
-            output.write(BYTES_NEW_LINE)
         }
-        output.write(BYTES_TWO_DASHES)
-        output.write(boundary)
-        output.write(BYTES_TWO_DASHES)
-        output.write(BYTES_NEW_LINE)
-        output.flush()
-    }
 
-    override fun copy(): MultipartEntity {
-        val entity = MultipartEntity()
-        entity.setEncoding(charsetName)
-        entity.parts.addAll(parts)
-        return entity
-    }
+        @Extendable
+        open fun add(
+            name: String,
+            file: File,
+        ) {
+            add(name, FileHolderOpenable(obtain(file)), null)
+        }
 
-    private abstract class Part(val name: String?) {
-        abstract val fileName: String?
-        abstract val contentType: String?
-        abstract val contentLength: Long
+        fun add(
+            name: String?,
+            openable: Openable?,
+            listener: OpenableOutputListener?,
+        ) {
+            if (name == null) {
+                throw NullPointerException("Name is null")
+            }
+            parts.add(OpenablePart(name, openable!!, listener))
+        }
 
-        @Throws(IOException::class)
-        abstract fun write(output: OutputStream)
-    }
+        override fun getContentType(): String? = "multipart/form-data; boundary=" + boundary
 
-    private class StringPart(name: String?, value: String, charset: String) : Part(name) {
-        private val bytes: ByteArray
-
-        init {
+        override fun getContentLength(): Long {
             try {
-                bytes = value.toByteArray(charset(charset))
+                var contentLength = 0L
+                val boundaryLength = boundary.length
+                val dashesLength: Int = BYTES_TWO_DASHES.size
+                val lineLength: Int = BYTES_NEW_LINE.size
+                for (part in parts) {
+                    contentLength += (dashesLength + boundaryLength + lineLength).toLong()
+                    contentLength += (39 + part.name!!.toByteArray(charset(charsetName)).size).toLong()
+                    val fileName = part.fileName
+                    if (fileName != null) {
+                        contentLength += (13 + fileName.toByteArray(charset(charsetName)).size).toLong()
+                    }
+                    contentLength += lineLength.toLong()
+                    val contentType = part.contentType
+                    if (contentType != null) {
+                        contentLength += (14 + contentType.length + lineLength).toLong()
+                    }
+                    contentLength += lineLength + part.contentLength + lineLength
+                }
+                contentLength += (dashesLength + boundaryLength + dashesLength + lineLength).toLong()
+                return contentLength
             } catch (e: UnsupportedEncodingException) {
                 throw RuntimeException(e)
             }
         }
 
-        override val fileName: String?
-            get() = null
-
-        override val contentType: String?
-            get() = null
-
-        override val contentLength: Long
-            get() = bytes.size.toLong()
-
-        @Throws(IOException::class)
-        override fun write(output: OutputStream) {
-            output.write(bytes)
+        init {
+            val builder = StringBuilder()
+            for (i in 0..26) {
+                builder.append('-')
+            }
+            for (i in 0..10) {
+                builder.append(RANDOM.nextInt(10))
+            }
+            boundary = builder.toString()
         }
-    }
-
-    private class OpenablePart(
-        name: String?,
-        private val openable: Openable,
-        private val listener: OpenableOutputListener?
-    ) : Part(name) {
-        override val fileName: String?
-            get() = openable.fileName
-
-        override val contentType: String?
-            get() = openable.mimeType
-
-        override val contentLength: Long
-            get() = openable.size
 
         @Throws(IOException::class)
         override fun write(output: OutputStream) {
-            val input = openable.openInputStream()
-            try {
-                var progress = 0L
-                val progressMax = openable.size
-                if (listener != null) {
-                    listener.onOutputProgressChange(openable, 0L, progressMax)
+            val boundary = this.boundary.toByteArray(charset("ISO-8859-1"))
+            for (part in parts) {
+                output.write(BYTES_TWO_DASHES)
+                output.write(boundary)
+                output.write(BYTES_NEW_LINE)
+                output.write("Content-Disposition: form-data; name=\"".toByteArray())
+                output.write(part.name!!.toByteArray(charset(charsetName)))
+                output.write('"'.code)
+                val fileName = part.fileName
+                if (fileName != null) {
+                    output.write("; filename=\"".toByteArray())
+                    output.write(fileName.toByteArray(charset(charsetName)))
+                    output.write('"'.code)
                 }
-                val buffer = ByteArray(4096)
-                var count: Int
-                while ((input.read(buffer).also { count = it }) > 0) {
-                    output.write(buffer, 0, count)
-                    progress += count.toLong()
-                    if (listener != null) {
-                        listener.onOutputProgressChange(openable, progress, progressMax)
-                    }
+                output.write(BYTES_NEW_LINE)
+                val contentType = part.contentType
+                if (contentType != null) {
+                    output.write(("Content-Type: " + contentType).toByteArray(charset("ISO-8859-1")))
+                    output.write(BYTES_NEW_LINE)
                 }
-            } finally {
-                input.close()
+                output.write(BYTES_NEW_LINE)
+                part.write(output)
+                output.write(BYTES_NEW_LINE)
+            }
+            output.write(BYTES_TWO_DASHES)
+            output.write(boundary)
+            output.write(BYTES_TWO_DASHES)
+            output.write(BYTES_NEW_LINE)
+            output.flush()
+        }
+
+        override fun copy(): MultipartEntity {
+            val entity = MultipartEntity()
+            entity.setEncoding(charsetName)
+            entity.parts.addAll(parts)
+            return entity
+        }
+
+        private abstract class Part(
+            val name: String?,
+        ) {
+            abstract val fileName: String?
+            abstract val contentType: String?
+            abstract val contentLength: Long
+
+            @Throws(IOException::class)
+            abstract fun write(output: OutputStream)
+        }
+
+        private class StringPart(
+            name: String?,
+            value: String,
+            charset: String,
+        ) : Part(name) {
+            private val bytes: ByteArray
+
+            init {
+                try {
+                    bytes = value.toByteArray(charset(charset))
+                } catch (e: UnsupportedEncodingException) {
+                    throw RuntimeException(e)
+                }
+            }
+
+            override val fileName: String?
+                get() = null
+
+            override val contentType: String?
+                get() = null
+
+            override val contentLength: Long
+                get() = bytes.size.toLong()
+
+            @Throws(IOException::class)
+            override fun write(output: OutputStream) {
+                output.write(bytes)
             }
         }
-    }
 
-    interface Openable {
-        val fileName: String?
-        val mimeType: String?
+        private class OpenablePart(
+            name: String?,
+            private val openable: Openable,
+            private val listener: OpenableOutputListener?,
+        ) : Part(name) {
+            override val fileName: String?
+                get() = openable.fileName
 
-        @Throws(IOException::class)
-        fun openInputStream(): InputStream
-        val size: Long
-    }
+            override val contentType: String?
+                get() = openable.mimeType
 
-    private class FileHolderOpenable(private val fileHolder: FileHolder) : Openable {
-        override val fileName: String = fileHolder.name
-        override val mimeType: String? = obtainMimeType(fileName)
+            override val contentLength: Long
+                get() = openable.size
 
-        @Throws(IOException::class)
-        override fun openInputStream(): InputStream {
-            return fileHolder.openInputStream()
+            @Throws(IOException::class)
+            override fun write(output: OutputStream) {
+                val input = openable.openInputStream()
+                try {
+                    var progress = 0L
+                    val progressMax = openable.size
+                    if (listener != null) {
+                        listener.onOutputProgressChange(openable, 0L, progressMax)
+                    }
+                    val buffer = ByteArray(4096)
+                    var count: Int
+                    while ((input.read(buffer).also { count = it }) > 0) {
+                        output.write(buffer, 0, count)
+                        progress += count.toLong()
+                        if (listener != null) {
+                            listener.onOutputProgressChange(openable, progress, progressMax)
+                        }
+                    }
+                } finally {
+                    input.close()
+                }
+            }
         }
 
-        override val size: Long
-            get() = fileHolder.size.toLong()
-    }
+        interface Openable {
+            val fileName: String?
+            val mimeType: String?
 
-    interface OpenableOutputListener {
-        fun onOutputProgressChange(openable: Openable, progress: Long, progressMax: Long)
-    }
+            @Throws(IOException::class)
+            fun openInputStream(): InputStream
 
-    companion object {
-        private val RANDOM = Random(System.currentTimeMillis())
+            val size: Long
+        }
 
-        private val BYTES_TWO_DASHES = byteArrayOf(0x2d, 0x2d)
-        private val BYTES_NEW_LINE = byteArrayOf(0x0d, 0x0a)
+        private class FileHolderOpenable(
+            private val fileHolder: FileHolder,
+        ) : Openable {
+            override val fileName: String = fileHolder.name
+            override val mimeType: String? = obtainMimeType(fileName)
 
-        fun obtainMimeType(fileName: String?): String? {
-            return forExtension(getFileExtension(fileName), "application/octet-stream")
+            @Throws(IOException::class)
+            override fun openInputStream(): InputStream = fileHolder.openInputStream()
+
+            override val size: Long
+                get() = fileHolder.size.toLong()
+        }
+
+        interface OpenableOutputListener {
+            fun onOutputProgressChange(
+                openable: Openable,
+                progress: Long,
+                progressMax: Long,
+            )
+        }
+
+        companion object {
+            private val RANDOM = Random(System.currentTimeMillis())
+
+            private val BYTES_TWO_DASHES = byteArrayOf(0x2d, 0x2d)
+            private val BYTES_NEW_LINE = byteArrayOf(0x0d, 0x0a)
+
+            fun obtainMimeType(fileName: String?): String? = forExtension(getFileExtension(fileName), "application/octet-stream")
         }
     }
-}

@@ -36,70 +36,77 @@ object Preferences {
     private const val PREFERENCES_RESTORE_NAME = "preferences.restore"
 
     @JvmField
-    val PREFERENCES: SharedPreferences? = run {
-        val application = MainApplication.getInstance()
-        if (application.isMainProcess()) {
-            val newFile = getPreferencesFile(application, PREFERENCES_NAME)
-            val newBackupFile = File(newFile.getParentFile(), newFile.getName() + ".bak")
-            if (!newFile.exists() && !newBackupFile.exists()) {
-                // Rename preferences file
-                val oldFile =
-                    getPreferencesFile(application, application.getPackageName() + "_preferences")
-                val oldBackupFile = File(oldFile.getParentFile(), oldFile.getName() + ".bak")
-                if (oldBackupFile.exists()) {
-                    oldBackupFile.renameTo(newBackupFile)
+    val PREFERENCES: SharedPreferences? =
+        run {
+            val application = MainApplication.getInstance()
+            if (application.isMainProcess()) {
+                val newFile = getPreferencesFile(application, PREFERENCES_NAME)
+                val newBackupFile = File(newFile.getParentFile(), newFile.getName() + ".bak")
+                if (!newFile.exists() && !newBackupFile.exists()) {
+                    // Rename preferences file
+                    val oldFile =
+                        getPreferencesFile(application, application.getPackageName() + "_preferences")
+                    val oldBackupFile = File(oldFile.getParentFile(), oldFile.getName() + ".bak")
+                    if (oldBackupFile.exists()) {
+                        oldBackupFile.renameTo(newBackupFile)
+                    }
+                    if (oldFile.exists()) {
+                        oldFile.renameTo(newFile)
+                    }
                 }
-                if (oldFile.exists()) {
-                    oldFile.renameTo(newFile)
+                val restoreFile = getPreferencesFile(application, PREFERENCES_RESTORE_NAME)
+                if (restoreFile.exists()) {
+                    newBackupFile.delete()
+                    restoreFile.renameTo(newFile)
                 }
+                SharedPreferences(application, PREFERENCES_NAME)
+            } else {
+                null
             }
-            val restoreFile = getPreferencesFile(application, PREFERENCES_RESTORE_NAME)
-            if (restoreFile.exists()) {
-                newBackupFile.delete()
-                restoreFile.renameTo(newFile)
-            }
-            SharedPreferences(application, PREFERENCES_NAME)
-        } else {
-            null
         }
-    }
 
     private const val SPECIAL_CHAN_NAME_GENERAL = "general"
     private const val SPECIAL_CHAN_NAME_CLOUDFLARE = "cloudflare"
 
     @JvmField
-    val SPECIAL_EXTENSION_NAMES: Array<String?> = arrayOf<String?>(
-        SPECIAL_CHAN_NAME_GENERAL,
-        SPECIAL_CHAN_NAME_CLOUDFLARE
-    )
+    val SPECIAL_EXTENSION_NAMES: Array<String?> =
+        arrayOf<String?>(
+            SPECIAL_CHAN_NAME_GENERAL,
+            SPECIAL_CHAN_NAME_CLOUDFLARE,
+        )
 
-    private fun getPreferencesFile(application: MainApplication, name: String?): File {
-        return File(application.getSharedPrefsDir(), name + ".xml")
-    }
+    private fun getPreferencesFile(
+        application: MainApplication,
+        name: String?,
+    ): File = File(application.getSharedPrefsDir(), name + ".xml")
 
     val filesForBackup: android.util.Pair<File, File>
         get() {
             val preferences =
                 getPreferencesFile(
                     MainApplication.getInstance(),
-                    PREFERENCES_NAME
+                    PREFERENCES_NAME,
                 )
             val restore =
                 getPreferencesFile(
                     MainApplication.getInstance(),
-                    PREFERENCES_RESTORE_NAME
+                    PREFERENCES_RESTORE_NAME,
                 )
             return android.util.Pair(preferences, restore)
         }
 
     val fileForRestore: File
-        get() = getPreferencesFile(
-            MainApplication.getInstance(),
-            PREFERENCES_RESTORE_NAME
-        )
+        get() =
+            getPreferencesFile(
+                MainApplication.getInstance(),
+                PREFERENCES_RESTORE_NAME,
+            )
 
     @JvmStatic
-    fun unpackOrCastMultipleValues(value: String?, count: Int): MutableList<String?> {
+    fun unpackOrCastMultipleValues(
+        value: String?,
+        count: Int,
+    ): MutableList<String?> {
         val values = java.util.ArrayList<String?>(count)
         for (i in 0..<count) {
             values.add(null)
@@ -109,16 +116,14 @@ object Preferences {
                 val jsonArray = JSONArray(value)
                 val length = min(count, jsonArray.length())
                 for (i in 0..<length) {
-                    values.set(
-                        i,
+                    values[i] =
                         if (jsonArray.isNull(i)) null else nullIfEmpty(jsonArray.getString(i))
-                    )
                 }
                 return values
             } catch (e: JSONException) {
                 // Backward compatibility
                 if (value.length > 0 && !value.startsWith("[")) {
-                    values.set(0, value)
+                    values[0] = value
                 }
             }
         }
@@ -127,7 +132,7 @@ object Preferences {
 
     fun unpackOrCastMultipleValues(
         value: String?,
-        keys: List<String>
+        keys: List<String>,
     ): MutableMap<String?, String?> {
         val values = HashMap<String?, String?>(keys.size)
         if (value != null) {
@@ -136,7 +141,7 @@ object Preferences {
                 for (key in keys) {
                     val stringValue = jsonObject.optString(key)
                     if (!isEmpty(stringValue)) {
-                        values.put(key, stringValue)
+                        values[key] = stringValue
                     }
                 }
             } catch (e: JSONException) {
@@ -145,7 +150,7 @@ object Preferences {
                 if (list.size == keys.size) {
                     var i = 0
                     while (i < keys.size) {
-                        values.put(keys.get(i), list.get(i))
+                        values[keys[i]] = list[i]
                         i++
                     }
                 }
@@ -168,8 +173,10 @@ object Preferences {
     }
 
     private fun <T : Enum<T>> getEnumValue(
-        key: String, values: Array<T>, defaultValue: T?,
-        enumValueProvider: EnumValueProvider<T>
+        key: String,
+        values: Array<T>,
+        defaultValue: T?,
+        enumValueProvider: EnumValueProvider<T>,
     ): T? {
         val stringValue = PREFERENCES!!.getString(key, enumValueProvider.getValue(defaultValue))
         for (value in values) {
@@ -180,14 +187,16 @@ object Preferences {
         return defaultValue
     }
 
-    private fun getNetworkModeGeneric(key: String, defaultValue: NetworkMode?): NetworkMode? {
-        return getEnumValue(
+    private fun getNetworkModeGeneric(
+        key: String,
+        defaultValue: NetworkMode?,
+    ): NetworkMode? =
+        getEnumValue(
             key,
             NetworkMode.entries.toTypedArray(),
             defaultValue,
-            NetworkMode.Companion.VALUE_PROVIDER
+            NetworkMode.Companion.VALUE_PROVIDER,
         )
-    }
 
     val KEY_HIDE_AI_POSTS: ChanKey = ChanKey("hide_ai_posts")
     const val DEFAULT_HIDE_AI_POSTS: Boolean = false
@@ -196,7 +205,7 @@ object Preferences {
         if (chan.configuration.getOption(ChanConfiguration.OPTION_AI_POSTING)) {
             return PREFERENCES!!.getBoolean(
                 KEY_HIDE_AI_POSTS.bind(chan.name),
-                DEFAULT_HIDE_AI_POSTS
+                DEFAULT_HIDE_AI_POSTS,
             )
         } else {
             return false
@@ -208,40 +217,44 @@ object Preferences {
 
     @JvmStatic
     val isActiveScrollbar: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ACTIVE_SCROLLBAR,
-            DEFAULT_ACTIVE_SCROLLBAR
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ACTIVE_SCROLLBAR,
+                DEFAULT_ACTIVE_SCROLLBAR,
+            )
 
     const val KEY_HIGHLIGHT_USER_POSTS: String = "highlight_user_posts"
     const val DEFAULT_HIGHLIGHT_USER_POSTS: Boolean = true
 
     @JvmStatic
     val isHighlightUserPosts: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_HIGHLIGHT_USER_POSTS,
-            DEFAULT_HIGHLIGHT_USER_POSTS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_HIGHLIGHT_USER_POSTS,
+                DEFAULT_HIGHLIGHT_USER_POSTS,
+            )
 
     const val KEY_ADVANCED_SEARCH: String = "advanced_search"
     const val DEFAULT_ADVANCED_SEARCH: Boolean = false
 
     @JvmStatic
     val isAdvancedSearch: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ADVANCED_SEARCH,
-            DEFAULT_ADVANCED_SEARCH
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ADVANCED_SEARCH,
+                DEFAULT_ADVANCED_SEARCH,
+            )
 
     const val KEY_ALL_ATTACHMENTS: String = "all_attachments"
     const val DEFAULT_ALL_ATTACHMENTS: Boolean = false
 
     @JvmStatic
     val isAllAttachments: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ALL_ATTACHMENTS,
-            DEFAULT_ALL_ATTACHMENTS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ALL_ATTACHMENTS,
+                DEFAULT_ALL_ATTACHMENTS,
+            )
 
     const val KEY_AUTO_REFRESH_INTERVAL: String = "auto_refresh_interval"
     const val DISABLED_AUTO_REFRESH_INTERVAL: Int = 0
@@ -253,14 +266,20 @@ object Preferences {
     @JvmStatic
     val autoRefreshInterval: Int
         get() {
-            val value = PREFERENCES!!.getInt(
-                KEY_AUTO_REFRESH_INTERVAL,
-                DEFAULT_AUTO_REFRESH_INTERVAL
-            )
-            return if (value > MAX_AUTO_REFRESH_INTERVAL)
+            val value =
+                PREFERENCES!!.getInt(
+                    KEY_AUTO_REFRESH_INTERVAL,
+                    DEFAULT_AUTO_REFRESH_INTERVAL,
+                )
+            return if (value > MAX_AUTO_REFRESH_INTERVAL) {
                 MAX_AUTO_REFRESH_INTERVAL
-            else
-                if (value < MIN_AUTO_REFRESH_INTERVAL) DISABLED_AUTO_REFRESH_INTERVAL else value
+            } else {
+                if (value < MIN_AUTO_REFRESH_INTERVAL) {
+                    DISABLED_AUTO_REFRESH_INTERVAL
+                } else {
+                    value
+                }
+            }
         }
 
     init {
@@ -286,10 +305,11 @@ object Preferences {
     const val DEFAULT_CACHE_SIZE: Int = 200
 
     val cacheSize: Int
-        get() = PREFERENCES!!.getInt(
-            KEY_CACHE_SIZE,
-            DEFAULT_CACHE_SIZE
-        )
+        get() =
+            PREFERENCES!!.getInt(
+                KEY_CACHE_SIZE,
+                DEFAULT_CACHE_SIZE,
+            )
 
     val KEY_CAPTCHA: ChanKey = ChanKey("captcha")
     private const val VALUE_CAPTCHA_START = "captcha_"
@@ -297,14 +317,15 @@ object Preferences {
     @JvmStatic
     fun getCaptchaTypeForChan(chan: Chan): String? {
         val supportedCaptchaTypes = chan.configuration.getSupportedCaptchaTypes()
-        if (supportedCaptchaTypes == null || supportedCaptchaTypes.isEmpty()) {
+        if (supportedCaptchaTypes.isNullOrEmpty()) {
             return null
         }
         val defaultCaptchaType = supportedCaptchaTypes.iterator().next()
-        val captchaTypeValue = PREFERENCES!!.getString(
-            KEY_CAPTCHA.bind(chan.name),
-            transformCaptchaTypeToValue(defaultCaptchaType)
-        )
+        val captchaTypeValue =
+            PREFERENCES!!.getString(
+                KEY_CAPTCHA.bind(chan.name),
+                transformCaptchaTypeToValue(defaultCaptchaType),
+            )
         val captchaType: String?
         if (captchaTypeValue != null && captchaTypeValue.startsWith(VALUE_CAPTCHA_START)) {
             captchaType = captchaTypeValue.substring(VALUE_CAPTCHA_START.length)
@@ -327,26 +348,29 @@ object Preferences {
 
     fun getCaptchaTypeEntries(
         chan: Chan,
-        captchaTypes: Collection<String?>
+        captchaTypes: Collection<String?>,
     ): MutableList<CharSequence> {
         val entries = java.util.ArrayList<CharSequence>()
         for (captchaType in captchaTypes) {
-            entries.add(chan.configuration.safe().obtainCaptcha(captchaType).title!!)
+            entries.add(
+                chan.configuration
+                    .safe()
+                    .obtainCaptcha(captchaType)
+                    .title!!,
+            )
         }
         return entries
     }
 
     fun getCaptchaTypeDefaultValue(chan: Chan): String? {
         val supportedCaptchaTypes = chan.configuration.getSupportedCaptchaTypes()
-        if (supportedCaptchaTypes == null || supportedCaptchaTypes.isEmpty()) {
+        if (supportedCaptchaTypes.isNullOrEmpty()) {
             return null
         }
         return transformCaptchaTypeToValue(supportedCaptchaTypes.iterator().next())
     }
 
-    private fun transformCaptchaTypeToValue(captchaType: String?): String {
-        return VALUE_CAPTCHA_START + captchaType
-    }
+    private fun transformCaptchaTypeToValue(captchaType: String?): String = VALUE_CAPTCHA_START + captchaType
 
     val KEY_CAPTCHA_PASS: ChanKey = ChanKey("captcha_pass")
 
@@ -366,22 +390,23 @@ object Preferences {
     const val SUB_KEY_CAPTCHA_SOLVING_ENDPOINT: String = "endpoint"
     const val SUB_KEY_CAPTCHA_SOLVING_TOKEN: String = "token"
     const val SUB_KEY_CAPTCHA_SOLVING_TIMEOUT: String = "timeout"
-    val KEYS_CAPTCHA_SOLVING: List<String> = listOf(
-        SUB_KEY_CAPTCHA_SOLVING_ENDPOINT,
-        SUB_KEY_CAPTCHA_SOLVING_TOKEN,
-        SUB_KEY_CAPTCHA_SOLVING_TIMEOUT
-    )
+    val KEYS_CAPTCHA_SOLVING: List<String> =
+        listOf(
+            SUB_KEY_CAPTCHA_SOLVING_ENDPOINT,
+            SUB_KEY_CAPTCHA_SOLVING_TOKEN,
+            SUB_KEY_CAPTCHA_SOLVING_TIMEOUT,
+        )
 
     val captchaSolving: MutableMap<String?, String?>
         get() {
             val value =
                 PREFERENCES!!.getString(
                     KEY_CAPTCHA_SOLVING,
-                    null
+                    null,
                 )
             return unpackOrCastMultipleValues(
                 value,
-                KEYS_CAPTCHA_SOLVING
+                KEYS_CAPTCHA_SOLVING,
             )
         }
 
@@ -392,7 +417,7 @@ object Preferences {
             val value =
                 PREFERENCES!!.getString(
                     KEY_CAPTCHA_SOLVING_CHANS,
-                    null
+                    null,
                 )
             if (isEmpty(value)) {
                 return mutableSetOf()
@@ -413,7 +438,8 @@ object Preferences {
         }
         set(chanNames) {
             if (chanNames.isEmpty()) {
-                PREFERENCES!!.edit()
+                PREFERENCES!!
+                    .edit()
                     .remove(KEY_CAPTCHA_SOLVING_CHANS)
                     .close()
             } else {
@@ -421,10 +447,12 @@ object Preferences {
                 for (chanName in chanNames) {
                     jsonArray.put(chanName)
                 }
-                PREFERENCES!!.edit().put(
-                    KEY_CAPTCHA_SOLVING_CHANS,
-                    jsonArray.toString()
-                ).close()
+                PREFERENCES!!
+                    .edit()
+                    .put(
+                        KEY_CAPTCHA_SOLVING_CHANS,
+                        jsonArray.toString(),
+                    ).close()
             }
         }
 
@@ -432,17 +460,20 @@ object Preferences {
     val DEFAULT_CATALOG_SORT: CatalogSort = CatalogSort.UNSORTED
 
     var catalogSort: CatalogSort?
-        get() = getEnumValue(
-            KEY_CATALOG_SORT,
-            CatalogSort.entries.toTypedArray(),
-            DEFAULT_CATALOG_SORT,
-            CatalogSort.Companion.VALUE_PROVIDER
-        )
-        set(catalogSort) {
-            PREFERENCES!!.edit().put(
+        get() =
+            getEnumValue(
                 KEY_CATALOG_SORT,
-                if (catalogSort != null) catalogSort.value else null
-            ).close()
+                CatalogSort.entries.toTypedArray(),
+                DEFAULT_CATALOG_SORT,
+                CatalogSort.Companion.VALUE_PROVIDER,
+            )
+        set(catalogSort) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_CATALOG_SORT,
+                    if (catalogSort != null) catalogSort.value else null,
+                ).close()
         }
 
     const val KEY_CHANS_ORDER: String = "chans_order"
@@ -453,7 +484,7 @@ object Preferences {
             val data =
                 PREFERENCES!!.getString(
                     KEY_CHANS_ORDER,
-                    null
+                    null,
                 )
             if (data != null) {
                 try {
@@ -475,10 +506,12 @@ object Preferences {
             for (chanName in chanNames!!) {
                 jsonArray.put(chanName)
             }
-            PREFERENCES!!.edit().put(
-                KEY_CHANS_ORDER,
-                jsonArray.toString()
-            ).close()
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_CHANS_ORDER,
+                    jsonArray.toString(),
+                ).close()
         }
 
     const val KEY_CHECK_UPDATES_ON_START: String = "check_updates_on_start"
@@ -486,15 +519,18 @@ object Preferences {
 
     @JvmStatic
     var isCheckUpdatesOnStart: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_CHECK_UPDATES_ON_START,
-            DEFAULT_CHECK_UPDATES_ON_START
-        )
-        set(checkUpdatesOnStart) {
-            PREFERENCES!!.edit().put(
+        get() =
+            PREFERENCES!!.getBoolean(
                 KEY_CHECK_UPDATES_ON_START,
-                checkUpdatesOnStart
-            ).close()
+                DEFAULT_CHECK_UPDATES_ON_START,
+            )
+        set(checkUpdatesOnStart) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_CHECK_UPDATES_ON_START,
+                    checkUpdatesOnStart,
+                ).close()
         }
 
     const val KEY_CLOSE_ON_BACK: String = "close_on_back"
@@ -502,50 +538,57 @@ object Preferences {
 
     @JvmStatic
     val isCloseOnBack: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_CLOSE_ON_BACK,
-            DEFAULT_CLOSE_ON_BACK
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_CLOSE_ON_BACK,
+                DEFAULT_CLOSE_ON_BACK,
+            )
 
     const val KEY_CUT_THUMBNAILS: String = "cut_thumbnails"
     const val DEFAULT_CUT_THUMBNAILS: Boolean = true
 
     @JvmStatic
     val isCutThumbnails: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_CUT_THUMBNAILS,
-            DEFAULT_CUT_THUMBNAILS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_CUT_THUMBNAILS,
+                DEFAULT_CUT_THUMBNAILS,
+            )
 
     const val KEY_CYCLICAL_REFRESH: String = "cyclical_refresh"
     val DEFAULT_CYCLICAL_REFRESH: CyclicalRefreshMode = CyclicalRefreshMode.DEFAULT
 
     @JvmStatic
     val cyclicalRefreshMode: CyclicalRefreshMode?
-        get() = getEnumValue(
-            KEY_CYCLICAL_REFRESH,
-            CyclicalRefreshMode.entries.toTypedArray(),
-            DEFAULT_CYCLICAL_REFRESH,
-            CyclicalRefreshMode.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_CYCLICAL_REFRESH,
+                CyclicalRefreshMode.entries.toTypedArray(),
+                DEFAULT_CYCLICAL_REFRESH,
+                CyclicalRefreshMode.Companion.VALUE_PROVIDER,
+            )
 
     val KEY_DEFAULT_BOARD_NAME: ChanKey = ChanKey("default_board_name")
 
     @JvmStatic
-    fun getDefaultBoardName(chan: Chan): String? {
-        return if (chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE))
+    fun getDefaultBoardName(chan: Chan): String? =
+        if (chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
             chan.configuration.getSingleBoardName()
-        else
+        } else {
             validateBoardName(
                 PREFERENCES!!.getString(
                     KEY_DEFAULT_BOARD_NAME.bind(
-                        chan.name
-                    ), null
-                )
+                        chan.name,
+                    ),
+                    null,
+                ),
             )
-    }
+        }
 
-    fun setDefaultBoardName(chanName: String?, boardName: String?) {
+    fun setDefaultBoardName(
+        chanName: String?,
+        boardName: String?,
+    ) {
         PREFERENCES!!.edit().put(KEY_DEFAULT_BOARD_NAME.bind(chanName), boardName).close()
     }
 
@@ -554,30 +597,33 @@ object Preferences {
 
     @JvmStatic
     val isDisplayHiddenThreads: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_DISPLAY_HIDDEN_THREADS,
-            DEFAULT_DISPLAY_HIDDEN_THREADS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_DISPLAY_HIDDEN_THREADS,
+                DEFAULT_DISPLAY_HIDDEN_THREADS,
+            )
 
     const val KEY_DISPLAY_ICONS: String = "display_icons"
     const val DEFAULT_DISPLAY_ICONS: Boolean = true
 
     @JvmStatic
     val isDisplayIcons: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_DISPLAY_ICONS,
-            DEFAULT_DISPLAY_ICONS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_DISPLAY_ICONS,
+                DEFAULT_DISPLAY_ICONS,
+            )
 
     val KEY_DOMAIN: ChanKey = ChanKey("domain")
 
     @JvmStatic
-    fun getDomainUnhandled(chan: Chan): String? {
-        return PREFERENCES!!.getString(KEY_DOMAIN.bind(chan.name), "")
-    }
+    fun getDomainUnhandled(chan: Chan): String? = PREFERENCES!!.getString(KEY_DOMAIN.bind(chan.name), "")
 
     @JvmStatic
-    fun setDomainUnhandled(chan: Chan, domain: String?) {
+    fun setDomainUnhandled(
+        chan: Chan,
+        domain: String?,
+    ) {
         PREFERENCES!!.edit().put(KEY_DOMAIN.bind(chan.name), domain).close()
     }
 
@@ -586,20 +632,22 @@ object Preferences {
 
     @JvmStatic
     val isDownloadDetailName: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_DOWNLOAD_DETAIL_NAME,
-            DEFAULT_DOWNLOAD_DETAIL_NAME
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_DOWNLOAD_DETAIL_NAME,
+                DEFAULT_DOWNLOAD_DETAIL_NAME,
+            )
 
     const val KEY_DOWNLOAD_ORIGINAL_NAME: String = "download_original_name"
     const val DEFAULT_DOWNLOAD_ORIGINAL_NAME: Boolean = false
 
     @JvmStatic
     val isDownloadOriginalName: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_DOWNLOAD_ORIGINAL_NAME,
-            DEFAULT_DOWNLOAD_ORIGINAL_NAME
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_DOWNLOAD_ORIGINAL_NAME,
+                DEFAULT_DOWNLOAD_ORIGINAL_NAME,
+            )
 
     const val KEY_DOWNLOAD_PATH: String = "download_path"
 
@@ -609,7 +657,7 @@ object Preferences {
             val path =
                 PREFERENCES!!.getString(
                     KEY_DOWNLOAD_PATH,
-                    null
+                    null,
                 )
             return path?.takeIf { !isEmptyOrWhitespace(it) } ?: C.DEFAULT_DOWNLOAD_PATH
         }
@@ -626,7 +674,7 @@ object Preferences {
             val uri = Uri.fromFile(dir)
             val pathSegments = uri.getPathSegments()
             if (pathSegments.size > 0) {
-                val first = File("/" + uri.getPathSegments().get(0))
+                val first = File("/" + uri.getPathSegments()[0])
                 if (first.exists() && first.isDirectory()) {
                     absolute = true
                 }
@@ -654,10 +702,11 @@ object Preferences {
         for (uriPermission in uriPermissions) {
             if (uriPermission.isReadPermission() && uriPermission.isWritePermission()) {
                 val treeUri = uriPermission.getUri()
-                val uri = DocumentsContract.buildDocumentUriUsingTree(
-                    treeUri,
-                    DocumentsContract.getTreeDocumentId(treeUri)
-                )
+                val uri =
+                    DocumentsContract.buildDocumentUriUsingTree(
+                        treeUri,
+                        DocumentsContract.getTreeDocumentId(treeUri),
+                    )
                 try {
                     contentResolver.query(uri, null, null, null, null).use { cursor ->
                         if (cursor != null && cursor.moveToFirst()) {
@@ -674,13 +723,17 @@ object Preferences {
 
     @JvmStatic
     @RequiresApi(Build.VERSION_CODES.KITKAT)
-    fun setDownloadUriTree(context: Context, uri: Uri?, uriFlags: Int) {
+    fun setDownloadUriTree(
+        context: Context,
+        uri: Uri?,
+        uriFlags: Int,
+    ) {
         val contentResolver = context.getContentResolver()
         for (uriPermission in contentResolver.getPersistedUriPermissions()) {
             if (uri == null || uri != uriPermission.getUri()) {
                 val flags =
                     (if (uriPermission.isReadPermission()) Intent.FLAG_GRANT_READ_URI_PERMISSION else 0) or
-                            (if (uriPermission.isWritePermission()) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
+                        (if (uriPermission.isWritePermission()) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
                 contentResolver.releasePersistableUriPermission(uriPermission.getUri(), flags)
             }
         }
@@ -689,8 +742,9 @@ object Preferences {
             ClickableToast.show(R.string.no_access_to_memory)
         } else {
             contentResolver.takePersistableUriPermission(
-                uri, uriFlags and
-                        (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                uri,
+                uriFlags and
+                    (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION),
             )
         }
     }
@@ -700,36 +754,40 @@ object Preferences {
 
     @JvmStatic
     val downloadSubdirMode: DownloadSubdirMode?
-        get() = getEnumValue(
-            KEY_DOWNLOAD_SUBDIR,
-            DownloadSubdirMode.entries.toTypedArray(),
-            DEFAULT_DOWNLOAD_SUBDIR,
-            DownloadSubdirMode.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_DOWNLOAD_SUBDIR,
+                DownloadSubdirMode.entries.toTypedArray(),
+                DEFAULT_DOWNLOAD_SUBDIR,
+                DownloadSubdirMode.Companion.VALUE_PROVIDER,
+            )
 
     const val KEY_DRAWER_INITIAL_POSITION: String = "drawer_initial_position"
     val DEFAULT_DRAWER_INITIAL_POSITION: DrawerInitialPosition = DrawerInitialPosition.CLOSED
 
     @JvmStatic
     val drawerInitialPosition: DrawerInitialPosition?
-        get() = getEnumValue(
-            KEY_DRAWER_INITIAL_POSITION,
-            DrawerInitialPosition.entries.toTypedArray(),
-            DEFAULT_DRAWER_INITIAL_POSITION,
-            DrawerInitialPosition.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_DRAWER_INITIAL_POSITION,
+                DrawerInitialPosition.entries.toTypedArray(),
+                DEFAULT_DRAWER_INITIAL_POSITION,
+                DrawerInitialPosition.VALUE_PROVIDER,
+            )
 
     const val KEY_EXPANDED_SCREEN: String = "expanded_screen"
     const val DEFAULT_EXPANDED_SCREEN: Boolean = false
 
     @JvmStatic
     var isExpandedScreen: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_EXPANDED_SCREEN,
-            DEFAULT_EXPANDED_SCREEN
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_EXPANDED_SCREEN,
+                DEFAULT_EXPANDED_SCREEN,
+            )
         set(expandedScreen) {
-            PREFERENCES!!.edit()
+            PREFERENCES!!
+                .edit()
                 .put(KEY_EXPANDED_SCREEN, expandedScreen)
                 .close()
         }
@@ -739,23 +797,29 @@ object Preferences {
 
     @JvmStatic
     val favoriteOnReply: FavoriteOnReplyMode?
-        get() = getEnumValue(
-            KEY_FAVORITE_ON_REPLY,
-            FavoriteOnReplyMode.entries.toTypedArray(),
-            DEFAULT_FAVORITE_ON_REPLY,
-            FavoriteOnReplyMode.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_FAVORITE_ON_REPLY,
+                FavoriteOnReplyMode.entries.toTypedArray(),
+                DEFAULT_FAVORITE_ON_REPLY,
+                FavoriteOnReplyMode.Companion.VALUE_PROVIDER,
+            )
 
     init {
         if (PREFERENCES != null) {
             val key = "favorite_on_reply"
-            val value = PREFERENCES.getAll().get(key)
+            val value = PREFERENCES.getAll()[key]
             if (value is Boolean) {
-                val favoriteOnReplyMode = if (value)
-                    FavoriteOnReplyMode.ENABLED
-                else
-                    FavoriteOnReplyMode.DISABLED
-                PREFERENCES.edit().remove(key).put(KEY_FAVORITE_ON_REPLY, favoriteOnReplyMode.value)
+                val favoriteOnReplyMode =
+                    if (value) {
+                        FavoriteOnReplyMode.ENABLED
+                    } else {
+                        FavoriteOnReplyMode.DISABLED
+                    }
+                PREFERENCES
+                    .edit()
+                    .remove(key)
+                    .put(KEY_FAVORITE_ON_REPLY, favoriteOnReplyMode.value)
                     .close()
             }
         }
@@ -765,22 +829,24 @@ object Preferences {
     val DEFAULT_FAVORITES_ORDER: FavoritesOrder = FavoritesOrder.DATE_DESC
 
     val favoritesOrder: FavoritesOrder?
-        get() = getEnumValue(
-            KEY_FAVORITES_ORDER,
-            FavoritesOrder.entries.toTypedArray(),
-            DEFAULT_FAVORITES_ORDER,
-            FavoritesOrder.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_FAVORITES_ORDER,
+                FavoritesOrder.entries.toTypedArray(),
+                DEFAULT_FAVORITES_ORDER,
+                FavoritesOrder.Companion.VALUE_PROVIDER,
+            )
 
     const val KEY_FAVORITES_HIDED_ALL: String = "favorites_hided_all"
     const val DEFAULT_FAVORITES_HIDED_ALL: Boolean = false
 
     @JvmStatic
     val isFavoritesHidedAll: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_FAVORITES_HIDED_ALL,
-            DEFAULT_FAVORITES_HIDED_ALL
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_FAVORITES_HIDED_ALL,
+                DEFAULT_FAVORITES_HIDED_ALL,
+            )
 
     @JvmStatic
     fun setFavoritesHideAll(flag: Boolean) {
@@ -792,10 +858,11 @@ object Preferences {
 
     @JvmStatic
     val isFavoritesHidedDeleted: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_FAVORITES_HIDED_DELETED,
-            DEFAULT_FAVORITES_HIDED_DELETED
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_FAVORITES_HIDED_DELETED,
+                DEFAULT_FAVORITES_HIDED_DELETED,
+            )
 
     @JvmStatic
     fun setFavoritesHideDeleted(flag: Boolean) {
@@ -807,138 +874,155 @@ object Preferences {
 
     @JvmStatic
     val isHidePersonalData: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_HIDE_PERSONAL_DATA,
-            DEFAULT_HIDE_PERSONAL_DATA
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_HIDE_PERSONAL_DATA,
+                DEFAULT_HIDE_PERSONAL_DATA,
+            )
 
     const val KEY_HIGHLIGHT_UNREAD: String = "highlight_unread_posts"
     val DEFAULT_HIGHLIGHT_UNREAD: HighlightUnreadMode = HighlightUnreadMode.AUTOMATICALLY
 
     @JvmStatic
     val highlightUnreadMode: HighlightUnreadMode?
-        get() = getEnumValue(
-            KEY_HIGHLIGHT_UNREAD,
-            HighlightUnreadMode.entries.toTypedArray(),
-            DEFAULT_HIGHLIGHT_UNREAD,
-            HighlightUnreadMode.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_HIGHLIGHT_UNREAD,
+                HighlightUnreadMode.entries.toTypedArray(),
+                DEFAULT_HIGHLIGHT_UNREAD,
+                HighlightUnreadMode.Companion.VALUE_PROVIDER,
+            )
 
     const val KEY_HUGE_CAPTCHA: String = "huge_captcha"
     const val DEFAULT_HUGE_CAPTCHA: Boolean = true
 
     @JvmStatic
     val isHugeCaptcha: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_HUGE_CAPTCHA,
-            DEFAULT_HUGE_CAPTCHA
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_HUGE_CAPTCHA,
+                DEFAULT_HUGE_CAPTCHA,
+            )
 
     const val KEY_CAPTCHA_TIMER: String = "captcha_timer"
     const val DEFAULT_CAPTCHA_TIMER: Boolean = true
 
     @JvmStatic
     val isCaptchaTimer: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_CAPTCHA_TIMER,
-            DEFAULT_CAPTCHA_TIMER
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_CAPTCHA_TIMER,
+                DEFAULT_CAPTCHA_TIMER,
+            )
 
     const val KEY_CAPTCHA_AUTO_RELOAD: String = "captcha_auto_reload"
     const val DEFAULT_CAPTCHA_AUTO_RELOAD: Boolean = true
 
     @JvmStatic
     val isCaptchaAutoReload: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_CAPTCHA_AUTO_RELOAD,
-            DEFAULT_CAPTCHA_AUTO_RELOAD
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_CAPTCHA_AUTO_RELOAD,
+                DEFAULT_CAPTCHA_AUTO_RELOAD,
+            )
 
     const val KEY_INTERNAL_BROWSER: String = "internal_browser"
     const val DEFAULT_INTERNAL_BROWSER: Boolean = true
 
     @JvmStatic
     val isUseInternalBrowser: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_INTERNAL_BROWSER,
-            DEFAULT_INTERNAL_BROWSER
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_INTERNAL_BROWSER,
+                DEFAULT_INTERNAL_BROWSER,
+            )
 
     const val KEY_LAST_UPDATE_CHECK: String = "last_update_check"
 
     @JvmStatic
     var lastUpdateCheck: Long
-        get() = PREFERENCES!!.getLong(
-            KEY_LAST_UPDATE_CHECK,
-            0L
-        )
-        set(lastUpdateCheck) {
-            PREFERENCES!!.edit().put(
+        get() =
+            PREFERENCES!!.getLong(
                 KEY_LAST_UPDATE_CHECK,
-                lastUpdateCheck
-            ).close()
+                0L,
+            )
+        set(lastUpdateCheck) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_LAST_UPDATE_CHECK,
+                    lastUpdateCheck,
+                ).close()
         }
 
     val KEY_LOAD_CATALOG: ChanKey = ChanKey("load_catalog")
     const val DEFAULT_LOAD_CATALOG: Boolean = false
 
-    fun isLoadCatalog(chan: Chan): Boolean {
-        return PREFERENCES!!.getBoolean(KEY_LOAD_CATALOG.bind(chan.name), DEFAULT_LOAD_CATALOG)
-    }
+    fun isLoadCatalog(chan: Chan): Boolean = PREFERENCES!!.getBoolean(KEY_LOAD_CATALOG.bind(chan.name), DEFAULT_LOAD_CATALOG)
 
     const val KEY_LOAD_NEAREST_IMAGE: String = "load_nearest_image"
     val DEFAULT_LOAD_NEAREST_IMAGE: NetworkMode = NetworkMode.NEVER
 
     @JvmStatic
     val loadNearestImage: NetworkMode?
-        get() = getNetworkModeGeneric(
-            KEY_LOAD_NEAREST_IMAGE,
-            DEFAULT_LOAD_NEAREST_IMAGE
-        )
+        get() =
+            getNetworkModeGeneric(
+                KEY_LOAD_NEAREST_IMAGE,
+                DEFAULT_LOAD_NEAREST_IMAGE,
+            )
 
     const val KEY_LOAD_THUMBNAILS: String = "load_thumbnails"
     val DEFAULT_LOAD_THUMBNAILS: NetworkMode = NetworkMode.ALWAYS
 
     @JvmStatic
     val loadThumbnails: NetworkMode?
-        get() = getNetworkModeGeneric(
-            KEY_LOAD_THUMBNAILS,
-            DEFAULT_LOAD_THUMBNAILS
-        )
+        get() =
+            getNetworkModeGeneric(
+                KEY_LOAD_THUMBNAILS,
+                DEFAULT_LOAD_THUMBNAILS,
+            )
 
     const val KEY_LOCALE: String = "locale"
 
     val locale: String?
-        get() = PREFERENCES!!.getString(
-            KEY_LOCALE,
-            LocaleManager.DEFAULT_LOCALE
-        )
+        get() =
+            PREFERENCES!!.getString(
+                KEY_LOCALE,
+                LocaleManager.DEFAULT_LOCALE,
+            )
 
     // Repository sources. An empty stored value means "use the built-in default" (BuildConfig).
     const val KEY_URI_UPDATES: String = "uri_updates"
     const val KEY_URI_UPDATES_EXTENSIONS: String = "uri_updates_extensions"
     const val KEY_URI_THEMES: String = "uri_themes"
 
-    private fun getRepositoryUri(key: String, defaultValue: String): String {
+    private fun getRepositoryUri(
+        key: String,
+        defaultValue: String,
+    ): String {
         val value = PREFERENCES!!.getString(key, "")
         return if (value != null && !value.isEmpty()) value else defaultValue
     }
 
     val uriUpdates: String
-        get() = getRepositoryUri(
-            KEY_URI_UPDATES,
-            BuildConfig.URI_UPDATES
-        )
+        get() =
+            getRepositoryUri(
+                KEY_URI_UPDATES,
+                BuildConfig.URI_UPDATES,
+            )
 
     val uriUpdatesExtensions: MutableList<String?>
         // The stored value is a whitespace-separated list, so updates from any number of
         get() {
-            val value = getRepositoryUri(
-                KEY_URI_UPDATES_EXTENSIONS,
-                BuildConfig.URI_UPDATES_EXTENSIONS
-            )
+            val value =
+                getRepositoryUri(
+                    KEY_URI_UPDATES_EXTENSIONS,
+                    BuildConfig.URI_UPDATES_EXTENSIONS,
+                )
             val uris = java.util.ArrayList<String?>()
-            for (uri in value.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }
+            for (uri in value
+                .split("\\s+".toRegex())
+                .dropLastWhile { it.isEmpty() }
                 .toTypedArray()) {
                 if (!uri.isEmpty()) {
                     uris.add(uri)
@@ -948,23 +1032,27 @@ object Preferences {
         }
 
     val uriThemes: String
-        get() = getRepositoryUri(
-            KEY_URI_THEMES,
-            BuildConfig.URI_THEMES
-        )
+        get() =
+            getRepositoryUri(
+                KEY_URI_THEMES,
+                BuildConfig.URI_THEMES,
+            )
 
     const val KEY_LOCK_DRAWER: String = "lock_drawer"
     const val DEFAULT_LOCK_DRAWER: Boolean = false
 
     @JvmStatic
     var isDrawerLocked: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_LOCK_DRAWER,
-            DEFAULT_LOCK_DRAWER
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_LOCK_DRAWER,
+                DEFAULT_LOCK_DRAWER,
+            )
         set(locked) {
-            PREFERENCES!!.edit()
-                .put(KEY_LOCK_DRAWER, locked).close()
+            PREFERENCES!!
+                .edit()
+                .put(KEY_LOCK_DRAWER, locked)
+                .close()
         }
 
     const val KEY_MERGE_CHANS: String = "merge_chans"
@@ -972,10 +1060,11 @@ object Preferences {
 
     @JvmStatic
     val isMergeChans: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_MERGE_CHANS,
-            DEFAULT_MERGE_CHANS
-        ) &&
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_MERGE_CHANS,
+                DEFAULT_MERGE_CHANS,
+            ) &&
                 ChanManager.getInstance().hasMultipleAvailableChans()
 
     const val KEY_NOTIFY_DOWNLOAD_COMPLETE: String = "notify_download_complete"
@@ -983,42 +1072,46 @@ object Preferences {
 
     @JvmStatic
     val isNotifyDownloadComplete: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_NOTIFY_DOWNLOAD_COMPLETE,
-            DEFAULT_NOTIFY_DOWNLOAD_COMPLETE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_NOTIFY_DOWNLOAD_COMPLETE,
+                DEFAULT_NOTIFY_DOWNLOAD_COMPLETE,
+            )
 
     const val KEY_PAGE_BY_PAGE: String = "page_by_page"
     const val DEFAULT_PAGE_BY_PAGE: Boolean = false
 
     val isPageByPage: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_PAGE_BY_PAGE,
-            DEFAULT_PAGE_BY_PAGE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_PAGE_BY_PAGE,
+                DEFAULT_PAGE_BY_PAGE,
+            )
 
     const val KEY_APP_ICON: String = "app_icon"
     val DEFAULT_APP_ICON: AppIcon = AppIcon.GRADIENT
 
     val appIcon: AppIcon?
-        get() = getEnumValue(
-            KEY_APP_ICON,
-            AppIcon.entries.toTypedArray(),
-            DEFAULT_APP_ICON,
-            AppIcon.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_APP_ICON,
+                AppIcon.entries.toTypedArray(),
+                DEFAULT_APP_ICON,
+                AppIcon.VALUE_PROVIDER,
+            )
 
     const val KEY_PAGES_LIST: String = "pages_list"
     val DEFAULT_PAGES_LIST: PagesListMode = PagesListMode.PAGES_FIRST
 
     @JvmStatic
     val pagesListMode: PagesListMode?
-        get() = getEnumValue(
-            KEY_PAGES_LIST,
-            PagesListMode.entries.toTypedArray(),
-            DEFAULT_PAGES_LIST,
-            PagesListMode.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_PAGES_LIST,
+                PagesListMode.entries.toTypedArray(),
+                DEFAULT_PAGES_LIST,
+                PagesListMode.VALUE_PROVIDER,
+            )
 
     val KEY_PARTIAL_THREAD_LOADING: ChanKey = ChanKey("partial_thread_loading")
     const val DEFAULT_PARTIAL_THREAD_LOADING: Boolean = true
@@ -1027,7 +1120,7 @@ object Preferences {
         if (chan.configuration.getOption(ChanConfiguration.OPTION_READ_THREAD_PARTIALLY)) {
             return PREFERENCES!!.getBoolean(
                 KEY_PARTIAL_THREAD_LOADING.bind(chan.name),
-                DEFAULT_PARTIAL_THREAD_LOADING
+                DEFAULT_PARTIAL_THREAD_LOADING,
             )
         } else {
             return false
@@ -1074,10 +1167,12 @@ object Preferences {
     val postMaxLines: Int
         get() {
             try {
-                return PREFERENCES!!.getString(
-                    com.mishiranu.dashchan.content.Preferences.KEY_POST_MAX_LINES,
-                    com.mishiranu.dashchan.content.Preferences.DEFAULT_POST_MAX_LINES
-                )!!.toInt()
+                return PREFERENCES!!
+                    .getString(
+                        com.mishiranu.dashchan.content.Preferences.KEY_POST_MAX_LINES,
+                        com.mishiranu.dashchan.content.Preferences.DEFAULT_POST_MAX_LINES,
+                    )!!
+                    .toInt()
             } catch (e: Exception) {
                 return DEFAULT_POST_MAX_LINES.toInt()
             }
@@ -1109,30 +1204,33 @@ object Preferences {
 
     @JvmStatic
     val isRecaptchaJavascript: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_RECAPTCHA_JAVASCRIPT,
-            DEFAULT_RECAPTCHA_JAVASCRIPT
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_RECAPTCHA_JAVASCRIPT,
+                DEFAULT_RECAPTCHA_JAVASCRIPT,
+            )
 
     const val KEY_REMEMBER_HISTORY: String = "remember_history"
     const val DEFAULT_REMEMBER_HISTORY: Boolean = true
 
     @JvmStatic
     val isRememberHistory: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_REMEMBER_HISTORY,
-            DEFAULT_REMEMBER_HISTORY
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_REMEMBER_HISTORY,
+                DEFAULT_REMEMBER_HISTORY,
+            )
 
     const val KEY_SCROLL_THREAD_GALLERY: String = "scroll_thread_gallery"
     const val DEFAULT_SCROLL_THREAD_GALLERY: Boolean = false
 
     @JvmStatic
     val isScrollThreadGallery: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SCROLL_THREAD_GALLERY,
-            DEFAULT_SCROLL_THREAD_GALLERY
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SCROLL_THREAD_GALLERY,
+                DEFAULT_SCROLL_THREAD_GALLERY,
+            )
 
     const val KEY_SHOWCASE_GALLERY: String = "showcase_gallery"
 
@@ -1143,23 +1241,27 @@ object Preferences {
 
     @JvmStatic
     val isShowcaseGalleryEnabled: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SHOWCASE_GALLERY,
-            true
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SHOWCASE_GALLERY,
+                true,
+            )
 
     const val KEY_SFW_MODE: String = "sfw_mode"
     const val DEFAULT_SFW_MODE: Boolean = false
 
     @JvmStatic
     var isSfwMode: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SFW_MODE,
-            DEFAULT_SFW_MODE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SFW_MODE,
+                DEFAULT_SFW_MODE,
+            )
         set(sfwMode) {
-            PREFERENCES!!.edit()
-                .put(KEY_SFW_MODE, sfwMode).close()
+            PREFERENCES!!
+                .edit()
+                .put(KEY_SFW_MODE, sfwMode)
+                .close()
         }
 
     const val KEY_SHOW_MY_POSTS: String = "show_my_posts"
@@ -1167,12 +1269,14 @@ object Preferences {
 
     @JvmStatic
     var isShowMyPosts: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SHOW_MY_POSTS,
-            DEFAULT_SHOW_MY_POSTS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SHOW_MY_POSTS,
+                DEFAULT_SHOW_MY_POSTS,
+            )
         set(showMyPosts) {
-            PREFERENCES!!.edit()
+            PREFERENCES!!
+                .edit()
                 .put(KEY_SHOW_MY_POSTS, showMyPosts)
                 .close()
         }
@@ -1182,12 +1286,14 @@ object Preferences {
 
     @JvmStatic
     var isShowSpoilers: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SHOW_SPOILERS,
-            DEFAULT_SHOW_SPOILERS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SHOW_SPOILERS,
+                DEFAULT_SHOW_SPOILERS,
+            )
         set(showSpoilers) {
-            PREFERENCES!!.edit()
+            PREFERENCES!!
+                .edit()
                 .put(KEY_SHOW_SPOILERS, showSpoilers)
                 .close()
         }
@@ -1197,8 +1303,11 @@ object Preferences {
 
     @JvmStatic
     fun getSubdir(
-        chanName: String?, chanTitle: String?, boardName: String?,
-        threadNumber: String?, threadTitle: String?
+        chanName: String?,
+        chanTitle: String?,
+        boardName: String?,
+        threadNumber: String?,
+        threadTitle: String?,
     ): String? {
         if (threadNumber == null) {
             return null
@@ -1210,8 +1319,12 @@ object Preferences {
 
     @JvmStatic
     fun formatSubdir(
-        pattern: String, chanName: String?, chanTitle: String?, boardName: String?,
-        threadNumber: String?, threadTitle: String?
+        pattern: String,
+        chanName: String?,
+        chanTitle: String?,
+        boardName: String?,
+        threadNumber: String?,
+        threadTitle: String?,
     ): String {
         val builder = StringBuilder(pattern)
         var i = builder.length - 2
@@ -1297,52 +1410,65 @@ object Preferences {
 
     @JvmStatic
     val textScale: Float
-        get() = max(
-            MIN_TEXT_SCALE, min(
-                PREFERENCES!!.getInt(
-                    KEY_TEXT_SCALE,
-                    DEFAULT_TEXT_SCALE
-                ), MAX_TEXT_SCALE
-            )
-        ) / 100f
+        get() =
+            max(
+                MIN_TEXT_SCALE,
+                min(
+                    PREFERENCES!!.getInt(
+                        KEY_TEXT_SCALE,
+                        DEFAULT_TEXT_SCALE,
+                    ),
+                    MAX_TEXT_SCALE,
+                ),
+            ) / 100f
 
     const val KEY_THEME: String = "theme"
 
     @JvmStatic
     var theme: String?
-        get() = PREFERENCES!!.getString(
-            KEY_THEME,
-            null
-        )
+        get() =
+            PREFERENCES!!.getString(
+                KEY_THEME,
+                null,
+            )
         set(value) {
-            PREFERENCES!!.edit()
-                .put(KEY_THEME, value).close()
+            PREFERENCES!!
+                .edit()
+                .put(KEY_THEME, value)
+                .close()
         }
 
     const val KEY_THREADS_VIEW: String = "threads_view"
     val DEFAULT_THREADS_VIEW: ThreadsView = ThreadsView.CARDS
 
     var threadsView: ThreadsView?
-        get() = getEnumValue(
-            KEY_THREADS_VIEW,
-            ThreadsView.entries.toTypedArray(),
-            DEFAULT_THREADS_VIEW,
-            ThreadsView.Companion.VALUE_PROVIDER
-        )
-        set(threadsView) {
-            PREFERENCES!!.edit().put(
+        get() =
+            getEnumValue(
                 KEY_THREADS_VIEW,
-                if (threadsView != null) threadsView.value else null
-            ).close()
+                ThreadsView.entries.toTypedArray(),
+                DEFAULT_THREADS_VIEW,
+                ThreadsView.Companion.VALUE_PROVIDER,
+            )
+        set(threadsView) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_THREADS_VIEW,
+                    if (threadsView != null) threadsView.value else null,
+                ).close()
         }
 
     init {
         if (PREFERENCES != null) {
-            val threadsGridMode = PREFERENCES.getAll().get("threads_grid_mode")
+            val threadsGridMode = PREFERENCES.getAll()["threads_grid_mode"]
             if (threadsGridMode is Boolean) {
                 val value =
                     if (threadsGridMode) ThreadsView.LARGE_GRID.value else ThreadsView.CARDS.value
-                PREFERENCES.edit().remove("threads_grid_mode").put(KEY_THREADS_VIEW, value).close()
+                PREFERENCES
+                    .edit()
+                    .remove("threads_grid_mode")
+                    .put(KEY_THREADS_VIEW, value)
+                    .close()
             }
         }
     }
@@ -1355,34 +1481,49 @@ object Preferences {
 
     @JvmStatic
     val thumbnailsScale: Float
-        get() = max(
-            MIN_THUMBNAILS_SCALE, min(
-                PREFERENCES!!.getInt(
-                    KEY_THUMBNAILS_SCALE,
-                    DEFAULT_THUMBNAILS_SCALE
-                ), MAX_THUMBNAILS_SCALE
-            )
-        ) / 100f
+        get() =
+            max(
+                MIN_THUMBNAILS_SCALE,
+                min(
+                    PREFERENCES!!.getInt(
+                        KEY_THUMBNAILS_SCALE,
+                        DEFAULT_THUMBNAILS_SCALE,
+                    ),
+                    MAX_THUMBNAILS_SCALE,
+                ),
+            ) / 100f
 
     const val KEY_TRUSTED_EXSTENSIONS: String = "trusted_extensions"
 
     @JvmStatic
-    fun isExtensionTrusted(packageName: String?, fingerprint: String?): Boolean {
+    fun isExtensionTrusted(
+        packageName: String?,
+        fingerprint: String?,
+    ): Boolean {
         val packageNameFingerprint = packageName + ":" + fingerprint
-        val packageNameFingerprints = PREFERENCES!!.getStringSet(
-            KEY_TRUSTED_EXSTENSIONS, null
-        )
-        return packageNameFingerprints != null && packageNameFingerprints.contains(
-            packageNameFingerprint
-        )
+        val packageNameFingerprints =
+            PREFERENCES!!.getStringSet(
+                KEY_TRUSTED_EXSTENSIONS,
+                null,
+            )
+        return packageNameFingerprints != null &&
+            packageNameFingerprints.contains(
+                packageNameFingerprint,
+            )
     }
 
     @JvmStatic
-    fun setExtensionTrusted(packageName: String?, fingerprint: String?) {
+    fun setExtensionTrusted(
+        packageName: String?,
+        fingerprint: String?,
+    ) {
         val packageNameFingerprint = packageName + ":" + fingerprint
-        var packageNameFingerprints: MutableSet<String> = PREFERENCES!!.getStringSet(
-            KEY_TRUSTED_EXSTENSIONS, null
-        )?.let { HashSet(it) } ?: HashSet()
+        var packageNameFingerprints: MutableSet<String> =
+            PREFERENCES!!
+                .getStringSet(
+                    KEY_TRUSTED_EXSTENSIONS,
+                    null,
+                )?.let { HashSet(it) } ?: HashSet()
         packageNameFingerprints.add(packageNameFingerprint)
         PREFERENCES.edit().put(KEY_TRUSTED_EXSTENSIONS, packageNameFingerprints).close()
     }
@@ -1392,42 +1533,48 @@ object Preferences {
     const val DEFAULT_USE_HTTPS: Boolean = true
 
     @JvmStatic
-    fun isUseHttps(chan: Chan): Boolean {
-        return PREFERENCES!!.getBoolean(KEY_USE_HTTPS.bind(chan.name), DEFAULT_USE_HTTPS)
-    }
+    fun isUseHttps(chan: Chan): Boolean = PREFERENCES!!.getBoolean(KEY_USE_HTTPS.bind(chan.name), DEFAULT_USE_HTTPS)
 
-    fun setUseHttps(chan: Chan, useHttps: Boolean) {
+    fun setUseHttps(
+        chan: Chan,
+        useHttps: Boolean,
+    ) {
         PREFERENCES!!.edit().put(KEY_USE_HTTPS.bind(chan.name), useHttps).close()
     }
 
     @JvmStatic
     val isUseHttpsGeneral: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_USE_HTTPS_GENERAL,
-            DEFAULT_USE_HTTPS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_USE_HTTPS_GENERAL,
+                DEFAULT_USE_HTTPS,
+            )
 
     const val KEY_USE_VIDEO_PLAYER: String = "use_video_player"
     const val DEFAULT_USE_VIDEO_PLAYER: Boolean = false
 
     val isUseVideoPlayer: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_USE_VIDEO_PLAYER,
-            DEFAULT_USE_VIDEO_PLAYER
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_USE_VIDEO_PLAYER,
+                DEFAULT_USE_VIDEO_PLAYER,
+            )
 
     const val KEY_USER_AGENT_REFERENCE: String = "user_agent_reference"
 
     var userAgentReference: String?
-        get() = PREFERENCES!!.getString(
-            KEY_USER_AGENT_REFERENCE,
-            null
-        )
-        set(userAgentReference) {
-            PREFERENCES!!.edit().put(
+        get() =
+            PREFERENCES!!.getString(
                 KEY_USER_AGENT_REFERENCE,
-                userAgentReference
-            ).close()
+                null,
+            )
+        set(userAgentReference) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_USER_AGENT_REFERENCE,
+                    userAgentReference,
+                ).close()
         }
 
     val KEY_USER_AUTHORIZATION: ChanKey = ChanKey("user_authorization")
@@ -1448,42 +1595,46 @@ object Preferences {
 
     @JvmStatic
     val isVerifyCertificate: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_VERIFY_CERTIFICATE,
-            DEFAULT_VERIFY_CERTIFICATE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_VERIFY_CERTIFICATE,
+                DEFAULT_VERIFY_CERTIFICATE,
+            )
 
     const val KEY_VIDEO_COMPLETION: String = "video_completion"
     val DEFAULT_VIDEO_COMPLETION: VideoCompletionMode = VideoCompletionMode.NOTHING
 
     @JvmStatic
     val videoCompletionMode: VideoCompletionMode?
-        get() = getEnumValue(
-            KEY_VIDEO_COMPLETION,
-            VideoCompletionMode.entries.toTypedArray(),
-            DEFAULT_VIDEO_COMPLETION,
-            VideoCompletionMode.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_VIDEO_COMPLETION,
+                VideoCompletionMode.entries.toTypedArray(),
+                DEFAULT_VIDEO_COMPLETION,
+                VideoCompletionMode.Companion.VALUE_PROVIDER,
+            )
 
     const val KEY_VIDEO_PLAY_AFTER_SCROLL: String = "video_play_after_scroll"
     const val DEFAULT_VIDEO_PLAY_AFTER_SCROLL: Boolean = false
 
     @JvmStatic
     val isVideoPlayAfterScroll: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_VIDEO_PLAY_AFTER_SCROLL,
-            DEFAULT_VIDEO_PLAY_AFTER_SCROLL
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_VIDEO_PLAY_AFTER_SCROLL,
+                DEFAULT_VIDEO_PLAY_AFTER_SCROLL,
+            )
 
     const val KEY_VIDEO_SEEK_ANY_FRAME: String = "video_seek_any_frame"
     const val DEFAULT_VIDEO_SEEK_ANY_FRAME: Boolean = false
 
     @JvmStatic
     val isVideoSeekAnyFrame: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_VIDEO_SEEK_ANY_FRAME,
-            DEFAULT_VIDEO_SEEK_ANY_FRAME
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_VIDEO_SEEK_ANY_FRAME,
+                DEFAULT_VIDEO_SEEK_ANY_FRAME,
+            )
 
     const val KEY_WATCHER_REFRESH_INTERVAL: String = "watcher_refresh_interval"
     const val DISABLED_WATCHER_REFRESH_INTERVAL: Int = 0
@@ -1495,20 +1646,26 @@ object Preferences {
     @JvmStatic
     val watcherRefreshInterval: Int
         get() {
-            val value = PREFERENCES!!.getInt(
-                KEY_WATCHER_REFRESH_INTERVAL,
-                DEFAULT_WATCHER_REFRESH_INTERVAL
-            )
-            return if (value > MAX_WATCHER_REFRESH_INTERVAL)
+            val value =
+                PREFERENCES!!.getInt(
+                    KEY_WATCHER_REFRESH_INTERVAL,
+                    DEFAULT_WATCHER_REFRESH_INTERVAL,
+                )
+            return if (value > MAX_WATCHER_REFRESH_INTERVAL) {
                 MAX_WATCHER_REFRESH_INTERVAL
-            else
-                if (value < MIN_WATCHER_REFRESH_INTERVAL) DISABLED_WATCHER_REFRESH_INTERVAL else value
+            } else {
+                if (value < MIN_WATCHER_REFRESH_INTERVAL) {
+                    DISABLED_WATCHER_REFRESH_INTERVAL
+                } else {
+                    value
+                }
+            }
         }
 
     init {
         if (PREFERENCES != null) {
             val key = "watcher_refresh_periodically"
-            val value = PREFERENCES.getAll().get(key)
+            val value = PREFERENCES.getAll()[key]
             if (value is Boolean) {
                 PREFERENCES.edit().use { editor ->
                     editor.remove(key)
@@ -1521,15 +1678,17 @@ object Preferences {
     }
 
     const val KEY_WATCHER_NOTIFICATIONS: String = "watcher_notifications"
-    val DEFAULT_WATCHER_NOTIFICATIONS: MutableSet<NotificationFeature?> = Collections
-        .unmodifiableSet<NotificationFeature?>(
-            HashSet<NotificationFeature?>(
-                Arrays.asList<NotificationFeature?>(
-                    NotificationFeature.IMPORTANT,
-                    NotificationFeature.SOUND, NotificationFeature.VIBRATION
-                )
+    val DEFAULT_WATCHER_NOTIFICATIONS: MutableSet<NotificationFeature?> =
+        Collections
+            .unmodifiableSet<NotificationFeature?>(
+                HashSet<NotificationFeature?>(
+                    Arrays.asList<NotificationFeature?>(
+                        NotificationFeature.IMPORTANT,
+                        NotificationFeature.SOUND,
+                        NotificationFeature.VIBRATION,
+                    ),
+                ),
             )
-        )
 
     @JvmStatic
     val watcherNotifications: MutableSet<NotificationFeature?>
@@ -1537,7 +1696,7 @@ object Preferences {
             val strings =
                 PREFERENCES!!.getStringSet(
                     KEY_WATCHER_NOTIFICATIONS,
-                    null
+                    null,
                 )
             if (strings == null) {
                 return DEFAULT_WATCHER_NOTIFICATIONS
@@ -1557,12 +1716,12 @@ object Preferences {
 
     fun setWatcherNotifications(notificationFeatures: Collection<NotificationFeature>?) {
         val strings: MutableSet<String>
-        if (notificationFeatures == null || notificationFeatures.isEmpty()) {
+        if (notificationFeatures.isNullOrEmpty()) {
             strings = mutableSetOf()
         } else {
             strings = HashSet()
             for (notificationFeature in notificationFeatures) {
-                strings.add(notificationFeature.value!!)
+                strings.add(notificationFeature.value)
             }
         }
         PREFERENCES!!.edit().put(KEY_WATCHER_NOTIFICATIONS, strings).close()
@@ -1572,39 +1731,43 @@ object Preferences {
     const val DEFAULT_WATCHER_WATCH_INITIALLY: Boolean = false
 
     val isWatcherWatchInitially: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_WATCHER_WATCH_INITIALLY,
-            DEFAULT_WATCHER_WATCH_INITIALLY
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_WATCHER_WATCH_INITIALLY,
+                DEFAULT_WATCHER_WATCH_INITIALLY,
+            )
 
     const val KEY_WATCHER_WIFI_ONLY: String = "watcher_wifi_only"
     const val DEFAULT_WATCHER_WIFI_ONLY: Boolean = false
 
     @JvmStatic
     val isWatcherWifiOnly: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_WATCHER_WIFI_ONLY,
-            DEFAULT_WATCHER_WIFI_ONLY
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_WATCHER_WIFI_ONLY,
+                DEFAULT_WATCHER_WIFI_ONLY,
+            )
 
     const val KEY_SWIPE_TO_HIDE_THREAD: String = "swipe_to_hide_thread"
     const val DEFAULT_SWIPE_TO_HIDE_THREAD: Boolean = false
 
     val isSwipeToHideThreadEnabled: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SWIPE_TO_HIDE_THREAD,
-            DEFAULT_SWIPE_TO_HIDE_THREAD
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SWIPE_TO_HIDE_THREAD,
+                DEFAULT_SWIPE_TO_HIDE_THREAD,
+            )
 
     const val KEY_DISPLAY_HIDDEN_POSTS: String = "display_hidden_posts"
     const val DEFAULT_DISPLAY_HIDDEN_POSTS: Boolean = true
 
     @JvmStatic
     val isDisplayHiddenPostsEnabled: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_DISPLAY_HIDDEN_POSTS,
-            DEFAULT_DISPLAY_HIDDEN_POSTS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_DISPLAY_HIDDEN_POSTS,
+                DEFAULT_DISPLAY_HIDDEN_POSTS,
+            )
 
     const val KEY_FIREWALL_RESOLUTION_METHOD: String = "firewall_resolution_method"
     val DEFAULT_FIREWALL_RESOLUTION_METHOD: FirewallResolutionMethod =
@@ -1612,62 +1775,68 @@ object Preferences {
 
     @JvmStatic
     val firewallResolutionMethod: FirewallResolutionMethod?
-        get() = getEnumValue(
-            KEY_FIREWALL_RESOLUTION_METHOD,
-            FirewallResolutionMethod.entries.toTypedArray(),
-            DEFAULT_FIREWALL_RESOLUTION_METHOD,
-            FirewallResolutionMethod.Companion.VALUE_PROVIDER
-        )
+        get() =
+            getEnumValue(
+                KEY_FIREWALL_RESOLUTION_METHOD,
+                FirewallResolutionMethod.entries.toTypedArray(),
+                DEFAULT_FIREWALL_RESOLUTION_METHOD,
+                FirewallResolutionMethod.Companion.VALUE_PROVIDER,
+            )
 
     const val KEY_ALWAYS_UNIQUE_HASH: String = "always_unique_hash"
     const val DEFAULT_ALWAYS_UNIQUE_HASH: Boolean = false
 
     @JvmStatic
     val isAlwaysUniqueHash: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ALWAYS_UNIQUE_HASH,
-            DEFAULT_ALWAYS_UNIQUE_HASH
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ALWAYS_UNIQUE_HASH,
+                DEFAULT_ALWAYS_UNIQUE_HASH,
+            )
 
     const val KEY_ALWAYS_CLEAR_METADATA: String = "always_clear_metadata"
     const val DEFAULT_ALWAYS_CLEAR_METADATA: Boolean = false
 
     @JvmStatic
     val isAlwaysClearMetadata: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ALWAYS_CLEAR_METADATA,
-            DEFAULT_ALWAYS_CLEAR_METADATA
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ALWAYS_CLEAR_METADATA,
+                DEFAULT_ALWAYS_CLEAR_METADATA,
+            )
 
     const val KEY_ALWAYS_REMOVE_FILENAME: String = "always_remove_filename"
     const val DEFAULT_ALWAYS_REMOVE_FILENAME: Boolean = false
 
     @JvmStatic
     val isAlwaysRemoveFilename: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ALWAYS_REMOVE_FILENAME,
-            DEFAULT_ALWAYS_REMOVE_FILENAME
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ALWAYS_REMOVE_FILENAME,
+                DEFAULT_ALWAYS_REMOVE_FILENAME,
+            )
 
     const val KEY_ALWAYS_RENAME_FILENAME: String = "always_rename_filename"
     const val DEFAULT_ALWAYS_RENAME_FILENAME: Boolean = false
 
     @JvmStatic
     val isAlwaysRenameFilename: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_ALWAYS_RENAME_FILENAME,
-            DEFAULT_ALWAYS_RENAME_FILENAME
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_ALWAYS_RENAME_FILENAME,
+                DEFAULT_ALWAYS_RENAME_FILENAME,
+            )
 
     const val KEY_FILE_NEWNAME: String = "file_newname"
     const val DEFAULT_FILE_NEWNAME: String = "image"
 
     @JvmStatic
     val configuredFileNewname: String?
-        get() = PREFERENCES!!.getString(
-            KEY_FILE_NEWNAME,
-            DEFAULT_FILE_NEWNAME
-        )
+        get() =
+            PREFERENCES!!.getString(
+                KEY_FILE_NEWNAME,
+                DEFAULT_FILE_NEWNAME,
+            )
 
     const val KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR: String =
         "important_posts_on_fastscroll_bar"
@@ -1675,75 +1844,88 @@ object Preferences {
 
     @JvmStatic
     val isShowImportantPostsOnFastScrollBar: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR,
-            DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR,
+                DEFAULT_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR,
+            )
 
     const val KEY_SHOW_POSTS_BORDERS: String = "posts_borders"
     const val DEFAULT_SHOW_POSTS_BORDERS: Boolean = true
 
     @JvmStatic
     val isShowPostsBorders: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SHOW_POSTS_BORDERS,
-            DEFAULT_SHOW_POSTS_BORDERS
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SHOW_POSTS_BORDERS,
+                DEFAULT_SHOW_POSTS_BORDERS,
+            )
 
     const val KEY_SPACE_AFTER_QUOTE: String = "space_after_quote"
     const val DEFAULT_SPACE_AFTER_QUOTE: Boolean = true
 
     @JvmStatic
     val isAddSpaceAfterQuote: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_SPACE_AFTER_QUOTE,
-            DEFAULT_SPACE_AFTER_QUOTE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_SPACE_AFTER_QUOTE,
+                DEFAULT_SPACE_AFTER_QUOTE,
+            )
 
     const val KEY_USE_INTERNAL_STORAGE_FOR_CACHE: String = "use_internal_storage_for_cache"
     const val DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE: Boolean = false
 
     val isUseInternalStorageForCache: Boolean
-        get() = PREFERENCES!!.getBoolean(
-            KEY_USE_INTERNAL_STORAGE_FOR_CACHE,
-            DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE
-        )
+        get() =
+            PREFERENCES!!.getBoolean(
+                KEY_USE_INTERNAL_STORAGE_FOR_CACHE,
+                DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE,
+            )
 
     const val KEY_MEDIA_LOADING_ACTION: String = "media_loading_action"
     val DEFAULT_MEDIA_LOADING_ACTION: MediaLoadingAction = MediaLoadingAction.MANUALLY
 
     @JvmStatic
     var mediaLoadingAction: MediaLoadingAction?
-        get() = getEnumValue(
-            KEY_MEDIA_LOADING_ACTION,
-            MediaLoadingAction.entries.toTypedArray(),
-            DEFAULT_MEDIA_LOADING_ACTION,
-            MediaLoadingAction.Companion.VALUE_PROVIDER
-        )
-        set(mediaLoadingAction) {
-            PREFERENCES!!.edit().put(
+        get() =
+            getEnumValue(
                 KEY_MEDIA_LOADING_ACTION,
-                if (mediaLoadingAction != null) mediaLoadingAction.value else null
-            ).close()
+                MediaLoadingAction.entries.toTypedArray(),
+                DEFAULT_MEDIA_LOADING_ACTION,
+                MediaLoadingAction.Companion.VALUE_PROVIDER,
+            )
+        set(mediaLoadingAction) {
+            PREFERENCES!!
+                .edit()
+                .put(
+                    KEY_MEDIA_LOADING_ACTION,
+                    if (mediaLoadingAction != null) mediaLoadingAction.value else null,
+                ).close()
         }
 
-    class ChanKey internal constructor(private val key: String?) {
-        fun bind(chanName: String?): String {
-            return chanName + "_" + key
-        }
+    class ChanKey internal constructor(
+        private val key: String?,
+    ) {
+        fun bind(chanName: String?): String = chanName + "_" + key
     }
 
     internal fun interface EnumValueProvider<T : Enum<T>> {
         fun getValue(enumValue: T?): String?
     }
 
-    enum class NetworkMode(value: String, titleResId: Int, check: Check) {
+    enum class NetworkMode(
+        value: String,
+        titleResId: Int,
+        check: Check,
+    ) {
         ALWAYS("always", R.string.always, NetworkMode.Check { o: NetworkObserver? -> true }),
         WIFI(
             "wifi",
             R.string.wifi_only,
-            NetworkMode.Check { obj: NetworkObserver? -> obj!!.isWifiConnected() }),
-        NEVER("never", R.string.never, NetworkMode.Check { o: NetworkObserver? -> false });
+            NetworkMode.Check { obj: NetworkObserver? -> obj!!.isWifiConnected() },
+        ),
+        NEVER("never", R.string.never, NetworkMode.Check { o: NetworkObserver? -> false }),
+        ;
 
         private fun interface Check {
             fun isNetworkAvailable(networkObserver: NetworkObserver?): Boolean
@@ -1759,9 +1941,7 @@ object Preferences {
             this.check = check
         }
 
-        fun isNetworkAvailable(networkObserver: NetworkObserver?): Boolean {
-            return check.isNetworkAvailable(networkObserver)
-        }
+        fun isNetworkAvailable(networkObserver: NetworkObserver?): Boolean = check.isNetworkAvailable(networkObserver)
 
         companion object {
             internal val VALUE_PROVIDER = EnumValueProvider<NetworkMode> { o -> o?.value }
@@ -1772,34 +1952,43 @@ object Preferences {
         value: String,
         menuItemId: Int,
         titleResId: Int,
-        comparator: Comparator<Comparable?>?
+        comparator: Comparator<Comparable?>?,
     ) {
         UNSORTED("unsorted", R.id.menu_unsorted, R.string.unsorted, null),
         CREATED(
-            "created", R.id.menu_date_created, R.string.date_created,
+            "created",
+            R.id.menu_date_created,
+            R.string.date_created,
             Comparator { lhs: Comparable?, rhs: Comparable? ->
                 java.lang.Long.compare(
                     rhs!!.getTimestamp(),
-                    lhs!!.getTimestamp()
+                    lhs!!.getTimestamp(),
                 )
-            }),
+            },
+        ),
         REPLIES(
-            "replies", R.id.menu_replies, R.string.replies_count,
+            "replies",
+            R.id.menu_replies,
+            R.string.replies_count,
             Comparator { lhs: Comparable?, rhs: Comparable? ->
                 Integer.compare(
                     rhs!!.getThreadPostsCount(),
-                    lhs!!.getThreadPostsCount()
+                    lhs!!.getThreadPostsCount(),
                 )
-            });
+            },
+        ),
+        ;
 
         interface Comparable {
             fun getTimestamp(): Long
+
             fun getThreadPostsCount(): Int
         }
 
         internal val value: String?
         val menuItemId: Int
         val titleResId: Int
+
         @JvmField
         val comparator: Comparator<Comparable?>?
 
@@ -1815,10 +2004,14 @@ object Preferences {
         }
     }
 
-    enum class CyclicalRefreshMode(value: String, titleResId: Int) {
+    enum class CyclicalRefreshMode(
+        value: String,
+        titleResId: Int,
+    ) {
         DEFAULT("default", R.string.use_forum_settings),
         FULL_LOAD("full_load", R.string.load_full_thread),
-        FULL_LOAD_CLEANUP("full_load_cleanup", R.string.load_full_thread_and_clear_old_posts);
+        FULL_LOAD_CLEANUP("full_load_cleanup", R.string.load_full_thread_and_clear_old_posts),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1833,16 +2026,23 @@ object Preferences {
         }
     }
 
-    enum class DownloadSubdirMode(value: String, titleResId: Int, check: Check) {
+    enum class DownloadSubdirMode(
+        value: String,
+        titleResId: Int,
+        check: Check,
+    ) {
         DISABLED(
             "disabled",
             R.string.never,
-            DownloadSubdirMode.Check { multiple: Boolean -> false }),
+            DownloadSubdirMode.Check { multiple: Boolean -> false },
+        ),
         MULTIPLE_ONLY(
             "multiple_only",
             R.string.on_multiple_downloading,
-            DownloadSubdirMode.Check { multiple: Boolean -> multiple }),
-        ENABLED("enabled", R.string.always, DownloadSubdirMode.Check { multiple: Boolean -> true });
+            DownloadSubdirMode.Check { multiple: Boolean -> multiple },
+        ),
+        ENABLED("enabled", R.string.always, DownloadSubdirMode.Check { multiple: Boolean -> true }),
+        ;
 
         private fun interface Check {
             fun isEnabled(multiple: Boolean): Boolean
@@ -1858,19 +2058,21 @@ object Preferences {
             this.check = check
         }
 
-        fun isEnabled(multiple: Boolean): Boolean {
-            return check.isEnabled(multiple)
-        }
+        fun isEnabled(multiple: Boolean): Boolean = check.isEnabled(multiple)
 
         companion object {
             internal val VALUE_PROVIDER = EnumValueProvider<DownloadSubdirMode> { o -> o?.value }
         }
     }
 
-    enum class DrawerInitialPosition(value: String, titleResId: Int) {
+    enum class DrawerInitialPosition(
+        value: String,
+        titleResId: Int,
+    ) {
         CLOSED("closed", R.string.closed),
         FAVORITES("favorites", R.string.favorites),
-        FORUMS("forums", R.string.forums);
+        FORUMS("forums", R.string.forums),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1886,16 +2088,23 @@ object Preferences {
         }
     }
 
-    enum class FavoriteOnReplyMode(value: String, titleResId: Int, check: Check) {
+    enum class FavoriteOnReplyMode(
+        value: String,
+        titleResId: Int,
+        check: Check,
+    ) {
         DISABLED(
             "disabled",
             R.string.disabled,
-            FavoriteOnReplyMode.Check { sage: Boolean -> false }),
+            FavoriteOnReplyMode.Check { sage: Boolean -> false },
+        ),
         ENABLED("enabled", R.string.enabled, FavoriteOnReplyMode.Check { sage: Boolean -> true }),
         WITHOUT_SAGE(
             "without_sage",
             R.string.only_if_without_sage,
-            FavoriteOnReplyMode.Check { sage: Boolean -> !sage });
+            FavoriteOnReplyMode.Check { sage: Boolean -> !sage },
+        ),
+        ;
 
         private fun interface Check {
             fun isEnabled(sage: Boolean): Boolean
@@ -1911,19 +2120,21 @@ object Preferences {
             this.check = check
         }
 
-        fun isEnabled(sage: Boolean): Boolean {
-            return check.isEnabled(sage)
-        }
+        fun isEnabled(sage: Boolean): Boolean = check.isEnabled(sage)
 
         companion object {
             internal val VALUE_PROVIDER = EnumValueProvider<FavoriteOnReplyMode> { o -> o?.value }
         }
     }
 
-    enum class FavoritesOrder(value: String, titleResId: Int) {
+    enum class FavoritesOrder(
+        value: String,
+        titleResId: Int,
+    ) {
         DATE_DESC("date_desc", R.string.add_to_top__imperfective),
         DATE_ASC("date_asc", R.string.add_to_bottom__imperfective),
-        TITLE("title", R.string.order_by_title);
+        TITLE("title", R.string.order_by_title),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1938,10 +2149,14 @@ object Preferences {
         }
     }
 
-    enum class HighlightUnreadMode(value: String, titleResId: Int) {
+    enum class HighlightUnreadMode(
+        value: String,
+        titleResId: Int,
+    ) {
         AUTOMATICALLY("automatically", R.string.hide_eventually__imperfective),
         MANUALLY("manually", R.string.hide_on_tap__imperfective),
-        NEVER("never", R.string.never_highlight);
+        NEVER("never", R.string.never_highlight),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1956,9 +2171,14 @@ object Preferences {
         }
     }
 
-    enum class AppIcon(value: String, titleResId: Int, componentSuffix: String) {
+    enum class AppIcon(
+        value: String,
+        titleResId: Int,
+        componentSuffix: String,
+    ) {
         GRADIENT("gradient", R.string.gradient, "MainActivityGradient"),
-        STRIPED("striped", R.string.stripes, "MainActivityStriped");
+        STRIPED("striped", R.string.stripes, "MainActivityStriped"),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1978,10 +2198,14 @@ object Preferences {
         }
     }
 
-    enum class PagesListMode(value: String, titleResId: Int) {
+    enum class PagesListMode(
+        value: String,
+        titleResId: Int,
+    ) {
         PAGES_FIRST("pages_first", R.string.pages_first),
         FAVORITES_FIRST("favorites_first", R.string.favorites_first),
-        HIDE_PAGES("hide_pages", R.string.hide_pages);
+        HIDE_PAGES("hide_pages", R.string.hide_pages),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -1997,11 +2221,16 @@ object Preferences {
         }
     }
 
-    enum class ThreadsView(value: String, menuItemId: Int, titleResId: Int) {
+    enum class ThreadsView(
+        value: String,
+        menuItemId: Int,
+        titleResId: Int,
+    ) {
         LIST("list", R.id.menu_list, R.string.list),
         CARDS("cards", R.id.menu_cards, R.string.cards),
         LARGE_GRID("large_grid", R.id.menu_large_grid, R.string.large_grid),
-        SMALL_GRID("small_grid", R.id.menu_small_grid, R.string.small_grid);
+        SMALL_GRID("small_grid", R.id.menu_small_grid, R.string.small_grid),
+        ;
 
         internal val value: String?
         val menuItemId: Int
@@ -2018,9 +2247,13 @@ object Preferences {
         }
     }
 
-    enum class VideoCompletionMode(value: String, titleResId: Int) {
+    enum class VideoCompletionMode(
+        value: String,
+        titleResId: Int,
+    ) {
         NOTHING("nothing", R.string.do_nothing),
-        LOOP("loop", R.string.play_again);
+        LOOP("loop", R.string.play_again),
+        ;
 
         val value: String?
         val titleResId: Int
@@ -2035,11 +2268,15 @@ object Preferences {
         }
     }
 
-    enum class NotificationFeature(val value: String, val titleResId: Int) {
+    enum class NotificationFeature(
+        val value: String,
+        val titleResId: Int,
+    ) {
         ENABLED("enabled", R.string.enabled),
         IMPORTANT("important", R.string.important__plural),
         SOUND("sound", R.string.sound),
-        VIBRATION("vibration", R.string.vibration);
+        VIBRATION("vibration", R.string.vibration),
+        ;
 
         companion object {
             internal fun find(value: String?): NotificationFeature? {
@@ -2053,10 +2290,14 @@ object Preferences {
         }
     }
 
-    enum class FirewallResolutionMethod(value: String, titleResId: Int) {
+    enum class FirewallResolutionMethod(
+        value: String,
+        titleResId: Int,
+    ) {
         MANUAL("manual", R.string.firewall_resolution_method_manual),
         AUTO("auto", R.string.firewall_resolution_method_auto),
-        AUTO_THEN_MANUAL("auto_then_manual", R.string.firewall_resolution_method_auto_then_manual);
+        AUTO_THEN_MANUAL("auto_then_manual", R.string.firewall_resolution_method_auto_then_manual),
+        ;
 
         val value: String?
 
@@ -2074,11 +2315,15 @@ object Preferences {
         }
     }
 
-    enum class MediaLoadingAction(value: String, titleResId: Int) {
+    enum class MediaLoadingAction(
+        value: String,
+        titleResId: Int,
+    ) {
         MANUALLY("manually", R.string.manually),
         REPLACE("replace", R.string.replace),
         KEEP_ALL("keep_all", R.string.keep_all),
-        SKIP("skip", R.string.skip);
+        SKIP("skip", R.string.skip),
+        ;
 
         val value: String?
         val titleResId: Int

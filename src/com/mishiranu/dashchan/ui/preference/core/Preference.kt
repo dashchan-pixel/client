@@ -13,11 +13,17 @@ import com.mishiranu.dashchan.widget.ViewFactory
 import com.mishiranu.dashchan.widget.ViewFactory.makeTwoLinesListItem
 
 abstract class Preference<T>(
-    val context: Context?, val key: String?, @JvmField val defaultValue: T?,
-    protected val title: CharSequence?, protected val summaryProvider: SummaryProvider<T>?
+    val context: Context?,
+    val key: String?,
+    @JvmField val defaultValue: T?,
+    protected val title: CharSequence?,
+    protected val summaryProvider: SummaryProvider<T>?,
 ) {
     enum class ViewType {
-        NORMAL, CATEGORY, HEADER, CHECK
+        NORMAL,
+        CATEGORY,
+        HEADER,
+        CHECK,
     }
 
     fun interface SummaryProvider<T> {
@@ -33,7 +39,10 @@ abstract class Preference<T>(
     }
 
     fun interface OnBeforeChangeListener<T> {
-        fun onBeforeChange(preference: Preference<T>?, value: T?): Boolean
+        fun onBeforeChange(
+            preference: Preference<T>?,
+            value: T?,
+        ): Boolean
     }
 
     fun interface OnAfterChangeListener<T> {
@@ -44,21 +53,22 @@ abstract class Preference<T>(
         val view: View,
         val title: TextView?,
         val summary: TextView?,
-        val widgetFrame: LinearLayout?
+        val widgetFrame: LinearLayout?,
     ) {
         constructor(viewHolder: ViewHolder) : this(
             viewHolder.view,
             viewHolder.title,
             viewHolder.summary,
-            viewHolder.widgetFrame
+            viewHolder.widgetFrame,
         )
     }
 
     var value: T? = null
         set(value) {
-            if (onBeforeChangeListener == null || onBeforeChangeListener!!.onBeforeChange(
+            if (onBeforeChangeListener == null ||
+                onBeforeChangeListener!!.onBeforeChange(
                     this,
-                    value
+                    value,
                 )
             ) {
                 field = value
@@ -74,9 +84,7 @@ abstract class Preference<T>(
     private var onBeforeChangeListener: OnBeforeChangeListener<T>? = null
     private var onAfterChangeListener: OnAfterChangeListener<T>? = null
 
-    open fun getViewType(): ViewType {
-        return ViewType.NORMAL
-    }
+    open fun getViewType(): ViewType = ViewType.NORMAL
 
     open fun createViewHolder(parent: ViewGroup): ViewHolder {
         val holder = makeTwoLinesListItem(parent, ViewFactory.FEATURE_WIDGET)
@@ -105,6 +113,7 @@ abstract class Preference<T>(
     }
 
     internal abstract fun extract(preferences: SharedPreferences)
+
     internal abstract fun persist(preferences: SharedPreferences)
 
     fun invalidate() {
@@ -140,9 +149,7 @@ abstract class Preference<T>(
         invalidate()
     }
 
-    fun isEnabled(): Boolean {
-        return enabled
-    }
+    fun isEnabled(): Boolean = enabled
 
     fun setSelectable(selectable: Boolean) {
         this.selectable = selectable
@@ -150,18 +157,20 @@ abstract class Preference<T>(
     }
 
     open class Runtime<T>(
-        context: Context?, key: String?, defaultValue: T?,
-        title: CharSequence?, summaryProvider: SummaryProvider<T>?
+        context: Context?,
+        key: String?,
+        defaultValue: T?,
+        title: CharSequence?,
+        summaryProvider: SummaryProvider<T>?,
     ) : Preference<T>(context, key, defaultValue, title, summaryProvider) {
-        override fun extract(preferences: SharedPreferences) {
-            throw UnsupportedOperationException()
-        }
+        override fun extract(preferences: SharedPreferences): Unit = throw UnsupportedOperationException()
 
-        override fun persist(preferences: SharedPreferences) {
-            throw UnsupportedOperationException()
-        }
+        override fun persist(preferences: SharedPreferences): Unit = throw UnsupportedOperationException()
 
-        class IconViewHolder(viewHolder: ViewHolder, val icon: ImageView?) : ViewHolder(viewHolder)
+        class IconViewHolder(
+            viewHolder: ViewHolder,
+            val icon: ImageView?,
+        ) : ViewHolder(viewHolder)
 
         fun createIconViewHolder(parent: ViewGroup): IconViewHolder {
             val viewHolder = super.createViewHolder(parent)

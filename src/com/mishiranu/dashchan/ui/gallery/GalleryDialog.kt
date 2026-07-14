@@ -21,14 +21,21 @@ import com.mishiranu.dashchan.widget.ViewFactory.ToolbarHolder
 import com.mishiranu.dashchan.widget.ViewFactory.addToolbarTitle
 import kotlin.math.max
 
-class GalleryDialog(private val fragment: Fragment) : Dialog(
-    fragment.requireContext(), R.style.Theme_Gallery
-) {
+class GalleryDialog(
+    private val fragment: Fragment,
+) : Dialog(
+        fragment.requireContext(),
+        R.style.Theme_Gallery,
+    ) {
     interface Callback {
         fun onBackPressed(): Boolean
+
         fun onCreateActionContextBarView()
+
         fun onCreateDialogMenu(menu: Menu)
+
         fun onPrepareDialogMenu(menu: Menu)
+
         fun onDialogMenuItemSelected(item: MenuItem): Boolean
     }
 
@@ -38,7 +45,10 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
 
     private var actionBarAnimationsFixed = false
 
-    fun setTitleSubtitle(title: CharSequence?, subtitle: CharSequence?) {
+    fun setTitleSubtitle(
+        title: CharSequence?,
+        subtitle: CharSequence?,
+    ) {
         toolbarHolder!!.update(title, subtitle)
     }
 
@@ -101,37 +111,45 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
         // ActionBarOverlayLayout relies on SYSTEM_UI_FLAG_LAYOUT_STABLE and uses deprecated
         // getSystemWindowInsetsAsRect instead of getInsetsIgnoringVisibility
         val decorView = getWindow()!!.getDecorView()
-        val overlay = decorView.findViewById<View?>(
-            fragment.getResources()
-                .getIdentifier("decor_content_parent", "id", "android")
-        )
-        val container = decorView.findViewById<View?>(
-            fragment.getResources()
-                .getIdentifier("action_bar_container", "id", "android")
-        )
+        val overlay =
+            decorView.findViewById<View?>(
+                fragment
+                    .getResources()
+                    .getIdentifier("decor_content_parent", "id", "android"),
+            )
+        val container =
+            decorView.findViewById<View?>(
+                fragment
+                    .getResources()
+                    .getIdentifier("action_bar_container", "id", "android"),
+            )
         if (overlay != null && container != null) {
-            overlay.setOnApplyWindowInsetsListener(View.OnApplyWindowInsetsListener { v: View?, insets: WindowInsets? ->
-                val systemInsets =
-                    insets!!.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
-                setNewMargin(
-                    container,
-                    systemInsets.left,
-                    systemInsets.top,
-                    systemInsets.right,
-                    null
-                )
-                val actionBar = this.actionBarView
-                if (actionBar != null) {
-                    val cutoutInsets =
-                        insets.getInsetsIgnoringVisibility(WindowInsets.Type.displayCutout())
-                    setNewPadding(
-                        actionBar, max(0, cutoutInsets.left - systemInsets.left),
-                        max(0, cutoutInsets.top - systemInsets.top),
-                        max(0, cutoutInsets.right - systemInsets.right), null
+            overlay.setOnApplyWindowInsetsListener(
+                View.OnApplyWindowInsetsListener { v: View?, insets: WindowInsets? ->
+                    val systemInsets =
+                        insets!!.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                    setNewMargin(
+                        container,
+                        systemInsets.left,
+                        systemInsets.top,
+                        systemInsets.right,
+                        null,
                     )
-                }
-                insets
-            })
+                    val actionBar = this.actionBarView
+                    if (actionBar != null) {
+                        val cutoutInsets =
+                            insets.getInsetsIgnoringVisibility(WindowInsets.Type.displayCutout())
+                        setNewPadding(
+                            actionBar,
+                            max(0, cutoutInsets.left - systemInsets.left),
+                            max(0, cutoutInsets.top - systemInsets.top),
+                            max(0, cutoutInsets.right - systemInsets.right),
+                            null,
+                        )
+                    }
+                    insets
+                },
+            )
         }
     }
 
@@ -144,7 +162,8 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
     override fun onStart() {
         super.onStart()
         getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-            OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback
+            OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+            backInvokedCallback,
         )
     }
 
@@ -153,7 +172,11 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
         super.onStop()
     }
 
-    override fun onPreparePanel(featureId: Int, view: View?, menu: Menu): Boolean {
+    override fun onPreparePanel(
+        featureId: Int,
+        view: View?,
+        menu: Menu,
+    ): Boolean {
         super.onPreparePanel(featureId, view, menu)
         // Dialog removes the menu completely if menu becomes once empty.
         // This logic is different from Activity and causes unwanted behavior.
@@ -175,7 +198,10 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
         return true
     }
 
-    override fun onMenuItemSelected(featureId: Int, item: MenuItem): Boolean {
+    override fun onMenuItemSelected(
+        featureId: Int,
+        item: MenuItem,
+    ): Boolean {
         if (featureId == Window.FEATURE_OPTIONS_PANEL) {
             return onOptionsItemSelected(item)
         } else {
@@ -183,10 +209,10 @@ class GalleryDialog(private val fragment: Fragment) : Dialog(
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return fragment.isAdded() && fragment is Callback
-                && (fragment as Callback).onDialogMenuItemSelected(item)
-    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        fragment.isAdded() &&
+            fragment is Callback &&
+            (fragment as Callback).onDialogMenuItemSelected(item)
 
     override fun onActionModeStarted(mode: ActionMode?) {
         super.onActionModeStarted(mode)

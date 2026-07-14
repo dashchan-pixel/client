@@ -29,7 +29,7 @@ class MultipleEditPreference<T>(
     summaryProvider: SummaryProvider<T>?,
     val hints: List<CharSequence?>?,
     val inputTypes: List<Int>?,
-    private val valueCodec: ValueCodec<T>
+    private val valueCodec: ValueCodec<T>,
 ) : DialogPreference<T>(context, key, null, title, summaryProvider) {
     private val values = SparseArray<Pair<List<CharSequence?>, List<String?>>?>()
     private var lastFocusIndex = 0
@@ -42,7 +42,11 @@ class MultipleEditPreference<T>(
         preferences.edit().put(key!!, valueCodec.toString(value)).close()
     }
 
-    fun setValues(index: Int, entries: List<CharSequence?>?, values: List<String?>?) {
+    fun setValues(
+        index: Int,
+        entries: List<CharSequence?>?,
+        values: List<String?>?,
+    ) {
         if (entries == null || values == null) {
             this.values.remove(index)
         } else {
@@ -53,14 +57,15 @@ class MultipleEditPreference<T>(
 
     override fun createDialog(savedInstanceState: Bundle?): AlertDialog {
         val alertDialog = super.createDialog(savedInstanceState)
-        alertDialog.getWindow()!!
+        alertDialog
+            .getWindow()!!
             .setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         return alertDialog
     }
 
     override fun configureDialog(
         savedInstanceState: Bundle?,
-        builder: AlertDialog.Builder
+        builder: AlertDialog.Builder,
     ): AlertDialog.Builder {
         val pair = createDialogLayout(builder.getContext())
         val viewHolders = ArrayList<ViewHolder>()
@@ -72,11 +77,15 @@ class MultipleEditPreference<T>(
                 viewHolder =
                     DropdownViewHolder(builder.getContext(), values.first, values.second, value)
             } else {
-                val hint = if (hints != null && hints.size > i) hints.get(i) else null
-                val inputType = (if (inputTypes != null && inputTypes.size > i)
-                    inputTypes.get(i)
-                else
-                    android.text.InputType.TYPE_CLASS_TEXT)!!
+                val hint = if (hints != null && hints.size > i) hints[i] else null
+                val inputType =
+                    (
+                        if (inputTypes != null && inputTypes.size > i) {
+                            inputTypes[i]
+                        } else {
+                            android.text.InputType.TYPE_CLASS_TEXT
+                        }
+                    )!!
                 viewHolder = EditTextViewHolder(builder.getContext(), hint, inputType, value)
             }
             viewHolders.add(viewHolder)
@@ -94,7 +103,9 @@ class MultipleEditPreference<T>(
         if (focusIndex >= 0) {
             restoreFocusIndex(pair.second!!, focusIndex)
         }
-        return super.configureDialog(savedInstanceState, builder).setView(pair.first)
+        return super
+            .configureDialog(savedInstanceState, builder)
+            .setView(pair.first)
             .setPositiveButton(
                 android.R.string.ok,
                 DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
@@ -105,11 +116,16 @@ class MultipleEditPreference<T>(
                                 values.add(nullIfEmpty(viewHolder.value))
                             }
                             this.value = valueCodec.createValue(values)
-                        })
-                })
+                        },
+                    )
+                },
+            )
     }
 
-    private fun restoreFocusIndex(layout: LinearLayout, focusIndex: Int) {
+    private fun restoreFocusIndex(
+        layout: LinearLayout,
+        focusIndex: Int,
+    ) {
         var index = 0
         val childCount = layout.getChildCount()
         for (i in 0..<childCount) {
@@ -152,7 +168,10 @@ class MultipleEditPreference<T>(
         lastFocusIndex = getFocusIndex(getDialogLayout(dialog))
     }
 
-    override fun saveState(dialog: AlertDialog, outState: Bundle) {
+    override fun saveState(
+        dialog: AlertDialog,
+        outState: Bundle,
+    ) {
         super.saveState(dialog, outState)
 
         var index = 0
@@ -174,15 +193,23 @@ class MultipleEditPreference<T>(
     private interface ViewHolder {
         val value: String?
         val view: View
-        fun restoreState(bundle: Bundle, index: Int)
-        fun saveState(bundle: Bundle, index: Int)
+
+        fun restoreState(
+            bundle: Bundle,
+            index: Int,
+        )
+
+        fun saveState(
+            bundle: Bundle,
+            index: Int,
+        )
     }
 
     private class EditTextViewHolder(
         context: Context,
         hint: CharSequence?,
         inputType: Int,
-        value: String?
+        value: String?,
     ) : ViewHolder {
         private val editText: SafePasteEditText
 
@@ -197,15 +224,21 @@ class MultipleEditPreference<T>(
         override val view: View
             get() = editText
 
-        override fun restoreState(bundle: Bundle, index: Int) {
+        override fun restoreState(
+            bundle: Bundle,
+            index: Int,
+        ) {
             editText.setText(bundle.getCharSequence("text" + index))
             editText.setSelection(
                 bundle.getInt("selectionStart" + index),
-                bundle.getInt("selectionEnd" + index)
+                bundle.getInt("selectionEnd" + index),
             )
         }
 
-        override fun saveState(bundle: Bundle, index: Int) {
+        override fun saveState(
+            bundle: Bundle,
+            index: Int,
+        ) {
             bundle.putCharSequence("text" + index, editText.getText())
             bundle.putInt("selectionStart" + index, editText.getSelectionStart())
             bundle.putInt("selectionEnd" + index, editText.getSelectionEnd())
@@ -216,7 +249,7 @@ class MultipleEditPreference<T>(
         context: Context,
         entries: List<CharSequence?>,
         values: List<String?>,
-        value: String?
+        value: String?,
     ) : ViewHolder {
         private val dropdownView: DropdownView
         private val values: List<String?>
@@ -229,41 +262,55 @@ class MultipleEditPreference<T>(
         }
 
         override val value: String?
-            get() = values.get(dropdownView.getSelectedItemPosition())
+            get() = values[dropdownView.getSelectedItemPosition()]
 
         override val view: View
             get() = dropdownView
 
-        override fun restoreState(bundle: Bundle, index: Int) {
+        override fun restoreState(
+            bundle: Bundle,
+            index: Int,
+        ) {
             dropdownView.setSelection(bundle.getInt("value" + index))
         }
 
-        override fun saveState(bundle: Bundle, index: Int) {
+        override fun saveState(
+            bundle: Bundle,
+            index: Int,
+        ) {
             bundle.putInt("value" + index, dropdownView.getSelectedItemPosition())
         }
     }
 
     interface ValueCodec<T> {
         val count: Int
+
         fun fromString(value: String?): T?
+
         fun toString(value: T?): String?
-        fun getValueAt(value: T?, index: Int): String?
+
+        fun getValueAt(
+            value: T?,
+            index: Int,
+        ): String?
+
         fun createValue(values: MutableList<String?>?): T?
     }
 
-    class ListValueCodec(override val count: Int) : ValueCodec<List<String>> {
+    class ListValueCodec(
+        override val count: Int,
+    ) : ValueCodec<List<String>> {
         override fun fromString(value: String?): List<String>? {
             @Suppress("UNCHECKED_CAST")
             return unpackOrCastMultipleValues(value, count) as List<String>
         }
 
-        override fun toString(value: List<String>?): String {
-            return JSONArray(value).toString()
-        }
+        override fun toString(value: List<String>?): String = JSONArray(value).toString()
 
-        override fun getValueAt(value: List<String>?, index: Int): String? {
-            return value!!.get(index)
-        }
+        override fun getValueAt(
+            value: List<String>?,
+            index: Int,
+        ): String? = value!![index]
 
         override fun createValue(values: MutableList<String?>?): List<String>? {
             @Suppress("UNCHECKED_CAST")
@@ -271,8 +318,9 @@ class MultipleEditPreference<T>(
         }
     }
 
-    class MapValueCodec(private val keys: List<String>) :
-        ValueCodec<Map<String, String>> {
+    class MapValueCodec(
+        private val keys: List<String>,
+    ) : ValueCodec<Map<String, String>> {
         override val count: Int
             get() = keys.size
 
@@ -293,16 +341,17 @@ class MultipleEditPreference<T>(
             return jsonObject.toString()
         }
 
-        override fun getValueAt(value: Map<String, String>?, index: Int): String? {
-            return value!!.get(keys.get(index))
-        }
+        override fun getValueAt(
+            value: Map<String, String>?,
+            index: Int,
+        ): String? = value!![keys[index]]
 
         override fun createValue(values: MutableList<String?>?): Map<String, String> {
             val map = HashMap<String, String>()
             for (i in keys.indices) {
-                val value = values!!.get(i)
+                val value = values!![i]
                 if (!isEmpty(value)) {
-                    map.put(keys.get(i), value!!)
+                    map[keys[i]] = value!!
                 }
             }
             return map
@@ -312,7 +361,11 @@ class MultipleEditPreference<T>(
     companion object {
         private const val EXTRA_FOCUS = "focus"
 
-        fun <T> formatValues(valueCodec: ValueCodec<T>, format: String?, value: T?): String? {
+        fun <T> formatValues(
+            valueCodec: ValueCodec<T>,
+            format: String?,
+            value: T?,
+        ): String? {
             val builder = StringBuilder(format!!)
             var index = 0
             var i = 0

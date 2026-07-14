@@ -29,7 +29,10 @@ class HttpRequest {
     }
 
     interface OutputListener {
-        fun onOutputProgressChange(progress: Long, progressMax: Long)
+        fun onOutputProgressChange(
+            progress: Long,
+            progressMax: Long,
+        )
     }
 
     @Public
@@ -43,7 +46,7 @@ class HttpRequest {
             GET,
 
             @Public
-            RETRANSMIT
+            RETRANSMIT,
         }
 
         @Public
@@ -63,17 +66,18 @@ class HttpRequest {
 
             @Public
             @JvmField
-            val STRICT: RedirectHandler = RedirectHandler { response: HttpResponse? ->
-                when (response!!.getResponseCode()) {
-                    HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP -> {
-                        return@RedirectHandler Action.RETRANSMIT
-                    }
+            val STRICT: RedirectHandler =
+                RedirectHandler { response: HttpResponse? ->
+                    when (response!!.getResponseCode()) {
+                        HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP -> {
+                            return@RedirectHandler Action.RETRANSMIT
+                        }
 
-                    else -> {
-                        return@RedirectHandler Action.GET
+                        else -> {
+                            return@RedirectHandler Action.GET
+                        }
                     }
                 }
-            }
         }
     }
 
@@ -82,7 +86,11 @@ class HttpRequest {
     private val client: HttpClient
 
     internal enum class RequestMethod {
-        GET, HEAD, POST, PUT, DELETE
+        GET,
+        HEAD,
+        POST,
+        PUT,
+        DELETE,
     }
 
     internal var requestMethod: RequestMethod? = RequestMethod.GET
@@ -136,36 +144,29 @@ class HttpRequest {
         }
     }
 
-    private fun setMethod(method: RequestMethod?, entity: RequestEntity?): HttpRequest {
+    private fun setMethod(
+        method: RequestMethod?,
+        entity: RequestEntity?,
+    ): HttpRequest {
         requestMethod = method
         requestEntity = entity
         return this
     }
 
     @Public
-    fun setGetMethod(): HttpRequest {
-        return setMethod(RequestMethod.GET, null)
-    }
+    fun setGetMethod(): HttpRequest = setMethod(RequestMethod.GET, null)
 
     @Public
-    fun setHeadMethod(): HttpRequest {
-        return setMethod(RequestMethod.HEAD, null)
-    }
+    fun setHeadMethod(): HttpRequest = setMethod(RequestMethod.HEAD, null)
 
     @Public
-    fun setPostMethod(entity: RequestEntity?): HttpRequest {
-        return setMethod(RequestMethod.POST, entity)
-    }
+    fun setPostMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.POST, entity)
 
     @Public
-    fun setPutMethod(entity: RequestEntity?): HttpRequest {
-        return setMethod(RequestMethod.PUT, entity)
-    }
+    fun setPutMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.PUT, entity)
 
     @Public
-    fun setDeleteMethod(entity: RequestEntity?): HttpRequest {
-        return setMethod(RequestMethod.DELETE, entity)
-    }
+    fun setDeleteMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.DELETE, entity)
 
     @Public
     fun setSuccessOnly(successOnly: Boolean): HttpRequest {
@@ -192,7 +193,10 @@ class HttpRequest {
     }
 
     @Public
-    fun setTimeouts(connectTimeout: Int, readTimeout: Int): HttpRequest {
+    fun setTimeouts(
+        connectTimeout: Int,
+        readTimeout: Int,
+    ): HttpRequest {
         if (connectTimeout >= 0) {
             this.connectTimeout = connectTimeout
         }
@@ -213,7 +217,10 @@ class HttpRequest {
         return this
     }
 
-    fun setRange(start: Long, end: Long): HttpRequest {
+    fun setRange(
+        start: Long,
+        end: Long,
+    ): HttpRequest {
         this.rangeStart = start
         this.rangeEnd = end
         return this
@@ -230,9 +237,10 @@ class HttpRequest {
     }
 
     @Public
-    fun addHeader(name: String?, value: String?): HttpRequest {
-        return addHeader(Pair<String?, String?>(name, value))
-    }
+    fun addHeader(
+        name: String?,
+        value: String?,
+    ): HttpRequest = addHeader(Pair<String?, String?>(name, value))
 
     @Public
     fun clearHeaders(): HttpRequest {
@@ -241,7 +249,10 @@ class HttpRequest {
     }
 
     @Public
-    fun addCookie(name: String?, value: String?): HttpRequest {
+    fun addCookie(
+        name: String?,
+        value: String?,
+    ): HttpRequest {
         if (name != null && value != null) {
             if (cookieBuilder == null) {
                 cookieBuilder = CookieBuilder()
@@ -299,10 +310,15 @@ class HttpRequest {
     @Throws(HttpException::class)
     fun perform(): HttpResponse? {
         val verifyCertificate = holder.chan!!.locator.isUseHttps() && isVerifyCertificate
-        val session = holder.createSession(
-            client, uri, client.getProxy(holder.chan!!),
-            verifyCertificate, delay, 10
-        )
+        val session =
+            holder.createSession(
+                client,
+                uri,
+                client.getProxy(holder.chan),
+                verifyCertificate,
+                delay,
+                10,
+            )
         return client.execute(session, this)
     }
 }

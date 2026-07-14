@@ -4,4 +4,6 @@ import android.annotation.SuppressLint
 import android.text.style.TypefaceSpan
 
 @SuppressLint("ParcelCreator")
-class MonospaceSpan(val isAsciiArt: Boolean) : TypefaceSpan("monospace")
+class MonospaceSpan(
+    val isAsciiArt: Boolean,
+) : TypefaceSpan("monospace")

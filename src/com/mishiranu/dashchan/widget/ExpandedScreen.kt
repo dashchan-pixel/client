@@ -34,8 +34,13 @@ import java.util.Arrays
 import kotlin.math.max
 
 class ExpandedScreen(
-    init: Init, rootView: View?, toolbarView: View?, drawerInterlayer: FrameLayout?,
-    drawerParent: FrameLayout?, drawerContent: View?, drawerHeader: View?
+    init: Init,
+    rootView: View?,
+    toolbarView: View?,
+    drawerInterlayer: FrameLayout?,
+    drawerParent: FrameLayout?,
+    drawerContent: View?,
+    drawerHeader: View?,
 ) : RecyclerScrollTracker.OnScrollListener {
     internal val expandingEnabled: Boolean
     internal val fullScreenLayoutEnabled: Boolean
@@ -59,11 +64,12 @@ class ExpandedScreen(
     private var foregroundAnimatorShow = false
 
     private enum class State {
-        SHOW, ACTION_MODE, LOCKED;
+        SHOW,
+        ACTION_MODE,
+        LOCKED,
+        ;
 
-        fun flag(): Int {
-            return 1 shl ordinal
-        }
+        fun flag(): Int = 1 shl ordinal
     }
 
     private val lockers = HashSet<String?>()
@@ -75,10 +81,17 @@ class ExpandedScreen(
     interface Layout {
         fun getRecyclerView(): RecyclerView? = null
 
-        fun setVerticalInsets(top: Int, bottom: Int, useGesture29: Boolean)
+        fun setVerticalInsets(
+            top: Int,
+            bottom: Int,
+            useGesture29: Boolean,
+        )
     }
 
-    class PreThemeInit(internal val activity: Activity, internal val expandingEnabled: Boolean) {
+    class PreThemeInit(
+        internal val activity: Activity,
+        internal val expandingEnabled: Boolean,
+    ) {
         internal val fullScreenLayoutEnabled = true
 
         init {
@@ -99,11 +112,12 @@ class ExpandedScreen(
     class Init internal constructor(
         internal val activity: Activity,
         internal val expandingEnabled: Boolean,
-        internal val fullScreenLayoutEnabled: Boolean
+        internal val fullScreenLayoutEnabled: Boolean,
     )
 
     private open class ForegroundDrawable : BaseDrawable() {
         open fun applyAlpha(alpha: Int) {}
+
         open fun applyStatusGuardColor(color: Int) {}
     }
 
@@ -116,28 +130,9 @@ class ExpandedScreen(
         }
     }
 
-    private inner class KitKatContentForeground : AlphaForegroundDrawable() {
-        private val paint = Paint()
-
-        public override fun draw(canvas: Canvas) {
-            val statusBarHeight = windowInsets.top
-            if (statusBarHeight > 0 && alphaValue != 0x00 && alphaValue != 0xff) {
-                // Black while action bar animated
-                paint.setColor(Color.BLACK)
-                canvas.drawRect(
-                    0f,
-                    0f,
-                    getBounds().width().toFloat(),
-                    statusBarHeight.toFloat(),
-                    paint
-                )
-            }
-        }
-    }
-
     private inner class LollipopContentForeground(
         private val statusBarColor: Int,
-        private val navigationBarColor: Int
+        private val navigationBarColor: Int,
     ) : AlphaForegroundDrawable() {
         private val paint = Paint()
 
@@ -171,7 +166,7 @@ class ExpandedScreen(
                     0f,
                     width.toFloat(),
                     height.toFloat(),
-                    paint
+                    paint,
                 )
             }
             if (navigationBarBottom > 0 && !useGesture29) {
@@ -181,7 +176,7 @@ class ExpandedScreen(
                     (height - navigationBarBottom).toFloat(),
                     width.toFloat(),
                     height.toFloat(),
-                    paint
+                    paint,
                 )
                 if (alphaValue > 0) {
                     paint.setColor(navigationBarColor)
@@ -191,15 +186,16 @@ class ExpandedScreen(
                         (height - navigationBarBottom).toFloat(),
                         width.toFloat(),
                         height.toFloat(),
-                        paint
+                        paint,
                     )
                 }
             }
         }
     }
 
-    private inner class LollipopStatusBarForeground(private val statusBarColor: Int) :
-        AlphaForegroundDrawable() {
+    private inner class LollipopStatusBarForeground(
+        private val statusBarColor: Int,
+    ) : AlphaForegroundDrawable() {
         private val paint = Paint()
 
         private var statusGuardColor = 0
@@ -244,8 +240,10 @@ class ExpandedScreen(
         }
     }
 
-    private inner class ForegroundAnimatorListener(private val show: Boolean) :
-        Animator.AnimatorListener, AnimatorUpdateListener {
+    private inner class ForegroundAnimatorListener(
+        private val show: Boolean,
+    ) : Animator.AnimatorListener,
+        AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
             val value = animation.getAnimatedValue() as Float
             val alpha = (0xff * value).toInt()
@@ -271,19 +269,16 @@ class ExpandedScreen(
         override fun onAnimationRepeat(animation: Animator) {}
     }
 
-    private fun setState(state: State, value: Boolean) {
+    private fun setState(
+        state: State,
+        value: Boolean,
+    ) {
         if (expandingEnabled) {
-            val oldShow = checkState(State.SHOW)
-            val newShow = if (state == State.SHOW) value else oldShow
-            val oldActionMode = checkState(State.ACTION_MODE)
-            val newActionMode = if (state == State.ACTION_MODE) value else oldActionMode
             stateFlags = set(stateFlags, state.flag(), value)
         }
     }
 
-    private fun checkState(state: State): Boolean {
-        return get(stateFlags, state.flag())
-    }
+    private fun checkState(state: State): Boolean = get(stateFlags, state.flag())
 
     private fun applyShowActionBar(show: Boolean) {
         val actionBar = activity.getActionBar()
@@ -332,15 +327,16 @@ class ExpandedScreen(
     private var enqueuedShowState = true
     private var lastShowStateChanged: Long = 0
 
-    private val showStateRunnable = Runnable {
-        if (enqueuedShowState != this.isActionBarShowing) {
-            val show = enqueuedShowState
-            setState(State.SHOW, show)
-            applyShowActionBar(show)
-            lastShowStateChanged = SystemClock.elapsedRealtime()
-            updatePaddings()
+    private val showStateRunnable =
+        Runnable {
+            if (enqueuedShowState != this.isActionBarShowing) {
+                val show = enqueuedShowState
+                setState(State.SHOW, show)
+                applyShowActionBar(show)
+                lastShowStateChanged = SystemClock.elapsedRealtime()
+                updatePaddings()
+            }
         }
-    }
 
     fun addLocker(name: String?) {
         lockers.add(name)
@@ -363,17 +359,21 @@ class ExpandedScreen(
         }
     }
 
-    private fun setShowActionBar(show: Boolean, delayed: Boolean) {
-        var show = show
-        if (!show) {
-            show = checkState(State.LOCKED) || checkState(State.ACTION_MODE) &&
-                    !activity.getWindow().hasFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
+    private fun setShowActionBar(
+        show: Boolean,
+        delayed: Boolean,
+    ) {
+        var showActionBar = show
+        if (!showActionBar) {
+            showActionBar = checkState(State.LOCKED) ||
+                checkState(State.ACTION_MODE) &&
+                !activity.getWindow().hasFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
         }
-        if (enqueuedShowState != show) {
-            enqueuedShowState = show
+        if (enqueuedShowState != showActionBar) {
+            enqueuedShowState = showActionBar
             ConcurrentUtils.HANDLER.removeCallbacks(showStateRunnable)
             val t = SystemClock.elapsedRealtime() - lastShowStateChanged
-            if (show != this.isActionBarShowing) {
+            if (showActionBar != this.isActionBarShowing) {
                 if (!delayed) {
                     showStateRunnable.run()
                 } else if (t >= ACTION_BAR_ANIMATION_TIME + 200) {
@@ -424,8 +424,11 @@ class ExpandedScreen(
             val bottomImeHeight = imeBottom29
             if (rootView != null) {
                 setNewMargin(
-                    rootView, leftNavigationBarHeight, 0,
-                    rightNavigationBarHeight, bottomImeHeight
+                    rootView,
+                    leftNavigationBarHeight,
+                    0,
+                    rightNavigationBarHeight,
+                    bottomImeHeight,
                 )
             }
             if (drawerInterlayer != null) {
@@ -434,27 +437,33 @@ class ExpandedScreen(
                     null,
                     statusBarHeight,
                     null,
-                    bottomNavigationBarHeight
+                    bottomNavigationBarHeight,
                 )
             }
             for (view in contentViews.keys) {
                 if (view is Layout) {
                     (view as Layout).setVerticalInsets(
                         statusBarHeight + actionBarHeight,
-                        bottomNavigationBarHeight, useGesture29
+                        bottomNavigationBarHeight,
+                        useGesture29,
                     )
                 } else {
                     setNewMargin(
-                        view, null, statusBarHeight + actionBarHeight,
-                        null, bottomNavigationBarHeight
+                        view,
+                        null,
+                        statusBarHeight + actionBarHeight,
+                        null,
+                        bottomNavigationBarHeight,
                     )
                 }
             }
             if (drawerContent != null) {
-                val paddingTop = if (drawerOverToolbarEnabled && toolbarView != null)
-                    statusBarHeight
-                else
-                    statusBarHeight + actionBarHeight
+                val paddingTop =
+                    if (drawerOverToolbarEnabled && toolbarView != null) {
+                        statusBarHeight
+                    } else {
+                        statusBarHeight + actionBarHeight
+                    }
                 if (drawerHeader != null) {
                     setNewPadding(drawerHeader, null, paddingTop, null, null)
                     setNewPadding(drawerContent, null, 0, null, bottomNavigationBarHeight)
@@ -473,7 +482,7 @@ class ExpandedScreen(
         scrollingDown: Boolean,
         totalItemCount: Int,
         first: Boolean,
-        last: Boolean
+        last: Boolean,
     ) {
         var show = true
         if (scrollingDown) {
@@ -513,10 +522,12 @@ class ExpandedScreen(
             contentForeground = LollipopContentForeground(statusBarColor, navigationBarColor)
             statusBarContentForeground = LollipopStatusBarForeground(statusBarColor)
             statusBarDrawerForeground = LollipopDrawerForeground()
-            foregroundDrawables = Arrays.asList<ForegroundDrawable>(
-                contentForeground,
-                statusBarContentForeground, statusBarDrawerForeground
-            )
+            foregroundDrawables =
+                Arrays.asList<ForegroundDrawable>(
+                    contentForeground,
+                    statusBarContentForeground,
+                    statusBarDrawerForeground,
+                )
         } else {
             contentForeground = null
             statusBarContentForeground = null
@@ -541,20 +552,26 @@ class ExpandedScreen(
             val content = activity.findViewById<FrameLayout>(android.R.id.content)
             val insetsLayout = InsetsLayout(activity)
             content.addView(
-                insetsLayout, FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+                insetsLayout,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
             )
             val actionBarHeight: Int = obtainActionBarHeight(activity)
-            insetsLayout.setOnApplyInsetsListener(OnApplyInsetsListener { applyData: Apply? ->
-                val windowInsets: InsetsLayout.Insets
-                windowInsets = applyData!!.window
-                if (!this.windowInsets.equals(windowInsets) || useGesture29 != applyData.useGesture29 || imeBottom29 != applyData.imeBottom29) {
-                    this.windowInsets = windowInsets
-                    useGesture29 = applyData.useGesture29
-                    imeBottom29 = applyData.imeBottom29
-                    updatePaddings()
-                }
-            })
+            insetsLayout.setOnApplyInsetsListener(
+                OnApplyInsetsListener { applyData: Apply? ->
+                    val windowInsets: InsetsLayout.Insets
+                    windowInsets = applyData!!.window
+                    if (!this.windowInsets.equals(windowInsets) ||
+                        useGesture29 != applyData.useGesture29 ||
+                        imeBottom29 != applyData.imeBottom29
+                    ) {
+                        this.windowInsets = windowInsets
+                        useGesture29 = applyData.useGesture29
+                        imeBottom29 = applyData.imeBottom29
+                        updatePaddings()
+                    }
+                },
+            )
             insetsLayout.setBackground(contentForeground)
             if (statusBarDrawerForeground != null && drawerParent != null) {
                 drawerParent.setForeground(statusBarDrawerForeground)
@@ -583,8 +600,9 @@ class ExpandedScreen(
                     // Use simple ViewGroup without MarginLayoutParams to avoid StatusGuardView in DecorView
                     val box = ActionModeBoxView(actionModeView, maxZ)
                     drawerInterlayer.addView(
-                        box, FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.WRAP_CONTENT
+                        box,
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
                     )
                 }
             }
@@ -600,17 +618,29 @@ class ExpandedScreen(
         }
     }
 
-    private inner class ActionModeBoxView(actionModeView: View, maxZ: Float) :
-        ViewGroup(actionModeView.getContext()), OnPreDrawListener {
+    private inner class ActionModeBoxView(
+        actionModeView: View,
+        maxZ: Float,
+    ) : ViewGroup(actionModeView.getContext()),
+        OnPreDrawListener {
         private val backgroundColor: Int
 
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        override fun onMeasure(
+            widthMeasureSpec: Int,
+            heightMeasureSpec: Int,
+        ) {
             val child = getChildAt(0)
             child.measure(widthMeasureSpec, heightMeasureSpec)
             setMeasuredDimension(child.getMeasuredWidth(), child.getMeasuredHeight())
         }
 
-        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        override fun onLayout(
+            changed: Boolean,
+            l: Int,
+            t: Int,
+            r: Int,
+            b: Int,
+        ) {
             val child = getChildAt(0)
             child.layout(0, 0, r - l, b - t)
         }
@@ -633,10 +663,11 @@ class ExpandedScreen(
             if (lastAlpha != value) {
                 lastAlpha = value
                 val alpha = (0xff * value).toInt()
-                val color = mixColors(
-                    -0x1000000 or backgroundColor,
-                    ViewUtils.STATUS_OVERLAY_TRANSPARENT
-                )
+                val color =
+                    mixColors(
+                        -0x1000000 or backgroundColor,
+                        ViewUtils.STATUS_OVERLAY_TRANSPARENT,
+                    )
                 val alphaColor = (alpha shl 24) or (0x00ffffff and color)
                 for (foregroundDrawable in foregroundDrawables) {
                     foregroundDrawable.applyStatusGuardColor(alphaColor)

@@ -62,7 +62,6 @@ import com.mishiranu.dashchan.util.MimeTypes.forExtension
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.ProgressDialog
-import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.Executor
 import kotlin.Any
@@ -75,10 +74,21 @@ import kotlin.String
 import kotlin.intArrayOf
 import kotlin.synchronized
 
-class DownloadDialog(context: Context?, callback: Callback) {
+class DownloadDialog(
+    context: Context?,
+    callback: Callback,
+) {
     interface Callback {
-        fun resolve(choiceRequest: ChoiceRequest, directRequest: DirectRequest?)
-        fun resolve(replaceRequest: ReplaceRequest, action: ReplaceRequest.Action?)
+        fun resolve(
+            choiceRequest: ChoiceRequest,
+            directRequest: DirectRequest?,
+        )
+
+        fun resolve(
+            replaceRequest: ReplaceRequest,
+            action: ReplaceRequest.Action?,
+        )
+
         fun cancel(prepareRequest: DownloadService.PrepareRequest)
     }
 
@@ -104,7 +114,10 @@ class DownloadDialog(context: Context?, callback: Callback) {
             }
         }
 
-        fun install(request: Request?, dialog: AlertDialog?) {
+        fun install(
+            request: Request?,
+            dialog: AlertDialog?,
+        ) {
             this.request = request
             this.dialog = dialog
         }
@@ -132,9 +145,10 @@ class DownloadDialog(context: Context?, callback: Callback) {
                         choiceRequest,
                         DialogInterface.OnDismissListener { dialog: DialogInterface? ->
                             choiceDialog.onDismiss(
-                                dialog
+                                dialog,
                             )
-                        })
+                        },
+                    ),
                 )
             }
         } else if (request is ReplaceRequest) {
@@ -163,9 +177,10 @@ class DownloadDialog(context: Context?, callback: Callback) {
                                 replaceRequest,
                                 DialogInterface.OnDismissListener { dialog: DialogInterface? ->
                                     choiceDialog.onDismiss(
-                                        dialog
+                                        dialog,
                                     )
-                                })
+                                },
+                            ),
                         )
                     }
                 }
@@ -182,9 +197,10 @@ class DownloadDialog(context: Context?, callback: Callback) {
                         prepareRequest,
                         DialogInterface.OnDismissListener { dialog: DialogInterface? ->
                             choiceDialog.onDismiss(
-                                dialog
+                                dialog,
                             )
-                        })
+                        },
+                    ),
                 )
             }
         } else if (request == null) {
@@ -205,7 +221,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private fun createChoice(
         choiceRequest: ChoiceRequest,
-        onDismissListener: DialogInterface.OnDismissListener
+        onDismissListener: DialogInterface.OnDismissListener,
     ): AlertDialog {
         var newState = false
         if (choiceRequest.state !is ChoiceState) {
@@ -219,10 +235,13 @@ class DownloadDialog(context: Context?, callback: Callback) {
         }
 
         val root = obtain(DataFile.Target.DOWNLOADS, null)
-        val inputMethodManager = context
-            .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-        val view = LayoutInflater.from(context)
-            .inflate(R.layout.dialog_download_choice, null)
+        val inputMethodManager =
+            context
+                .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+        val view =
+            LayoutInflater
+                .from(context)
+                .inflate(R.layout.dialog_download_choice, null)
 
         var allowDetailName = choiceRequest.allowDetailName()
         val allowOriginalName = choiceRequest.allowOriginalName()
@@ -233,17 +252,21 @@ class DownloadDialog(context: Context?, callback: Callback) {
         }
         if (allowDetailName) {
             detailNameCheckBox.setChecked(state.detailedName)
-            detailNameCheckBox.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener { b: CompoundButton?, isChecked: Boolean ->
-                state.detailedName = isChecked
-            })
+            detailNameCheckBox.setOnCheckedChangeListener(
+                CompoundButton.OnCheckedChangeListener { b: CompoundButton?, isChecked: Boolean ->
+                    state.detailedName = isChecked
+                },
+            )
         } else {
             detailNameCheckBox.setVisibility(View.GONE)
         }
         if (allowOriginalName) {
             originalNameCheckBox.setChecked(state.originalName)
-            originalNameCheckBox.setOnCheckedChangeListener(CompoundButton.OnCheckedChangeListener { b: CompoundButton?, isChecked: Boolean ->
-                state.originalName = isChecked
-            })
+            originalNameCheckBox.setOnCheckedChangeListener(
+                CompoundButton.OnCheckedChangeListener { b: CompoundButton?, isChecked: Boolean ->
+                    state.originalName = isChecked
+                },
+            )
         } else {
             originalNameCheckBox.setVisibility(View.GONE)
         }
@@ -259,119 +282,154 @@ class DownloadDialog(context: Context?, callback: Callback) {
             if (threadTitle != null) {
                 threadTitle = escapeFile(cutIfLongerToLine(threadTitle, 50, false), false)
             }
-            var text = getSubdir(
-                choiceRequest.chanName, chanTitle,
-                choiceRequest.boardName, choiceRequest.threadNumber, threadTitle
-            )
+            var text =
+                getSubdir(
+                    choiceRequest.chanName,
+                    chanTitle,
+                    choiceRequest.boardName,
+                    choiceRequest.threadNumber,
+                    threadTitle,
+                )
             if (newState) {
                 state.path = text
             }
             editText.setText(state.path)
             editText.setSelection(editText.getText().length)
-            editText.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int
-                ) {
-                }
+            editText.addTextChangedListener(
+                object : TextWatcher {
+                    override fun beforeTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        count: Int,
+                        after: Int,
+                    ) {
+                    }
 
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                    override fun onTextChanged(
+                        s: CharSequence?,
+                        start: Int,
+                        before: Int,
+                        count: Int,
+                    ) {}
 
-                override fun afterTextChanged(s: Editable) {
-                    state.path = s.toString()
-                }
-            })
+                    override fun afterTextChanged(s: Editable) {
+                        state.path = s.toString()
+                    }
+                },
+            )
             if (isEmpty(text)) {
-                text = formatSubdir(
-                    Preferences.DEFAULT_SUBDIR_PATTERN, choiceRequest.chanName,
-                    chanTitle, choiceRequest.boardName, choiceRequest.threadNumber, threadTitle
-                )
+                text =
+                    formatSubdir(
+                        Preferences.DEFAULT_SUBDIR_PATTERN,
+                        choiceRequest.chanName,
+                        chanTitle,
+                        choiceRequest.boardName,
+                        choiceRequest.threadNumber,
+                        threadTitle,
+                    )
             }
             editText.setHint(text)
         }
 
-        editText.setOnItemClickListener(OnItemClickListener { parent: AdapterView<*>, v: View, position: Int, id: Long ->
-            v.post(
-                Runnable {
-                    val adapter = editText.getAdapter() as Adapter
-                    adapter.items = mutableListOf<DialogDirectory>()
-                    adapter.notifyDataSetChanged()
-                    refreshDropDownContents(editText)
-                    editText.showDropDown()
-                })
-        })
+        editText.setOnItemClickListener(
+            OnItemClickListener { parent: AdapterView<*>, v: View, position: Int, id: Long ->
+                v.post(
+                    Runnable {
+                        val adapter = editText.getAdapter() as Adapter
+                        adapter.items = mutableListOf<DialogDirectory>()
+                        adapter.notifyDataSetChanged()
+                        refreshDropDownContents(editText)
+                        editText.showDropDown()
+                    },
+                )
+            },
+        )
         val dropDownRunnable = Runnable { editText.showDropDown() }
 
         val radioGroup = view.findViewById<RadioGroup>(R.id.download_choice)
-        radioGroup.setOnCheckedChangeListener(RadioGroup.OnCheckedChangeListener { rg: RadioGroup?, checkedId: Int ->
-            val enabled = checkedId == R.id.download_subdirectory
-            editText.setEnabled(enabled)
-            state.subdirectory = enabled
-            if (enabled) {
-                editText.dismissDropDown()
-                refreshDropDownContents(editText)
-                if (inputMethodManager != null) {
-                    inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
-                    editText.postDelayed(dropDownRunnable, 250)
+        radioGroup.setOnCheckedChangeListener(
+            RadioGroup.OnCheckedChangeListener { rg: RadioGroup?, checkedId: Int ->
+                val enabled = checkedId == R.id.download_subdirectory
+                editText.setEnabled(enabled)
+                state.subdirectory = enabled
+                if (enabled) {
+                    editText.dismissDropDown()
+                    refreshDropDownContents(editText)
+                    if (inputMethodManager != null) {
+                        inputMethodManager.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+                        editText.postDelayed(dropDownRunnable, 250)
+                    } else {
+                        dropDownRunnable.run()
+                    }
                 } else {
-                    dropDownRunnable.run()
+                    editText.removeCallbacks(dropDownRunnable)
                 }
-            } else {
-                editText.removeCallbacks(dropDownRunnable)
-            }
-        })
+            },
+        )
         radioGroup.check(if (state.subdirectory) R.id.download_subdirectory else R.id.download_common)
-        view.findViewById<RadioButton>(R.id.download_common)
+        view
+            .findViewById<RadioButton>(R.id.download_common)
             .setText(context.getString(R.string.save_to_directory__format, root.getName()))
 
-        val adapter = Adapter(root, Runnable {
-            if (editText.isEnabled()) {
-                refreshDropDownContents(editText)
-            }
-        })
+        val adapter =
+            Adapter(
+                root,
+                Runnable {
+                    if (editText.isEnabled()) {
+                        refreshDropDownContents(editText)
+                    }
+                },
+            )
         editText.setAdapter<Adapter?>(adapter)
 
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(R.string.select_where_to_save)
-            .setView(view)
-            .setNegativeButton(
-                android.R.string.cancel,
-                DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
-                    callback.resolve(
-                        choiceRequest,
-                        null
-                    )
-                })
-            .setPositiveButton(
-                android.R.string.ok,
-                DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
-                    handleChoiceResolve(
-                        choiceRequest,
-                        editText, detailNameCheckBox, originalNameCheckBox
-                    )
-                })
-            .setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? ->
-                callback.resolve(
-                    choiceRequest,
-                    null
-                )
-            })
-            .create()
+        val dialog =
+            AlertDialog
+                .Builder(context)
+                .setTitle(R.string.select_where_to_save)
+                .setView(view)
+                .setNegativeButton(
+                    android.R.string.cancel,
+                    DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
+                        callback.resolve(
+                            choiceRequest,
+                            null,
+                        )
+                    },
+                ).setPositiveButton(
+                    android.R.string.ok,
+                    DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
+                        handleChoiceResolve(
+                            choiceRequest,
+                            editText,
+                            detailNameCheckBox,
+                            originalNameCheckBox,
+                        )
+                    },
+                ).setOnCancelListener(
+                    DialogInterface.OnCancelListener { d: DialogInterface? ->
+                        callback.resolve(
+                            choiceRequest,
+                            null,
+                        )
+                    },
+                ).create()
         dialog.getWindow()!!.setSoftInputMode(
             WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN or
-                    (WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                (WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN),
         )
-        editText.setOnEditorActionListener(OnEditorActionListener { v: TextView?, actionId: Int, event: KeyEvent? ->
-            handleChoiceResolve(choiceRequest, editText, detailNameCheckBox, originalNameCheckBox)
-            dialog.dismiss()
-            true
-        })
-        dialog.setOnDismissListener(DialogInterface.OnDismissListener { d: DialogInterface? ->
-            adapter.shutdown()
-            onDismissListener.onDismiss(d)
-        })
+        editText.setOnEditorActionListener(
+            OnEditorActionListener { v: TextView?, actionId: Int, event: KeyEvent? ->
+                handleChoiceResolve(choiceRequest, editText, detailNameCheckBox, originalNameCheckBox)
+                dialog.dismiss()
+                true
+            },
+        )
+        dialog.setOnDismissListener(
+            DialogInterface.OnDismissListener { d: DialogInterface? ->
+                adapter.shutdown()
+                onDismissListener.onDismiss(d)
+            },
+        )
         dialog.show()
         return dialog
     }
@@ -390,24 +448,35 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private fun handleChoiceResolve(
         choiceRequest: ChoiceRequest,
-        editText: AutoCompleteTextView, detailNameCheckBox: CheckBox, originalNameCheckBox: CheckBox
+        editText: AutoCompleteTextView,
+        detailNameCheckBox: CheckBox,
+        originalNameCheckBox: CheckBox,
     ) {
-        val pathCandidate = if (editText.isEnabled()) escapeFile(
-            editText.getText().toString(),
-            true
-        )!!.trim { it <= ' ' } else ""
+        val pathCandidate =
+            if (editText.isEnabled()) {
+                escapeFile(
+                    editText.getText().toString(),
+                    true,
+                )!!.trim { it <= ' ' }
+            } else {
+                ""
+            }
         val segments = ArrayList<String?>()
-        for (segment in pathCandidate.split("/".toRegex()).dropLastWhile { it.isEmpty() }
+        for (segment in pathCandidate
+            .split("/".toRegex())
+            .dropLastWhile { it.isEmpty() }
             .toTypedArray()) {
             if (isValidSegment(segment)) {
                 segments.add(segment)
             }
         }
         val path = nullIfEmpty(Adapter.Companion.buildPath(segments, 0))
-        val directRequest = choiceRequest.complete(
-            path,
-            detailNameCheckBox.isChecked(), originalNameCheckBox.isChecked()
-        )
+        val directRequest =
+            choiceRequest.complete(
+                path,
+                detailNameCheckBox.isChecked(),
+                originalNameCheckBox.isChecked(),
+            )
         callback.resolve(choiceRequest, directRequest)
     }
 
@@ -417,7 +486,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private fun createReplace(
         replaceRequest: ReplaceRequest,
-        onDismissListener: DialogInterface.OnDismissListener?
+        onDismissListener: DialogInterface.OnDismissListener?,
     ): AlertDialog {
         if (replaceRequest.state !is ReplaceState) {
             replaceRequest.state = ReplaceState()
@@ -435,8 +504,8 @@ class DownloadDialog(context: Context?, callback: Callback) {
             context.getResources().getQuantityString(
                 R.plurals.number_files_already_exist__sentence_format,
                 count,
-                count
-            )
+                count,
+            ),
         )
         linearLayout.addView(textView)
 
@@ -455,76 +524,86 @@ class DownloadDialog(context: Context?, callback: Callback) {
         }
         radioGroup.check(state.selectedId)
         radioGroup.setPadding(0, (12f * density).toInt(), 0, 0)
-        radioGroup.setOnCheckedChangeListener(RadioGroup.OnCheckedChangeListener { g: RadioGroup?, id: Int ->
-            state.selectedId = id
-        })
+        radioGroup.setOnCheckedChangeListener(
+            RadioGroup.OnCheckedChangeListener { g: RadioGroup?, id: Int ->
+                state.selectedId = id
+            },
+        )
         linearLayout.addView(radioGroup)
 
-        val builder = AlertDialog.Builder(context)
-            .setView(linearLayout)
-            .setPositiveButton(
-                android.R.string.ok,
-                DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                    when (radioGroup.getCheckedRadioButtonId()) {
-                        android.R.id.button1 -> {
-                            callback.resolve(replaceRequest, ReplaceRequest.Action.REPLACE)
-                        }
+        val builder =
+            AlertDialog
+                .Builder(context)
+                .setView(linearLayout)
+                .setPositiveButton(
+                    android.R.string.ok,
+                    DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                        when (radioGroup.getCheckedRadioButtonId()) {
+                            android.R.id.button1 -> {
+                                callback.resolve(replaceRequest, ReplaceRequest.Action.REPLACE)
+                            }
 
-                        android.R.id.button2 -> {
-                            callback.resolve(replaceRequest, ReplaceRequest.Action.KEEP_ALL)
-                        }
+                            android.R.id.button2 -> {
+                                callback.resolve(replaceRequest, ReplaceRequest.Action.KEEP_ALL)
+                            }
 
-                        android.R.id.button3 -> {
-                            callback.resolve(replaceRequest, ReplaceRequest.Action.SKIP)
+                            android.R.id.button3 -> {
+                                callback.resolve(replaceRequest, ReplaceRequest.Action.SKIP)
+                            }
                         }
-                    }
-                })
-            .setNegativeButton(
-                android.R.string.cancel,
-                DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
-                    callback.resolve(
-                        replaceRequest,
-                        null
-                    )
-                })
-            .setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? ->
-                callback.resolve(
-                    replaceRequest,
-                    null
+                    },
+                ).setNegativeButton(
+                    android.R.string.cancel,
+                    DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
+                        callback.resolve(
+                            replaceRequest,
+                            null,
+                        )
+                    },
+                ).setOnCancelListener(
+                    DialogInterface.OnCancelListener { d: DialogInterface? ->
+                        callback.resolve(
+                            replaceRequest,
+                            null,
+                        )
+                    },
                 )
-            })
 
         val dialog: AlertDialog
         if (replaceRequest.exists == 1) {
             builder.setNeutralButton(R.string.view__verb, null)
             dialog = builder.create()
             val singleFile = replaceRequest.lastExistingFile
-            dialog.setOnShowListener(OnShowListener { d: DialogInterface? ->
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(
-                    View.OnClickListener { v: View? ->
-                        val extension = getFileExtension(singleFile!!.getName())
-                        val type = forExtension(extension, "image/jpeg")
-                        val fileOrUri = singleFile.getFileOrUri()
-                        val uri: Uri?
-                        if (fileOrUri.first != null) {
-                            uri = FileProvider.convertDownloadsLegacyFile(fileOrUri.first!!, type)
-                        } else if (fileOrUri.second != null) {
-                            uri = fileOrUri.second
-                        } else {
-                            uri = null
-                        }
-                        if (uri != null) {
-                            try {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW).setDataAndType(uri, type)
-                                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                )
-                            } catch (e: ActivityNotFoundException) {
-                                show(R.string.unknown_address)
+            dialog.setOnShowListener(
+                OnShowListener { d: DialogInterface? ->
+                    dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(
+                        View.OnClickListener { v: View? ->
+                            val extension = getFileExtension(singleFile!!.getName())
+                            val type = forExtension(extension, "image/jpeg")
+                            val fileOrUri = singleFile.getFileOrUri()
+                            val uri: Uri?
+                            if (fileOrUri.first != null) {
+                                uri = FileProvider.convertDownloadsLegacyFile(fileOrUri.first!!, type)
+                            } else if (fileOrUri.second != null) {
+                                uri = fileOrUri.second
+                            } else {
+                                uri = null
                             }
-                        }
-                    })
-            })
+                            if (uri != null) {
+                                try {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW)
+                                            .setDataAndType(uri, type)
+                                            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                                    )
+                                } catch (e: ActivityNotFoundException) {
+                                    show(R.string.unknown_address)
+                                }
+                            }
+                        },
+                    )
+                },
+            )
         } else {
             dialog = builder.create()
         }
@@ -535,55 +614,63 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private fun createPrepare(
         prepareRequest: PrepareRequest?,
-        onDismissListener: DialogInterface.OnDismissListener?
+        onDismissListener: DialogInterface.OnDismissListener?,
     ): ProgressDialog {
         val dialog = ProgressDialog(context, null)
         dialog.setMessage(context.getString(R.string.processing_data__ellipsis))
         dialog.setButton(
-            DialogInterface.BUTTON_NEGATIVE, context.getString(android.R.string.cancel),
+            DialogInterface.BUTTON_NEGATIVE,
+            context.getString(android.R.string.cancel),
             DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                 callback.cancel(
-                    prepareRequest!!
+                    prepareRequest!!,
                 )
-            })
-        dialog.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? ->
-            callback.cancel(
-                prepareRequest!!
-            )
-        })
+            },
+        )
+        dialog.setOnCancelListener(
+            DialogInterface.OnCancelListener { d: DialogInterface? ->
+                callback.cancel(
+                    prepareRequest!!,
+                )
+            },
+        )
         dialog.setOnDismissListener(onDismissListener)
         dialog.show()
         return dialog
     }
 
-    private class Adapter(private val root: DataFile, private val refresh: Runnable) :
-        BaseAdapter(), Filterable {
+    private class Adapter(
+        private val root: DataFile,
+        private val refresh: Runnable,
+    ) : BaseAdapter(),
+        Filterable {
         internal var items: MutableList<DialogDirectory> = mutableListOf<DialogDirectory>()
 
-        override fun getCount(): Int {
-            return items.size
-        }
+        override fun getCount(): Int = items.size
 
-        override fun getItem(position: Int): DialogDirectory {
-            return items.get(position)
-        }
+        override fun getItem(position: Int): DialogDirectory = items[position]
 
-        override fun getItemId(position: Int): Long {
-            return 0L
-        }
+        override fun getItemId(position: Int): Long = 0L
 
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            var convertView = convertView
+        override fun getView(
+            position: Int,
+            convertView: View?,
+            parent: ViewGroup,
+        ): View {
+            var view = convertView
             val dialogDirectory = getItem(position)
-            if (convertView == null) {
-                convertView = LayoutInflater.from(parent.getContext()).inflate(
-                    android.R.layout
-                        .simple_spinner_dropdown_item, parent, false
-                )
-                (convertView as TextView).setEllipsize(TextUtils.TruncateAt.START)
+            if (view == null) {
+                view =
+                    LayoutInflater.from(parent.getContext()).inflate(
+                        android.R.layout
+                            .simple_spinner_dropdown_item,
+                        parent,
+                        false,
+                    )
+                (view as TextView).setEllipsize(TextUtils.TruncateAt.START)
             }
-            (convertView as TextView).setText(dialogDirectory.displayName)
-            return convertView
+            (view as TextView).setText(dialogDirectory.displayName)
+            return view
         }
 
         private val lastDirectoryLock = Any()
@@ -593,132 +680,146 @@ class DownloadDialog(context: Context?, callback: Callback) {
         private var lastDirectoryItems: MutableList<DialogDirectory>? = null
         private var lastDirectoryTask: ExecutorTask<*, *>? = null
 
-        private val filter: Filter = object : Filter() {
-            override fun performFiltering(constraint: CharSequence): FilterResults {
-                val constraintString = constraint.toString()
-                val separatorIndex = constraintString.lastIndexOf('/')
-                val enterDirectoryPath =
-                    if (separatorIndex >= 0) constraintString.substring(0, separatorIndex) else ""
-                val segments: MutableList<String?> = ArrayList<String?>()
-                for (segment in enterDirectoryPath.split("/".toRegex())
-                    .dropLastWhile { it.isEmpty() }.toTypedArray()) {
-                    if (isValidSegment(segment)) {
-                        segments.add(segment)
-                    }
-                }
-
-                val items: MutableList<DialogDirectory>
-                synchronized(lastDirectoryLock) {
-                    val directoryPath: String = buildPath(segments, 0)
-                    if (lastDirectoryPath == null || !equals(lastDirectoryPath, directoryPath)) {
-                        lastDirectoryPath = directoryPath
-                        lastDirectoryItems = mutableListOf<DialogDirectory>()
-
-                        if (lastDirectoryTask != null) {
-                            lastDirectoryTask!!.cancel()
-                            lastDirectoryTask = null
+        private val filter: Filter =
+            object : Filter() {
+                override fun performFiltering(constraint: CharSequence): FilterResults {
+                    val constraintString = constraint.toString()
+                    val separatorIndex = constraintString.lastIndexOf('/')
+                    val enterDirectoryPath =
+                        if (separatorIndex >= 0) constraintString.substring(0, separatorIndex) else ""
+                    val segments: MutableList<String?> = ArrayList<String?>()
+                    for (segment in enterDirectoryPath
+                        .split("/".toRegex())
+                        .dropLastWhile { it.isEmpty() }
+                        .toTypedArray()) {
+                        if (isValidSegment(segment)) {
+                            segments.add(segment)
                         }
+                    }
 
-                        if (!lastDirectoryCancel) {
-                            var cachedDirectory: Pair<DataFile?, String?>? = null
-                            // Optimize deep traversal
-                            for (i in segments.indices) {
-                                val path: String = buildPath(segments, i)
-                                val directory = cachedDirectories.get(path)
-                                if (directory != null) {
-                                    cachedDirectory = Pair<DataFile?, String?>(
-                                        directory, if (i == 0)
-                                            ""
-                                        else
-                                            directoryPath.substring(path.length + 1)
-                                    )
-                                }
+                    val items: MutableList<DialogDirectory>
+                    synchronized(lastDirectoryLock) {
+                        val directoryPath: String = buildPath(segments, 0)
+                        if (lastDirectoryPath == null || !equals(lastDirectoryPath, directoryPath)) {
+                            lastDirectoryPath = directoryPath
+                            lastDirectoryItems = mutableListOf<DialogDirectory>()
+
+                            if (lastDirectoryTask != null) {
+                                lastDirectoryTask!!.cancel()
+                                lastDirectoryTask = null
                             }
-                            val cachedDirectoryFinal = cachedDirectory
-                            lastDirectoryTask = object :
-                                ExecutorTask<Void?, Pair<MutableList<DataFile>, MutableList<DialogDirectory>>>() {
-                                override fun run(): Pair<MutableList<DataFile>, MutableList<DialogDirectory>> {
-                                    val directory = if (cachedDirectoryFinal != null)
-                                        cachedDirectoryFinal.first!!.getChild(cachedDirectoryFinal.second)
-                                    else
-                                        if (isEmpty(directoryPath)) root else root.getChild(
-                                            directoryPath
-                                        )
-                                    val cachedFiles = ArrayList<DataFile>()
-                                    val items: ArrayList<DialogDirectory> =
-                                        ArrayList<DialogDirectory>()
-                                    val files = directory.getChildren()
-                                    if (files != null) {
-                                        for (file in files) {
-                                            if (isCancelled()) {
-                                                break
+
+                            if (!lastDirectoryCancel) {
+                                var cachedDirectory: Pair<DataFile?, String?>? = null
+                                // Optimize deep traversal
+                                for (i in segments.indices) {
+                                    val path: String = buildPath(segments, i)
+                                    val directory = cachedDirectories[path]
+                                    if (directory != null) {
+                                        cachedDirectory =
+                                            Pair<DataFile?, String?>(
+                                                directory,
+                                                if (i == 0) {
+                                                    ""
+                                                } else {
+                                                    directoryPath.substring(path.length + 1)
+                                                },
+                                            )
+                                    }
+                                }
+                                val cachedDirectoryFinal = cachedDirectory
+                                lastDirectoryTask =
+                                    object :
+                                        ExecutorTask<Unit, Pair<MutableList<DataFile>, MutableList<DialogDirectory>>>() {
+                                        override fun run(): Pair<MutableList<DataFile>, MutableList<DialogDirectory>> {
+                                            val directory =
+                                                if (cachedDirectoryFinal != null) {
+                                                    cachedDirectoryFinal.first!!.getChild(cachedDirectoryFinal.second)
+                                                } else {
+                                                    if (isEmpty(directoryPath)) {
+                                                        root
+                                                    } else {
+                                                        root.getChild(
+                                                            directoryPath,
+                                                        )
+                                                    }
+                                                }
+                                            val cachedFiles = ArrayList<DataFile>()
+                                            val directories: ArrayList<DialogDirectory> =
+                                                ArrayList<DialogDirectory>()
+                                            val files = directory.getChildren()
+                                            if (files != null) {
+                                                for (file in files) {
+                                                    if (isCancelled()) {
+                                                        break
+                                                    }
+                                                    if (file.isDirectory()) {
+                                                        val childSegments: MutableList<String?> =
+                                                            ArrayList<String?>(segments)
+                                                        childSegments.add(file.getName())
+                                                        directories.add(
+                                                            DialogDirectory(
+                                                                childSegments,
+                                                                file.getLastModified(),
+                                                            ),
+                                                        )
+                                                        cachedFiles.add(file)
+                                                    }
+                                                }
                                             }
-                                            if (file.isDirectory()) {
-                                                val childSegments: MutableList<String?> =
-                                                    ArrayList<String?>(segments)
-                                                childSegments.add(file.getName())
-                                                items.add(
-                                                    DialogDirectory(
-                                                        childSegments,
-                                                        file.getLastModified()
-                                                    )
-                                                )
-                                                cachedFiles.add(file)
+                                            if (!isCancelled()) {
+                                                directories.sort()
+                                            }
+                                            return Pair(cachedFiles, directories)
+                                        }
+
+                                        override fun onComplete(result: Pair<MutableList<DataFile>, MutableList<DialogDirectory>>) {
+                                            val resultPair = result
+                                            synchronized(lastDirectoryLock) {
+                                                if (resultPair.first != null) {
+                                                    for (file in resultPair.first) {
+                                                        cachedDirectories[file.getRelativePath()] = file
+                                                    }
+                                                }
+                                                lastDirectoryItems = resultPair.second
+                                                lastDirectoryTask = null
+                                                notifyDataSetChanged()
+                                                refresh.run()
                                             }
                                         }
                                     }
-                                    if (!isCancelled()) {
-                                        items.sort()
-                                    }
-                                    return Pair(cachedFiles, items)
-                                }
-
-                                override fun onComplete(result: Pair<MutableList<DataFile>, MutableList<DialogDirectory>>) {
-                                    val items = result
-                                    synchronized(lastDirectoryLock) {
-                                        if (items.first != null) {
-                                            for (file in items.first) {
-                                                cachedDirectories.put(file.getRelativePath(), file)
-                                            }
-                                        }
-                                        lastDirectoryItems = items.second
-                                        lastDirectoryTask = null
-                                        notifyDataSetChanged()
-                                        refresh.run()
-                                    }
-                                }
+                                lastDirectoryTask!!.execute(EXECUTOR)
                             }
-                            lastDirectoryTask!!.execute(EXECUTOR)
+                        }
+                        items = lastDirectoryItems!!
+                    }
+
+                    val name = constraintString.substring(separatorIndex + 1)
+                    val result: ArrayList<DialogDirectory> = ArrayList<DialogDirectory>()
+                    for (item in items) {
+                        if (item.filter(name)) {
+                            result.add(item)
                         }
                     }
-                    items = lastDirectoryItems!!
+
+                    val results = FilterResults()
+                    results.values = result
+                    results.count = result.size
+                    return results
                 }
 
-                val name = constraintString.substring(separatorIndex + 1)
-                val result: ArrayList<DialogDirectory> = ArrayList<DialogDirectory>()
-                for (item in items) {
-                    if (item.filter(name)) {
-                        result.add(item)
-                    }
+                override fun publishResults(
+                    constraint: CharSequence?,
+                    results: FilterResults,
+                ) {
+                    @Suppress("UNCHECKED_CAST")
+                    val items: ArrayList<DialogDirectory> = results.values as ArrayList<DialogDirectory>
+                    this@Adapter.items = items
+                    notifyDataSetChanged()
                 }
-
-                val results = FilterResults()
-                results.values = result
-                results.count = result.size
-                return results
             }
 
-            override fun publishResults(constraint: CharSequence?, results: FilterResults) {
-                @Suppress("UNCHECKED_CAST")
-                val items: ArrayList<DialogDirectory> = results.values as ArrayList<DialogDirectory>
-                this@Adapter.items = items
-                notifyDataSetChanged()
-            }
-        }
-
-        override fun getFilter(): Filter {
-            return filter
-        }
+        override fun getFilter(): Filter = filter
 
         fun shutdown() {
             synchronized(lastDirectoryLock) {
@@ -731,33 +832,37 @@ class DownloadDialog(context: Context?, callback: Callback) {
         }
 
         companion object {
-            fun buildPath(segments: MutableList<String?>, parent: Int): String {
+            fun buildPath(
+                segments: MutableList<String?>,
+                parent: Int,
+            ): String {
                 val directoryPathBuilder = StringBuilder()
                 for (i in 0..<segments.size - parent) {
                     if (directoryPathBuilder.length > 0) {
                         directoryPathBuilder.append('/')
                     }
-                    directoryPathBuilder.append(segments.get(i))
+                    directoryPathBuilder.append(segments[i])
                 }
                 return directoryPathBuilder.toString()
             }
         }
     }
 
-    private class DialogDirectory(val segments: MutableList<String?>, val lastModified: Long) :
-        Comparable<DialogDirectory> {
+    private class DialogDirectory(
+        val segments: MutableList<String?>,
+        val lastModified: Long,
+    ) : Comparable<DialogDirectory> {
         fun filter(name: String): Boolean {
-            var name = name
             val locale = Locale.getDefault()
-            name = name.lowercase(locale)
-            val lastSegment = segments.get(segments.size - 1)!!.lowercase(locale)
-            if (lastSegment.startsWith(name)) {
+            val lowerName = name.lowercase(locale)
+            val lastSegment = segments[segments.size - 1]!!.lowercase(locale)
+            if (lastSegment.startsWith(lowerName)) {
                 return true
             }
             val splitted =
                 lastSegment.split("[\\W_]+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             for (part in splitted) {
-                if (part.startsWith(name)) {
+                if (part.startsWith(lowerName)) {
                     return true
                 }
             }
@@ -785,13 +890,9 @@ class DownloadDialog(context: Context?, callback: Callback) {
         val displayName: String
             get() = convert(true)
 
-        override fun toString(): String {
-            return convert(false)
-        }
+        override fun toString(): String = convert(false)
 
-        override fun compareTo(other: DialogDirectory): Int {
-            return other.lastModified.compareTo(lastModified)
-        }
+        override fun compareTo(other: DialogDirectory): Int = other.lastModified.compareTo(lastModified)
     }
 
     companion object {

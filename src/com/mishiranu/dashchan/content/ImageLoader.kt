@@ -42,26 +42,30 @@ class ImageLoader private constructor() {
     private val executors = HashMap<String?, Executor?>()
 
     private fun getExecutor(chanName: String?): Executor {
-        var executor = executors.get(chanName)
+        var executor = executors[chanName]
         if (executor == null) {
             executor = newThreadPool(3, 3, 0, "ImageLoader", chanName)
-            executors.put(chanName, executor)
+            executors[chanName] = executor
         }
         return executor
     }
 
     internal fun interface TaskCallback {
-        fun onTaskFinished(key: String?, bitmap: Bitmap?, error: Boolean)
+        fun onTaskFinished(
+            key: String?,
+            bitmap: Bitmap?,
+            error: Boolean,
+        )
     }
 
     private inner class LoaderTask(
         val uri: Uri,
         val chan: Chan,
         val key: String?,
-        val fromCacheOnly: Boolean
-    ) : HttpHolderTask<Void?, Bitmap?>(
-        chan
-    ) {
+        val fromCacheOnly: Boolean,
+    ) : HttpHolderTask<Unit, Bitmap?>(
+            chan,
+        ) {
         val callbacks: HashSet<TaskCallback> = HashSet<TaskCallback>()
         private val created = SystemClock.elapsedRealtime()
 
@@ -86,8 +90,14 @@ class ImageLoader private constructor() {
             val storeExternal = !chanScheme && !dataScheme
             var bitmap: Bitmap? = null
             try {
-                bitmap = if (storeExternal) CacheManager.Companion.getInstance()
-                    .loadThumbnailExternal(key!!) else null
+                bitmap =
+                    if (storeExternal) {
+                        CacheManager.Companion
+                            .getInstance()
+                            .loadThumbnailExternal(key!!)
+                    } else {
+                        null
+                    }
                 if (isCancelled()) {
                     return null
                 }
@@ -112,13 +122,19 @@ class ImageLoader private constructor() {
                     } else {
                         val response: HttpResponse?
                         try {
-                            val result = chan.performer.safe()
-                                .onReadContent(
-                                    ReadContentData(
-                                        uri,
-                                        CONNECT_TIMEOUT, READ_TIMEOUT, holder, -1, -1
+                            val result =
+                                chan.performer
+                                    .safe()
+                                    .onReadContent(
+                                        ReadContentData(
+                                            uri,
+                                            CONNECT_TIMEOUT,
+                                            READ_TIMEOUT,
+                                            holder,
+                                            -1,
+                                            -1,
+                                        ),
                                     )
-                                )
                             response = if (result != null) result.response else null
                         } catch (e: ExtensionException) {
                             e.getErrorItemAndHandle()
@@ -138,9 +154,11 @@ class ImageLoader private constructor() {
                     if (isCancelled()) {
                         return null
                     }
-                    bitmap = GraphicsUtils.reduceThumbnailSize(
-                        MainApplication.getInstance().getResources(), bitmap!!
-                    )
+                    bitmap =
+                        GraphicsUtils.reduceThumbnailSize(
+                            MainApplication.getInstance().getResources(),
+                            bitmap!!,
+                        )
                     if (storeExternal) {
                         CacheManager.Companion.getInstance().storeThumbnailExternal(key!!, bitmap)
                     }
@@ -167,10 +185,10 @@ class ImageLoader private constructor() {
             // so targets could be extracted later.
             finished = true
             if (notFound) {
-                notFoundMap.put(key, SystemClock.elapsedRealtime())
+                notFoundMap[key] = SystemClock.elapsedRealtime()
             }
             if (result != null) {
-                bitmapCache.put(key, result)
+                bitmapCache[key] = result
             }
             for (callback in callbacks) {
                 callback.onTaskFinished(key, result, !fromCacheOnly)
@@ -184,23 +202,43 @@ class ImageLoader private constructor() {
     abstract class Target {
         var currentKey: String? = null
 
-        internal val taskCallback = TaskCallback { key: String?, bitmap: Bitmap?, error: Boolean ->
-            if (key == currentKey) {
-                onResult(key, bitmap, error, false)
+        internal val taskCallback =
+            TaskCallback { key: String?, bitmap: Bitmap?, error: Boolean ->
+                if (key == currentKey) {
+                    onResult(key, bitmap, error, false)
+                }
             }
-        }
 
         open fun onStart() {}
-        abstract fun onResult(key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean)
+
+        abstract fun onResult(
+            key: String?,
+            bitmap: Bitmap?,
+            error: Boolean,
+            instantly: Boolean,
+        )
     }
 
     private fun interface WrapperCallback<T> {
-        fun onResult(target: T?, key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean)
+        fun onResult(
+            target: T?,
+            key: String?,
+            bitmap: Bitmap?,
+            error: Boolean,
+            instantly: Boolean,
+        )
     }
 
-    private open class WrapperTarget<T>(val target: T?, val callback: WrapperCallback<T?>) :
-        Target() {
-        override fun onResult(key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean) {
+    private open class WrapperTarget<T>(
+        val target: T?,
+        val callback: WrapperCallback<T?>,
+    ) : Target() {
+        override fun onResult(
+            key: String?,
+            bitmap: Bitmap?,
+            error: Boolean,
+            instantly: Boolean,
+        ) {
             callback.onResult(target, key, bitmap, error, instantly)
         }
     }
@@ -212,8 +250,10 @@ class ImageLoader private constructor() {
     private class ViewTarget<T : View?>(
         target: T?,
         wrapperCallback: WrapperCallback<T?>,
-        private val detachCallback: DetachCallback?
-    ) : WrapperTarget<T?>(target, wrapperCallback), Runnable, OnAttachStateChangeListener {
+        private val detachCallback: DetachCallback?,
+    ) : WrapperTarget<T?>(target, wrapperCallback),
+        Runnable,
+        OnAttachStateChangeListener {
         init {
             target!!.addOnAttachStateChangeListener(this)
         }
@@ -247,7 +287,7 @@ class ImageLoader private constructor() {
     @Suppress("UNCHECKED_CAST")
     private fun <T : View?> getWrapperTarget(
         view: T?,
-        wrapperCallback: WrapperCallback<T?>?
+        wrapperCallback: WrapperCallback<T?>?,
     ): WrapperTarget<T?>? {
         val wrapperTarget: WrapperTarget<T?>? =
             view!!.getTag(R.id.tag_image_loader) as WrapperTarget<T?>?
@@ -262,7 +302,7 @@ class ImageLoader private constructor() {
     fun hasRunningTask(view: View): Boolean {
         val wrapperTarget: WrapperTarget<*>? = getWrapperTarget<View?>(view, null)
         if (wrapperTarget != null && wrapperTarget.currentKey != null) {
-            val loaderTask = loaderTasks.get(wrapperTarget.currentKey)
+            val loaderTask = loaderTasks[wrapperTarget.currentKey]
             return loaderTask != null && !loaderTask.finished
         }
         return false
@@ -272,7 +312,7 @@ class ImageLoader private constructor() {
         val key = target.currentKey
         target.currentKey = null
         if (key != null) {
-            val loaderTask = loaderTasks.get(key)
+            val loaderTask = loaderTasks[key]
             if (loaderTask != null) {
                 loaderTask.callbacks.remove(target.taskCallback)
                 if (loaderTask.callbacks.isEmpty()) {
@@ -290,7 +330,12 @@ class ImageLoader private constructor() {
         }
     }
 
-    fun loadImage(chan: Chan, uri: Uri, fromCacheOnly: Boolean, target: ImageView) {
+    fun loadImage(
+        chan: Chan,
+        uri: Uri,
+        fromCacheOnly: Boolean,
+        target: ImageView,
+    ) {
         val wrapperTarget = getWrapperTarget<ImageView?>(target, WRAPPER_CALLBACK_IMAGE_VIEW)
         loadImage(chan, uri, null, fromCacheOnly, wrapperTarget!!)
     }
@@ -300,7 +345,7 @@ class ImageLoader private constructor() {
         uri: Uri,
         key: String?,
         fromCacheOnly: Boolean,
-        target: AttachmentView
+        target: AttachmentView,
     ) {
         val wrapperTarget =
             getWrapperTarget<AttachmentView?>(target, WRAPPER_CALLBACK_ATTACHMENT_VIEW)
@@ -312,13 +357,13 @@ class ImageLoader private constructor() {
         uri: Uri,
         key: String?,
         fromCacheOnly: Boolean,
-        target: Target
+        target: Target,
     ): Boolean {
-        var key = key
-        if (key == null) {
-            key = CacheManager.Companion.getInstance().getCachedFileKey(uri)
+        var imageKey = key
+        if (imageKey == null) {
+            imageKey = CacheManager.Companion.getInstance().getCachedFileKey(uri)
         }
-        if (key == null) {
+        if (imageKey == null) {
             return false
         }
         val mainThread = isMain()
@@ -327,39 +372,39 @@ class ImageLoader private constructor() {
         }
         val memoryCachedBitmap: Bitmap?
         if (mainThread) {
-            memoryCachedBitmap = bitmapCache.get(key)
+            memoryCachedBitmap = bitmapCache[imageKey]
         } else {
-            val finalKey: String? = key
-            memoryCachedBitmap = mainGet<Bitmap?>(Callable { bitmapCache.get(finalKey) })
+            val finalKey: String? = imageKey
+            memoryCachedBitmap = mainGet<Bitmap?>(Callable { bitmapCache[finalKey] })
         }
         if (memoryCachedBitmap != null) {
-            target.onResult(key, memoryCachedBitmap, false, true)
+            target.onResult(imageKey, memoryCachedBitmap, false, true)
             return true
         } else if (!mainThread) {
             // Don't enqueue tasks requested from non-main thread
-            target.onResult(key, null, false, true)
+            target.onResult(imageKey, null, false, true)
             return false
         }
         // Check "not found" images once per 5 minutes
-        val value = notFoundMap.get(key)
+        val value = notFoundMap[imageKey]
         if (value != null && SystemClock.elapsedRealtime() - value < 5 * 60 * 1000) {
-            target.onResult(key, null, !fromCacheOnly, true)
+            target.onResult(imageKey, null, !fromCacheOnly, true)
             return false
         }
-        target.currentKey = key
+        target.currentKey = imageKey
         target.onStart()
-        val currentLoaderTask = loaderTasks.get(key)
+        val currentLoaderTask = loaderTasks[imageKey]
         val startTask =
             currentLoaderTask == null || currentLoaderTask.finished || currentLoaderTask.fromCacheOnly && !fromCacheOnly
         var registerLoaderTask = currentLoaderTask
         if (startTask) {
-            val loaderTask = LoaderTask(uri, chan, key, fromCacheOnly)
+            val loaderTask = LoaderTask(uri, chan, imageKey, fromCacheOnly)
             registerLoaderTask = loaderTask
             if (currentLoaderTask != null) {
                 currentLoaderTask.cancel()
                 loaderTask.callbacks.addAll(currentLoaderTask.callbacks)
             }
-            loaderTasks.put(key, loaderTask)
+            loaderTasks[imageKey] = loaderTask
             loaderTask.execute(getExecutor(chan.name))
         }
         registerLoaderTask.callbacks.add(target.taskCallback)
@@ -390,7 +435,7 @@ class ImageLoader private constructor() {
                     key,
                     bitmap,
                     error,
-                    instantly
+                    instantly,
                 )
             }
     }

@@ -34,18 +34,32 @@ import com.mishiranu.dashchan.widget.ViewFactory.createErrorLayout
 import com.mishiranu.dashchan.widget.ViewFactory.createProgressLayout
 import java.util.UUID
 
-class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callback {
+class PageFragment :
+    ContentFragment,
+    FragmentHandler.Callback,
+    ListPage.Callback {
     interface Callback {
         val uiManager: UiManager?
+
         fun getRetainableExtra(retainId: String?): Retainable?
-        fun storeRetainableExtra(retainId: String?, extra: Retainable?)
-        fun setPageTitle(title: String?, subtitle: String?)
+
+        fun storeRetainableExtra(
+            retainId: String?,
+            extra: Retainable?,
+        )
+
+        fun setPageTitle(
+            title: String?,
+            subtitle: String?,
+        )
+
         fun invalidateHomeUpState()
+
         fun handleRedirect(
             chanName: String?,
             boardName: String?,
             threadNumber: String?,
-            postNumber: PostNumber?
+            postNumber: PostNumber?,
         )
 
         fun closeCurrentPage()
@@ -61,11 +75,12 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     }
 
     val page: Page?
-        get() = BundleCompat.getParcelable<Page?>(
-            requireArguments(),
-            EXTRA_PAGE,
-            Page::class.java
-        )
+        get() =
+            BundleCompat.getParcelable<Page?>(
+                requireArguments(),
+                EXTRA_PAGE,
+                Page::class.java,
+            )
 
     val retainId: String?
         get() = requireArguments().getString(EXTRA_RETAIN_ID)
@@ -103,40 +118,63 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        listPosition = if (savedInstanceState != null && !resetScroll)
-            BundleCompat.getParcelable<ListPosition?>(
-                savedInstanceState,
-                EXTRA_LIST_POSITION,
-                ListPosition::class.java
+        listPosition =
+            if (savedInstanceState != null && !resetScroll) {
+                BundleCompat.getParcelable<ListPosition?>(
+                    savedInstanceState,
+                    EXTRA_LIST_POSITION,
+                    ListPosition::class.java,
+                )
+            } else {
+                null
+            }
+        parcelableExtra =
+            if (savedInstanceState != null) {
+                BundleCompat
+                    .getParcelable<Parcelable?>(
+                        savedInstanceState,
+                        EXTRA_PARCELABLE_EXTRA,
+                        Parcelable::class.java,
+                    )
+            } else {
+                null
+            }
+        initErrorItem =
+            if (savedInstanceState != null) {
+                BundleCompat
+                    .getParcelable<ErrorItem?>(
+                        savedInstanceState,
+                        EXTRA_INIT_ERROR_ITEM,
+                        ErrorItem::class.java,
+                    )
+            } else {
+                null
+            }
+        searchCurrentQuery =
+            if (savedInstanceState != null) {
+                savedInstanceState
+                    .getString(EXTRA_SEARCH_CURRENT_QUERY)
+            } else {
+                null
+            }
+        searchSubmitQuery =
+            if (savedInstanceState != null) {
+                savedInstanceState
+                    .getString(EXTRA_SEARCH_SUBMIT_QUERY)
+            } else {
+                null
+            }
+        searchFocused = savedInstanceState != null &&
+            savedInstanceState.getBoolean(
+                EXTRA_SEARCH_FOCUSED,
             )
-        else
-            null
-        parcelableExtra = if (savedInstanceState != null) BundleCompat
-            .getParcelable<Parcelable?>(
-                savedInstanceState,
-                EXTRA_PARCELABLE_EXTRA,
-                Parcelable::class.java
-            ) else null
-        initErrorItem = if (savedInstanceState != null) BundleCompat
-            .getParcelable<ErrorItem?>(
-                savedInstanceState,
-                EXTRA_INIT_ERROR_ITEM,
-                ErrorItem::class.java
-            ) else null
-        searchCurrentQuery = if (savedInstanceState != null) savedInstanceState
-            .getString(EXTRA_SEARCH_CURRENT_QUERY) else null
-        searchSubmitQuery = if (savedInstanceState != null) savedInstanceState
-            .getString(EXTRA_SEARCH_SUBMIT_QUERY) else null
-        searchFocused = savedInstanceState != null && savedInstanceState.getBoolean(
-            EXTRA_SEARCH_FOCUSED
-        )
         resetScroll = false
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         actionBarLockerPull = "pull-" + UUID.randomUUID()
         actionBarLockerSearch = "search-" + UUID.randomUUID()
@@ -144,8 +182,9 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         val layout = ExpandedLayout(container!!.getContext(), false)
         recyclerView = PaddedRecyclerView(layout.getContext())
         layout.addView(
-            recyclerView, ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
+            recyclerView,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
         )
         layout.setRecyclerView(recyclerView)
         recyclerView!!.setMotionEventSplittingEnabled(false)
@@ -160,10 +199,12 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         allowShowScale = true
         listPage = this.page!!.content.newPage()
         recyclerView!!.pullable!!.setOnPullListener(listPage!!)
-        recyclerView!!.pullable!!.setPullStateListener(PullStateListener { wrapper: PullableWrapper?, busy: Boolean ->
-            (requireActivity() as FragmentHandler)
-                .setActionBarLocked(actionBarLockerPull!!, busy)
-        })
+        recyclerView!!.pullable!!.setPullStateListener(
+            PullStateListener { wrapper: PullableWrapper?, busy: Boolean ->
+                (requireActivity() as FragmentHandler)
+                    .setActionBarLocked(actionBarLockerPull!!, busy)
+            },
+        )
         return layout
     }
 
@@ -185,7 +226,10 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         searchMenuItem = null
     }
 
-    public override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    public override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         val initErrorItem = this.initErrorItem
@@ -196,9 +240,16 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
             initRequest = InitRequest(initErrorItem)
         }
         listPage!!.init(
-            this.page!!, this, this, recyclerView!!, listPosition, this.callback.uiManager,
-            this.callback.getRetainableExtra(this.retainId), parcelableExtra, initRequest,
-            InitSearch(searchCurrentQuery, searchSubmitQuery)
+            this.page!!,
+            this,
+            this,
+            recyclerView!!,
+            listPosition,
+            this.callback.uiManager,
+            this.callback.getRetainableExtra(this.retainId),
+            parcelableExtra,
+            initRequest,
+            InitSearch(searchCurrentQuery, searchSubmitQuery),
         )
         notifyTitleChanged()
     }
@@ -260,7 +311,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
 
     override fun onChansChanged(
         changed: Collection<String>,
-        removed: Collection<String>
+        removed: Collection<String>,
     ) {
         val page = this.page
         if (changed.contains(page!!.chanName)) {
@@ -271,29 +322,36 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     private fun getSearchView(required: Boolean): CustomSearchView? {
         if (searchView == null && required) {
             searchView = obtainSearchView()
-            searchView!!.setOnSubmitListener(OnSubmitListener { query: String? ->
-                if (listPage!!.onSearchSubmit(query!!)) {
-                    searchSubmitQuery = null
-                    setSearchMode(false)
-                    return@OnSubmitListener true
-                } else {
-                    searchSubmitQuery = query
-                    return@OnSubmitListener false
-                }
-            })
-            searchView!!.setOnChangeListener(CustomSearchView.OnChangeListener { query: String? ->
-                if (listPage != null) {
-                    listPage!!.onSearchQueryChange(query)
-                }
-                if (searchCurrentQuery != null) {
-                    searchCurrentQuery = query
-                }
-            })
+            searchView!!.setOnSubmitListener(
+                OnSubmitListener { query: String? ->
+                    if (listPage!!.onSearchSubmit(query!!)) {
+                        searchSubmitQuery = null
+                        setSearchMode(false)
+                        return@OnSubmitListener true
+                    } else {
+                        searchSubmitQuery = query
+                        return@OnSubmitListener false
+                    }
+                },
+            )
+            searchView!!.setOnChangeListener(
+                CustomSearchView.OnChangeListener { query: String? ->
+                    if (listPage != null) {
+                        listPage!!.onSearchQueryChange(query)
+                    }
+                    if (searchCurrentQuery != null) {
+                        searchCurrentQuery = query
+                    }
+                },
+            )
         }
         return searchView
     }
 
-    private fun setSearchMode(search: Boolean, toggle: Boolean): Boolean {
+    private fun setSearchMode(
+        search: Boolean,
+        toggle: Boolean,
+    ): Boolean {
         val menuItem = searchMenuItem
         if (menuItem != null && this.isBackHandled != search) {
             this.isBackHandled = search
@@ -308,7 +366,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
             invalidateOptionsMenu()
             (requireActivity() as FragmentHandler).setActionBarLocked(
                 actionBarLockerSearch!!,
-                search
+                search,
             )
             this.callback.invalidateHomeUpState()
             notifyBackHandledChanged()
@@ -324,9 +382,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         return false
     }
 
-    private fun setSearchMode(search: Boolean): Boolean {
-        return setSearchMode(search, true)
-    }
+    private fun setSearchMode(search: Boolean): Boolean = setSearchMode(search, true)
 
     fun setInitRequest(initRequest: InitRequest?) {
         this.initRequest = initRequest
@@ -340,19 +396,19 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         listPage!!.onAppearanceOptionChanged(what)
     }
 
-    fun onDrawerNumberEntered(number: Int): Int {
-        return listPage!!.onDrawerNumberEntered(number)
-    }
+    fun onDrawerNumberEntered(number: Int): Int = listPage!!.onDrawerNumberEntered(number)
 
     fun updatePageConfiguration(postNumber: PostNumber?) {
         if (listPage != null) {
             listPage!!.updatePageConfiguration(postNumber)
         } else {
             val last = this.initRequest
-            initRequest = InitRequest(
-                last != null && last.shouldLoad,
-                postNumber, if (last != null) last.threadTitle else null
-            )
+            initRequest =
+                InitRequest(
+                    last != null && last.shouldLoad,
+                    postNumber,
+                    if (last != null) last.threadTitle else null,
+                )
         }
     }
 
@@ -367,7 +423,10 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     override val isValidOptionsMenuState: Boolean
         get() = listPage != null && listPage!!.isRunning
 
-    public override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
+    public override fun onCreateOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
         listPage!!.onCreateOptionsMenu(menu)
         if (primary) {
             val searchMenuItem = menu.findItem(R.id.menu_search)
@@ -375,21 +434,25 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
             if (searchMenuItem != null) {
                 this.searchMenuItem = searchMenuItem
                 searchMenuItem.setActionView(getSearchView(true))
-                searchMenuItem.setOnActionExpandListener(MenuExpandListener(MenuExpandListener.Callback { menuItem: MenuItem?, expand: Boolean ->
-                    if (expand) {
-                        searchView!!.setFocusOnExpand(searchFocused)
-                        if (searchCurrentQuery != null) {
-                            searchView!!.setQuery(searchCurrentQuery)
-                        } else {
-                            searchCurrentQuery = ""
-                        }
-                    } else {
-                        searchCurrentQuery = null
-                        searchSubmitQuery = null
-                    }
-                    setSearchMode(expand, false)
-                    true
-                }))
+                searchMenuItem.setOnActionExpandListener(
+                    MenuExpandListener(
+                        MenuExpandListener.Callback { menuItem: MenuItem?, expand: Boolean ->
+                            if (expand) {
+                                searchView!!.setFocusOnExpand(searchFocused)
+                                if (searchCurrentQuery != null) {
+                                    searchView!!.setQuery(searchCurrentQuery)
+                                } else {
+                                    searchCurrentQuery = ""
+                                }
+                            } else {
+                                searchCurrentQuery = null
+                                searchSubmitQuery = null
+                            }
+                            setSearchMode(expand, false)
+                            true
+                        },
+                    ),
+                )
                 if (searchCurrentQuery != null) {
                     searchMenuItem.expandActionView()
                 }
@@ -397,7 +460,10 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         }
     }
 
-    public override fun onPrepareOptionsMenu(menu: Menu, primary: Boolean) {
+    public override fun onPrepareOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
         for (i in 0..<menu.size()) {
             val menuItem = menu.getItem(i)
             if (!menuItem.isVisible() && !this.isBackHandled) {
@@ -432,19 +498,15 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         return super.onMenuItemSelected(item)
     }
 
-    public override fun onSearchRequested(): Boolean {
-        return setSearchMode(true) || this.isBackHandled
-    }
+    public override fun onSearchRequested(): Boolean = setSearchMode(true) || this.isBackHandled
 
-    public override fun onBackPressed(): Boolean {
-        return setSearchMode(false)
-    }
+    public override fun onBackPressed(): Boolean = setSearchMode(false)
 
     override fun notifyTitleChanged() {
         val titleSubtitle = listPage!!.obtainTitleSubtitle()
         this.callback.setPageTitle(
             if (titleSubtitle != null) titleSubtitle.first else null,
-            if (titleSubtitle != null) titleSubtitle.second else null
+            if (titleSubtitle != null) titleSubtitle.second else null,
         )
     }
 
@@ -462,9 +524,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     override val toolbarContext: Context?
         get() = (requireActivity() as FragmentHandler).getToolbarContext()
 
-    override fun startActionMode(callback: ActionMode.Callback?): ActionMode? {
-        return requireActivity().startActionMode(callback)
-    }
+    override fun startActionMode(callback: ActionMode.Callback?): ActionMode? = requireActivity().startActionMode(callback)
 
     override fun switchList() {
         initErrorItem = null
@@ -479,14 +539,11 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
     }
 
     override fun switchError(errorItem: ErrorItem?) {
-        var errorItem = errorItem
-        if (errorItem == null) {
-            errorItem = ErrorItem(ErrorItem.Type.UNKNOWN)
-        }
-        initErrorItem = errorItem
+        val resolvedErrorItem = errorItem ?: ErrorItem(ErrorItem.Type.UNKNOWN)
+        initErrorItem = resolvedErrorItem
         progressView!!.setVisibility(View.GONE)
         errorHolder!!.layout.setVisibility(View.VISIBLE)
-        errorHolder!!.text.setText(errorItem.toString())
+        errorHolder!!.text.setText(resolvedErrorItem.toString())
     }
 
     override fun showScaleAnimation() {
@@ -500,7 +557,7 @@ class PageFragment : ContentFragment, FragmentHandler.Callback, ListPage.Callbac
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumber: PostNumber?
+        postNumber: PostNumber?,
     ) {
         if (isStateSaved()) {
             doOnResume = Runnable { handleRedirect(chanName, boardName, threadNumber, postNumber) }

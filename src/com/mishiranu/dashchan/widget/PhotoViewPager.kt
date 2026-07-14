@@ -18,7 +18,10 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 @SuppressLint("ViewConstructor")
-class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
+class PhotoViewPager(
+    context: Context,
+    adapter: Adapter,
+) : ViewGroup(context) {
     private val flingDistance: Int
     private val minimumVelocity: Int
     private val maximumVelocity: Int
@@ -35,39 +38,59 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
 
     interface Adapter {
         fun onCreateView(parent: ViewGroup?): View
+
         fun getPhotoView(view: View): PhotoView?
+
         fun onPositionChange(
-            view: PhotoViewPager?, index: Int, centerView: View, leftView: View?, rightView: View?,
-            manually: Boolean
+            view: PhotoViewPager?,
+            index: Int,
+            centerView: View,
+            leftView: View?,
+            rightView: View?,
+            manually: Boolean,
         )
 
-        fun onSwipingStateChange(view: PhotoViewPager?, swiping: Boolean)
+        fun onSwipingStateChange(
+            view: PhotoViewPager?,
+            swiping: Boolean,
+        )
     }
 
-    override fun generateDefaultLayoutParams(): LayoutParams {
-        return LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-    }
+    override fun generateDefaultLayoutParams(): LayoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
-    override fun addView(child: View?, index: Int, params: LayoutParams?) {
-        throw UnsupportedOperationException()
-    }
+    override fun addView(
+        child: View?,
+        index: Int,
+        params: LayoutParams?,
+    ): Unit = throw UnsupportedOperationException()
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-            MeasureSpec.getSize(widthMeasureSpec),
-            MeasureSpec.EXACTLY
-        )
-        val childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
-            MeasureSpec.getSize(heightMeasureSpec),
-            MeasureSpec.EXACTLY
-        )
+        val childWidthMeasureSpec =
+            MeasureSpec.makeMeasureSpec(
+                MeasureSpec.getSize(widthMeasureSpec),
+                MeasureSpec.EXACTLY,
+            )
+        val childHeightMeasureSpec =
+            MeasureSpec.makeMeasureSpec(
+                MeasureSpec.getSize(heightMeasureSpec),
+                MeasureSpec.EXACTLY,
+            )
         for (i in 0..<getChildCount()) {
             getChildAt(i).measure(childWidthMeasureSpec, childHeightMeasureSpec)
         }
     }
 
-    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+    override fun onLayout(
+        changed: Boolean,
+        l: Int,
+        t: Int,
+        r: Int,
+        b: Int,
+    ) {
         val width = r - l
         val height = b - t
         val start = currentIndex * (width + innerPadding)
@@ -99,9 +122,7 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
         }
     }
 
-    fun getCount(): Int {
-        return count
-    }
+    fun getCount(): Int = count
 
     fun setCurrentIndex(index: Int) {
         if (index >= 0 && index < count) {
@@ -110,9 +131,7 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
         }
     }
 
-    fun getCurrentIndex(): Int {
-        return currentIndex
-    }
+    fun getCurrentIndex(): Int = currentIndex
 
     val currentView: View?
         get() = getChildAt(currentIndex % 3)
@@ -155,22 +174,21 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
 
     private var velocityTracker: VelocityTracker? = null
 
-    private val longTapRunnable = Runnable {
-        longTapConfirmed = true
-        val photoView = photoViews.get(currentIndex % 3)
-        photoView.dispatchSimpleClick(true, startX, startY)
-    }
+    private val longTapRunnable =
+        Runnable {
+            longTapConfirmed = true
+            val photoView = photoViews[currentIndex % 3]
+            photoView.dispatchSimpleClick(true, startX, startY)
+        }
 
-    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
-        return true
-    }
+    override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean = true
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!active) {
             return false
         }
-        val photoView = photoViews.get(currentIndex % 3)
+        val photoView = photoViews[currentIndex % 3]
         val action = event.getActionMasked()
         when (action) {
             MotionEvent.ACTION_DOWN -> {
@@ -252,8 +270,10 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
                     var actualScroll =
                         max(0, min((count - 1) * (width + innerPadding), desiredScroll))
                     val canFocusPhotoView =
-                        currentScrollX < startScrollX && actualScroll >= startScrollX ||
-                                currentScrollX > startScrollX && actualScroll <= startScrollX
+                        currentScrollX < startScrollX &&
+                            actualScroll >= startScrollX ||
+                            currentScrollX > startScrollX &&
+                            actualScroll <= startScrollX
                     if (canFocusPhotoView && canScrollPhotoView) {
                         // Fix scrolling to make PhotoView fill PhotoViewPager
                         // to ensure sendToPhotoView = true on next touch event
@@ -359,20 +379,32 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
         }
     }
 
-    private fun determineTargetIndex(velocity: Int, deltaX: Int): Int {
+    private fun determineTargetIndex(
+        velocity: Int,
+        deltaX: Int,
+    ): Int {
         val index = currentIndex
         val targetIndex: Int
         if (abs(deltaX) > flingDistance && abs(velocity) > minimumVelocity) {
             // First condition to ensure not scrolling through 2 pages (from 4.8 to 3, for example)
             targetIndex =
-                if (deltaX * velocity > 0) index else if (velocity > 0) index - 1 else index + 1
+                if (deltaX * velocity > 0) {
+                    index
+                } else if (velocity > 0) {
+                    index - 1
+                } else {
+                    index + 1
+                }
         } else {
             targetIndex = (index + deltaX.toFloat() / getWidth() + 0.5f).toInt()
         }
         return max(0, min(count - 1, targetIndex))
     }
 
-    private fun smoothScrollTo(index: Int, velocity: Int) {
+    private fun smoothScrollTo(
+        index: Int,
+        velocity: Int,
+    ) {
         val startX = getScrollX()
         val endX = index * (getWidth() + innerPadding)
         val deltaX = endX - startX
@@ -406,7 +438,9 @@ class PhotoViewPager(context: Context, adapter: Adapter) : ViewGroup(context) {
     private val swipingStateRunnableTrue: Runnable = SwipingStateRunnable(true)
     private val swipingStateRunnableFalse: Runnable = SwipingStateRunnable(false)
 
-    private inner class SwipingStateRunnable(private val swiping: Boolean) : Runnable {
+    private inner class SwipingStateRunnable(
+        private val swiping: Boolean,
+    ) : Runnable {
         override fun run() {
             adapter.onSwipingStateChange(this@PhotoViewPager, swiping)
         }

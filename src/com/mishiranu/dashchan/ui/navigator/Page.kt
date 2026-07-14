@@ -16,33 +16,35 @@ import com.mishiranu.dashchan.ui.navigator.page.ThreadsPage
 import com.mishiranu.dashchan.ui.navigator.page.UserBoardsPage
 
 class Page(
-    val content: Content, @JvmField val chanName: String?,
-    @JvmField val boardName: String?, @JvmField val threadNumber: String?, val searchQuery: String?
+    val content: Content,
+    @JvmField val chanName: String?,
+    @JvmField val boardName: String?,
+    @JvmField val threadNumber: String?,
+    val searchQuery: String?,
 ) : Parcelable {
-    enum class Content(private val pageFactory: PageFactory) {
+    enum class Content(
+        private val pageFactory: PageFactory,
+    ) {
         THREADS(PageFactory { ThreadsPage() }),
         POSTS(PageFactory { PostsPage() }),
         SEARCH(PageFactory { SearchPage() }),
         ARCHIVE(PageFactory { ArchivePage() }),
         BOARDS(PageFactory { BoardsPage() }),
         USER_BOARDS(PageFactory { UserBoardsPage() }),
-        HISTORY(PageFactory { HistoryPage() });
+        HISTORY(PageFactory { HistoryPage() }),
+        ;
 
         private fun interface PageFactory {
             fun newPage(): ListPage?
         }
 
-        fun newPage(): ListPage? {
-            return pageFactory.newPage()
-        }
+        fun newPage(): ListPage? = pageFactory.newPage()
     }
 
     val isThreadsOrPosts: Boolean
         get() = content == Content.THREADS || content == Content.POSTS
 
-    fun canDestroyIfNotInStack(): Boolean {
-        return content == Content.SEARCH || content == Content.ARCHIVE || content == Content.BOARDS || content == Content.HISTORY
-    }
+    fun canDestroyIfNotInStack(): Boolean = content == Content.SEARCH || content == Content.ARCHIVE || content == Content.BOARDS || content == Content.HISTORY
 
     fun canRemoveFromStackIfDeep(): Boolean {
         if (content == Content.BOARDS) {
@@ -55,7 +57,11 @@ class Page(
     val isMultiChanAllowed: Boolean
         get() = content == Content.HISTORY
 
-    fun isThreadsOrPosts(chanName: String?, boardName: String?, threadNumber: String?): Boolean {
+    fun isThreadsOrPosts(
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+    ): Boolean {
         if (threadNumber != null) {
             return `is`(Content.POSTS, chanName, boardName, threadNumber)
         } else {
@@ -67,7 +73,7 @@ class Page(
         content: Content?,
         chanName: String?,
         boardName: String?,
-        threadNumber: String?
+        threadNumber: String?,
     ): Boolean {
         if (this.content != content) {
             return false
@@ -107,10 +113,10 @@ class Page(
         if (other is Page) {
             val page = other
             return content == page.content &&
-                    equals(chanName, page.chanName) &&
-                    equals(boardName, page.boardName) &&
-                    equals(threadNumber, page.threadNumber) &&
-                    equals(searchQuery, page.searchQuery)
+                equals(chanName, page.chanName) &&
+                equals(boardName, page.boardName) &&
+                equals(threadNumber, page.threadNumber) &&
+                equals(searchQuery, page.searchQuery)
         }
         return false
     }
@@ -126,11 +132,12 @@ class Page(
         return result
     }
 
-    override fun describeContents(): Int {
-        return 0
-    }
+    override fun describeContents(): Int = 0
 
-    override fun writeToParcel(dest: Parcel, flags: Int) {
+    override fun writeToParcel(
+        dest: Parcel,
+        flags: Int,
+    ) {
         dest.writeString(content.toString())
         dest.writeString(chanName)
         dest.writeString(boardName)
@@ -140,19 +147,18 @@ class Page(
 
     companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<Page?> = object : Parcelable.Creator<Page?> {
-            override fun createFromParcel(`in`: Parcel): Page {
-                val content = Content.valueOf(`in`.readString()!!)
-                val chanName = `in`.readString()
-                val boardName = `in`.readString()
-                val threadNumber = `in`.readString()
-                val searchQuery = `in`.readString()
-                return Page(content, chanName, boardName, threadNumber, searchQuery)
-            }
+        val CREATOR: Parcelable.Creator<Page?> =
+            object : Parcelable.Creator<Page?> {
+                override fun createFromParcel(`in`: Parcel): Page {
+                    val content = Content.valueOf(`in`.readString()!!)
+                    val chanName = `in`.readString()
+                    val boardName = `in`.readString()
+                    val threadNumber = `in`.readString()
+                    val searchQuery = `in`.readString()
+                    return Page(content, chanName, boardName, threadNumber, searchQuery)
+                }
 
-            override fun newArray(size: Int): Array<Page?> {
-                return arrayOfNulls<Page>(size)
+                override fun newArray(size: Int): Array<Page?> = arrayOfNulls<Page>(size)
             }
-        }
     }
 }

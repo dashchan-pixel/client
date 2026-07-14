@@ -42,10 +42,16 @@ class CaptchaForm(
     container: View,
     private val inputParentView: View?,
     private val inputView: EditText,
-    captcha: ChanConfiguration.Captcha
-) : View.OnClickListener, OnLongClickListener, OnEditorActionListener {
+    captcha: ChanConfiguration.Captcha,
+) : View.OnClickListener,
+    OnLongClickListener,
+    OnEditorActionListener {
     enum class CaptchaViewType {
-        LOADING, IMAGE, SKIP, SKIP_LOCK, ERROR
+        LOADING,
+        IMAGE,
+        SKIP,
+        SKIP_LOCK,
+        ERROR,
     }
 
     private val blockParentView: View
@@ -85,11 +91,12 @@ class CaptchaForm(
         }
 
         protected constructor(`in`: Parcel) {
-            image = ParcelCompat.readParcelable<Bitmap?>(
-                `in`,
-                Bitmap::class.java.getClassLoader(),
-                Bitmap::class.java
-            )
+            image =
+                ParcelCompat.readParcelable<Bitmap?>(
+                    `in`,
+                    Bitmap::class.java.getClassLoader(),
+                    Bitmap::class.java,
+                )
             lifetimeSeconds = `in`.readInt()
             creationTimeMillis = `in`.readLong()
         }
@@ -107,7 +114,8 @@ class CaptchaForm(
                 if (hasLifetime()) {
                     val now = SystemClock.elapsedRealtime()
                     val secondsPassedSinceCaptchaCreation =
-                        TimeUnit.MILLISECONDS.toSeconds(now - creationTimeMillis)
+                        TimeUnit.MILLISECONDS
+                            .toSeconds(now - creationTimeMillis)
                             .toInt()
                     return max(0, lifetimeSeconds - secondsPassedSinceCaptchaCreation)
                 } else {
@@ -115,15 +123,14 @@ class CaptchaForm(
                 }
             }
 
-        fun hasLifetime(): Boolean {
-            return lifetimeSeconds > 0
-        }
+        fun hasLifetime(): Boolean = lifetimeSeconds > 0
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeParcelable(image, flags)
             dest.writeInt(lifetimeSeconds)
             dest.writeLong(creationTimeMillis)
@@ -131,15 +138,12 @@ class CaptchaForm(
 
         companion object {
             @JvmField
-            val CREATOR: Parcelable.Creator<Captcha?> = object : Parcelable.Creator<Captcha?> {
-                override fun createFromParcel(`in`: Parcel): Captcha {
-                    return Captcha(`in`)
-                }
+            val CREATOR: Parcelable.Creator<Captcha?> =
+                object : Parcelable.Creator<Captcha?> {
+                    override fun createFromParcel(`in`: Parcel): Captcha = Captcha(`in`)
 
-                override fun newArray(size: Int): Array<Captcha?> {
-                    return arrayOfNulls<Captcha>(size)
+                    override fun newArray(size: Int): Array<Captcha?> = arrayOfNulls<Captcha>(size)
                 }
-            }
         }
     }
 
@@ -178,8 +182,10 @@ class CaptchaForm(
             callback.onRefreshCaptcha(false)
         } else if (inputParentView != null && v === inputParentView) {
             inputView.requestFocus()
-            val inputMethodManager = v.getContext()
-                .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+            val inputMethodManager =
+                v
+                    .getContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
             if (inputMethodManager != null) {
                 inputMethodManager.showSoftInput(inputView, InputMethodManager.SHOW_IMPLICIT)
             }
@@ -198,14 +204,21 @@ class CaptchaForm(
         return false
     }
 
-    override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {
+    override fun onEditorAction(
+        v: TextView?,
+        actionId: Int,
+        event: KeyEvent?,
+    ): Boolean {
         callback.onConfirmCaptcha()
         return true
     }
 
     fun showCaptcha(
-        captchaState: ReadCaptchaTask.CaptchaState, input: ChanConfiguration.Captcha.Input?,
-        captcha: Captcha?, large: Boolean, invertColors: Boolean
+        captchaState: ReadCaptchaTask.CaptchaState,
+        input: ChanConfiguration.Captcha.Input?,
+        captcha: Captcha?,
+        large: Boolean,
+        invertColors: Boolean,
     ) {
         when (captchaState) {
             ReadCaptchaTask.CaptchaState.CAPTCHA -> {
@@ -227,10 +240,11 @@ class CaptchaForm(
             ReadCaptchaTask.CaptchaState.NEED_LOAD, ReadCaptchaTask.CaptchaState.MAY_LOAD, ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING -> {
                 skipTextView.setText(R.string.load_captcha)
                 cancelView.setVisibility(
-                    if (captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING)
+                    if (captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING) {
                         View.VISIBLE
-                    else
+                    } else {
                         View.GONE
+                    },
                 )
                 switchToCaptchaView(CaptchaViewType.SKIP, null, false)
             }
@@ -268,7 +282,10 @@ class CaptchaForm(
     val input: String
         get() = inputView.getText().toString()
 
-    private fun setInputEnabled(enabled: Boolean, switchVisibility: Boolean) {
+    private fun setInputEnabled(
+        enabled: Boolean,
+        switchVisibility: Boolean,
+    ) {
         inputView.setEnabled(enabled)
         if (hideInput && switchVisibility) {
             inputView.setVisibility(if (enabled) View.VISIBLE else View.GONE)
@@ -277,7 +294,8 @@ class CaptchaForm(
 
     private fun switchToCaptchaView(
         captchaViewType: CaptchaViewType,
-        input: ChanConfiguration.Captcha.Input?, large: Boolean
+        input: ChanConfiguration.Captcha.Input?,
+        large: Boolean,
     ) {
         if (captchaViewType != CaptchaViewType.IMAGE) {
             hideCaptchaLifetimeTimer()
@@ -337,9 +355,7 @@ class CaptchaForm(
         }
     }
 
-    private fun captchaLifetimeTimerAvailable(): Boolean {
-        return captchaLifetimeTimerEnabled && captchaLifetimeSeconds > 0 && lifetimeTimerView != null
-    }
+    private fun captchaLifetimeTimerAvailable(): Boolean = captchaLifetimeTimerEnabled && captchaLifetimeSeconds > 0 && lifetimeTimerView != null
 
     private fun showCaptchaLifetimeTimer() {
         if (!imageView.isLaidOut()) {
@@ -351,12 +367,14 @@ class CaptchaForm(
     }
 
     private fun showCaptchaLifetimeTimerWhenImageViewIsLaidOut() {
-        imageView.getViewTreeObserver().addOnGlobalLayoutListener(object : OnGlobalLayoutListener {
-            override fun onGlobalLayout() {
-                imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this)
-                showCaptchaLifetimeTimer()
-            }
-        })
+        imageView.getViewTreeObserver().addOnGlobalLayoutListener(
+            object : OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this)
+                    showCaptchaLifetimeTimer()
+                }
+            },
+        )
     }
 
     private fun alignCaptchaLifetimeTimerWithCaptchaImage() {
@@ -390,23 +408,24 @@ class CaptchaForm(
         }
     }
 
-    private val captchaLifetimeUpdateRunnable: Runnable = object : Runnable {
-        override fun run() {
-            val captchaAlive = captchaLifetimeSeconds > 0
-            if (captchaAlive) {
-                lifetimeTimerView!!.setText(
-                    String.format(
-                        Locale.getDefault(),
-                        "%d",
-                        captchaLifetimeSeconds--
+    private val captchaLifetimeUpdateRunnable: Runnable =
+        object : Runnable {
+            override fun run() {
+                val captchaAlive = captchaLifetimeSeconds > 0
+                if (captchaAlive) {
+                    lifetimeTimerView!!.setText(
+                        String.format(
+                            Locale.getDefault(),
+                            "%d",
+                            captchaLifetimeSeconds--,
+                        ),
                     )
-                )
-                ConcurrentUtils.HANDLER.postDelayed(this, 1000)
-            } else {
-                callback.onCaptchaLifetimeEnded()
+                    ConcurrentUtils.HANDLER.postDelayed(this, 1000)
+                } else {
+                    callback.onCaptchaLifetimeEnded()
+                }
             }
         }
-    }
 
     init {
         blockParentView = container.findViewById<View>(R.id.captcha_block_parent)
@@ -424,8 +443,8 @@ class CaptchaForm(
         cancelView.setImageTintList(
             getColorStateList(
                 cancelView.getContext(),
-                android.R.attr.textColorPrimary
-            )
+                android.R.attr.textColorPrimary,
+            ),
         )
         skipTextView.setAllCaps(true)
         skipTextView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM)

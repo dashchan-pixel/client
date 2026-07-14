@@ -32,14 +32,24 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
+class PhotoView(
+    context: Context,
+    attr: AttributeSet?,
+) : View(context, attr),
     OnScaleGestureListener {
     private enum class ScrollEdge {
-        NONE, START, END, BOTH
+        NONE,
+        START,
+        END,
+        BOTH,
     }
 
     private enum class TouchMode {
-        UNDEFINED, COMMON, CLOSING_START, CLOSING_END, CLOSING_BOTH
+        UNDEFINED,
+        COMMON,
+        CLOSING_START,
+        CLOSING_END,
+        CLOSING_BOTH,
     }
 
     private val tile: TransparentTileDrawable
@@ -95,7 +105,13 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
 
     private val lastLayout = Rect()
 
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+    override fun onLayout(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+    ) {
         if (top != lastLayout.top || bottom != lastLayout.bottom || left != lastLayout.left || right != lastLayout.right) {
             lastLayout.set(left, top, right, bottom)
             resetScale()
@@ -104,10 +120,29 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
     }
 
     interface Listener {
-        fun onClick(photoView: PhotoView?, image: Boolean, x: Float, y: Float)
-        fun onLongClick(photoView: PhotoView?, x: Float, y: Float)
-        fun onVerticalSwipe(photoView: PhotoView?, down: Boolean, value: Float)
-        fun onClose(photoView: PhotoView?, down: Boolean): Boolean
+        fun onClick(
+            photoView: PhotoView?,
+            image: Boolean,
+            x: Float,
+            y: Float,
+        )
+
+        fun onLongClick(
+            photoView: PhotoView?,
+            x: Float,
+            y: Float,
+        )
+
+        fun onVerticalSwipe(
+            photoView: PhotoView?,
+            down: Boolean,
+            value: Float,
+        )
+
+        fun onClose(
+            photoView: PhotoView?,
+            down: Boolean,
+        ): Boolean
     }
 
     fun setListener(listener: Listener?) {
@@ -120,20 +155,27 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             unscheduleDrawable(drawable)
             drawable = null
             invalidate()
-            post(Runnable {
-                // Check drawable wasn't set immediately after recycle call
-                if (drawable == null) {
-                    // Disallow scale keeping
-                    previousDimensions.set(0, 0)
-                    cancelRestoreVerticalSwipe(false)
-                    notifyVerticalSwipe(0f, false)
-                }
-            })
+            post(
+                Runnable {
+                    // Check drawable wasn't set immediately after recycle call
+                    if (drawable == null) {
+                        // Disallow scale keeping
+                        previousDimensions.set(0, 0)
+                        cancelRestoreVerticalSwipe(false)
+                        notifyVerticalSwipe(0f, false)
+                    }
+                },
+            )
         }
     }
 
-    fun setImage(drawable: Drawable, hasAlpha: Boolean, fitScreen: Boolean, keepScale: Boolean) {
-        var keepScale = keepScale
+    fun setImage(
+        drawable: Drawable,
+        hasAlpha: Boolean,
+        fitScreen: Boolean,
+        keepScale: Boolean,
+    ) {
+        var keepScaleValue = keepScale
         recycle()
         this.drawable = drawable
         this.hasAlpha = hasAlpha
@@ -141,14 +183,12 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         drawDim = false
         drawable.setCallback(this)
         val dimensions = this.dimensions
-        keepScale = keepScale and (previousDimensions == dimensions)
+        keepScaleValue = keepScaleValue and (previousDimensions == dimensions)
         previousDimensions.set(dimensions!!.x, dimensions.y)
-        initBaseMatrix(keepScale)
+        initBaseMatrix(keepScaleValue)
     }
 
-    fun hasImage(): Boolean {
-        return drawable != null
-    }
+    fun hasImage(): Boolean = drawable != null
 
     fun setDrawDimForCurrentImage(drawDim: Boolean) {
         if (this.drawDim != drawDim) {
@@ -157,11 +197,18 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         }
     }
 
-    fun setInitialScaleAnimationData(imageViewPosition: IntArray, cropEnabled: Boolean) {
-        initialScalingData = intArrayOf(
-            imageViewPosition[0], imageViewPosition[1], imageViewPosition[2],
-            imageViewPosition[3], if (cropEnabled) 1 else 0
-        )
+    fun setInitialScaleAnimationData(
+        imageViewPosition: IntArray,
+        cropEnabled: Boolean,
+    ) {
+        initialScalingData =
+            intArrayOf(
+                imageViewPosition[0],
+                imageViewPosition[1],
+                imageViewPosition[2],
+                imageViewPosition[3],
+                if (cropEnabled) 1 else 0,
+            )
     }
 
     fun clearInitialScaleAnimationData() {
@@ -190,9 +237,12 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             initialScalingAnimator = ValueAnimator.ofFloat(0f, 1f)
             initialScalingAnimator!!.addUpdateListener(
                 InitialScaleListener(
-                    centerX, centerY,
-                    viewWidth, viewHeight, cropEnabled
-                )
+                    centerX,
+                    centerY,
+                    viewWidth,
+                    viewHeight,
+                    cropEnabled,
+                ),
             )
             initialScalingAnimator!!.setDuration(INITIAL_SCALE_TRANSITION_TIME.toLong())
             initialScalingAnimator!!.start()
@@ -235,7 +285,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                     (rect!!.left + 0.5f).toInt(),
                     (rect.top + 0.5f).toInt(),
                     (rect.right + 0.5f).toInt(),
-                    (rect.bottom + 0.5f).toInt()
+                    (rect.bottom + 0.5f).toInt(),
                 )
                 tile.draw(canvas)
             }
@@ -246,7 +296,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 0,
                 0,
                 drawable!!.getIntrinsicWidth(),
-                drawable!!.getIntrinsicHeight()
+                drawable!!.getIntrinsicHeight(),
             )
             drawable!!.draw(canvas)
             canvas.restore()
@@ -335,9 +385,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         return true
     }
 
-    override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
-        return true
-    }
+    override fun onScaleBegin(detector: ScaleGestureDetector): Boolean = true
 
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
 
@@ -345,8 +393,9 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         get() {
             transformMatrix.getValues(matrixValues)
             return sqrt(
-                matrixValues[Matrix.MSCALE_X].toDouble()
-                    .pow(2.0) + matrixValues[Matrix.MSKEW_Y].toDouble().pow(2.0)
+                matrixValues[Matrix.MSCALE_X]
+                    .toDouble()
+                    .pow(2.0) + matrixValues[Matrix.MSKEW_Y].toDouble().pow(2.0),
             ).toFloat()
         }
         set(scale) {
@@ -386,34 +435,40 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         }
     }
 
-    private fun onScale(scaleFactor: Float, focusX: Float, focusY: Float) {
-        var scaleFactor = scaleFactor
+    private fun onScale(
+        scaleFactor: Float,
+        focusX: Float,
+        focusY: Float,
+    ) {
+        var currentScaleFactor = scaleFactor
         if (checkTouchMode() && !fitScreen) {
             val scale = this.scale
             val maxFactor = maximumScale / scale
-            scaleFactor = min(scaleFactor, maxFactor)
-            if (scaleFactor == 1f) {
+            currentScaleFactor = min(currentScaleFactor, maxFactor)
+            if (currentScaleFactor == 1f) {
                 return
             }
-            if (scale <= minimumScale && scaleFactor < 1f) {
-                scaleFactor = scaleFactor.toDouble().pow((1f / 4f).toDouble()).toFloat()
+            if (scale <= minimumScale && currentScaleFactor < 1f) {
+                currentScaleFactor = currentScaleFactor.toDouble().pow((1f / 4f).toDouble()).toFloat()
             }
             val minFactor = minimumScale / scale / 2f
-            scaleFactor = max(scaleFactor, minFactor)
-            if (scaleFactor == 1f) {
+            currentScaleFactor = max(currentScaleFactor, minFactor)
+            if (currentScaleFactor == 1f) {
                 return
             }
-            transformMatrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
+            transformMatrix.postScale(currentScaleFactor, currentScaleFactor, focusX, focusY)
             checkMatrixBoundsAndInvalidate()
         }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return false
-    }
+    override fun onTouchEvent(event: MotionEvent?): Boolean = false
 
-    fun dispatchSimpleClick(longClick: Boolean, x: Float, y: Float) {
+    fun dispatchSimpleClick(
+        longClick: Boolean,
+        x: Float,
+        y: Float,
+    ) {
         if (listener != null && !hasImage() && this.isAttachedToWindow()) {
             if (longClick) {
                 listener!!.onLongClick(this, x, y)
@@ -441,8 +496,8 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                                 AnimatedScaleRunnable(
                                     minimumScale,
                                     rect.centerX(),
-                                    rect.centerY()
-                                )
+                                    rect.centerY(),
+                                ),
                             )
                         }
                     }
@@ -479,24 +534,38 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         }
     }
 
-    fun canScrollLeft(): Boolean {
-        return hasImage() && (scrollEdgeX != ScrollEdge.START && scrollEdgeX != ScrollEdge.BOTH
-                || this.isClosingTouchMode)
-    }
+    fun canScrollLeft(): Boolean =
+        hasImage() &&
+            (
+                scrollEdgeX != ScrollEdge.START &&
+                    scrollEdgeX != ScrollEdge.BOTH ||
+                    this.isClosingTouchMode
+            )
 
-    fun canScrollRight(): Boolean {
-        return hasImage() && (scrollEdgeX != ScrollEdge.END && scrollEdgeX != ScrollEdge.BOTH
-                || this.isClosingTouchMode)
-    }
+    fun canScrollRight(): Boolean =
+        hasImage() &&
+            (
+                scrollEdgeX != ScrollEdge.END &&
+                    scrollEdgeX != ScrollEdge.BOTH ||
+                    this.isClosingTouchMode
+            )
 
     val isScaling: Boolean
         get() = hasImage() && scaleGestureDetector.isInProgress()
 
-    fun setScale(scale: Float, animate: Boolean) {
+    fun setScale(
+        scale: Float,
+        animate: Boolean,
+    ) {
         setScale(scale, getRight() / 2f, getBottom() / 2f, animate)
     }
 
-    fun setScale(scale: Float, focalX: Float, focalY: Float, animate: Boolean) {
+    fun setScale(
+        scale: Float,
+        focalX: Float,
+        focalY: Float,
+        animate: Boolean,
+    ) {
         if (scale < minimumScale || scale > maximumScale) {
             return
         }
@@ -634,7 +703,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         baseMatrix.postScale(scale, scale)
         baseMatrix.postTranslate(
             (viewWidth - imageWidth * scale) / 2f,
-            (viewHeight - imageHeight * scale) / 2f
+            (viewHeight - imageHeight * scale) / 2f,
         )
         if (!keepScale) {
             transformMatrix.reset()
@@ -661,7 +730,10 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
 
     private var lastVerticalSwipeDeltaY = 0f
 
-    private fun notifyVerticalSwipe(deltaY: Float, restore: Boolean) {
+    private fun notifyVerticalSwipe(
+        deltaY: Float,
+        restore: Boolean,
+    ) {
         if (lastVerticalSwipeDeltaY != deltaY) {
             var value = min(abs(deltaY / getHeight()) * 4f, 1f)
             if (value < 0.001f && value > -0.001f) {
@@ -684,20 +756,24 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         }
     }
 
-    private fun startRestoreVerticalSwipe(rect: RectF?, close: Boolean, velocity: Float) {
-        var rect = rect
+    private fun startRestoreVerticalSwipe(
+        rect: RectF?,
+        close: Boolean,
+        velocity: Float,
+    ) {
+        var targetRect = rect
         cancelRestoreVerticalSwipe(false)
-        if (rect == null) {
-            rect = checkMatrixBounds()
+        if (targetRect == null) {
+            targetRect = checkMatrixBounds()
         }
-        animatedRestoreSwipeRunnable = AnimatedRestoreSwipeRunnable(rect!!, close, velocity)
+        animatedRestoreSwipeRunnable = AnimatedRestoreSwipeRunnable(targetRect!!, close, velocity)
         post(animatedRestoreSwipeRunnable)
     }
 
     private inner class AnimatedScaleRunnable(
         private val scaleEnd: Float,
         private val focalX: Float,
-        private val focalY: Float
+        private val focalY: Float,
     ) : Runnable {
         private val startTime: Long
         private val startTransformMatrix: Matrix
@@ -726,19 +802,13 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 postOnAnimation(this)
             }
         }
-
-        private val ZOOM_DURATION = 200
     }
 
     private inner class AnimatedRestoreSwipeRunnable(
         rect: RectF,
         finish: Boolean,
-        velocity: Float
+        velocity: Float,
     ) : Runnable {
-        private val RESTORE_DURATION = 150
-        private val FINISH_DURATION_MAX = 500
-        private val FINISH_DURATION_MIN = RESTORE_DURATION
-
         private val startTime: Long
         private val deltaY: Float
         private val finish: Boolean
@@ -803,11 +873,11 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 }
             }
         }
-
-
     }
 
-    private inner class FlingRunnable(context: Context?) : Runnable {
+    private inner class FlingRunnable(
+        context: Context?,
+    ) : Runnable {
         private val scroller: Scroller
         private var currentX = 0
         private var currentY = 0
@@ -820,7 +890,12 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             scroller.forceFinished(true)
         }
 
-        fun fling(viewWidth: Int, viewHeight: Int, velocityX: Int, velocityY: Int) {
+        fun fling(
+            viewWidth: Int,
+            viewHeight: Int,
+            velocityX: Int,
+            velocityY: Int,
+        ) {
             val rect = checkMatrixBounds()
             if (rect == null) {
                 return
@@ -861,7 +936,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 val newY = scroller.getCurrY()
                 transformMatrix.postTranslate(
                     (currentX - newX).toFloat(),
-                    (currentY - newY).toFloat()
+                    (currentY - newY).toFloat(),
                 )
                 invalidate()
                 currentX = newX
@@ -875,21 +950,21 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         val configuration = ViewConfiguration.get(context)
         minimumVelocity = configuration.getScaledMinimumFlingVelocity().toFloat()
         touchSlop = configuration.getScaledTouchSlop().toFloat()
-        gestureDetector = GestureDetector(context, object : SimpleOnGestureListener() {
-            override fun onDoubleTapEvent(e: MotionEvent): Boolean {
-                return this@PhotoView.onDoubleTapEvent(e)
-            }
+        gestureDetector =
+            GestureDetector(
+                context,
+                object : SimpleOnGestureListener() {
+                    override fun onDoubleTapEvent(e: MotionEvent): Boolean = this@PhotoView.onDoubleTapEvent(e)
 
-            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                return this@PhotoView.isAttachedToWindow() && this@PhotoView.onSingleTapConfirmed(e)
-            }
+                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean = this@PhotoView.isAttachedToWindow() && this@PhotoView.onSingleTapConfirmed(e)
 
-            override fun onLongPress(e: MotionEvent) {
-                if (!isDragging && !isParentDragging && this@PhotoView.isAttachedToWindow()) {
-                    this@PhotoView.onLongPress(e)
-                }
-            }
-        })
+                    override fun onLongPress(e: MotionEvent) {
+                        if (!isDragging && !isParentDragging && this@PhotoView.isAttachedToWindow()) {
+                            this@PhotoView.onLongPress(e)
+                        }
+                    }
+                },
+            )
         scaleGestureDetector = ScaleGestureDetector(getContext(), this)
         tile = TransparentTileDrawable(context, true)
         initBaseMatrix(false)
@@ -900,7 +975,7 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         private val centerY: Float,
         private val viewWidth: Int,
         private val viewHeight: Int,
-        private val cropEnabled: Boolean
+        private val cropEnabled: Boolean,
     ) : AnimatorUpdateListener {
         override fun onAnimationUpdate(animation: ValueAnimator) {
             baseMatrix.getValues(matrixValues)
@@ -909,10 +984,12 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             if (dimensions == null) {
                 return
             }
-            var scale = if ((dimensions.x * viewHeight > dimensions.y * viewWidth) == cropEnabled)
-                viewHeight.toFloat() / dimensions.y
-            else
-                viewWidth.toFloat() / dimensions.x
+            var scale =
+                if ((dimensions.x * viewHeight > dimensions.y * viewWidth) == cropEnabled) {
+                    viewHeight.toFloat() / dimensions.y
+                } else {
+                    viewWidth.toFloat() / dimensions.x
+                }
             scale /= baseScale
 
             var t = animation.getAnimatedValue() as Float
@@ -922,12 +999,20 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 finished = true
             }
             val wait: Float = WAIT_TIME.toFloat() / INITIAL_SCALE_TRANSITION_TIME
-            t = if (t >= wait) AnimationUtils.ACCELERATE_DECELERATE_INTERPOLATOR
-                .getInterpolation((t - wait) / (1f - wait)) else 0f
+            t =
+                if (t >= wait) {
+                    AnimationUtils.ACCELERATE_DECELERATE_INTERPOLATOR
+                        .getInterpolation((t - wait) / (1f - wait))
+                } else {
+                    0f
+                }
 
             if (!finished) {
-                val ct = t.toDouble().pow(TRANSFER_TIME_FACTOR.toDouble())
-                    .toFloat() // Make XY transition faster
+                val ct =
+                    t
+                        .toDouble()
+                        .pow(TRANSFER_TIME_FACTOR.toDouble())
+                        .toFloat() // Make XY transition faster
                 val targetX = lerp(centerX, getWidth() / 2f, ct)
                 val targetY = lerp(centerY, getHeight() / 2f, ct)
                 val targetScale = lerp(scale, initialScale, t)
@@ -940,17 +1025,23 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                     if (initialScaleClipRect == null) {
                         initialScaleClipRect = Rect()
                     }
-                    val sizeXY = lerp(
-                        min(dimensions.x, dimensions.y).toFloat(),
-                        max(dimensions.x, dimensions.y).toFloat(), t
-                    ).toInt()
+                    val sizeXY =
+                        lerp(
+                            min(dimensions.x, dimensions.y).toFloat(),
+                            max(dimensions.x, dimensions.y).toFloat(),
+                            t,
+                        ).toInt()
                     val scaledHalfSize = targetScale * baseScale * sizeXY / 2f
                     initialScaleClipRect!!.set(
                         (targetX - scaledHalfSize - 0.5f).toInt(),
-                        ((targetY - scaledHalfSize
-                                - 0.5f)).toInt(),
+                        (
+                            (
+                                targetY - scaledHalfSize -
+                                    0.5f
+                            )
+                        ).toInt(),
                         (targetX + scaledHalfSize + 0.5f).toInt(),
-                        (targetY + scaledHalfSize + 0.5f).toInt()
+                        (targetY + scaledHalfSize + 0.5f).toInt(),
                     )
                 }
                 invalidate()
@@ -960,9 +1051,6 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 this@PhotoView.scale = initialScale
             }
         }
-
-        private val WAIT_TIME = 100
-        private val TRANSFER_TIME_FACTOR = 1.5f
     }
 
     private fun getActiveX(event: MotionEvent): Float {
@@ -992,7 +1080,8 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
             }
 
             MotionEvent.ACTION_POINTER_UP -> {
-                val pointerIndex = (event.getAction() and MotionEvent.ACTION_POINTER_INDEX_MASK) shr
+                val pointerIndex =
+                    (event.getAction() and MotionEvent.ACTION_POINTER_INDEX_MASK) shr
                         MotionEvent.ACTION_POINTER_INDEX_SHIFT
                 val pointerId = event.getPointerId(pointerIndex)
                 if (pointerId == activePointerId) {
@@ -1032,7 +1121,11 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
                 if (isDragging) {
                     if (touchMode == TouchMode.UNDEFINED) {
                         val allowClosing =
-                            scrollEdgeY == ScrollEdge.BOTH || scrollEdgeY == ScrollEdge.START && dy > 0 || scrollEdgeY == ScrollEdge.END && dy < 0
+                            scrollEdgeY == ScrollEdge.BOTH ||
+                                scrollEdgeY == ScrollEdge.START &&
+                                dy > 0 ||
+                                scrollEdgeY == ScrollEdge.END &&
+                                dy < 0
                         var closing = false
                         if (allowClosing) {
                             val angle =
@@ -1140,5 +1233,14 @@ class PhotoView(context: Context, attr: AttributeSet?) : View(context, attr),
         private val INVALID_POINTER_ID = -1
 
         const val INITIAL_SCALE_TRANSITION_TIME: Int = 400
+
+        private const val ZOOM_DURATION = 200
+
+        private const val RESTORE_DURATION = 150
+        private const val FINISH_DURATION_MAX = 500
+        private const val FINISH_DURATION_MIN = RESTORE_DURATION
+
+        private const val WAIT_TIME = 100
+        private const val TRANSFER_TIME_FACTOR = 1.5f
     }
 }

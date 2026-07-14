@@ -11,22 +11,26 @@ import java.io.IOException
  * Throws [IOException] if the file is not an animated image, letting the
  * caller fall back to regular bitmap decoding.
  */
-class AnimatedImageDecoder @Throws(IOException::class) constructor(file: File) {
-	private val drawable: AnimatedImageDrawable
+class AnimatedImageDecoder
+    @Throws(IOException::class)
+    constructor(
+        file: File,
+    ) {
+        private val drawable: AnimatedImageDrawable
 
-	init {
-		val drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file))
-		if (drawable !is AnimatedImageDrawable) {
-			throw IOException("Not an animated image")
-		}
-		this.drawable = drawable
-		this.drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-		this.drawable.start()
-	}
+        init {
+            val drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file))
+            if (drawable !is AnimatedImageDrawable) {
+                throw IOException("Not an animated image")
+            }
+            this.drawable = drawable
+            this.drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+            this.drawable.start()
+        }
 
-	fun getDrawable(): Drawable = drawable
+        fun getDrawable(): Drawable = drawable
 
-	fun recycle() {
-		drawable.stop()
-	}
-}
+        fun recycle() {
+            drawable.stop()
+        }
+    }

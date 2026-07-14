@@ -35,7 +35,9 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executor
 
-class ImageUnit(private val instance: PagerInstance) {
+class ImageUnit(
+    private val instance: PagerInstance,
+) {
     private var readFileTask: ReadFileTask? = null
     private var readBitmapCallback: ReadBitmapCallback? = null
 
@@ -60,7 +62,11 @@ class ImageUnit(private val instance: PagerInstance) {
         }
     }
 
-    fun applyImage(uri: Uri, file: File, reload: Boolean) {
+    fun applyImage(
+        uri: Uri,
+        file: File,
+        reload: Boolean,
+    ) {
         if (!reload && file.exists()) {
             applyImageFromFile(file)
         } else {
@@ -85,7 +91,8 @@ class ImageUnit(private val instance: PagerInstance) {
         decodeBitmapTask.execute(EXECUTOR)
         holder.decodeBitmapTask = decodeBitmapTask
         val nextHolder = if (instance.scrollingLeft) instance.leftHolder else instance.rightHolder
-        if (nextHolder != null && loadNearestImage!!
+        if (nextHolder != null &&
+            loadNearestImage!!
                 .isNetworkAvailable(getInstance())
         ) {
             val nextGalleryItem = nextHolder.galleryItem
@@ -100,7 +107,11 @@ class ImageUnit(private val instance: PagerInstance) {
         }
     }
 
-    private fun loadImage(uri: Uri, cachedFile: File, holder: PagerInstance.ViewHolder) {
+    private fun loadImage(
+        uri: Uri,
+        cachedFile: File,
+        holder: PagerInstance.ViewHolder,
+    ) {
         if (attachReadBitmapCallback(holder)) {
             return
         }
@@ -122,13 +133,13 @@ class ImageUnit(private val instance: PagerInstance) {
         return false
     }
 
-    private inner class ReadBitmapCallback(private val galleryItem: GalleryItem?) : FileCallback {
+    private inner class ReadBitmapCallback(
+        private val galleryItem: GalleryItem?,
+    ) : FileCallback {
         val isCurrentHolder: Boolean
             get() = isHolder(instance.currentHolder)
 
-        fun isHolder(holder: PagerInstance.ViewHolder?): Boolean {
-            return holder != null && holder.galleryItem == galleryItem
-        }
+        fun isHolder(holder: PagerInstance.ViewHolder?): Boolean = holder != null && holder.galleryItem == galleryItem
 
         override fun onStartDownloading() {
             if (this.isCurrentHolder) {
@@ -148,7 +159,7 @@ class ImageUnit(private val instance: PagerInstance) {
                     instance.currentHolder!!.progressBar!!.setProgress(
                         pendingProgress,
                         pendingProgressMax,
-                        true
+                        true,
                     )
                 }
             }
@@ -158,7 +169,7 @@ class ImageUnit(private val instance: PagerInstance) {
             success: Boolean,
             uri: Uri,
             file: File,
-            errorItem: ErrorItem?
+            errorItem: ErrorItem?,
         ) {
             readFileTask = null
             readBitmapCallback = null
@@ -167,7 +178,11 @@ class ImageUnit(private val instance: PagerInstance) {
                 if (success) {
                     applyImageFromFile(file)
                 } else {
-                    instance.callback.showError(instance.currentHolder!!, errorItem.toString())
+                    // errorItem is nullable here; a bare toString() would show "null".
+                    instance.callback.showError(
+                        instance.currentHolder!!,
+                        (errorItem ?: ErrorItem(ErrorItem.Type.UNKNOWN)).toString(),
+                    )
                 }
             }
         }
@@ -178,13 +193,16 @@ class ImageUnit(private val instance: PagerInstance) {
             }
         }
 
-        override fun onUpdateProgress(progress: Long, progressMax: Long) {
+        override fun onUpdateProgress(
+            progress: Long,
+            progressMax: Long,
+        ) {
             if (this.isCurrentHolder) {
                 instance.currentHolder!!.progressBar!!.setIndeterminate(false)
                 instance.currentHolder!!.progressBar!!.setProgress(
                     progress.toInt(),
                     progressMax.toInt(),
-                    progress == 0L
+                    progress == 0L,
                 )
             } else {
                 pendingProgress = progress.toInt()
@@ -195,23 +213,29 @@ class ImageUnit(private val instance: PagerInstance) {
 
     fun hasMetadata(): Boolean {
         val jpegData = instance.currentHolder!!.jpegData
-        return jpegData != null && jpegData.exifData != null && !jpegData.exifData.getUserMetadata()
-            .isEmpty()
+        return jpegData != null &&
+            jpegData.exifData != null &&
+            !jpegData.exifData
+                .getUserMetadata()
+                .isEmpty()
     }
 
     fun viewMetadata() {
-        val fileName = instance.currentHolder!!.galleryItem!!
-            .getFileName(get(instance.galleryInstance.chanName))
+        val fileName =
+            instance.currentHolder!!
+                .galleryItem!!
+                .getFileName(get(instance.galleryInstance.chanName))
         showMetadata(
             instance.galleryInstance.callback.getChildFragmentManager(),
-            instance.currentHolder!!.jpegData, fileName
+            instance.currentHolder!!.jpegData,
+            fileName,
         )
     }
 
     private inner class DecodeBitmapTask(
         private val file: File,
-        private val fileHolder: FileHolder
-    ) : ExecutorTask<Void?, Void?>() {
+        private val fileHolder: FileHolder,
+    ) : ExecutorTask<Unit?, Unit?>() {
         private val photoView: PhotoView?
 
         private var bitmap: Bitmap? = null
@@ -221,20 +245,24 @@ class ImageUnit(private val instance: PagerInstance) {
 
         init {
             photoView = instance.currentHolder!!.photoView
-            if (fileHolder.imageWidth >= 2048 && fileHolder.imageHeight >= 2048
-                || fileHolder.imageType == FileHolder.ImageType.IMAGE_SVG
+            if (fileHolder.imageWidth >= 2048 &&
+                fileHolder.imageHeight >= 2048 ||
+                fileHolder.imageType == FileHolder.ImageType.IMAGE_SVG
             ) {
                 instance.currentHolder!!.progressBar!!.setVisible(true, false)
                 instance.currentHolder!!.progressBar!!.setIndeterminate(true)
             }
         }
 
-        override fun run(): Void? {
+        override fun run(): Unit? {
             if (!fileHolder.isImage) {
                 errorMessageId = R.string.image_is_corrupted
                 return null
             }
-            if (fileHolder.imageType == FileHolder.ImageType.IMAGE_PNG || fileHolder.imageType == FileHolder.ImageType.IMAGE_GIF || fileHolder.imageType == FileHolder.ImageType.IMAGE_WEBP) {
+            if (fileHolder.imageType == FileHolder.ImageType.IMAGE_PNG ||
+                fileHolder.imageType == FileHolder.ImageType.IMAGE_GIF ||
+                fileHolder.imageType == FileHolder.ImageType.IMAGE_WEBP
+            ) {
                 try {
                     animatedImageDecoder = AnimatedImageDecoder(file)
                     return null
@@ -274,7 +302,7 @@ class ImageUnit(private val instance: PagerInstance) {
             return null
         }
 
-        override fun onComplete(result: Void?) {
+        override fun onComplete(result: Unit?) {
             val holder = instance.currentHolder
             holder!!.decodeBitmapTask = null
             holder.progressBar!!.setVisible(false, false)
@@ -299,7 +327,7 @@ class ImageUnit(private val instance: PagerInstance) {
                     setPhotoViewImage(
                         holder,
                         holder.simpleBitmapDrawable!!,
-                        bitmap!!.hasAlpha()
+                        bitmap!!.hasAlpha(),
                     )
                 }
                 if (holder.mediaSummary!!.updateDimensions(width, height)) {
@@ -310,7 +338,7 @@ class ImageUnit(private val instance: PagerInstance) {
             } else {
                 instance.callback.showError(
                     holder,
-                    instance.galleryInstance.context.getString(errorMessageId)
+                    instance.galleryInstance.context.getString(errorMessageId),
                 )
             }
         }
@@ -318,7 +346,7 @@ class ImageUnit(private val instance: PagerInstance) {
         fun setPhotoViewImage(
             holder: PagerInstance.ViewHolder,
             drawable: Drawable,
-            hasAlpha: Boolean
+            hasAlpha: Boolean,
         ) {
             holder.photoView!!.setImage(drawable, hasAlpha, false, holder.photoViewThumbnail)
             holder.jpegData = fileHolder.jpegData
@@ -332,34 +360,43 @@ class ImageUnit(private val instance: PagerInstance) {
         private fun showMetadata(
             fragmentManager: FragmentManager,
             jpegData: JpegData?,
-            fileName: String?
+            fileName: String?,
         ) {
             InstanceDialog(
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     val context = GalleryInstance.getCallback(provider!!).getWindow()!!.getContext()
-                    val dialogBuilder = AlertDialog.Builder(context)
-                        .setTitle(R.string.metadata)
-                        .setPositiveButton(android.R.string.ok, null)
+                    val dialogBuilder =
+                        AlertDialog
+                            .Builder(context)
+                            .setTitle(R.string.metadata)
+                            .setPositiveButton(android.R.string.ok, null)
                     val exifData = if (jpegData != null) jpegData.exifData else null
                     val geolocation = if (exifData != null) exifData.getGeolocation(false) else null
                     if (geolocation != null) {
-                        val uri = Uri.Builder().scheme("geo").appendQueryParameter(
-                            "q",
-                            geolocation + "(" + fileName + ")"
-                        ).build()
+                        val uri =
+                            Uri
+                                .Builder()
+                                .scheme("geo")
+                                .appendQueryParameter(
+                                    "q",
+                                    geolocation + "(" + fileName + ")",
+                                ).build()
                         val intent = Intent(Intent.ACTION_VIEW).setData(uri)
-                        if (!context.getPackageManager().queryIntentActivities(
-                                intent,
-                                PackageManager.MATCH_DEFAULT_ONLY
-                            ).isEmpty()
+                        if (!context
+                                .getPackageManager()
+                                .queryIntentActivities(
+                                    intent,
+                                    PackageManager.MATCH_DEFAULT_ONLY,
+                                ).isEmpty()
                         ) {
                             dialogBuilder.setNeutralButton(
                                 R.string.show_on_map,
                                 DialogInterface.OnClickListener { d: DialogInterface?, w: Int ->
                                     context.startActivity(intent)
-                                })
+                                },
+                            )
                         }
                     }
                     val dialog = dialogBuilder.create()
@@ -375,7 +412,8 @@ class ImageUnit(private val instance: PagerInstance) {
                         layout.addDivider()
                     }
                     dialog
-                })
+                },
+            )
         }
     }
 }

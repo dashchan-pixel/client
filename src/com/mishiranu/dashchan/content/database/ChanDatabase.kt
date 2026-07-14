@@ -107,7 +107,7 @@ class ChanDatabase private constructor() {
         val hasItems: Boolean,
         val filtered: Boolean,
         internal val provider1: BoardExtraFallbackProvider?,
-        internal val provider2: BoardExtraFallbackProvider?
+        internal val provider2: BoardExtraFallbackProvider?,
     ) : CursorWrapper(cursor) {
         internal val boardNameIndex: Int
         internal val categoryIndex: Int
@@ -153,9 +153,13 @@ class ChanDatabase private constructor() {
         }
     }
 
-    class DataKey(boardName: String?, name: String?) {
+    class DataKey(
+        boardName: String?,
+        name: String?,
+    ) {
         @JvmField
         val boardName: String
+
         @JvmField
         val name: String
 
@@ -183,7 +187,9 @@ class ChanDatabase private constructor() {
         }
     }
 
-    class CookieCursor internal constructor(cursor: Cursor) : CursorWrapper(cursor) {
+    class CookieCursor internal constructor(
+        cursor: Cursor,
+    ) : CursorWrapper(cursor) {
         internal val nameIndex: Int
         internal val valueIndex: Int
         internal val titleIndex: Int
@@ -229,8 +235,7 @@ class ChanDatabase private constructor() {
     private val database: SQLiteDatabase = helper.getWritableDatabase()
     private val supportsCte: Boolean
 
-    private class Helper :
-        SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
+    private class Helper : SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
         init {
             setWriteAheadLoggingEnabled(true)
         }
@@ -238,35 +243,39 @@ class ChanDatabase private constructor() {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE " + Boards.Companion.TABLE_NAME + " (" +
-                        Boards.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                        Boards.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                        Boards.Columns.Companion.CATEGORY + " TEXT NOT NULL, " +
-                        "PRIMARY KEY (" + Boards.Columns.Companion.CHAN_NAME + ", " +
-                        Boards.Columns.Companion.BOARD_NAME + "))"
+                    Boards.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Boards.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                    Boards.Columns.Companion.CATEGORY + " TEXT NOT NULL, " +
+                    "PRIMARY KEY (" + Boards.Columns.Companion.CHAN_NAME + ", " +
+                    Boards.Columns.Companion.BOARD_NAME + "))",
             )
             db.execSQL(
                 "CREATE TABLE " + Schema.Data.Companion.TABLE_NAME + " (" +
-                        Schema.Data.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                        Schema.Data.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                        Schema.Data.Columns.Companion.NAME + " TEXT NOT NULL, " +
-                        Schema.Data.Columns.Companion.VALUE + " TEXT, " +
-                        "PRIMARY KEY (" + Schema.Data.Columns.Companion.CHAN_NAME + ", " +
-                        Schema.Data.Columns.Companion.BOARD_NAME + ", " +
-                        Schema.Data.Columns.Companion.NAME + "))"
+                    Schema.Data.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Schema.Data.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                    Schema.Data.Columns.Companion.NAME + " TEXT NOT NULL, " +
+                    Schema.Data.Columns.Companion.VALUE + " TEXT, " +
+                    "PRIMARY KEY (" + Schema.Data.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Data.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Data.Columns.Companion.NAME + "))",
             )
             db.execSQL(
                 "CREATE TABLE " + Cookies.Companion.TABLE_NAME + " (" +
-                        Cookies.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                        Cookies.Columns.Companion.NAME + " TEXT NOT NULL, " +
-                        Cookies.Columns.Companion.VALUE + " TEXT NOT NULL, " +
-                        Cookies.Columns.Companion.TITLE + " TEXT NOT NULL, " +
-                        Cookies.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
-                        "PRIMARY KEY (" + Cookies.Columns.Companion.CHAN_NAME + ", " +
-                        Cookies.Columns.Companion.NAME + "))"
+                    Cookies.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Cookies.Columns.Companion.NAME + " TEXT NOT NULL, " +
+                    Cookies.Columns.Companion.VALUE + " TEXT NOT NULL, " +
+                    Cookies.Columns.Companion.TITLE + " TEXT NOT NULL, " +
+                    Cookies.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
+                    "PRIMARY KEY (" + Cookies.Columns.Companion.CHAN_NAME + ", " +
+                    Cookies.Columns.Companion.NAME + "))",
             )
         }
 
-        override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {}
+        override fun onUpgrade(
+            db: SQLiteDatabase?,
+            oldVersion: Int,
+            newVersion: Int,
+        ) {}
 
         companion object {
             private const val DATABASE_NAME = "chan.db"
@@ -274,7 +283,10 @@ class ChanDatabase private constructor() {
         }
     }
 
-    fun setBoards(chanName: String, boardCategories: Array<out BoardCategory?>?): Boolean {
+    fun setBoards(
+        chanName: String,
+        boardCategories: Array<out BoardCategory?>?,
+    ): Boolean {
         Objects.requireNonNull<String?>(chanName)
         val boardsList = ArrayList<Pair<String?, String?>?>()
         if (boardCategories != null) {
@@ -297,21 +309,25 @@ class ChanDatabase private constructor() {
         }
         database.beginTransaction()
         try {
-            val filter = Expression.filter()
-                .equals(Boards.Columns.Companion.CHAN_NAME, chanName)
-                .build()
+            val filter =
+                Expression
+                    .filter()
+                    .equals(Boards.Columns.Companion.CHAN_NAME, chanName)
+                    .build()
             database.delete(Boards.Companion.TABLE_NAME, filter.value, filter.args)
             val iterator: MutableIterator<Pair<String?, String?>?> = boardsList.iterator()
             Expression.batchInsert(
-                boardsList.size, 100, 3,
+                boardsList.size,
+                100,
+                3,
                 CreateBatchInsertStatement { values: String? ->
                     database.compileStatement(
                         "INSERT OR REPLACE " +
-                                "INTO " + Boards.Companion.TABLE_NAME + " (" +
-                                Boards.Columns.Companion.CHAN_NAME + ", " +
-                                Boards.Columns.Companion.BOARD_NAME + ", " +
-                                Boards.Columns.Companion.CATEGORY + ") " +
-                                "VALUES " + values
+                            "INTO " + Boards.Companion.TABLE_NAME + " (" +
+                            Boards.Columns.Companion.CHAN_NAME + ", " +
+                            Boards.Columns.Companion.BOARD_NAME + ", " +
+                            Boards.Columns.Companion.CATEGORY + ") " +
+                            "VALUES " + values,
                     )
                 },
                 BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
@@ -319,7 +335,8 @@ class ChanDatabase private constructor() {
                     statement!!.bindString(start + 1, chanName)
                     statement.bindString(start + 2, pair.first)
                     statement.bindString(start + 3, pair.second)
-                })
+                },
+            )
             database.setTransactionSuccessful()
             return !boardsList.isEmpty()
         } finally {
@@ -329,39 +346,57 @@ class ChanDatabase private constructor() {
 
     @Throws(OperationCanceledException::class)
     fun getBoards(
-        chanName: String, searchQuery: String?, extraName: String,
-        provider: BoardExtraFallbackProvider?, signal: CancellationSignal?
+        chanName: String,
+        searchQuery: String?,
+        extraName: String,
+        provider: BoardExtraFallbackProvider?,
+        signal: CancellationSignal?,
     ): BoardCursor {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(extraName)
         val projection = arrayOf<String?>("COUNT(*)")
-        val countFilter = Expression.filter()
-            .equals(Boards.Columns.Companion.CHAN_NAME, chanName)
-            .build()
+        val countFilter =
+            Expression
+                .filter()
+                .equals(Boards.Columns.Companion.CHAN_NAME, chanName)
+                .build()
         val count: Int
-        database.query(
-            false, Boards.Companion.TABLE_NAME,
-            projection, countFilter.value, countFilter.args, null, null, null, null, signal
-        ).use { cursor ->
-            count = if (cursor.moveToFirst()) cursor.getInt(0) else 0
-        }
-        val filterBuilder = Expression.filter()
-            .equals("b." + Boards.Columns.Companion.CHAN_NAME, chanName)
+        database
+            .query(
+                false,
+                Boards.Companion.TABLE_NAME,
+                projection,
+                countFilter.value,
+                countFilter.args,
+                null,
+                null,
+                null,
+                null,
+                signal,
+            ).use { cursor ->
+                count = if (cursor.moveToFirst()) cursor.getInt(0) else 0
+            }
+        val filterBuilder =
+            Expression
+                .filter()
+                .equals("b." + Boards.Columns.Companion.CHAN_NAME, chanName)
         var filtered = false
         if (!isEmpty(searchQuery)) {
             filterBuilder.append(
-                Expression.filterOr()
+                Expression
+                    .filterOr()
                     .like("b." + Boards.Columns.Companion.BOARD_NAME, "%" + searchQuery + "%")
-                    .like("d." + Schema.Data.Columns.Companion.VALUE, "%" + searchQuery + "%")
+                    .like("d." + Schema.Data.Columns.Companion.VALUE, "%" + searchQuery + "%"),
             )
             filtered = true
         }
         val filter = filterBuilder.build()
         val args = arrayOfNulls<String>(1 + filter.args!!.size)
         args[0] = extraName
-        System.arraycopy(filter.args, 0, args, 1, filter.args!!.size)
-        val cursor = database.rawQuery(
-            "SELECT b.rowid, " +
+        System.arraycopy(filter.args, 0, args, 1, filter.args.size)
+        val cursor =
+            database.rawQuery(
+                "SELECT b.rowid, " +
                     "b." + Boards.Columns.Companion.BOARD_NAME + ", " +
                     "b." + Boards.Columns.Companion.CATEGORY + ", " +
                     "d." + Schema.Data.Columns.Companion.VALUE + " AS " + Schema.Extra.Columns.Companion.EXTRA1 + " " +
@@ -371,14 +406,20 @@ class ChanDatabase private constructor() {
                     "b." + Boards.Columns.Companion.BOARD_NAME + " = d." + Schema.Data.Columns.Companion.BOARD_NAME + " AND " +
                     "d." + Schema.Data.Columns.Companion.NAME + " = ? " +
                     "WHERE " + filter.value + " " +
-                    "ORDER BY b.rowid ASC", args, signal
-        )
+                    "ORDER BY b.rowid ASC",
+                args,
+                signal,
+            )
         return BoardCursor(cursor, count > 0, filtered, provider, null)
     }
 
     private fun getBoards(
-        chanName: String, boardNames: List<String>, filter: Expression.Filter,
-        extra1Name: String, extra2Name: String, signal: CancellationSignal?
+        chanName: String,
+        boardNames: List<String>,
+        filter: Expression.Filter,
+        extra1Name: String,
+        extra2Name: String,
+        signal: CancellationSignal?,
     ): Cursor? {
         val args =
             arrayOfNulls<String>(boardNames.size + 4 + (if (filter.args != null) filter.args.size else 0))
@@ -401,7 +442,7 @@ class ChanDatabase private constructor() {
                     valuesBuilder.append(" AS ").append(Boards.Columns.Companion.BOARD_NAME)
                 }
             }
-            args[i] = boardNames.get(i)
+            args[i] = boardNames[i]
         }
         args[boardNames.size] = chanName
         args[boardNames.size + 1] = extra1Name
@@ -410,9 +451,18 @@ class ChanDatabase private constructor() {
         if (filter.args != null) {
             System.arraycopy(filter.args, 0, args, boardNames.size + 4, filter.args.size)
         }
-        val cursor = database.rawQuery(
-            (if (supportsCte) ("WITH " + Boards.Companion.TABLE_NAME + " (" +
-                    Boards.Columns.Companion.BOARD_NAME + ") AS (" + valuesBuilder + ") ") else "") +
+        val cursor =
+            database.rawQuery(
+                (
+                    if (supportsCte) {
+                        (
+                            "WITH " + Boards.Companion.TABLE_NAME + " (" +
+                                Boards.Columns.Companion.BOARD_NAME + ") AS (" + valuesBuilder + ") "
+                        )
+                    } else {
+                        ""
+                    }
+                ) +
                     "SELECT b." + Boards.Columns.Companion.BOARD_NAME + ", " +
                     "d1." + Schema.Data.Columns.Companion.VALUE + " AS " + Schema.Extra.Columns.Companion.EXTRA1 + ", " +
                     "d2." + Schema.Data.Columns.Companion.VALUE + " AS " + Schema.Extra.Columns.Companion.EXTRA2 + " " +
@@ -425,8 +475,10 @@ class ChanDatabase private constructor() {
                     "ON d2." + Schema.Data.Columns.Companion.CHAN_NAME + " = ? AND " +
                     "b." + Boards.Columns.Companion.BOARD_NAME + " = d2." + Schema.Data.Columns.Companion.BOARD_NAME + " AND " +
                     "d2." + Schema.Data.Columns.Companion.NAME + " = ? " +
-                    "WHERE " + (if (filter.value != null) filter.value else "1"), args, signal
-        )
+                    "WHERE " + (if (filter.value != null) filter.value else "1"),
+                args,
+                signal,
+            )
         if (cursor.getCount() > 0) {
             return cursor
         } else {
@@ -437,10 +489,14 @@ class ChanDatabase private constructor() {
 
     @Throws(OperationCanceledException::class)
     fun getBoards(
-        chanName: String, boardNames: List<String>,
-        searchQuery: String?, extra1Name: String, extra2Name: String,
-        provider1: BoardExtraFallbackProvider?, provider2: BoardExtraFallbackProvider?,
-        signal: CancellationSignal?
+        chanName: String,
+        boardNames: List<String>,
+        searchQuery: String?,
+        extra1Name: String,
+        extra2Name: String,
+        provider1: BoardExtraFallbackProvider?,
+        provider2: BoardExtraFallbackProvider?,
+        signal: CancellationSignal?,
     ): BoardCursor {
         val filterBuilder = Expression.filterOr()
         var filtered = false
@@ -456,10 +512,15 @@ class ChanDatabase private constructor() {
         try {
             var i = 0
             while (i < boardNames.size) {
-                val cursor = getBoards(
-                    chanName, boardNames.subList(i, min(i + limit, boardNames.size)),
-                    filter, extra1Name, extra2Name, signal
-                )
+                val cursor =
+                    getBoards(
+                        chanName,
+                        boardNames.subList(i, min(i + limit, boardNames.size)),
+                        filter,
+                        extra1Name,
+                        extra2Name,
+                        signal,
+                    )
                 if (cursor != null) {
                     cursors.add(cursor)
                 }
@@ -474,23 +535,35 @@ class ChanDatabase private constructor() {
             }
         }
         return BoardCursor(
-            if (cursors.isEmpty()) MatrixCursor(arrayOfNulls<String>(0), 0) else MergeCursor(
-                CommonUtils.toArray(cursors, Cursor::class.java)
-            ),
-            !boardNames.isEmpty(), filtered, provider1, provider2
+            if (cursors.isEmpty()) {
+                MatrixCursor(arrayOfNulls<String>(0), 0)
+            } else {
+                MergeCursor(
+                    CommonUtils.toArray(cursors, Cursor::class.java),
+                )
+            },
+            !boardNames.isEmpty(),
+            filtered,
+            provider1,
+            provider2,
         )
     }
 
     private val dataCacheMap = HashMap<String?, LruCache<DataKey?, String?>?>()
 
-    fun setData(chanName: String, map: MutableMap<DataKey?, Any?>?) {
+    fun setData(
+        chanName: String,
+        map: MutableMap<DataKey?, Any?>?,
+    ) {
         Objects.requireNonNull<String?>(chanName)
         if (map != null && !map.isEmpty()) {
-            val filter = Expression.filter()
-                .equals(Schema.Data.Columns.Companion.CHAN_NAME, chanName)
-                .equals(Schema.Data.Columns.Companion.BOARD_NAME, "")
-                .equals(Schema.Data.Columns.Companion.NAME, "")
-                .build()
+            val filter =
+                Expression
+                    .filter()
+                    .equals(Schema.Data.Columns.Companion.CHAN_NAME, chanName)
+                    .equals(Schema.Data.Columns.Companion.BOARD_NAME, "")
+                    .equals(Schema.Data.Columns.Companion.NAME, "")
+                    .build()
             database.beginTransaction()
             try {
                 var totalReplace = 0
@@ -502,16 +575,18 @@ class ChanDatabase private constructor() {
                 val replaceIterator: MutableIterator<MutableMap.MutableEntry<DataKey?, Any?>> =
                     map.entries.iterator()
                 Expression.batchInsert(
-                    totalReplace, 100, 4,
+                    totalReplace,
+                    100,
+                    4,
                     CreateBatchInsertStatement { values: String? ->
                         database.compileStatement(
                             "INSERT OR REPLACE " +
-                                    "INTO " + Schema.Data.Companion.TABLE_NAME + " (" +
-                                    Schema.Data.Columns.Companion.CHAN_NAME + ", " +
-                                    Schema.Data.Columns.Companion.BOARD_NAME + ", " +
-                                    Schema.Data.Columns.Companion.NAME + ", " +
-                                    Schema.Data.Columns.Companion.VALUE + ") " +
-                                    "VALUES " + values
+                                "INTO " + Schema.Data.Companion.TABLE_NAME + " (" +
+                                Schema.Data.Columns.Companion.CHAN_NAME + ", " +
+                                Schema.Data.Columns.Companion.BOARD_NAME + ", " +
+                                Schema.Data.Columns.Companion.NAME + ", " +
+                                Schema.Data.Columns.Companion.VALUE + ") " +
+                                "VALUES " + values,
                         )
                     },
                     BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
@@ -531,12 +606,13 @@ class ChanDatabase private constructor() {
                         } else {
                             statement.bindString(start + 4, value.toString())
                         }
-                    })
+                    },
+                )
                 for (entry in map.entries) {
                     if (entry.value == null) {
                         val dataKey: DataKey = entry.key!!
                         filter.args!![1] = dataKey.boardName
-                        filter.args!![2] = dataKey.name
+                        filter.args[2] = dataKey.name
                         database.delete(Schema.Data.Companion.TABLE_NAME, filter.value, filter.args)
                     }
                 }
@@ -544,7 +620,7 @@ class ChanDatabase private constructor() {
             } finally {
                 database.endTransaction()
                 synchronized(dataCacheMap) {
-                    val dataCache = dataCacheMap.get(chanName)
+                    val dataCache = dataCacheMap[chanName]
                     if (dataCache != null) {
                         dataCache.keys.removeAll(map.keys)
                     }
@@ -553,49 +629,68 @@ class ChanDatabase private constructor() {
         }
     }
 
-    fun getData(chanName: String, boardName: String, name: String): String? {
+    fun getData(
+        chanName: String,
+        boardName: String,
+        name: String,
+    ): String? {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(boardName)
         Objects.requireNonNull<String?>(name)
         val dataKey = DataKey(boardName, name)
         synchronized(dataCacheMap) {
-            val dataCache = dataCacheMap.get(chanName)
+            val dataCache = dataCacheMap[chanName]
             if (dataCache != null && dataCache.containsKey(dataKey)) {
-                return dataCache.get(dataKey)
+                return dataCache[dataKey]
             }
         }
-        val filter = Expression.filter()
-            .equals(Schema.Data.Columns.Companion.CHAN_NAME, chanName)
-            .equals(Schema.Data.Columns.Companion.BOARD_NAME, boardName)
-            .equals(Schema.Data.Columns.Companion.NAME, name)
-            .build()
+        val filter =
+            Expression
+                .filter()
+                .equals(Schema.Data.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Schema.Data.Columns.Companion.BOARD_NAME, boardName)
+                .equals(Schema.Data.Columns.Companion.NAME, name)
+                .build()
         val value: String?
         val projection = arrayOf<String?>(Schema.Data.Columns.Companion.VALUE)
-        database.query(
-            Schema.Data.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, null
-        ).use { cursor ->
-            value = if (cursor.moveToFirst()) cursor.getString(0) else null
-        }
+        database
+            .query(
+                Schema.Data.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                value = if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
         synchronized(dataCacheMap) {
-            var dataCache = dataCacheMap.get(chanName)
+            var dataCache = dataCacheMap[chanName]
             if (dataCache == null) {
                 dataCache =
                     LruCache<DataKey?, String?>(if (MainApplication.getInstance().isLowRam) 20 else 50)
-                dataCacheMap.put(chanName, dataCache)
+                dataCacheMap[chanName] = dataCache
             }
-            dataCache.put(dataKey, value)
+            dataCache[dataKey] = value
         }
         return value
     }
 
-    fun setCookie(chanName: String, name: String, value: String?, title: String?) {
+    fun setCookie(
+        chanName: String,
+        name: String,
+        value: String?,
+        title: String?,
+    ) {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(name)
-        val filter = Expression.filter()
-            .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
-            .equals(Cookies.Columns.Companion.NAME, name)
-            .build()
+        val filter =
+            Expression
+                .filter()
+                .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Cookies.Columns.Companion.NAME, name)
+                .build()
         database.beginTransaction()
         try {
             if (value != null) {
@@ -608,16 +703,19 @@ class ChanDatabase private constructor() {
                     filter.args,
                     0,
                     args,
-                    args.size - filter.args!!.size,
-                    filter.args!!.size
+                    args.size - filter.args.size,
+                    filter.args.size,
                 )
                 database.execSQL(
                     "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
-                            "SET " + Cookies.Columns.Companion.VALUE + " = ?, " +
-                            (if (title != null) Cookies.Columns.Companion.TITLE + " = ?, " else "") +
-                            Cookies.Columns.Companion.FLAGS + " = " +
-                            Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.DELETED.inv() + " " +
-                            "WHERE " + filter.value, args
+                        "SET " + Cookies.Columns.Companion.VALUE + " = ?, " +
+                        (if (title != null) Cookies.Columns.Companion.TITLE + " = ?, " else "") +
+                        Cookies.Columns.Companion.FLAGS + " = " +
+                        Cookies.Columns.Companion.FLAGS + " & " +
+                        Cookies.Flags.Companion.DELETED
+                            .inv() + " " +
+                        "WHERE " + filter.value,
+                    args,
                 )
                 val updated: Boolean
                 database.rawQuery("SELECT CHANGES()", null).use { cursor ->
@@ -634,16 +732,17 @@ class ChanDatabase private constructor() {
             } else {
                 database.execSQL(
                     "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
-                            "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
-                            Cookies.Columns.Companion.FLAGS + " = " +
-                            Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
-                            "WHERE " + filter.value, filter.args as Array<out Any?>
+                        "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
+                        Cookies.Columns.Companion.FLAGS + " = " +
+                        Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
+                        "WHERE " + filter.value,
+                    filter.args as Array<out Any?>,
                 )
                 database.delete(
                     Cookies.Companion.TABLE_NAME,
                     "(" + filter.value + ") AND " +
-                            Cookies.Columns.Companion.FLAGS + " = " + Cookies.Flags.Companion.DELETED,
-                    filter.args
+                        Cookies.Columns.Companion.FLAGS + " = " + Cookies.Flags.Companion.DELETED,
+                    filter.args,
                 )
             }
             database.setTransactionSuccessful()
@@ -652,39 +751,55 @@ class ChanDatabase private constructor() {
         }
     }
 
-    fun setCookieState(chanName: String, name: String, blocked: Boolean?, deleteOnExit: Boolean?) {
+    fun setCookieState(
+        chanName: String,
+        name: String,
+        blocked: Boolean?,
+        deleteOnExit: Boolean?,
+    ) {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(name)
         if (blocked == null && deleteOnExit == null) {
             return
         }
-        val filter = Expression.filter()
-            .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
-            .equals(Cookies.Columns.Companion.NAME, name)
-            .build()
+        val filter =
+            Expression
+                .filter()
+                .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Cookies.Columns.Companion.NAME, name)
+                .build()
         database.beginTransaction()
         try {
-            val clearFlags = (if (blocked != null) Cookies.Flags.Companion.BLOCKED else 0) or
+            val clearFlags =
+                (if (blocked != null) Cookies.Flags.Companion.BLOCKED else 0) or
                     (if (deleteOnExit != null) Cookies.Flags.Companion.DELETE_ON_EXIT else 0)
             val setFlags =
                 (if (blocked != null && blocked) Cookies.Flags.Companion.BLOCKED else 0) or
-                        (if (deleteOnExit != null && deleteOnExit) Cookies.Flags.Companion.DELETE_ON_EXIT else 0)
+                    (if (deleteOnExit != null && deleteOnExit) Cookies.Flags.Companion.DELETE_ON_EXIT else 0)
             database.execSQL(
                 "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
-                        "SET " + Cookies.Columns.Companion.FLAGS + " = " +
-                        Cookies.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                        "WHERE " + filter.value, filter.args as Array<out Any?>
+                    "SET " + Cookies.Columns.Companion.FLAGS + " = " +
+                    Cookies.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
+                    "WHERE " + filter.value,
+                filter.args as Array<out Any?>,
             )
             if (setFlags == 0) {
                 val delete: Boolean
                 val projection = arrayOf<String?>(Cookies.Columns.Companion.FLAGS)
-                database.query(
-                    Cookies.Companion.TABLE_NAME, projection,
-                    filter.value, filter.args, null, null, null
-                ).use { cursor ->
-                    delete =
-                        cursor.moveToFirst() && cursor.getInt(0) == Cookies.Flags.Companion.DELETED
-                }
+                database
+                    .query(
+                        Cookies.Companion.TABLE_NAME,
+                        projection,
+                        filter.value,
+                        filter.args,
+                        null,
+                        null,
+                        null,
+                    ).use { cursor ->
+                        delete =
+                            cursor.moveToFirst() &&
+                            cursor.getInt(0) == Cookies.Flags.Companion.DELETED
+                    }
                 if (delete) {
                     database.delete(Cookies.Companion.TABLE_NAME, filter.value, filter.args)
                 }
@@ -698,10 +813,10 @@ class ChanDatabase private constructor() {
     private fun deleteCookiesOnExit() {
         database.execSQL(
             "UPDATE " + Cookies.Companion.TABLE_NAME + " " +
-                    "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
-                    Cookies.Columns.Companion.FLAGS + " = " +
-                    Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
-                    "WHERE " + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.DELETE_ON_EXIT
+                "SET " + Cookies.Columns.Companion.VALUE + " = '', " +
+                Cookies.Columns.Companion.FLAGS + " = " +
+                Cookies.Columns.Companion.FLAGS + " | " + Cookies.Flags.Companion.DELETED + " " +
+                "WHERE " + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.DELETE_ON_EXIT,
         )
     }
 
@@ -797,50 +912,77 @@ class ChanDatabase private constructor() {
         }
     }
 
-    fun getCookieChecked(chanName: String, name: String): String? {
+    fun getCookieChecked(
+        chanName: String,
+        name: String,
+    ): String? {
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(name)
-        val filter = Expression.filter()
-            .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
-            .equals(Cookies.Columns.Companion.NAME, name)
-            .raw("NOT (" + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.DELETED + ")")
-            .raw("NOT (" + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.BLOCKED + ")")
-            .build()
+        val filter =
+            Expression
+                .filter()
+                .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Cookies.Columns.Companion.NAME, name)
+                .raw("NOT (" + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.DELETED + ")")
+                .raw("NOT (" + Cookies.Columns.Companion.FLAGS + " & " + Cookies.Flags.Companion.BLOCKED + ")")
+                .build()
         val projection = arrayOf<String?>(Cookies.Columns.Companion.VALUE)
-        database.query(
-            Cookies.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, null
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                return cursor.getString(0)
+        database
+            .query(
+                Cookies.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(0)
+                }
             }
-        }
         return null
     }
 
     fun hasCookies(chanName: String): Boolean {
         val projection = arrayOf<String?>("1")
-        val filter = Expression.filter()
-            .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
-            .build()
-        database.query(
-            Cookies.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, null, "1"
-        ).use { cursor ->
-            return cursor.moveToFirst()
-        }
+        val filter =
+            Expression
+                .filter()
+                .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
+                .build()
+        database
+            .query(
+                Cookies.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+                "1",
+            ).use { cursor ->
+                return cursor.moveToFirst()
+            }
     }
 
     fun getCookies(chanName: String): CookieCursor {
         val projection = arrayOf<String?>("rowid", "*")
-        val filter = Expression.filter()
-            .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
-            .build()
+        val filter =
+            Expression
+                .filter()
+                .equals(Cookies.Columns.Companion.CHAN_NAME, chanName)
+                .build()
         return CookieCursor(
             database.query(
-                Cookies.Companion.TABLE_NAME, projection,
-                filter.value, filter.args, null, null, null
-            )
+                Cookies.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ),
         )
     }
 

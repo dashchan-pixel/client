@@ -114,8 +114,11 @@ class PagesDatabase private constructor() {
     }
 
     class Meta(
-        val validator: HttpValidator?, val archivedThreadUri: Uri?, val uniquePosters: Int,
-        val deleted: Boolean, val error: Boolean
+        val validator: HttpValidator?,
+        val archivedThreadUri: Uri?,
+        val uniquePosters: Int,
+        val deleted: Boolean,
+        val error: Boolean,
     ) {
         @Throws(IOException::class)
         fun serialize(writer: JsonSerial.Writer) {
@@ -139,7 +142,8 @@ class PagesDatabase private constructor() {
             @Throws(IOException::class, ParseException::class)
             fun deserialize(
                 reader: JsonSerial.Reader,
-                deleted: Boolean, error: Boolean
+                deleted: Boolean,
+                error: Boolean,
             ): Meta {
                 var validator: HttpValidator? = null
                 var archivedThreadUri: Uri? = null
@@ -169,9 +173,18 @@ class PagesDatabase private constructor() {
         }
     }
 
-    class WatcherState(@JvmField val newCount: Int, @JvmField val deleted: Boolean, @JvmField val error: Boolean, @JvmField val time: Long)
+    class WatcherState(
+        @JvmField val newCount: Int,
+        @JvmField val deleted: Boolean,
+        @JvmField val error: Boolean,
+        @JvmField val time: Long,
+    )
 
-    class ThreadKey(chanName: String, boardName: String?, threadNumber: String) {
+    class ThreadKey(
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+    ) {
         val chanName: String
         val boardName: String
         val threadNumber: String
@@ -184,19 +197,19 @@ class PagesDatabase private constructor() {
             this.threadNumber = threadNumber
         }
 
-        internal fun filterMeta(): Expression.Filter.Builder? {
-            return Expression.filter()
+        internal fun filterMeta(): Expression.Filter.Builder? =
+            Expression
+                .filter()
                 .equals(Schema.Meta.Columns.Companion.CHAN_NAME, chanName)
                 .equals(Schema.Meta.Columns.Companion.BOARD_NAME, boardName)
                 .equals(Schema.Meta.Columns.Companion.THREAD_NUMBER, threadNumber)
-        }
 
-        internal fun filterPosts(): Expression.Filter.Builder? {
-            return Expression.filter()
+        internal fun filterPosts(): Expression.Filter.Builder? =
+            Expression
+                .filter()
                 .equals(Schema.Posts.Columns.Companion.CHAN_NAME, chanName)
                 .equals(Schema.Posts.Columns.Companion.BOARD_NAME, boardName)
                 .equals(Schema.Posts.Columns.Companion.THREAD_NUMBER, threadNumber)
-        }
 
         override fun equals(other: Any?): Boolean {
             if (other === this) {
@@ -204,8 +217,8 @@ class PagesDatabase private constructor() {
             }
             if (other is ThreadKey) {
                 return chanName == other.chanName &&
-                        boardName == other.boardName &&
-                        threadNumber == other.threadNumber
+                    boardName == other.boardName &&
+                    threadNumber == other.threadNumber
             }
             return false
         }
@@ -224,7 +237,7 @@ class PagesDatabase private constructor() {
         val post: Post,
         val data: ByteArray?,
         val hash: ByteArray?,
-        newThread: Boolean
+        newThread: Boolean,
     ) {
         var flags: Int
 
@@ -233,16 +246,26 @@ class PagesDatabase private constructor() {
         }
     }
 
-    internal class DiffItem(val hash: ByteArray?, val deleted: Boolean)
+    internal class DiffItem(
+        val hash: ByteArray?,
+        val deleted: Boolean,
+    )
 
-    private class Extracted(val data: ByteArray, val postNumber: PostNumber, val deleted: Boolean)
+    private class Extracted(
+        val data: ByteArray,
+        val postNumber: PostNumber,
+        val deleted: Boolean,
+    )
 
     class Cache internal constructor(
-		internal val diffItems: MutableMap<PostNumber, DiffItem>,
-	    val originalPostNumber: PostNumber?,
-	    @JvmField val state: State
+        internal val diffItems: MutableMap<PostNumber, DiffItem>,
+        val originalPostNumber: PostNumber?,
+        @JvmField val state: State,
     ) {
-        class State internal constructor(private val id: UUID, private var newThread: Boolean) {
+        class State internal constructor(
+            private val id: UUID,
+            private var newThread: Boolean,
+        ) {
             internal val isNewThreadOnce: Boolean
                 get() {
                     if (newThread) {
@@ -266,9 +289,7 @@ class PagesDatabase private constructor() {
                 return false
             }
 
-            override fun hashCode(): Int {
-                return id.hashCode()
-            }
+            override fun hashCode(): Int = id.hashCode()
         }
 
         val isEmpty: Boolean
@@ -286,9 +307,13 @@ class PagesDatabase private constructor() {
     class InsertResult(
         val cacheState: Cache.State?,
         val replies: List<Reply>?,
-        val newCount: Int
+        val newCount: Int,
     ) {
-        class Reply(val postNumber: PostNumber?, val comment: String?, val timestamp: Long)
+        class Reply(
+            val postNumber: PostNumber?,
+            val comment: String?,
+            val timestamp: Long,
+        )
     }
 
     class Diff(
@@ -298,22 +323,25 @@ class PagesDatabase private constructor() {
         val newPosts: Set<PostNumber>,
         val deletedPosts: Set<PostNumber>,
         val editedPosts: Set<PostNumber>,
-        val replyPosts: Set<PostNumber>
+        val replyPosts: Set<PostNumber>,
     )
 
     enum class Cleanup {
-        NONE, ERASE, OLD, DELETED
+        NONE,
+        ERASE,
+        OLD,
+        DELETED,
     }
 
     private enum class MigrationRequest {
-        GET_META, COLLECT_DIFF_POSTS
+        GET_META,
+        COLLECT_DIFF_POSTS,
     }
 
     private val helper = Helper()
     private val database: SQLiteDatabase = helper.getWritableDatabase()
 
-    private class Helper :
-        SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
+    private class Helper : SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
         init {
             setWriteAheadLoggingEnabled(true)
         }
@@ -325,48 +353,52 @@ class PagesDatabase private constructor() {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL(
                 "CREATE TABLE " + Schema.Meta.Companion.TABLE_NAME + " (" +
-                        Schema.Meta.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                        Schema.Meta.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                        Schema.Meta.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
-                        Schema.Meta.Columns.Companion.TIME + " INTEGER NOT NULL, " +
-                        Schema.Meta.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
-                        Schema.Meta.Columns.Companion.DATA + " BLOB NOT NULL, " +
-                        "PRIMARY KEY (" + Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
-                        Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
-                        Schema.Meta.Columns.Companion.THREAD_NUMBER + "))"
+                    Schema.Meta.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Schema.Meta.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                    Schema.Meta.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
+                    Schema.Meta.Columns.Companion.TIME + " INTEGER NOT NULL, " +
+                    Schema.Meta.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
+                    Schema.Meta.Columns.Companion.DATA + " BLOB NOT NULL, " +
+                    "PRIMARY KEY (" + Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Meta.Columns.Companion.THREAD_NUMBER + "))",
             )
             db.execSQL(
                 "CREATE INDEX " + Schema.Meta.Companion.TABLE_NAME + "_order " +
-                        "ON " + Schema.Meta.Companion.TABLE_NAME + " (" +
-                        Schema.Meta.Columns.Companion.TIME + ")"
+                    "ON " + Schema.Meta.Companion.TABLE_NAME + " (" +
+                    Schema.Meta.Columns.Companion.TIME + ")",
             )
             db.execSQL(
                 "CREATE TABLE " + Schema.Posts.Companion.TABLE_NAME + " (" +
-                        Schema.Posts.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                        Schema.Posts.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                        Schema.Posts.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
-                        Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " INTEGER NOT NULL, " +
-                        Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " INTEGER NOT NULL, " +
-                        Schema.Posts.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
-                        Schema.Posts.Columns.Companion.DATA + " BLOB NOT NULL, " +
-                        Schema.Posts.Columns.Companion.HASH + " BLOB NOT NULL, " +
-                        "PRIMARY KEY (" + Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
-                        Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
-                        Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
-                        Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
-                        Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + "), " +
-                        "FOREIGN KEY (" + Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
-                        Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
-                        Schema.Posts.Columns.Companion.THREAD_NUMBER + ") " +
-                        "REFERENCES " + Schema.Meta.Companion.TABLE_NAME + " (" +
-                        Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
-                        Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
-                        Schema.Meta.Columns.Companion.THREAD_NUMBER + ") " +
-                        "ON DELETE CASCADE ON UPDATE CASCADE)"
+                    Schema.Posts.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Schema.Posts.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                    Schema.Posts.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
+                    Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " INTEGER NOT NULL, " +
+                    Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " INTEGER NOT NULL, " +
+                    Schema.Posts.Columns.Companion.FLAGS + " INTEGER NOT NULL DEFAULT 0, " +
+                    Schema.Posts.Columns.Companion.DATA + " BLOB NOT NULL, " +
+                    Schema.Posts.Columns.Companion.HASH + " BLOB NOT NULL, " +
+                    "PRIMARY KEY (" + Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
+                    Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
+                    Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + "), " +
+                    "FOREIGN KEY (" + Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Posts.Columns.Companion.THREAD_NUMBER + ") " +
+                    "REFERENCES " + Schema.Meta.Companion.TABLE_NAME + " (" +
+                    Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Meta.Columns.Companion.THREAD_NUMBER + ") " +
+                    "ON DELETE CASCADE ON UPDATE CASCADE)",
             )
         }
 
-        override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {}
+        override fun onUpgrade(
+            db: SQLiteDatabase?,
+            oldVersion: Int,
+            newVersion: Int,
+        ) {}
 
         override fun onOpen(db: SQLiteDatabase?) {}
 
@@ -376,11 +408,15 @@ class PagesDatabase private constructor() {
         }
     }
 
-    private fun cleanup(excludeThreads: MutableSet<ThreadKey?>, force: Boolean) {
+    private fun cleanup(
+        excludeThreads: MutableSet<ThreadKey?>,
+        force: Boolean,
+    ) {
         var removeThreads: HashSet<ThreadKey>? = null
         var shouldRemove = false
-        database.rawQuery(
-            "SELECT " +
+        database
+            .rawQuery(
+                "SELECT " +
                     "m." + Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
                     "m." + Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
                     "m." + Schema.Meta.Columns.Companion.THREAD_NUMBER + ", " +
@@ -393,28 +429,29 @@ class PagesDatabase private constructor() {
                     "GROUP BY p." + Schema.Meta.Columns.Companion.CHAN_NAME + ", " +
                     "p." + Schema.Meta.Columns.Companion.BOARD_NAME + ", " +
                     "p." + Schema.Meta.Columns.Companion.THREAD_NUMBER + " " +
-                    "ORDER BY m." + Schema.Meta.Columns.Companion.TIME + " DESC", null
-        ).use { cursor ->
-            var postCount = 0
-            while (cursor.moveToNext()) {
-                val chanName = cursor.getString(0)
-                val boardName = cursor.getString(1)
-                val threadNumber = cursor.getString(2)
-                val threadKey = ThreadKey(chanName, boardName, threadNumber)
-                if (!excludeThreads.contains(threadKey)) {
-                    postCount += cursor.getInt(3)
-                    if (postCount > Schema.Posts.Companion.MAX_COUNT * Schema.Posts.Companion.MAX_COUNT_FACTOR || force) {
-                        if (removeThreads == null) {
-                            removeThreads = HashSet<ThreadKey>()
+                    "ORDER BY m." + Schema.Meta.Columns.Companion.TIME + " DESC",
+                null,
+            ).use { cursor ->
+                var postCount = 0
+                while (cursor.moveToNext()) {
+                    val chanName = cursor.getString(0)
+                    val boardName = cursor.getString(1)
+                    val threadNumber = cursor.getString(2)
+                    val threadKey = ThreadKey(chanName, boardName, threadNumber)
+                    if (!excludeThreads.contains(threadKey)) {
+                        postCount += cursor.getInt(3)
+                        if (postCount > Schema.Posts.Companion.MAX_COUNT * Schema.Posts.Companion.MAX_COUNT_FACTOR || force) {
+                            if (removeThreads == null) {
+                                removeThreads = HashSet<ThreadKey>()
+                            }
+                            removeThreads.add(threadKey)
                         }
-                        removeThreads.add(threadKey)
-                    }
-                    if (postCount > Schema.Posts.Companion.MAX_COUNT || force) {
-                        shouldRemove = true
+                        if (postCount > Schema.Posts.Companion.MAX_COUNT || force) {
+                            shouldRemove = true
+                        }
                     }
                 }
             }
-        }
         if (removeThreads != null && !removeThreads.isEmpty() && shouldRemove) {
             database.beginTransaction()
             try {
@@ -431,18 +468,22 @@ class PagesDatabase private constructor() {
     }
 
     fun erase(keepThreads: Collection<ThreadKey>?) {
-        val mainExcludeThreads = mainGet<HashSet<ThreadKey?>?>(Callable {
-            val excludeThreads = HashSet<ThreadKey?>()
-            for (favoriteItem in FavoritesStorage.getInstance().getThreads(null)) {
-                excludeThreads.add(
-                    PagesDatabase.ThreadKey(
-                        favoriteItem.chanName,
-                        emptyIfNull(favoriteItem.boardName), favoriteItem.threadNumber!!
-                    )
-                )
-            }
-            excludeThreads
-        })
+        val mainExcludeThreads =
+            mainGet<HashSet<ThreadKey?>?>(
+                Callable {
+                    val excludeThreads = HashSet<ThreadKey?>()
+                    for (favoriteItem in FavoritesStorage.getInstance().getThreads(null)) {
+                        excludeThreads.add(
+                            PagesDatabase.ThreadKey(
+                                favoriteItem.chanName,
+                                emptyIfNull(favoriteItem.boardName),
+                                favoriteItem.threadNumber!!,
+                            ),
+                        )
+                    }
+                    excludeThreads
+                },
+            )
         if (keepThreads != null) {
             mainExcludeThreads!!.addAll(keepThreads)
         }
@@ -464,39 +505,50 @@ class PagesDatabase private constructor() {
         get() {
             val file =
                 MainApplication.getInstance().getDatabasePath(helper.getDatabaseName())
-            return file.length() + File(file.getParentFile(), file.getName() + "-wal")
-                .length()
+            return file.length() +
+                File(file.getParentFile(), file.getName() + "-wal")
+                    .length()
         }
 
-    fun getMeta(threadKey: ThreadKey, temporary: Boolean): Meta? {
+    fun getMeta(
+        threadKey: ThreadKey,
+        temporary: Boolean,
+    ): Meta? {
         Objects.requireNonNull<ThreadKey?>(threadKey)
-        val projection = arrayOf<String?>(
-            Schema.Meta.Columns.Companion.FLAGS,
-            Schema.Meta.Columns.Companion.DATA
-        )
+        val projection =
+            arrayOf<String?>(
+                Schema.Meta.Columns.Companion.FLAGS,
+                Schema.Meta.Columns.Companion.DATA,
+            )
         val filter = threadKey.filterMeta()!!.build()
         var meta: Meta? = null
-        database.query(
-            Schema.Meta.Companion.TABLE_NAME,
-            projection, filter.value, filter.args, null, null, null
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                val flags = cursor.getInt(0)
-                val deleted = get(flags, Schema.Meta.Flags.Companion.DELETED)
-                val error = get(flags, Schema.Meta.Flags.Companion.ERROR)
-                try {
-                    reader(cursor.getBlob(1)).use { reader ->
-                        meta = Meta.Companion.deserialize(reader, deleted, error)
+        database
+            .query(
+                Schema.Meta.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val flags = cursor.getInt(0)
+                    val deleted = get(flags, Schema.Meta.Flags.Companion.DELETED)
+                    val error = get(flags, Schema.Meta.Flags.Companion.ERROR)
+                    try {
+                        reader(cursor.getBlob(1)).use { reader ->
+                            meta = Meta.Companion.deserialize(reader, deleted, error)
+                        }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        return null
+                    } catch (e: ParseException) {
+                        e.printStackTrace()
+                        return null
                     }
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    return null
-                } catch (e: ParseException) {
-                    e.printStackTrace()
-                    return null
                 }
             }
-        }
         if (meta != null) {
             if (!temporary) {
                 val values = ContentValues()
@@ -511,7 +563,11 @@ class PagesDatabase private constructor() {
         }
     }
 
-    fun setMetaFlags(threadKey: ThreadKey, deleted: Boolean, error: Boolean) {
+    fun setMetaFlags(
+        threadKey: ThreadKey,
+        deleted: Boolean,
+        error: Boolean,
+    ) {
         Objects.requireNonNull<ThreadKey?>(threadKey)
         val filter = threadKey.filterMeta()!!.build()
         val clearFlags: Int =
@@ -520,76 +576,107 @@ class PagesDatabase private constructor() {
             (if (deleted) Schema.Meta.Flags.Companion.DELETED else 0) or (if (error) Schema.Meta.Flags.Companion.ERROR else 0)
         database.execSQL(
             "UPDATE " + Schema.Meta.Companion.TABLE_NAME + " " +
-                    "SET " + Schema.Meta.Columns.Companion.FLAGS + " = " +
-                    Schema.Meta.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
-                    "WHERE " + filter.value, filter.args as Array<out Any?>
+                "SET " + Schema.Meta.Columns.Companion.FLAGS + " = " +
+                Schema.Meta.Columns.Companion.FLAGS + " & " + clearFlags.inv() + " | " + setFlags + " " +
+                "WHERE " + filter.value,
+            filter.args as Array<out Any?>,
         )
     }
 
     fun getLastExistingPostNumber(threadKey: ThreadKey): PostNumber? {
         Objects.requireNonNull<ThreadKey?>(threadKey)
-        val projection = arrayOf<String?>(
-            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
-            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR
-        )
-        val filter = threadKey.filterPosts()!!
-            .raw("NOT (" + Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED + ")")
-            .build()
-        database.query(
-            Schema.Posts.Companion.TABLE_NAME, projection, filter.value,
-            filter.args, null, null, orderByPostNumber(true), "1"
-        ).use { cursor ->
-            return if (cursor.moveToFirst()) PostNumber(
-                cursor.getInt(0),
-                cursor.getInt(1)
-            ) else null
-        }
+        val projection =
+            arrayOf<String?>(
+                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
+            )
+        val filter =
+            threadKey
+                .filterPosts()!!
+                .raw("NOT (" + Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED + ")")
+                .build()
+        database
+            .query(
+                Schema.Posts.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                orderByPostNumber(true),
+                "1",
+            ).use { cursor ->
+                return if (cursor.moveToFirst()) {
+                    PostNumber(
+                        cursor.getInt(0),
+                        cursor.getInt(1),
+                    )
+                } else {
+                    null
+                }
+            }
     }
 
     fun getOriginalPost(threadKey: ThreadKey): Post? {
         Objects.requireNonNull<ThreadKey?>(threadKey)
-        val projection = arrayOf<String?>(
-            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
-            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR, Schema.Posts.Columns.Companion.DATA
-        )
+        val projection =
+            arrayOf<String?>(
+                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
+                Schema.Posts.Columns.Companion.DATA,
+            )
         val filter = threadKey.filterPosts()!!.build()
-        database.query(
-            Schema.Posts.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, orderByPostNumber(false), "1"
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                val postNumber = PostNumber(cursor.getInt(0), cursor.getInt(1))
-                try {
-                    reader(cursor.getBlob(2)).use { reader ->
-                        return deserialize(postNumber, false, reader)
+        database
+            .query(
+                Schema.Posts.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                orderByPostNumber(false),
+                "1",
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val postNumber = PostNumber(cursor.getInt(0), cursor.getInt(1))
+                    try {
+                        reader(cursor.getBlob(2)).use { reader ->
+                            return deserialize(postNumber, false, reader)
+                        }
+                    } catch (e: IOException) {
+                        throw RuntimeException(e)
+                    } catch (e: ParseException) {
+                        // Ignore
                     }
-                } catch (e: IOException) {
-                    throw RuntimeException(e)
-                } catch (e: ParseException) {
-                    // Ignore
                 }
             }
-        }
         return null
     }
 
     fun getPostNumbers(threadKey: ThreadKey): MutableList<PostNumber?> {
         Objects.requireNonNull<ThreadKey?>(threadKey)
-        val projection = arrayOf<String?>(
-            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
-            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR
-        )
+        val projection =
+            arrayOf<String?>(
+                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
+            )
         val filter = threadKey.filterPosts()!!.build()
         val postNumbers: ArrayList<PostNumber?>
-        database.query(
-            Schema.Posts.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, orderByPostNumber(false)
-        ).use { cursor ->
-            postNumbers = ArrayList<PostNumber?>(cursor.getCount())
-            while (cursor.moveToNext()) {
-                postNumbers.add(PostNumber(cursor.getInt(0), cursor.getInt(1)))
+        database
+            .query(
+                Schema.Posts.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                orderByPostNumber(false),
+            ).use { cursor ->
+                postNumbers = ArrayList<PostNumber?>(cursor.getCount())
+                while (cursor.moveToNext()) {
+                    postNumbers.add(PostNumber(cursor.getInt(0), cursor.getInt(1)))
+                }
             }
-        }
         return postNumbers
     }
 
@@ -598,33 +685,46 @@ class PagesDatabase private constructor() {
         val newCount: Int
         var time: Long = 0
         var flags: Int = Schema.Meta.Flags.Companion.DELETED
-        val newPostsFilter = threadKey.filterPosts()!!
-            .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.MARK_NEW)
-            .build()
-        database.rawQuery(
-            "SELECT COUNT(*) " +
+        val newPostsFilter =
+            threadKey
+                .filterPosts()!!
+                .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.MARK_NEW)
+                .build()
+        database
+            .rawQuery(
+                "SELECT COUNT(*) " +
                     "FROM " + Schema.Posts.Companion.TABLE_NAME + " " +
-                    "WHERE " + newPostsFilter.value, newPostsFilter.args
-        ).use { cursor ->
-            newCount = if (cursor.moveToFirst()) cursor.getInt(0) else 0
-        }
-        val metaFilter = threadKey.filterMeta()!!.build()
-        val metaProjection = arrayOf<String?>(
-            Schema.Meta.Columns.Companion.TIME,
-            Schema.Meta.Columns.Companion.FLAGS
-        )
-        database.query(
-            Schema.Meta.Companion.TABLE_NAME, metaProjection,
-            metaFilter.value, metaFilter.args, null, null, null
-        ).use { cursor ->
-            if (cursor.moveToFirst()) {
-                time = cursor.getLong(0)
-                flags = cursor.getInt(1)
+                    "WHERE " + newPostsFilter.value,
+                newPostsFilter.args,
+            ).use { cursor ->
+                newCount = if (cursor.moveToFirst()) cursor.getInt(0) else 0
             }
-        }
+        val metaFilter = threadKey.filterMeta()!!.build()
+        val metaProjection =
+            arrayOf<String?>(
+                Schema.Meta.Columns.Companion.TIME,
+                Schema.Meta.Columns.Companion.FLAGS,
+            )
+        database
+            .query(
+                Schema.Meta.Companion.TABLE_NAME,
+                metaProjection,
+                metaFilter.value,
+                metaFilter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    time = cursor.getLong(0)
+                    flags = cursor.getInt(1)
+                }
+            }
         return WatcherState(
-            newCount, get(flags, Schema.Meta.Flags.Companion.DELETED),
-            get(flags, Schema.Meta.Flags.Companion.ERROR), time
+            newCount,
+            get(flags, Schema.Meta.Flags.Companion.DELETED),
+            get(flags, Schema.Meta.Flags.Companion.ERROR),
+            time,
         )
     }
 
@@ -633,10 +733,10 @@ class PagesDatabase private constructor() {
     fun getCacheState(threadKey: ThreadKey?): Cache.State {
         Objects.requireNonNull<ThreadKey?>(threadKey)
         synchronized(cacheStates) {
-            var state = cacheStates.get(threadKey)
+            var state = cacheStates[threadKey]
             if (state == null) {
                 state = Cache.State(UUID.randomUUID(), false)
-                cacheStates.put(threadKey, state)
+                cacheStates[threadKey] = state
             }
             return state
         }
@@ -645,7 +745,7 @@ class PagesDatabase private constructor() {
     private fun updateFlags(
         threadKey: ThreadKey,
         iterator: Expression.LongIterator,
-        transform: String?
+        transform: String?,
     ) {
         // Use filter to properly handle reused rowid
         val filter = threadKey.filterPosts()!!.build()
@@ -655,12 +755,16 @@ class PagesDatabase private constructor() {
             Schema.Posts.Companion.TABLE_NAME,
             "rowid",
             Schema.Posts.Columns.Companion.FLAGS + " = " + Schema.Posts.Columns.Companion.FLAGS + " " + transform,
-            filter
+            filter,
         )
     }
 
     @Throws(IOException::class)
-    private fun upsertMeta(threadKey: ThreadKey, time: Long, meta: Meta) {
+    private fun upsertMeta(
+        threadKey: ThreadKey,
+        time: Long,
+        meta: Meta,
+    ) {
         check(database.inTransaction())
         val filter = threadKey.filterMeta()!!.build()
         val values = ContentValues()
@@ -676,7 +780,7 @@ class PagesDatabase private constructor() {
                 Schema.Meta.Companion.TABLE_NAME,
                 values,
                 filter.value,
-                filter.args
+                filter.args,
             ) <= 0
         ) {
             values.put(Schema.Meta.Columns.Companion.CHAN_NAME, threadKey.chanName)
@@ -690,90 +794,120 @@ class PagesDatabase private constructor() {
 
     @Throws(IOException::class)
     fun insertNewPosts(
-        threadKey: ThreadKey, posts: List<Post>, meta: Meta,
-        temporary: Boolean, newThread: Boolean, partial: Boolean
+        threadKey: ThreadKey,
+        posts: List<Post>,
+        meta: Meta,
+        temporary: Boolean,
+        newThread: Boolean,
+        partial: Boolean,
     ): InsertResult? {
         val dataArray: Array<ByteArray?> = arrayOfNulls(posts.size)
         for (i in posts.indices) {
             writer().use { writer ->
-                posts.get(i).serialize(writer)
+                posts[i].serialize(writer)
                 dataArray[i] = writer.build()
             }
         }
         val serializedMap = HashMap<PostNumber?, Serialized>(dataArray.size)
         val hasher = getInstanceSha256()
         for (i in dataArray.indices) {
-            val post = posts.get(i)
+            val post = posts[i]
             val data = dataArray[i]!!
             val hash = hasher.calculate(data)
-            serializedMap.put(post.number, Serialized(post, data, hash, newThread))
+            serializedMap[post.number] = Serialized(post, data, hash, newThread)
         }
-        val userPosts: MutableSet<PostNumber> = CommonDatabase.Companion.getInstance().posts
-            .getFlags(threadKey.chanName, threadKey.boardName, threadKey.threadNumber).userPosts!!
-        return insertLocks.lock<InsertResult?, IOException?>(threadKey, KeyLock.Callback {
-            insertNewPostsLocked(
-                threadKey,
-                meta, temporary, newThread, partial, serializedMap, userPosts
-            )
-        })
+        val userPosts: MutableSet<PostNumber> =
+            CommonDatabase.Companion
+                .getInstance()
+                .posts
+                .getFlags(threadKey.chanName, threadKey.boardName, threadKey.threadNumber)
+                .userPosts!!
+        return insertLocks.lock<InsertResult?, IOException?>(
+            threadKey,
+            KeyLock.Callback {
+                insertNewPostsLocked(
+                    threadKey,
+                    meta,
+                    temporary,
+                    newThread,
+                    partial,
+                    serializedMap,
+                    userPosts,
+                )
+            },
+        )
     }
 
     @Throws(IOException::class)
     private fun insertNewPostsLocked(
         threadKey: ThreadKey,
-        meta: Meta, temporary: Boolean, newThread: Boolean, partial: Boolean,
-        serializedMap: HashMap<PostNumber?, Serialized>, userPosts: MutableSet<PostNumber>
+        meta: Meta,
+        temporary: Boolean,
+        newThread: Boolean,
+        partial: Boolean,
+        serializedMap: HashMap<PostNumber?, Serialized>,
+        userPosts: MutableSet<PostNumber>,
     ): InsertResult {
-        var deleted: LongSparseArray<Void?>? = null
-        var restored: LongSparseArray<Void?>? = null
+        var deleted: LongSparseArray<Unit?>? = null
+        var restored: LongSparseArray<Unit?>? = null
         var newCount = 0
-        val projection = arrayOf<String?>(
-            "rowid",
-            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
-            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
-            Schema.Posts.Columns.Companion.FLAGS,
-            Schema.Posts.Columns.Companion.HASH
-        )
+        val projection =
+            arrayOf<String?>(
+                "rowid",
+                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
+                Schema.Posts.Columns.Companion.FLAGS,
+                Schema.Posts.Columns.Companion.HASH,
+            )
         val filter = threadKey.filterPosts()!!.build()
-        database.query(
-            Schema.Posts.Companion.TABLE_NAME,
-            projection, filter.value, filter.args, null, null, null
-        ).use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                val postNumber = PostNumber(cursor.getInt(1), cursor.getInt(2))
-                var flags = cursor.getInt(3)
-                val hash = cursor.getBlob(4)
-                var serialized = serializedMap.get(postNumber)
-                if (serialized != null) {
-                    if (serialized.hash.contentEquals(hash)) {
-                        serializedMap.remove(postNumber)
-                        serialized = null
-                        if (get(flags, Schema.Posts.Flags.Companion.DELETED)) {
-                            if (restored == null) {
-                                restored = LongSparseArray<Void?>()
+        database
+            .query(
+                Schema.Posts.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    val postNumber = PostNumber(cursor.getInt(1), cursor.getInt(2))
+                    var flags = cursor.getInt(3)
+                    val hash = cursor.getBlob(4)
+                    var serialized = serializedMap[postNumber]
+                    if (serialized != null) {
+                        if (serialized.hash.contentEquals(hash)) {
+                            serializedMap.remove(postNumber)
+                            serialized = null
+                            if (get(flags, Schema.Posts.Flags.Companion.DELETED)) {
+                                if (restored == null) {
+                                    restored = LongSparseArray<Unit?>()
+                                }
+                                restored.put(id, null)
                             }
-                            restored.put(id, null)
+                        } else {
+                            flags =
+                                set(
+                                    flags,
+                                    Schema.Posts.Flags.Companion.DELETED or
+                                        Schema.Posts.Flags.Companion.MARK_DELETED,
+                                    false,
+                                )
+                            flags = set(flags, Schema.Posts.Flags.Companion.MARK_EDITED, true)
+                            serialized.flags = flags
                         }
-                    } else {
-                        flags = set(
-                            flags, Schema.Posts.Flags.Companion.DELETED or
-                                    Schema.Posts.Flags.Companion.MARK_DELETED, false
-                        )
-                        flags = set(flags, Schema.Posts.Flags.Companion.MARK_EDITED, true)
-                        serialized.flags = flags
+                    } else if (!partial && !get(flags, Schema.Posts.Flags.Companion.DELETED)) {
+                        if (deleted == null) {
+                            deleted = LongSparseArray<Unit?>()
+                        }
+                        deleted.put(id, null)
                     }
-                } else if (!partial && !get(flags, Schema.Posts.Flags.Companion.DELETED)) {
-                    if (deleted == null) {
-                        deleted = LongSparseArray<Void?>()
+                    if (serialized == null && get(flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
+                        newCount++
                     }
-                    deleted.put(id, null)
-                }
-                if (serialized == null && get(flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
-                    newCount++
                 }
             }
-        }
         for (serialized in serializedMap.values) {
             if (get(serialized.flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
                 newCount++
@@ -786,43 +920,50 @@ class PagesDatabase private constructor() {
             upsertMeta(threadKey, if (temporary) 0 else System.currentTimeMillis(), meta)
             if (deleted != null) {
                 updateFlags(
-                    threadKey, Expression.LongIterator.Companion.create(deleted), "| " +
-                            (Schema.Posts.Flags.Companion.DELETED or Schema.Posts.Flags.Companion.MARK_DELETED)
+                    threadKey,
+                    Expression.LongIterator.Companion.create(deleted),
+                    "| " +
+                        (Schema.Posts.Flags.Companion.DELETED or Schema.Posts.Flags.Companion.MARK_DELETED),
                 )
             }
             if (restored != null) {
                 updateFlags(
-                    threadKey, Expression.LongIterator.Companion.create(restored), "& " +
-                            (Schema.Posts.Flags.Companion.DELETED or Schema.Posts.Flags.Companion.MARK_DELETED).inv() + " | " +
-                            Schema.Posts.Flags.Companion.MARK_EDITED
+                    threadKey,
+                    Expression.LongIterator.Companion.create(restored),
+                    "& " +
+                        (Schema.Posts.Flags.Companion.DELETED or Schema.Posts.Flags.Companion.MARK_DELETED).inv() + " | " +
+                        Schema.Posts.Flags.Companion.MARK_EDITED,
                 )
             }
             if (!serializedMap.isEmpty()) {
                 val iterator = serializedMap.values.iterator()
                 val referencesTo = if (userPosts.isEmpty()) null else HashSet<PostNumber>()
                 Expression.batchInsert(
-                    serializedMap.size, 10, 8,
+                    serializedMap.size,
+                    10,
+                    8,
                     CreateBatchInsertStatement { values: String? ->
                         database.compileStatement(
                             "INSERT OR REPLACE " +
-                                    "INTO " + Schema.Posts.Companion.TABLE_NAME + " (" +
-                                    Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
-                                    Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
-                                    Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
-                                    Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
-                                    Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + ", " +
-                                    Schema.Posts.Columns.Companion.FLAGS + ", " +
-                                    Schema.Posts.Columns.Companion.DATA + ", " +
-                                    Schema.Posts.Columns.Companion.HASH + ") " +
-                                    "VALUES " + values
+                                "INTO " + Schema.Posts.Companion.TABLE_NAME + " (" +
+                                Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
+                                Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
+                                Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
+                                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
+                                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + ", " +
+                                Schema.Posts.Columns.Companion.FLAGS + ", " +
+                                Schema.Posts.Columns.Companion.DATA + ", " +
+                                Schema.Posts.Columns.Companion.HASH + ") " +
+                                "VALUES " + values,
                         )
                     },
                     BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
                         val serialized = iterator.next()
                         var flags = serialized.flags
-                        if (referencesTo != null && get(
+                        if (referencesTo != null &&
+                            get(
                                 flags,
-                                Schema.Posts.Flags.Companion.MARK_NEW
+                                Schema.Posts.Flags.Companion.MARK_NEW,
                             )
                         ) {
                             referencesTo.clear()
@@ -833,8 +974,9 @@ class PagesDatabase private constructor() {
                                     replies.add(
                                         Reply(
                                             serialized.post.number,
-                                            serialized.post.comment, serialized.post.timestamp
-                                        )
+                                            serialized.post.comment,
+                                            serialized.post.timestamp,
+                                        ),
                                     )
                                     break
                                 }
@@ -843,12 +985,21 @@ class PagesDatabase private constructor() {
                         statement!!.bindString(start + 1, threadKey.chanName)
                         statement.bindString(start + 2, threadKey.boardName)
                         statement.bindString(start + 3, threadKey.threadNumber)
-                        statement.bindLong(start + 4, serialized.post.number.major.toLong())
-                        statement.bindLong(start + 5, serialized.post.number.minor.toLong())
+                        statement.bindLong(
+                            start + 4,
+                            serialized.post.number.major
+                                .toLong(),
+                        )
+                        statement.bindLong(
+                            start + 5,
+                            serialized.post.number.minor
+                                .toLong(),
+                        )
                         statement.bindLong(start + 6, flags.toLong())
                         statement.bindBlob(start + 7, serialized.data)
                         statement.bindBlob(start + 8, serialized.hash)
-                    })
+                    },
+                )
             }
             database.setTransactionSuccessful()
         } finally {
@@ -857,7 +1008,7 @@ class PagesDatabase private constructor() {
 
         val state = Cache.State(UUID.randomUUID(), newThread)
         synchronized(cacheStates) {
-            cacheStates.put(threadKey, state)
+            cacheStates[threadKey] = state
         }
         return InsertResult(state, replies, newCount)
     }
@@ -866,17 +1017,23 @@ class PagesDatabase private constructor() {
 
     @Throws(ParseException::class, OperationCanceledException::class)
     fun collectDiffPosts(
-        threadKey: ThreadKey, cache: Cache?, cleanup: Cleanup,
-        signal: CancellationSignal?
+        threadKey: ThreadKey,
+        cache: Cache?,
+        cleanup: Cleanup,
+        signal: CancellationSignal?,
     ): Diff? {
         Objects.requireNonNull<ThreadKey?>(threadKey)
         Objects.requireNonNull<Cleanup?>(cleanup)
-        val diff = collectLocks.lock<Diff, ParseException?>(
-            threadKey,
-            KeyLock.Callback { collectDiffPostsLocked(threadKey, cache, cleanup, signal) })
-        if (cache == null && diff!!.cache.isEmpty && migratePosts(
+        val diff =
+            collectLocks.lock<Diff, ParseException?>(
                 threadKey,
-                MigrationRequest.COLLECT_DIFF_POSTS
+                KeyLock.Callback { collectDiffPostsLocked(threadKey, cache, cleanup, signal) },
+            )
+        if (cache == null &&
+            diff!!.cache.isEmpty &&
+            migratePosts(
+                threadKey,
+                MigrationRequest.COLLECT_DIFF_POSTS,
             )
         ) {
             return collectDiffPosts(threadKey, cache, cleanup, signal)
@@ -889,10 +1046,11 @@ class PagesDatabase private constructor() {
         threadKey: ThreadKey,
         cache: Cache?,
         cleanup: Cleanup,
-        signal: CancellationSignal?
+        signal: CancellationSignal?,
     ): Diff {
         when (cleanup) {
             Cleanup.NONE -> {}
+
             Cleanup.ERASE -> {
                 val filter = threadKey.filterMeta()!!.build()
                 database.delete(Schema.Meta.Companion.TABLE_NAME, filter.value, filter.args)
@@ -902,50 +1060,56 @@ class PagesDatabase private constructor() {
                 if (cache != null && !cache.diffItems.isEmpty() && cache.originalPostNumber != null) {
                     var firstExistingPostNumber: PostNumber? = null
                     for (entry in cache.diffItems.entries) {
-                        if (!entry.value!!.deleted) {
-                            val postNumber: PostNumber = entry.key!!
-                            if (!postNumber.equals(cache.originalPostNumber) && (firstExistingPostNumber == null ||
-                                        postNumber.compareTo(firstExistingPostNumber) < 0)
+                        if (!entry.value.deleted) {
+                            val postNumber: PostNumber = entry.key
+                            if (!postNumber.equals(cache.originalPostNumber) &&
+                                (
+                                    firstExistingPostNumber == null ||
+                                        postNumber.compareTo(firstExistingPostNumber) < 0
+                                )
                             ) {
                                 firstExistingPostNumber = postNumber
                             }
                         }
                     }
                     if (firstExistingPostNumber != null) {
-                        val filter = threadKey.filterPosts()!!
-                            .append(
-                                Expression.filterOr()
-                                    .raw(
-                                        Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " < " +
-                                                firstExistingPostNumber.major
-                                    )
-                                    .append(
-                                        Expression.filter()
-                                            .raw(
-                                                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " = " +
-                                                        firstExistingPostNumber.major
-                                            )
-                                            .raw(
-                                                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " < " +
-                                                        firstExistingPostNumber.minor
-                                            )
-                                    )
-                            )
-                            .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
-                            .build()
+                        val filter =
+                            threadKey
+                                .filterPosts()!!
+                                .append(
+                                    Expression
+                                        .filterOr()
+                                        .raw(
+                                            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " < " +
+                                                firstExistingPostNumber.major,
+                                        ).append(
+                                            Expression
+                                                .filter()
+                                                .raw(
+                                                    Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " = " +
+                                                        firstExistingPostNumber.major,
+                                                ).raw(
+                                                    Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " < " +
+                                                        firstExistingPostNumber.minor,
+                                                ),
+                                        ),
+                                ).raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
+                                .build()
                         database.delete(
                             Schema.Posts.Companion.TABLE_NAME,
                             filter.value,
-                            filter.args
+                            filter.args,
                         )
                     }
                 }
             }
 
             Cleanup.DELETED -> {
-                val filter = threadKey.filterPosts()!!
-                    .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
-                    .build()
+                val filter =
+                    threadKey
+                        .filterPosts()!!
+                        .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
+                        .build()
                 database.delete(Schema.Posts.Companion.TABLE_NAME, filter.value, filter.args)
             }
         }
@@ -962,75 +1126,90 @@ class PagesDatabase private constructor() {
         var replyPosts: MutableMap<PostNumber, Long>? = null
         val state = getCacheState(threadKey)
 
-        val projection = arrayOf<String?>(
-            "rowid", Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
-            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR, Schema.Posts.Columns.Companion.FLAGS,
-            Schema.Posts.Columns.Companion.DATA, Schema.Posts.Columns.Companion.HASH
-        )
+        val projection =
+            arrayOf<String?>(
+                "rowid",
+                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
+                Schema.Posts.Columns.Companion.FLAGS,
+                Schema.Posts.Columns.Companion.DATA,
+                Schema.Posts.Columns.Companion.HASH,
+            )
         val filter = threadKey.filterPosts()!!.build()
-        database.query(
-            false, Schema.Posts.Companion.TABLE_NAME, projection,
-            filter.value, filter.args, null, null, null, null, signal
-        ).use { cursor ->
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(0)
-                val postNumber = PostNumber(cursor.getInt(1), cursor.getInt(2))
-                if (existing == null) {
-                    existing = ArrayList(cursor.getCount())
-                }
-                existing.add(postNumber)
-                val flags = cursor.getInt(3)
-                if (get(flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
-                    if (newPosts == null) {
-                        newPosts = HashMap()
+        database
+            .query(
+                false,
+                Schema.Posts.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+                null,
+                signal,
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(0)
+                    val postNumber = PostNumber(cursor.getInt(1), cursor.getInt(2))
+                    if (existing == null) {
+                        existing = ArrayList(cursor.getCount())
                     }
-                    newPosts.put(postNumber, id)
-                }
-                if (get(flags, Schema.Posts.Flags.Companion.MARK_DELETED)) {
-                    if (deletedPosts == null) {
-                        deletedPosts = HashMap()
+                    existing.add(postNumber)
+                    val flags = cursor.getInt(3)
+                    if (get(flags, Schema.Posts.Flags.Companion.MARK_NEW)) {
+                        if (newPosts == null) {
+                            newPosts = HashMap()
+                        }
+                        newPosts[postNumber] = id
                     }
-                    deletedPosts.put(postNumber, id)
-                }
-                if (get(flags, Schema.Posts.Flags.Companion.MARK_EDITED)) {
-                    if (editedPosts == null) {
-                        editedPosts = HashMap()
+                    if (get(flags, Schema.Posts.Flags.Companion.MARK_DELETED)) {
+                        if (deletedPosts == null) {
+                            deletedPosts = HashMap()
+                        }
+                        deletedPosts[postNumber] = id
                     }
-                    editedPosts.put(postNumber, id)
-                }
-                if (get(flags, Schema.Posts.Flags.Companion.MARK_REPLY)) {
-                    if (replyPosts == null) {
-                        replyPosts = HashMap()
+                    if (get(flags, Schema.Posts.Flags.Companion.MARK_EDITED)) {
+                        if (editedPosts == null) {
+                            editedPosts = HashMap()
+                        }
+                        editedPosts[postNumber] = id
                     }
-                    replyPosts.put(postNumber, id)
-                }
-                val deleted = get(flags, Schema.Posts.Flags.Companion.DELETED)
-                val hash = cursor.getBlob(5)
-                val oldItem = oldItems.get(postNumber)
-                if (oldItem == null || oldItem.deleted != deleted || !oldItem.hash.contentEquals(
-                        hash
-                    )
-                ) {
-                    if (originalPostNumber == null || postNumber.compareTo(originalPostNumber) < 0) {
-                        originalPostNumber = postNumber
+                    if (get(flags, Schema.Posts.Flags.Companion.MARK_REPLY)) {
+                        if (replyPosts == null) {
+                            replyPosts = HashMap()
+                        }
+                        replyPosts[postNumber] = id
                     }
-                    if (extractedList == null) {
-                        extractedList = ArrayList<Extracted>()
+                    val deleted = get(flags, Schema.Posts.Flags.Companion.DELETED)
+                    val hash = cursor.getBlob(5)
+                    val oldItem = oldItems[postNumber]
+                    if (oldItem == null ||
+                        oldItem.deleted != deleted ||
+                        !oldItem.hash.contentEquals(
+                            hash,
+                        )
+                    ) {
+                        if (originalPostNumber == null || postNumber.compareTo(originalPostNumber) < 0) {
+                            originalPostNumber = postNumber
+                        }
+                        if (extractedList == null) {
+                            extractedList = ArrayList<Extracted>()
+                        }
+                        if (newItems == null) {
+                            newItems = HashMap(oldItems)
+                        }
+                        extractedList.add(Extracted(cursor.getBlob(4), postNumber, deleted))
+                        newItems[postNumber] = DiffItem(hash, deleted)
                     }
-                    if (newItems == null) {
-                        newItems = HashMap(oldItems)
-                    }
-                    extractedList.add(Extracted(cursor.getBlob(4), postNumber, deleted))
-                    newItems.put(postNumber, DiffItem(hash, deleted))
                 }
             }
-        }
         var changed: MutableList<Post>? = null
         if (extractedList != null) {
             @Suppress("UNCHECKED_CAST")
             val unsafeChanged = extractedList as MutableList<*> as MutableList<Post>
             for (i in extractedList.indices) {
-                val extracted = extractedList.get(i)
+                val extracted = extractedList[i]
                 val post: Post?
                 try {
                     reader(extracted.data).use { reader ->
@@ -1039,7 +1218,7 @@ class PagesDatabase private constructor() {
                 } catch (e: IOException) {
                     throw RuntimeException(e)
                 }
-                unsafeChanged.set(i, post!!)
+                unsafeChanged[i] = post!!
             }
             changed = unsafeChanged
         }
@@ -1066,35 +1245,51 @@ class PagesDatabase private constructor() {
             removed = oldItems.keys
         }
 
-        if (newPosts != null && !newPosts.isEmpty() || deletedPosts != null && !deletedPosts.isEmpty() || editedPosts != null && !editedPosts.isEmpty() || replyPosts != null && !replyPosts.isEmpty()) {
+        if (newPosts != null &&
+            !newPosts.isEmpty() ||
+            deletedPosts != null &&
+            !deletedPosts.isEmpty() ||
+            editedPosts != null &&
+            !editedPosts.isEmpty() ||
+            replyPosts != null &&
+            !replyPosts.isEmpty()
+        ) {
             database.beginTransaction()
             try {
                 if (newPosts != null && !newPosts.isEmpty()) {
                     updateFlags(
                         threadKey,
                         Expression.LongIterator.Companion.create(newPosts.values.iterator()),
-                        "& " + Schema.Posts.Flags.Companion.MARK_NEW.inv()
+                        "& " +
+                            Schema.Posts.Flags.Companion.MARK_NEW
+                                .inv(),
                     )
                 }
                 if (deletedPosts != null && !deletedPosts.isEmpty()) {
                     updateFlags(
                         threadKey,
                         Expression.LongIterator.Companion.create(deletedPosts.values.iterator()),
-                        "& " + Schema.Posts.Flags.Companion.MARK_DELETED.inv()
+                        "& " +
+                            Schema.Posts.Flags.Companion.MARK_DELETED
+                                .inv(),
                     )
                 }
                 if (editedPosts != null && !editedPosts.isEmpty()) {
                     updateFlags(
                         threadKey,
                         Expression.LongIterator.Companion.create(editedPosts.values.iterator()),
-                        "& " + Schema.Posts.Flags.Companion.MARK_EDITED.inv()
+                        "& " +
+                            Schema.Posts.Flags.Companion.MARK_EDITED
+                                .inv(),
                     )
                 }
                 if (replyPosts != null && !replyPosts.isEmpty()) {
                     updateFlags(
                         threadKey,
                         Expression.LongIterator.Companion.create(replyPosts.values.iterator()),
-                        "& " + Schema.Posts.Flags.Companion.MARK_REPLY.inv()
+                        "& " +
+                            Schema.Posts.Flags.Companion.MARK_REPLY
+                                .inv(),
                     )
                 }
                 database.setTransactionSuccessful()
@@ -1103,17 +1298,20 @@ class PagesDatabase private constructor() {
             }
         }
 
-        val newCache = PagesDatabase.Cache(
-            if (newItems != null) newItems else oldItems,
-            originalPostNumber,
-            state
-        )
+        val newCache =
+            PagesDatabase.Cache(
+                if (newItems != null) newItems else oldItems,
+                originalPostNumber,
+                state,
+            )
         return Diff(
-            newCache, if (changed != null) changed else mutableListOf(), removed,
+            newCache,
+            if (changed != null) changed else mutableListOf(),
+            removed,
             if (newPosts != null) newPosts.keys else mutableSetOf(),
             if (deletedPosts != null) deletedPosts.keys else mutableSetOf(),
             if (editedPosts != null) editedPosts.keys else mutableSetOf(),
-            if (replyPosts != null) replyPosts.keys else mutableSetOf()
+            if (replyPosts != null) replyPosts.keys else mutableSetOf(),
         )
     }
 
@@ -1122,6 +1320,10 @@ class PagesDatabase private constructor() {
         class HttpValidator : Serializable {
             var eTag: String? = null
             var lastModified: String? = null
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
 
         class Posts : Serializable {
@@ -1135,6 +1337,10 @@ class PagesDatabase private constructor() {
             var mLocalAutohide: Array<Array<String?>?>? = null
             var mAutoRefreshEnabled: Boolean = false
             var mAutoRefreshInterval: Int = 0
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
 
         class Post : Serializable {
@@ -1178,6 +1384,10 @@ class PagesDatabase private constructor() {
             var mEmail: String? = null
             var mAttachments: Array<Any?>? = null
             var mIcons: Array<Icon?>? = null
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
 
         class FileAttachment : Serializable {
@@ -1188,11 +1398,16 @@ class PagesDatabase private constructor() {
             var mWidth: Int = 0
             var mHeight: Int = 0
             var mSpoiler: Boolean = false
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
 
         class EmbeddedAttachment : Serializable {
             enum class ContentType {
-                AUDIO, VIDEO
+                AUDIO,
+                VIDEO,
             }
 
             var mFileUriString: String? = null
@@ -1202,20 +1417,30 @@ class PagesDatabase private constructor() {
             var mCanDownload: Boolean = false
             var mForcedName: String? = null
             var mTitle: String? = null
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
 
         class Icon : Serializable {
             var mUriString: String? = null
             var mTitle: String? = null
+
+            companion object {
+                private const val serialVersionUID: Long = 1L
+            }
         }
     }
 
-    private class LegacyObjectInputStream(`in`: InputStream?) : ObjectInputStream(`in`) {
+    private class LegacyObjectInputStream(
+        `in`: InputStream?,
+    ) : ObjectInputStream(`in`) {
         @Throws(ClassNotFoundException::class, IOException::class)
         override fun readClassDescriptor(): ObjectStreamClass? {
             var objectStreamClass = super.readClassDescriptor()
             if (objectStreamClass != null) {
-                val newClass = TRANSFORM.get(objectStreamClass.getName())
+                val newClass = TRANSFORM[objectStreamClass.getName()]
                 if (newClass != null) {
                     objectStreamClass = ObjectStreamClass.lookup(newClass)
                 }
@@ -1228,34 +1453,24 @@ class PagesDatabase private constructor() {
 
             init {
                 TRANSFORM = HashMap<String?, Class<*>?>()
-                TRANSFORM.put("HttpValidator", Legacy.HttpValidator::class.java)
-                TRANSFORM.put("chan.content.model.Posts", Legacy.Posts::class.java)
-                TRANSFORM.put("chan.content.model.Post", Legacy.Post::class.java)
-                TRANSFORM.put("[Lchan.content.model.Post;", Array<Legacy.Post>::class.java)
-                TRANSFORM.put("chan.content.model.Attachment", Any::class.java)
-                TRANSFORM.put("[Lchan.content.model.Attachment;", Array<Any>::class.java)
-                TRANSFORM.put(
-                    "chan.content.model.FileAttachment",
+                TRANSFORM["HttpValidator"] = Legacy.HttpValidator::class.java
+                TRANSFORM["chan.content.model.Posts"] = Legacy.Posts::class.java
+                TRANSFORM["chan.content.model.Post"] = Legacy.Post::class.java
+                TRANSFORM["[Lchan.content.model.Post;"] = Array<Legacy.Post>::class.java
+                TRANSFORM["chan.content.model.Attachment"] = Any::class.java
+                TRANSFORM["[Lchan.content.model.Attachment;"] = Array<Any>::class.java
+                TRANSFORM["chan.content.model.FileAttachment"] =
                     Legacy.FileAttachment::class.java
-                )
-                TRANSFORM.put(
-                    "[Lchan.content.model.FileAttachment;",
+                TRANSFORM["[Lchan.content.model.FileAttachment;"] =
                     Array<Legacy.FileAttachment>::class.java
-                )
-                TRANSFORM.put(
-                    "chan.content.model.EmbeddedAttachment",
+                TRANSFORM["chan.content.model.EmbeddedAttachment"] =
                     Legacy.EmbeddedAttachment::class.java
-                )
-                TRANSFORM.put(
-                    "[Lchan.content.model.EmbeddedAttachment;",
+                TRANSFORM["[Lchan.content.model.EmbeddedAttachment;"] =
                     Array<Legacy.EmbeddedAttachment>::class.java
-                )
-                TRANSFORM.put(
-                    "chan.content.model.EmbeddedAttachment\$ContentType",
+                TRANSFORM["chan.content.model.EmbeddedAttachment\$ContentType"] =
                     Legacy.EmbeddedAttachment.ContentType::class.java
-                )
-                TRANSFORM.put("chan.content.model.Icon", Legacy.Icon::class.java)
-                TRANSFORM.put("[Lchan.content.model.Icon;", Array<Legacy.Icon>::class.java)
+                TRANSFORM["chan.content.model.Icon"] = Legacy.Icon::class.java
+                TRANSFORM["[Lchan.content.model.Icon;"] = Array<Legacy.Icon>::class.java
             }
         }
     }
@@ -1279,18 +1494,18 @@ class PagesDatabase private constructor() {
                 forceMigrate.delete()
                 val files = directory.list()
                 for (name in files!!) {
-                    var name = name
-                    if (name.startsWith("posts_")) {
-                        name = name.substring(6)
-                        val index1 = name.indexOf('_')
-                        val index2 = name.lastIndexOf('_')
+                    var entryName = name
+                    if (entryName.startsWith("posts_")) {
+                        entryName = entryName.substring(6)
+                        val index1 = entryName.indexOf('_')
+                        val index2 = entryName.lastIndexOf('_')
                         if (index2 > index1 && index1 >= 0) {
-                            val chanName = name.substring(0, index1)
-                            var boardName: String? = name.substring(index1 + 1, index2)
+                            val chanName = entryName.substring(0, index1)
+                            var boardName: String? = entryName.substring(index1 + 1, index2)
                             if ("null" == boardName) {
                                 boardName = null
                             }
-                            val threadNumber = name.substring(index2 + 1)
+                            val threadNumber = entryName.substring(index2 + 1)
                             migratePosts(ThreadKey(chanName, boardName, threadNumber), null)
                         }
                     }
@@ -1304,67 +1519,70 @@ class PagesDatabase private constructor() {
                 excludeThreads.add(
                     PagesDatabase.ThreadKey(
                         favoriteItem.chanName,
-                        emptyIfNull(favoriteItem.boardName), favoriteItem.threadNumber!!
-                    )
+                        emptyIfNull(favoriteItem.boardName),
+                        favoriteItem.threadNumber!!,
+                    ),
                 )
             }
             Thread(Runnable { cleanup(excludeThreads, false) }).start()
         }
     }
 
-    private fun migratePosts(threadKey: ThreadKey, request: MigrationRequest?): Boolean {
+    private fun migratePosts(
+        threadKey: ThreadKey,
+        request: MigrationRequest?,
+    ): Boolean {
         Objects.requireNonNull<ThreadKey?>(threadKey)
         synchronized(migrated) {
-            val requests = migrated.get(threadKey)
+            val requests = migrated[threadKey]
             if (requests != null && requests.isEmpty()) {
                 return false
             }
         }
-        return migrateLocks.lock<Boolean, RuntimeException?>(threadKey, KeyLock.Callback {
-            synchronized(migrated) {
-                val requests = migrated.get(threadKey)
-                if (requests != null) {
-                    if (request != null && requests.contains(request)) {
-                        if (requests.size == 1) {
-                            migrated.put(threadKey, mutableSetOf<MigrationRequest?>())
+        return migrateLocks.lock<Boolean, RuntimeException?>(
+            threadKey,
+            KeyLock.Callback {
+                synchronized(migrated) {
+                    val requests = migrated[threadKey]
+                    if (requests != null) {
+                        if (request != null && requests.contains(request)) {
+                            if (requests.size == 1) {
+                                migrated[threadKey] = mutableSetOf<MigrationRequest?>()
+                            } else {
+                                val newRequests: HashSet<MigrationRequest?> =
+                                    HashSet<MigrationRequest?>(requests)
+                                newRequests.remove(request)
+                                migrated[threadKey] =
+                                    Collections.unmodifiableSet<MigrationRequest?>(newRequests)
+                            }
+                            return@Callback true
                         } else {
-                            val newRequests: HashSet<MigrationRequest?> =
-                                HashSet<MigrationRequest?>(requests)
-                            newRequests.remove(request)
-                            migrated.put(
-                                threadKey,
-                                Collections.unmodifiableSet<MigrationRequest?>(newRequests)
-                            )
+                            return@Callback false
                         }
-                        return@Callback true
-                    } else {
-                        return@Callback false
                     }
                 }
-            }
-            val success = migratePostsLocked(threadKey)
-            synchronized(migrated) {
-                if (success && request != null) {
-                    val newRequests: HashSet<MigrationRequest?> =
-                        HashSet<MigrationRequest?>(Arrays.asList<MigrationRequest?>(*MigrationRequest.entries.toTypedArray()))
-                    newRequests.remove(request)
-                    migrated.put(
-                        threadKey,
-                        Collections.unmodifiableSet<MigrationRequest?>(newRequests)
-                    )
-                } else {
-                    migrated.put(threadKey, mutableSetOf<MigrationRequest?>())
+                val success = migratePostsLocked(threadKey)
+                synchronized(migrated) {
+                    if (success && request != null) {
+                        val newRequests: HashSet<MigrationRequest?> =
+                            HashSet<MigrationRequest?>(Arrays.asList<MigrationRequest?>(*MigrationRequest.entries.toTypedArray()))
+                        newRequests.remove(request)
+                        migrated[threadKey] =
+                            Collections.unmodifiableSet<MigrationRequest?>(newRequests)
+                    } else {
+                        migrated[threadKey] = mutableSetOf<MigrationRequest?>()
+                    }
                 }
-            }
-            success
-        })!!
+                success
+            },
+        )!!
     }
 
     private fun getPostsFile(
         directory: File?,
         chanName: String,
         boardName: String?,
-        threadNumber: String?
+        threadNumber: String?,
     ): File? {
         val fileName = "posts_" + chanName + "_" + boardName + "_" + threadNumber
         val postsFile = File(directory, fileName)
@@ -1385,10 +1603,13 @@ class PagesDatabase private constructor() {
         var postsFile =
             getPostsFile(directory, threadKey.chanName, threadKey.boardName, threadKey.threadNumber)
         if (postsFile == null) {
-            postsFile = getPostsFile(
-                directory, threadKey.chanName,
-                nullIfEmpty(threadKey.boardName), threadKey.threadNumber
-            )
+            postsFile =
+                getPostsFile(
+                    directory,
+                    threadKey.chanName,
+                    nullIfEmpty(threadKey.boardName),
+                    threadKey.threadNumber,
+                )
         }
         if (postsFile == null) {
             return false
@@ -1410,14 +1631,21 @@ class PagesDatabase private constructor() {
             return false
         }
 
-        val validator = if (legacyPosts.mHttpValidator != null) HttpValidator(
-            legacyPosts.mHttpValidator!!.eTag,
-            legacyPosts.mHttpValidator!!.lastModified
-        ) else null
-        val archivedThreadUri = if (legacyPosts.mArchivedThreadUriString != null)
-            Uri.parse(legacyPosts.mArchivedThreadUriString)
-        else
-            null
+        val validator =
+            if (legacyPosts.mHttpValidator != null) {
+                HttpValidator(
+                    legacyPosts.mHttpValidator!!.eTag,
+                    legacyPosts.mHttpValidator!!.lastModified,
+                )
+            } else {
+                null
+            }
+        val archivedThreadUri =
+            if (legacyPosts.mArchivedThreadUriString != null) {
+                Uri.parse(legacyPosts.mArchivedThreadUriString)
+            } else {
+                null
+            }
         val meta = Meta(validator, archivedThreadUri, legacyPosts.mUniquePosters, false, false)
         val posts = ArrayList<Post>(legacyPosts.mPosts!!.size)
         val flags = HashMap<PostNumber?, Pair<HideState?, Boolean?>?>()
@@ -1450,11 +1678,17 @@ class PagesDatabase private constructor() {
             val deleted = get(legacyPost.mFlags, InternalFlags.Companion.DELETED)
             val userPost = get(legacyPost.mFlags, InternalFlags.Companion.USER_POST)
             if (hidden || shown || userPost) {
-                val hideState = if (hidden)
-                    HideState.HIDDEN
-                else
-                    if (shown) HideState.SHOWN else HideState.UNDEFINED
-                flags.put(builder.number, Pair<HideState?, Boolean?>(hideState, userPost))
+                val hideState =
+                    if (hidden) {
+                        HideState.HIDDEN
+                    } else {
+                        if (shown) {
+                            HideState.SHOWN
+                        } else {
+                            HideState.UNDEFINED
+                        }
+                    }
+                flags[builder.number] = Pair<HideState?, Boolean?>(hideState, userPost)
             }
             builder.timestamp = legacyPost.mTimestamp
             builder.subject = legacyPost.mSubject
@@ -1470,32 +1704,45 @@ class PagesDatabase private constructor() {
                 for (legacyAttachment in legacyPost.mAttachments) {
                     if (legacyAttachment is Legacy.FileAttachment) {
                         val legacyFile = legacyAttachment
-                        val fileUri = if (isEmpty(legacyFile.mFileUriString))
-                            null
-                        else
-                            Uri.parse(legacyFile.mFileUriString)
-                        val thumbnailUri = if (isEmpty(legacyFile.mThumbnailUriString))
-                            null
-                        else
-                            Uri.parse(legacyFile.mThumbnailUriString)
-                        val file = createExternal(
-                            fileUri, thumbnailUri,
-                            legacyFile.mOriginalName, legacyFile.mSize,
-                            legacyFile.mWidth, legacyFile.mHeight, legacyFile.mSpoiler
-                        )
+                        val fileUri =
+                            if (isEmpty(legacyFile.mFileUriString)) {
+                                null
+                            } else {
+                                Uri.parse(legacyFile.mFileUriString)
+                            }
+                        val thumbnailUri =
+                            if (isEmpty(legacyFile.mThumbnailUriString)) {
+                                null
+                            } else {
+                                Uri.parse(legacyFile.mThumbnailUriString)
+                            }
+                        val file =
+                            createExternal(
+                                fileUri,
+                                thumbnailUri,
+                                legacyFile.mOriginalName,
+                                legacyFile.mSize,
+                                legacyFile.mWidth,
+                                legacyFile.mHeight,
+                                legacyFile.mSpoiler,
+                            )
                         if (file != null) {
                             builder.attachments!!.add(file)
                         }
                     } else if (legacyAttachment is Legacy.EmbeddedAttachment) {
                         val legacyEmbedded = legacyAttachment
-                        val fileUri = if (isEmpty(legacyEmbedded.mFileUriString))
-                            null
-                        else
-                            Uri.parse(legacyEmbedded.mFileUriString)
-                        val thumbnailUri = if (isEmpty(legacyEmbedded.mThumbnailUriString))
-                            null
-                        else
-                            Uri.parse(legacyEmbedded.mThumbnailUriString)
+                        val fileUri =
+                            if (isEmpty(legacyEmbedded.mFileUriString)) {
+                                null
+                            } else {
+                                Uri.parse(legacyEmbedded.mFileUriString)
+                            }
+                        val thumbnailUri =
+                            if (isEmpty(legacyEmbedded.mThumbnailUriString)) {
+                                null
+                            } else {
+                                Uri.parse(legacyEmbedded.mThumbnailUriString)
+                            }
                         val contentType: Embedded.ContentType?
                         when (legacyEmbedded.mContentType) {
                             Legacy.EmbeddedAttachment.ContentType.AUDIO -> {
@@ -1510,11 +1757,16 @@ class PagesDatabase private constructor() {
                                 contentType = null
                             }
                         }
-                        val embedded = createExternal(
-                            false,
-                            fileUri, thumbnailUri, legacyEmbedded.mEmbeddedType, contentType,
-                            legacyEmbedded.mCanDownload, legacyEmbedded.mForcedName
-                        )
+                        val embedded =
+                            createExternal(
+                                false,
+                                fileUri,
+                                thumbnailUri,
+                                legacyEmbedded.mEmbeddedType,
+                                contentType,
+                                legacyEmbedded.mCanDownload,
+                                legacyEmbedded.mForcedName,
+                            )
                         if (embedded != null) {
                             builder.attachments!!.add(embedded)
                         }
@@ -1525,10 +1777,12 @@ class PagesDatabase private constructor() {
                 builder.icons = ArrayList<Post.Icon>(legacyPost.mIcons!!.size)
                 for (legacyIcon in legacyPost.mIcons) {
                     if (legacyIcon != null) {
-                        val uri = if (isEmpty(legacyIcon.mUriString))
-                            null
-                        else
-                            Uri.parse(legacyIcon.mUriString)
+                        val uri =
+                            if (isEmpty(legacyIcon.mUriString)) {
+                                null
+                            } else {
+                                Uri.parse(legacyIcon.mUriString)
+                            }
                         val icon = createExternal(uri, legacyIcon.mTitle)
                         if (icon != null) {
                             builder.icons!!.add(icon)
@@ -1543,7 +1797,7 @@ class PagesDatabase private constructor() {
         for (i in posts.indices) {
             try {
                 writer().use { writer ->
-                    posts.get(i).serialize(writer)
+                    posts[i].serialize(writer)
                     data[i] = writer.build()
                 }
             } catch (e: IOException) {
@@ -1576,7 +1830,7 @@ class PagesDatabase private constructor() {
                         false,
                         null,
                         true,
-                        extra
+                        extra,
                     )
                 }
             }
@@ -1584,7 +1838,10 @@ class PagesDatabase private constructor() {
         if (!flags.isEmpty()) {
             CommonDatabase.Companion.getInstance().posts.setFlagsMigration(
                 threadKey.chanName,
-                threadKey.boardName, threadKey.threadNumber, flags, time
+                threadKey.boardName,
+                threadKey.threadNumber,
+                flags,
+                time,
             )
         }
         database.beginTransaction()
@@ -1598,25 +1855,27 @@ class PagesDatabase private constructor() {
             val index = intArrayOf(0)
             val hasher = getInstanceSha256()
             Expression.batchInsert(
-                posts.size, 10, 8,
+                posts.size,
+                10,
+                8,
                 CreateBatchInsertStatement { values: String? ->
                     database.compileStatement(
                         "INSERT OR REPLACE " +
-                                "INTO " + Schema.Posts.Companion.TABLE_NAME + " (" +
-                                Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
-                                Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
-                                Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
-                                Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
-                                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + ", " +
-                                Schema.Posts.Columns.Companion.FLAGS + ", " +
-                                Schema.Posts.Columns.Companion.DATA + ", " +
-                                Schema.Posts.Columns.Companion.HASH + ") " +
-                                "VALUES " + values
+                            "INTO " + Schema.Posts.Companion.TABLE_NAME + " (" +
+                            Schema.Posts.Columns.Companion.CHAN_NAME + ", " +
+                            Schema.Posts.Columns.Companion.BOARD_NAME + ", " +
+                            Schema.Posts.Columns.Companion.THREAD_NUMBER + ", " +
+                            Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + ", " +
+                            Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + ", " +
+                            Schema.Posts.Columns.Companion.FLAGS + ", " +
+                            Schema.Posts.Columns.Companion.DATA + ", " +
+                            Schema.Posts.Columns.Companion.HASH + ") " +
+                            "VALUES " + values,
                     )
                 },
                 BindBatchInsertArgs { statement: SQLiteStatement?, start: Int ->
                     val i = index[0]
-                    val post = posts.get(i)
+                    val post = posts[i]
                     statement!!.bindString(start + 1, threadKey.chanName)
                     statement.bindString(start + 2, threadKey.boardName)
                     statement.bindString(start + 3, threadKey.threadNumber)
@@ -1624,12 +1883,13 @@ class PagesDatabase private constructor() {
                     statement.bindLong(start + 5, post.number.minor.toLong())
                     statement.bindLong(
                         start + 6,
-                        (if (post.deleted) Schema.Posts.Flags.Companion.DELETED else 0).toLong()
+                        (if (post.deleted) Schema.Posts.Flags.Companion.DELETED else 0).toLong(),
                     )
                     statement.bindBlob(start + 7, data[i])
                     statement.bindBlob(start + 8, hasher.calculate(data[i]!!))
                     index[0]++
-                })
+                },
+            )
             database.setTransactionSuccessful()
         } finally {
             database.endTransaction()
@@ -1646,7 +1906,7 @@ class PagesDatabase private constructor() {
         private fun orderByPostNumber(desc: Boolean): String {
             val order = (if (desc) "DESC" else "ASC")
             return Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " " + order + ", " +
-                    Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " " + order
+                Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " " + order
         }
     }
 }

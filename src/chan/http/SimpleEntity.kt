@@ -22,50 +22,54 @@ import java.io.IOException
 import java.io.OutputStream
 
 @Extendable
-open class SimpleEntity @Public constructor() : RequestEntity {
-	private var data: ByteArray? = null
-	private var contentType = "text/plain"
+open class SimpleEntity
+    @Public
+    constructor() : RequestEntity {
+        private var data: ByteArray? = null
+        private var contentType = "text/plain"
 
-	override fun add(name: String, value: String?) {
-		throw UnsupportedOperationException()
-	}
+        override fun add(
+            name: String,
+            value: String?,
+        ): Unit = throw UnsupportedOperationException()
 
-	@Extendable
-	open fun setData(data: String?) {
-		setData(data, "UTF-8")
-	}
+        @Extendable
+        open fun setData(data: String?) {
+            setData(data, "UTF-8")
+        }
 
-	@Extendable
-	open fun setData(data: String?, charsetName: String) {
-		setData(data?.toByteArray(charset(charsetName)))
-	}
+        @Extendable
+        open fun setData(
+            data: String?,
+            charsetName: String,
+        ) {
+            setData(data?.toByteArray(charset(charsetName)))
+        }
 
-	@Extendable
-	open fun setData(data: ByteArray?) {
-		this.data = data
-	}
+        @Extendable
+        open fun setData(data: ByteArray?) {
+            this.data = data
+        }
 
-	@Extendable
-	open fun setContentType(contentType: String) {
-		require(contentType.isNotEmpty()) { "Invalid content type" }
-		this.contentType = contentType
-	}
+        @Extendable
+        open fun setContentType(contentType: String) {
+            require(contentType.isNotEmpty()) { "Invalid content type" }
+            this.contentType = contentType
+        }
 
-	override fun getContentType(): String = contentType
+        override fun getContentType(): String = contentType
 
-	override fun getContentLength(): Long {
-		return data?.size?.toLong() ?: 0L
-	}
+        override fun getContentLength(): Long = data?.size?.toLong() ?: 0L
 
-	@Throws(IOException::class)
-	override fun write(output: OutputStream) {
-		data?.let { output.write(it) }
-	}
+        @Throws(IOException::class)
+        override fun write(output: OutputStream) {
+            data?.let { output.write(it) }
+        }
 
-	override fun copy(): RequestEntity {
-		val entity = SimpleEntity()
-		entity.setData(data)
-		entity.setContentType(contentType)
-		return entity
-	}
-}
+        override fun copy(): RequestEntity {
+            val entity = SimpleEntity()
+            entity.setData(data)
+            entity.setContentType(contentType)
+            return entity
+        }
+    }

@@ -17,694 +17,912 @@ import chan.util.StringUtils
 import com.mishiranu.dashchan.content.FileProvider
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
-import java.net.HttpURLConnection
-import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.util.Locale
 
-class ReadUpdateTask(context: Context, private val callback: Callback) :
-		HttpHolderTask<Void, Pair<ErrorItem?, ReadUpdateTask.UpdateDataMap?>?>(Chan.getFallback()) {
-	private val context: Context = context.applicationContext
+class ReadUpdateTask(
+    context: Context,
+    private val callback: Callback,
+) : HttpHolderTask<Unit, Pair<ErrorItem?, ReadUpdateTask.UpdateDataMap?>?>(Chan.getFallback()) {
+    private val context: Context = context.applicationContext
 
-	class UpdateDataMap private constructor(private val update: Map<String, ApplicationItem>,
-			private val install: Map<String, ApplicationItem>) : Parcelable {
-		constructor(update: HashMap<String, ApplicationItem>,
-				install: HashMap<String, ApplicationItem>) : this(update as Map<String, ApplicationItem>, install)
+    class UpdateDataMap private constructor(
+        private val update: Map<String, ApplicationItem>,
+        private val install: Map<String, ApplicationItem>,
+    ) : Parcelable {
+        constructor(
+            update: HashMap<String, ApplicationItem>,
+            install: HashMap<String, ApplicationItem>,
+        ) : this(update as Map<String, ApplicationItem>, install)
 
-		fun get(extensionName: String?, installed: Boolean): ApplicationItem? {
-			return (if (installed) update else install)[extensionName]
-		}
+        fun get(
+            extensionName: String?,
+            installed: Boolean,
+        ): ApplicationItem? = (if (installed) update else install)[extensionName]
 
-		fun extensionNames(installed: Boolean): Collection<String> {
-			return (if (installed) update else install).keys
-		}
+        fun extensionNames(installed: Boolean): Collection<String> = (if (installed) update else install).keys
 
-		override fun describeContents(): Int = 0
+        override fun describeContents(): Int = 0
 
-		override fun writeToParcel(dest: Parcel, flags: Int) {
-			writeMap(dest, flags, update)
-			writeMap(dest, flags, install)
-		}
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
+            writeMap(dest, flags, update)
+            writeMap(dest, flags, install)
+        }
 
-		companion object {
-			private fun <T : Parcelable> writeMap(dest: Parcel, flags: Int, map: Map<String, T>) {
-				dest.writeInt(map.size)
-				for ((key, value) in map) {
-					dest.writeString(key)
-					value.writeToParcel(dest, flags)
-				}
-			}
+        companion object {
+            private fun <T : Parcelable> writeMap(
+                dest: Parcel,
+                flags: Int,
+                map: Map<String, T>,
+            ) {
+                dest.writeInt(map.size)
+                for ((key, value) in map) {
+                    dest.writeString(key)
+                    value.writeToParcel(dest, flags)
+                }
+            }
 
-			private fun <T : Parcelable> readMap(source: Parcel,
-					creator: Parcelable.Creator<T>): Map<String, T> {
-				val count = source.readInt()
-				val map = HashMap<String, T>()
-				for (i in 0 until count) {
-					val key = source.readString()!!
-					val value = creator.createFromParcel(source)
-					map[key] = value
-				}
-				return map
-			}
+            private fun <T : Parcelable> readMap(
+                source: Parcel,
+                creator: Parcelable.Creator<T>,
+            ): Map<String, T> {
+                val count = source.readInt()
+                val map = HashMap<String, T>()
+                for (i in 0 until count) {
+                    val key = source.readString()!!
+                    val value = creator.createFromParcel(source)
+                    map[key] = value
+                }
+                return map
+            }
 
-			@JvmField
-			val CREATOR = object : Parcelable.Creator<UpdateDataMap> {
-				override fun createFromParcel(source: Parcel): UpdateDataMap {
-					val update = readMap(source, ApplicationItem.CREATOR)
-					val install = readMap(source, ApplicationItem.CREATOR)
-					return UpdateDataMap(update, install)
-				}
+            @JvmField
+            val CREATOR =
+                object : Parcelable.Creator<UpdateDataMap> {
+                    override fun createFromParcel(source: Parcel): UpdateDataMap {
+                        val update = readMap(source, ApplicationItem.CREATOR)
+                        val install = readMap(source, ApplicationItem.CREATOR)
+                        return UpdateDataMap(update, install)
+                    }
 
-				override fun newArray(size: Int): Array<UpdateDataMap?> = arrayOfNulls(size)
-			}
-		}
-	}
+                    override fun newArray(size: Int): Array<UpdateDataMap?> = arrayOfNulls(size)
+                }
+        }
+    }
 
-	class ApplicationItem(@JvmField val type: Type, @JvmField val name: String,
-			@JvmField val title: String?, @JvmField val packageItems: MutableList<PackageItem>) : Parcelable {
-		enum class Type { CLIENT, LIBRARY, CHAN }
+    class ApplicationItem(
+        @JvmField val type: Type,
+        @JvmField val name: String,
+        @JvmField val title: String?,
+        @JvmField val packageItems: MutableList<PackageItem>,
+    ) : Parcelable {
+        enum class Type { CLIENT, LIBRARY, CHAN }
 
-		override fun describeContents(): Int = 0
+        override fun describeContents(): Int = 0
 
-		override fun writeToParcel(dest: Parcel, flags: Int) {
-			dest.writeString(type.name)
-			dest.writeString(name)
-			dest.writeString(title)
-			dest.writeTypedList(packageItems)
-		}
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
+            dest.writeString(type.name)
+            dest.writeString(name)
+            dest.writeString(title)
+            dest.writeTypedList(packageItems)
+        }
 
-		companion object {
-			@Throws(JSONException::class)
-			internal fun fromJsonV1(jsonObject: JSONObject): ApplicationItem {
-				val name = jsonObject.getString("name")
-				val typeString = jsonObject.getString("type")
-				val title = jsonObject.getString("title")
-				val type = when (typeString) {
-					"client" -> Type.CLIENT
-					"chan" -> Type.CHAN
-					"library" -> Type.LIBRARY
-					else -> throw JSONException("Invalid type")
-				}
-				return ApplicationItem(type, name, title, ArrayList())
-			}
+        companion object {
+            @Throws(JSONException::class)
+            internal fun fromJsonV1(jsonObject: JSONObject): ApplicationItem {
+                val name = jsonObject.getString("name")
+                val typeString = jsonObject.getString("type")
+                val title = jsonObject.getString("title")
+                val type =
+                    when (typeString) {
+                        "client" -> Type.CLIENT
+                        "chan" -> Type.CHAN
+                        "library" -> Type.LIBRARY
+                        else -> throw JSONException("Invalid type")
+                    }
+                return ApplicationItem(type, name, title, ArrayList())
+            }
 
-			@JvmField
-			val CREATOR = object : Parcelable.Creator<ApplicationItem> {
-				override fun createFromParcel(source: Parcel): ApplicationItem {
-					val type = Type.valueOf(source.readString()!!)
-					val name = source.readString()!!
-					val title = source.readString()
-					val packageItems = source.createTypedArrayList(PackageItem.CREATOR)!!
-					return ApplicationItem(type, name, title, packageItems)
-				}
+            @JvmField
+            val CREATOR =
+                object : Parcelable.Creator<ApplicationItem> {
+                    override fun createFromParcel(source: Parcel): ApplicationItem {
+                        val type = Type.valueOf(source.readString()!!)
+                        val name = source.readString()!!
+                        val title = source.readString()
+                        val packageItems = source.createTypedArrayList(PackageItem.CREATOR)!!
+                        return ApplicationItem(type, name, title, packageItems)
+                    }
 
-				override fun newArray(size: Int): Array<ApplicationItem?> = arrayOfNulls(size)
-			}
-		}
-	}
+                    override fun newArray(size: Int): Array<ApplicationItem?> = arrayOfNulls(size)
+                }
+        }
+    }
 
-	class PackageItem(@JvmField val repository: String?, @JvmField val title: String?,
-			@JvmField val versionName: String?, @JvmField val versionCode: Long,
-			@JvmField val minApiVersion: Int, @JvmField val maxApiVersion: Int,
-			@JvmField val apiVersion: Int, @JvmField val length: Long, @JvmField val source: Uri?,
-			@JvmField val sha256sum: ByteArray?,
-			@JvmField val fingerprints: ChanManager.Fingerprints?) : Parcelable {
-		override fun describeContents(): Int = 0
+    class PackageItem(
+        @JvmField val repository: String?,
+        @JvmField val title: String?,
+        @JvmField val versionName: String?,
+        @JvmField val versionCode: Long,
+        @JvmField val minApiVersion: Int,
+        @JvmField val maxApiVersion: Int,
+        @JvmField val apiVersion: Int,
+        @JvmField val length: Long,
+        @JvmField val source: Uri?,
+        @JvmField val sha256sum: ByteArray?,
+        @JvmField val fingerprints: ChanManager.Fingerprints?,
+    ) : Parcelable {
+        override fun describeContents(): Int = 0
 
-		override fun writeToParcel(dest: Parcel, flags: Int) {
-			dest.writeString(repository)
-			dest.writeString(title)
-			dest.writeString(versionName)
-			dest.writeLong(versionCode)
-			dest.writeInt(minApiVersion)
-			dest.writeInt(maxApiVersion)
-			dest.writeInt(apiVersion)
-			dest.writeLong(length)
-			dest.writeString(source?.toString())
-			dest.writeByteArray(sha256sum)
-			dest.writeByte(if (fingerprints != null) 1 else 0)
-			fingerprints?.writeToParcel(dest, flags)
-		}
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
+            dest.writeString(repository)
+            dest.writeString(title)
+            dest.writeString(versionName)
+            dest.writeLong(versionCode)
+            dest.writeInt(minApiVersion)
+            dest.writeInt(maxApiVersion)
+            dest.writeInt(apiVersion)
+            dest.writeLong(length)
+            dest.writeString(source?.toString())
+            dest.writeByteArray(sha256sum)
+            dest.writeByte(if (fingerprints != null) 1 else 0)
+            fingerprints?.writeToParcel(dest, flags)
+        }
 
-		companion object {
-			@JvmField
-			val CREATOR = object : Parcelable.Creator<PackageItem> {
-				override fun createFromParcel(source: Parcel): PackageItem {
-					val repository = source.readString()
-					val title = source.readString()
-					val versionName = source.readString()
-					val versionCode = source.readLong()
-					val minVersion = source.readInt()
-					val maxVersion = source.readInt()
-					val version = source.readInt()
-					val length = source.readLong()
-					val sourceString = source.readString()
-					val sourceUri = if (sourceString != null) Uri.parse(sourceString) else null
-					val sha256sum = source.createByteArray()
-					val fingerprints = if (source.readByte().toInt() != 0)
-							ChanManager.Fingerprints.CREATOR.createFromParcel(source) else null
-					return PackageItem(repository, title, versionName, versionCode,
-							minVersion, maxVersion, version, length, sourceUri, sha256sum, fingerprints)
-				}
+        companion object {
+            @JvmField
+            val CREATOR =
+                object : Parcelable.Creator<PackageItem> {
+                    override fun createFromParcel(source: Parcel): PackageItem {
+                        val repository = source.readString()
+                        val title = source.readString()
+                        val versionName = source.readString()
+                        val versionCode = source.readLong()
+                        val minVersion = source.readInt()
+                        val maxVersion = source.readInt()
+                        val version = source.readInt()
+                        val length = source.readLong()
+                        val sourceString = source.readString()
+                        val sourceUri = if (sourceString != null) Uri.parse(sourceString) else null
+                        val sha256sum = source.createByteArray()
+                        val fingerprints =
+                            if (source.readByte().toInt() != 0) {
+                                ChanManager.Fingerprints.CREATOR.createFromParcel(source)
+                            } else {
+                                null
+                            }
+                        return PackageItem(
+                            repository,
+                            title,
+                            versionName,
+                            versionCode,
+                            minVersion,
+                            maxVersion,
+                            version,
+                            length,
+                            sourceUri,
+                            sha256sum,
+                            fingerprints,
+                        )
+                    }
 
-				override fun newArray(size: Int): Array<PackageItem?> = arrayOfNulls(size)
-			}
-		}
-	}
+                    override fun newArray(size: Int): Array<PackageItem?> = arrayOfNulls(size)
+                }
+        }
+    }
 
-	fun interface Callback {
-		fun onReadUpdateComplete(updateDataMap: UpdateDataMap?, errorItem: ErrorItem?)
-	}
+    fun interface Callback {
+        fun onReadUpdateComplete(
+            updateDataMap: UpdateDataMap?,
+            errorItem: ErrorItem?,
+        )
+    }
 
-	private enum class DataVersion(val fileName: String) {
-		V1("data-v1.json"),
-		LEGACY("data.json")
-	}
+    private enum class DataVersion(
+        val fileName: String,
+    ) {
+        V1("data-v1.json"),
+        LEGACY("data.json"),
+    }
 
-	private class TargetUri(uri: Uri) {
-		val uri: Uri
-		val directory: Boolean
+    private class TargetUri(
+        uri: Uri,
+    ) {
+        val uri: Uri
+        val directory: Boolean
 
-		init {
-			val builder = uri.buildUpon()
-			builder.scheme("")
-			val name = uri.lastPathSegment
-			var directory = false
-			for (dataVersion in DataVersion.values()) {
-				if (name == dataVersion.fileName) {
-					directory = true
-					break
-				}
-			}
-			if (directory) {
-				val path = uri.path!!
-				builder.path(path.substring(0, path.lastIndexOf('/')))
-			}
-			this.uri = builder.build()
-			this.directory = directory
-		}
+        init {
+            val builder = uri.buildUpon()
+            builder.scheme("")
+            val name = uri.lastPathSegment
+            var directory = false
+            for (dataVersion in DataVersion.values()) {
+                if (name == dataVersion.fileName) {
+                    directory = true
+                    break
+                }
+            }
+            if (directory) {
+                val path = uri.path!!
+                builder.path(path.substring(0, path.lastIndexOf('/')))
+            }
+            this.uri = builder.build()
+            this.directory = directory
+        }
 
-		override fun equals(other: Any?): Boolean {
-			if (other === this) {
-				return true
-			}
-			if (other is TargetUri) {
-				return uri == other.uri && directory == other.directory
-			}
-			return false
-		}
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
+                return true
+            }
+            if (other is TargetUri) {
+                return uri == other.uri && directory == other.directory
+            }
+            return false
+        }
 
-		override fun hashCode(): Int {
-			val prime = 31
-			var result = 1
-			result = prime * result + uri.hashCode()
-			result = prime * result + if (directory) 1231 else 1237
-			return result
-		}
-	}
+        override fun hashCode(): Int {
+            val prime = 31
+            var result = 1
+            result = prime * result + uri.hashCode()
+            result = prime * result + if (directory) 1231 else 1237
+            return result
+        }
+    }
 
-	private class Response(var uri: Uri, val dataVersion: DataVersion,
-			val jsonObject: JSONObject, val extensionNames: HashSet<String>) {
-		fun getRepositoryName(): String {
-			var repository: String? = when (dataVersion) {
-				DataVersion.LEGACY -> jsonObject
-						.optJSONObject(ChanManager.EXTENSION_NAME_META)?.optString("repository")
-				DataVersion.V1 -> jsonObject.optString("title")
-			}
-			if (StringUtils.isEmpty(repository)) {
-				repository = "Unknown repository"
-			}
-			return repository!!
-		}
-	}
+    private class Response(
+        var uri: Uri,
+        val dataVersion: DataVersion,
+        val jsonObject: JSONObject,
+        val extensionNames: HashSet<String>,
+    ) {
+        fun getRepositoryName(): String {
+            var repository: String? =
+                when (dataVersion) {
+                    DataVersion.LEGACY -> {
+                        jsonObject
+                            .optJSONObject(ChanManager.EXTENSION_NAME_META)
+                            ?.optString("repository")
+                    }
 
-	override fun run(holder: HttpHolder): Pair<ErrorItem?, UpdateDataMap?>? {
-		val directory = FileProvider.updatesDirectory
-				?: return Pair(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY), null)
-		val files = directory.listFiles()
-		if (files != null) {
-			// One week
-			val timeThreshold = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
-			for (file in files) {
-				if (file.lastModified() < timeThreshold) {
-					file.delete()
-				}
-			}
-		}
+                    DataVersion.V1 -> {
+                        jsonObject.optString("title")
+                    }
+                }
+            if (StringUtils.isEmpty(repository)) {
+                repository = "Unknown repository"
+            }
+            return repository!!
+        }
+    }
 
-		val extensionItems = ChanManager.getInstance().extensionItems
-		val fingerprintsMap = HashMap<String, ChanManager.Fingerprints?>()
-		fingerprintsMap[ChanManager.EXTENSION_NAME_CLIENT] =
-				ChanManager.getInstance().applicationFingerprints
-		for (extensionItem in extensionItems) {
-			fingerprintsMap[extensionItem.name!!] = extensionItem.fingerprints
-		}
-		val applicationTitle: String
-		val applicationVersionName: String?
-		val applicationVersionCode: Long
-		try {
-			val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-			applicationTitle = packageInfo.applicationInfo!!.loadLabel(context.packageManager).toString()
-			applicationVersionName = packageInfo.versionName
-			applicationVersionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
-		} catch (e: Exception) {
-			throw RuntimeException(e)
-		}
-		val updateDataMap = HashMap<String, ApplicationItem>()
-		run {
-			var applicationItem = ApplicationItem(ApplicationItem.Type.CLIENT,
-					ChanManager.EXTENSION_NAME_CLIENT, applicationTitle, ArrayList())
-			applicationItem.packageItems.add(PackageItem(null, null,
-					applicationVersionName, applicationVersionCode,
-					ChanManager.MIN_VERSION, ChanManager.MAX_VERSION, 0, -1, null, null, null))
-			updateDataMap[ChanManager.EXTENSION_NAME_CLIENT] = applicationItem
-			for (extensionItem in extensionItems) {
-				applicationItem = ApplicationItem(
-						if (extensionItem.type == ChanManager.ExtensionItem.Type.LIBRARY)
-								ApplicationItem.Type.LIBRARY else ApplicationItem.Type.CHAN,
-						extensionItem.name!!, extensionItem.title, ArrayList())
-				applicationItem.packageItems.add(PackageItem(null, null, extensionItem.versionName,
-						extensionItem.versionCode, 0, 0, extensionItem.apiVersion, -1, null, null, null))
-				updateDataMap[extensionItem.name] = applicationItem
-			}
-		}
-		if (isCancelled()) {
-			return null
-		}
+    override fun run(holder: HttpHolder): Pair<ErrorItem?, UpdateDataMap?>? {
+        val directory =
+            FileProvider.updatesDirectory
+                ?: return Pair(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY), null)
+        val files = directory.listFiles()
+        if (files != null) {
+            // One week
+            val timeThreshold = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000
+            for (file in files) {
+                if (file.lastModified() < timeThreshold) {
+                    file.delete()
+                }
+            }
+        }
 
-		val responses = readData(holder, extensionItems)
-		if (!responses.iterator().hasNext()) {
-			return Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
-		}
-		if (isCancelled()) {
-			return null
-		}
+        val extensionItems = ChanManager.getInstance().extensionItems
+        val fingerprintsMap = HashMap<String, ChanManager.Fingerprints?>()
+        fingerprintsMap[ChanManager.EXTENSION_NAME_CLIENT] =
+            ChanManager.getInstance().applicationFingerprints
+        for (extensionItem in extensionItems) {
+            fingerprintsMap[extensionItem.name!!] = extensionItem.fingerprints
+        }
+        val applicationTitle: String
+        val applicationVersionName: String?
+        val applicationVersionCode: Long
+        try {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            applicationTitle = packageInfo.applicationInfo!!.loadLabel(context.packageManager).toString()
+            applicationVersionName = packageInfo.versionName
+            applicationVersionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
+        } catch (e: Exception) {
+            throw RuntimeException(e)
+        }
+        val updateDataMap = HashMap<String, ApplicationItem>()
+        run {
+            var applicationItem =
+                ApplicationItem(
+                    ApplicationItem.Type.CLIENT,
+                    ChanManager.EXTENSION_NAME_CLIENT,
+                    applicationTitle,
+                    ArrayList(),
+                )
+            applicationItem.packageItems.add(
+                PackageItem(
+                    null,
+                    null,
+                    applicationVersionName,
+                    applicationVersionCode,
+                    ChanManager.MIN_VERSION,
+                    ChanManager.MAX_VERSION,
+                    0,
+                    -1,
+                    null,
+                    null,
+                    null,
+                ),
+            )
+            updateDataMap[ChanManager.EXTENSION_NAME_CLIENT] = applicationItem
+            for (extensionItem in extensionItems) {
+                applicationItem =
+                    ApplicationItem(
+                        if (extensionItem.type == ChanManager.ExtensionItem.Type.LIBRARY) {
+                            ApplicationItem.Type.LIBRARY
+                        } else {
+                            ApplicationItem.Type.CHAN
+                        },
+                        extensionItem.name!!,
+                        extensionItem.title,
+                        ArrayList(),
+                    )
+                applicationItem.packageItems.add(
+                    PackageItem(
+                        null,
+                        null,
+                        extensionItem.versionName,
+                        extensionItem.versionCode,
+                        0,
+                        0,
+                        extensionItem.apiVersion,
+                        -1,
+                        null,
+                        null,
+                        null,
+                    ),
+                )
+                updateDataMap[extensionItem.name] = applicationItem
+            }
+        }
+        if (isCancelled()) {
+            return null
+        }
 
-		for (response in responses) {
-			try {
-				when (response.dataVersion) {
-					DataVersion.LEGACY -> {
-						val keys = response.jsonObject.keys()
-						while (keys.hasNext()) {
-							val extensionName = keys.next()
-							if (ChanManager.EXTENSION_NAME_META == extensionName) {
-								continue
-							}
-							if (response.extensionNames.contains(extensionName)) {
-								val packagesArray = response.jsonObject.getJSONArray(extensionName)
-								handleUpdateItems(response, extensionName, updateDataMap, fingerprintsMap,
-										packagesArray, DataVersion.LEGACY, null)
-							}
-						}
-					}
-					DataVersion.V1 -> {
-						val jsonArray = response.jsonObject.optJSONArray("applications")
-						if (jsonArray != null && jsonArray.length() > 0) {
-							for (i in 0 until jsonArray.length()) {
-								val jsonObject = jsonArray.getJSONObject(i)
-								val extractedItem = ApplicationItem.fromJsonV1(jsonObject)
-								if (response.extensionNames.contains(extractedItem.name)) {
-									val packagesArray = jsonObject.getJSONArray("packages")
-									handleUpdateItems(response, extractedItem.name, updateDataMap, fingerprintsMap,
-											packagesArray, DataVersion.V1, extractedItem)
-								}
-							}
-						}
-					}
-				}
-			} catch (e: JSONException) {
-				e.printStackTrace()
-			}
-			if (isCancelled()) {
-				return null
-			}
-		}
+        val responses = readData(holder, extensionItems)
+        if (!responses.iterator().hasNext()) {
+            return Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
+        }
+        if (isCancelled()) {
+            return null
+        }
 
-		val installDataMap = HashMap<String, ApplicationItem>()
-		for (response in responses) {
-			try {
-				when (response.dataVersion) {
-					DataVersion.LEGACY -> {
-						val keys = response.jsonObject.keys()
-						while (keys.hasNext()) {
-							val extensionName = keys.next()
-							if (ChanManager.EXTENSION_NAME_META == extensionName) {
-								continue
-							}
-							if (!updateDataMap.containsKey(extensionName)) {
-								val packagesArray = response.jsonObject.getJSONArray(extensionName)
-								handleInstallItems(response, extensionName, installDataMap,
-										packagesArray, DataVersion.LEGACY, null)
-							}
-						}
-					}
-					DataVersion.V1 -> {
-						val jsonArray = response.jsonObject.optJSONArray("applications")
-						if (jsonArray != null && jsonArray.length() > 0) {
-							for (i in 0 until jsonArray.length()) {
-								val jsonObject = jsonArray.getJSONObject(i)
-								val extractedItem = ApplicationItem.fromJsonV1(jsonObject)
-								if (!updateDataMap.containsKey(extractedItem.name)) {
-									val packagesArray = jsonObject.getJSONArray("packages")
-									handleInstallItems(response, extractedItem.name, installDataMap,
-											packagesArray, DataVersion.V1, extractedItem)
-								}
-							}
-						}
-					}
-				}
-			} catch (e: JSONException) {
-				e.printStackTrace()
-			}
-			if (isCancelled()) {
-				return null
-			}
-		}
+        for (response in responses) {
+            try {
+                when (response.dataVersion) {
+                    DataVersion.LEGACY -> {
+                        val keys = response.jsonObject.keys()
+                        while (keys.hasNext()) {
+                            val extensionName = keys.next()
+                            if (ChanManager.EXTENSION_NAME_META == extensionName) {
+                                continue
+                            }
+                            if (response.extensionNames.contains(extensionName)) {
+                                val packagesArray = response.jsonObject.getJSONArray(extensionName)
+                                handleUpdateItems(
+                                    response,
+                                    extensionName,
+                                    updateDataMap,
+                                    fingerprintsMap,
+                                    packagesArray,
+                                    DataVersion.LEGACY,
+                                    null,
+                                )
+                            }
+                        }
+                    }
 
-		return if (updateDataMap.isNotEmpty()) {
-			Pair(null, UpdateDataMap(updateDataMap, installDataMap))
-		} else {
-			Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
-		}
-	}
+                    DataVersion.V1 -> {
+                        val jsonArray = response.jsonObject.optJSONArray("applications")
+                        if (jsonArray != null && jsonArray.length() > 0) {
+                            for (i in 0 until jsonArray.length()) {
+                                val jsonObject = jsonArray.getJSONObject(i)
+                                val extractedItem = ApplicationItem.fromJsonV1(jsonObject)
+                                if (response.extensionNames.contains(extractedItem.name)) {
+                                    val packagesArray = jsonObject.getJSONArray("packages")
+                                    handleUpdateItems(
+                                        response,
+                                        extractedItem.name,
+                                        updateDataMap,
+                                        fingerprintsMap,
+                                        packagesArray,
+                                        DataVersion.V1,
+                                        extractedItem,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+            if (isCancelled()) {
+                return null
+            }
+        }
 
-	override fun onComplete(result: Pair<ErrorItem?, UpdateDataMap?>?) {
-		callback.onReadUpdateComplete(result!!.second, result.first)
-	}
+        val installDataMap = HashMap<String, ApplicationItem>()
+        for (response in responses) {
+            try {
+                when (response.dataVersion) {
+                    DataVersion.LEGACY -> {
+                        val keys = response.jsonObject.keys()
+                        while (keys.hasNext()) {
+                            val extensionName = keys.next()
+                            if (ChanManager.EXTENSION_NAME_META == extensionName) {
+                                continue
+                            }
+                            if (!updateDataMap.containsKey(extensionName)) {
+                                val packagesArray = response.jsonObject.getJSONArray(extensionName)
+                                handleInstallItems(
+                                    response,
+                                    extensionName,
+                                    installDataMap,
+                                    packagesArray,
+                                    DataVersion.LEGACY,
+                                    null,
+                                )
+                            }
+                        }
+                    }
 
-	companion object {
-		@JvmStatic
-		fun normalizeRelativeUri(base: Uri, uriOrPath: String): Uri {
-			var uri = Uri.parse(uriOrPath)
-			val noScheme = StringUtils.isEmpty(uri.scheme)
-			val noHost = StringUtils.isEmpty(uri.host)
-			val noPath = StringUtils.isEmpty(uri.path)
-			if (noScheme || noHost || noPath) {
-				val builder = uri.buildUpon()
-				if (noScheme) {
-					builder.scheme(base.scheme)
-				}
-				if (noHost) {
-					builder.authority(base.host)
-				}
-				if (noPath) {
-					builder.path(base.path)
-				} else if (noScheme && noHost && !uriOrPath.startsWith("/")) {
-					val path = uri.path
-					var basePath = base.path!!
-					val index = basePath.lastIndexOf('/')
-					basePath = if (index >= 0) basePath.substring(0, index + 1) else "/"
-					builder.path(basePath + path)
-				}
-				uri = builder.build()
-			}
-			return uri
-		}
+                    DataVersion.V1 -> {
+                        val jsonArray = response.jsonObject.optJSONArray("applications")
+                        if (jsonArray != null && jsonArray.length() > 0) {
+                            for (i in 0 until jsonArray.length()) {
+                                val jsonObject = jsonArray.getJSONObject(i)
+                                val extractedItem = ApplicationItem.fromJsonV1(jsonObject)
+                                if (!updateDataMap.containsKey(extractedItem.name)) {
+                                    val packagesArray = jsonObject.getJSONArray("packages")
+                                    handleInstallItems(
+                                        response,
+                                        extractedItem.name,
+                                        installDataMap,
+                                        packagesArray,
+                                        DataVersion.V1,
+                                        extractedItem,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+            if (isCancelled()) {
+                return null
+            }
+        }
 
-		@Throws(JSONException::class)
-		private fun extractPackageItem(dataVersion: DataVersion, chanObject: JSONObject,
-				extensionName: String, repository: String?, uri: Uri, installedCode: Long?,
-				requireFingerprints: ChanManager.Fingerprints?): PackageItem? {
-			val title: String?
-			val versionName: String?
-			val versionCode: Long
-			val minSdk: Int
-			val maxSdk: Int
-			val minApiVersion: Int
-			val maxApiVersion: Int
-			val apiVersion: Int
-			val length: Long
-			val source: String?
-			val fingerprintsArray: JSONArray?
-			val fingerprint: String?
-			var sha256sumString: String?
-			val requireFingerprintChecksum: Boolean
-			when (dataVersion) {
-				DataVersion.LEGACY -> {
-					title = CommonUtils.getJsonString(chanObject, "title")
-					versionName = CommonUtils.getJsonString(chanObject, "name")
-					versionCode = chanObject.getInt("code").toLong()
-					minApiVersion = chanObject.optInt("minVersion")
-					maxApiVersion = chanObject.optInt("maxVersion")
-					apiVersion = chanObject.optInt("version")
-					minSdk = chanObject.optInt("minSdk")
-					maxSdk = chanObject.optInt("maxSdk")
-					length = chanObject.getLong("length")
-					source = CommonUtils.getJsonString(chanObject, "source")
-					fingerprintsArray = chanObject.optJSONArray("fingerprints")
-					fingerprint = CommonUtils.optJsonString(chanObject, "fingerprint")
-					sha256sumString = null
-					requireFingerprintChecksum = false
-				}
-				DataVersion.V1 -> {
-					title = CommonUtils.getJsonString(chanObject, "title")
-					versionName = CommonUtils.getJsonString(chanObject, "version_name")
-					versionCode = chanObject.getInt("version_code").toLong()
-					minApiVersion = chanObject.optInt("min_api_version")
-					maxApiVersion = chanObject.optInt("max_api_version")
-					apiVersion = chanObject.optInt("api_version")
-					minSdk = chanObject.optInt("min_sdk")
-					maxSdk = chanObject.optInt("max_sdk")
-					length = chanObject.getLong("length")
-					source = CommonUtils.getJsonString(chanObject, "source")
-					fingerprintsArray = chanObject.optJSONArray("fingerprints")
-					fingerprint = CommonUtils.optJsonString(chanObject, "fingerprint")
-					sha256sumString = CommonUtils.getJsonString(chanObject, "sha256sum")
-					requireFingerprintChecksum = true
-				}
-			}
-			if (minSdk > 0 && minSdk > Build.VERSION.SDK_INT ||
-					maxSdk > 0 && maxSdk < Build.VERSION.SDK_INT) {
-				return null
-			}
-			val rawFingerprints = ArrayList<String>()
-			if (fingerprintsArray != null) {
-				for (j in 0 until fingerprintsArray.length()) {
-					rawFingerprints.add(fingerprintsArray.optString(j))
-				}
-			} else if (!StringUtils.isEmpty(fingerprint)) {
-				rawFingerprints.add(fingerprint!!)
-			}
-			val fingerprintsSet = HashSet<String>()
-			for (rawFingerprint in rawFingerprints) {
-				if (!StringUtils.isEmpty(rawFingerprint)) {
-					val normalized = rawFingerprint
-							.replace("[^a-fA-F0-9]".toRegex(), "").lowercase(Locale.US)
-					if (normalized.length == 64) {
-						fingerprintsSet.add(normalized)
-					}
-				}
-			}
-			if (requireFingerprintChecksum && fingerprintsSet.isEmpty()) {
-				return null
-			}
-			val fingerprints = ChanManager.Fingerprints(fingerprintsSet)
-			if (requireFingerprints != null && requireFingerprints != fingerprints) {
-				return null
-			}
-			if (sha256sumString != null) {
-				sha256sumString = sha256sumString.replace("[^a-fA-F0-9]".toRegex(), "").lowercase(Locale.US)
-			}
-			if (installedCode != null && versionCode < installedCode || source == null) {
-				return null
-			}
-			var sha256sum: ByteArray? = null
-			if (sha256sumString != null && sha256sumString.length == 64) {
-				sha256sum = ByteArray(sha256sumString.length / 2)
-				for (i in sha256sum.indices) {
-					var h = sha256sumString[2 * i].code
-					var l = sha256sumString[2 * i + 1].code
-					h = if (h >= 'a'.code) h - 'a'.code + 10 else h - '0'.code
-					l = if (l >= 'a'.code) l - 'a'.code + 10 else l - '0'.code
-					sha256sum[i] = ((h shl 4) or l).toByte()
-				}
-			} else if (requireFingerprintChecksum) {
-				return null
-			}
-			val sourceUri = normalizeRelativeUri(uri, source)
-			return if (ChanManager.EXTENSION_NAME_CLIENT == extensionName) {
-				if (minApiVersion <= 0 || maxApiVersion <= 0) {
-					null
-				} else {
-					PackageItem(repository, title, versionName, versionCode,
-							minApiVersion, maxApiVersion, 0, length, sourceUri, sha256sum, fingerprints)
-				}
-			} else {
-				PackageItem(repository, title, versionName, versionCode,
-						0, 0, apiVersion, length, sourceUri, sha256sum, fingerprints)
-			}
-		}
+        return if (updateDataMap.isNotEmpty()) {
+            Pair(null, UpdateDataMap(updateDataMap, installDataMap))
+        } else {
+            Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
+        }
+    }
 
-		@Throws(JSONException::class)
-		private fun handleUpdateItems(response: Response, extensionName: String,
-				updateDataMap: HashMap<String, ApplicationItem>,
-				fingerprintsMap: HashMap<String, ChanManager.Fingerprints?>,
-				packagesArray: JSONArray, dataVersion: DataVersion,
-				updateApplicationItem: ApplicationItem?) {
-			val applicationItem = updateDataMap[extensionName]!!
-			if (updateApplicationItem == null || applicationItem.type == updateApplicationItem.type) {
-				val installedCode = applicationItem.packageItems[0].versionCode
-				val fingerprints = fingerprintsMap[extensionName]
-				for (i in 0 until packagesArray.length()) {
-					val packageItem = extractPackageItem(dataVersion, packagesArray.getJSONObject(i),
-							extensionName, response.getRepositoryName(), response.uri, installedCode, fingerprints)
-					if (packageItem != null) {
-						applicationItem.packageItems.add(packageItem)
-					}
-				}
-			}
-		}
+    override fun onComplete(result: Pair<ErrorItem?, UpdateDataMap?>?) {
+        callback.onReadUpdateComplete(result!!.second, result.first)
+    }
 
-		@Throws(JSONException::class)
-		private fun handleInstallItems(response: Response, extensionName: String,
-				installDataMap: HashMap<String, ApplicationItem>, packagesArray: JSONArray,
-				dataVersion: DataVersion, installApplicationItem: ApplicationItem?) {
-			for (i in 0 until packagesArray.length()) {
-				val packageItem = extractPackageItem(dataVersion, packagesArray.getJSONObject(i),
-						extensionName, response.getRepositoryName(), response.uri, null, null)
-				if (packageItem != null) {
-					var applicationItem = installDataMap[extensionName]
-					if (applicationItem == null) {
-						applicationItem = if (installApplicationItem != null) {
-							ApplicationItem(installApplicationItem.type, installApplicationItem.name,
-									installApplicationItem.title, ArrayList())
-						} else {
-							ApplicationItem(ApplicationItem.Type.CHAN, extensionName,
-									extensionName, ArrayList())
-						}
-						installDataMap[extensionName] = applicationItem
-					} else if (installApplicationItem != null &&
-							applicationItem.type != installApplicationItem.type) {
-						continue
-					}
-					applicationItem.packageItems.add(packageItem)
-				}
-			}
-		}
+    companion object {
+        @JvmStatic
+        fun normalizeRelativeUri(
+            base: Uri,
+            uriOrPath: String,
+        ): Uri {
+            var uri = Uri.parse(uriOrPath)
+            val noScheme = StringUtils.isEmpty(uri.scheme)
+            val noHost = StringUtils.isEmpty(uri.host)
+            val noPath = StringUtils.isEmpty(uri.path)
+            if (noScheme || noHost || noPath) {
+                val builder = uri.buildUpon()
+                if (noScheme) {
+                    builder.scheme(base.scheme)
+                }
+                if (noHost) {
+                    builder.authority(base.host)
+                }
+                if (noPath) {
+                    builder.path(base.path)
+                } else if (noScheme && noHost && !uriOrPath.startsWith("/")) {
+                    val path = uri.path
+                    var basePath = base.path!!
+                    val index = basePath.lastIndexOf('/')
+                    basePath = if (index >= 0) basePath.substring(0, index + 1) else "/"
+                    builder.path(basePath + path)
+                }
+                uri = builder.build()
+            }
+            return uri
+        }
 
-		private fun readData(holder: HttpHolder,
-				extensionItems: Iterable<ChanManager.ExtensionItem>): Iterable<Response> {
-			val chan = Chan.getFallback()
-			val targets = LinkedHashMap<TargetUri, HashSet<String>>()
-			val requestedScheme = HashMap<TargetUri, String>()
-			run {
-				val uri = Uri.parse(Preferences.uriUpdates)
-				val targetUri = TargetUri(uri)
-				val extensionNames = HashSet<String>()
-				extensionNames.add(ChanManager.EXTENSION_NAME_CLIENT)
-				targets[targetUri] = extensionNames
-				val scheme = uri.scheme
-				if (!StringUtils.isEmpty(scheme)) {
-					requestedScheme[targetUri] = scheme!!
-				}
-			}
-			// Separate sources merged with the client one: each covers every installed
-			// extension (in addition to each extension's own updateUri) and contributes
-			// install suggestions even when no extensions are installed yet.
-			for (uriString in Preferences.uriUpdatesExtensions) {
-				val uri = Uri.parse(uriString)
-				val targetUri = TargetUri(uri)
-				var extensionNames = targets[targetUri]
-				if (extensionNames == null) {
-					extensionNames = HashSet()
-					targets[targetUri] = extensionNames
-				}
-				for (extensionItem in extensionItems) {
-					extensionNames.add(extensionItem.name!!)
-				}
-				val scheme = uri.scheme
-				if (!StringUtils.isEmpty(scheme)) {
-					requestedScheme[targetUri] = scheme!!
-				}
-			}
-			for (extensionItem in extensionItems) {
-				if (extensionItem.updateUri != null) {
-					val targetUri = TargetUri(extensionItem.updateUri)
-					var extensionNames = targets[targetUri]
-					if (extensionNames == null) {
-						extensionNames = HashSet()
-						targets[targetUri] = extensionNames
-					}
-					extensionNames.add(extensionItem.name!!)
-					val scheme = extensionItem.updateUri.scheme
-					if (!StringUtils.isEmpty(scheme)) {
-						requestedScheme[targetUri] = scheme!!
-					}
-				}
-			}
+        @Throws(JSONException::class)
+        private fun extractPackageItem(
+            dataVersion: DataVersion,
+            chanObject: JSONObject,
+            extensionName: String,
+            repository: String?,
+            uri: Uri,
+            installedCode: Long?,
+            requireFingerprints: ChanManager.Fingerprints?,
+        ): PackageItem? {
+            val title: String?
+            val versionName: String?
+            val versionCode: Long
+            val minSdk: Int
+            val maxSdk: Int
+            val minApiVersion: Int
+            val maxApiVersion: Int
+            val apiVersion: Int
+            val length: Long
+            val source: String?
+            val fingerprintsArray: JSONArray?
+            val fingerprint: String?
+            var sha256sumString: String?
+            val requireFingerprintChecksum: Boolean
+            when (dataVersion) {
+                DataVersion.LEGACY -> {
+                    title = CommonUtils.getJsonString(chanObject, "title")
+                    versionName = CommonUtils.getJsonString(chanObject, "name")
+                    versionCode = chanObject.getInt("code").toLong()
+                    minApiVersion = chanObject.optInt("minVersion")
+                    maxApiVersion = chanObject.optInt("maxVersion")
+                    apiVersion = chanObject.optInt("version")
+                    minSdk = chanObject.optInt("minSdk")
+                    maxSdk = chanObject.optInt("maxSdk")
+                    length = chanObject.getLong("length")
+                    source = CommonUtils.getJsonString(chanObject, "source")
+                    fingerprintsArray = chanObject.optJSONArray("fingerprints")
+                    fingerprint = CommonUtils.optJsonString(chanObject, "fingerprint")
+                    sha256sumString = null
+                    requireFingerprintChecksum = false
+                }
 
-			val responses = LinkedHashMap<TargetUri, Response>()
-			for ((key, value) in targets) {
-				try {
-					var targetUri = key
-					var targetScheme = requestedScheme[targetUri]
-					var redirects = 0
-					while (redirects++ < 5) {
-						val response = responses[targetUri]
-						if (response != null) {
-							if ("http" == response.uri.scheme && "https" == targetScheme) {
-								response.uri = response.uri.buildUpon().scheme("https").build()
-							}
-							response.extensionNames.addAll(value)
-							break
-						}
-						var responseUri: Uri? = null
-						var responseText: String? = null
-						var responseDataVersion: DataVersion? = null
-						if (targetUri.directory) {
-							var lastHttpException: HttpException? = null
-							val directoryUri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
-							for (dataVersion in DataVersion.values()) {
-								val uri = directoryUri!!.buildUpon().appendPath(dataVersion.fileName).build()
-								try {
-									responseUri = uri
-									responseText = HttpRequest(uri, holder).perform()!!.readString()
-									responseDataVersion = dataVersion
-									lastHttpException = null
-									break
-								} catch (e: HttpException) {
-									if (!e.isHttpException() ||
-											e.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
-										throw e
-									} else {
-										lastHttpException = e
-									}
-								}
-							}
-							if (lastHttpException != null) {
-								throw lastHttpException
-							}
-						} else {
-							val uri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
-							responseUri = uri
-							responseText = HttpRequest(uri, holder).perform()!!.readString()
-							responseDataVersion = DataVersion.LEGACY
-						}
-						// An empty body is not valid JSON; JSONException is already handled
-						// below, whereas the Java's null would have thrown an NPE.
-						val jsonObject = JSONObject(responseText.orEmpty())
-						val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
-						if (redirect != null) {
-							val uri = normalizeRelativeUri(responseUri!!, redirect)
-							targetUri = TargetUri(uri)
-							targetScheme = uri.scheme
-						} else {
-							responses[targetUri] = Response(responseUri!!, responseDataVersion!!,
-									jsonObject, HashSet(value))
-							break
-						}
-					}
-				} catch (e: HttpException) {
-					e.printStackTrace()
-				} catch (e: JSONException) {
-					e.printStackTrace()
-				}
-				if (Thread.currentThread().isInterrupted) {
-					return emptyList()
-				}
-			}
-			return responses.values
-		}
-	}
+                DataVersion.V1 -> {
+                    title = CommonUtils.getJsonString(chanObject, "title")
+                    versionName = CommonUtils.getJsonString(chanObject, "version_name")
+                    versionCode = chanObject.getInt("version_code").toLong()
+                    minApiVersion = chanObject.optInt("min_api_version")
+                    maxApiVersion = chanObject.optInt("max_api_version")
+                    apiVersion = chanObject.optInt("api_version")
+                    minSdk = chanObject.optInt("min_sdk")
+                    maxSdk = chanObject.optInt("max_sdk")
+                    length = chanObject.getLong("length")
+                    source = CommonUtils.getJsonString(chanObject, "source")
+                    fingerprintsArray = chanObject.optJSONArray("fingerprints")
+                    fingerprint = CommonUtils.optJsonString(chanObject, "fingerprint")
+                    sha256sumString = CommonUtils.getJsonString(chanObject, "sha256sum")
+                    requireFingerprintChecksum = true
+                }
+            }
+            if (minSdk > 0 &&
+                minSdk > Build.VERSION.SDK_INT ||
+                maxSdk > 0 &&
+                maxSdk < Build.VERSION.SDK_INT
+            ) {
+                return null
+            }
+            val rawFingerprints = ArrayList<String>()
+            if (fingerprintsArray != null) {
+                for (j in 0 until fingerprintsArray.length()) {
+                    rawFingerprints.add(fingerprintsArray.optString(j))
+                }
+            } else if (!StringUtils.isEmpty(fingerprint)) {
+                rawFingerprints.add(fingerprint!!)
+            }
+            val fingerprintsSet = HashSet<String>()
+            for (rawFingerprint in rawFingerprints) {
+                if (!StringUtils.isEmpty(rawFingerprint)) {
+                    val normalized =
+                        rawFingerprint
+                            .replace("[^a-fA-F0-9]".toRegex(), "")
+                            .lowercase(Locale.US)
+                    if (normalized.length == 64) {
+                        fingerprintsSet.add(normalized)
+                    }
+                }
+            }
+            if (requireFingerprintChecksum && fingerprintsSet.isEmpty()) {
+                return null
+            }
+            val fingerprints = ChanManager.Fingerprints(fingerprintsSet)
+            if (requireFingerprints != null && requireFingerprints != fingerprints) {
+                return null
+            }
+            if (sha256sumString != null) {
+                sha256sumString = sha256sumString.replace("[^a-fA-F0-9]".toRegex(), "").lowercase(Locale.US)
+            }
+            if (installedCode != null && versionCode < installedCode || source == null) {
+                return null
+            }
+            var sha256sum: ByteArray? = null
+            if (sha256sumString != null && sha256sumString.length == 64) {
+                sha256sum = ByteArray(sha256sumString.length / 2)
+                for (i in sha256sum.indices) {
+                    var h = sha256sumString[2 * i].code
+                    var l = sha256sumString[2 * i + 1].code
+                    h = if (h >= 'a'.code) h - 'a'.code + 10 else h - '0'.code
+                    l = if (l >= 'a'.code) l - 'a'.code + 10 else l - '0'.code
+                    sha256sum[i] = ((h shl 4) or l).toByte()
+                }
+            } else if (requireFingerprintChecksum) {
+                return null
+            }
+            val sourceUri = normalizeRelativeUri(uri, source)
+            return if (ChanManager.EXTENSION_NAME_CLIENT == extensionName) {
+                if (minApiVersion <= 0 || maxApiVersion <= 0) {
+                    null
+                } else {
+                    PackageItem(
+                        repository,
+                        title,
+                        versionName,
+                        versionCode,
+                        minApiVersion,
+                        maxApiVersion,
+                        0,
+                        length,
+                        sourceUri,
+                        sha256sum,
+                        fingerprints,
+                    )
+                }
+            } else {
+                PackageItem(
+                    repository,
+                    title,
+                    versionName,
+                    versionCode,
+                    0,
+                    0,
+                    apiVersion,
+                    length,
+                    sourceUri,
+                    sha256sum,
+                    fingerprints,
+                )
+            }
+        }
+
+        @Throws(JSONException::class)
+        private fun handleUpdateItems(
+            response: Response,
+            extensionName: String,
+            updateDataMap: HashMap<String, ApplicationItem>,
+            fingerprintsMap: HashMap<String, ChanManager.Fingerprints?>,
+            packagesArray: JSONArray,
+            dataVersion: DataVersion,
+            updateApplicationItem: ApplicationItem?,
+        ) {
+            val applicationItem = updateDataMap[extensionName]!!
+            if (updateApplicationItem == null || applicationItem.type == updateApplicationItem.type) {
+                val installedCode = applicationItem.packageItems[0].versionCode
+                val fingerprints = fingerprintsMap[extensionName]
+                for (i in 0 until packagesArray.length()) {
+                    val packageItem =
+                        extractPackageItem(
+                            dataVersion,
+                            packagesArray.getJSONObject(i),
+                            extensionName,
+                            response.getRepositoryName(),
+                            response.uri,
+                            installedCode,
+                            fingerprints,
+                        )
+                    if (packageItem != null) {
+                        applicationItem.packageItems.add(packageItem)
+                    }
+                }
+            }
+        }
+
+        @Throws(JSONException::class)
+        private fun handleInstallItems(
+            response: Response,
+            extensionName: String,
+            installDataMap: HashMap<String, ApplicationItem>,
+            packagesArray: JSONArray,
+            dataVersion: DataVersion,
+            installApplicationItem: ApplicationItem?,
+        ) {
+            for (i in 0 until packagesArray.length()) {
+                val packageItem =
+                    extractPackageItem(
+                        dataVersion,
+                        packagesArray.getJSONObject(i),
+                        extensionName,
+                        response.getRepositoryName(),
+                        response.uri,
+                        null,
+                        null,
+                    )
+                if (packageItem != null) {
+                    var applicationItem = installDataMap[extensionName]
+                    if (applicationItem == null) {
+                        applicationItem =
+                            if (installApplicationItem != null) {
+                                ApplicationItem(
+                                    installApplicationItem.type,
+                                    installApplicationItem.name,
+                                    installApplicationItem.title,
+                                    ArrayList(),
+                                )
+                            } else {
+                                ApplicationItem(
+                                    ApplicationItem.Type.CHAN,
+                                    extensionName,
+                                    extensionName,
+                                    ArrayList(),
+                                )
+                            }
+                        installDataMap[extensionName] = applicationItem
+                    } else if (installApplicationItem != null &&
+                        applicationItem.type != installApplicationItem.type
+                    ) {
+                        continue
+                    }
+                    applicationItem.packageItems.add(packageItem)
+                }
+            }
+        }
+
+        private fun readData(
+            holder: HttpHolder,
+            extensionItems: Iterable<ChanManager.ExtensionItem>,
+        ): Iterable<Response> {
+            val chan = Chan.getFallback()
+            val targets = LinkedHashMap<TargetUri, HashSet<String>>()
+            val requestedScheme = HashMap<TargetUri, String>()
+            run {
+                val uri = Uri.parse(Preferences.uriUpdates)
+                val targetUri = TargetUri(uri)
+                val extensionNames = HashSet<String>()
+                extensionNames.add(ChanManager.EXTENSION_NAME_CLIENT)
+                targets[targetUri] = extensionNames
+                val scheme = uri.scheme
+                if (!StringUtils.isEmpty(scheme)) {
+                    requestedScheme[targetUri] = scheme!!
+                }
+            }
+            // Separate sources merged with the client one: each covers every installed
+            // extension (in addition to each extension's own updateUri) and contributes
+            // install suggestions even when no extensions are installed yet.
+            for (uriString in Preferences.uriUpdatesExtensions) {
+                val uri = Uri.parse(uriString)
+                val targetUri = TargetUri(uri)
+                var extensionNames = targets[targetUri]
+                if (extensionNames == null) {
+                    extensionNames = HashSet()
+                    targets[targetUri] = extensionNames
+                }
+                for (extensionItem in extensionItems) {
+                    extensionNames.add(extensionItem.name!!)
+                }
+                val scheme = uri.scheme
+                if (!StringUtils.isEmpty(scheme)) {
+                    requestedScheme[targetUri] = scheme!!
+                }
+            }
+            for (extensionItem in extensionItems) {
+                if (extensionItem.updateUri != null) {
+                    val targetUri = TargetUri(extensionItem.updateUri)
+                    var extensionNames = targets[targetUri]
+                    if (extensionNames == null) {
+                        extensionNames = HashSet()
+                        targets[targetUri] = extensionNames
+                    }
+                    extensionNames.add(extensionItem.name!!)
+                    val scheme = extensionItem.updateUri.scheme
+                    if (!StringUtils.isEmpty(scheme)) {
+                        requestedScheme[targetUri] = scheme!!
+                    }
+                }
+            }
+
+            val responses = LinkedHashMap<TargetUri, Response>()
+            for ((key, value) in targets) {
+                try {
+                    var targetUri = key
+                    var targetScheme = requestedScheme[targetUri]
+                    var redirects = 0
+                    while (redirects++ < 5) {
+                        val response = responses[targetUri]
+                        if (response != null) {
+                            if ("http" == response.uri.scheme && "https" == targetScheme) {
+                                response.uri =
+                                    response.uri
+                                        .buildUpon()
+                                        .scheme("https")
+                                        .build()
+                            }
+                            response.extensionNames.addAll(value)
+                            break
+                        }
+                        var responseUri: Uri? = null
+                        var responseText: String? = null
+                        var responseDataVersion: DataVersion? = null
+                        if (targetUri.directory) {
+                            var lastHttpException: HttpException? = null
+                            val directoryUri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
+                            for (dataVersion in DataVersion.values()) {
+                                val uri = directoryUri!!.buildUpon().appendPath(dataVersion.fileName).build()
+                                try {
+                                    responseUri = uri
+                                    responseText = HttpRequest(uri, holder).perform()!!.readString()
+                                    responseDataVersion = dataVersion
+                                    lastHttpException = null
+                                    break
+                                } catch (e: HttpException) {
+                                    if (!e.isHttpException() ||
+                                        e.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND
+                                    ) {
+                                        throw e
+                                    } else {
+                                        lastHttpException = e
+                                    }
+                                }
+                            }
+                            if (lastHttpException != null) {
+                                throw lastHttpException
+                            }
+                        } else {
+                            val uri = chan.locator.setSchemeIfEmpty(targetUri.uri, targetScheme)
+                            responseUri = uri
+                            responseText = HttpRequest(uri, holder).perform()!!.readString()
+                            responseDataVersion = DataVersion.LEGACY
+                        }
+                        // An empty body is not valid JSON; JSONException is already handled
+                        // below, whereas the Java's null would have thrown an NPE.
+                        val jsonObject = JSONObject(responseText.orEmpty())
+                        val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
+                        if (redirect != null) {
+                            val uri = normalizeRelativeUri(responseUri!!, redirect)
+                            targetUri = TargetUri(uri)
+                            targetScheme = uri.scheme
+                        } else {
+                            responses[targetUri] =
+                                Response(
+                                    responseUri!!,
+                                    responseDataVersion!!,
+                                    jsonObject,
+                                    HashSet(value),
+                                )
+                            break
+                        }
+                    }
+                } catch (e: HttpException) {
+                    e.printStackTrace()
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+                if (Thread.currentThread().isInterrupted) {
+                    return emptyList()
+                }
+            }
+            return responses.values
+        }
+    }
 }

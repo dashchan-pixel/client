@@ -1,7 +1,5 @@
 package com.mishiranu.dashchan.ui.posting
 
-import chan.util.StringUtils
-
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -54,6 +52,7 @@ import chan.text.CommentEditor
 import chan.util.CommonUtils
 import chan.util.CommonUtils.equals
 import chan.util.DataFile
+import chan.util.StringUtils
 import chan.util.StringUtils.formatFileSize
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
@@ -126,14 +125,21 @@ import com.mishiranu.dashchan.widget.ViewFactory.makeListTextHeader
 import kotlin.math.max
 import kotlin.math.min
 
-class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.Callback,
-    ReadCaptchaTask.Callback, PostingDialogCallback, CaptchaOptionsDialog.Callback,
+class PostingFragment :
+    ContentFragment,
+    FragmentHandler.Callback,
+    CaptchaForm.Callback,
+    ReadCaptchaTask.Callback,
+    PostingDialogCallback,
+    CaptchaOptionsDialog.Callback,
     UriPasteEditText.Callback {
     constructor()
 
     constructor(
-        chanName: String?, boardName: String?, threadNumber: String?,
-        replyDataList: MutableList<ReplyData?>
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        replyDataList: MutableList<ReplyData?>,
     ) {
         val args = Bundle()
         args.putString(EXTRA_CHAN_NAME, chanName)
@@ -152,11 +158,14 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private val threadNumber: String?
         get() = requireArguments().getString(EXTRA_THREAD_NUMBER)
 
-    fun check(chanName: String?, boardName: String?, threadNumber: String?): Boolean {
-        return equals(this.chanName, chanName) &&
-                equals(this.boardName, boardName) &&
-                equals(this.threadNumber, threadNumber)
-    }
+    fun check(
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+    ): Boolean =
+        equals(this.chanName, chanName) &&
+            equals(this.boardName, boardName) &&
+            equals(this.threadNumber, threadNumber)
 
     private var allowPosting = false
     private var sendSuccess = false
@@ -207,49 +216,60 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private var refreshCaptchaWhenLifetimeEnd = false
 
     private var postingBinder: PostingService.Binder? = null
-    private val postingConnection: ServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            postingBinder = service as PostingService.Binder?
-            postingBinder!!.register(
-                postingCallback,
-                this@PostingFragment.chanName,
-                this@PostingFragment.boardName,
-                this@PostingFragment.threadNumber
-            )
-        }
+    private val postingConnection: ServiceConnection =
+        object : ServiceConnection {
+            override fun onServiceConnected(
+                name: ComponentName?,
+                service: IBinder?,
+            ) {
+                postingBinder = service as PostingService.Binder?
+                postingBinder!!.register(
+                    postingCallback,
+                    this@PostingFragment.chanName,
+                    this@PostingFragment.boardName,
+                    this@PostingFragment.threadNumber,
+                )
+            }
 
-        override fun onServiceDisconnected(name: ComponentName?) {
-            if (postingBinder != null) {
-                postingBinder!!.unregister(postingCallback)
-                postingBinder = null
+            override fun onServiceDisconnected(name: ComponentName?) {
+                if (postingBinder != null) {
+                    postingBinder!!.unregister(postingCallback)
+                    postingBinder = null
+                }
             }
         }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         val rootView = ExpandedLayout(container!!.getContext(), true)
         rootView.setLayoutParams(
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
         )
         inflater.inflate(R.layout.activity_posting, rootView)
         return rootView
     }
 
-    public override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    public override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         val chan = get(this.chanName)
         postingConfiguration =
             chan.configuration.safe().obtainPosting(this.boardName, this.threadNumber == null)
         if (postingConfiguration != null) {
-            allowPosting = chan.configuration.safe().obtainBoard(this.boardName).allowPosting
+            allowPosting =
+                chan.configuration
+                    .safe()
+                    .obtainBoard(this.boardName)
+                    .allowPosting
         } else {
             postingConfiguration = Posting()
             allowPosting = false
@@ -283,15 +303,27 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         attachmentContainer = view.findViewById<LinearLayout?>(R.id.attachment_container)
         val footerContainer = view.findViewById<FrameLayout>(R.id.footer_container)
         val oldScrollViewHeight = intArrayOf(-1)
-        scrollView!!.addOnLayoutChangeListener(OnLayoutChangeListener { v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int ->
-            if (scrollView != null) {
-                val scrollViewHeight = scrollView!!.getHeight()
-                if (scrollViewHeight != oldScrollViewHeight[0]) {
-                    oldScrollViewHeight[0] = scrollViewHeight
-                    resizeComment(false)
+        scrollView!!.addOnLayoutChangeListener(
+            OnLayoutChangeListener {
+                v: View?,
+                left: Int,
+                top: Int,
+                right: Int,
+                bottom: Int,
+                oldLeft: Int,
+                oldTop: Int,
+                oldRight: Int,
+                oldBottom: Int,
+                ->
+                if (scrollView != null) {
+                    val scrollViewHeight = scrollView!!.getHeight()
+                    if (scrollViewHeight != oldScrollViewHeight[0]) {
+                        oldScrollViewHeight[0] = scrollViewHeight
+                        resizeComment(false)
+                    }
                 }
-            }
-        })
+            },
+        )
         postingLayout.setPadding((8f * density).toInt(), 0, (8f * density).toInt(), 0)
 
         Companion.addHeader(personalDataBlock!!, 0, R.string.personal_data)
@@ -304,7 +336,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             (4f * density).toInt(),
             0,
             (4f * density).toInt(),
-            (4f * density).toInt()
+            (4f * density).toInt(),
         )
         setTextSizeScaled(remainingCharacters, 12)
         setNewMargin(remainingCharacters, 0, (-2f * density).toInt(), 0, 0)
@@ -312,10 +344,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         nameView!!.addTextChangedListener(
             NameEditWatcher(
                 postingConfiguration!!.allowName &&
-                        !postingConfiguration!!.allowTripcode,
+                    !postingConfiguration!!.allowTripcode,
                 nameView!!,
                 tripcodeWarning,
-                Runnable { resizeComment(true) })
+                Runnable { resizeComment(true) },
+            ),
         )
         ViewUtils.applyMonospaceTypeface(passwordView!!)
         commentEditWatcher =
@@ -324,25 +357,30 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 commentView!!,
                 remainingCharacters,
                 Runnable { resizeComment(true) },
-                Runnable { getInstance().store(obtainPostDraft()) })
-        commentView!!.setOnFocusChangeListener(OnFocusChangeListener { v: View?, hasFocus: Boolean ->
-            updateFocusButtons(
-                hasFocus
+                Runnable { getInstance().store(obtainPostDraft()) },
             )
-        })
+        commentView!!.setOnFocusChangeListener(
+            OnFocusChangeListener { v: View?, hasFocus: Boolean ->
+                updateFocusButtons(
+                    hasFocus,
+                )
+            },
+        )
         commentView!!.addTextChangedListener(commentEditWatcher)
         commentView!!.addTextChangedListener(QuoteEditWatcher(requireContext()))
         commentView!!.setCallback(
             this,
-            buildMimeTypeList(postingConfiguration!!.attachmentMimeTypes)
+            buildMimeTypeList(postingConfiguration!!.attachmentMimeTypes),
         )
         var addPaddingToRoot = false
         val landscape =
             getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
-        val extra = if (landscape)
-            (requireActivity() as FragmentHandler).getToolbarView()
-        else
-            (requireActivity() as FragmentHandler).getToolbarExtra()
+        val extra =
+            if (landscape) {
+                (requireActivity() as FragmentHandler).getToolbarView()
+            } else {
+                (requireActivity() as FragmentHandler).getToolbarExtra()
+            }
         val textFormatView = LinearLayout(extra.getContext())
         textFormatView.setOrientation(LinearLayout.HORIZONTAL)
         this.textFormatView = textFormatView
@@ -352,20 +390,21 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 if (rtl) 0 else (8f * density).toInt(),
                 0,
                 if (rtl) (8f * density).toInt() else 0,
-                0
+                0,
             )
         } else {
             textFormatView.setPadding(
                 (8f * density).toInt(),
                 0,
                 (8f * density).toInt(),
-                (4f * density).toInt()
+                (4f * density).toInt(),
             )
             addPaddingToRoot = true
         }
         extra.addView(
-            textFormatView, ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            textFormatView,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
         )
         commentParent.removeView(commentView)
         postingLayout.addView(commentView, postingLayout.indexOfChild(commentParent))
@@ -374,8 +413,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
         updatePostingConfiguration(true, false, false)
         MarkupButtonsBuilder(
-            addPaddingToRoot, (getResources().getConfiguration().screenWidthDp *
-                    obtainDensity(getResources())).toInt()
+            addPaddingToRoot,
+            (
+                getResources().getConfiguration().screenWidthDp *
+                    obtainDensity(getResources())
+            ).toInt(),
         )
 
         val longFooter = longLayout && !hugeCaptcha
@@ -391,40 +433,52 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             0,
             if (longFooter) (8f * density).toInt() else 0,
             0,
-            (8f * density).toInt()
+            (8f * density).toInt(),
         )
         setNewMarginRelative(captchaInputView, null, null, (4f * density).toInt(), null)
 
         val captchaConfiguration = chan.configuration.safe().obtainCaptcha(captchaType)
-        captchaForm = CaptchaForm(
-            this, true, !longFooter,
-            footerContainer, captchaInputParentView, captchaInputView, captchaConfiguration
-        )
+        captchaForm =
+            CaptchaForm(
+                this,
+                true,
+                !longFooter,
+                footerContainer,
+                captchaInputParentView,
+                captchaInputView,
+                captchaConfiguration,
+            )
         captchaLifetimeSeconds = captchaConfiguration.ttl
         refreshCaptchaWhenLifetimeEnd = isCaptchaAutoReload
         val maxTranslationZ = (2f * density).toInt().toFloat()
-        sendButton = object : Button(
-            captchaInputParentView.getContext(),
-            null,
-            0,
-            android.R.style.Widget_Material_Button_Colored
-        ) {
-            override fun setTranslationZ(translationZ: Float) {
-                super.setTranslationZ(min(translationZ, maxTranslationZ))
-            }
-        }
-        val rect = Rect()
-        // Limit elevation height since the shadow looks ugly when the view is at the bottom
-        sendButton!!.setOutlineProvider(object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                view.getBackground().getOutline(outline)
-                if (getOutlineRect(outline, rect)) {
-                    val radius = getOutlineRadius(outline)
-                    rect.bottom -= (2f * density).toInt()
-                    outline.setRoundRect(rect, radius)
+        sendButton =
+            object : Button(
+                captchaInputParentView.getContext(),
+                null,
+                0,
+                android.R.style.Widget_Material_Button_Colored,
+            ) {
+                override fun setTranslationZ(translationZ: Float) {
+                    super.setTranslationZ(min(translationZ, maxTranslationZ))
                 }
             }
-        })
+        val rect = Rect()
+        // Limit elevation height since the shadow looks ugly when the view is at the bottom
+        sendButton!!.setOutlineProvider(
+            object : ViewOutlineProvider() {
+                override fun getOutline(
+                    view: View,
+                    outline: Outline,
+                ) {
+                    view.getBackground().getOutline(outline)
+                    if (getOutlineRect(outline, rect)) {
+                        val radius = getOutlineRadius(outline)
+                        rect.bottom -= (2f * density).toInt()
+                        outline.setRoundRect(rect, radius)
+                    }
+                }
+            },
+        )
 
         val theme = getTheme(sendButton!!.getContext())
         val colorControlDisabled = applyAlpha(theme!!.controlNormal21, theme.disabledAlpha21)
@@ -442,26 +496,46 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         if (longFooter) {
             (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight = 2f
             val lastAddWeight = booleanArrayOf(true)
-            captchaInputParentView.addOnLayoutChangeListener(OnLayoutChangeListener { v: View?, left: Int, top: Int, right: Int, bottom: Int, oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int ->
-                val addWeight = captchaInputView.getVisibility() == View.GONE
-                if (addWeight != lastAddWeight[0]) {
-                    lastAddWeight[0] = addWeight
-                    (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight =
-                        if (addWeight) 2f else 1f
-                    sendButton!!.requestLayout()
-                }
-            })
+            captchaInputParentView.addOnLayoutChangeListener(
+                OnLayoutChangeListener {
+                    v: View?,
+                    left: Int,
+                    top: Int,
+                    right: Int,
+                    bottom: Int,
+                    oldLeft: Int,
+                    oldTop: Int,
+                    oldRight: Int,
+                    oldBottom: Int,
+                    ->
+                    val addWeight = captchaInputView.getVisibility() == View.GONE
+                    if (addWeight != lastAddWeight[0]) {
+                        lastAddWeight[0] = addWeight
+                        (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight =
+                            if (addWeight) 2f else 1f
+                        sendButton!!.requestLayout()
+                    }
+                },
+            )
         } else {
             (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
         }
-        attachmentColumnCount = if (screenWidthDp >= 960) 4 else if (screenWidthDp >= 480) 2 else 1
+        attachmentColumnCount =
+            if (screenWidthDp >= 960) {
+                4
+            } else if (screenWidthDp >= 480) {
+                2
+            } else {
+                1
+            }
 
         val builder = StringBuilder()
         var commentCarriage = 0
 
         attachments.clear()
-        val postDraft = draftsStorage
-            .getPostDraft(this.chanName, this.boardName, this.threadNumber)
+        val postDraft =
+            draftsStorage
+                .getPostDraft(this.chanName, this.boardName, this.threadNumber)
         if (postDraft != null) {
             if (!StringUtils.isEmpty(postDraft.comment)) {
                 builder.append(postDraft.comment)
@@ -480,7 +554,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                         attachmentDraft.optionRemoveFileName,
                         attachmentDraft.optionSpoiler,
                         attachmentDraft.reencoding,
-                        attachmentDraft.optionCustomName
+                        attachmentDraft.optionCustomName,
                     )
                 }
             }
@@ -507,11 +581,12 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
         var captchaRestoreSuccess = false
         if (savedInstanceState != null && savedInstanceState.containsKey(EXTRA_CAPTCHA_DRAFT)) {
-            val captchaDraft = BundleCompat.getParcelable<CaptchaDraft?>(
-                savedInstanceState,
-                EXTRA_CAPTCHA_DRAFT,
-                CaptchaDraft::class.java
-            )
+            val captchaDraft =
+                BundleCompat.getParcelable<CaptchaDraft?>(
+                    savedInstanceState,
+                    EXTRA_CAPTCHA_DRAFT,
+                    CaptchaDraft::class.java,
+                )
             if (captchaDraft!!.captchaState != null) {
                 showCaptcha(
                     captchaDraft.captchaState,
@@ -521,7 +596,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                     captchaDraft.loadedValidity,
                     captchaDraft.captcha,
                     captchaDraft.large,
-                    captchaDraft.blackAndWhite
+                    captchaDraft.blackAndWhite,
                 )
                 captchaForm!!.setText(captchaDraft.text)
                 captchaRestoreSuccess = true
@@ -556,13 +631,13 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                     }
 
                     ChanConfiguration.Captcha.Validity.IN_THREAD -> {
-                        canLoadState = equals(this.boardName, captchaDraft.boardName)
-                                && equals(this.threadNumber, captchaDraft.threadNumber)
+                        canLoadState = equals(this.boardName, captchaDraft.boardName) &&
+                            equals(this.threadNumber, captchaDraft.threadNumber)
                     }
 
                     ChanConfiguration.Captcha.Validity.IN_BOARD_SEPARATELY -> {
-                        canLoadState = equals(this.boardName, captchaDraft.boardName)
-                                && ((this.threadNumber == null) == (captchaDraft.threadNumber == null))
+                        canLoadState = equals(this.boardName, captchaDraft.boardName) &&
+                            ((this.threadNumber == null) == (captchaDraft.threadNumber == null))
                     }
 
                     ChanConfiguration.Captcha.Validity.IN_BOARD -> {
@@ -579,16 +654,29 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                         captchaFromDraft != null
                     ) {
                         showCaptcha(
-                            ReadCaptchaTask.CaptchaState.CAPTCHA, captchaDraft.captchaData, null,
-                            captchaDraft.loadedInput, captchaDraft.loadedValidity,
-                            captchaFromDraft, captchaDraft.large, captchaDraft.blackAndWhite
+                            ReadCaptchaTask.CaptchaState.CAPTCHA,
+                            captchaDraft.captchaData,
+                            null,
+                            captchaDraft.loadedInput,
+                            captchaDraft.loadedValidity,
+                            captchaFromDraft,
+                            captchaDraft.large,
+                            captchaDraft.blackAndWhite,
                         )
                         captchaForm!!.setText(captchaDraft.text)
                         captchaRestoreSuccess = true
-                    } else if (captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.SKIP || captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.PASS) {
+                    } else if (captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.SKIP ||
+                        captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.PASS
+                    ) {
                         showCaptcha(
-                            captchaDraft.captchaState, captchaDraft.captchaData, null, null,
-                            captchaDraft.loadedValidity, null, false, false
+                            captchaDraft.captchaState,
+                            captchaDraft.captchaData,
+                            null,
+                            null,
+                            captchaDraft.loadedValidity,
+                            null,
+                            false,
+                            false,
                         )
                         captchaRestoreSuccess = true
                     }
@@ -597,12 +685,15 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
 
         val replyDataList: MutableList<ReplyData>? =
-            if (savedInstanceState != null) mutableListOf() else
+            if (savedInstanceState != null) {
+                mutableListOf()
+            } else {
                 BundleCompat.getParcelableArrayList<ReplyData>(
                     requireArguments(),
                     EXTRA_REPLY_DATA_LIST,
-                    ReplyData::class.java
+                    ReplyData::class.java,
                 )
+            }
         if (!replyDataList!!.isEmpty()) {
             var onlyLinks = true
             for (data in replyDataList) {
@@ -620,7 +711,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                     val link = ">>" + postNumber
                     // Check if user replies to the same post
                     val index = builder.lastIndexOf(link, commentCarriage)
-                    if (index < 0 || index < commentCarriage && commentCarriage <= builder.length &&
+                    if (index < 0 ||
+                        index < commentCarriage &&
+                        commentCarriage <= builder.length &&
                         builder.substring(index, commentCarriage).contains("\n>>")
                     ) {
                         var afterSpace = false // If user wants to add link at the same line
@@ -654,8 +747,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                     }
                 }
                 if (!StringUtils.isEmpty(comment)) {
-                    if (commentCarriage > 0 && commentCarriage <= builder.length && builder.get(
-                            commentCarriage - 1
+                    if (commentCarriage > 0 &&
+                        commentCarriage <= builder.length &&
+                        builder.get(
+                            commentCarriage - 1,
                         ) != '\n'
                     ) {
                         builder.insert(commentCarriage++, '\n')
@@ -688,17 +783,20 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         (requireActivity() as FragmentHandler).setTitleSubtitle(
             getString(
                 if (StringUtils.isEmpty(
-                        this.threadNumber
+                        this.threadNumber,
                     )
-                )
+                ) {
                     R.string.new_thread
-                else
+                } else {
                     R.string.new_post
-            ), null
+                },
+            ),
+            null,
         )
         requireActivity().bindService(
             Intent(requireContext(), PostingService::class.java),
-            postingConnection, Context.BIND_AUTO_CREATE
+            postingConnection,
+            Context.BIND_AUTO_CREATE,
         )
 
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
@@ -755,8 +853,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                         holder.optionRemoveFileName,
                         holder.optionSpoiler,
                         holder.reencoding,
-                        holder.optionCustomName
-                    )
+                        holder.optionCustomName,
+                    ),
                 )
             }
         }
@@ -771,18 +869,38 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         val optionOriginalPoster = originalPosterCheckBox!!.isChecked()
         val userIcon = this.userIcon
         return PostDraft(
-            this.chanName, this.boardName, this.threadNumber, name, email, password,
-            subject, comment, commentCarriage, attachmentDrafts,
-            optionSage, optionSpoiler, optionOriginalPoster, userIcon
+            this.chanName,
+            this.boardName,
+            this.threadNumber,
+            name,
+            email,
+            password,
+            subject,
+            comment,
+            commentCarriage,
+            attachmentDrafts,
+            optionSage,
+            optionSpoiler,
+            optionOriginalPoster,
+            userIcon,
         )
     }
 
     private fun obtainCaptchaDraft(): CaptchaDraft {
         val input = captchaForm!!.input
         return CaptchaDraft(
-            captchaType, captchaState, captchaData, loadedCaptchaType,
-            loadedCaptchaInput, loadedCaptchaValidity, input, captcha, captchaLarge,
-            captchaBlackAndWhite, this.boardName, this.threadNumber
+            captchaType,
+            captchaState,
+            captchaData,
+            loadedCaptchaType,
+            loadedCaptchaInput,
+            loadedCaptchaValidity,
+            input,
+            captcha,
+            captchaLarge,
+            captchaBlackAndWhite,
+            this.boardName,
+            this.threadNumber,
         )
     }
 
@@ -805,8 +923,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 attachmentsToAdd.add(
                     Pair<String?, String?>(
                         attachmentDraft.hash,
-                        attachmentDraft.name
-                    )
+                        attachmentDraft.name,
+                    ),
                 )
             }
             handleAttachmentsToAdd(attachmentsToAdd, futureAttachmentDrafts.size)
@@ -826,7 +944,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
     override fun onChansChanged(
         changed: Collection<String>,
-        removed: Collection<String>
+        removed: Collection<String>,
     ) {
         if (changed.contains(this.chanName) || removed.contains(this.chanName)) {
             updatePostingConfigurationIfNeeded()
@@ -873,9 +991,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         captchaImageAttachmentDataFile.delete()
     }
 
-    override fun getCaptchaImageDownloadParameters(): CaptchaImageDownloadParameters {
-        return CaptchaImageDownloadParameters(this.chanName, this.boardName, this.threadNumber)
-    }
+    override fun getCaptchaImageDownloadParameters(): CaptchaImageDownloadParameters = CaptchaImageDownloadParameters(this.chanName, this.boardName, this.threadNumber)
 
     override fun refreshCaptcha() {
         onRefreshCaptcha(true)
@@ -901,7 +1017,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 null,
                 null,
                 false,
-                false
+                false,
             )
         }
     }
@@ -909,7 +1025,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private fun updatePostingConfiguration(
         views: Boolean,
         attachmentOptions: Boolean,
-        attachmentCount: Boolean
+        attachmentCount: Boolean,
     ) {
         val posting = postingConfiguration
         if (views) {
@@ -934,9 +1050,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             }
             var needPassword = false
             val chan = get(this.chanName)
-            val board = chan.configuration.safe().obtainBoard(
-                this.chanName
-            )
+            val board =
+                chan.configuration.safe().obtainBoard(
+                    this.chanName,
+                )
             if (board.allowDeleting) {
                 val deleting = chan.configuration.safe().obtainDeleting(this.chanName)
                 needPassword = deleting != null && deleting.password
@@ -949,15 +1066,18 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             spoilerCheckBox!!.setVisibility(if (posting.optionSpoiler) View.VISIBLE else View.GONE)
             originalPosterCheckBox!!.setVisibility(if (posting.optionOriginalPoster) View.VISIBLE else View.GONE)
             checkBoxParent!!.setVisibility(
-                if (posting.optionSage || posting.optionSpoiler || posting.optionOriginalPoster)
+                if (posting.optionSage || posting.optionSpoiler || posting.optionOriginalPoster) {
                     View.VISIBLE
-                else
+                } else {
                     View.GONE
+                },
             )
             var showPersonalDataBlock = !isHidePersonalData
             if (showPersonalDataBlock) {
-                showPersonalDataBlock = posting.allowName || posting.allowEmail ||
-                        needPassword || userIconItems != null
+                showPersonalDataBlock = posting.allowName ||
+                    posting.allowEmail ||
+                    needPassword ||
+                    userIconItems != null
             }
             personalDataBlock!!.setVisibility(if (showPersonalDataBlock) View.VISIBLE else View.GONE)
             commentEditWatcher!!.updateConfiguration(postingConfiguration)
@@ -981,14 +1101,14 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
     private fun compareListOfPairs(
         first: List<Pair<String, String>>,
-        second: List<Pair<String, String>>
+        second: List<Pair<String, String>>,
     ): Boolean {
         if (first.size != second.size) {
             return false
         }
         for (i in first.indices) {
-            if (!equals(first.get(i)!!.first, first.get(i)!!.second)
-                || !equals(first.get(i)!!.second, first.get(i)!!.second)
+            if (!equals(first.get(i)!!.first, first.get(i)!!.second) ||
+                !equals(first.get(i)!!.second, first.get(i)!!.second)
             ) {
                 return false
             }
@@ -999,21 +1119,37 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private fun updatePostingConfigurationIfNeeded() {
         val chan = get(this.chanName)
         val oldPosting = postingConfiguration
-        var newPosting = chan.configuration
-            .safe().obtainPosting(this.boardName, this.threadNumber == null)
+        var newPosting =
+            chan.configuration
+                .safe()
+                .obtainPosting(this.boardName, this.threadNumber == null)
         if (newPosting == null) {
             allowPosting = false
             newPosting = Posting()
         } else {
-            allowPosting = chan.configuration.safe().obtainBoard(this.boardName).allowPosting
+            allowPosting =
+                chan.configuration
+                    .safe()
+                    .obtainBoard(this.boardName)
+                    .allowPosting
         }
         val views =
-            oldPosting!!.allowName != newPosting.allowName || oldPosting.allowEmail != newPosting.allowEmail || oldPosting.allowTripcode != newPosting.allowTripcode || oldPosting.allowSubject != newPosting.allowSubject || oldPosting.optionSage != newPosting.optionSage || oldPosting.optionSpoiler != newPosting.optionSpoiler || oldPosting.optionOriginalPoster != newPosting.optionOriginalPoster || oldPosting.maxCommentLength != newPosting.maxCommentLength || !equals(
-                oldPosting.maxCommentLengthEncoding,
-                newPosting.maxCommentLengthEncoding
-            ) || !compareListOfPairs(oldPosting.userIcons, newPosting.userIcons)
-        val attachmentOptions = oldPosting.attachmentSpoiler != newPosting.attachmentSpoiler
-                || !compareListOfPairs(oldPosting.attachmentRatings, newPosting.attachmentRatings)
+            oldPosting!!.allowName != newPosting.allowName ||
+                oldPosting.allowEmail != newPosting.allowEmail ||
+                oldPosting.allowTripcode != newPosting.allowTripcode ||
+                oldPosting.allowSubject != newPosting.allowSubject ||
+                oldPosting.optionSage != newPosting.optionSage ||
+                oldPosting.optionSpoiler != newPosting.optionSpoiler ||
+                oldPosting.optionOriginalPoster != newPosting.optionOriginalPoster ||
+                oldPosting.maxCommentLength != newPosting.maxCommentLength ||
+                !equals(
+                    oldPosting.maxCommentLengthEncoding,
+                    newPosting.maxCommentLengthEncoding,
+                ) ||
+                !compareListOfPairs(oldPosting.userIcons, newPosting.userIcons)
+        val attachmentOptions =
+            oldPosting.attachmentSpoiler != newPosting.attachmentSpoiler ||
+                !compareListOfPairs(oldPosting.attachmentRatings, newPosting.attachmentRatings)
         val attachmentCount = oldPosting.attachmentCount != newPosting.attachmentCount
         if (views || attachmentOptions || attachmentCount) {
             postingConfiguration = newPosting
@@ -1033,21 +1169,29 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             return null
         }
 
-    public override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
-        menu.add(0, R.id.menu_attach, 0, R.string.attach)
+    public override fun onCreateOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
+        menu
+            .add(0, R.id.menu_attach, 0, R.string.attach)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAttach))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
     }
 
-    public override fun onPrepareOptionsMenu(menu: Menu, primary: Boolean) {
-        menu.findItem(R.id.menu_attach)
+    public override fun onPrepareOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
+        menu
+            .findItem(R.id.menu_attach)
             .setVisible(attachments.size < postingConfiguration!!.attachmentCount)
     }
 
     private fun handleMimeTypeGroup(
         list: ArrayList<String>,
         mimeTypes: MutableCollection<String>,
-        mimeTypeGroup: String
+        mimeTypeGroup: String,
     ) {
         val allSubMimeTypes = mimeTypeGroup + "*"
         if (mimeTypes.contains(allSubMimeTypes)) {
@@ -1078,14 +1222,16 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         if (switchItemId0 == R.id.menu_attach) {
             // SHOW_ADVANCED to show folder navigation
 
-            val intent = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE)
-                .putExtra("android.content.extra.SHOW_ADVANCED", true)
+            val intent =
+                Intent(Intent.ACTION_GET_CONTENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .putExtra("android.content.extra.SHOW_ADVANCED", true)
             val mimeTypes = buildMimeTypeList(postingConfiguration!!.attachmentMimeTypes)
             if (mimeTypes.size >= 2) {
                 intent.setType("*/*")
                 intent.putExtra(
                     Intent.EXTRA_MIME_TYPES,
-                    CommonUtils.toArray(mimeTypes, String::class.java)
+                    CommonUtils.toArray(mimeTypes, String::class.java),
                 )
             } else if (mimeTypes.size == 1) {
                 intent.setType(mimeTypes.get(0))
@@ -1107,39 +1253,42 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
     }
 
-    private val formatButtonClickListener: View.OnClickListener = object : View.OnClickListener {
-        override fun onClick(v: View) {
-            val what = v.getTag() as Int
-            when (what) {
-                ChanMarkup.TAG_QUOTE -> {
-                    formatQuote()
-                }
+    private val formatButtonClickListener: View.OnClickListener =
+        object : View.OnClickListener {
+            override fun onClick(v: View) {
+                val what = v.getTag() as Int
+                when (what) {
+                    ChanMarkup.TAG_QUOTE -> {
+                        formatQuote()
+                    }
 
-                else -> {
-                    commentEditor!!.formatSelectedText(commentView!!, what)
+                    else -> {
+                        commentEditor!!.formatSelectedText(commentView!!, what)
+                    }
                 }
-            }
-            val inputMethodManager = requireContext()
-                .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-            if (inputMethodManager != null) {
-                inputMethodManager.showSoftInput(commentView, 0)
+                val inputMethodManager =
+                    requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+                if (inputMethodManager != null) {
+                    inputMethodManager.showSoftInput(commentView, 0)
+                }
             }
         }
-    }
 
     private fun updateSendButtonState() {
         sendButton!!.setEnabled(sendButtonEnabled && captchaState != null && captchaState != ReadCaptchaTask.CaptchaState.NEED_LOAD)
     }
 
-    private fun getTextIfVisible(editText: EditText): String? {
-        return if (editText.getVisibility() == View.VISIBLE) nullIfEmpty(
-            editText.getText().toString()
-        ) else null
-    }
+    private fun getTextIfVisible(editText: EditText): String? =
+        if (editText.getVisibility() == View.VISIBLE) {
+            nullIfEmpty(
+                editText.getText().toString(),
+            )
+        } else {
+            null
+        }
 
-    private fun isCheckedIfVisible(checkBox: CheckBox): Boolean {
-        return checkBox.getVisibility() == View.VISIBLE && checkBox.isChecked()
-    }
+    private fun isCheckedIfVisible(checkBox: CheckBox): Boolean = checkBox.getVisibility() == View.VISIBLE && checkBox.isChecked()
 
     private fun executeSendPost() {
         if (postingBinder == null) {
@@ -1190,8 +1339,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                         data.optionRemoveMetadata,
                         data.optionRemoveFileName,
                         postingConfiguration!!.attachmentSpoiler && data.optionSpoiler,
-                        data.reencoding
-                    )
+                        data.reencoding,
+                    ),
                 )
             }
         }
@@ -1206,27 +1355,29 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             captchaData = captchaData.copy()
             captchaData.put(CaptchaData.INPUT, captchaForm!!.input)
         }
-        val captchaNeedLoad = captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD ||
+        val captchaNeedLoad =
+            captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD ||
                 captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING
-        val data = SendPostData(
-            this.boardName,
-            this.threadNumber,
-            subject,
-            comment,
-            name,
-            email,
-            password,
-            attachments,
-            optionSage,
-            optionSpoiler,
-            optionOriginalPoster,
-            userIcon,
-            captchaType,
-            captchaData,
-            captchaNeedLoad,
-            15000,
-            45000
-        )
+        val data =
+            SendPostData(
+                this.boardName,
+                this.threadNumber,
+                subject,
+                comment,
+                name,
+                email,
+                password,
+                attachments,
+                optionSage,
+                optionSpoiler,
+                optionOriginalPoster,
+                userIcon,
+                captchaType,
+                captchaData,
+                captchaNeedLoad,
+                15000,
+                45000,
+            )
         getInstance().store(obtainPostDraft())
         allowDialog = false
         if (postingBinder!!.executeSendPost(this.chanName, data)) {
@@ -1265,71 +1416,82 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
     }
 
-    private val postingCallback: PostingService.Callback = object : PostingService.Callback {
-        override fun onState(
-            progressMode: Boolean, progressState: ProgressState,
-            attachmentIndex: Int, attachmentsCount: Int
-        ) {
-            if (allowDialog && progressDialog == null) {
-                progressDialog =
-                    ProgressDialog(requireContext(), if (progressMode) "%1\$d / %2\$d kB" else null)
-                progressDialog!!.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? -> onSendPostCancel() })
-                progressDialog!!.setButton(
-                    DialogInterface.BUTTON_POSITIVE, getString(R.string.minimize),
-                    DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostMinimize() })
-                progressDialog!!.setButton(
-                    DialogInterface.BUTTON_NEGATIVE, getString(android.R.string.cancel),
-                    DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostCancel() })
-                progressDialog!!.show()
-            }
-            if (progressDialog == null) {
-                return
-            }
-            when (progressState) {
-                ProgressState.CONNECTING -> {
-                    progressDialog!!.setMax(1)
-                    progressDialog!!.setIndeterminate(true)
-                    progressDialog!!.setMessage(getString(R.string.sending__ellipsis))
+    private val postingCallback: PostingService.Callback =
+        object : PostingService.Callback {
+            override fun onState(
+                progressMode: Boolean,
+                progressState: ProgressState,
+                attachmentIndex: Int,
+                attachmentsCount: Int,
+            ) {
+                if (allowDialog && progressDialog == null) {
+                    progressDialog =
+                        ProgressDialog(requireContext(), if (progressMode) "%1\$d / %2\$d kB" else null)
+                    progressDialog!!.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? -> onSendPostCancel() })
+                    progressDialog!!.setButton(
+                        DialogInterface.BUTTON_POSITIVE,
+                        getString(R.string.minimize),
+                        DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostMinimize() },
+                    )
+                    progressDialog!!.setButton(
+                        DialogInterface.BUTTON_NEGATIVE,
+                        getString(android.R.string.cancel),
+                        DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostCancel() },
+                    )
+                    progressDialog!!.show()
                 }
-
-                ProgressState.SENDING -> {
-                    progressDialog!!.setIndeterminate(false)
-                    if (progressMode) {
-                        progressDialog!!.setMessage(
-                            getString(
-                                R.string.sending_number_of_number__ellipsis_format,
-                                attachmentIndex + 1, attachmentsCount
-                            )
-                        )
-                    } else {
+                if (progressDialog == null) {
+                    return
+                }
+                when (progressState) {
+                    ProgressState.CONNECTING -> {
+                        progressDialog!!.setMax(1)
+                        progressDialog!!.setIndeterminate(true)
                         progressDialog!!.setMessage(getString(R.string.sending__ellipsis))
                     }
-                }
 
-                ProgressState.PROCESSING -> {
-                    progressDialog!!.setIndeterminate(false)
-                    progressDialog!!.setMessage(getString(R.string.processing_data__ellipsis))
+                    ProgressState.SENDING -> {
+                        progressDialog!!.setIndeterminate(false)
+                        if (progressMode) {
+                            progressDialog!!.setMessage(
+                                getString(
+                                    R.string.sending_number_of_number__ellipsis_format,
+                                    attachmentIndex + 1,
+                                    attachmentsCount,
+                                ),
+                            )
+                        } else {
+                            progressDialog!!.setMessage(getString(R.string.sending__ellipsis))
+                        }
+                    }
+
+                    ProgressState.PROCESSING -> {
+                        progressDialog!!.setIndeterminate(false)
+                        progressDialog!!.setMessage(getString(R.string.processing_data__ellipsis))
+                    }
+                }
+            }
+
+            override fun onProgress(
+                progress: Long,
+                progressMax: Long,
+            ) {
+                if (progressDialog != null) {
+                    progressDialog!!.setMax((progressMax / 1000).toInt())
+                    progressDialog!!.setValue((progress / 1000).toInt())
+                }
+            }
+
+            override fun onStop(success: Boolean) {
+                dismissSendPost()
+                if (success) {
+                    sendSuccess = true
+                    if (isResumed()) {
+                        (requireActivity() as FragmentHandler).removeFragment()
+                    }
                 }
             }
         }
-
-        override fun onProgress(progress: Long, progressMax: Long) {
-            if (progressDialog != null) {
-                progressDialog!!.setMax((progressMax / 1000).toInt())
-                progressDialog!!.setValue((progress / 1000).toInt())
-            }
-        }
-
-        override fun onStop(success: Boolean) {
-            dismissSendPost()
-            if (success) {
-                sendSuccess = true
-                if (isResumed()) {
-                    (requireActivity() as FragmentHandler).removeFragment()
-                }
-            }
-        }
-    }
 
     fun handleFailResult(failResult: FailResult) {
         if (isResumed()) {
@@ -1337,10 +1499,14 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
                 show(
                     failResult.errorItem.toString(),
                     null,
-                    ClickableToast.Button(R.string.details, false, Runnable {
-                        SendPostFailDetailsDialog(failResult.extra)
-                            .show(getChildFragmentManager(), null)
-                    })
+                    ClickableToast.Button(
+                        R.string.details,
+                        false,
+                        Runnable {
+                            SendPostFailDetailsDialog(failResult.extra)
+                                .show(getChildFragmentManager(), null)
+                        },
+                    ),
                 )
             } else {
                 show(failResult.errorItem)
@@ -1357,9 +1523,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
     private fun refreshCaptcha(
         forceCaptcha: Boolean,
         mayShowLoadButton: Boolean,
-        restart: Boolean
+        restart: Boolean,
     ) {
-        val allowSolveAutomatically = !forceCaptcha ||
+        val allowSolveAutomatically =
+            !forceCaptcha ||
                 captchaState != ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING
         captchaState = null
         loadedCaptchaType = null
@@ -1370,12 +1537,19 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
             val captchaPass = if (forceCaptcha) null else getCaptchaPass(chan)
-            val task = ReadCaptchaTask(
-                viewModel.callback!!, null, captchaType, null, captchaPass,
-                mayShowLoadButton, allowSolveAutomatically, chan,
-                this.boardName,
-                this.threadNumber
-            )
+            val task =
+                ReadCaptchaTask(
+                    viewModel.callback!!,
+                    null,
+                    captchaType,
+                    null,
+                    captchaPass,
+                    mayShowLoadButton,
+                    allowSolveAutomatically,
+                    chan,
+                    this.boardName,
+                    this.threadNumber,
+                )
             task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
             viewModel.attach(task)
         }
@@ -1392,7 +1566,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             result.validity,
             CaptchaForm.Captcha(result.image, captchaLifetimeSeconds),
             result.large,
-            result.blackAndWhite
+            result.blackAndWhite,
         )
         updatePostingConfigurationIfNeeded()
     }
@@ -1411,7 +1585,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         validity: ChanConfiguration.Captcha.Validity?,
         captcha: CaptchaForm.Captcha?,
         large: Boolean,
-        blackAndWhite: Boolean
+        blackAndWhite: Boolean,
     ) {
         var input = input
         var validity = validity
@@ -1422,8 +1596,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         captchaBlackAndWhite = blackAndWhite
         loadedCaptchaType = captchaType
         if (captchaType != null) {
-            val captchaConfiguration = get(this.chanName).configuration
-                .safe().obtainCaptcha(captchaType)
+            val captchaConfiguration =
+                get(this.chanName)
+                    .configuration
+                    .safe()
+                    .obtainCaptcha(captchaType)
             if (input == null) {
                 input = captchaConfiguration.input
             }
@@ -1436,60 +1613,67 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         val invertColors =
             blackAndWhite && !isLight(getColor(requireContext(), android.R.attr.colorBackground))
         captchaForm!!.showCaptcha(captchaState, input, captcha, large, invertColors)
-        if (scrollView!!.getScrollY() + scrollView!!.getHeight() >= scrollView!!.getChildAt(0)
+        if (scrollView!!.getScrollY() + scrollView!!.getHeight() >=
+            scrollView!!
+                .getChildAt(0)
                 .getHeight()
         ) {
-            scrollView!!.post(Runnable {
-                if (scrollView != null) {
-                    scrollView!!.setScrollY(
-                        max(
-                            scrollView!!.getChildAt(0).getHeight() - scrollView!!.getHeight(), 0
+            scrollView!!.post(
+                Runnable {
+                    if (scrollView != null) {
+                        scrollView!!.setScrollY(
+                            max(
+                                scrollView!!.getChildAt(0).getHeight() - scrollView!!.getHeight(),
+                                0,
+                            ),
                         )
-                    )
-                }
-            })
+                    }
+                },
+            )
         }
         updateSendButtonState()
     }
 
-    private val attachLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val data: Intent? = result.getData()
-        if (result.getResultCode() == Activity.RESULT_OK && data != null) {
-            val uris = LinkedHashSet<Uri>()
-            val dataUri = data.getData()
-            if (dataUri != null) {
-                uris.add(dataUri)
-            }
-            val clipData = data.getClipData()
-            if (clipData != null) {
-                for (i in 0..<clipData.getItemCount()) {
-                    val item = clipData.getItemAt(i)
-                    val uri = item.getUri()
-                    if (uri != null) {
-                        uris.add(uri)
+    private val attachLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts
+                .StartActivityForResult(),
+        ) { result ->
+            val data: Intent? = result.getData()
+            if (result.getResultCode() == Activity.RESULT_OK && data != null) {
+                val uris = LinkedHashSet<Uri>()
+                val dataUri = data.getData()
+                if (dataUri != null) {
+                    uris.add(dataUri)
+                }
+                val clipData = data.getClipData()
+                if (clipData != null) {
+                    for (i in 0..<clipData.getItemCount()) {
+                        val item = clipData.getItemAt(i)
+                        val uri = item.getUri()
+                        if (uri != null) {
+                            uris.add(uri)
+                        }
                     }
                 }
-            }
 
-            val attachmentsToAdd = ArrayList<Pair<String?, String?>>()
-            for (uri in uris) {
-                val fileHolder = obtain(uri)
-                if (fileHolder != null) {
-                    val hash = getInstance().store(fileHolder)
-                    if (hash != null) {
-                        attachmentsToAdd.add(Pair<String?, String?>(hash, fileHolder.name))
+                val attachmentsToAdd = ArrayList<Pair<String?, String?>>()
+                for (uri in uris) {
+                    val fileHolder = obtain(uri)
+                    if (fileHolder != null) {
+                        val hash = getInstance().store(fileHolder)
+                        if (hash != null) {
+                            attachmentsToAdd.add(Pair<String?, String?>(hash, fileHolder.name))
+                        }
                     }
                 }
+                handleAttachmentsToAdd(attachmentsToAdd, uris.size)
             }
-            handleAttachmentsToAdd(attachmentsToAdd, uris.size)
         }
-    }
 
     private fun handleAttachmentsToAdd(
         attachmentsToAdd: ArrayList<Pair<String?, String?>>,
-        addedCount: Int
+        addedCount: Int,
     ) {
         val oldCount = attachments.size
         for (attachmentToAdd in attachmentsToAdd) {
@@ -1506,66 +1690,66 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             show(
                 getResources().getQuantityString(
                     R.plurals
-                        .number_files_havent_been_attached__format, errorCount, errorCount
-                )
+                        .number_files_havent_been_attached__format,
+                    errorCount,
+                    errorCount,
+                ),
             )
         }
     }
 
-    override fun getAttachmentHolder(index: Int): AttachmentHolder? {
-        return if (index >= 0 && index < attachments.size) attachments.get(index) else null
-    }
+    override fun getAttachmentHolder(index: Int): AttachmentHolder? = if (index >= 0 && index < attachments.size) attachments.get(index) else null
 
-    override fun getAttachmentRatingItems(): List<Pair<String, String>>? {
-        return attachmentRatingItems
-    }
+    override fun getAttachmentRatingItems(): List<Pair<String, String>>? = attachmentRatingItems
 
-    override fun getPostingConfiguration(): Posting? {
-        return postingConfiguration
-    }
+    override fun getPostingConfiguration(): Posting? = postingConfiguration
 
-    private val attachmentOptionsListener = View.OnClickListener { v: View? ->
-        val holder = v!!.getTag() as AttachmentHolder?
-        val attachmentIndex = attachments.indexOf(holder)
-        AttachmentOptionsDialog(attachmentIndex).show(
-            getChildFragmentManager(),
-            AttachmentOptionsDialog.TAG
-        )
-    }
+    private val attachmentOptionsListener =
+        View.OnClickListener { v: View? ->
+            val holder = v!!.getTag() as AttachmentHolder?
+            val attachmentIndex = attachments.indexOf(holder)
+            AttachmentOptionsDialog(attachmentIndex).show(
+                getChildFragmentManager(),
+                AttachmentOptionsDialog.TAG,
+            )
+        }
 
-    private val attachmentWarningListener = View.OnClickListener { v: View? ->
-        val holder = v!!.getTag() as AttachmentHolder?
-        val attachmentIndex = attachments.indexOf(holder)
-        AttachmentWarningDialog(attachmentIndex).show(
-            getChildFragmentManager(),
-            AttachmentWarningDialog.TAG
-        )
-    }
+    private val attachmentWarningListener =
+        View.OnClickListener { v: View? ->
+            val holder = v!!.getTag() as AttachmentHolder?
+            val attachmentIndex = attachments.indexOf(holder)
+            AttachmentWarningDialog(attachmentIndex).show(
+                getChildFragmentManager(),
+                AttachmentWarningDialog.TAG,
+            )
+        }
 
-    private val attachmentRatingListener = View.OnClickListener { v: View? ->
-        val holder = v!!.getTag() as AttachmentHolder?
-        val attachmentIndex = attachments.indexOf(holder)
-        AttachmentRatingDialog(attachmentIndex).show(
-            getChildFragmentManager(),
-            AttachmentRatingDialog.TAG
-        )
-    }
+    private val attachmentRatingListener =
+        View.OnClickListener { v: View? ->
+            val holder = v!!.getTag() as AttachmentHolder?
+            val attachmentIndex = attachments.indexOf(holder)
+            AttachmentRatingDialog(attachmentIndex).show(
+                getChildFragmentManager(),
+                AttachmentRatingDialog.TAG,
+            )
+        }
 
-    private val attachmentRemoveListener: View.OnClickListener = object : View.OnClickListener {
-        override fun onClick(v: View) {
-            val holder = v.getTag() as AttachmentHolder
-            if (attachments.remove(holder)) {
-                if (attachmentColumnCount == 1) {
-                    attachmentContainer!!.removeView(holder.view)
-                } else {
-                    invalidateAttachments(true)
+    private val attachmentRemoveListener: View.OnClickListener =
+        object : View.OnClickListener {
+            override fun onClick(v: View) {
+                val holder = v.getTag() as AttachmentHolder
+                if (attachments.remove(holder)) {
+                    if (attachmentColumnCount == 1) {
+                        attachmentContainer!!.removeView(holder.view)
+                    } else {
+                        invalidateAttachments(true)
+                    }
+                    invalidateOptionsMenu()
+                    resizeComment(true)
+                    getInstance().store(obtainPostDraft())
                 }
-                invalidateOptionsMenu()
-                resizeComment(true)
-                getInstance().store(obtainPostDraft())
             }
         }
-    }
 
     private fun invalidateAttachments(clearContainer: Boolean) {
         if (clearContainer) {
@@ -1581,7 +1765,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
     }
 
-    private fun addAttachmentViewToContainer(attachmentView: View, position: Int) {
+    private fun addAttachmentViewToContainer(
+        attachmentView: View,
+        position: Int,
+    ) {
         var layoutParams = attachmentView.getLayoutParams() as LinearLayout.LayoutParams
         if (attachmentColumnCount == 1) {
             layoutParams.width = LinearLayout.LayoutParams.MATCH_PARENT
@@ -1601,8 +1788,9 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             if (column == 0) {
                 subcontainer = LinearLayout(requireContext())
                 attachmentContainer!!.addView(
-                    subcontainer, LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    subcontainer,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
                 )
                 subcontainer.setOrientation(LinearLayout.HORIZONTAL)
                 placeholder = View(requireContext())
@@ -1628,16 +1816,16 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         view.setLayoutParams(
             LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                minHeight
-            )
+                minHeight,
+            ),
         )
         setNewMargin(view, 0, (4f * density).toInt(), 0, 0)
         view.setBackgroundColor(-0x1000000)
         view.setForeground(
             RoundedCornersDrawable(
                 (2f * density).toInt(),
-                getTheme(view.getContext())!!.window
-            )
+                getTheme(view.getContext())!!.window,
+            ),
         )
 
         addAttachmentViewToContainer(view, attachments.size)
@@ -1648,7 +1836,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         view.addView(
             imageView,
             FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
+            FrameLayout.LayoutParams.MATCH_PARENT,
         )
         val overlay = View(view.getContext())
         overlay.setBackgroundColor(getColor(overlay.getContext(), R.attr.colorBlockBackground))
@@ -1660,7 +1848,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         view.addView(
             options,
             FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
+            FrameLayout.LayoutParams.MATCH_PARENT,
         )
 
         val controls = LinearLayout(view.getContext())
@@ -1679,11 +1867,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         textLayout.addView(
             fileName,
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         TextViewCompat.setTextAppearance(
             fileName,
-            getResourceId(fileName.getContext(), android.R.attr.textAppearanceListItem, 0)
+            getResourceId(fileName.getContext(), android.R.attr.textAppearanceListItem, 0),
         )
         fileName.setSingleLine(true)
         fileName.setEllipsize(TextUtils.TruncateAt.END)
@@ -1694,33 +1882,47 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         textLayout.addView(
             fileSize,
             LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         TextViewCompat.setTextAppearance(
             fileSize,
-            getResourceId(fileSize.getContext(), android.R.attr.textAppearanceListItem, 0)
+            getResourceId(fileSize.getContext(), android.R.attr.textAppearanceListItem, 0),
         )
         fileSize.setSingleLine(true)
         fileSize.setEllipsize(TextUtils.TruncateAt.END)
         setTextSizeScaled(fileSize, 12)
 
-        val warningButton: View = addAttachmentButton(
-            controls, minHeight,
-            R.attr.iconButtonWarning, attachmentWarningListener
-        )
-        val ratingButton: View = addAttachmentButton(
-            controls, minHeight,
-            R.attr.iconButtonRating, attachmentRatingListener
-        )
-        val removeButton: View = addAttachmentButton(
-            controls, minHeight,
-            R.attr.iconButtonCancel, attachmentRemoveListener
-        )
+        val warningButton: View =
+            addAttachmentButton(
+                controls,
+                minHeight,
+                R.attr.iconButtonWarning,
+                attachmentWarningListener,
+            )
+        val ratingButton: View =
+            addAttachmentButton(
+                controls,
+                minHeight,
+                R.attr.iconButtonRating,
+                attachmentRatingListener,
+            )
+        val removeButton: View =
+            addAttachmentButton(
+                controls,
+                minHeight,
+                R.attr.iconButtonCancel,
+                attachmentRemoveListener,
+            )
 
-        val holder = AttachmentHolder(
-            view, fileName, fileSize, imageView,
-            warningButton, ratingButton
-        )
+        val holder =
+            AttachmentHolder(
+                view,
+                fileName,
+                fileSize,
+                imageView,
+                warningButton,
+                ratingButton,
+            )
         warningButton.setTag(holder)
         ratingButton.setTag(holder)
         removeButton.setTag(holder)
@@ -1741,7 +1943,7 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         optionRemoveFileName: Boolean = isAlwaysRemoveFilename,
         optionSpoiler: Boolean = false,
         reencoding: Reencoding? = null,
-        optionCustomName: Boolean = isAlwaysRenameFilename
+        optionCustomName: Boolean = isAlwaysRenameFilename,
     ) {
         val fileHolder = getInstance().getAttachmentDraftFileHolder(hash)
         val jpegData = if (fileHolder != null) fileHolder.jpegData else null
@@ -1851,31 +2053,40 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
     }
 
-    private val resizeComment = Runnable {
-        if (scrollView != null) {
-            val postMain = scrollView!!.getChildAt(0)
-            commentView!!.setMinLines(4)
-            val widthMeasureSpec =
-                View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
-            val heightMeasureSpec =
-                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-            postMain.measure(widthMeasureSpec, heightMeasureSpec)
-            val delta = scrollView!!.getHeight() - postMain.getMeasuredHeight()
-            if (delta > 0) {
-                commentView!!.setMinHeight(commentView!!.getMeasuredHeight() + delta)
+    private val resizeComment =
+        Runnable {
+            if (scrollView != null) {
+                val postMain = scrollView!!.getChildAt(0)
+                commentView!!.setMinLines(4)
+                val widthMeasureSpec =
+                    View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
+                val heightMeasureSpec =
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                postMain.measure(widthMeasureSpec, heightMeasureSpec)
+                val delta = scrollView!!.getHeight() - postMain.getMeasuredHeight()
+                if (delta > 0) {
+                    commentView!!.setMinHeight(commentView!!.getMeasuredHeight() + delta)
+                }
             }
         }
-    }
 
     private inner class MarkupButtonsBuilder(
         private val addPaddingToRoot: Boolean,
-        initialWidth: Int
-    ) : OnLayoutChangeListener, Runnable {
+        initialWidth: Int,
+    ) : OnLayoutChangeListener,
+        Runnable {
         private var lastWidth: Int
 
         override fun onLayoutChange(
-            v: View?, left: Int, top: Int, right: Int, bottom: Int,
-            oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int
+            v: View?,
+            left: Int,
+            top: Int,
+            right: Int,
+            bottom: Int,
+            oldLeft: Int,
+            oldTop: Int,
+            oldRight: Int,
+            oldBottom: Int,
         ) {
             if (textFormatView != null) {
                 val width = textFormatView!!.getWidth()
@@ -1907,10 +2118,14 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             val maxButtonsWidth =
                 lastWidth - textFormatView!!.getPaddingLeft() - textFormatView!!.getPaddingRight()
             val buttonMarginLeft = ((-4f) * density).toInt()
-            val supportedAndDisplayedTags: Pair<Int, Int> = obtainSupportedAndDisplayedTags(
-                if (allowPosting) get(this@PostingFragment.chanName).markup else null,
-                this@PostingFragment.boardName, density, maxButtonsWidth, buttonMarginLeft
-            )
+            val supportedAndDisplayedTags: Pair<Int, Int> =
+                obtainSupportedAndDisplayedTags(
+                    if (allowPosting) get(this@PostingFragment.chanName).markup else null,
+                    this@PostingFragment.boardName,
+                    density,
+                    maxButtonsWidth,
+                    buttonMarginLeft,
+                )
             val supportedTags: Int = supportedAndDisplayedTags.first!!
             val displayedTags: Int = supportedAndDisplayedTags.second!!
             if (lastSupportedTags == supportedTags && lastDisplayedTags == displayedTags) {
@@ -1925,15 +2140,17 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             textFormatView!!.removeAllViews()
             var firstMarkupButton = true
             for (provider in iterable(displayedTags)) {
-                val button = provider.createButton(
-                    textFormatView!!.getContext(),
-                    android.R.attr.borderlessButtonStyle
-                )
+                val button =
+                    provider.createButton(
+                        textFormatView!!.getContext(),
+                        android.R.attr.borderlessButtonStyle,
+                    )
                 setTextSizeScaled(button, 14)
-                val layoutParams = LinearLayout.LayoutParams(
-                    (provider.widthDp * density).toInt(),
-                    (40f * density).toInt()
-                )
+                val layoutParams =
+                    LinearLayout.LayoutParams(
+                        (provider.widthDp * density).toInt(),
+                        (40f * density).toInt(),
+                    )
                 if (!firstMarkupButton) {
                     layoutParams.leftMargin = buttonMarginLeft
                 }
@@ -1971,7 +2188,11 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
 
         private const val EXTRA_CAPTCHA_DRAFT = "captchaDraft"
 
-        private fun addHeader(layout: ViewGroup, index: Int, textResId: Int) {
+        private fun addHeader(
+            layout: ViewGroup,
+            index: Int,
+            textResId: Int,
+        ) {
             val textView = makeListTextHeader(layout)
             textView.setText(textResId)
             layout.addView(textView, index)
@@ -1981,8 +2202,10 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
         }
 
         private fun addAttachmentButton(
-            parent: LinearLayout, width: Int,
-            attrResId: Int, listener: View.OnClickListener?
+            parent: LinearLayout,
+            width: Int,
+            attrResId: Int,
+            listener: View.OnClickListener?,
         ): View {
             val density = obtainDensity(parent)
             val imageView: ImageView
@@ -1998,8 +2221,8 @@ class PostingFragment : ContentFragment, FragmentHandler.Callback, CaptchaForm.C
             imageView.setImageTintList(
                 getColorStateList(
                     imageView.getContext(),
-                    android.R.attr.textColorPrimary
-                )
+                    android.R.attr.textColorPrimary,
+                ),
             )
 
             imageView.setOnClickListener(listener)

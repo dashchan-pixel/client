@@ -34,7 +34,10 @@ import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.ThemeEngine
 import java.io.File
 
-class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnErrorListener,
+class AudioPlayerService :
+    BaseService(),
+    OnCompletionListener,
+    MediaPlayer.OnErrorListener,
     FileCallback {
     private val callbacks = WeakObservable<Callback>()
     private var audioFocus: AudioFocus? = null
@@ -59,47 +62,53 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
     override fun onCreate() {
         super.onCreate()
 
-        audioFocus = AudioFocus(this, AudioFocus.Callback { change: AudioFocus.Change? ->
-            when (change) {
-                AudioFocus.Change.LOSS -> {
-                    pause(true)
-                }
+        audioFocus =
+            AudioFocus(
+                this,
+                AudioFocus.Callback { change: AudioFocus.Change? ->
+                    when (change) {
+                        AudioFocus.Change.LOSS -> {
+                            pause(true)
+                        }
 
-                AudioFocus.Change.LOSS_TRANSIENT -> {
-                    val playing = mediaPlayer!!.isPlaying()
-                    pause(false)
-                    if (playing) {
-                        pausedByTransientLossOfFocus = true
+                        AudioFocus.Change.LOSS_TRANSIENT -> {
+                            val playing = mediaPlayer!!.isPlaying()
+                            pause(false)
+                            if (playing) {
+                                pausedByTransientLossOfFocus = true
+                            }
+                        }
+
+                        AudioFocus.Change.GAIN -> {
+                            if (pausedByTransientLossOfFocus) {
+                                play(false)
+                            }
+                        }
+
+                        else -> {}
                     }
-                }
-
-                AudioFocus.Change.GAIN -> {
-                    if (pausedByTransientLossOfFocus) {
-                        play(false)
-                    }
-                }
-
-                else -> {}
-            }
-        })
+                },
+            )
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         var notificationColor = 0
         val theme = ThemeEngine.attachAndApply(this)
-        notificationColor = theme!!.accent
+        notificationColor = theme.accent
 
         this.notificationColor = notificationColor
         notificationManager!!.createNotificationChannel(
             NotificationChannel(
                 C.NOTIFICATION_CHANNEL_AUDIO_PLAYER,
-                getString(R.string.audio_player), NotificationManager.IMPORTANCE_LOW
-            )
+                getString(R.string.audio_player),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
         )
 
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            getPackageName() + ":AudioPlayerWakeLock"
-        )
+        wakeLock =
+            powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                getPackageName() + ":AudioPlayerWakeLock",
+            )
         wakeLock!!.setReferenceCounted(false)
         addOnDestroyListener(ChanDatabase.getInstance().requireCookies())
     }
@@ -116,7 +125,11 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         if (intent != null) {
             val action = intent.getAction()
             if (ACTION_START == action) {
@@ -163,7 +176,10 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         startForeground(C.NOTIFICATION_ID_AUDIO_PLAYER, builder.build())
     }
 
-    private fun cleanup(stopSelf: Boolean, notify: Boolean) {
+    private fun cleanup(
+        stopSelf: Boolean,
+        notify: Boolean,
+    ) {
         if (readFileTask != null) {
             readFileTask!!.cancel()
             readFileTask = null
@@ -205,6 +221,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
 
     interface Callback {
         fun onTogglePlayback()
+
         fun onCancel()
     }
 
@@ -233,9 +250,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         val isPlaying: Boolean
             get() = mediaPlayer != null && mediaPlayer!!.isPlaying()
 
-        fun getFileName(): String? {
-            return fileName
-        }
+        fun getFileName(): String? = fileName
 
         val position: Int
             get() = if (mediaPlayer != null) mediaPlayer!!.getCurrentPosition() else -1
@@ -250,9 +265,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         }
     }
 
-    override fun onBind(intent: Intent?): Binder? {
-        return this.Binder()
-    }
+    override fun onBind(intent: Intent?): Binder? = this.Binder()
 
     override fun onCompletion(mp: MediaPlayer?) {
         pause(true)
@@ -261,7 +274,11 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         initAndPlayAudio(audioFile!!)
     }
 
-    override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
+    override fun onError(
+        mp: MediaPlayer?,
+        what: Int,
+        extra: Int,
+    ): Boolean {
         ClickableToast.show(R.string.playback_error)
         if (audioFile != null) {
             audioFile!!.delete()
@@ -319,32 +336,38 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
             builder = NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_AUDIO_PLAYER)
             builder.setSmallIcon(R.drawable.ic_audiotrack_white_24dp)
             builder.setColor(notificationColor)
-            val contentIntent = PendingIntent.getActivity(
-                this, 0,
-                Intent(this, MainActivity::class.java).setAction(C.ACTION_PLAYER),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val contentIntent =
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java).setAction(C.ACTION_PLAYER),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
             builder.setContentIntent(contentIntent)
-            val toggleIntent = PendingIntent.getForegroundService(
-                this,
-                0,
-                obtainIntent(this, ACTION_TOGGLE),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val toggleIntent =
+                PendingIntent.getForegroundService(
+                    this,
+                    0,
+                    obtainIntent(this, ACTION_TOGGLE),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
             val playing = mediaPlayer != null && mediaPlayer!!.isPlaying()
             builder.addAction(
                 0,
-                getString(if (playing) R.string.pause else R.string.play), toggleIntent
+                getString(if (playing) R.string.pause else R.string.play),
+                toggleIntent,
             )
-            val cancelIntent = PendingIntent.getForegroundService(
-                this,
-                0,
-                obtainIntent(this, ACTION_CANCEL),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val cancelIntent =
+                PendingIntent.getForegroundService(
+                    this,
+                    0,
+                    obtainIntent(this, ACTION_CANCEL),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
             builder.addAction(
                 0,
-                getString(R.string.stop), cancelIntent
+                getString(R.string.stop),
+                cancelIntent,
             )
             this.builder = builder
             builder.setContentTitle(getString(R.string.audio_playback))
@@ -356,48 +379,54 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
     private fun getDownloadingNotification(
         recreate: Boolean,
         error: Boolean,
-        uri: Uri?
+        uri: Uri?,
     ): NotificationCompat.Builder {
         var builder = this.builder
         if (builder == null || recreate) {
             builder = NotificationCompat.Builder(this, C.NOTIFICATION_CHANNEL_AUDIO_PLAYER)
             builder.setSmallIcon(
-                if (error)
+                if (error) {
                     android.R.drawable.stat_sys_download_done
-                else
+                } else {
                     android.R.drawable.stat_sys_download
+                },
             )
             builder.setDeleteIntent(
                 PendingIntent.getForegroundService(
                     this,
                     0,
                     obtainIntent(this, ACTION_CANCEL),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
             if (error) {
-                val retryIntent = PendingIntent.getForegroundService(
-                    this,
-                    0,
-                    obtainIntent(this, ACTION_START).setData(uri)
-                        .putExtra(EXTRA_CHAN_NAME, chanName)
-                        .putExtra(EXTRA_FILE_NAME, fileName),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                val retryIntent =
+                    PendingIntent.getForegroundService(
+                        this,
+                        0,
+                        obtainIntent(this, ACTION_START)
+                            .setData(uri)
+                            .putExtra(EXTRA_CHAN_NAME, chanName)
+                            .putExtra(EXTRA_FILE_NAME, fileName),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
                 builder.addAction(
                     0,
-                    getString(R.string.retry), retryIntent
+                    getString(R.string.retry),
+                    retryIntent,
                 )
             } else {
-                val cancelIntent = PendingIntent.getForegroundService(
-                    this,
-                    0,
-                    obtainIntent(this, ACTION_CANCEL),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                val cancelIntent =
+                    PendingIntent.getForegroundService(
+                        this,
+                        0,
+                        obtainIntent(this, ACTION_CANCEL),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
                 builder.addAction(
                     0,
-                    getString(android.R.string.cancel), cancelIntent
+                    getString(android.R.string.cancel),
+                    cancelIntent,
                 )
             }
             builder.setColor(notificationColor)
@@ -410,8 +439,8 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
                 getString(
                     R.string.success_number_not_loaded_number__format,
                     0,
-                    1
-                )
+                    1,
+                ),
             )
         } else {
             builder.setContentTitle(getString(R.string.downloading_audio))
@@ -419,7 +448,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
             builder.setProgress(
                 progressMax,
                 progress,
-                progressMax == 0 || progress > progressMax || progress < 0
+                progressMax == 0 || progress > progressMax || progress < 0,
             )
         }
         return builder
@@ -434,7 +463,7 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         success: Boolean,
         uri: Uri,
         file: File,
-        errorItem: ErrorItem?
+        errorItem: ErrorItem?,
     ) {
         wakeLock!!.acquire(15000)
         readFileTask = null
@@ -444,12 +473,15 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
             cleanup(true, true)
             notificationManager!!.notify(
                 C.NOTIFICATION_ID_AUDIO_PLAYER,
-                getDownloadingNotification(true, true, uri).build()
+                getDownloadingNotification(true, true, uri).build(),
             )
         }
     }
 
-    override fun onUpdateProgress(progress: Long, progressMax: Long) {
+    override fun onUpdateProgress(
+        progress: Long,
+        progressMax: Long,
+    ) {
         this.progress = progress.toInt()
         this.progressMax = progressMax.toInt()
         val t = SystemClock.elapsedRealtime()
@@ -467,15 +499,23 @@ class AudioPlayerService : BaseService(), OnCompletionListener, MediaPlayer.OnEr
         private const val EXTRA_CHAN_NAME = "chanName"
         private const val EXTRA_FILE_NAME = "fileName"
 
-        private fun obtainIntent(context: Context?, action: String?): Intent {
-            return Intent(context, AudioPlayerService::class.java).setAction(action)
-        }
+        private fun obtainIntent(
+            context: Context?,
+            action: String?,
+        ): Intent = Intent(context, AudioPlayerService::class.java).setAction(action)
 
         @JvmStatic
-        fun start(context: Context, chanName: String?, uri: Uri?, fileName: String?) {
+        fun start(
+            context: Context,
+            chanName: String?,
+            uri: Uri?,
+            fileName: String?,
+        ) {
             context.startForegroundService(
-                obtainIntent(context, ACTION_START).setData(uri)
-                    .putExtra(EXTRA_CHAN_NAME, chanName).putExtra(EXTRA_FILE_NAME, fileName)
+                obtainIntent(context, ACTION_START)
+                    .setData(uri)
+                    .putExtra(EXTRA_CHAN_NAME, chanName)
+                    .putExtra(EXTRA_FILE_NAME, fileName),
             )
         }
     }

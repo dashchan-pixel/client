@@ -8,7 +8,9 @@ import java.io.Closeable
 import java.net.Proxy
 import kotlin.concurrent.Volatile
 
-class HttpHolder(val chan: Chan?) {
+class HttpHolder(
+    val chan: Chan?,
+) {
     fun interface Use : Closeable {
         override fun close()
     }
@@ -50,18 +52,29 @@ class HttpHolder(val chan: Chan?) {
     }
 
     fun createSession(
-        client: HttpClient?, uri: Uri?, proxy: Proxy?,
-        verifyCertificate: Boolean, delay: Int, maxAttempts: Int
+        client: HttpClient?,
+        uri: Uri?,
+        proxy: Proxy?,
+        verifyCertificate: Boolean,
+        delay: Int,
+        maxAttempts: Int,
     ): HttpSession {
         checkThread()
         if (session != null) {
             session!!.disconnectAndClear()
         }
         val mayCheckFirewallBlock = sessions == null || sessions!!.isEmpty()
-        session = HttpSession(
-            this, client!!, uri, proxy,
-            verifyCertificate, mayCheckFirewallBlock, delay, maxAttempts
-        )
+        session =
+            HttpSession(
+                this,
+                client!!,
+                uri,
+                proxy,
+                verifyCertificate,
+                mayCheckFirewallBlock,
+                delay,
+                maxAttempts,
+            )
         return session!!
     }
 

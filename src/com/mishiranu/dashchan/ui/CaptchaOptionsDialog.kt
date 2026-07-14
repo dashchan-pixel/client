@@ -24,150 +24,165 @@ import java.io.OutputStream
 import java.util.concurrent.Executors
 
 class CaptchaOptionsDialog : DialogFragment {
-	private lateinit var viewModel: CaptchaOptionsViewModel
+    private lateinit var viewModel: CaptchaOptionsViewModel
 
-	constructor()
+    constructor()
 
-	constructor(captchaImage: Bitmap) {
-		val args = Bundle()
-		args.putParcelable(KEY_CAPTCHA_IMAGE, captchaImage)
-		arguments = args
-	}
+    constructor(captchaImage: Bitmap) {
+        val args = Bundle()
+        args.putParcelable(KEY_CAPTCHA_IMAGE, captchaImage)
+        arguments = args
+    }
 
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		viewModel = ViewModelProvider(this).get(CaptchaOptionsViewModel::class.java)
-		observeCaptchaImageAttachment()
-		observeCaptchaImageDownload()
-	}
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel = ViewModelProvider(this).get(CaptchaOptionsViewModel::class.java)
+        observeCaptchaImageAttachment()
+        observeCaptchaImageDownload()
+    }
 
-	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-		val captchaImage = BundleCompat.getParcelable(requireArguments(), KEY_CAPTCHA_IMAGE, Bitmap::class.java)!!
-		val buttonTitles = arrayOf(getString(R.string.attach), getString(R.string.download_file),
-				getString(R.string.refresh))
-		val dialog = AlertDialog.Builder(requireContext()).setItems(buttonTitles, null).create()
-		// Set onclick listener here to prevent the dialog from dismissing when an item is clicked,
-		// we will dismiss the dialog manually when selected action is done
-		dialog.listView.setOnItemClickListener { _, _, position, _ ->
-			when (position) {
-				0 -> viewModel.onAttachClicked(captchaImage)
-				1 -> viewModel.onDownloadClicked(captchaImage)
-				2 -> refreshCaptchaAndDismiss()
-				else -> throw IllegalStateException("Unexpected value: $position")
-			}
-		}
-		return dialog
-	}
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val captchaImage = BundleCompat.getParcelable(requireArguments(), KEY_CAPTCHA_IMAGE, Bitmap::class.java)!!
+        val buttonTitles =
+            arrayOf(
+                getString(R.string.attach),
+                getString(R.string.download_file),
+                getString(R.string.refresh),
+            )
+        val dialog = AlertDialog.Builder(requireContext()).setItems(buttonTitles, null).create()
+        // Set onclick listener here to prevent the dialog from dismissing when an item is clicked,
+        // we will dismiss the dialog manually when selected action is done
+        dialog.listView.setOnItemClickListener { _, _, position, _ ->
+            when (position) {
+                0 -> viewModel.onAttachClicked(captchaImage)
+                1 -> viewModel.onDownloadClicked(captchaImage)
+                2 -> refreshCaptchaAndDismiss()
+                else -> error("Unexpected value: $position")
+            }
+        }
+        return dialog
+    }
 
-	private fun observeCaptchaImageAttachment() {
-		viewModel.captchaImageAttachmentDataFile.observe(this) { captchaImageAttachmentDataFile ->
-			if (captchaImageAttachmentDataFile != null) {
-				getCallback().attachCaptchaImageToPost(captchaImageAttachmentDataFile)
-			} else {
-				ClickableToast.show(R.string.unknown_error)
-			}
-			dismiss()
-		}
-	}
+    private fun observeCaptchaImageAttachment() {
+        viewModel.captchaImageAttachmentDataFile.observe(this) { captchaImageAttachmentDataFile ->
+            if (captchaImageAttachmentDataFile != null) {
+                getCallback().attachCaptchaImageToPost(captchaImageAttachmentDataFile)
+            } else {
+                ClickableToast.show(R.string.unknown_error)
+            }
+            dismiss()
+        }
+    }
 
-	private fun observeCaptchaImageDownload() {
-		viewModel.captchaImageDownloadInputStreamAndFileName.observe(this) { captchaImageDownloadInputStreamAndName ->
-			val captchaImageInputStream = captchaImageDownloadInputStreamAndName.first
-			val captchaImageName = captchaImageDownloadInputStreamAndName.second
-			val captchaImageDownloadParameters = getCallback().getCaptchaImageDownloadParameters()
-			val chanName = captchaImageDownloadParameters.chanName
-			val boardName = captchaImageDownloadParameters.boardName
-			val threadNumber = captchaImageDownloadParameters.threadNumber
-			(requireActivity() as FragmentHandler).getDownloadBinder()!!.downloadStorage(captchaImageInputStream,
-					chanName, boardName, threadNumber, null, captchaImageName, true, false)
-			dismiss()
-		}
-	}
+    private fun observeCaptchaImageDownload() {
+        viewModel.captchaImageDownloadInputStreamAndFileName.observe(this) { captchaImageDownloadInputStreamAndName ->
+            val captchaImageInputStream = captchaImageDownloadInputStreamAndName.first
+            val captchaImageName = captchaImageDownloadInputStreamAndName.second
+            val captchaImageDownloadParameters = getCallback().getCaptchaImageDownloadParameters()
+            val chanName = captchaImageDownloadParameters.chanName
+            val boardName = captchaImageDownloadParameters.boardName
+            val threadNumber = captchaImageDownloadParameters.threadNumber
+            (requireActivity() as FragmentHandler).getDownloadBinder()!!.downloadStorage(
+                captchaImageInputStream,
+                chanName,
+                boardName,
+                threadNumber,
+                null,
+                captchaImageName,
+                true,
+                false,
+            )
+            dismiss()
+        }
+    }
 
-	private fun refreshCaptchaAndDismiss() {
-		getCallback().refreshCaptcha()
-		dismiss()
-	}
+    private fun refreshCaptchaAndDismiss() {
+        getCallback().refreshCaptcha()
+        dismiss()
+    }
 
-	private fun getCallback(): Callback {
-		val parentFragment = requireParentFragment()
-		if (parentFragment is Callback) {
-			return parentFragment
-		} else {
-			throw IllegalStateException("Parent fragment must implement CaptchaOptionsDialog.Callback")
-		}
-	}
+    private fun getCallback(): Callback {
+        val parentFragment = requireParentFragment()
+        if (parentFragment is Callback) {
+            return parentFragment
+        } else {
+            error("Parent fragment must implement CaptchaOptionsDialog.Callback")
+        }
+    }
 
-	interface Callback {
-		fun attachCaptchaImageToPost(captchaImageAttachmentDataFile: DataFile)
-		fun getCaptchaImageDownloadParameters(): CaptchaImageDownloadParameters
-		fun refreshCaptcha()
-	}
+    interface Callback {
+        fun attachCaptchaImageToPost(captchaImageAttachmentDataFile: DataFile)
 
-	class CaptchaImageDownloadParameters(
-			@JvmField val chanName: String?,
-			@JvmField val boardName: String?,
-			@JvmField val threadNumber: String?)
+        fun getCaptchaImageDownloadParameters(): CaptchaImageDownloadParameters
 
-	class CaptchaOptionsViewModel : ViewModel() {
-		internal val captchaImageAttachmentDataFile = MutableLiveData<DataFile?>()
-		internal val captchaImageDownloadInputStreamAndFileName = MutableLiveData<Pair<InputStream, String>>()
-		private val executor = Executors.newSingleThreadExecutor()
+        fun refreshCaptcha()
+    }
 
-		internal fun onAttachClicked(captchaImage: Bitmap) {
-			executor.execute {
-				try {
-					val captchaImageFileName = getCaptchaImageFileName()
-					val captchaImageDataFile = DataFile.obtain(DataFile.Target.CACHE, captchaImageFileName)
-					writeCaptchaImagePNGToOutputStream(captchaImage, captchaImageDataFile.openOutputStream())
-					captchaImageAttachmentDataFile.postValue(captchaImageDataFile)
-				} catch (e: IOException) {
-					captchaImageAttachmentDataFile.postValue(null)
-				}
-			}
-		}
+    class CaptchaImageDownloadParameters(
+        @JvmField val chanName: String?,
+        @JvmField val boardName: String?,
+        @JvmField val threadNumber: String?,
+    )
 
-		internal fun onDownloadClicked(captchaImage: Bitmap) {
-			executor.execute {
-				val captchaImageOutputStream = ByteArrayOutputStream()
-				writeCaptchaImagePNGToOutputStream(captchaImage, captchaImageOutputStream)
-				val captchaImageBytes = captchaImageOutputStream.toByteArray()
-				val captchaImageInputStream = ByteArrayInputStream(captchaImageBytes)
-				val captchaImageFileName = getCaptchaImageFileName()
-				captchaImageDownloadInputStreamAndFileName.postValue(Pair(captchaImageInputStream, captchaImageFileName))
-			}
-		}
+    class CaptchaOptionsViewModel : ViewModel() {
+        internal val captchaImageAttachmentDataFile = MutableLiveData<DataFile?>()
+        internal val captchaImageDownloadInputStreamAndFileName = MutableLiveData<Pair<InputStream, String>>()
+        private val executor = Executors.newSingleThreadExecutor()
 
-		private fun writeCaptchaImagePNGToOutputStream(captchaImage: Bitmap, outputStream: OutputStream) {
-			processCaptchaImage(captchaImage).compress(Bitmap.CompressFormat.PNG, 0, outputStream)
-		}
+        internal fun onAttachClicked(captchaImage: Bitmap) {
+            executor.execute {
+                try {
+                    val captchaImageFileName = getCaptchaImageFileName()
+                    val captchaImageDataFile = DataFile.obtain(DataFile.Target.CACHE, captchaImageFileName)
+                    writeCaptchaImagePNGToOutputStream(captchaImage, captchaImageDataFile.openOutputStream())
+                    captchaImageAttachmentDataFile.postValue(captchaImageDataFile)
+                } catch (e: IOException) {
+                    captchaImageAttachmentDataFile.postValue(null)
+                }
+            }
+        }
 
-		private fun processCaptchaImage(captchaImage: Bitmap): Bitmap {
-			return if (GraphicsUtils.isBlackAndWhiteCaptchaImage(captchaImage)) {
-				createCaptchaImageWithWhiteBackground(captchaImage)
-			} else {
-				captchaImage
-			}
-		}
+        internal fun onDownloadClicked(captchaImage: Bitmap) {
+            executor.execute {
+                val captchaImageOutputStream = ByteArrayOutputStream()
+                writeCaptchaImagePNGToOutputStream(captchaImage, captchaImageOutputStream)
+                val captchaImageBytes = captchaImageOutputStream.toByteArray()
+                val captchaImageInputStream = ByteArrayInputStream(captchaImageBytes)
+                val captchaImageFileName = getCaptchaImageFileName()
+                captchaImageDownloadInputStreamAndFileName.postValue(Pair(captchaImageInputStream, captchaImageFileName))
+            }
+        }
 
-		private fun createCaptchaImageWithWhiteBackground(captchaImage: Bitmap): Bitmap {
-			val newCaptchaImage = Bitmap.createBitmap(captchaImage.width, captchaImage.height, captchaImage.config!!)
-			val canvas = Canvas(newCaptchaImage)
-			canvas.drawColor(Color.WHITE)
-			canvas.drawBitmap(captchaImage, 0f, 0f, null)
-			return newCaptchaImage
-		}
+        private fun writeCaptchaImagePNGToOutputStream(
+            captchaImage: Bitmap,
+            outputStream: OutputStream,
+        ) {
+            processCaptchaImage(captchaImage).compress(Bitmap.CompressFormat.PNG, 0, outputStream)
+        }
 
-		private fun getCaptchaImageFileName(): String {
-			return "captcha-" + System.currentTimeMillis() + ".png"
-		}
+        private fun processCaptchaImage(captchaImage: Bitmap): Bitmap =
+            if (GraphicsUtils.isBlackAndWhiteCaptchaImage(captchaImage)) {
+                createCaptchaImageWithWhiteBackground(captchaImage)
+            } else {
+                captchaImage
+            }
 
-		override fun onCleared() {
-			executor.shutdownNow()
-		}
-	}
+        private fun createCaptchaImageWithWhiteBackground(captchaImage: Bitmap): Bitmap {
+            val newCaptchaImage = Bitmap.createBitmap(captchaImage.width, captchaImage.height, captchaImage.config!!)
+            val canvas = Canvas(newCaptchaImage)
+            canvas.drawColor(Color.WHITE)
+            canvas.drawBitmap(captchaImage, 0f, 0f, null)
+            return newCaptchaImage
+        }
 
-	companion object {
-		private const val KEY_CAPTCHA_IMAGE = "captcha_image"
-	}
+        private fun getCaptchaImageFileName(): String = "captcha-" + System.currentTimeMillis() + ".png"
+
+        override fun onCleared() {
+            executor.shutdownNow()
+        }
+    }
+
+    companion object {
+        private const val KEY_CAPTCHA_IMAGE = "captcha_image"
+    }
 }

@@ -1,9 +1,9 @@
 package com.mishiranu.dashchan.ui.navigator.page
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.os.Parcelable
-import android.content.res.Resources
 import android.util.Pair
 import android.view.ActionMode
 import android.view.Menu
@@ -29,9 +29,10 @@ import com.mishiranu.dashchan.widget.PaddedRecyclerView
 import com.mishiranu.dashchan.widget.PullableWrapper
 import com.mishiranu.dashchan.widget.PullableWrapper.PullCallback
 import java.lang.ref.WeakReference
-import java.util.Objects
 
-abstract class ListPage : LifecycleOwner, PullCallback {
+abstract class ListPage :
+    LifecycleOwner,
+    PullCallback {
     fun interface ExtraFactory<T> {
         fun newExtra(): T
     }
@@ -43,10 +44,13 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     class InitRequest {
         @JvmField
         val shouldLoad: Boolean
+
         @JvmField
         val postNumber: PostNumber?
+
         @JvmField
         val threadTitle: String?
+
         @JvmField
         val errorItem: ErrorItem?
 
@@ -69,7 +73,10 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         }
     }
 
-    class InitSearch(val currentQuery: String?, @JvmField val submitQuery: String?) {
+    class InitSearch(
+        val currentQuery: String?,
+        @JvmField val submitQuery: String?,
+    ) {
         companion object {
             internal val EMPTY_SEARCH = InitSearch(null, null)
         }
@@ -98,7 +105,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         retainableExtra: Retainable?,
         parcelableExtra: Parcelable?,
         initRequest: InitRequest?,
-        initSearch: InitSearch?
+        initSearch: InitSearch?,
     ) {
         if (lifecycleRegistry == null) {
             lifecycleRegistry = LifecycleRegistry(this)
@@ -133,31 +140,24 @@ abstract class ListPage : LifecycleOwner, PullCallback {
     protected val resources: Resources
         get() = this.context.resources
 
-    protected fun getString(resId: Int): String {
-        return this.context.getString(resId)
-    }
+    protected fun getString(resId: Int): String = this.context.getString(resId)
 
-    protected fun getString(resId: Int, vararg formatArgs: Any?): String {
-        return this.context.getString(resId, *formatArgs)
-    }
+    protected fun getString(
+        resId: Int,
+        vararg formatArgs: Any?,
+    ): String = this.context.getString(resId, *formatArgs)
 
-    internal fun getPage(): Page {
-        return page!!
-    }
+    internal fun getPage(): Page = page!!
 
     protected val fragmentManager: FragmentManager
         get() = fragment!!.getChildFragmentManager()
 
-    protected fun <T : ViewModel> getViewModel(modelClass: Class<T>): T {
-        return ViewModelProvider(fragment!!).get(modelClass)
-    }
+    protected fun <T : ViewModel> getViewModel(modelClass: Class<T>): T = ViewModelProvider(fragment!!).get(modelClass)
 
     protected val chan: Chan
         get() = get(page!!.chanName)
 
-    protected fun getRecyclerView(): PaddedRecyclerView {
-        return recyclerView!!
-    }
+    protected fun getRecyclerView(): PaddedRecyclerView = recyclerView!!
 
     protected fun takeListPosition(): ListPosition? {
         val listPosition = this.listPosition
@@ -165,22 +165,16 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         return listPosition
     }
 
-    protected fun getInitRequest(): InitRequest {
-        return (if (initRequest != null) initRequest else InitRequest.Companion.EMPTY_REQUEST)!!
-    }
+    protected fun getInitRequest(): InitRequest = (if (initRequest != null) initRequest else InitRequest.Companion.EMPTY_REQUEST)!!
 
-    protected fun getInitSearch(): InitSearch {
-        return (if (initSearch != null) initSearch else InitSearch.Companion.EMPTY_SEARCH)!!
-    }
+    protected fun getInitSearch(): InitSearch = (if (initSearch != null) initSearch else InitSearch.Companion.EMPTY_SEARCH)!!
 
     protected fun notifyAllAdaptersChanged() {
         recyclerView!!.getAdapter()!!.notifyDataSetChanged()
         onNotifyAllAdaptersChanged()
     }
 
-    protected fun getActionBarIcon(attr: Int): Drawable {
-        return getActionBarIcon(this.toolbarContext!!, attr)
-    }
+    protected fun getActionBarIcon(attr: Int): Drawable = getActionBarIcon(this.toolbarContext!!, attr)
 
     protected fun notifyTitleChanged() {
         callback!!.notifyTitleChanged()
@@ -200,9 +194,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         callback!!.clearSearchFocus()
     }
 
-    protected fun startActionMode(callback: ActionMode.Callback?): ActionMode? {
-        return this.callback!!.startActionMode(callback)
-    }
+    protected fun startActionMode(callback: ActionMode.Callback?): ActionMode? = this.callback!!.startActionMode(callback)
 
     protected fun switchList() {
         callback!!.switchList()
@@ -230,7 +222,9 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     internal fun handleRedirect(
         chanName: String?,
-        boardName: String?, threadNumber: String?, postNumber: PostNumber?
+        boardName: String?,
+        threadNumber: String?,
+        postNumber: PostNumber?,
     ) {
         callback!!.handleRedirect(chanName, boardName, threadNumber, postNumber)
     }
@@ -271,37 +265,30 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     protected open fun onRequestStoreExtra(saveToStack: Boolean) {}
 
-    open fun obtainTitle(): String? {
-        return null
-    }
+    open fun obtainTitle(): String? = null
 
-    open fun obtainTitleSubtitle(): Pair<String?, String?>? {
-        return Pair<String?, String?>(obtainTitle(), null)
-    }
+    open fun obtainTitleSubtitle(): Pair<String?, String?>? = Pair<String?, String?>(obtainTitle(), null)
 
     open fun onCreateOptionsMenu(menu: Menu) {}
 
     open fun onPrepareOptionsMenu(menu: Menu) {}
 
-    open fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return false
-    }
+    open fun onOptionsItemSelected(item: MenuItem): Boolean = false
 
     open fun onAppearanceOptionChanged(what: Int) {}
 
     open fun onSearchQueryChange(query: String?) {}
 
-    open fun onSearchSubmit(query: String): Boolean {
-        return false
-    }
+    open fun onSearchSubmit(query: String): Boolean = false
 
     open fun onSearchCancel() {}
 
-    override fun onListPulled(wrapper: PullableWrapper, side: PullableWrapper.Side) {}
+    override fun onListPulled(
+        wrapper: PullableWrapper,
+        side: PullableWrapper.Side,
+    ) {}
 
-    open fun onDrawerNumberEntered(number: Int): Int {
-        return 0
-    }
+    open fun onDrawerNumberEntered(number: Int): Int = 0
 
     open fun updatePageConfiguration(postNumber: PostNumber?) {}
 
@@ -353,9 +340,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         }
     }
 
-    fun getListPosition(): ListPosition? {
-        return if (listPosition != null) listPosition else ListPosition.obtain(recyclerView!!, null)
-    }
+    fun getListPosition(): ListPosition? = if (listPosition != null) listPosition else ListPosition.obtain(recyclerView!!, null)
 
     fun getExtraToStore(saveToStack: Boolean): Pair<Retainable?, Parcelable?> {
         onRequestStoreExtra(saveToStack)
@@ -375,29 +360,37 @@ abstract class ListPage : LifecycleOwner, PullCallback {
 
     interface Callback {
         fun notifyTitleChanged()
+
         fun invalidateOptionsMenu()
+
         fun setCustomSearchView(view: View?)
+
         fun clearSearchFocus()
+
         val toolbarContext: Context?
+
         fun startActionMode(callback: ActionMode.Callback?): ActionMode?
+
         fun switchList()
+
         fun switchProgress()
+
         fun switchError(errorItem: ErrorItem?)
+
         fun showScaleAnimation()
+
         fun handleRedirect(
             chanName: String?,
             boardName: String?,
             threadNumber: String?,
-            postNumber: PostNumber?
+            postNumber: PostNumber?,
         )
 
         fun closePage()
     }
 
     companion object {
-        private fun getViewModel(fragment: Fragment): PageViewModel {
-            return ViewModelProvider(fragment).get<PageViewModel>(PageViewModel::class.java)
-        }
+        private fun getViewModel(fragment: Fragment): PageViewModel = ViewModelProvider(fragment).get<PageViewModel>(PageViewModel::class.java)
 
         @JvmStatic
         @Suppress("UNCHECKED_CAST")

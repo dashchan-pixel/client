@@ -21,12 +21,19 @@ import com.mishiranu.dashchan.util.ViewUtils.setNewPadding
 import com.mishiranu.dashchan.widget.DividerItemDecoration
 
 class SearchAdapter(
-    private val context: Context, callback: Callback?, chanName: String?,
-    private val uiManager: UiManager, fragmentManager: FragmentManager?, searchQuery: String?
+    private val context: Context,
+    callback: Callback?,
+    chanName: String?,
+    private val uiManager: UiManager,
+    fragmentManager: FragmentManager?,
+    searchQuery: String?,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder?>() {
     interface Callback : ListViewUtils.SimpleCallback<PostItem?>
 
-    private class ListItem(val postItem: PostItem, val group: String?)
+    private class ListItem(
+        val postItem: PostItem,
+        val group: String?,
+    )
 
     val configurationSet: ConfigurationSet
     private val demandSet = DemandSet()
@@ -38,37 +45,49 @@ class SearchAdapter(
     private var groupMode = false
 
     init {
-        configurationSet = ConfigurationSet(
-            chanName, null, null, PostStateProvider.DEFAULT,
-            gallerySet, fragmentManager, uiManager.dialog().createStackInstance(), null, callback,
-            true, false, false, false, false, null
-        )
+        configurationSet =
+            ConfigurationSet(
+                chanName,
+                null,
+                null,
+                PostStateProvider.DEFAULT,
+                gallerySet,
+                fragmentManager,
+                uiManager.dialog().createStackInstance(),
+                null,
+                callback,
+                true,
+                false,
+                false,
+                false,
+                false,
+                null,
+            )
         demandSet.highlightText = mutableSetOf(searchQuery!!)
     }
 
-    override fun getItemCount(): Int {
-        return if (groupMode) groupItems.size else postItems.size
-    }
+    override fun getItemCount(): Int = if (groupMode) groupItems.size else postItems.size
 
-    override fun getItemViewType(position: Int): Int {
-        return ViewUnit.ViewType.POST.ordinal
-    }
+    override fun getItemViewType(position: Int): Int = ViewUnit.ViewType.POST.ordinal
 
-    private fun getItem(position: Int): PostItem {
-        return if (groupMode) groupItems.get(position)!!.postItem else postItems.get(position)
-    }
+    private fun getItem(position: Int): PostItem = if (groupMode) groupItems[position]!!.postItem else postItems[position]
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return uiManager.view().createView(parent, ViewUnit.ViewType.POST)
-    }
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): RecyclerView.ViewHolder = uiManager.view().createView(parent, ViewUnit.ViewType.POST)
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+    ) {
         onBindViewHolder(holder, position, mutableListOf<Any?>())
     }
 
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
-        position: Int, payloads: MutableList<Any?>
+        position: Int,
+        payloads: MutableList<Any?>,
     ) {
         if (payloads.isEmpty()) {
             uiManager.view().bindPostView(holder, getItem(position), configurationSet, demandSet)
@@ -108,10 +127,10 @@ class SearchAdapter(
                 val map = LinkedHashMap<String?, ArrayList<PostItem?>?>()
                 for (postItem in postItems) {
                     val threadNumber = postItem.getThreadNumber()
-                    var postItems = map.get(threadNumber)
+                    var postItems = map[threadNumber]
                     if (postItems == null) {
                         postItems = ArrayList<PostItem?>()
-                        map.put(threadNumber, postItems)
+                        map[threadNumber] = postItems
                     }
                     postItems.add(postItem)
                 }
@@ -124,10 +143,11 @@ class SearchAdapter(
                     } catch (e: NumberFormatException) {
                         number = false
                     }
-                    val group = context.getString(
-                        R.string.in_thread_number__format,
-                        if (number) "#" + threadNumber else threadNumber
-                    )
+                    val group =
+                        context.getString(
+                            R.string.in_thread_number__format,
+                            if (number) "#" + threadNumber else threadNumber,
+                        )
                     var ordinalIndex = 0
                     for (postItem in entry.value!!) {
                         groupItems.add(SearchAdapter.ListItem(postItem!!, group))
@@ -136,7 +156,7 @@ class SearchAdapter(
                 }
             } else {
                 for (i in postItems.indices) {
-                    postItems.get(i).setOrdinalIndex(i)
+                    postItems[i].setOrdinalIndex(i)
                 }
             }
         }
@@ -162,12 +182,13 @@ class SearchAdapter(
 
     fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
-        position: Int
-    ): DividerItemDecoration.Configuration {
-        return configuration.need(true)
-    }
+        position: Int,
+    ): DividerItemDecoration.Configuration = configuration.need(true)
 
-    fun configureItemHeader(context: Context, headerView: TextView) {
+    fun configureItemHeader(
+        context: Context,
+        headerView: TextView,
+    ) {
         val density = obtainDensity(context)
         setNewPadding(headerView, (12f * density).toInt(), null, (12f * density).toInt(), null)
     }
@@ -175,10 +196,10 @@ class SearchAdapter(
     fun getItemHeader(position: Int): String? {
         if (groupMode) {
             if (position == 0) {
-                return groupItems.get(0)!!.group
+                return groupItems[0]!!.group
             } else {
-                val previous = groupItems.get(position - 1)!!.group
-                val current = groupItems.get(position)!!.group
+                val previous = groupItems[position - 1]!!.group
+                val current = groupItems[position]!!.group
                 return if (equals(previous, current)) null else current
             }
         } else {

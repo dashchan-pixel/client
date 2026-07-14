@@ -7,29 +7,35 @@ import android.content.Context
 import android.content.Intent
 
 object AndroidUtils {
-	fun interface OnReceiveListener {
-		fun onReceive(receiver: BroadcastReceiver, context: Context, intent: Intent)
-	}
+    fun interface OnReceiveListener {
+        fun onReceive(
+            receiver: BroadcastReceiver,
+            context: Context,
+            intent: Intent,
+        )
+    }
 
-	@JvmStatic
-	fun createReceiver(listener: OnReceiveListener): BroadcastReceiver {
-		return object : BroadcastReceiver() {
-			override fun onReceive(context: Context, intent: Intent) {
-				listener.onReceive(this, context, intent)
-			}
-		}
-	}
+    @JvmStatic
+    fun createReceiver(listener: OnReceiveListener): BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                listener.onReceive(this, context, intent)
+            }
+        }
 
-	@JvmStatic
-	fun getApplicationLabel(context: Context): String {
-		return context.applicationInfo.loadLabel(context.packageManager).toString()
-	}
+    @JvmStatic
+    fun getApplicationLabel(context: Context): String = context.applicationInfo.loadLabel(context.packageManager).toString()
 
-	@JvmStatic
-	fun createHeadsUpNotificationChannel(id: String, name: CharSequence): NotificationChannel {
-		return NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
-			setSound(null, null)
-			vibrationPattern = longArrayOf(0)
-		}
-	}
+    @JvmStatic
+    fun createHeadsUpNotificationChannel(
+        id: String,
+        name: CharSequence,
+    ): NotificationChannel =
+        NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH).apply {
+            setSound(null, null)
+            vibrationPattern = longArrayOf(0)
+        }
 }

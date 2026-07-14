@@ -12,91 +12,93 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 
 class InstanceDialog : DialogFragment {
-	interface Provider {
-		val context: Context
-		val activity: FragmentActivity
-		val fragmentManager: FragmentManager
-		val parentFragment: Fragment?
-		val lifecycleOwner: LifecycleOwner
-		fun <T : ViewModel> getViewModel(modelClass: Class<T>): T
-		fun createDismissDialog(): Dialog
-		fun dismiss()
-	}
+    interface Provider {
+        val context: Context
+        val activity: FragmentActivity
+        val fragmentManager: FragmentManager
+        val parentFragment: Fragment?
+        val lifecycleOwner: LifecycleOwner
 
-	fun interface Factory {
-		fun createDialog(provider: Provider): Dialog
-	}
+        fun <T : ViewModel> getViewModel(modelClass: Class<T>): T
 
-	class InstanceViewModel : ViewModel() {
-		var factory: Factory? = null
+        fun createDismissDialog(): Dialog
 
-		override fun onCleared() {
-			factory = null
-		}
-	}
+        fun dismiss()
+    }
 
-	private var initFactory: Factory? = null
+    fun interface Factory {
+        fun createDialog(provider: Provider): Dialog
+    }
 
-	constructor()
+    class InstanceViewModel : ViewModel() {
+        var factory: Factory? = null
 
-	constructor(fragmentManager: FragmentManager, tag: String?, factory: Factory) {
-		if (!fragmentManager.isStateSaved) {
-			this.initFactory = factory
-			if (tag != null) {
-				val oldDialog = fragmentManager.findFragmentByTag(tag) as InstanceDialog?
-				oldDialog?.dismiss()
-			}
-			show(fragmentManager, tag)
-		}
-	}
+        override fun onCleared() {
+            factory = null
+        }
+    }
 
-	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-		val viewModel = ViewModelProvider(this).get(InstanceViewModel::class.java)
-		if (initFactory != null) {
-			viewModel.factory = initFactory
-			initFactory = null
-		}
-		return viewModel.factory?.createDialog(provider) ?: DismissDialog(requireContext())
-	}
+    private var initFactory: Factory? = null
 
-	// View-less DialogFragment: onViewStateRestored never runs, so check from onStart.
-	override fun onStart() {
-		if (dialog is DismissDialog) {
-			dismiss()
-		}
-		super.onStart()
-	}
+    constructor()
 
-	private class DismissDialog(context: Context) : Dialog(context) {
-		override fun show() {}
-	}
+    constructor(fragmentManager: FragmentManager, tag: String?, factory: Factory) {
+        if (!fragmentManager.isStateSaved) {
+            this.initFactory = factory
+            if (tag != null) {
+                val oldDialog = fragmentManager.findFragmentByTag(tag) as InstanceDialog?
+                oldDialog?.dismiss()
+            }
+            show(fragmentManager, tag)
+        }
+    }
 
-	private val provider: Provider = object : Provider {
-		override val context: Context
-			get() = requireContext()
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val viewModel = ViewModelProvider(this).get(InstanceViewModel::class.java)
+        if (initFactory != null) {
+            viewModel.factory = initFactory
+            initFactory = null
+        }
+        return viewModel.factory?.createDialog(provider) ?: DismissDialog(requireContext())
+    }
 
-		override val activity: FragmentActivity
-			get() = requireActivity()
+    // View-less DialogFragment: onViewStateRestored never runs, so check from onStart.
+    override fun onStart() {
+        if (dialog is DismissDialog) {
+            dismiss()
+        }
+        super.onStart()
+    }
 
-		override val fragmentManager: FragmentManager
-			get() = parentFragmentManager
+    private class DismissDialog(
+        context: Context,
+    ) : Dialog(context) {
+        override fun show() {}
+    }
 
-		override val parentFragment: Fragment?
-			get() = this@InstanceDialog.parentFragment
+    private val provider: Provider =
+        object : Provider {
+            override val context: Context
+                get() = requireContext()
 
-		override val lifecycleOwner: LifecycleOwner
-			get() = this@InstanceDialog
+            override val activity: FragmentActivity
+                get() = requireActivity()
 
-		override fun <T : ViewModel> getViewModel(modelClass: Class<T>): T {
-			return ViewModelProvider(this@InstanceDialog).get(modelClass)
-		}
+            override val fragmentManager: FragmentManager
+                get() = parentFragmentManager
 
-		override fun createDismissDialog(): Dialog {
-			return DismissDialog(requireContext())
-		}
+            override val parentFragment: Fragment?
+                get() = this@InstanceDialog.parentFragment
 
-		override fun dismiss() {
-			this@InstanceDialog.dismiss()
-		}
-	}
+            override val lifecycleOwner: LifecycleOwner
+                get() = this@InstanceDialog
+
+            override fun <T : ViewModel> getViewModel(modelClass: Class<T>): T = ViewModelProvider(this@InstanceDialog).get(modelClass)
+
+            override fun createDismissDialog(): Dialog = DismissDialog(requireContext())
+
+            override fun dismiss() {
+                this@InstanceDialog.dismiss()
+            }
+        }
 }

@@ -8,53 +8,62 @@ import com.mishiranu.dashchan.util.GraphicsUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ThemeEngine
 
-class ColorScheme(context: Context, theme: ThemeEngine.Theme) {
-	@JvmField val windowBackgroundColor: Int = theme.window
-	@JvmField val dialogBackgroundColor: Int
+class ColorScheme(
+    context: Context,
+    theme: ThemeEngine.Theme,
+) {
+    @JvmField val windowBackgroundColor: Int = theme.window
 
-	@JvmField val spoilerBackgroundColor: Int = theme.spoiler
-	@JvmField val spoilerTopBackgroundColor: Int
+    @JvmField val dialogBackgroundColor: Int
 
-	@JvmField val linkColor: Int = theme.link
-	@JvmField val quoteColor: Int = theme.quote
-	@JvmField val clickedColor: Int
+    @JvmField val spoilerBackgroundColor: Int = theme.spoiler
 
-	@JvmField val tripcodeColor: Int = theme.tripcode
-	@JvmField val capcodeColor: Int = theme.capcode
-	@JvmField val neuroslopColor: Int = theme.neuroslop
+    @JvmField val spoilerTopBackgroundColor: Int
 
-	@JvmField val highlightTextColor: Int
-	@JvmField val highlightBackgroundColor: Int
-	@JvmField val highlightUserPostBackgroundColor: Int
+    @JvmField val linkColor: Int = theme.link
 
-	@JvmField val colorGainFactor: Float = theme.colorGainFactor
+    @JvmField val quoteColor: Int = theme.quote
 
-	init {
-		spoilerTopBackgroundColor = minOf((spoilerBackgroundColor ushr 24) * 2, 0xff) shl 24 or
-				(spoilerBackgroundColor and 0x00ffffff)
-		dialogBackgroundColor = ResourceUtils.getDialogBackground(context)
-		clickedColor = ResourceUtils.getSystemSelectorColor(context)
-		highlightTextColor = (Color.BLACK or linkColor) and 0x80ffffff.toInt()
-		highlightBackgroundColor = if (GraphicsUtils.isLight(windowBackgroundColor)) 0x1e000000 else 0x1effffff
-		highlightUserPostBackgroundColor = ColorUtils.setAlphaComponent(theme.highlight, (255 * 0.1).toInt())
-	}
+    @JvmField val clickedColor: Int
 
-	interface Span {
-		fun applyColorScheme(colorScheme: ColorScheme?)
-	}
+    @JvmField val tripcodeColor: Int = theme.tripcode
 
-	fun apply(text: CharSequence?) {
-		apply(getSpans(text))
-	}
+    @JvmField val capcodeColor: Int = theme.capcode
 
-	fun apply(spans: Array<Span>?) {
-		spans?.forEach { it.applyColorScheme(this) }
-	}
+    @JvmField val neuroslopColor: Int = theme.neuroslop
 
-	companion object {
-		@JvmStatic
-		fun getSpans(text: CharSequence?): Array<Span>? {
-			return if (text is Spanned) text.getSpans(0, text.length, Span::class.java) else null
-		}
-	}
+    @JvmField val highlightTextColor: Int
+
+    @JvmField val highlightBackgroundColor: Int
+
+    @JvmField val highlightUserPostBackgroundColor: Int
+
+    @JvmField val colorGainFactor: Float = theme.colorGainFactor
+
+    init {
+        spoilerTopBackgroundColor = minOf((spoilerBackgroundColor ushr 24) * 2, 0xff) shl 24 or
+            (spoilerBackgroundColor and 0x00ffffff)
+        dialogBackgroundColor = ResourceUtils.getDialogBackground(context)
+        clickedColor = ResourceUtils.getSystemSelectorColor(context)
+        highlightTextColor = (Color.BLACK or linkColor) and 0x80ffffff.toInt()
+        highlightBackgroundColor = if (GraphicsUtils.isLight(windowBackgroundColor)) 0x1e000000 else 0x1effffff
+        highlightUserPostBackgroundColor = ColorUtils.setAlphaComponent(theme.highlight, (255 * 0.1).toInt())
+    }
+
+    interface Span {
+        fun applyColorScheme(colorScheme: ColorScheme?)
+    }
+
+    fun apply(text: CharSequence?) {
+        apply(getSpans(text))
+    }
+
+    fun apply(spans: Array<Span>?) {
+        spans?.forEach { it.applyColorScheme(this) }
+    }
+
+    companion object {
+        @JvmStatic
+        fun getSpans(text: CharSequence?): Array<Span>? = if (text is Spanned) text.getSpans(0, text.length, Span::class.java) else null
+    }
 }

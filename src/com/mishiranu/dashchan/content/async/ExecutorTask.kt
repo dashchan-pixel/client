@@ -11,12 +11,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class ExecutorTask<Progress, Result> {
     private enum class Message {
-        PROGRESS, RESULT
+        PROGRESS,
+        RESULT,
     }
 
     private class ProgressHolder<Progress>(
         val task: ExecutorTask<Progress, *>,
-        val progress: Progress?
+        val progress: Progress?,
     ) {
         fun handle() {
             if (!task.isCancelled()) {
@@ -25,7 +26,10 @@ abstract class ExecutorTask<Progress, Result> {
         }
     }
 
-    private class ResultHolder<Result>(val task: ExecutorTask<*, Result>, val result: Result?) {
+    private class ResultHolder<Result>(
+        val task: ExecutorTask<*, Result>,
+        val result: Result?,
+    ) {
         fun handle() {
             if (task.isCancelled()) {
                 task.onCancel(result)
@@ -42,7 +46,9 @@ abstract class ExecutorTask<Progress, Result> {
     private val cancelled = AtomicBoolean(false)
     private val started = AtomicBoolean(false)
 
-    private class Worker<Result>(private val task: ExecutorTask<*, Result>) : Callable<Result?> {
+    private class Worker<Result>(
+        private val task: ExecutorTask<*, Result>,
+    ) : Callable<Result?> {
         @Throws(Exception::class)
         override fun call(): Result? {
             task.started.set(true)
@@ -95,7 +101,8 @@ abstract class ExecutorTask<Progress, Result> {
         }
 
     private fun postResult(result: Result?) {
-        HANDLER.obtainMessage(Message.RESULT.ordinal, ResultHolder(this, result))
+        HANDLER
+            .obtainMessage(Message.RESULT.ordinal, ResultHolder(this, result))
             .sendToTarget()
     }
 
@@ -113,40 +120,45 @@ abstract class ExecutorTask<Progress, Result> {
 
     protected fun notifyProgress(progress: Progress?) {
         if (!isCancelled()) {
-            HANDLER.obtainMessage(
-                Message.PROGRESS.ordinal,
-                ProgressHolder(this, progress)
-            ).sendToTarget()
+            HANDLER
+                .obtainMessage(
+                    Message.PROGRESS.ordinal,
+                    ProgressHolder(this, progress),
+                ).sendToTarget()
         }
     }
 
-    protected fun isCancelled(): Boolean {
-        return cancelled.get()
-    }
+    protected fun isCancelled(): Boolean = cancelled.get()
 
     protected open fun onPrepare() {}
 
     @Throws(InterruptedException::class)
     protected abstract fun run(): Result?
+
     protected open fun onProgress(progress: Progress) {}
+
     protected open fun onCancel(result: Result?) {}
+
     protected open fun onComplete(result: Result) {}
 
     companion object {
         private val HANDLER =
-            Handler(Looper.getMainLooper(), Handler.Callback { msg: android.os.Message? ->
-                when (Message.entries[msg!!.what]) {
-                    Message.PROGRESS -> {
-                        val progressHolder: ProgressHolder<*> = msg.obj as ProgressHolder<*>
-                        progressHolder.handle()
-                    }
+            Handler(
+                Looper.getMainLooper(),
+                Handler.Callback { msg: android.os.Message? ->
+                    when (Message.entries[msg!!.what]) {
+                        Message.PROGRESS -> {
+                            val progressHolder: ProgressHolder<*> = msg.obj as ProgressHolder<*>
+                            progressHolder.handle()
+                        }
 
-                    Message.RESULT -> {
-                        val resultHolder: ResultHolder<*> = msg.obj as ResultHolder<*>
-                        resultHolder.handle()
+                        Message.RESULT -> {
+                            val resultHolder: ResultHolder<*> = msg.obj as ResultHolder<*>
+                            resultHolder.handle()
+                        }
                     }
-                }
-                true
-            })
+                    true
+                },
+            )
     }
 }

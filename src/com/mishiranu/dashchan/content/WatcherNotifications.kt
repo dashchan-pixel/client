@@ -24,25 +24,43 @@ object WatcherNotifications {
     fun configure(context: Context) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channel = NotificationChannel(
-            C.NOTIFICATION_CHANNEL_REPLIES,
-            context.getString(R.string.replies), NotificationManager.IMPORTANCE_HIGH
-        )
+        val channel =
+            NotificationChannel(
+                C.NOTIFICATION_CHANNEL_REPLIES,
+                context.getString(R.string.replies),
+                NotificationManager.IMPORTANCE_HIGH,
+            )
         channel.enableLights(true)
         channel.enableVibration(true)
         notificationManager.createNotificationChannel(channel)
     }
 
     fun notifyReplies(
-        context: Context, color: Int, important: Boolean, sound: Boolean, vibration: Boolean,
-        title: String?, chanName: String?, boardName: String?, threadNumber: String?,
-        replies: List<Reply>
+        context: Context,
+        color: Int,
+        important: Boolean,
+        sound: Boolean,
+        vibration: Boolean,
+        title: String?,
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        replies: List<Reply>,
     ) {
         EXECUTOR.execute(
             Task(
-                context, color, important, sound, vibration, title,
-                chanName, boardName, threadNumber, replies, mutableListOf()
-            )
+                context,
+                color,
+                important,
+                sound,
+                vibration,
+                title,
+                chanName,
+                boardName,
+                threadNumber,
+                replies,
+                mutableListOf(),
+            ),
         )
     }
 
@@ -51,13 +69,22 @@ object WatcherNotifications {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: Collection<PostNumber>
+        postNumbers: Collection<PostNumber>,
     ) {
         EXECUTOR.execute(
             WatcherNotifications.Task(
-                context, 0, false, false, false, null,
-                chanName, boardName, threadNumber, listOf<Reply>(), postNumbers
-            )
+                context,
+                0,
+                false,
+                false,
+                false,
+                null,
+                chanName,
+                boardName,
+                threadNumber,
+                listOf<Reply>(),
+                postNumbers,
+            ),
         )
     }
 
@@ -72,7 +99,7 @@ object WatcherNotifications {
         val boardName: String?,
         val threadNumber: String?,
         val replies: List<Reply>,
-        val removePostNumbers: Collection<PostNumber>
+        val removePostNumbers: Collection<PostNumber>,
     ) : Runnable {
         val context: Context
 
@@ -103,26 +130,35 @@ object WatcherNotifications {
                     builder.setTicker((title + "\n" + text).trim { it <= ' ' })
                 }
                 builder.setStyle(
-                    NotificationCompat.BigTextStyle().bigText(buildLongComment(comment))
+                    NotificationCompat.BigTextStyle().bigText(buildLongComment(comment)),
                 )
                 builder.setWhen(reply.timestamp)
                 configureNotification(builder, color)
                 builder.setGroup(GROUP_REPLIES)
                 builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
 
-
                 val tag: String? = makeTag(chanName, boardName, threadNumber, reply.postNumber)
-                val intent = Intent(context, MainActivity::class.java).setAction(tag)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    .putExtra(C.EXTRA_CHAN_NAME, chanName)
-                    .putExtra(C.EXTRA_BOARD_NAME, boardName)
-                    .putExtra(C.EXTRA_THREAD_NUMBER, threadNumber)
-                    .putExtra(C.EXTRA_POST_NUMBER, reply.postNumber.toString())
+                val intent =
+                    Intent(context, MainActivity::class.java)
+                        .setAction(tag)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                        .putExtra(C.EXTRA_CHAN_NAME, chanName)
+                        .putExtra(C.EXTRA_BOARD_NAME, boardName)
+                        .putExtra(C.EXTRA_THREAD_NUMBER, threadNumber)
+                        .apply {
+                            // reply.postNumber is nullable, and a bare toString() writes the
+                            // literal string "null" into the extra. The reader
+                            // (MainActivity.parseNullable) then gets a non-null "null" and
+                            // tries to parse it as a post number. Omit the extra instead.
+                            reply.postNumber?.let { putExtra(C.EXTRA_POST_NUMBER, it.toString()) }
+                        }
                 builder.setContentIntent(
                     PendingIntent.getActivity(
-                        context, 0, intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
                 )
                 notificationManager.notify(tag, C.NOTIFICATION_ID_REPLIES, builder.build())
             }
@@ -165,56 +201,46 @@ object WatcherNotifications {
                 chanName: String?,
                 boardName: String?,
                 threadNumber: String?,
-                postNumber: PostNumber?
-            ): String? {
-                return formatHex(
+                postNumber: PostNumber?,
+            ): String? =
+                formatHex(
                     getInstanceSha256().calculate(
                         chanName + "/" +
-                                boardName + "/" + threadNumber + "/" + postNumber
-                    )
+                            boardName + "/" + threadNumber + "/" + postNumber,
+                    ),
                 )
-            }
 
-            private fun configureNotification(builder: NotificationCompat.Builder, color: Int) {
+            private fun configureNotification(
+                builder: NotificationCompat.Builder,
+                color: Int,
+            ) {
                 builder.setSmallIcon(R.drawable.ic_notification)
                 builder.setColor(color)
-            }
-
-            private fun applyPreferencesPreOreo(
-                builder: NotificationCompat.Builder,
-                color: Int, important: Boolean, sound: Boolean, vibration: Boolean
-            ) {
-                builder.setPriority(if (important) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
-                if (important) {
-                    if (!sound && !vibration) {
-                        builder.setVibrate(LongArray(0))
-                    }
-                    builder.setLights(color, 1000, 1000)
-                }
-                builder.setDefaults(
-                    (if (sound) NotificationCompat.DEFAULT_SOUND else 0) or
-                            (if (vibration) NotificationCompat.DEFAULT_VIBRATE else 0)
-                )
             }
 
             private fun buildLongComment(comment: String): String {
                 val builder = StringBuilder()
                 var nextNewLine = false
-                for (line in comment.split("\n".toRegex()).dropLastWhile { it.isEmpty() }
+                for (line in comment
+                    .split("\n".toRegex())
+                    .dropLastWhile { it.isEmpty() }
                     .toTypedArray()) {
-                    var line = line
-                    if (!line.isEmpty()) {
-                        line = line.trim { it <= ' ' }
-                        if (!line.isEmpty()) {
-                            line = line.replace(" {2,}".toRegex(), " ")
+                    var currentLine = line
+                    if (!currentLine.isEmpty()) {
+                        currentLine = currentLine.trim { it <= ' ' }
+                        if (!currentLine.isEmpty()) {
+                            currentLine = currentLine.replace(" {2,}".toRegex(), " ")
                             val newLine = nextNewLine
                             nextNewLine =
-                                !line.contains(">>") || !line.replace(">>\\d+".toRegex(), "")
-                                    .trim { it <= ' ' }.isEmpty()
+                                !currentLine.contains(">>") ||
+                                !currentLine
+                                    .replace(">>\\d+".toRegex(), "")
+                                    .trim { it <= ' ' }
+                                    .isEmpty()
                             if (builder.length > 0) {
                                 builder.append(if (newLine) '\n' else ' ')
                             }
-                            builder.append(line)
+                            builder.append(currentLine)
                         }
                     }
                 }

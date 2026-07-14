@@ -23,7 +23,6 @@ import chan.http.HttpHolder
 import chan.http.HttpRequest
 import chan.util.CommonUtils
 import chan.util.StringUtils
-import com.mishiranu.dashchan.BuildConfig
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.HttpHolderTask
@@ -43,7 +42,6 @@ import com.mishiranu.dashchan.widget.DividerItemDecoration
 import com.mishiranu.dashchan.widget.SimpleViewHolder
 import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ViewFactory
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
@@ -52,334 +50,410 @@ import java.io.IOException
 import java.util.Collections
 
 class ThemesFragment : BaseListFragment() {
-	private var availableJsonThemes: List<JSONObject>? = null
+    private var availableJsonThemes: List<JSONObject>? = null
 
-	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-		super.onViewCreated(view, savedInstanceState)
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
 
-		(requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.themes), null)
-		val recyclerView = getRecyclerView()!!
-		recyclerView.adapter = Adapter(recyclerView.context) { theme, installed, longClick ->
-			if (longClick) {
-				val json: String
-				try {
-					json = theme.toJsonObject().toString(4)
-				} catch (e: JSONException) {
-					throw RuntimeException(e)
-				}
-				ContextMenuDialog(theme.name, json, installed && !theme.builtIn)
-						.show(childFragmentManager, ContextMenuDialog::class.java.name)
-			} else {
-				installTheme(theme, installed)
-			}
-			true
-		}
-		updateThemes()
+        (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.themes), null)
+        val recyclerView = getRecyclerView()!!
+        recyclerView.adapter =
+            Adapter(recyclerView.context) { theme, installed, longClick ->
+                if (longClick) {
+                    val json: String
+                    try {
+                        json = theme.toJsonObject().toString(4)
+                    } catch (e: JSONException) {
+                        throw RuntimeException(e)
+                    }
+                    ContextMenuDialog(theme.name, json, installed && !theme.builtIn)
+                        .show(childFragmentManager, ContextMenuDialog::class.java.name)
+                } else {
+                    installTheme(theme, installed)
+                }
+                true
+            }
+        updateThemes()
 
-		val viewModel = ViewModelProvider(this).get(ThemesViewModel::class.java)
-		val availableThemes = if (savedInstanceState != null)
-				savedInstanceState.getStringArrayList(EXTRA_AVAILABLE_THEMES) else null
-		if (availableThemes != null) {
-			val themes = ArrayList<JSONObject>()
-			for (string in availableThemes) {
-				try {
-					themes.add(JSONObject(string))
-				} catch (e: JSONException) {
-					throw RuntimeException(e)
-				}
-			}
-			availableJsonThemes = themes
-			updateThemes()
-		} else {
-			if (!viewModel.hasTaskOrValue()) {
-				val task = ReadThemesTask(viewModel)
-				task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
-				viewModel.attach(task)
-			}
-			viewModel.observe(viewLifecycleOwner) { result ->
-				if (result.second != null) {
-					availableJsonThemes = result.second
-					updateThemes()
-				} else {
-					availableJsonThemes = emptyList()
-					ClickableToast.show(result.first)
-				}
-			}
-		}
-	}
+        val viewModel = ViewModelProvider(this).get(ThemesViewModel::class.java)
+        val availableThemes =
+            if (savedInstanceState != null) {
+                savedInstanceState.getStringArrayList(EXTRA_AVAILABLE_THEMES)
+            } else {
+                null
+            }
+        if (availableThemes != null) {
+            val themes = ArrayList<JSONObject>()
+            for (string in availableThemes) {
+                try {
+                    themes.add(JSONObject(string))
+                } catch (e: JSONException) {
+                    throw RuntimeException(e)
+                }
+            }
+            availableJsonThemes = themes
+            updateThemes()
+        } else {
+            if (!viewModel.hasTaskOrValue()) {
+                val task = ReadThemesTask(viewModel)
+                task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+                viewModel.attach(task)
+            }
+            viewModel.observe(viewLifecycleOwner) { result ->
+                if (result.second != null) {
+                    availableJsonThemes = result.second
+                    updateThemes()
+                } else {
+                    availableJsonThemes = emptyList()
+                    ClickableToast.show(result.first)
+                }
+            }
+        }
+    }
 
-	override fun onSaveInstanceState(outState: Bundle) {
-		super.onSaveInstanceState(outState)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
 
-		val availableJsonThemes = this.availableJsonThemes
-		if (availableJsonThemes != null) {
-			val availableThemes = ArrayList<String>()
-			for (jsonObject in availableJsonThemes) {
-				availableThemes.add(jsonObject.toString())
-			}
-			outState.putStringArrayList(EXTRA_AVAILABLE_THEMES, availableThemes)
-		}
-	}
+        val availableJsonThemes = this.availableJsonThemes
+        if (availableJsonThemes != null) {
+            val availableThemes = ArrayList<String>()
+            for (jsonObject in availableJsonThemes) {
+                availableThemes.add(jsonObject.toString())
+            }
+            outState.putStringArrayList(EXTRA_AVAILABLE_THEMES, availableThemes)
+        }
+    }
 
-	override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
-		menu.add(0, R.id.menu_add_theme, 0, R.string.add_theme)
-				.setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
-				.setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-	}
+    override fun onCreateOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
+        menu
+            .add(0, R.id.menu_add_theme, 0, R.string.add_theme)
+            .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
+            .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+    }
 
-	override fun onMenuItemSelected(item: MenuItem): Boolean {
-		if (item.itemId == R.id.menu_add_theme) {
-			// Check Android supports "application/json" MIME-type
-			var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json")
-			if (StringUtils.isEmpty(mimeType) || "application/octet-stream" == mimeType) {
-				mimeType = "*/*"
-			}
-			// SHOW_ADVANCED to show folder navigation
-			val intent = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE)
-					.setType(mimeType).putExtra("android.content.extra.SHOW_ADVANCED", true)
-			addThemeLauncher.launch(intent)
-			return true
-		}
-		return super.onMenuItemSelected(item)
-	}
+    override fun onMenuItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.menu_add_theme) {
+            // Check Android supports "application/json" MIME-type
+            var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json")
+            if (StringUtils.isEmpty(mimeType) || "application/octet-stream" == mimeType) {
+                mimeType = "*/*"
+            }
+            // SHOW_ADVANCED to show folder navigation
+            val intent =
+                Intent(Intent.ACTION_GET_CONTENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType(mimeType)
+                    .putExtra("android.content.extra.SHOW_ADVANCED", true)
+            addThemeLauncher.launch(intent)
+            return true
+        }
+        return super.onMenuItemSelected(item)
+    }
 
-	private val addThemeLauncher = registerForActivityResult(
-			ActivityResultContracts.StartActivityForResult()) { result ->
-		val data = result.data
-		if (result.resultCode == Activity.RESULT_OK && data != null) {
-			val uri = data.data
-			val fileHolder = if (uri != null) FileHolder.obtain(uri) else null
-			if (fileHolder != null) {
-				val output = ByteArrayOutputStream()
-				val success = try {
-					fileHolder.openInputStream().use { input ->
-						IOUtils.copyStream(input, output)
-					}
-					true
-				} catch (e: IOException) {
-					e.printStackTrace()
-					false
-				}
-				val array = output.toByteArray()
-				if (success && array.isNotEmpty()) {
-					val jsonObject = try {
-						JSONObject(String(array))
-					} catch (e: JSONException) {
-						null
-					}
-					val theme = if (jsonObject != null)
-							ThemeEngine.parseTheme(requireContext(), jsonObject) else null
-					if (theme != null) {
-						installTheme(theme, false)
-					} else {
-						ClickableToast.show(R.string.invalid_data_format)
-					}
-				}
-			}
-		}
-	}
+    private val addThemeLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == Activity.RESULT_OK && data != null) {
+                val uri = data.data
+                val fileHolder = if (uri != null) FileHolder.obtain(uri) else null
+                if (fileHolder != null) {
+                    val output = ByteArrayOutputStream()
+                    val success =
+                        try {
+                            fileHolder.openInputStream().use { input ->
+                                IOUtils.copyStream(input, output)
+                            }
+                            true
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                            false
+                        }
+                    val array = output.toByteArray()
+                    if (success && array.isNotEmpty()) {
+                        val jsonObject =
+                            try {
+                                JSONObject(String(array))
+                            } catch (e: JSONException) {
+                                null
+                            }
+                        val theme =
+                            if (jsonObject != null) {
+                                ThemeEngine.parseTheme(requireContext(), jsonObject)
+                            } else {
+                                null
+                            }
+                        if (theme != null) {
+                            installTheme(theme, false)
+                        } else {
+                            ClickableToast.show(R.string.invalid_data_format)
+                        }
+                    }
+                }
+            }
+        }
 
-	override fun configureDivider(configuration: DividerItemDecoration.Configuration,
-			position: Int): DividerItemDecoration.Configuration {
-		return (getRecyclerView()!!.adapter as Adapter).configureDivider(configuration, position)
-	}
+    override fun configureDivider(
+        configuration: DividerItemDecoration.Configuration,
+        position: Int,
+    ): DividerItemDecoration.Configuration = (getRecyclerView()!!.adapter as Adapter).configureDivider(configuration, position)
 
-	private fun updateThemes() {
-		val listItems = ArrayList<ListItem>()
-		var installedAdded = false
-		for (theme in ThemeEngine.getThemes()) {
-			if (!theme!!.builtIn && !installedAdded) {
-				listItems.add(ListItem(null, false, getString(R.string.installed__plural)))
-				installedAdded = true
-			}
-			listItems.add(ListItem(theme, true, null))
-		}
-		val availableThemes = ArrayList<ThemeEngine.Theme>()
-		val availableJsonThemes = this.availableJsonThemes
-		if (availableJsonThemes != null) {
-			for (jsonObject in availableJsonThemes) {
-				val theme = ThemeEngine.parseTheme(requireContext(), jsonObject)
-				if (theme != null) {
-					availableThemes.add(theme)
-				}
-			}
-			Collections.sort(availableThemes)
-		}
-		if (!availableThemes.isEmpty()) {
-			listItems.add(ListItem(null, false, getString(R.string.available__plural)))
-			for (theme in availableThemes) {
-				listItems.add(ListItem(theme, false, null))
-			}
-		}
-		val adapter = getRecyclerView()!!.adapter as Adapter
-		adapter.listItems = listItems
-		adapter.notifyDataSetChanged()
-	}
+    private fun updateThemes() {
+        val listItems = ArrayList<ListItem>()
+        var installedAdded = false
+        for (theme in ThemeEngine.getThemes()) {
+            if (!theme.builtIn && !installedAdded) {
+                listItems.add(ListItem(null, false, getString(R.string.installed__plural)))
+                installedAdded = true
+            }
+            listItems.add(ListItem(theme, true, null))
+        }
+        val availableThemes = ArrayList<ThemeEngine.Theme>()
+        val availableJsonThemes = this.availableJsonThemes
+        if (availableJsonThemes != null) {
+            for (jsonObject in availableJsonThemes) {
+                val theme = ThemeEngine.parseTheme(requireContext(), jsonObject)
+                if (theme != null) {
+                    availableThemes.add(theme)
+                }
+            }
+            Collections.sort(availableThemes)
+        }
+        if (!availableThemes.isEmpty()) {
+            listItems.add(ListItem(null, false, getString(R.string.available__plural)))
+            for (theme in availableThemes) {
+                listItems.add(ListItem(theme, false, null))
+            }
+        }
+        val adapter = getRecyclerView()!!.adapter as Adapter
+        adapter.listItems = listItems
+        adapter.notifyDataSetChanged()
+    }
 
-	private fun installTheme(theme: ThemeEngine.Theme, installed: Boolean) {
-		if (!installed) {
-			if (ThemeEngine.addTheme(theme)) {
-				updateThemes()
-			} else {
-				ClickableToast.show(R.string.no_access)
-				return
-			}
-		}
-		if (!installed || theme.name != Preferences.theme) {
-			Preferences.theme = theme.name
-			requireActivity().recreate()
-		}
-	}
+    private fun installTheme(
+        theme: ThemeEngine.Theme,
+        installed: Boolean,
+    ) {
+        if (!installed) {
+            if (ThemeEngine.addTheme(theme)) {
+                updateThemes()
+            } else {
+                ClickableToast.show(R.string.no_access)
+                return
+            }
+        }
+        if (!installed || theme.name != Preferences.theme) {
+            Preferences.theme = theme.name
+            requireActivity().recreate()
+        }
+    }
 
-	internal fun deleteTheme(name: String) {
-		if (ThemeEngine.deleteTheme(name)) {
-			updateThemes()
-			if (name == Preferences.theme) {
-				requireActivity().recreate()
-			}
-		}
-	}
+    internal fun deleteTheme(name: String) {
+        if (ThemeEngine.deleteTheme(name)) {
+            updateThemes()
+            if (name == Preferences.theme) {
+                requireActivity().recreate()
+            }
+        }
+    }
 
-	private class ListItem(val theme: ThemeEngine.Theme?, val installed: Boolean, val title: String?)
+    private class ListItem(
+        val theme: ThemeEngine.Theme?,
+        val installed: Boolean,
+        val title: String?,
+    )
 
-	private class Adapter(context: Context, private val callback: Callback) :
-			RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-			ListViewUtils.ClickCallback<Void, RecyclerView.ViewHolder> {
-		private enum class ViewType { ITEM, HEADER }
+    private class Adapter(
+        context: Context,
+        private val callback: Callback,
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
+        ListViewUtils.ClickCallback<Unit, RecyclerView.ViewHolder> {
+        private enum class ViewType { ITEM, HEADER }
 
-		fun interface Callback {
-			fun onThemeClick(theme: ThemeEngine.Theme, installed: Boolean, longClick: Boolean): Boolean
-		}
+        fun interface Callback {
+            fun onThemeClick(
+                theme: ThemeEngine.Theme,
+                installed: Boolean,
+                longClick: Boolean,
+            ): Boolean
+        }
 
-		private class ItemViewHolder(val holder: Preference.Runtime.IconViewHolder) :
-				RecyclerView.ViewHolder(holder.view) {
-			init {
-				ViewUtils.setSelectableItemBackground(itemView)
-				holder.summary!!.visibility = View.GONE
-			}
-		}
+        private class ItemViewHolder(
+            val holder: Preference.Runtime.IconViewHolder,
+        ) : RecyclerView.ViewHolder(holder.view) {
+            init {
+                ViewUtils.setSelectableItemBackground(itemView)
+                holder.summary!!.visibility = View.GONE
+            }
+        }
 
-		private val iconPreference: Preference.Runtime<Any?> =
-				Preference.Runtime(context, "", null, "title") { null }
+        private val iconPreference: Preference.Runtime<Any?> =
+            Preference.Runtime(context, "", null, "title") { null }
 
-		internal var listItems: List<ListItem> = emptyList()
+        internal var listItems: List<ListItem> = emptyList()
 
-		fun configureDivider(configuration: DividerItemDecoration.Configuration,
-				position: Int): DividerItemDecoration.Configuration {
-			val next = if (listItems.size > position + 1) listItems[position + 1] else null
-			return configuration.need(next != null && next.title != null)
-		}
+        fun configureDivider(
+            configuration: DividerItemDecoration.Configuration,
+            position: Int,
+        ): DividerItemDecoration.Configuration {
+            val next = if (listItems.size > position + 1) listItems[position + 1] else null
+            return configuration.need(next != null && next.title != null)
+        }
 
-		override fun getItemCount(): Int = listItems.size
+        override fun getItemCount(): Int = listItems.size
 
-		override fun getItemViewType(position: Int): Int =
-				(if (listItems[position].title != null) ViewType.HEADER else ViewType.ITEM).ordinal
+        override fun getItemViewType(position: Int): Int =
+            (
+                if (listItems[position].title !=
+                    null
+                ) {
+                    ViewType.HEADER
+                } else {
+                    ViewType.ITEM
+                }
+            ).ordinal
 
-		override fun onItemClick(holder: RecyclerView.ViewHolder, position: Int,
-				item: Void?, longClick: Boolean): Boolean {
-			val listItem = listItems[position]
-			return callback.onThemeClick(listItem.theme!!, listItem.installed, longClick)
-		}
+        override fun onItemClick(
+            holder: RecyclerView.ViewHolder,
+            position: Int,
+            item: Unit?,
+            longClick: Boolean,
+        ): Boolean {
+            val listItem = listItems[position]
+            return callback.onThemeClick(listItem.theme!!, listItem.installed, longClick)
+        }
 
-		override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-			return when (ViewType.values()[viewType]) {
-				ViewType.ITEM -> ListViewUtils.bind<Void, RecyclerView.ViewHolder>(
-						ItemViewHolder(iconPreference.createIconViewHolder(parent)), true, null, this)
-				ViewType.HEADER -> SimpleViewHolder(ViewFactory.makeListTextHeader(parent))
-			}
-		}
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): RecyclerView.ViewHolder =
+            when (ViewType.values()[viewType]) {
+                ViewType.ITEM -> {
+                    ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
+                        ItemViewHolder(iconPreference.createIconViewHolder(parent)),
+                        true,
+                        null,
+                        this,
+                    )
+                }
 
-		override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-			val listItem = listItems[position]
-			when (ViewType.values()[holder.itemViewType]) {
-				ViewType.ITEM -> {
-					val viewHolder = (holder as ItemViewHolder).holder
-					viewHolder.icon!!.setImageDrawable(listItem.theme!!.createThemeChoiceDrawable())
-					viewHolder.title!!.text = listItem.theme.name
-				}
-				ViewType.HEADER -> (holder.itemView as TextView).text = listItem.title
-			}
-		}
-	}
+                ViewType.HEADER -> {
+                    SimpleViewHolder(ViewFactory.makeListTextHeader(parent))
+                }
+            }
 
-	class ContextMenuDialog : DialogFragment {
-		constructor()
+        override fun onBindViewHolder(
+            holder: RecyclerView.ViewHolder,
+            position: Int,
+        ) {
+            val listItem = listItems[position]
+            when (ViewType.values()[holder.itemViewType]) {
+                ViewType.ITEM -> {
+                    val viewHolder = (holder as ItemViewHolder).holder
+                    viewHolder.icon!!.setImageDrawable(listItem.theme!!.createThemeChoiceDrawable())
+                    viewHolder.title!!.text = listItem.theme.name
+                }
 
-		constructor(name: String?, json: String, canDelete: Boolean) {
-			val args = Bundle()
-			args.putString(EXTRA_NAME, name)
-			args.putString(EXTRA_JSON, json)
-			args.putBoolean(EXTRA_CAN_DELETE, canDelete)
-			arguments = args
-		}
+                ViewType.HEADER -> {
+                    (holder.itemView as TextView).text = listItem.title
+                }
+            }
+        }
+    }
 
-		override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
-			val name = requireArguments().getString(EXTRA_NAME)
-			val dialogMenu = DialogMenu(requireContext())
-			dialogMenu.add(R.string.save) {
-				val binder = (requireActivity() as FragmentHandler).getDownloadBinder()
-				if (binder != null) {
-					val json = requireArguments().getString(EXTRA_JSON)
-					binder.downloadStorage(ByteArrayInputStream(json!!.toByteArray()),
-							null, null, null, null, "$name.json", false, true)
-				}
-			}
-			if (requireArguments().getBoolean(EXTRA_CAN_DELETE)) {
-				dialogMenu.add(R.string.delete) {
-					val themesFragment = parentFragment as ThemesFragment
-					themesFragment.view!!.post {
-						themesFragment.deleteTheme(requireArguments().getString(EXTRA_NAME)!!)
-					}
-				}
-			}
-			return dialogMenu.create()
-		}
+    class ContextMenuDialog : DialogFragment {
+        constructor()
 
-		companion object {
-			private const val EXTRA_NAME = "name"
-			private const val EXTRA_JSON = "json"
-			private const val EXTRA_CAN_DELETE = "canDelete"
-		}
-	}
+        constructor(name: String?, json: String, canDelete: Boolean) {
+            val args = Bundle()
+            args.putString(EXTRA_NAME, name)
+            args.putString(EXTRA_JSON, json)
+            args.putBoolean(EXTRA_CAN_DELETE, canDelete)
+            arguments = args
+        }
 
-	class ThemesViewModel : TaskViewModel<ReadThemesTask, Pair<ErrorItem, List<JSONObject>>>()
+        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
+            val name = requireArguments().getString(EXTRA_NAME)
+            val dialogMenu = DialogMenu(requireContext())
+            dialogMenu.add(R.string.save) {
+                val binder = (requireActivity() as FragmentHandler).getDownloadBinder()
+                if (binder != null) {
+                    val json = requireArguments().getString(EXTRA_JSON)
+                    binder.downloadStorage(
+                        ByteArrayInputStream(json!!.toByteArray()),
+                        null,
+                        null,
+                        null,
+                        null,
+                        "$name.json",
+                        false,
+                        true,
+                    )
+                }
+            }
+            if (requireArguments().getBoolean(EXTRA_CAN_DELETE)) {
+                dialogMenu.add(R.string.delete) {
+                    val themesFragment = parentFragment as ThemesFragment
+                    themesFragment.view!!.post {
+                        themesFragment.deleteTheme(requireArguments().getString(EXTRA_NAME)!!)
+                    }
+                }
+            }
+            return dialogMenu.create()
+        }
 
-	class ReadThemesTask(private val viewModel: ThemesViewModel) :
-			HttpHolderTask<Void, Pair<ErrorItem, List<JSONObject>>>(Chan.getFallback()) {
-		override fun run(holder: HttpHolder): Pair<ErrorItem, List<JSONObject>> {
-			try {
-				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.uriThemes), null)
-				var redirects = 0
-				while (redirects++ < 5) {
-					val responseString = HttpRequest(uri, holder).perform()!!.readString()
-							?: return Pair(ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null)
-					val jsonObject = JSONObject(responseString)
-					val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
-					if (redirect != null) {
-						uri = ReadUpdateTask.normalizeRelativeUri(uri!!, redirect)
-						continue
-					}
-					val jsonArray = jsonObject.getJSONArray("themes")
-					val themes = ArrayList<JSONObject>()
-					for (i in 0 until jsonArray.length()) {
-						themes.add(jsonArray.getJSONObject(i))
-					}
-					return Pair(null, themes)
-				}
-				return Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
-			} catch (e: HttpException) {
-				return Pair(e.getErrorItemAndHandle(), null)
-			} catch (e: JSONException) {
-				return Pair(ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null)
-			}
-		}
+        companion object {
+            private const val EXTRA_NAME = "name"
+            private const val EXTRA_JSON = "json"
+            private const val EXTRA_CAN_DELETE = "canDelete"
+        }
+    }
 
-		override fun onComplete(result: Pair<ErrorItem, List<JSONObject>>) {
-			viewModel.handleResult(result)
-		}
-	}
+    class ThemesViewModel : TaskViewModel<ReadThemesTask, Pair<ErrorItem, List<JSONObject>>>()
 
-	companion object {
-		private const val EXTRA_AVAILABLE_THEMES = "availableThemes"
-	}
+    class ReadThemesTask(
+        private val viewModel: ThemesViewModel,
+    ) : HttpHolderTask<Unit, Pair<ErrorItem, List<JSONObject>>>(Chan.getFallback()) {
+        override fun run(holder: HttpHolder): Pair<ErrorItem, List<JSONObject>> {
+            try {
+                var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.uriThemes), null)
+                var redirects = 0
+                while (redirects++ < 5) {
+                    val responseString =
+                        HttpRequest(uri, holder).perform()!!.readString()
+                            ?: return Pair(ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null)
+                    val jsonObject = JSONObject(responseString)
+                    val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
+                    if (redirect != null) {
+                        uri = ReadUpdateTask.normalizeRelativeUri(uri!!, redirect)
+                        continue
+                    }
+                    val jsonArray = jsonObject.getJSONArray("themes")
+                    val themes = ArrayList<JSONObject>()
+                    for (i in 0 until jsonArray.length()) {
+                        themes.add(jsonArray.getJSONObject(i))
+                    }
+                    return Pair(null, themes)
+                }
+                return Pair(ErrorItem(ErrorItem.Type.EMPTY_RESPONSE), null)
+            } catch (e: HttpException) {
+                return Pair(e.getErrorItemAndHandle(), null)
+            } catch (e: JSONException) {
+                return Pair(ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null)
+            }
+        }
+
+        override fun onComplete(result: Pair<ErrorItem, List<JSONObject>>) {
+            viewModel.handleResult(result)
+        }
+    }
+
+    companion object {
+        private const val EXTRA_AVAILABLE_THEMES = "availableThemes"
+    }
 }

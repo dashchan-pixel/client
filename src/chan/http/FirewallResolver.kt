@@ -11,7 +11,10 @@ import kotlin.concurrent.Volatile
 
 @Extendable
 abstract class FirewallResolver {
-    class CheckResult(val resolved: Boolean, val retransmitOnSuccess: Boolean)
+    class CheckResult(
+        val resolved: Boolean,
+        val retransmitOnSuccess: Boolean,
+    )
 
     abstract class Implementation {
         @Throws(HttpException::class, InterruptedException::class)
@@ -21,14 +24,14 @@ abstract class FirewallResolver {
             holder: HttpHolder,
             response: HttpResponse?,
             identifier: Identifier,
-            resolve: Boolean
+            resolve: Boolean,
         ): CheckResult?
 
         abstract fun collectCookies(
             chan: Chan,
             uri: Uri?,
             identifier: Identifier,
-            safe: Boolean
+            safe: Boolean,
         ): CookieBuilder
 
         companion object {
@@ -43,13 +46,13 @@ abstract class FirewallResolver {
     class Identifier(
         @JvmField @field:Public val userAgent: String?,
         @JvmField @field:Public val defaultUserAgent: Boolean,
-        @JvmField val host: String?
+        @JvmField val host: String?,
     ) {
         @Public
         enum class Flag {
             @Public
             USER_AGENT,
-            HOST
+            HOST,
         }
 
         override fun equals(other: Any?): Boolean {
@@ -59,39 +62,38 @@ abstract class FirewallResolver {
             return defaultUserAgent == that.defaultUserAgent && userAgent == that.userAgent && host == that.host
         }
 
-        override fun hashCode(): Int {
-            return Objects.hash(userAgent, defaultUserAgent, host)
-        }
+        override fun hashCode(): Int = Objects.hash(userAgent, defaultUserAgent, host)
     }
 
     @Extendable
-    abstract class WebViewClient<Result> @Public constructor(@JvmField val name: String?) {
-        @Volatile
-        internal var result: Result? = null
-
+    abstract class WebViewClient<Result>
         @Public
-        fun setResult(result: Result?) {
-            this.result = result
-        }
+        constructor(
+            @JvmField val name: String?,
+        ) {
+            @Volatile
+            internal var result: Result? = null
 
-        fun getResult(): Result? {
-            return result
-        }
+            @Public
+            fun setResult(result: Result?) {
+                this.result = result
+            }
 
-        @Extendable
-        open fun onPageFinished(
-            uri: Uri,
-            cookies: Map<String, String>,
-            title: String?
-        ): Boolean {
-            return true
-        }
+            fun getResult(): Result? = result
 
-        @Extendable
-        open fun onLoad(initialUri: Uri, uri: Uri): Boolean {
-            return true
+            @Extendable
+            open fun onPageFinished(
+                uri: Uri,
+                cookies: Map<String, String>,
+                title: String?,
+            ): Boolean = true
+
+            @Extendable
+            open fun onLoad(
+                initialUri: Uri,
+                uri: Uri,
+            ): Boolean = true
         }
-    }
 
     @Public
     interface Session : HttpRequest.Preset {
@@ -135,7 +137,10 @@ abstract class FirewallResolver {
 
         @Extendable
         @Throws(CancelException::class, HttpException::class, InterruptedException::class)
-        fun resolve(session: Session, key: Key): Boolean
+        fun resolve(
+            session: Session,
+            key: Key,
+        ): Boolean
 
         companion object {
             val FAIL: Exclusive =
@@ -144,25 +149,33 @@ abstract class FirewallResolver {
     }
 
     @Public
-    class CheckResponseResult @Public constructor(
-        @JvmField val key: Exclusive.Key?,
-        @JvmField val exclusive: Exclusive?
-    ) {
-        @JvmField
-        var retransmitOnSuccess: Boolean = false
-
+    class CheckResponseResult
         @Public
-        fun setRetransmitOnSuccess(retransmitOnSuccess: Boolean): CheckResponseResult {
-            this.retransmitOnSuccess = retransmitOnSuccess
-            return this
+        constructor(
+            @JvmField val key: Exclusive.Key?,
+            @JvmField val exclusive: Exclusive?,
+        ) {
+            @JvmField
+            var retransmitOnSuccess: Boolean = false
+
+            @Public
+            fun setRetransmitOnSuccess(retransmitOnSuccess: Boolean): CheckResponseResult {
+                this.retransmitOnSuccess = retransmitOnSuccess
+                return this
+            }
         }
-    }
 
     @Extendable
     @Throws(HttpException::class)
-    abstract fun checkResponse(session: Session, response: HttpResponse): CheckResponseResult?
+    abstract fun checkResponse(
+        session: Session,
+        response: HttpResponse,
+    ): CheckResponseResult?
 
     @Extendable
-    open fun collectCookies(session: Session, cookieBuilder: CookieBuilder) {
+    open fun collectCookies(
+        session: Session,
+        cookieBuilder: CookieBuilder,
+    ) {
     }
 }

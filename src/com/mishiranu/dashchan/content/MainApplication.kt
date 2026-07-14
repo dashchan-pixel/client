@@ -20,95 +20,99 @@ import com.mishiranu.dashchan.util.Logger
 import java.io.File
 
 class MainApplication : Application() {
-	init {
-		instance = this
-	}
+    init {
+        instance = this
+    }
 
-	private fun checkProcess(suffix: String?): Boolean = CommonUtils.equals(suffix, processSuffix)
+    private fun checkProcess(suffix: String?): Boolean = CommonUtils.equals(suffix, processSuffix)
 
-	fun isMainProcess(): Boolean = checkProcess(null)
+    fun isMainProcess(): Boolean = checkProcess(null)
 
-	private var processSuffix: String? = null
+    private var processSuffix: String? = null
 
-	override fun onCreate() {
-		super.onCreate()
+    override fun onCreate() {
+        super.onCreate()
 
-		val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-		val processes = activityManager.runningAppProcesses ?: emptyList()
-		val pid = Process.myPid()
-		for (process in processes) {
-			if (process.pid == pid) {
-				val index = process.processName.indexOf(':')
-				if (index >= 0) {
-					processSuffix = StringUtils.nullIfEmpty(process.processName.substring(index + 1))
-				}
-				break
-			}
-		}
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val processes = activityManager.runningAppProcesses.orEmpty()
+        val pid = Process.myPid()
+        for (process in processes) {
+            if (process.pid == pid) {
+                val index = process.processName.indexOf(':')
+                if (index >= 0) {
+                    processSuffix = StringUtils.nullIfEmpty(process.processName.substring(index + 1))
+                }
+                break
+            }
+        }
 
-		if (isMainProcess()) {
-			Logger.init(this)
-			UserAgentProvider.initialize(this)
-			ChanManager.getInstance()
-			HttpClient.getInstance()
-			CommonDatabase.getInstance()
-			PagesDatabase.getInstance()
-			ChanDatabase.getInstance()
-			CacheManager.getInstance()
-		} else if (checkProcess(PROCESS_WEB_VIEW)) {
-			IOUtils.deleteRecursive(getWebViewCacheDir())
-		}
-	}
+        if (isMainProcess()) {
+            Logger.init(this)
+            UserAgentProvider.initialize(this)
+            ChanManager.getInstance()
+            HttpClient.getInstance()
+            CommonDatabase.getInstance()
+            PagesDatabase.getInstance()
+            ChanDatabase.getInstance()
+            CacheManager.getInstance()
+        } else if (checkProcess(PROCESS_WEB_VIEW)) {
+            IOUtils.deleteRecursive(getWebViewCacheDir())
+        }
+    }
 
-	val localizedContext: Context
-		get() = LocaleManager.getInstance().applyApplication(this)
+    val localizedContext: Context
+        get() = LocaleManager.getInstance().applyApplication(this)
 
-	val isLowRam: Boolean
-		@TargetApi(Build.VERSION_CODES.KITKAT)
-		get() {
-			val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-			return activityManager != null && activityManager.isLowRamDevice
-		}
+    val isLowRam: Boolean
+        @TargetApi(Build.VERSION_CODES.KITKAT)
+        get() {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+            return activityManager != null && activityManager.isLowRamDevice
+        }
 
-	fun getSharedPrefsDir(): File = File(getCacheDir().parentFile, "shared_prefs")
+    fun getSharedPrefsDir(): File = File(getCacheDir().parentFile, "shared_prefs")
 
-	private fun getWebViewCacheDir(): File = File(super.getCacheDir(), "webview")
+    private fun getWebViewCacheDir(): File = File(super.getCacheDir(), "webview")
 
-	override fun getCacheDir(): File {
-		if (checkProcess(PROCESS_WEB_VIEW)) {
-			val dir = File(getWebViewCacheDir(), "cache")
-			dir.mkdirs()
-			return dir
-		}
-		return super.getCacheDir()
-	}
+    override fun getCacheDir(): File {
+        if (checkProcess(PROCESS_WEB_VIEW)) {
+            val dir = File(getWebViewCacheDir(), "cache")
+            dir.mkdirs()
+            return dir
+        }
+        return super.getCacheDir()
+    }
 
-	override fun getDir(name: String, mode: Int): File {
-		return if (checkProcess(PROCESS_WEB_VIEW)) {
-			val dir = File(getWebViewCacheDir(), name)
-			dir.mkdirs()
-			dir
-		} else {
-			super.getDir(name, mode)
-		}
-	}
+    override fun getDir(
+        name: String,
+        mode: Int,
+    ): File =
+        if (checkProcess(PROCESS_WEB_VIEW)) {
+            val dir = File(getWebViewCacheDir(), name)
+            dir.mkdirs()
+            dir
+        } else {
+            super.getDir(name, mode)
+        }
 
-	override fun openOrCreateDatabase(name: String?, mode: Int,
-			factory: SQLiteDatabase.CursorFactory?): SQLiteDatabase {
-		return if ("http_auth.db" == name) {
-			// Create in-memory database for WebView
-			SQLiteDatabase.create(factory)
-		} else {
-			super.openOrCreateDatabase(name, mode, factory)
-		}
-	}
+    override fun openOrCreateDatabase(
+        name: String?,
+        mode: Int,
+        factory: SQLiteDatabase.CursorFactory?,
+    ): SQLiteDatabase =
+        if ("http_auth.db" == name) {
+            // Create in-memory database for WebView
+            SQLiteDatabase.create(factory)
+        } else {
+            super.openOrCreateDatabase(name, mode, factory)
+        }
 
-	companion object {
-		private const val PROCESS_WEB_VIEW = "webview"
+    companion object {
+        private const val PROCESS_WEB_VIEW = "webview"
 
-		private var instance: MainApplication? = null
+        private var instance: MainApplication? = null
 
-		@JvmStatic
-		fun getInstance(): MainApplication = instance!!
-	}
+        @JvmStatic
+        fun getInstance(): MainApplication = instance!!
+    }
 }

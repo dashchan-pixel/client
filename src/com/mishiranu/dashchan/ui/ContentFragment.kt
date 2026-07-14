@@ -22,7 +22,9 @@ import com.mishiranu.dashchan.widget.CustomSearchView
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 
-abstract class ContentFragment : Fragment(), MenuProvider {
+abstract class ContentFragment :
+    Fragment(),
+    MenuProvider {
     private class MenuState {
         var created: Boolean = false
     }
@@ -32,17 +34,11 @@ abstract class ContentFragment : Fragment(), MenuProvider {
     val isSearchMode: Boolean
         get() = false
 
-    open fun onSearchRequested(): Boolean {
-        return false
-    }
+    open fun onSearchRequested(): Boolean = false
 
-    open fun onHomePressed(): Boolean {
-        return onBackPressed()
-    }
+    open fun onHomePressed(): Boolean = onBackPressed()
 
-    open fun onBackPressed(): Boolean {
-        return false
-    }
+    open fun onBackPressed(): Boolean = false
 
     open val isBackHandled: Boolean
         /**
@@ -108,7 +104,11 @@ abstract class ContentFragment : Fragment(), MenuProvider {
         return false
     }
 
-    override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): Animator? {
+    override fun onCreateAnimator(
+        transit: Int,
+        enter: Boolean,
+        nextAnim: Int,
+    ): Animator? {
         if (transit == FragmentTransaction.TRANSIT_FRAGMENT_OPEN) {
             return createAnimator(getView(), enter)
         } else {
@@ -116,7 +116,10 @@ abstract class ContentFragment : Fragment(), MenuProvider {
         }
     }
 
-    protected fun createAnimator(view: View?, enter: Boolean): Animator {
+    protected fun createAnimator(
+        view: View?,
+        enter: Boolean,
+    ): Animator {
         if (enter) {
             val alphaAnimator = ObjectAnimator.ofFloat<View?>(view, View.ALPHA, 0f, 1f)
             alphaAnimator.setDuration(150)
@@ -135,7 +138,10 @@ abstract class ContentFragment : Fragment(), MenuProvider {
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().addMenuProvider(this, getViewLifecycleOwner())
     }
@@ -153,12 +159,15 @@ abstract class ContentFragment : Fragment(), MenuProvider {
         var menuState = menuStates.get(menu)
         if (menuState == null) {
             menuState = MenuState()
-            menuStates.put(menu, menuState)
+            menuStates[menu] = menuState
         }
         return menuState
     }
 
-    override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+    override fun onCreateMenu(
+        menu: Menu,
+        inflater: MenuInflater,
+    ) {
         val menuState = obtainMenuState(menu)
         if (isAdded() && this.isValidOptionsMenuState) {
             menuState.created = true
@@ -185,13 +194,17 @@ abstract class ContentFragment : Fragment(), MenuProvider {
     open val isValidOptionsMenuState: Boolean
         get() = true
 
-    open fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {}
+    open fun onCreateOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {}
 
-    open fun onPrepareOptionsMenu(menu: Menu, primary: Boolean) {}
+    open fun onPrepareOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {}
 
-    override fun onMenuItemSelected(item: MenuItem): Boolean {
-        return false
-    }
+    override fun onMenuItemSelected(item: MenuItem): Boolean = false
 
     fun invalidateOptionsMenu() {
         invalidateMenuInternal(false)
@@ -244,12 +257,13 @@ abstract class ContentFragment : Fragment(), MenuProvider {
         internal fun obtainSearchView(fragment: ContentFragment?): CustomSearchView? {
             resetSearchView(null)
             if (searchView == null) {
-                searchView = CustomSearchView(
-                    ContextThemeWrapper(
-                        requireContext(),
-                        R.style.Theme_Special_White
+                searchView =
+                    CustomSearchView(
+                        ContextThemeWrapper(
+                            requireContext(),
+                            R.style.Theme_Special_White,
+                        ),
                     )
-                )
             }
             searchViewOwner = WeakReference<ContentFragment?>(fragment)
             ViewUtils.removeFromParent(searchView!!)
@@ -269,7 +283,9 @@ abstract class ContentFragment : Fragment(), MenuProvider {
                 fragmentManager.findFragmentByTag(ViewHolderFragment.TAG) as ViewHolderFragment?
             if (viewHolder == null) {
                 viewHolder = ViewHolderFragment()
-                fragmentManager.beginTransaction().add(viewHolder, ViewHolderFragment.TAG)
+                fragmentManager
+                    .beginTransaction()
+                    .add(viewHolder, ViewHolderFragment.TAG)
                     .commitNow()
             }
         }

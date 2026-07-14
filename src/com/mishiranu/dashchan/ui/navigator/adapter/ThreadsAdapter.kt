@@ -35,11 +35,16 @@ class ThreadsAdapter(
     chanName: String?,
     private val uiManager: UiManager,
     postStateProvider: PostStateProvider?,
-    fragmentManager: FragmentManager?
-) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(), GalleryItem.Provider {
+    fragmentManager: FragmentManager?,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(),
+    GalleryItem.Provider {
     interface Callback : ListViewUtils.SimpleCallback<PostItem?>
 
-    private class GridMode(val columns: Int, val small: Boolean, val gridItemContentHeight: Int)
+    private class GridMode(
+        val columns: Int,
+        val small: Boolean,
+        val gridItemContentHeight: Int,
+    )
 
     private val postItems = ArrayList<PostItem>()
     private var catalogSortedPostItems: ArrayList<PostItem>? = null
@@ -54,24 +59,42 @@ class ThreadsAdapter(
     private var gridMode: GridMode? = null
 
     init {
-        configurationSet = ConfigurationSet(
-            chanName, null, null, postStateProvider,
-            this, fragmentManager, uiManager.dialog().createStackInstance(), null, callback,
-            false, false, false, false, false, null
-        )
+        configurationSet =
+            ConfigurationSet(
+                chanName,
+                null,
+                null,
+                postStateProvider,
+                this,
+                fragmentManager,
+                uiManager.dialog().createStackInstance(),
+                null,
+                callback,
+                false,
+                false,
+                false,
+                false,
+                false,
+                null,
+            )
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return uiManager.view().createView(parent, ViewUnit.ViewType.values()[viewType])
-    }
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): RecyclerView.ViewHolder = uiManager.view().createView(parent, ViewUnit.ViewType.values()[viewType])
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+    ) {
         onBindViewHolder(holder, position, mutableListOf<Any?>())
     }
 
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
-        position: Int, payloads: MutableList<Any?>
+        position: Int,
+        payloads: MutableList<Any?>,
     ) {
         val postItem = getItem(position)
         when (ViewUnit.ViewType.values()[holder.getItemViewType()]) {
@@ -94,8 +117,11 @@ class ThreadsAdapter(
             ViewUnit.ViewType.THREAD_CARD_CELL -> {
                 if (payloads.isEmpty()) {
                     uiManager.view().bindThreadCellView(
-                        holder, postItem, configurationSet,
-                        gridMode!!.small, gridMode!!.gridItemContentHeight
+                        holder,
+                        postItem,
+                        configurationSet,
+                        gridMode!!.small,
+                        gridMode!!.gridItemContentHeight,
                     )
                 } else {
                     for (`object` in payloads) {
@@ -110,40 +136,45 @@ class ThreadsAdapter(
         }
     }
 
-    override fun getGallerySet(postItem: PostItem): GalleryItem.Set {
-        return postItem.getThreadGallerySet()
-    }
+    override fun getGallerySet(postItem: PostItem): GalleryItem.Set = postItem.getThreadGallerySet()
 
     val isRealEmpty: Boolean
         get() = postItems.isEmpty()
 
     override fun getItemViewType(position: Int): Int {
         val postItem = getItem(position)
-        return (if (gridMode != null)
-            ViewUnit.ViewType.THREAD_CARD_CELL
-        else
-            if (configurationSet.postStateProvider!!.isHiddenResolve(postItem))
-                (if (cardsMode) ViewUnit.ViewType.THREAD_CARD_HIDDEN else ViewUnit.ViewType.THREAD_HIDDEN)
-            else
-                (if (cardsMode) ViewUnit.ViewType.THREAD_CARD else ViewUnit.ViewType.THREAD)).ordinal
+        return (
+            if (gridMode != null) {
+                ViewUnit.ViewType.THREAD_CARD_CELL
+            } else {
+                if (configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                    (if (cardsMode) ViewUnit.ViewType.THREAD_CARD_HIDDEN else ViewUnit.ViewType.THREAD_HIDDEN)
+                } else {
+                    (if (cardsMode) ViewUnit.ViewType.THREAD_CARD else ViewUnit.ViewType.THREAD)
+                }
+            }
+        ).ordinal
     }
 
-    private fun getPostItems(): MutableList<PostItem> {
-        return if (filteredPostItems != null) filteredPostItems!! else if (catalogSortedPostItems != null)
+    private fun getPostItems(): MutableList<PostItem> =
+        if (filteredPostItems != null) {
+            filteredPostItems!!
+        } else if (catalogSortedPostItems != null) {
             catalogSortedPostItems!!
-        else
+        } else {
             postItems
-    }
+        }
 
-    private fun getItem(position: Int): PostItem {
-        return getPostItems().get(position)
-    }
+    private fun getItem(position: Int): PostItem = getPostItems()[position]
 
-    override fun getItemCount(): Int {
-        return getPostItems().size
-    }
+    override fun getItemCount(): Int = getPostItems().size
 
-    fun applyItemPadding(view: View, position: Int, column: Int, rect: Rect) {
+    fun applyItemPadding(
+        view: View,
+        position: Int,
+        column: Int,
+        rect: Rect,
+    ) {
         val density = obtainDensity(view)
         val paddingOut = (CARD_PADDING_OUT_DP * density).toInt()
         val paddingIn = (CARD_PADDING_IN_DP * density).toInt()
@@ -158,11 +189,12 @@ class ThreadsAdapter(
                     ((CARD_PADDING_IN_DP + CARD_PADDING_IN_EXTRA_DP) * density).toInt()
                 val total = 2 * paddingOut + (columns - 1) * paddingInExtra
                 val average = total.toFloat() / columns
-                left = lerp(
-                    paddingOut.toFloat(),
-                    average - paddingOut,
-                    column.toFloat() / (columns - 1)
-                ).toInt()
+                left =
+                    lerp(
+                        paddingOut.toFloat(),
+                        average - paddingOut,
+                        column.toFloat() / (columns - 1),
+                    ).toInt()
                 right = average.toInt() - left
             } else {
                 left = paddingOut
@@ -174,14 +206,14 @@ class ThreadsAdapter(
                 left,
                 if (firstRow) paddingOut else paddingIn,
                 right,
-                if (lastRow) paddingOut else 0
+                if (lastRow) paddingOut else 0,
             )
         }
     }
 
     fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
-        position: Int
+        position: Int,
     ): DividerItemDecoration.Configuration {
         if (cardsMode) {
             return configuration.need(false)
@@ -192,20 +224,24 @@ class ThreadsAdapter(
             val scale = thumbnailsScale
             val padding = (LIST_PADDING * density).toInt()
             val imagePadding = ((10 + 64 * scale + 10) * density).toInt()
-            val currentImage = current.hasAttachments() &&
+            val currentImage =
+                current.hasAttachments() &&
                     !configurationSet.postStateProvider!!.isHiddenResolve(current)
             val nextImage =
-                next != null && next.hasAttachments() && !configurationSet.postStateProvider!!.isHiddenResolve(
-                    next
-                )
-            return configuration.need(true)
+                next != null &&
+                    next.hasAttachments() &&
+                    !configurationSet.postStateProvider!!.isHiddenResolve(
+                        next,
+                    )
+            return configuration
+                .need(true)
                 .horizontal(if (currentImage && nextImage) imagePadding else padding, padding)
         }
     }
 
     fun setItems(
         postItemsCollection: Collection<List<PostItem>>,
-        catalog: Boolean
+        catalog: Boolean,
     ) {
         postItems.clear()
         for (postItems in postItemsCollection) {
@@ -258,13 +294,17 @@ class ThreadsAdapter(
         }
     }
 
-    private fun applyCurrentSortingAndFilter(sorting: Boolean, filter: Boolean) {
+    private fun applyCurrentSortingAndFilter(
+        sorting: Boolean,
+        filter: Boolean,
+    ) {
         if (sorting) {
             val comparator =
                 if (catalogSort != null) catalogSort!!.comparator else null
             if (catalog && comparator != null) {
-                val sortedPostItems = catalogSortedPostItems
-                    ?: ArrayList<PostItem>().also { catalogSortedPostItems = it }
+                val sortedPostItems =
+                    catalogSortedPostItems
+                        ?: ArrayList<PostItem>().also { catalogSortedPostItems = it }
                 sortedPostItems.clear()
                 sortedPostItems.addAll(postItems)
                 Collections.sort(sortedPostItems, comparator)
@@ -284,8 +324,13 @@ class ThreadsAdapter(
                 val chan = get(configurationSet.chanName)
                 val locale = Locale.getDefault()
                 for (postItem in ((if (catalogSortedPostItems != null) catalogSortedPostItems else postItems)!!)) {
-                    val add = postItem.getSubject().lowercase(locale).contains(text) ||
-                            postItem.getComment(chan).toString().lowercase(locale).contains(text)
+                    val add =
+                        postItem.getSubject().lowercase(locale).contains(text) ||
+                            postItem
+                                .getComment(chan)
+                                .toString()
+                                .lowercase(locale)
+                                .contains(text)
                     if (add) {
                         filteredPostItems!!.add(postItem)
                     }
@@ -338,9 +383,7 @@ class ThreadsAdapter(
         }
     }
 
-    fun getThread(position: Int): PostItem {
-        return getItem(position)
-    }
+    fun getThread(position: Int): PostItem = getItem(position)
 
     fun notifyThreadHidden(thread: PostItem?) {
         val threadPosition = getPostItems().indexOf(thread)
@@ -369,14 +412,15 @@ class ThreadsAdapter(
             totalWidth: Int,
             minWidth: Int,
             paddingOut: Int,
-            paddingInExtra: Int
-        ): Int {
-            return min(
+            paddingInExtra: Int,
+        ): Int =
+            min(
                 max(
-                    1, (totalWidth - 2 * paddingOut + paddingInExtra)
-                            / (minWidth + paddingInExtra)
-                ), 6
+                    1,
+                    (totalWidth - 2 * paddingOut + paddingInExtra) /
+                        (minWidth + paddingInExtra),
+                ),
+                6,
             )
-        }
     }
 }

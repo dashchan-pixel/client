@@ -51,7 +51,9 @@ import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import java.util.UUID
 import kotlin.math.min
 
-class BrowserFragment : ContentFragment, DownloadListener {
+class BrowserFragment :
+    ContentFragment,
+    DownloadListener {
     constructor()
 
     constructor(uri: Uri?) {
@@ -68,33 +70,36 @@ class BrowserFragment : ContentFragment, DownloadListener {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         val layout = ExpandedLayout(container!!.getContext(), true)
         webView = WebView(layout.getContext().getApplicationContext())
         layout.addView(
             webView,
             FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
+            FrameLayout.LayoutParams.MATCH_PARENT,
         )
         progressView = ProgressView(layout.getContext())
         val density = obtainDensity(this)
         layout.addView(
             progressView,
             FrameLayout.LayoutParams.MATCH_PARENT,
-            (3f * density + 0.5f).toInt()
+            (3f * density + 0.5f).toInt(),
         )
         return layout
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    public override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    public override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
 
         navigationDrawerLocker = "browser-" + UUID.randomUUID()
         (requireActivity() as FragmentHandler).setNavigationAreaLocked(
             navigationDrawerLocker!!,
-            true
+            true,
         )
 
         val settings = webView!!.getSettings()
@@ -107,20 +112,22 @@ class BrowserFragment : ContentFragment, DownloadListener {
         webView!!.setWebViewClient(CustomWebViewClient())
         webView!!.setWebChromeClient(CustomWebChromeClient())
         webView!!.setDownloadListener(this)
-        webView!!.setOnLongClickListener(OnLongClickListener { v: View? ->
-            val hitTestResult = webView!!.getHitTestResult()
-            when (hitTestResult.getType()) {
-                HitTestResult.IMAGE_TYPE, HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                    val chan = getFallback()
-                    val uri = Uri.parse(hitTestResult.getExtra())
-                    if (chan.locator.isWebScheme(uri) && chan.locator.isImageExtension(uri.getPath())) {
-                        openImageVideo(requireContext(), uri)
+        webView!!.setOnLongClickListener(
+            OnLongClickListener { v: View? ->
+                val hitTestResult = webView!!.getHitTestResult()
+                when (hitTestResult.getType()) {
+                    HitTestResult.IMAGE_TYPE, HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                        val chan = getFallback()
+                        val uri = Uri.parse(hitTestResult.getExtra())
+                        if (chan.locator.isWebScheme(uri) && chan.locator.isImageExtension(uri.getPath())) {
+                            openImageVideo(requireContext(), uri)
+                        }
+                        return@OnLongClickListener true
                     }
-                    return@OnLongClickListener true
                 }
-            }
-            false
-        })
+                false
+            },
+        )
 
         if (savedInstanceState != null) {
             webView!!.restoreState(savedInstanceState)
@@ -128,16 +135,17 @@ class BrowserFragment : ContentFragment, DownloadListener {
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(
             getString(R.string.web_browser),
-            null
+            null,
         )
         if (savedInstanceState == null) {
             clearAll(webView)
             webView!!.loadUrl(
-                BundleCompat.getParcelable<Uri?>(
-                    requireArguments(),
-                    EXTRA_URI,
-                    Uri::class.java
-                ).toString()
+                BundleCompat
+                    .getParcelable<Uri?>(
+                        requireArguments(),
+                        EXTRA_URI,
+                        Uri::class.java,
+                    ).toString(),
             )
         }
     }
@@ -147,7 +155,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
 
         (requireActivity() as FragmentHandler).setNavigationAreaLocked(
             navigationDrawerLocker!!,
-            false
+            false,
         )
         webView!!.stopLoading()
         webView!!.destroy()
@@ -176,8 +184,12 @@ class BrowserFragment : ContentFragment, DownloadListener {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, primary: Boolean) {
-        menu.add(0, R.id.menu_reload, 0, R.string.reload)
+    override fun onCreateOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
+        menu
+            .add(0, R.id.menu_reload, 0, R.string.reload)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionRefresh))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         menu.add(0, R.id.menu_copy_link, 0, R.string.copy_link)
@@ -199,9 +211,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
         return true
     }
 
-    override fun onHomePressed(): Boolean {
-        return false
-    }
+    override fun onHomePressed(): Boolean = false
 
     override fun onBackPressed(): Boolean {
         if (webView!!.canGoBack()) {
@@ -215,13 +225,17 @@ class BrowserFragment : ContentFragment, DownloadListener {
         get() = webView != null && webView!!.canGoBack()
 
     override fun onDownloadStart(
-        url: String?, userAgent: String?, contentDisposition: String?, mimetype: String?,
-        contentLength: Long
+        url: String?,
+        userAgent: String?,
+        contentDisposition: String?,
+        mimetype: String?,
+        contentLength: Long,
     ) {
         try {
             startActivity(
-                Intent(Intent.ACTION_VIEW).setData(Uri.parse(url))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                Intent(Intent.ACTION_VIEW)
+                    .setData(Uri.parse(url))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
         } catch (e: ActivityNotFoundException) {
             show(R.string.unknown_address)
@@ -229,24 +243,32 @@ class BrowserFragment : ContentFragment, DownloadListener {
     }
 
     private inner class CustomWebViewClient : WebViewClient() {
-        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+        override fun shouldOverrideUrlLoading(
+            view: WebView,
+            request: WebResourceRequest,
+        ): Boolean {
             val uri = request.getUrl()
             val chan = getPreferred(null, uri)
             if (chan.name != null) {
                 val navigationData: NavigationData?
                 if (chan.locator.safe(true).isBoardUri(uri)) {
-                    navigationData = NavigationData(
-                        NavigationData.Target.THREADS,
-                        chan.locator.safe(true).getBoardName(uri), null, null, null
-                    )
+                    navigationData =
+                        NavigationData(
+                            NavigationData.Target.THREADS,
+                            chan.locator.safe(true).getBoardName(uri),
+                            null,
+                            null,
+                            null,
+                        )
                 } else if (chan.locator.safe(true).isThreadUri(uri)) {
-                    navigationData = NavigationData(
-                        NavigationData.Target.POSTS,
-                        chan.locator.safe(true).getBoardName(uri),
-                        chan.locator.safe(true).getThreadNumber(uri),
-                        chan.locator.safe(true).getPostNumber(uri),
-                        null
-                    )
+                    navigationData =
+                        NavigationData(
+                            NavigationData.Target.POSTS,
+                            chan.locator.safe(true).getBoardName(uri),
+                            chan.locator.safe(true).getThreadNumber(uri),
+                            chan.locator.safe(true).getPostNumber(uri),
+                            null,
+                        )
                 } else {
                     navigationData = chan.locator.safe(true).handleUriClickSpecial(uri)
                 }
@@ -257,12 +279,16 @@ class BrowserFragment : ContentFragment, DownloadListener {
                 }
             }
             if (!chan.locator.isWebScheme(uri)) {
-                val intent = Intent(Intent.ACTION_VIEW).setData(uri)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (!requireContext().getPackageManager().queryIntentActivities(
-                        intent,
-                        PackageManager.MATCH_DEFAULT_ONLY
-                    ).isEmpty()
+                val intent =
+                    Intent(Intent.ACTION_VIEW)
+                        .setData(uri)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (!requireContext()
+                        .getPackageManager()
+                        .queryIntentActivities(
+                            intent,
+                            PackageManager.MATCH_DEFAULT_ONLY,
+                        ).isEmpty()
                 ) {
                     requireContext().startActivity(intent)
                     return true
@@ -272,17 +298,26 @@ class BrowserFragment : ContentFragment, DownloadListener {
             return true
         }
 
-        override fun onPageFinished(view: WebView, url: String?) {
+        override fun onPageFinished(
+            view: WebView,
+            url: String?,
+        ) {
             val title = view.getTitle()
             (requireActivity() as FragmentHandler).setTitleSubtitle(
-                if (isEmptyOrWhitespace(title))
+                if (isEmptyOrWhitespace(title)) {
                     getString(R.string.web_browser)
-                else
-                    title, null
+                } else {
+                    title
+                },
+                null,
             )
         }
 
-        override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+        override fun doUpdateVisitedHistory(
+            view: WebView?,
+            url: String?,
+            isReload: Boolean,
+        ) {
             // canGoBack() may have changed - re-sync back gesture interception.
             notifyBackHandledChanged()
         }
@@ -290,7 +325,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
         override fun onReceivedSslError(
             view: WebView?,
             handler: SslErrorHandler,
-            error: SslError?
+            error: SslError?,
         ) {
             if (isVerifyCertificate) {
                 show(R.string.invalid_certificate)
@@ -313,12 +348,14 @@ class BrowserFragment : ContentFragment, DownloadListener {
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val chanName = requireArguments().getString(EXTRA_CHAN_NAME)
-            val navigationData = BundleCompat.getParcelable<NavigationData?>(
-                requireArguments(),
-                EXTRA_NAVIGATION_DATA,
-                NavigationData::class.java
-            )
-            return AlertDialog.Builder(requireContext())
+            val navigationData =
+                BundleCompat.getParcelable<NavigationData?>(
+                    requireArguments(),
+                    EXTRA_NAVIGATION_DATA,
+                    NavigationData::class.java,
+                )
+            return AlertDialog
+                .Builder(requireContext())
                 .setMessage(R.string.follow_the_link__sentence)
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(
@@ -326,10 +363,10 @@ class BrowserFragment : ContentFragment, DownloadListener {
                     DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
                         (requireActivity() as FragmentHandler).navigateTargetAllowReturn(
                             chanName,
-                            navigationData!!
+                            navigationData!!,
                         )
-                    })
-                .create()
+                    },
+                ).create()
         }
 
         companion object {
@@ -339,12 +376,17 @@ class BrowserFragment : ContentFragment, DownloadListener {
     }
 
     private inner class CustomWebChromeClient : WebChromeClient() {
-        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+        override fun onProgressChanged(
+            view: WebView?,
+            newProgress: Int,
+        ) {
             progressView!!.setProgress(newProgress)
         }
     }
 
-    private class ProgressView(context: Context?) : View(context) {
+    private class ProgressView(
+        context: Context?,
+    ) : View(context) {
         private val paint = Paint()
 
         private var progressSetTime: Long = 0
@@ -352,7 +394,7 @@ class BrowserFragment : ContentFragment, DownloadListener {
         private var progress = 0
 
         init {
-            val color = getTheme(context)!!.accent
+            val color = getTheme(context).accent
             paint.setColor(Color.BLACK or color)
         }
 
@@ -364,17 +406,18 @@ class BrowserFragment : ContentFragment, DownloadListener {
         }
 
         val time: Float
-            get() = min(
-                (SystemClock.elapsedRealtime() - progressSetTime).toFloat() / TRANSIENT_TIME,
-                1f
-            )
+            get() =
+                min(
+                    (SystemClock.elapsedRealtime() - progressSetTime).toFloat() / TRANSIENT_TIME,
+                    1f,
+                )
 
-        fun calculateTransient(): Float {
-            return lerp(
-                transientProgress, progress.toFloat(),
-                this.time
+        fun calculateTransient(): Float =
+            lerp(
+                transientProgress,
+                progress.toFloat(),
+                this.time,
             )
-        }
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)

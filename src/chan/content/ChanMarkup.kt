@@ -36,7 +36,9 @@ import com.mishiranu.dashchan.text.style.UnderlyingSpoilerSpan
 import org.xml.sax.Attributes
 
 @Extendable
-open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.Linked {
+open class ChanMarkup internal constructor(
+    chanProvider: Chan.Provider?,
+) : Chan.Linked {
     private val chanProvider: Chan.Provider?
 
     @Public
@@ -44,19 +46,16 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     override fun init() {}
 
-    override fun get(): Chan {
-        return chanProvider!!.get()
-    }
+    override fun get(): Chan = chanProvider!!.get()
 
     @Extendable
-    protected open fun obtainCommentEditor(boardName: String?): CommentEditor? {
-        return null
-    }
+    protected open fun obtainCommentEditor(boardName: String?): CommentEditor? = null
 
     @Extendable
-    protected open fun isTagSupported(boardName: String?, tag: Int): Boolean {
-        return false
-    }
+    protected open fun isTagSupported(
+        boardName: String?,
+        tag: Int,
+    ): Boolean = false
 
     private class MarkupItem {
         var tagItem: TagItem? = null
@@ -64,7 +63,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         var attrubuteItems: ArrayList<AttributeItem>? = null
     }
 
-    private class AttributeItem(val attribute: String?, val value: String?) {
+    private class AttributeItem(
+        val attribute: String?,
+        val value: String?,
+    ) {
         val tagItem: TagItem = TagItem()
     }
 
@@ -81,7 +83,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         var preformattedDefined: Boolean = false
         var preformatted: Boolean = false
 
-        fun setBlock(block: Boolean, spaced: Boolean) {
+        fun setBlock(
+            block: Boolean,
+            spaced: Boolean,
+        ) {
             blockDefined = true
             this.block = block
             this.spaced = spaced
@@ -101,10 +106,12 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                 tagData.spaced = spaced
             }
             if (preformattedDefined) {
-                tagData.preformatted = if (preformatted)
-                    HtmlParser.TagData.Preformatted.ENABLED
-                else
-                    HtmlParser.TagData.Preformatted.DISABLED
+                tagData.preformatted =
+                    if (preformatted) {
+                        HtmlParser.TagData.Preformatted.ENABLED
+                    } else {
+                        HtmlParser.TagData.Preformatted.DISABLED
+                    }
             }
         }
 
@@ -115,30 +122,34 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
     private val markupItems: HashMap<String?, MarkupItem?> = HashMap<String?, MarkupItem?>()
 
     private fun obtainTagItem(
-        tagName: String, withCssClass: Boolean, cssClass: String?, withAttribute: Boolean,
-        attribute: String?, value: String?
+        tagName: String,
+        withCssClass: Boolean,
+        cssClass: String?,
+        withAttribute: Boolean,
+        attribute: String?,
+        value: String?,
     ): TagItem? {
-        var tagName = tagName
+        var lowerTagName = tagName
         if (withCssClass && cssClass == null) {
             throw NullPointerException("cssClass must not be null")
         }
         if (withAttribute && (attribute == null || value == null)) {
             throw NullPointerException("attribute and value must not be null")
         }
-        tagName = tagName.lowercase()
-        var markupItem = markupItems.get(tagName)
+        lowerTagName = lowerTagName.lowercase()
+        var markupItem = markupItems[lowerTagName]
         if (markupItem == null) {
             markupItem = MarkupItem()
-            markupItems.put(tagName, markupItem)
+            markupItems[lowerTagName] = markupItem
         }
         if (withCssClass) {
             if (markupItem.cssClassTagItems == null) {
                 markupItem.cssClassTagItems = HashMap<String?, TagItem>()
             }
-            var tagItem = markupItem.cssClassTagItems!!.get(cssClass)
+            var tagItem = markupItem.cssClassTagItems!![cssClass]
             if (tagItem == null) {
                 tagItem = TagItem()
-                markupItem.cssClassTagItems!!.put(cssClass, tagItem)
+                markupItem.cssClassTagItems!![cssClass] = tagItem
                 tagItem.parentTagItem = markupItem.tagItem
             }
             return tagItem
@@ -179,17 +190,29 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
     }
 
     @Public
-    fun addTag(tagName: String, tag: Int) {
+    fun addTag(
+        tagName: String,
+        tag: Int,
+    ) {
         obtainTagItem(tagName, false, null, false, null, null)!!.tag = tag
     }
 
     @Public
-    fun addTag(tagName: String, cssClass: String, tag: Int) {
+    fun addTag(
+        tagName: String,
+        cssClass: String,
+        tag: Int,
+    ) {
         obtainTagItem(tagName, true, cssClass, false, null, null)!!.tag = tag
     }
 
     @Public
-    fun addTag(tagName: String, attribute: String, value: String, tag: Int) {
+    fun addTag(
+        tagName: String,
+        attribute: String,
+        value: String,
+        tag: Int,
+    ) {
         obtainTagItem(tagName, false, null, true, attribute, value)!!.tag = tag
     }
 
@@ -199,22 +222,38 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
     }
 
     @Public
-    fun addColorable(tagName: String, cssClass: String) {
+    fun addColorable(
+        tagName: String,
+        cssClass: String,
+    ) {
         obtainTagItem(tagName, true, cssClass, false, null, null)!!.colorable = true
     }
 
     @Public
-    fun addColorable(tagName: String, attribute: String, value: String) {
+    fun addColorable(
+        tagName: String,
+        attribute: String,
+        value: String,
+    ) {
         obtainTagItem(tagName, false, null, true, attribute, value)!!.colorable = true
     }
 
     @Public
-    fun addBlock(tagName: String, block: Boolean, spaced: Boolean) {
+    fun addBlock(
+        tagName: String,
+        block: Boolean,
+        spaced: Boolean,
+    ) {
         obtainTagItem(tagName, false, null, false, null, null)!!.setBlock(block, spaced)
     }
 
     @Public
-    fun addBlock(tagName: String, cssClass: String, block: Boolean, spaced: Boolean) {
+    fun addBlock(
+        tagName: String,
+        cssClass: String,
+        block: Boolean,
+        spaced: Boolean,
+    ) {
         obtainTagItem(tagName, true, cssClass, false, null, null)!!.setBlock(block, spaced)
     }
 
@@ -224,23 +263,35 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         attribute: String,
         value: String,
         block: Boolean,
-        spaced: Boolean
+        spaced: Boolean,
     ) {
         obtainTagItem(tagName, false, null, true, attribute, value)!!.setBlock(block, spaced)
     }
 
     @Public
-    fun addPreformatted(tagName: String, preformatted: Boolean) {
+    fun addPreformatted(
+        tagName: String,
+        preformatted: Boolean,
+    ) {
         obtainTagItem(tagName, false, null, false, null, null)!!.definePreformatted(preformatted)
     }
 
     @Public
-    fun addPreformatted(tagName: String, cssClass: String, preformatted: Boolean) {
+    fun addPreformatted(
+        tagName: String,
+        cssClass: String,
+        preformatted: Boolean,
+    ) {
         obtainTagItem(tagName, true, cssClass, false, null, null)!!.definePreformatted(preformatted)
     }
 
     @Public
-    fun addPreformatted(tagName: String, attribute: String, value: String, preformatted: Boolean) {
+    fun addPreformatted(
+        tagName: String,
+        attribute: String,
+        value: String,
+        preformatted: Boolean,
+    ) {
         obtainTagItem(tagName, false, null, true, attribute, value)!!.definePreformatted(preformatted)
     }
 
@@ -251,22 +302,28 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                 builder: StringBuilder,
                 tagName: String,
                 attributes: Attributes,
-                tagData: HtmlParser.TagData
+                tagData: HtmlParser.TagData,
             ): TagItem? {
                 if (tagName != "a") {
-                    val markupItem = markupItems.get(tagName)
+                    val markupItem = markupItems[tagName]
                     if (markupItem != null) {
                         var tagItem = markupItem.tagItem
                         var preferredTagItemFound = false
                         if (markupItem.cssClassTagItems != null) {
                             val fullCssClass = attributes.getValue("", "class")
                             val cssClasses: Array<String?>? =
-                                if (fullCssClass != null) fullCssClass.split(" +".toRegex())
-                                    .dropLastWhile { it.isEmpty() }.toTypedArray() else null
+                                if (fullCssClass != null) {
+                                    fullCssClass
+                                        .split(" +".toRegex())
+                                        .dropLastWhile { it.isEmpty() }
+                                        .toTypedArray()
+                                } else {
+                                    null
+                                }
                             if (cssClasses != null) {
                                 for (cssClass in cssClasses) {
                                     val preferredTagItem =
-                                        markupItem.cssClassTagItems!!.get(cssClass)
+                                        markupItem.cssClassTagItems!![cssClass]
                                     if (preferredTagItem != null &&
                                         preferredTagItem.isMorePreferredThanParent
                                     ) {
@@ -300,7 +357,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
             override fun onTagStart(
                 parser: HtmlParser<MarkupExtra?, TagItem?, ChanSpanProvider>,
-                builder: StringBuilder, tagName: String, attributes: Attributes, obj: TagItem?
+                builder: StringBuilder,
+                tagName: String,
+                attributes: Attributes,
+                obj: TagItem?,
             ) {
                 val provider = parser.getSpanProvider()
                 var tag = 0
@@ -340,7 +400,8 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
             override fun onTagEnd(
                 parser: HtmlParser<MarkupExtra?, TagItem?, ChanSpanProvider>,
-                builder: StringBuilder, tagName: String
+                builder: StringBuilder,
+                tagName: String,
             ) {
                 val provider = parser.getSpanProvider()
                 var styledItem: StyledItem? = null
@@ -352,10 +413,12 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                         val commentEditor = provider!!.commentEditor
                         if (commentEditor != null) {
                             if (styledItem.tag != 0) {
-                                val markupTag = commentEditor.getTag(
-                                    styledItem.tag, true,
-                                    builder.length - styledItem.start
-                                )
+                                val markupTag =
+                                    commentEditor.getTag(
+                                        styledItem.tag,
+                                        true,
+                                        builder.length - styledItem.start,
+                                    )
                                 if (markupTag != null) {
                                     builder.append(markupTag)
                                 }
@@ -368,12 +431,13 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                         if (parser.isSpanifyMode) {
                             provider!!.modifyLink(parser, styledItem.start, end, linkHolder)
                         } else if (parser.isUnmarkMode) {
-                            end += provider!!.replaceLink(
-                                parser,
-                                styledItem.start,
-                                end,
-                                linkHolder.uriString
-                            )
+                            end +=
+                                provider!!.replaceLink(
+                                    parser,
+                                    styledItem.start,
+                                    end,
+                                    linkHolder.uriString,
+                                )
                         }
                     }
                     styledItem.close(end)
@@ -382,7 +446,9 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
             override fun onListLineStart(
                 parser: HtmlParser<MarkupExtra?, TagItem?, ChanSpanProvider>,
-                builder: StringBuilder, ordered: Boolean, line: Int
+                builder: StringBuilder,
+                ordered: Boolean,
+                line: Int,
             ): Int {
                 val length = builder.length
                 if (parser.isSpanifyMode) {
@@ -419,7 +485,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
             override fun onCutBlock(
                 parser: HtmlParser<MarkupExtra?, TagItem?, ChanSpanProvider>,
-                builder: StringBuilder
+                builder: StringBuilder,
             ) {
                 val provider = parser.getSpanProvider()
                 provider!!.cut(builder.length)
@@ -442,9 +508,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     @Extendable
     @Throws(NotImplementedException::class)
-    protected open fun obtainPostLinkThreadPostNumbers(uriString: String?): Pair<String?, String?>? {
-        throw NotImplementedException()
-    }
+    protected open fun obtainPostLinkThreadPostNumbers(uriString: String?): Pair<String?, String?>? = throw NotImplementedException()
 
     internal class LinkHolder {
         var uriString: String? = null
@@ -456,7 +520,11 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         var postNumber: PostNumber? = null
     }
 
-    internal class StyledItem(val tag: Int, val extra: Any?, var start: Int) {
+    internal class StyledItem(
+        val tag: Int,
+        val extra: Any?,
+        var start: Int,
+    ) {
         var end: Int
 
         init {
@@ -471,7 +539,9 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         }
     }
 
-    class MarkupBuilder(constructor: Constructor) {
+    class MarkupBuilder(
+        constructor: Constructor,
+    ) {
         fun interface Constructor {
             fun configure(markup: ChanMarkup?)
         }
@@ -483,14 +553,16 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
             constructor.configure(markup)
         }
 
-        fun fromHtmlReduced(html: String?): CharSequence {
-            return reduceEmptyLines(
+        fun fromHtmlReduced(html: String?): CharSequence =
+            reduceEmptyLines(
                 spanify(
                     html,
-                    markup.markup, null, null, null
-                )
+                    markup.markup,
+                    null,
+                    null,
+                    null,
+                ),
             )
-        }
     }
 
     inner class ChanSpanProvider internal constructor() : SpanProvider<MarkupExtra?> {
@@ -498,7 +570,11 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
         var commentEditor: CommentEditor? = null
 
-        internal fun add(tag: Int, extra: Any?, start: Int): StyledItem {
+        internal fun add(
+            tag: Int,
+            extra: Any?,
+            start: Int,
+        ): StyledItem {
             val styledItem = StyledItem(tag, extra, start)
             styledItems.add(styledItem)
             return styledItem
@@ -508,7 +584,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
             get() {
                 val styledItems = this.styledItems
                 for (i in styledItems.indices.reversed()) {
-                    val styledItem = styledItems.get(i)
+                    val styledItem = styledItems[i]
                     if (!styledItem.isClosed) {
                         return styledItem
                     }
@@ -519,7 +595,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         fun cut(length: Int) {
             val styledItems = this.styledItems
             for (i in styledItems.indices.reversed()) {
-                val styledItem = styledItems.get(i)
+                val styledItem = styledItems[i]
                 if (styledItem.end > length) {
                     styledItem.end = length
                 }
@@ -533,7 +609,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
             parser: HtmlParser<MarkupExtra?, *, *>,
             start: Int,
             end: Int,
-            linkHolder: LinkHolder
+            linkHolder: LinkHolder,
         ) {
             val processThreadNumber = parser.getThreadNumber()
             val processOriginalPostNumber = parser.getOriginalPostNumber()
@@ -545,7 +621,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                 }
                 // Fast match >>\d+
                 for (i in 0..<string.length) {
-                    val c = string.get(i)
+                    val c = string[i]
                     if (!(i < 2 && c == '>' || i >= 2 && c >= '0' && c <= '9')) {
                         return
                     }
@@ -572,11 +648,12 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                     val extra = parser.getExtra()
                     if (extra != null) {
                         val locator = get().locator
-                        val uri = locator.validateClickedUriString(
-                            uriString,
-                            extra.getBoardName(),
-                            extra.getThreadNumber()
-                        )
+                        val uri =
+                            locator.validateClickedUriString(
+                                uriString,
+                                extra.getBoardName(),
+                                extra.getThreadNumber(),
+                            )
                         threadNumber = locator.safe(false).getThreadNumber(uri)
                         postNumber = locator.safe(false).getPostNumber(uri)
                     }
@@ -601,13 +678,13 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         }
 
         /*
-		 * Returns number of characters added or removed
-		 */
+         * Returns number of characters added or removed
+         */
         internal fun replaceLink(
             parser: HtmlParser<MarkupExtra?, *, *>,
             start: Int,
             end: Int,
-            uriString: String?
+            uriString: String?,
         ): Int {
             if (uriString != null) {
                 val builder = parser.getBuilder()
@@ -623,7 +700,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         @SuppressLint("ResourceAsColor")
         override fun transformBuilder(
             parser: HtmlParser<MarkupExtra?, *, *>,
-            builder: StringBuilder
+            builder: StringBuilder,
         ): CharSequence {
             val spannable = SpannableString(builder)
             for (i in 0..<spannable.length) {
@@ -632,7 +709,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                         TabulationSpan(),
                         i,
                         i + 1,
-                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
                     )
                 }
             }
@@ -713,13 +790,17 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                     }
                     if (span != null) {
                         spannable.setSpan(
-                            span, styledItem.start, styledItem.end,
-                            SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                            span,
+                            styledItem.start,
+                            styledItem.end,
+                            SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
                         )
                         if (styledItem.tag == TAG_AI) {
                             spannable.setSpan(
-                                LeadingMarginSpan.Standard(30), styledItem.start, styledItem.end,
-                                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                                LeadingMarginSpan.Standard(30),
+                                styledItem.start,
+                                styledItem.end,
+                                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
                             )
                         }
                     }
@@ -729,8 +810,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
             for (styledItem in styledItems) {
                 if (styledItem.tag == TAG_SPOILER && styledItem.isClosed) {
                     spannable.setSpan(
-                        SpoilerSpan(), styledItem.start, styledItem.end,
-                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                        SpoilerSpan(),
+                        styledItem.start,
+                        styledItem.end,
+                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
                     )
                 }
             }
@@ -740,10 +823,13 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
     interface MarkupExtra {
         fun getBoardName(): String?
+
         fun getThreadNumber(): String?
     }
 
-    class Safe internal constructor(private val markup: ChanMarkup) {
+    class Safe internal constructor(
+        private val markup: ChanMarkup,
+    ) {
         fun obtainCommentEditor(boardName: String?): CommentEditor? {
             try {
                 return markup.obtainCommentEditor(boardName)
@@ -756,7 +842,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
             }
         }
 
-        fun isTagSupported(boardName: String?, tag: Int): Boolean {
+        fun isTagSupported(
+            boardName: String?,
+            tag: Int,
+        ): Boolean {
             try {
                 return markup.isTagSupported(boardName, tag)
             } catch (e: LinkageError) {
@@ -780,18 +869,14 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
         }
     }
 
-    fun safe(): Safe {
-        return safe
-    }
+    fun safe(): Safe = safe
 
     companion object {
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
 
         @Public
         @JvmStatic
-        fun get(`object`: Any): ChanMarkup {
-            return (`object` as Chan.Linked).get().markup
-        }
+        fun get(`object`: Any): ChanMarkup = (`object` as Chan.Linked).get().markup
 
         @Public
         const val TAG_BOLD: Int = 0x00000001

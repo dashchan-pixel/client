@@ -5,16 +5,19 @@ import android.text.style.CharacterStyle
 import android.text.style.UpdateAppearance
 import com.mishiranu.dashchan.graphics.ColorScheme
 
-class NeuroslopSpan : CharacterStyle(), UpdateAppearance, ColorScheme.Span {
-	private var backgroundColor = 0
+class NeuroslopSpan :
+    CharacterStyle(),
+    UpdateAppearance,
+    ColorScheme.Span {
+    private var backgroundColor = 0
 
-	override fun updateDrawState(paint: TextPaint) {
-		paint.bgColor = backgroundColor
-	}
+    override fun updateDrawState(paint: TextPaint) {
+        paint.bgColor = backgroundColor
+    }
 
-	override fun applyColorScheme(colorScheme: ColorScheme?) {
-		if (colorScheme != null) {
-			backgroundColor = colorScheme.neuroslopColor
-		}
-	}
+    override fun applyColorScheme(colorScheme: ColorScheme?) {
+        if (colorScheme != null) {
+            backgroundColor = colorScheme.neuroslopColor
+        }
+    }
 }

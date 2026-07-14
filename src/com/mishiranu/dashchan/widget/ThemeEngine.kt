@@ -63,32 +63,34 @@ import kotlin.math.min
 
 class ThemeEngine {
     class Theme(
-		val base: Base?,
-	    @JvmField val name: String,
-	    val builtIn: Boolean,
-	    private val json: String?,
-	    @JvmField val window: Int,
-	    val primary: Int,
-	    @JvmField val accent: Int,
-	    @JvmField val card: Int,
-	    val thread: Int,
-	    val post: Int,
-	    @JvmField val meta: Int,
-	    val spoiler: Int,
-	    val link: Int,
-	    val quote: Int,
-	    val tripcode: Int,
-	    val capcode: Int,
-	    val highlight: Int,
-	    val colorGainFactor: Float,
-	    @JvmField val controlNormal21: Int,
-	    val neuroslop: Int,
-	    val neuroslopQuote: Int,
-	    @JvmField val disabledAlpha21: Float
+        val base: Base?,
+        @JvmField val name: String,
+        val builtIn: Boolean,
+        private val json: String?,
+        @JvmField val window: Int,
+        val primary: Int,
+        @JvmField val accent: Int,
+        @JvmField val card: Int,
+        val thread: Int,
+        val post: Int,
+        @JvmField val meta: Int,
+        val spoiler: Int,
+        val link: Int,
+        val quote: Int,
+        val tripcode: Int,
+        val capcode: Int,
+        val highlight: Int,
+        val colorGainFactor: Float,
+        @JvmField val controlNormal21: Int,
+        val neuroslop: Int,
+        val neuroslopQuote: Int,
+        @JvmField val disabledAlpha21: Float,
     ) : Comparable<Theme> {
-        enum class Base(internal val resId: Int) {
+        enum class Base(
+            internal val resId: Int,
+        ) {
             LIGHT(R.style.Theme_Main_Light),
-            DARK(R.style.Theme_Main_Dark)
+            DARK(R.style.Theme_Main_Dark),
         }
 
         val isBlack4: Boolean
@@ -130,9 +132,7 @@ class ThemeEngine {
             }
         }
 
-        override fun compareTo(other: Theme): Int {
-            return name.compareTo(other.name)
-        }
+        override fun compareTo(other: Theme): Int = name.compareTo(other.name)
     }
 
     fun interface OnOverlayFocusListener {
@@ -144,16 +144,24 @@ class ThemeEngine {
         fun onOverlayFocusChanged(stack: Iterable<MutableItem>?)
     }
 
-    private class OverlayStack : Iterable<MutableItem>,
+    private class OverlayStack :
+        Iterable<MutableItem>,
         WeakIterator.Provider<OverlayStack.StackItem, View, MutableItem> {
-        private class StackItem(decorView: View, val indirect: Boolean) {
+        private class StackItem(
+            decorView: View,
+            val indirect: Boolean,
+        ) {
             val decorView: WeakReference<View> = WeakReference(decorView)
         }
 
         private val stackItems = ArrayList<StackItem>()
         private val mutableItem = MutableItem()
 
-        fun handleOverlayFocused(decorView: View, direct: Boolean, dialog: Boolean) {
+        fun handleOverlayFocused(
+            decorView: View,
+            direct: Boolean,
+            dialog: Boolean,
+        ) {
             var topStackItem: StackItem? = null
             val iterator = stackItems.iterator()
             while (iterator.hasNext()) {
@@ -173,15 +181,14 @@ class ThemeEngine {
             stackItems.add(topStackItem)
         }
 
-        override fun iterator(): MutableIterator<MutableItem> {
-            return WeakIterator(stackItems.iterator(), this)
-        }
+        override fun iterator(): MutableIterator<MutableItem> = WeakIterator(stackItems.iterator(), this)
 
-        override fun getWeakReference(data: StackItem): WeakReference<View>? {
-            return data.decorView
-        }
+        override fun getWeakReference(data: StackItem): WeakReference<View>? = data.decorView
 
-        override fun transform(data: StackItem, referenced: View): MutableItem? {
+        override fun transform(
+            data: StackItem,
+            referenced: View,
+        ): MutableItem? {
             if (referenced.isAttachedToWindow()) {
                 val mutableItem = this.mutableItem
                 mutableItem.decorView = referenced
@@ -197,7 +204,9 @@ class ThemeEngine {
         }
     }
 
-    private class ThemeContext(base: Context?) : ContextWrapper(base) {
+    private class ThemeContext(
+        base: Context?,
+    ) : ContextWrapper(base) {
         internal var engineTheme: Theme? = null
         internal var colorScheme: ColorScheme? = null
         private var layoutInflater: ThemeLayoutInflater? = null
@@ -208,17 +217,27 @@ class ThemeEngine {
         override fun getSystemService(name: String): Any? {
             if (LAYOUT_INFLATER_SERVICE == name) {
                 if (layoutInflater == null) {
-                    layoutInflater = ThemeLayoutInflater(
-                        LayoutInflater
-                            .from(getBaseContext()), this, true, false, false, false
-                    )
+                    layoutInflater =
+                        ThemeLayoutInflater(
+                            LayoutInflater
+                                .from(getBaseContext()),
+                            this,
+                            true,
+                            false,
+                            false,
+                            false,
+                        )
                 }
                 return layoutInflater
             }
             return super.getSystemService(name)
         }
 
-        fun dispatchOverlayFocused(decorView: View, direct: Boolean, dialog: Boolean) {
+        fun dispatchOverlayFocused(
+            decorView: View,
+            direct: Boolean,
+            dialog: Boolean,
+        ) {
             overlayStack.handleOverlayFocused(decorView, direct, dialog)
             for (listener in overlayFocusListeners) {
                 listener.onOverlayFocusChanged(overlayStack)
@@ -230,11 +249,12 @@ class ThemeEngine {
                 if (field == null) {
                     val colorControlDisabled =
                         applyAlpha(engineTheme!!.controlNormal21, engineTheme!!.disabledAlpha21)
-                    val states = arrayOf<IntArray?>(
-                        intArrayOf(-android.R.attr.state_enabled),
-                        intArrayOf(android.R.attr.state_checked),
-                        intArrayOf()
-                    )
+                    val states =
+                        arrayOf<IntArray?>(
+                            intArrayOf(-android.R.attr.state_enabled),
+                            intArrayOf(android.R.attr.state_checked),
+                            intArrayOf(),
+                        )
                     val colors =
                         intArrayOf(colorControlDisabled, engineTheme!!.accent, engineTheme!!.controlNormal21)
                     field = ColorStateList(states, colors)
@@ -249,13 +269,15 @@ class ThemeEngine {
                     val thumbColorNormalDisabled: Int
                     val thumbNormalColorsAttr =
                         getResources().getIdentifier("colorSwitchThumbNormal", "attr", "android")
-                    val thumbColors = if (thumbNormalColorsAttr != 0)
-                        getColorStateList(
-                            this,
-                            thumbNormalColorsAttr
-                        )
-                    else
-                        null
+                    val thumbColors =
+                        if (thumbNormalColorsAttr != 0) {
+                            getColorStateList(
+                                this,
+                                thumbNormalColorsAttr,
+                            )
+                        } else {
+                            null
+                        }
                     if (thumbColors != null) {
                         thumbColorNormal = thumbColors.getDefaultColor()
                         val disabledState =
@@ -266,11 +288,12 @@ class ThemeEngine {
                         thumbColorNormal = engineTheme!!.controlNormal21
                         thumbColorNormalDisabled = engineTheme!!.controlNormal21
                     }
-                    val states = arrayOf<IntArray?>(
-                        intArrayOf(-android.R.attr.state_enabled),
-                        intArrayOf(android.R.attr.state_checked),
-                        intArrayOf()
-                    )
+                    val states =
+                        arrayOf<IntArray?>(
+                            intArrayOf(-android.R.attr.state_enabled),
+                            intArrayOf(android.R.attr.state_checked),
+                            intArrayOf(),
+                        )
                     val colors =
                         intArrayOf(thumbColorNormalDisabled, engineTheme!!.accent, thumbColorNormal)
                     field = ColorStateList(states, colors)
@@ -281,18 +304,20 @@ class ThemeEngine {
         var editTextColors: ColorStateList? = null
             get() {
                 if (field == null) {
-                    val states = arrayOf<IntArray?>(
-                        intArrayOf(-android.R.attr.state_enabled),
-                        intArrayOf(android.R.attr.state_pressed),
-                        intArrayOf(android.R.attr.state_focused),
-                        intArrayOf()
-                    )
-                    val colors = intArrayOf(
-                        engineTheme!!.controlNormal21,
-                        engineTheme!!.accent,
-                        engineTheme!!.accent,
-                        engineTheme!!.controlNormal21
-                    )
+                    val states =
+                        arrayOf<IntArray?>(
+                            intArrayOf(-android.R.attr.state_enabled),
+                            intArrayOf(android.R.attr.state_pressed),
+                            intArrayOf(android.R.attr.state_focused),
+                            intArrayOf(),
+                        )
+                    val colors =
+                        intArrayOf(
+                            engineTheme!!.controlNormal21,
+                            engineTheme!!.accent,
+                            engineTheme!!.accent,
+                            engineTheme!!.controlNormal21,
+                        )
                     field = ColorStateList(states, colors)
                 }
                 return field
@@ -303,10 +328,11 @@ class ThemeEngine {
                 if (field == null) {
                     val colorAccentDisabled =
                         applyAlpha(engineTheme!!.accent, engineTheme!!.disabledAlpha21)
-                    val states = arrayOf<IntArray?>(
-                        intArrayOf(-android.R.attr.state_enabled),
-                        intArrayOf()
-                    )
+                    val states =
+                        arrayOf<IntArray?>(
+                            intArrayOf(-android.R.attr.state_enabled),
+                            intArrayOf(),
+                        )
                     val colors =
                         intArrayOf(colorAccentDisabled, engineTheme!!.accent)
                     field = ColorStateList(states, colors)
@@ -318,6 +344,7 @@ class ThemeEngine {
 
     private interface AttachListener : OnAttachStateChangeListener {
         val isProcessed: Boolean
+
         fun handleView(view: View)
 
         override fun onViewAttachedToWindow(v: View) {
@@ -328,8 +355,10 @@ class ThemeEngine {
         override fun onViewDetachedFromWindow(v: View) {}
     }
 
-    private class OverlayAttachListener(private val direct: Boolean, private val dialog: Boolean) :
-        AttachListener {
+    private class OverlayAttachListener(
+        private val direct: Boolean,
+        private val dialog: Boolean,
+    ) : AttachListener {
         private var processed = false
 
         override val isProcessed: Boolean
@@ -355,7 +384,8 @@ class ThemeEngine {
                                 if (hasFocus) {
                                     themeContext.dispatchOverlayFocused(decorView, direct, dialog)
                                 }
-                            })
+                            },
+                        )
                     }
                 }
             }
@@ -363,22 +393,30 @@ class ThemeEngine {
     }
 
     private class ThemeLayoutInflater(
-        original: LayoutInflater?, newContext: Context?,
-        private val direct: Boolean, dialog: Boolean, overlay: Boolean, popup: Boolean
+        original: LayoutInflater?,
+        newContext: Context?,
+        private val direct: Boolean,
+        dialog: Boolean,
+        overlay: Boolean,
+        popup: Boolean,
     ) : LayoutInflater(original, newContext) {
         private val attachListener: AttachListener?
 
         private var toolbar = false
 
-        fun isDirect(): Boolean {
-            return direct || toolbar
-        }
+        fun isDirect(): Boolean = direct || toolbar
 
         init {
-            attachListener = if (dialog || overlay)
-                OverlayAttachListener(direct, dialog)
-            else
-                if (popup) POPUP_ATTACH_LISTENER else null
+            attachListener =
+                if (dialog || overlay) {
+                    OverlayAttachListener(direct, dialog)
+                } else {
+                    if (popup) {
+                        POPUP_ATTACH_LISTENER
+                    } else {
+                        null
+                    }
+                }
         }
 
         override fun cloneInContext(newContext: Context): LayoutInflater {
@@ -394,7 +432,10 @@ class ThemeEngine {
         }
 
         @Throws(ClassNotFoundException::class)
-        override fun onCreateView(name: String?, attrs: AttributeSet?): View {
+        override fun onCreateView(
+            name: String?,
+            attrs: AttributeSet?,
+        ): View {
             val view = createViewInternal(name, attrs)
             if (view is Toolbar) {
                 val layoutInflater = from(view.getContext())
@@ -410,7 +451,10 @@ class ThemeEngine {
         }
 
         @Throws(ClassNotFoundException::class)
-        fun createViewInternal(name: String?, attrs: AttributeSet?): View {
+        fun createViewInternal(
+            name: String?,
+            attrs: AttributeSet?,
+        ): View {
             for (prefix in PREFIXES) {
                 try {
                     return createView(name, prefix, attrs)
@@ -444,7 +488,7 @@ class ThemeEngine {
                 } catch (e: JSONException) {
                     throw RuntimeException(e)
                 }
-                themes.put(theme.name, theme)
+                themes[theme.name] = theme
             }
             var additionalChanged = false
             val additionalThemes = getInstance().getItems()
@@ -453,11 +497,11 @@ class ThemeEngine {
             for (name in additionalThemeNames) {
                 var theme: Theme? = null
                 if (!themes.containsKey(name)) {
-                    val jsonObject = additionalThemes.get(name)
+                    val jsonObject = additionalThemes[name]
                     theme = Companion.parseTheme(context, jsonObject!!)
                 }
                 if (theme != null) {
-                    themes.put(name, theme)
+                    themes[name] = theme
                 } else {
                     additionalThemes.remove(name)
                     additionalChanged = true
@@ -475,7 +519,10 @@ class ThemeEngine {
 
     private class ThemeBuilder {
         fun interface Setter {
-            fun setColor(builder: ThemeBuilder?, color: Int)
+            fun setColor(
+                builder: ThemeBuilder?,
+                color: Int,
+            )
         }
 
         fun interface Getter {
@@ -490,7 +537,7 @@ class ThemeEngine {
             val setter: Setter,
             val getter: Getter,
             val transform: Transform?,
-            val fallback: Int
+            val fallback: Int,
         )
 
         var window: Int? = null
@@ -513,7 +560,7 @@ class ThemeEngine {
             name: String,
             builtIn: Boolean,
             json: String?,
-            context: Context
+            context: Context,
         ): Theme {
             while (true) {
                 var changed = false
@@ -529,12 +576,14 @@ class ThemeEngine {
                     value.setter.setColor(this, getColor(context, value.fallback))
                 }
             }
-            var typedArray = context.obtainStyledAttributes(
-                intArrayOf(
-                    R.attr.colorTextThread,
-                    R.attr.colorTextPost, R.attr.colorGainFactor
+            var typedArray =
+                context.obtainStyledAttributes(
+                    intArrayOf(
+                        R.attr.colorTextThread,
+                        R.attr.colorTextPost,
+                        R.attr.colorGainFactor,
+                    ),
                 )
-            )
             val threadAlpha = Color.alpha(typedArray.getColor(0, 0)).toFloat() / 0xff
             val postAlpha = Color.alpha(typedArray.getColor(1, 0)).toFloat() / 0xff
             val colorGainFactor = typedArray.getFloat(2, 0f)
@@ -548,16 +597,35 @@ class ThemeEngine {
             val colorControlNormal = typedArray.getColorStateList(0)
             disabledAlpha21 = typedArray.getFloat(1, 1f)
             typedArray.recycle()
-            controlNormal21 = colorControlNormal!!.getColorForState(
-                intArrayOf(android.R.attr.state_enabled),
-                colorControlNormal.getDefaultColor()
-            )
+            controlNormal21 =
+                colorControlNormal!!.getColorForState(
+                    intArrayOf(android.R.attr.state_enabled),
+                    colorControlNormal.getDefaultColor(),
+                )
 
             return ThemeEngine.Theme(
-                base, name, builtIn, json,
-                window!!, primary!!, accent!!, card!!, thread, post!!, meta!!,
-                spoiler!!, link!!, quote!!, tripcode!!, capcode!!, highlight!!, colorGainFactor,
-                controlNormal21, neuroslop!!, neuroslopQuote!!, disabledAlpha21
+                base,
+                name,
+                builtIn,
+                json,
+                window!!,
+                primary!!,
+                accent!!,
+                card!!,
+                thread,
+                post!!,
+                meta!!,
+                spoiler!!,
+                link!!,
+                quote!!,
+                tripcode!!,
+                capcode!!,
+                highlight!!,
+                colorGainFactor,
+                controlNormal21,
+                neuroslop!!,
+                neuroslopQuote!!,
+                disabledAlpha21,
             )
         }
 
@@ -577,118 +645,104 @@ class ThemeEngine {
 
             init {
                 val map = HashMap<String?, Value>()
-                map.put(
-                    "window", Value(
+                map["window"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.window = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.window },
                         null,
-                        R.attr.colorWindowBackground
+                        R.attr.colorWindowBackground,
                     )
-                )
-                map.put(
-                    "primary", Value(
+                map["primary"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.primary = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.primary },
                         null,
-                        R.attr.colorPrimarySupport
+                        R.attr.colorPrimarySupport,
                     )
-                )
-                map.put(
-                    "accent", Value(
+                map["accent"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.accent = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.accent },
                         ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.primary },
-                        R.attr.colorAccentSupport
+                        R.attr.colorAccentSupport,
                     )
-                )
-                map.put(
-                    "card", Value(
+                map["card"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.card = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.card },
                         null,
-                        R.attr.colorCardBackground
+                        R.attr.colorCardBackground,
                     )
-                )
-                map.put(
-                    "post", Value(
+                map["post"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.post = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.post },
                         null,
-                        R.attr.colorTextPost
+                        R.attr.colorTextPost,
                     )
-                )
-                map.put(
-                    "meta", Value(
+                map["meta"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.meta = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.meta },
                         null,
-                        R.attr.colorTextMeta
+                        R.attr.colorTextMeta,
                     )
-                )
-                map.put(
-                    "spoiler", Value(
+                map["spoiler"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.spoiler = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.spoiler },
                         null,
-                        R.attr.colorSpoilerBackground
+                        R.attr.colorSpoilerBackground,
                     )
-                )
-                map.put(
-                    "link", Value(
+                map["link"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.link = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.link },
                         ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.accent },
-                        android.R.attr.textColorLink
+                        android.R.attr.textColorLink,
                     )
-                )
-                map.put(
-                    "quote", Value(
+                map["quote"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.quote = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.quote },
                         null,
-                        R.attr.colorTextQuote
+                        R.attr.colorTextQuote,
                     )
-                )
-                map.put(
-                    "tripcode", Value(
+                map["tripcode"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.tripcode = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.tripcode },
                         null,
-                        R.attr.colorTextTripcode
+                        R.attr.colorTextTripcode,
                     )
-                )
-                map.put(
-                    "capcode", Value(
+                map["capcode"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.capcode = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.capcode },
                         ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.tripcode },
-                        R.attr.colorTextCapcode
+                        R.attr.colorTextCapcode,
                     )
-                )
-                map.put(
-                    "highlight", Value(
+                map["highlight"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.highlight = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.highlight },
                         null,
-                        R.attr.colorPostHighlight
+                        R.attr.colorPostHighlight,
                     )
-                )
-                map.put(
-                    "neuroslop", Value(
+                map["neuroslop"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.neuroslop = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.neuroslop },
                         null,
-                        R.attr.colorPostNeuroslop
+                        R.attr.colorPostNeuroslop,
                     )
-                )
-                map.put(
-                    "neuroslopQuote", Value(
+                map["neuroslopQuote"] =
+                    Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.neuroslopQuote = c },
                         ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.neuroslopQuote },
                         null,
-                        R.attr.colorPostQuoteNeuroslop
+                        R.attr.colorPostQuoteNeuroslop,
                     )
-                )
                 MAP = Collections.unmodifiableMap<String?, Value>(map)
             }
         }
@@ -698,46 +752,47 @@ class ThemeEngine {
         private val INSTANCE = ThemeEngine()
 
         @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-        private val POPUP_ATTACH_LISTENER: AttachListener = object : AttachListener {
-            override val isProcessed: Boolean
-                get() = false
+        private val POPUP_ATTACH_LISTENER: AttachListener =
+            object : AttachListener {
+                override val isProcessed: Boolean
+                    get() = false
 
-            override fun handleView(view: View) {
-                val decorView = getDecorView(view)
-                val tag = decorView.getTag(R.id.tag_theme_engine)
-                if (tag == null || !(tag as Boolean)) {
-                    // Mark as handled
-                    decorView.setTag(R.id.tag_theme_engine, true)
-                    if (shouldApplyStyle(decorView.getContext())) {
-                        val decorViewName = decorView.javaClass.getSimpleName()
-                        if ("PopupDecorView" == decorViewName || "PopupViewContainer" == decorViewName) {
-                            var backgroundView = decorView
-                            if (backgroundView.getBackground() == null) {
-                                val viewGroup = decorView as ViewGroup
-                                if (viewGroup.getChildCount() > 0) {
-                                    val child = viewGroup.getChildAt(0)
-                                    if (child.getBackground() != null) {
-                                        // More modern Android versions wrap background with decor view
-                                        backgroundView = child
+                override fun handleView(view: View) {
+                    val decorView = getDecorView(view)
+                    val tag = decorView.getTag(R.id.tag_theme_engine)
+                    if (tag == null || !(tag as Boolean)) {
+                        // Mark as handled
+                        decorView.setTag(R.id.tag_theme_engine, true)
+                        if (shouldApplyStyle(decorView.getContext())) {
+                            val decorViewName = decorView.javaClass.getSimpleName()
+                            if ("PopupDecorView" == decorViewName || "PopupViewContainer" == decorViewName) {
+                                var backgroundView = decorView
+                                if (backgroundView.getBackground() == null) {
+                                    val viewGroup = decorView as ViewGroup
+                                    if (viewGroup.getChildCount() > 0) {
+                                        val child = viewGroup.getChildAt(0)
+                                        if (child.getBackground() != null) {
+                                            // More modern Android versions wrap background with decor view
+                                            backgroundView = child
+                                        }
                                     }
                                 }
+                                val themeContext: ThemeContext =
+                                    requireThemeContext(decorView.getContext())
+                                backgroundView.setBackgroundTintList(ColorStateList.valueOf(themeContext.engineTheme!!.card))
                             }
-                            val themeContext: ThemeContext =
-                                requireThemeContext(decorView.getContext())
-                            backgroundView.setBackgroundTintList(ColorStateList.valueOf(themeContext.engineTheme!!.card))
                         }
                     }
                 }
             }
-        }
 
         private fun obtainThemeContext(context: Context?): ThemeContext? {
-            var context = context
+            var current = context
             while (true) {
-                if (context is ThemeContext) {
-                    return context
-                } else if (context is ContextWrapper) {
-                    context = context.getBaseContext()
+                if (current is ThemeContext) {
+                    return current
+                } else if (current is ContextWrapper) {
+                    current = current.getBaseContext()
                 } else {
                     return null
                 }
@@ -751,19 +806,21 @@ class ThemeEngine {
         }
 
         @JvmStatic
-        fun attach(baseContext: Context?): Context {
-            return ThemeContext(baseContext)
-        }
+        fun attach(baseContext: Context?): Context = ThemeContext(baseContext)
 
         @JvmStatic
         fun applyTheme(context: Context) {
             val themeContext: ThemeContext = requireThemeContext(context)
             INSTANCE.prepareThemes(context)
             val themeString = theme
-            var theme: Theme? = INSTANCE.themes!!.get(themeString)
+            var theme: Theme? = INSTANCE.themes!![themeString]
             if (theme == null) {
-                theme = INSTANCE.themes!!.values.iterator().next()
-                Preferences.theme = theme!!.name
+                theme =
+                    INSTANCE.themes!!
+                        .values
+                        .iterator()
+                        .next()
+                Preferences.theme = theme.name
             }
             themeContext.engineTheme = theme
             context.setTheme(theme.base!!.resId)
@@ -772,16 +829,18 @@ class ThemeEngine {
                 activity.getWindow().getDecorView().setBackgroundColor(theme.window)
                 val toolbarColor = theme.primary or -0x1000000
                 val taskDescription: TaskDescription?
-                taskDescription = TaskDescription.Builder()
-                    .setIcon(R.mipmap.ic_launcher).setPrimaryColor(toolbarColor).build()
+                taskDescription =
+                    TaskDescription
+                        .Builder()
+                        .setIcon(R.mipmap.ic_launcher)
+                        .setPrimaryColor(toolbarColor)
+                        .build()
 
                 activity.setTaskDescription(taskDescription)
             }
         }
 
-        fun getThemes(): MutableList<Theme> {
-            return ArrayList(INSTANCE.themes!!.values)
-        }
+        fun getThemes(): MutableList<Theme> = ArrayList(INSTANCE.themes!!.values)
 
         fun attachAndApply(context: Context?): Theme {
             val themeContext: Context = attach(context)
@@ -870,7 +929,10 @@ class ThemeEngine {
             }
         }
 
-        private fun handleTag(theme: Theme, view: View) {
+        private fun handleTag(
+            theme: Theme,
+            view: View,
+        ) {
             val tag = view.getTag()
             if (tag is String) {
                 val options = tag.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -898,7 +960,12 @@ class ThemeEngine {
             }
         }
 
-        private fun handleTagValue(theme: Theme, view: View, name: String, value: String): Boolean {
+        private fun handleTagValue(
+            theme: Theme,
+            view: View,
+            name: String,
+            value: String,
+        ): Boolean {
             when (name) {
                 "background" -> {
                     view.setBackgroundColor(theme.getColor(value))
@@ -916,12 +983,15 @@ class ThemeEngine {
             return false
         }
 
-        fun addWeakOnOverlayFocusListener(context: Context?, listener: OnOverlayFocusListener) {
+        fun addWeakOnOverlayFocusListener(
+            context: Context?,
+            listener: OnOverlayFocusListener,
+        ) {
             requireThemeContext(context).overlayFocusListeners.register(listener)
         }
 
         /** Dirty hack, see [OverlayAttachListener.handleView]  */
-		@JvmStatic
+        @JvmStatic
         fun markDecorAsDialog(decorView: View) {
             decorView.setTag(R.id.tag_theme_engine, true)
         }
@@ -930,11 +1000,11 @@ class ThemeEngine {
 
         @JvmStatic
         fun addTheme(theme: Theme): Boolean {
-            val existingTheme: Theme? = INSTANCE.themes!!.get(theme.name)
+            val existingTheme: Theme? = INSTANCE.themes!![theme.name]
             if (existingTheme != null && existingTheme.builtIn) {
                 return false
             }
-            getInstance().getItems().put(theme.name, theme.toJsonObject())
+            getInstance().getItems()[theme.name] = theme.toJsonObject()
             getInstance().serialize()
             val installedThemesMap = HashMap(INSTANCE.themes!!)
             val iterator = installedThemesMap.values.iterator()
@@ -944,17 +1014,17 @@ class ThemeEngine {
                 }
             }
             INSTANCE.themes!!.keys.removeAll(installedThemesMap.keys)
-            installedThemesMap.put(theme.name, theme)
+            installedThemesMap[theme.name] = theme
             val installedThemes = ArrayList(installedThemesMap.values)
             installedThemes.sort()
             for (installedTheme in installedThemes) {
-                INSTANCE.themes!!.put(installedTheme.name, installedTheme)
+                INSTANCE.themes!![installedTheme.name] = installedTheme
             }
             return true
         }
 
         fun deleteTheme(name: String?): Boolean {
-            val theme: Theme? = INSTANCE.themes!!.get(name)
+            val theme: Theme? = INSTANCE.themes!![name]
             if (theme == null || theme.builtIn) {
                 return false
             }
@@ -965,7 +1035,10 @@ class ThemeEngine {
         }
 
         @JvmStatic
-        fun fastParseThemeFromText(context: Context?, text: String): Theme? {
+        fun fastParseThemeFromText(
+            context: Context?,
+            text: String,
+        ): Theme? {
             if (text.contains("\"base\"") && text.contains("\"name\"")) {
                 val start = text.indexOf("{")
                 val end = text.lastIndexOf("}") + 1
@@ -982,7 +1055,10 @@ class ThemeEngine {
             return null
         }
 
-        fun parseTheme(context: Context?, jsonObject: JSONObject): Theme? {
+        fun parseTheme(
+            context: Context?,
+            jsonObject: JSONObject,
+        ): Theme? {
             try {
                 return parseThemeInternal(context, jsonObject, false)
             } catch (e: JSONException) {
@@ -994,7 +1070,8 @@ class ThemeEngine {
         @Throws(JSONException::class)
         private fun parseThemeInternal(
             context: Context?,
-            jsonObject: JSONObject, builtIn: Boolean
+            jsonObject: JSONObject,
+            builtIn: Boolean,
         ): Theme {
             val baseString = jsonObject.getString("base")
             val base: Theme.Base?
@@ -1019,15 +1096,19 @@ class ThemeEngine {
                 }
             }
             return builder.create(
-                base, name, builtIn, jsonObject.toString(),
-                ContextThemeWrapper(context, base.resId)
+                base,
+                name,
+                builtIn,
+                jsonObject.toString(),
+                ContextThemeWrapper(context, base.resId),
             )
         }
 
         @Throws(JSONException::class)
         private fun resolveColor(
             jsonObject: JSONObject,
-            name: String?, checked: HashSet<String?>
+            name: String?,
+            checked: HashSet<String?>,
         ): Int? {
             val value = emptyIfNull(jsonObject.optString(name))
             if (value.startsWith("#")) {

@@ -54,9 +54,13 @@ class CacheManager private constructor() : Runnable {
     @Volatile
     private var cacheBuildingLatch: CountDownLatch? = null
 
-    private class CacheItem(file: File, val type: Type) {
+    private class CacheItem(
+        file: File,
+        val type: Type,
+    ) {
         enum class Type {
-            THUMBNAILS, MEDIA
+            THUMBNAILS,
+            MEDIA,
         }
 
         val name: String
@@ -71,9 +75,7 @@ class CacheManager private constructor() : Runnable {
             lastModified = file.lastModified()
         }
 
-        override fun toString(): String {
-            return "CacheItem [\"" + name + "\", " + length + "]"
-        }
+        override fun toString(): String = "CacheItem [\"" + name + "\", " + length + "]"
 
         override fun equals(other: Any?): Boolean {
             if (other === this) {
@@ -103,7 +105,7 @@ class CacheManager private constructor() : Runnable {
     private fun fillCache(
         cacheItems: LinkedHashMap<String?, CacheItem?>,
         directory: File?,
-        type: CacheItem.Type
+        type: CacheItem.Type,
     ): Long {
         cacheItems.clear()
         if (directory == null) {
@@ -119,7 +121,7 @@ class CacheManager private constructor() : Runnable {
         Collections.sort<CacheItem?>(cacheItemsList, SORT_BY_DATE_COMPARATOR)
         var size = 0L
         for (cacheItem in cacheItemsList) {
-            cacheItems.put(cacheItem.nameLc, cacheItem)
+            cacheItems[cacheItem.nameLc] = cacheItem
             size += cacheItem.length
         }
         return size
@@ -128,29 +130,37 @@ class CacheManager private constructor() : Runnable {
     private fun syncCache() {
         val latch = CountDownLatch(1)
         cacheBuildingLatch = latch
-        Thread(Runnable {
-            try {
-                synchronized(thumbnailsCache) {
-                    thumbnailsCacheSize = fillCache(
-                        thumbnailsCache,
-                        this.thumbnailsDirectory,
-                        CacheItem.Type.THUMBNAILS
-                    )
+        Thread(
+            Runnable {
+                try {
+                    synchronized(thumbnailsCache) {
+                        thumbnailsCacheSize =
+                            fillCache(
+                                thumbnailsCache,
+                                this.thumbnailsDirectory,
+                                CacheItem.Type.THUMBNAILS,
+                            )
+                    }
+                    synchronized(mediaCache) {
+                        mediaCacheSize =
+                            fillCache(
+                                mediaCache,
+                                this.mediaDirectory,
+                                CacheItem.Type.MEDIA,
+                            )
+                    }
+                    cleanupAsync(true, true)
+                } finally {
+                    latch.countDown()
                 }
-                synchronized(mediaCache) {
-                    mediaCacheSize = fillCache(
-                        mediaCache,
-                        this.mediaDirectory, CacheItem.Type.MEDIA
-                    )
-                }
-                cleanupAsync(true, true)
-            } finally {
-                latch.countDown()
-            }
-        }).start()
+            },
+        ).start()
     }
 
-    private fun cleanupAsync(thumbnails: Boolean, media: Boolean) {
+    private fun cleanupAsync(
+        thumbnails: Boolean,
+        media: Boolean,
+    ) {
         val maxCache: Int = MAX_THUMBNAILS_PART + MAX_MEDIA_PART
         val maxCacheSize = Preferences.cacheSize * 1000L * 1000L
         var cleanupCacheItems: ArrayList<CacheItem?>? = null
@@ -161,10 +171,14 @@ class CacheManager private constructor() : Runnable {
                     if (cleanupCacheItems == null) {
                         cleanupCacheItems = ArrayList<CacheItem?>()
                     }
-                    thumbnailsCacheSize = obtainCacheItemsToCleanup(
-                        cleanupCacheItems, thumbnailsCache,
-                        thumbnailsCacheSize, maxSize, null
-                    )
+                    thumbnailsCacheSize =
+                        obtainCacheItemsToCleanup(
+                            cleanupCacheItems,
+                            thumbnailsCache,
+                            thumbnailsCacheSize,
+                            maxSize,
+                            null,
+                        )
                 }
             }
         }
@@ -175,10 +189,14 @@ class CacheManager private constructor() : Runnable {
                     if (cleanupCacheItems == null) {
                         cleanupCacheItems = ArrayList<CacheItem?>()
                     }
-                    mediaCacheSize = obtainCacheItemsToCleanup(
-                        cleanupCacheItems, mediaCache,
-                        mediaCacheSize, maxSize, null
-                    )
+                    mediaCacheSize =
+                        obtainCacheItemsToCleanup(
+                            cleanupCacheItems,
+                            mediaCache,
+                            mediaCacheSize,
+                            maxSize,
+                            null,
+                        )
                 }
             }
         }
@@ -193,9 +211,9 @@ class CacheManager private constructor() : Runnable {
         cacheItems: LinkedHashMap<String?, CacheItem?>,
         size: Long,
         maxSize: Long,
-        deleteCondition: DeleteCondition?
+        deleteCondition: DeleteCondition?,
     ): Long {
-        var size = size
+        var remainingSize = size
         val trimAmount = (TRIM_FACTOR * maxSize).toLong()
         var deleteAmount = size - maxSize + trimAmount
         val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
@@ -203,12 +221,12 @@ class CacheManager private constructor() : Runnable {
             val cacheItem = iterator.next()!!
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
                 deleteAmount -= cacheItem.length
-                size -= cacheItem.length
+                remainingSize -= cacheItem.length
                 iterator.remove()
                 cleanupCacheItems.add(cacheItem)
             }
         }
-        return size
+        return remainingSize
     }
 
     private interface DeleteCondition {
@@ -241,7 +259,10 @@ class CacheManager private constructor() : Runnable {
         throw RuntimeException("Unknown cache type")
     }
 
-    private fun modifyCacheSize(type: CacheItem.Type, lengthDelta: Long) {
+    private fun modifyCacheSize(
+        type: CacheItem.Type,
+        lengthDelta: Long,
+    ) {
         when (type) {
             CacheItem.Type.THUMBNAILS -> {
                 thumbnailsCacheSize += lengthDelta
@@ -253,13 +274,17 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
-    private fun isFileExistsInCache(file: File, fileName: String, type: CacheItem.Type): Boolean {
+    private fun isFileExistsInCache(
+        file: File,
+        fileName: String,
+        type: CacheItem.Type,
+    ): Boolean {
         if (waitCacheSync()) {
             return false
         }
         val cacheItems = getCacheItems(type)
         synchronized(cacheItems) {
-            var cacheItem = cacheItems.get(fileName.lowercase())
+            var cacheItem = cacheItems[fileName.lowercase()]
             if (cacheItem != null && !file.exists()) {
                 cacheItems.remove(cacheItem.nameLc)
                 modifyCacheSize(type, -cacheItem.length)
@@ -269,7 +294,11 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
-    private fun updateCachedFileLastModified(file: File, fileName: String, type: CacheItem.Type) {
+    private fun updateCachedFileLastModified(
+        file: File,
+        fileName: String,
+        type: CacheItem.Type,
+    ) {
         if (waitCacheSync()) {
             return
         }
@@ -282,7 +311,7 @@ class CacheManager private constructor() : Runnable {
                     val lastModified = System.currentTimeMillis()
                     file.setLastModified(lastModified)
                     cacheItem.lastModified = lastModified
-                    cacheItems.put(fileNameLc, cacheItem)
+                    cacheItems[fileNameLc] = cacheItem
                 } else {
                     modifyCacheSize(type, -cacheItem.length)
                 }
@@ -294,7 +323,7 @@ class CacheManager private constructor() : Runnable {
         file: File,
         fileName: String,
         type: CacheItem.Type,
-        success: Boolean
+        success: Boolean,
     ) {
         if (waitCacheSync()) {
             return
@@ -308,7 +337,7 @@ class CacheManager private constructor() : Runnable {
             }
             if (success) {
                 cacheItem = CacheItem(file, type)
-                cacheItems.put(cacheItem.nameLc, cacheItem)
+                cacheItems[cacheItem.nameLc] = cacheItem
                 lengthDelta += cacheItem.length
             }
             modifyCacheSize(type, lengthDelta)
@@ -347,7 +376,10 @@ class CacheManager private constructor() : Runnable {
         return file
     }
 
-    private fun getMediaFile(fileName: String, touch: Boolean): File? {
+    private fun getMediaFile(
+        fileName: String,
+        touch: Boolean,
+    ): File? {
         val directory = this.mediaDirectory
         if (directory == null) {
             return null
@@ -359,18 +391,18 @@ class CacheManager private constructor() : Runnable {
         return file
     }
 
-    fun getMediaFile(uri: Uri?, touch: Boolean): File? {
-        return getMediaFile(getCachedFileKey(uri)!!, touch)
-    }
+    fun getMediaFile(
+        uri: Uri?,
+        touch: Boolean,
+    ): File? = getMediaFile(getCachedFileKey(uri)!!, touch)
 
-    fun getPartialMediaFile(uri: Uri?): File? {
-        return getMediaFile(getCachedFileKey(uri) + ".part", false)
-    }
+    fun getPartialMediaFile(uri: Uri?): File? = getMediaFile(getCachedFileKey(uri) + ".part", false)
 
     @Throws(InterruptedException::class)
     private fun eraseCache(
-        cacheItems: LinkedHashMap<String?, CacheItem?>, directory: File?,
-        deleteCondition: DeleteCondition?
+        cacheItems: LinkedHashMap<String?, CacheItem?>,
+        directory: File?,
+        deleteCondition: DeleteCondition?,
     ): Long {
         if (directory == null) {
             return 0L
@@ -439,14 +471,14 @@ class CacheManager private constructor() : Runnable {
             }
             val cachedFileKeys = this.cachedFileKeys
             synchronized(cachedFileKeys) {
-                val hash = cachedFileKeys.get(data)
+                val hash = cachedFileKeys[data]
                 if (hash != null) {
                     return hash
                 }
             }
             val hash = formatHex(getInstanceSha256().calculate(data))
             synchronized(cachedFileKeys) {
-                cachedFileKeys.put(data, hash)
+                cachedFileKeys[data] = hash
             }
             return hash
         }
@@ -461,7 +493,10 @@ class CacheManager private constructor() : Runnable {
         return false
     }
 
-    fun handleDownloadedFile(file: File, success: Boolean) {
+    fun handleDownloadedFile(
+        file: File,
+        success: Boolean,
+    ) {
         val directory = file.getParentFile()
         if (directory != null) {
             var type: CacheItem.Type? = null
@@ -510,7 +545,10 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
-    fun storeThumbnailExternal(thumbnailKey: String, data: Bitmap) {
+    fun storeThumbnailExternal(
+        thumbnailKey: String,
+        data: Bitmap,
+    ) {
         if (!this.isCacheAvailable) {
             return
         }
@@ -587,10 +625,11 @@ class CacheManager private constructor() : Runnable {
             syncCache()
             val intentFilter = IntentFilter(Intent.ACTION_MEDIA_MOUNTED)
             intentFilter.addDataScheme("file")
-            MainApplication.getInstance()
+            MainApplication
+                .getInstance()
                 .registerReceiver(
                     createReceiver(OnReceiveListener { r: BroadcastReceiver?, c: Context?, i: Intent? -> syncCache() }),
-                    intentFilter
+                    intentFilter,
                 )
             Thread(this, "CacheManagerWorker").start()
         }
@@ -606,8 +645,9 @@ class CacheManager private constructor() : Runnable {
         if (files != null) {
             for (tempFile in files) {
                 val tempFileName = tempFile.getName()
-                if (tempFileName.startsWith(CLIPBOARD_FILE_NAME_START) || tempFileName.startsWith(
-                        GALLERY_SHARE_FILE_NAME_START
+                if (tempFileName.startsWith(CLIPBOARD_FILE_NAME_START) ||
+                    tempFileName.startsWith(
+                        GALLERY_SHARE_FILE_NAME_START,
                     )
                 ) {
                     val delete = tempFile.lastModified() + 60 * 60 * 1000 < time // 1 hour
@@ -619,32 +659,40 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
-    fun prepareFileForShare(file: File, fileName: String?): Pair<Uri?, String?>? {
-        return createTemporaryFileForExternalApplication(
+    fun prepareFileForShare(
+        file: File,
+        fileName: String?,
+    ): Pair<Uri?, String?>? =
+        createTemporaryFileForExternalApplication(
             file,
             fileName,
             GALLERY_SHARE_FILE_NAME_START + System.currentTimeMillis(),
-            FileUriProvider { directory: File?, file: File?, type: String? ->
+            FileUriProvider { directory: File?, sourceFile: File?, type: String? ->
                 FileProvider.Companion.convertShareFile(
                     directory!!,
-                    file!!,
-                    type
+                    sourceFile!!,
+                    type,
                 )
-            })
-    }
+            },
+        )
 
-    fun prepareFileForClipboard(file: File, originalFileName: String?): Uri? {
-        val data = createTemporaryFileForExternalApplication(
-            file,
-            originalFileName,
-            CLIPBOARD_FILE_NAME_START + System.currentTimeMillis(),
-            FileUriProvider { directory: File?, file: File?, type: String? ->
-                FileProvider.Companion.convertClipboardFile(
-                    directory!!,
-                    file!!,
-                    type
-                )
-            })
+    fun prepareFileForClipboard(
+        file: File,
+        originalFileName: String?,
+    ): Uri? {
+        val data =
+            createTemporaryFileForExternalApplication(
+                file,
+                originalFileName,
+                CLIPBOARD_FILE_NAME_START + System.currentTimeMillis(),
+                FileUriProvider { directory: File?, sourceFile: File?, type: String? ->
+                    FileProvider.Companion.convertClipboardFile(
+                        directory!!,
+                        sourceFile!!,
+                        type,
+                    )
+                },
+            )
         if (data != null) {
             return data.first
         } else {
@@ -656,9 +704,8 @@ class CacheManager private constructor() : Runnable {
         originalFile: File,
         originalFileName: String?,
         fileName: String?,
-        fileURIProvider: FileUriProvider
+        fileURIProvider: FileUriProvider,
     ): Pair<Uri?, String?>? {
-        var fileName = fileName
         val tempDirectory = getTempDirectory()
         if (tempDirectory == null) {
             return null
@@ -673,22 +720,31 @@ class CacheManager private constructor() : Runnable {
             extension = "jpg"
         }
 
-        fileName = fileName + "." + extension
+        val temporaryFileName = fileName + "." + extension
 
-        val temporaryFile = File(tempDirectory, fileName)
+        val temporaryFile = File(tempDirectory, temporaryFileName)
         copyInternalFile(originalFile, temporaryFile)
         val uri = fileURIProvider.getUri(tempDirectory, temporaryFile, mimeType)
         return Pair<Uri?, String?>(uri, mimeType)
     }
 
     private fun interface FileUriProvider {
-        fun getUri(directory: File?, file: File?, mimeType: String?): Uri?
+        fun getUri(
+            directory: File?,
+            file: File?,
+            mimeType: String?,
+        ): Uri?
     }
 
-    class CacheException(errorMessage: String?) : Exception(errorMessage)
+    class CacheException(
+        errorMessage: String?,
+    ) : Exception(errorMessage)
 
     @Throws(CacheException::class)
-    fun getMediaFileOrThrow(uri: Uri?, touch: Boolean): File {
+    fun getMediaFileOrThrow(
+        uri: Uri?,
+        touch: Boolean,
+    ): File {
         val directory = this.mediaDirectoryOrThrow
         // getCachedFileKey() only returns null for a null uri, on which the Java
         // blew up inside new File(parent, null). Report it as a CacheException

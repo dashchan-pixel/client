@@ -43,8 +43,9 @@ import kotlin.math.min
 import kotlin.math.sign
 import kotlin.math.sqrt
 
-class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context) :
-    Iterable<Pair<T?, View?>?> {
+class DialogStack<T : DialogStack.ViewFactory<T?>?>(
+    private val context: Context,
+) : Iterable<Pair<T?, View?>?> {
     private val contentView: View
     private val rootView: DragLayout
     private val dialogAnimations: Int
@@ -57,11 +58,17 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     private val keyBackHandler: KeyBackHandler = RegularKeyBackHandler()
 
     private interface KeyBackHandler {
-        fun onBackKey(event: KeyEvent, allowPop: Boolean): Boolean
+        fun onBackKey(
+            event: KeyEvent,
+            allowPop: Boolean,
+        ): Boolean
     }
 
     private inner class RegularKeyBackHandler : KeyBackHandler {
-        override fun onBackKey(event: KeyEvent, allowPop: Boolean): Boolean {
+        override fun onBackKey(
+            event: KeyEvent,
+            allowPop: Boolean,
+        ): Boolean {
             if (event.getAction() == KeyEvent.ACTION_UP) {
                 if (!event.isLongPress() && allowPop) {
                     popInternal()
@@ -82,77 +89,94 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         LinkedList<Pair<T?, DialogView?>>()
     private var dialog: Dialog? = null
 
-    private val overlayFocusListener = OnOverlayFocusListener { stack: Iterable<MutableItem>? ->
-        val decorView = if (dialog != null) dialog!!.getWindow()!!.getDecorView() else null
-        var background = false
-        if (decorView != null) {
-            var foundSelf = false
-            var isDimmedByOtherWindow = false
-            for (mutableItem in stack!!) {
-                if (!foundSelf) {
-                    if (mutableItem.decorView === decorView) {
-                        foundSelf = true
-                    }
-                } else {
-                    if (mutableItem.indirect) {
-                        // Ignore next windows with dim behind, e.g. gallery -> gallery dialog
-                        break
+    private val overlayFocusListener =
+        OnOverlayFocusListener { stack: Iterable<MutableItem>? ->
+            val decorView = if (dialog != null) dialog!!.getWindow()!!.getDecorView() else null
+            var background = false
+            if (decorView != null) {
+                var foundSelf = false
+                var isDimmedByOtherWindow = false
+                for (mutableItem in stack!!) {
+                    if (!foundSelf) {
+                        if (mutableItem.decorView === decorView) {
+                            foundSelf = true
+                        }
                     } else {
-                        isDimmedByOtherWindow = true
+                        if (mutableItem.indirect) {
+                            // Ignore next windows with dim behind, e.g. gallery -> gallery dialog
+                            break
+                        } else {
+                            isDimmedByOtherWindow = true
+                        }
                     }
                 }
+                background = isDimmedByOtherWindow
             }
-            background = isDimmedByOtherWindow
+            switchBackground(background)
         }
-        switchBackground(background)
-    }
 
     init {
-        val styledContext: Context = ContextThemeWrapper(
-            context, getResourceId(
+        val styledContext: Context =
+            ContextThemeWrapper(
                 context,
-                android.R.attr.dialogTheme, 0
+                getResourceId(
+                    context,
+                    android.R.attr.dialogTheme,
+                    0,
+                ),
             )
-        )
         ThemeEngine.Companion.addWeakOnOverlayFocusListener(context, overlayFocusListener)
         val contentView = InsetsLayout(context)
         this.contentView = contentView
-        rootView = ContentView(context, DragLayout.Side.TOP, object : DragLayout.Callback {
-            private val lastVisibleDialog: DialogView?
-                get() = if (visibleViews.isEmpty()) null else visibleViews.last().second
+        rootView =
+            ContentView(
+                context,
+                DragLayout.Side.TOP,
+                object : DragLayout.Callback {
+                    private val lastVisibleDialog: DialogView?
+                        get() = if (visibleViews.isEmpty()) null else visibleViews.last().second
 
-            override val isScrolled: Boolean
-                get() {
-                    val dialogView = this.lastVisibleDialog
-                    return dialogView != null && dialogView.isScrolledToTop
-                }
+                    override val isScrolled: Boolean
+                        get() {
+                            val dialogView = this.lastVisibleDialog
+                            return dialogView != null && dialogView.isScrolledToTop
+                        }
 
-            override fun onProposeShift(shift: Int, acceleration: Float): Boolean {
-                val dialogView = this.lastVisibleDialog
-                return dialogView != null && dialogView.handleShift(shift, acceleration)
-            }
+                    override fun onProposeShift(
+                        shift: Int,
+                        acceleration: Float,
+                    ): Boolean {
+                        val dialogView = this.lastVisibleDialog
+                        return dialogView != null && dialogView.handleShift(shift, acceleration)
+                    }
 
-            override fun onFinished() {
-                clear()
-            }
-        })
+                    override fun onFinished() {
+                        clear()
+                    }
+                },
+            )
         contentView.addView(
             rootView,
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
+            ViewGroup.LayoutParams.MATCH_PARENT,
         )
         contentView.setOnApplyInsetsTarget(rootView)
         rootView.setClipToPadding(false)
         rootView.setClipChildren(false)
-        rootView.setOnClickListener(View.OnClickListener { v: View? ->
-            if (!visibleViews.isEmpty()) {
-                popInternal()
-            }
-        })
-        val attrs = intArrayOf(
-            android.R.attr.windowAnimationStyle, android.R.attr.backgroundDimAmount,
-            android.R.attr.windowBackground, android.R.attr.windowElevation
+        rootView.setOnClickListener(
+            View.OnClickListener { v: View? ->
+                if (!visibleViews.isEmpty()) {
+                    popInternal()
+                }
+            },
         )
+        val attrs =
+            intArrayOf(
+                android.R.attr.windowAnimationStyle,
+                android.R.attr.backgroundDimAmount,
+                android.R.attr.windowBackground,
+                android.R.attr.windowElevation,
+            )
         val typedArray = styledContext.obtainStyledAttributes(attrs)
         try {
             dialogAnimations = typedArray.getResourceId(0, 0)
@@ -164,20 +188,22 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
 
         // Apply elevation to visible children only so their shadows didn't overlap each other too much
-        rootView.addOnLayoutChangeListener(OnLayoutChangeListener { v: View?, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int ->
-            var maxHeight = 0
-            val iterator: MutableListIterator<Pair<T?, DialogView?>> =
-                visibleViews.listIterator(visibleViews.size)
-            while (iterator.hasPrevious()) {
-                val pair = iterator.previous()
-                val height = pair.second!!.getHeight()
-                val taller = height > maxHeight
-                if (taller) {
-                    maxHeight = height
+        rootView.addOnLayoutChangeListener(
+            OnLayoutChangeListener { v: View?, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int ->
+                var maxHeight = 0
+                val iterator: MutableListIterator<Pair<T?, DialogView?>> =
+                    visibleViews.listIterator(visibleViews.size)
+                while (iterator.hasPrevious()) {
+                    val pair = iterator.previous()
+                    val height = pair.second!!.getHeight()
+                    val taller = height > maxHeight
+                    if (taller) {
+                        maxHeight = height
+                    }
+                    pair.second!!.setElevated(taller)
                 }
-                pair.second!!.setElevated(taller)
-            }
-        })
+            },
+        )
     }
 
     fun push(viewFactory: T?) {
@@ -211,22 +237,24 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                     // With predictive back enabled, back gestures arrive here instead of
                     // dispatchKeyEvent. Pops a single dialog like the KeyEvent handler
                     // (the long-press-back "clear all" shortcut has no gesture equivalent).
-                    private val backInvokedCallback = OnBackInvokedCallback {
-                        if (!visibleViews.isEmpty()) {
-                            popInternal()
+                    private val backInvokedCallback =
+                        OnBackInvokedCallback {
+                            if (!visibleViews.isEmpty()) {
+                                popInternal()
+                            }
                         }
-                    }
 
                     override fun onStart() {
                         super.onStart()
                         getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                            OnBackInvokedDispatcher.PRIORITY_DEFAULT, backInvokedCallback
+                            OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                            backInvokedCallback,
                         )
                     }
 
                     override fun onStop() {
                         getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
-                            backInvokedCallback
+                            backInvokedCallback,
                         )
                         super.onStop()
                     }
@@ -264,7 +292,11 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
         val dialogView = addDialogView(viewFactory, rootView.getChildCount())
         dialogView.setAlpha(0f)
-        dialogView.animate().alpha(1f).setDuration(100).start()
+        dialogView
+            .animate()
+            .alpha(1f)
+            .setDuration(100)
+            .start()
         visibleViews.add(Pair<T?, DialogView?>(viewFactory, dialogView))
         switchBackground(false)
     }
@@ -286,9 +318,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
     }
 
-    fun pop(): T? {
-        return popInternal()
-    }
+    fun pop(): T? = popInternal()
 
     fun clear() {
         while (!visibleViews.isEmpty()) {
@@ -324,22 +354,27 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         return last.first
     }
 
-    private fun addDialogView(viewFactory: T?, index: Int): DialogView {
-        val dialogView = DialogView(
-            context,
-            dialogBackgroundResId,
-            dialogElevation,
-            dialogDimAmount,
-            @Suppress("UNCHECKED_CAST") viewFactory!!.createView(this as DialogStack<T?>),
-            viewFactory,
-            PopSelf { dialogView: DialogView? -> this.handlePopSelf(dialogView) })
+    private fun addDialogView(
+        viewFactory: T?,
+        index: Int,
+    ): DialogView {
+        val dialogView =
+            DialogView(
+                context,
+                dialogBackgroundResId,
+                dialogElevation,
+                dialogDimAmount,
+                @Suppress("UNCHECKED_CAST") viewFactory!!.createView(this as DialogStack<T?>),
+                viewFactory,
+                PopSelf { dialogView: DialogView? -> this.handlePopSelf(dialogView) },
+            )
         rootView.addView(
             dialogView.container,
             index,
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
         )
         return dialogView
     }
@@ -350,27 +385,40 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
     }
 
-    private open class SimpleLayout(context: Context?) : ViewGroup(context) {
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    private open class SimpleLayout(
+        context: Context?,
+    ) : ViewGroup(context) {
+        override fun onMeasure(
+            widthMeasureSpec: Int,
+            heightMeasureSpec: Int,
+        ) {
             val horizontal = getPaddingLeft() + getPaddingRight()
             val vertical = getPaddingTop() + getPaddingBottom()
             val childCount = getChildCount()
-            var width = if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) max(
-                0,
-                MeasureSpec.getSize(widthMeasureSpec) - horizontal
-            ) else
-                0
-            var height = if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) max(
-                0,
-                MeasureSpec.getSize(heightMeasureSpec) - vertical
-            ) else
-                0
+            var width =
+                if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) {
+                    max(
+                        0,
+                        MeasureSpec.getSize(widthMeasureSpec) - horizontal,
+                    )
+                } else {
+                    0
+                }
+            var height =
+                if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
+                    max(
+                        0,
+                        MeasureSpec.getSize(heightMeasureSpec) - vertical,
+                    )
+                } else {
+                    0
+                }
             for (i in 0..<childCount) {
                 val child = getChildAt(i)
                 val layoutParams = child.getLayoutParams()
                 child.measure(
                     getChildMeasureSpec(widthMeasureSpec, horizontal, layoutParams.width),
-                    getChildMeasureSpec(heightMeasureSpec, vertical, layoutParams.height)
+                    getChildMeasureSpec(heightMeasureSpec, vertical, layoutParams.height),
                 )
                 width = max(width, child.getMeasuredWidth())
                 height = max(height, child.getMeasuredHeight())
@@ -378,7 +426,13 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             setMeasuredDimension(width + horizontal, height + vertical)
         }
 
-        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        override fun onLayout(
+            changed: Boolean,
+            l: Int,
+            t: Int,
+            r: Int,
+            b: Int,
+        ) {
             val left = getPaddingLeft()
             val top = getPaddingTop()
             val width = r - l - getPaddingRight() - left
@@ -394,21 +448,31 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                     left + shiftX,
                     top + shiftY,
                     left + shiftX + childWidth,
-                    top + shiftY + childHeight
+                    top + shiftY + childHeight,
                 )
             }
         }
     }
 
-    private open class DragLayout(context: Context?, side: Side, private val callback: Callback) :
-        SimpleLayout(context), Runnable {
+    private open class DragLayout(
+        context: Context?,
+        side: Side,
+        private val callback: Callback,
+    ) : SimpleLayout(context),
+        Runnable {
         enum class Side {
-            TOP, BOTTOM
+            TOP,
+            BOTTOM,
         }
 
         interface Callback {
             val isScrolled: Boolean
-            fun onProposeShift(shift: Int, acceleration: Float): Boolean
+
+            fun onProposeShift(
+                shift: Int,
+                acceleration: Float,
+            ): Boolean
+
             fun onFinished()
         }
 
@@ -425,98 +489,119 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         private var accept = false
 
         init {
-            helper = ViewDragHelper.create(this, object : ViewDragHelper.Callback() {
-                override fun tryCaptureView(child: View, pointerId: Int): Boolean {
-                    return hasWindowFocus
-                }
+            helper =
+                ViewDragHelper.create(
+                    this,
+                    object : ViewDragHelper.Callback() {
+                        override fun tryCaptureView(
+                            child: View,
+                            pointerId: Int,
+                        ): Boolean = hasWindowFocus
 
-                override fun getViewVerticalDragRange(child: View): Int {
-                    return getHeight()
-                }
+                        override fun getViewVerticalDragRange(child: View): Int = getHeight()
 
-                override fun clampViewPositionHorizontal(child: View, left: Int, dx: Int): Int {
-                    return child.getLeft()
-                }
+                        override fun clampViewPositionHorizontal(
+                            child: View,
+                            left: Int,
+                            dx: Int,
+                        ): Int = child.getLeft()
 
-                override fun clampViewPositionVertical(child: View, top: Int, dy: Int): Int {
-                    val layoutTop = getChildInitialTop(child)
-                    val scrolled = intercepted || callback.isScrolled
-                    return when (side) {
-                        Side.TOP -> if (scrolled) max(layoutTop, top) else layoutTop
-                        Side.BOTTOM -> if (scrolled) min(layoutTop, top) else layoutTop
-                    }
-                }
-
-                override fun onViewDragStateChanged(state: Int) {
-                    if (state == ViewDragHelper.STATE_DRAGGING) {
-                        accept = false
-                    }
-                }
-
-                override fun onViewPositionChanged(
-                    changedView: View,
-                    left: Int,
-                    top: Int,
-                    dx: Int,
-                    dy: Int
-                ) {
-                    val layoutTop = getChildInitialTop(changedView)
-                    val shift = top - layoutTop
-                    val childCount = getChildCount()
-                    for (i in 0..<childCount) {
-                        val child = getChildAt(i)
-                        if (child !== changedView) {
-                            val layoutData = getLayoutData(child, false)
-                            if (layoutData != null) {
-                                val shareShift = (shift * layoutData.multiplier + 0.5f).toInt()
-                                val childTop = child.getTop()
-                                val childDy = layoutData.top + shareShift - childTop
-                                ViewCompat.offsetTopAndBottom(child, childDy)
+                        override fun clampViewPositionVertical(
+                            child: View,
+                            top: Int,
+                            dy: Int,
+                        ): Int {
+                            val layoutTop = getChildInitialTop(child)
+                            val scrolled = intercepted || callback.isScrolled
+                            return when (side) {
+                                Side.TOP -> if (scrolled) max(layoutTop, top) else layoutTop
+                                Side.BOTTOM -> if (scrolled) min(layoutTop, top) else layoutTop
                             }
                         }
-                    }
-                    callback.onProposeShift(abs(shift), 0f)
-                }
 
-                override fun onViewReleased(releasedChild: View, xvel: Float, yvel: Float) {
-                    val top = releasedChild.getTop()
-                    val layoutTop = getChildInitialTop(releasedChild)
-                    val shift = abs(top - layoutTop)
-                    val velocity =
-                        if (top > layoutTop && yvel > 0) yvel else if (top < layoutTop && yvel < 0) -yvel else 0f
-                    val acceleration = 1f + sqrt((velocity / getHeight()).toDouble()).toFloat()
-                    if (hasWindowFocus && callback.onProposeShift(shift, acceleration)) {
-                        accept = true
-                        val targetTop = 2 * top - layoutTop
-                        val maxTop: Int
-                        val minTop: Int
-                        when (side) {
-                            Side.TOP -> {
-                                maxTop = getHeight()
-                                minTop = min(targetTop, maxTop)
-                            }
-
-                            Side.BOTTOM -> {
-                                maxTop = -getHeight()
-                                minTop = max(targetTop, maxTop)
+                        override fun onViewDragStateChanged(state: Int) {
+                            if (state == ViewDragHelper.STATE_DRAGGING) {
+                                accept = false
                             }
                         }
-                        if (velocity > 0) {
-                            helper.flingCapturedView(
-                                releasedChild.getLeft(), min(minTop, maxTop),
-                                releasedChild.getLeft(), max(minTop, maxTop)
-                            )
-                        } else {
-                            helper.settleCapturedViewAt(releasedChild.getLeft(), minTop)
+
+                        override fun onViewPositionChanged(
+                            changedView: View,
+                            left: Int,
+                            top: Int,
+                            dx: Int,
+                            dy: Int,
+                        ) {
+                            val layoutTop = getChildInitialTop(changedView)
+                            val shift = top - layoutTop
+                            val childCount = getChildCount()
+                            for (i in 0..<childCount) {
+                                val child = getChildAt(i)
+                                if (child !== changedView) {
+                                    val layoutData = getLayoutData(child, false)
+                                    if (layoutData != null) {
+                                        val shareShift = (shift * layoutData.multiplier + 0.5f).toInt()
+                                        val childTop = child.getTop()
+                                        val childDy = layoutData.top + shareShift - childTop
+                                        ViewCompat.offsetTopAndBottom(child, childDy)
+                                    }
+                                }
+                            }
+                            callback.onProposeShift(abs(shift), 0f)
                         }
-                        removeCallbacks(this@DragLayout)
-                        postDelayed(this@DragLayout, 150)
-                    } else {
-                        helper.settleCapturedViewAt(releasedChild.getLeft(), layoutTop)
-                    }
-                    invalidate()
-                }
-            })
+
+                        override fun onViewReleased(
+                            releasedChild: View,
+                            xvel: Float,
+                            yvel: Float,
+                        ) {
+                            val top = releasedChild.getTop()
+                            val layoutTop = getChildInitialTop(releasedChild)
+                            val shift = abs(top - layoutTop)
+                            val velocity =
+                                if (top > layoutTop && yvel > 0) {
+                                    yvel
+                                } else if (top < layoutTop && yvel < 0) {
+                                    -yvel
+                                } else {
+                                    0f
+                                }
+                            val acceleration = 1f + sqrt((velocity / getHeight()).toDouble()).toFloat()
+                            if (hasWindowFocus && callback.onProposeShift(shift, acceleration)) {
+                                accept = true
+                                val targetTop = 2 * top - layoutTop
+                                val maxTop: Int
+                                val minTop: Int
+                                when (side) {
+                                    Side.TOP -> {
+                                        maxTop = getHeight()
+                                        minTop = min(targetTop, maxTop)
+                                    }
+
+                                    Side.BOTTOM -> {
+                                        maxTop = -getHeight()
+                                        minTop = max(targetTop, maxTop)
+                                    }
+                                }
+                                if (velocity > 0) {
+                                    helper.flingCapturedView(
+                                        releasedChild.getLeft(),
+                                        min(minTop, maxTop),
+                                        releasedChild.getLeft(),
+                                        max(minTop, maxTop),
+                                    )
+                                } else {
+                                    helper.settleCapturedViewAt(releasedChild.getLeft(), minTop)
+                                }
+                                removeCallbacks(this@DragLayout)
+                                postDelayed(this@DragLayout, 150)
+                            } else {
+                                helper.settleCapturedViewAt(releasedChild.getLeft(), layoutTop)
+                            }
+                            invalidate()
+                        }
+                    },
+                )
         }
 
         override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
@@ -586,7 +671,13 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             return if (layoutData != null) layoutData.top else 0
         }
 
-        protected override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        protected override fun onLayout(
+            changed: Boolean,
+            l: Int,
+            t: Int,
+            r: Int,
+            b: Int,
+        ) {
             val childCount = getChildCount()
             for (i in 0..<childCount) {
                 val child = getChildAt(i)
@@ -623,7 +714,10 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
 
         companion object {
-            private fun getLayoutData(child: View, create: Boolean): LayoutData? {
+            private fun getLayoutData(
+                child: View,
+                create: Boolean,
+            ): LayoutData? {
                 var layoutData: LayoutData? = child.getTag(R.id.tag_drag_layout_data) as LayoutData?
                 if (layoutData == null && create) {
                     layoutData = LayoutData()
@@ -634,8 +728,11 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         }
     }
 
-    private class ContentView(context: Context?, side: Side, callback: Callback) :
-        DragLayout(context, side, callback) {
+    private class ContentView(
+        context: Context?,
+        side: Side,
+        callback: Callback,
+    ) : DragLayout(context, side, callback) {
         init {
             setWillNotDraw(false)
         }
@@ -647,8 +744,13 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     }
 
     private class DialogView(
-        context: Context?, backgroundResId: Int, elevation: Float, dimAmount: Float,
-        content: View?, private val viewFactory: ViewFactory<*>, popSelf: PopSelf
+        context: Context?,
+        backgroundResId: Int,
+        elevation: Float,
+        dimAmount: Float,
+        content: View?,
+        private val viewFactory: ViewFactory<*>,
+        popSelf: PopSelf,
     ) : SimpleLayout(context) {
         fun interface PopSelf {
             fun onRequestPopSelf(dialogView: DialogView?)
@@ -658,7 +760,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             val paint: Paint,
             val size: Float,
             topText: String,
-            bottomText: String?
+            bottomText: String?,
         ) {
             val path: Path = Path()
 
@@ -693,33 +795,40 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
 
         init {
             val container =
-                DragLayout(context, DragLayout.Side.BOTTOM, object : DragLayout.Callback {
-                    override val isScrolled: Boolean
-                        get() = this@DialogView.isScrolledToBottom
+                DragLayout(
+                    context,
+                    DragLayout.Side.BOTTOM,
+                    object : DragLayout.Callback {
+                        override val isScrolled: Boolean
+                            get() = this@DialogView.isScrolledToBottom
 
-                    override fun onProposeShift(shift: Int, acceleration: Float): Boolean {
-                        return handleShift(-shift, acceleration)
-                    }
+                        override fun onProposeShift(
+                            shift: Int,
+                            acceleration: Float,
+                        ): Boolean = handleShift(-shift, acceleration)
 
-                    override fun onFinished() {
-                        popSelf.onRequestPopSelf(this@DialogView)
-                    }
-                })
+                        override fun onFinished() {
+                            popSelf.onRequestPopSelf(this@DialogView)
+                        }
+                    },
+                )
             container.setClipToPadding(false)
             container.setClipChildren(false)
             container.addView(
-                this, LayoutParams.MATCH_PARENT,
-                LayoutParams.WRAP_CONTENT
+                this,
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
             )
             addView(
-                content, LayoutParams.MATCH_PARENT,
-                LayoutParams.WRAP_CONTENT
+                content,
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT,
             )
             setClickable(true)
 
             setBackgroundResource(backgroundResId)
             this.elevation = elevation
-            setBackgroundTintList(ColorStateList.valueOf(ThemeEngine.Companion.getTheme(context)!!.card))
+            setBackgroundTintList(ColorStateList.valueOf(ThemeEngine.Companion.getTheme(context).card))
 
             paint.setColor((dimAmount * 0xff).toInt() shl 24)
             setActive(true)
@@ -731,7 +840,10 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         val isScrolledToBottom: Boolean
             get() = viewFactory.isScrolledToBottom(this.content)
 
-        fun handleShift(shift: Int, acceleration: Float): Boolean {
+        fun handleShift(
+            shift: Int,
+            acceleration: Float,
+        ): Boolean {
             val height = this.container!!.getHeight()
             var relativeShift = shift / (height / 8f)
             relativeShift = max(-1f, min(relativeShift, 1f))
@@ -771,9 +883,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             }
         }
 
-        override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-            return active && super.dispatchTouchEvent(ev)
-        }
+        override fun dispatchTouchEvent(ev: MotionEvent?): Boolean = active && super.dispatchTouchEvent(ev)
 
         fun updatePath(shift: Float) {
             if (shift == 0f && arrowData == null) {
@@ -808,7 +918,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             arrow.vertical = sign(shift) * max(0f, absShift - 2f / 3f) * 3f
             arrow.path.moveTo(
                 -absShift * arrow.size / 2f,
-                -arrow.vertical * arrow.size / 4f
+                -arrow.vertical * arrow.size / 4f,
             )
             arrow.path.lineTo(0f, 0f)
             arrow.path.lineTo(absShift * arrow.size / 2f, -arrow.vertical * arrow.size / 4f)
@@ -836,7 +946,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                         (getHeight() - getPaddingBottom()).toFloat(),
                         radius,
                         radius,
-                        paint
+                        paint,
                     )
                 } else {
                     canvas.drawRect(
@@ -844,7 +954,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                         getPaddingTop().toFloat(),
                         (getWidth() - getPaddingRight()).toFloat(),
                         (getHeight() - getPaddingBottom()).toFloat(),
-                        paint
+                        paint,
                     )
                 }
             }
@@ -854,7 +964,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                 canvas.save()
                 canvas.translate(
                     getWidth() / 2f,
-                    (if (arrow.shift >= 0) 0 else getHeight()).toFloat()
+                    (if (arrow.shift >= 0) 0 else getHeight()).toFloat(),
                 )
                 arrow.paint.setStyle(Paint.Style.STROKE)
                 canvas.drawPath(arrow.path, arrow.paint)
@@ -881,24 +991,22 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
 
     interface ViewFactory<T : ViewFactory<T?>?> {
         fun createView(dialogStack: DialogStack<T>): View
-        fun destroyView(view: View, remove: Boolean) {}
 
-        fun isScrolledToTop(view: View): Boolean {
-            return true
-        }
+        fun destroyView(
+            view: View,
+            remove: Boolean,
+        ) {}
 
-        fun isScrolledToBottom(view: View): Boolean {
-            return true
-        }
+        fun isScrolledToTop(view: View): Boolean = true
+
+        fun isScrolledToBottom(view: View): Boolean = true
     }
 
     fun getVisibleViews(): Iterable<View?> {
         return Iterable {
             val iterator: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
             object : Iterator<View?> {
-                override fun hasNext(): Boolean {
-                    return iterator.hasNext()
-                }
+                override fun hasNext(): Boolean = iterator.hasNext()
 
                 override fun next(): View {
                     val pair = iterator.next()
@@ -912,9 +1020,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         val hidden = hiddenViews.iterator()
         val visible: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
         return object : Iterator<Pair<T?, View?>?> {
-            override fun hasNext(): Boolean {
-                return hidden.hasNext() || visible.hasNext()
-            }
+            override fun hasNext(): Boolean = hidden.hasNext() || visible.hasNext()
 
             override fun next(): Pair<T?, View?>? {
                 if (hidden.hasNext()) {
@@ -923,7 +1029,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                     val pair = visible.next()
                     return Pair<T?, View?>(
                         pair.first,
-                        pair.second!!.content
+                        pair.second!!.content,
                     )
                 } else {
                     return null

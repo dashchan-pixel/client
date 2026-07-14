@@ -1,16 +1,14 @@
 package com.mishiranu.dashchan.content
 
-import chan.util.StringUtils
-
 import android.content.Context
 import chan.content.Chan
 import chan.content.ChanConfiguration
 import chan.text.JsonSerial
 import chan.text.ParseException
+import chan.util.StringUtils
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.model.Post
 import com.mishiranu.dashchan.content.model.PostItem
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.content.model.PostNumber.Companion.parseNullable
@@ -23,7 +21,9 @@ import com.mishiranu.dashchan.widget.ClickableToast
 import java.io.IOException
 import java.util.Arrays
 
-class HidePerformer(context: Context?) {
+class HidePerformer(
+    context: Context?,
+) {
     interface PostsProvider {
         fun findPostItem(postNumber: PostNumber?): PostItem?
     }
@@ -45,7 +45,10 @@ class HidePerformer(context: Context?) {
         this.postsProvider = postsProvider
     }
 
-    fun checkHidden(chan: Chan, postItem: PostItem): String? {
+    fun checkHidden(
+        chan: Chan,
+        postItem: PostItem,
+    ): String? {
         var message = checkHiddenByReplies(postItem)
         if (message == null) {
             message = checkHiddenByName(chan, postItem)
@@ -63,15 +66,15 @@ class HidePerformer(context: Context?) {
     }
 
     private fun checkHiddenByReplies(postItem: PostItem?): String? {
-        var postItem = postItem
+        var currentPostItem = postItem
         if (replies != null && postsProvider != null) {
-            if (replies!!.contains(postItem!!.getPostNumber())) {
-                return "replies tree " + postItem.getPostNumber()
+            if (replies!!.contains(currentPostItem!!.getPostNumber())) {
+                return "replies tree " + currentPostItem.getPostNumber()
             }
-            for (postNumber in postItem.getReferencesTo()) {
-                postItem = postsProvider!!.findPostItem(postNumber)
-                if (postItem != null) {
-                    val message = checkHiddenByReplies(postItem)
+            for (postNumber in currentPostItem.getReferencesTo()) {
+                currentPostItem = postsProvider!!.findPostItem(postNumber)
+                if (currentPostItem != null) {
+                    val message = checkHiddenByReplies(currentPostItem)
                     if (message != null) {
                         return message
                     }
@@ -81,7 +84,10 @@ class HidePerformer(context: Context?) {
         return null
     }
 
-    private fun checkHiddenByName(chan: Chan, postItem: PostItem): String? {
+    private fun checkHiddenByName(
+        chan: Chan,
+        postItem: PostItem,
+    ): String? {
         if (names != null) {
             val name = postItem.getFullName(chan).toString()
             if (names!!.contains(name)) {
@@ -91,7 +97,10 @@ class HidePerformer(context: Context?) {
         return null
     }
 
-    private fun checkHiddenBySimilarPost(chan: Chan, postItem: PostItem): String? {
+    private fun checkHiddenBySimilarPost(
+        chan: Chan,
+        postItem: PostItem,
+    ): String? {
         if (similar != null) {
             val wordsData =
                 estimator.getWords<PostNumber?>(postItem.getComment(chan).toString())
@@ -106,17 +115,25 @@ class HidePerformer(context: Context?) {
         return null
     }
 
-    private fun checkHiddenIfAIGenerated(chan: Chan, postItem: PostItem): String? {
-        if (chan.configuration.getOption(ChanConfiguration.OPTION_AI_POSTING) && Preferences.isHideAIPosts(
-                chan
-            ) && postItem.getPost().isAiGenerated
+    private fun checkHiddenIfAIGenerated(
+        chan: Chan,
+        postItem: PostItem,
+    ): String? {
+        if (chan.configuration.getOption(ChanConfiguration.OPTION_AI_POSTING) &&
+            Preferences.isHideAIPosts(
+                chan,
+            ) &&
+            postItem.getPost().isAiGenerated
         ) {
             return "Is AI-generated!"
         }
         return null
     }
 
-    private fun checkHiddenGlobalAutohide(chan: Chan, postItem: PostItem): String? {
+    private fun checkHiddenGlobalAutohide(
+        chan: Chan,
+        postItem: PostItem,
+    ): String? {
         val boardName = postItem.getBoardName()
         val originalPostNumber = postItem.getOriginalPostNumber()
         // PostItem.getOriginalPostNumber() is non-null (PostItem dereferences it
@@ -129,15 +146,16 @@ class HidePerformer(context: Context?) {
         var names: MutableList<String>? = null
         val autohideItems = autohideStorage.getItems()
         for (i in autohideItems.indices) {
-            val autohideItem = autohideItems.get(i)
+            val autohideItem = autohideItems[i]
             // AND selection (only if chan, board, thread, op, and sage match the rule)
             if (autohideItem.chanNames == null || autohideItem.chanNames!!.contains(chan.name!!)) {
                 if (StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
-                    if (StringUtils.isEmpty(autohideItem.threadNumber) || autohideItem.boardName != null &&
+                    if (StringUtils.isEmpty(autohideItem.threadNumber) ||
+                        autohideItem.boardName != null &&
                         autohideItem.threadNumber == originalPostNumberString
                     ) {
-                        if ((!autohideItem.optionOriginalPost || autohideItem.optionOriginalPost == originalPost)
-                            && (!autohideItem.optionSage || autohideItem.optionSage == sage)
+                        if ((!autohideItem.optionOriginalPost || autohideItem.optionOriginalPost == originalPost) &&
+                            (!autohideItem.optionSage || autohideItem.optionSage == sage)
                         ) {
                             var result: String?
                             // OR selection (hide if subject, comment, or name match the rule)
@@ -148,7 +166,9 @@ class HidePerformer(context: Context?) {
                                 if ((autohideItem.find(subject).also { result = it }) != null) {
                                     return autohideItem.getReason(
                                         AutohideItem
-                                            .ReasonSource.SUBJECT, comment, result
+                                            .ReasonSource.SUBJECT,
+                                        comment,
+                                        result,
                                     )
                                 }
                             }
@@ -159,7 +179,9 @@ class HidePerformer(context: Context?) {
                                 if ((autohideItem.find(comment).also { result = it }) != null) {
                                     return autohideItem.getReason(
                                         AutohideItem
-                                            .ReasonSource.COMMENT, comment, result
+                                            .ReasonSource.COMMENT,
+                                        comment,
+                                        result,
                                     )
                                 }
                             }
@@ -171,7 +193,7 @@ class HidePerformer(context: Context?) {
                                         names = ArrayList<String>(1 + icons.size)
                                         names.add(name)
                                         for (icon in icons) {
-                                            names.add(icon.title!!)
+                                            names.add(icon.title)
                                         }
                                     } else {
                                         names = mutableListOf(name)
@@ -181,7 +203,9 @@ class HidePerformer(context: Context?) {
                                     if ((autohideItem.find(name).also { result = it }) != null) {
                                         return autohideItem.getReason(
                                             AutohideItem
-                                                .ReasonSource.NAME, name, result
+                                                .ReasonSource.NAME,
+                                            name,
+                                            result,
                                         )
                                     }
                                 }
@@ -190,12 +214,17 @@ class HidePerformer(context: Context?) {
                                 for (attachmentItem in postItem.getAttachmentItems()!!) {
                                     val originalName: String =
                                         StringUtils.emptyIfNull(attachmentItem.getOriginalName())
-                                    if ((autohideItem.find(originalName)
-                                            .also { result = it }) != null
+                                    if ((
+                                            autohideItem
+                                                .find(originalName)
+                                                .also { result = it }
+                                        ) != null
                                     ) {
                                         return autohideItem.getReason(
                                             AutohideItem
-                                                .ReasonSource.FILE, originalName, result
+                                                .ReasonSource.FILE,
+                                            originalName,
+                                            result,
                                         )
                                     }
                                 }
@@ -209,7 +238,9 @@ class HidePerformer(context: Context?) {
     }
 
     enum class AddResult {
-        SUCCESS, FAIL, EXISTS
+        SUCCESS,
+        FAIL,
+        EXISTS,
     }
 
     fun addHideByReplies(postItem: PostItem): AddResult {
@@ -224,7 +255,10 @@ class HidePerformer(context: Context?) {
         return AddResult.SUCCESS
     }
 
-    fun addHideByName(chan: Chan, postItem: PostItem): AddResult {
+    fun addHideByName(
+        chan: Chan,
+        postItem: PostItem,
+    ): AddResult {
         if (postItem.isUseDefaultName()) {
             ClickableToast.show(R.string.default_name_cant_be_hidden)
             return AddResult.FAIL
@@ -240,7 +274,10 @@ class HidePerformer(context: Context?) {
         return AddResult.SUCCESS
     }
 
-    fun addHideSimilar(chan: Chan, postItem: PostItem): AddResult {
+    fun addHideSimilar(
+        chan: Chan,
+        postItem: PostItem,
+    ): AddResult {
         val comment = postItem.getComment(chan).toString()
         val wordsData = estimator.getWords<PostNumber?>(comment)
         if (wordsData == null) {
@@ -254,7 +291,7 @@ class HidePerformer(context: Context?) {
         wordsData.extra = postNumber
         // Remove repeats
         for (i in similar!!.indices.reversed()) {
-            if (postNumber.equals(similar!!.get(i).extra)) {
+            if (postNumber.equals(similar!![i].extra)) {
                 similar!!.removeAt(i)
             }
         }
@@ -276,8 +313,8 @@ class HidePerformer(context: Context?) {
                 localFilters.add(
                     context.getString(
                         R.string.replies_to_number__format,
-                        postNumber.toString()
-                    )
+                        postNumber.toString(),
+                    ),
                 )
             }
         }
@@ -291,8 +328,8 @@ class HidePerformer(context: Context?) {
                 localFilters.add(
                     context.getString(
                         R.string.similar_to_number__format,
-                        wordsData.extra.toString()
-                    )
+                        wordsData.extra.toString(),
+                    ),
                 )
             }
         }
@@ -300,12 +337,12 @@ class HidePerformer(context: Context?) {
     }
 
     fun removeLocalFilter(index: Int) {
-        var index = index
+        var remainingIndex = index
         if (replies != null) {
-            if (index >= replies!!.size) {
-                index -= replies!!.size
+            if (remainingIndex >= replies!!.size) {
+                remainingIndex -= replies!!.size
             } else {
-                Companion.removeFromLinkedHashSet(replies!!, index)
+                Companion.removeFromLinkedHashSet(replies!!, remainingIndex)
                 if (replies!!.isEmpty()) {
                     replies = null
                 }
@@ -313,10 +350,10 @@ class HidePerformer(context: Context?) {
             }
         }
         if (names != null) {
-            if (index >= names!!.size) {
-                index -= names!!.size
+            if (remainingIndex >= names!!.size) {
+                remainingIndex -= names!!.size
             } else {
-                Companion.removeFromLinkedHashSet(names!!, index)
+                Companion.removeFromLinkedHashSet(names!!, remainingIndex)
                 if (names!!.isEmpty()) {
                     names = null
                 }
@@ -324,10 +361,10 @@ class HidePerformer(context: Context?) {
             }
         }
         if (similar != null) {
-            if (index >= similar!!.size) {
-                index -= similar!!.size
+            if (remainingIndex >= similar!!.size) {
+                remainingIndex -= similar!!.size
             } else {
-                similar!!.removeAt(index)
+                similar!!.removeAt(remainingIndex)
                 if (similar!!.isEmpty()) {
                     similar = null
                 }
@@ -492,9 +529,10 @@ class HidePerformer(context: Context?) {
                                     // Ignore exception
                                 }
                                 if (count > 0) {
-                                    val words = HashSet<String>(
-                                        Arrays.asList(*rule).subList(3, rule.size).filterNotNull()
-                                    )
+                                    val words =
+                                        HashSet<String>(
+                                            Arrays.asList(*rule).subList(3, rule.size).filterNotNull(),
+                                        )
                                     words.remove("")
                                     if (!words.isEmpty()) {
                                         val wordsData =
@@ -517,7 +555,10 @@ class HidePerformer(context: Context?) {
     companion object {
         private const val MAX_COMMENT_LENGTH = 1000
 
-        private fun removeFromLinkedHashSet(set: LinkedHashSet<*>, index: Int) {
+        private fun removeFromLinkedHashSet(
+            set: LinkedHashSet<*>,
+            index: Int,
+        ) {
             var k = 0
             val iterator: MutableIterator<*> = set.iterator()
             while (iterator.hasNext()) {

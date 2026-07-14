@@ -15,8 +15,6 @@
  */
 package chan.http
 
-import chan.util.StringUtils
-
 import chan.util.StringUtils.getFileExtension
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.ImageType
@@ -31,8 +29,12 @@ import java.util.Random
 import kotlin.math.min
 
 class ChanFileOpenable(
-    fileHolder: FileHolder, fileName: String?, uniqueHash: Boolean, removeMetadata: Boolean,
-    removeFileName: Boolean, reencoding: Reencoding?
+    fileHolder: FileHolder,
+    fileName: String?,
+    uniqueHash: Boolean,
+    removeMetadata: Boolean,
+    removeFileName: Boolean,
+    reencoding: Reencoding?,
 ) : MultipartEntity.Openable {
     private val fileHolder: FileHolder
     override val fileName: String?
@@ -46,58 +48,61 @@ class ChanFileOpenable(
     private val realSize: Long
 
     init {
-        var fileName = fileName
+        var currentFileName = fileName
         this.fileHolder = fileHolder
-        if (fileName == null) {
-            fileName = fileHolder.name
+        if (currentFileName == null) {
+            currentFileName = fileHolder.name
         }
         if (removeFileName) {
-            val extension = getFileExtension(fileName)
+            val extension = getFileExtension(currentFileName)
             val time = System.currentTimeMillis()
             if (extension != null && extension.matches("[a-z0-9]{1,10}".toRegex())) {
-                fileName = time.toString() + "." + extension
+                currentFileName = time.toString() + "." + extension
             } else {
                 when (fileHolder.imageType) {
                     ImageType.IMAGE_JPEG -> {
-                        fileName = time.toString() + ".jpeg"
+                        currentFileName = time.toString() + ".jpeg"
                     }
 
                     ImageType.IMAGE_PNG -> {
-                        fileName = time.toString() + ".png"
+                        currentFileName = time.toString() + ".png"
                     }
 
                     ImageType.IMAGE_GIF -> {
-                        fileName = time.toString() + ".gif"
+                        currentFileName = time.toString() + ".gif"
                     }
 
                     ImageType.IMAGE_WEBP -> {
-                        fileName = time.toString() + ".webp"
+                        currentFileName = time.toString() + ".webp"
                     }
 
                     ImageType.IMAGE_BMP -> {
-                        fileName = time.toString() + ".bmp"
+                        currentFileName = time.toString() + ".bmp"
                     }
 
                     ImageType.IMAGE_SVG -> {
-                        fileName = time.toString() + ".svg"
+                        currentFileName = time.toString() + ".svg"
                     }
 
                     else -> {
-                        fileName = time.toString()
+                        currentFileName = time.toString()
                     }
                 }
             }
         }
         randomBytes = if (uniqueHash) 6 else 0
-        val transformationData = transformImageForPosting(
-            fileHolder,
-            fileName, removeMetadata, reencoding
-        )
+        val transformationData =
+            transformImageForPosting(
+                fileHolder,
+                currentFileName,
+                removeMetadata,
+                reencoding,
+            )
         if (transformationData != null) {
             skipRanges = transformationData.skipRanges
             decodedBytes = transformationData.decodedBytes
             if (transformationData.newFileName != null) {
-                fileName = transformationData.newFileName
+                currentFileName = transformationData.newFileName
             }
             imageWidth =
                 if (transformationData.newWidth > 0) transformationData.newWidth else fileHolder.imageWidth
@@ -109,15 +114,13 @@ class ChanFileOpenable(
             imageWidth = fileHolder.imageWidth
             imageHeight = fileHolder.imageHeight
         }
-        this.fileName = fileName
-        mimeType = MultipartEntity.obtainMimeType(fileName)
+        this.fileName = currentFileName
+        mimeType = MultipartEntity.obtainMimeType(currentFileName)
         realSize = (if (decodedBytes != null) decodedBytes.size else fileHolder.size).toLong()
     }
 
     @Throws(IOException::class)
-    override fun openInputStream(): InputStream {
-        return ChanFileInputStream()
-    }
+    override fun openInputStream(): InputStream = ChanFileInputStream()
 
     override val size: Long
         get() {
@@ -162,12 +165,14 @@ class ChanFileOpenable(
         }
 
         @Throws(IOException::class)
-        override fun read(buffer: ByteArray): Int {
-            return read(buffer, 0, buffer.size)
-        }
+        override fun read(buffer: ByteArray): Int = read(buffer, 0, buffer.size)
 
         @Throws(IOException::class)
-        override fun read(buffer: ByteArray, byteOffset: Int, byteCount: Int): Int {
+        override fun read(
+            buffer: ByteArray,
+            byteOffset: Int,
+            byteCount: Int,
+        ): Int {
             var totalRead = 0
             while (byteCount > totalRead) {
                 val result = readAndSkip(buffer, byteOffset + totalRead, byteCount - totalRead)
@@ -189,18 +194,25 @@ class ChanFileOpenable(
         }
 
         @Throws(IOException::class)
-        fun readAndSkip(buffer: ByteArray?, byteOffset: Int, byteCount: Int): Int {
-            val skipRange = if (skipRanges != null && skipIndex < skipRanges.size)
-                skipRanges.get(skipIndex)
-            else
-                null
+        fun readAndSkip(
+            buffer: ByteArray?,
+            byteOffset: Int,
+            byteCount: Int,
+        ): Int {
+            val skipRange =
+                if (skipRanges != null && skipIndex < skipRanges.size) {
+                    skipRanges[skipIndex]
+                } else {
+                    null
+                }
             val canRead = if (skipRange != null) skipRange.start - position else byteCount.toLong()
             if (canRead > 0) {
-                val count = inputStream.read(
-                    buffer,
-                    byteOffset,
-                    if (canRead >= byteCount) byteCount else canRead.toInt()
-                )
+                val count =
+                    inputStream.read(
+                        buffer,
+                        byteOffset,
+                        if (canRead >= byteCount) byteCount else canRead.toInt(),
+                    )
                 if (count > 0) {
                     position += count.toLong()
                 }

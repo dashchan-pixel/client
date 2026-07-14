@@ -60,15 +60,20 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
 
 class HttpClient private constructor() {
-    class ProxyData(@JvmField val socks: Boolean, @JvmField val host: String?, @JvmField val port: Int) {
+    class ProxyData(
+        @JvmField val socks: Boolean,
+        @JvmField val host: String?,
+        @JvmField val port: Int,
+    ) {
         var proxy: Proxy? = null
             get() {
                 if (field == null) {
                     try {
-                        field = Proxy(
-                            if (socks) Proxy.Type.SOCKS else Proxy.Type.HTTP,
-                            InetSocketAddress.createUnresolved(host, port)
-                        )
+                        field =
+                            Proxy(
+                                if (socks) Proxy.Type.SOCKS else Proxy.Type.HTTP,
+                                InetSocketAddress.createUnresolved(host, port),
+                            )
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -84,7 +89,8 @@ class HttpClient private constructor() {
             if (other is ProxyData) {
                 val proxyData = other
                 return socks == proxyData.socks &&
-                        equals(host, proxyData.host) && port == proxyData.port
+                    equals(host, proxyData.host) &&
+                    port == proxyData.port
             }
             return false
         }
@@ -102,23 +108,21 @@ class HttpClient private constructor() {
         return proxyData == null || proxyData.proxy != null
     }
 
-    fun getProxyData(chan: Chan): ProxyData? {
-        return getProxyData(Preferences.getProxy(chan))
-    }
+    fun getProxyData(chan: Chan): ProxyData? = getProxyData(Preferences.getProxy(chan))
 
     private fun getProxyData(map: Map<String, String>?): ProxyData? {
         if (map != null) {
-            val host = map.get(Preferences.SUB_KEY_PROXY_HOST)
+            val host = map[Preferences.SUB_KEY_PROXY_HOST]
             if (!isEmpty(host)) {
                 var port: Int
                 try {
-                    port = map.get(Preferences.SUB_KEY_PROXY_PORT)!!.toInt()
+                    port = map[Preferences.SUB_KEY_PROXY_PORT]!!.toInt()
                 } catch (e: Exception) {
                     port = -1
                 }
                 if (port > 0) {
                     val socks =
-                        Preferences.VALUE_PROXY_TYPE_SOCKS == map.get(Preferences.SUB_KEY_PROXY_TYPE)
+                        Preferences.VALUE_PROXY_TYPE_SOCKS == map[Preferences.SUB_KEY_PROXY_TYPE]
                     return ProxyData(socks, host, port)
                 }
             }
@@ -129,12 +133,12 @@ class HttpClient private constructor() {
     fun getProxy(chan: Chan): Proxy? {
         var proxyData = getProxyData(chan)
         synchronized(proxies) {
-            val lastProxyData = proxies.get(chan.name)
+            val lastProxyData = proxies[chan.name]
             if (equals(proxyData, lastProxyData)) {
                 // With initialized proxy object
                 proxyData = lastProxyData
             } else {
-                proxies.put(chan.name, proxyData)
+                proxies[chan.name] = proxyData
             }
         }
         return if (proxyData != null) proxyData.proxy else null
@@ -143,19 +147,20 @@ class HttpClient private constructor() {
     private val proxies = HashMap<String?, ProxyData?>()
 
     internal class InterruptedHttpException : IOException() {
-        fun toHttp(): HttpException {
-            return HttpException(null, false, false, this)
-        }
+        fun toHttp(): HttpException = HttpException(null, false, false, this)
     }
 
     private class RetryException : Exception()
 
-    internal enum class Encoding(val value: String) {
+    internal enum class Encoding(
+        val value: String,
+    ) {
         IDENTITY("identity"),
         GZIP("gzip"),
         DEFLATE("deflate"),
         BROTLI("br"),
-        UNKNOWN("");
+        UNKNOWN(""),
+        ;
 
         companion object {
             fun get(headers: Headers?): Encoding {
@@ -183,7 +188,7 @@ class HttpClient private constructor() {
         val proxy: Proxy?,
         val verifyCertificate: Boolean,
         val connectTimeout: Int,
-        val readTimeout: Int
+        val readTimeout: Int,
     ) {
         override fun equals(other: Any?): Boolean {
             if (other === this) {
@@ -193,8 +198,11 @@ class HttpClient private constructor() {
                 val key: ClientKey = other
                 return equals(
                     proxy,
-                    key.proxy
-                ) && verifyCertificate == key.verifyCertificate && connectTimeout == key.connectTimeout && readTimeout == key.readTimeout
+                    key.proxy,
+                ) &&
+                    verifyCertificate == key.verifyCertificate &&
+                    connectTimeout == key.connectTimeout &&
+                    readTimeout == key.readTimeout
             }
             return false
         }
@@ -210,24 +218,30 @@ class HttpClient private constructor() {
 
     @Synchronized
     private fun obtainClient(
-        proxy: Proxy?, verifyCertificate: Boolean,
-        connectTimeout: Int, readTimeout: Int
+        proxy: Proxy?,
+        verifyCertificate: Boolean,
+        connectTimeout: Int,
+        readTimeout: Int,
     ): OkHttpClient {
         if (baseClient == null) {
-            baseClient = OkHttpClient.Builder()
-                .followRedirects(false)
-                .followSslRedirects(false)
-                .retryOnConnectionFailure(false)
-                .build()
+            baseClient =
+                OkHttpClient
+                    .Builder()
+                    .followRedirects(false)
+                    .followSslRedirects(false)
+                    .retryOnConnectionFailure(false)
+                    .build()
         }
         val key = ClientKey(proxy, verifyCertificate, connectTimeout, readTimeout)
-        var client = clients.get(key)
+        var client = clients[key]
         if (client == null) {
-            val builder = baseClient!!.newBuilder()
-                .proxy(if (proxy != null) proxy else Proxy.NO_PROXY)
-                .connectTimeout(connectTimeout.toLong(), TimeUnit.MILLISECONDS)
-                .readTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
-                .writeTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
+            val builder =
+                baseClient!!
+                    .newBuilder()
+                    .proxy(if (proxy != null) proxy else Proxy.NO_PROXY)
+                    .connectTimeout(connectTimeout.toLong(), TimeUnit.MILLISECONDS)
+                    .readTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
+                    .writeTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
             if (!verifyCertificate) {
                 if (unsafeSslSocketFactory == null) {
                     try {
@@ -235,7 +249,7 @@ class HttpClient private constructor() {
                         sslContext.init(
                             null,
                             arrayOf<X509TrustManager?>(UNSAFE_TRUST_MANAGER),
-                            null
+                            null,
                         )
                         unsafeSslSocketFactory = sslContext.getSocketFactory()
                     } catch (e: Exception) {
@@ -249,13 +263,16 @@ class HttpClient private constructor() {
             if (clients.size > 16) {
                 clients.clear()
             }
-            clients.put(key, client)
+            clients[key] = client
         }
         return client
     }
 
     @Throws(HttpException::class)
-    fun execute(session: HttpSession, request: HttpRequest): HttpResponse {
+    fun execute(
+        session: HttpSession,
+        request: HttpRequest,
+    ): HttpResponse {
         while (true) {
             try {
                 return executeInternal(session, request)
@@ -268,7 +285,7 @@ class HttpClient private constructor() {
     private class EntityRequestBody(
         private val entity: RequestEntity,
         private val session: HttpSession,
-        private val listener: HttpRequest.OutputListener?
+        private val listener: HttpRequest.OutputListener?,
     ) : RequestBody() {
         override fun contentType(): MediaType? {
             val contentType = entity.getContentType()
@@ -283,24 +300,33 @@ class HttpClient private constructor() {
         @Throws(IOException::class)
         override fun writeTo(sink: BufferedSink) {
             val contentLength = entity.getContentLength()
-            val output = ClientOutputStream(
-                sink.outputStream(),
-                session, listener, contentLength
-            )
+            val output =
+                ClientOutputStream(
+                    sink.outputStream(),
+                    session,
+                    listener,
+                    contentLength,
+                )
             entity.write(output)
             output.flush()
         }
     }
 
     @Throws(HttpException::class, RetryException::class)
-    private fun executeInternal(session: HttpSession, request: HttpRequest): HttpResponse {
+    private fun executeInternal(
+        session: HttpSession,
+        request: HttpRequest,
+    ): HttpResponse {
         session.checkThread()
         session.checkExecuting()
         session.disconnectAndClear()
         session.executing = true
         try {
             val requestedUri = session.currentRequestedUri!!
-            if (!session.holder.chan!!.locator.isWebScheme(requestedUri)) {
+            if (!session.holder.chan!!
+                    .locator
+                    .isWebScheme(requestedUri)
+            ) {
                 throw HttpException(ErrorItem.Type.UNSUPPORTED_SCHEME, false, false)
             }
             val url: URL = encodeUri(requestedUri)
@@ -325,7 +351,7 @@ class HttpClient private constructor() {
                 }
             }
             if (!userAgentSet) {
-                userAgent = getUserAgent(session.holder.chan!!.name)
+                userAgent = getUserAgent(session.holder.chan.name)
                 builder.header("User-Agent", userAgent)
             }
             if (!acceptEncodingSet) {
@@ -333,13 +359,17 @@ class HttpClient private constructor() {
             }
             val resolverIdentifier =
                 FirewallResolver.Identifier(userAgent, !userAgentSet, url.getHost())
-            val cookieBuilder = if (!session.mayCheckFirewallBlock)
-                request.cookieBuilder
-            else
-                obtainModifiedCookieBuilder(
-                    request.cookieBuilder,
-                    session.holder.chan, requestedUri, resolverIdentifier
-                )
+            val cookieBuilder =
+                if (!session.mayCheckFirewallBlock) {
+                    request.cookieBuilder
+                } else {
+                    obtainModifiedCookieBuilder(
+                        request.cookieBuilder,
+                        session.holder.chan,
+                        requestedUri,
+                        resolverIdentifier,
+                    )
+                }
             if (cookieBuilder != null) {
                 builder.header("Cookie", cookieBuilder.build())
             }
@@ -354,9 +384,10 @@ class HttpClient private constructor() {
             }
             if (request.rangeStart >= 0 || request.rangeEnd >= 0) {
                 builder.header(
-                    "Range", "bytes=" +
-                            (if (request.rangeStart >= 0) request.rangeStart else "") + "-" +
-                            (if (request.rangeEnd >= 0) request.rangeEnd else "")
+                    "Range",
+                    "bytes=" +
+                        (if (request.rangeStart >= 0) request.rangeStart else "") + "-" +
+                        (if (request.rangeEnd >= 0) request.rangeEnd else ""),
                 )
             }
 
@@ -368,21 +399,26 @@ class HttpClient private constructor() {
             val entity = if (forceGet) null else request.requestEntity
             var requestBody: RequestBody? = null
             if (entity != null) {
-                requestBody = EntityRequestBody(
-                    entity, session,
-                    if (forceGet) null else request.outputListener
-                )
-            } else if (requestMethod == RequestMethod.POST
-                || requestMethod == RequestMethod.PUT
+                requestBody =
+                    EntityRequestBody(
+                        entity,
+                        session,
+                        if (forceGet) null else request.outputListener,
+                    )
+            } else if (requestMethod == RequestMethod.POST ||
+                requestMethod == RequestMethod.PUT
             ) {
                 requestBody = ByteArray(0).toRequestBody(null)
             }
             builder.method(requestMethod!!.name, requestBody)
 
-            val client = obtainClient(
-                session.proxy, session.verifyCertificate,
-                request.connectTimeout, request.readTimeout
-            )
+            val client =
+                obtainClient(
+                    session.proxy,
+                    session.verifyCertificate,
+                    request.connectTimeout,
+                    request.readTimeout,
+                )
             val call = client.newCall(builder.build())
             session.setCall(call)
             val okResponse: Response?
@@ -454,14 +490,18 @@ class HttpClient private constructor() {
                 throw HttpException(responseCode, responseMessage)
             }
 
-            if (session.holder.chan!!.name != null && session.mayCheckFirewallBlock && requestMethod != RequestMethod.HEAD) {
+            if (session.holder.chan.name != null && session.mayCheckFirewallBlock && requestMethod != RequestMethod.HEAD) {
                 val result: FirewallResolver.CheckResult?
                 try {
-                    result = FirewallResolver.Implementation.getInstance().checkResponse(
-                        session.holder.chan,
-                        requestedUri, session.holder, response, resolverIdentifier,
-                        session.holder.mayResolveFirewallBlock
-                    )
+                    result =
+                        FirewallResolver.Implementation.getInstance().checkResponse(
+                            session.holder.chan,
+                            requestedUri,
+                            session.holder,
+                            response,
+                            resolverIdentifier,
+                            session.holder.mayResolveFirewallBlock,
+                        )
                 } catch (e: InterruptedException) {
                     throw InterruptedHttpException()
                 }
@@ -516,14 +556,16 @@ class HttpClient private constructor() {
             if (okResponse == null) {
                 throw InterruptedHttpException()
             }
-            var input: InputStream = okResponse.body?.byteStream()
-                ?: throw HttpException(ErrorItem.Type.EMPTY_RESPONSE, false, false)
+            var input: InputStream =
+                okResponse.body?.byteStream()
+                    ?: throw HttpException(ErrorItem.Type.EMPTY_RESPONSE, false, false)
             var success = false
             try {
                 response.session.holder.checkInterrupted()
                 input = BufferedInputStream(input, 8192)
                 when (Encoding.Companion.get(okResponse.headers)) {
                     Encoding.IDENTITY -> {}
+
                     Encoding.GZIP -> {
                         input = GZIPInputStream(input)
                     }
@@ -555,27 +597,36 @@ class HttpClient private constructor() {
     }
 
     fun obtainModifiedCookieBuilder(
-        cookieBuilder: CookieBuilder?, chan: Chan?, uri: Uri?,
-        resolverIdentifier: FirewallResolver.Identifier?
+        cookieBuilder: CookieBuilder?,
+        chan: Chan?,
+        uri: Uri?,
+        resolverIdentifier: FirewallResolver.Identifier?,
     ): CookieBuilder? {
-        var cookieBuilder = cookieBuilder
+        var resultCookieBuilder = cookieBuilder
         val appendCookieBuilder: CookieBuilder =
-            FirewallResolver.Implementation.getInstance()
+            FirewallResolver.Implementation
+                .getInstance()
                 .collectCookies(chan!!, uri, resolverIdentifier!!, false)
         if (!appendCookieBuilder.isEmpty) {
-            cookieBuilder = CookieBuilder(cookieBuilder)
-            cookieBuilder.append(appendCookieBuilder)
+            resultCookieBuilder = CookieBuilder(cookieBuilder)
+            resultCookieBuilder.append(appendCookieBuilder)
         }
-        return cookieBuilder
+        return resultCookieBuilder
     }
 
-    fun obtainRedirectedUri(requestedUri: Uri, locationHeader: String?): Uri {
+    fun obtainRedirectedUri(
+        requestedUri: Uri,
+        locationHeader: String?,
+    ): Uri {
         var redirectedUri: Uri
         if (!isEmpty(locationHeader)) {
             redirectedUri = Uri.parse(locationHeader)
             if (redirectedUri.isRelative()) {
-                val builder = redirectedUri.buildUpon().scheme(requestedUri.getScheme())
-                    .authority(requestedUri.getAuthority())
+                val builder =
+                    redirectedUri
+                        .buildUpon()
+                        .scheme(requestedUri.getScheme())
+                        .authority(requestedUri.getAuthority())
                 val redirectedPath = emptyIfNull(redirectedUri.getPath())
                 if (!redirectedPath.isEmpty() && !redirectedPath.startsWith("/")) {
                     var path = emptyIfNull(requestedUri.getPath())
@@ -598,7 +649,9 @@ class HttpClient private constructor() {
         return redirectedUri
     }
 
-    private class DeflateInputStream(private val input: InputStream) : InputStream() {
+    private class DeflateInputStream(
+        private val input: InputStream,
+    ) : InputStream() {
         private var workInput: InputStream? = null
 
         @Throws(IOException::class)
@@ -615,7 +668,11 @@ class HttpClient private constructor() {
         }
 
         @Throws(IOException::class)
-        override fun read(b: ByteArray?, off: Int, len: Int): Int {
+        override fun read(
+            b: ByteArray?,
+            off: Int,
+            len: Int,
+        ): Int {
             ensureWorkInput()
             return workInput!!.read(b, off, len)
         }
@@ -630,25 +687,33 @@ class HttpClient private constructor() {
             fun createWorkInput(input: InputStream): InputStream {
                 // Check zlib header and create a proper Inflater
                 val output = arrayOf<ByteArrayOutputStream?>(ByteArrayOutputStream())
-                val workInput: InputStream = InflaterInputStream(object : InputStream() {
-                    @Throws(IOException::class)
-                    override fun read(): Int {
-                        val result = input.read()
-                        if (result >= 0 && output[0] != null) {
-                            output[0]!!.write(result)
-                        }
-                        return result
-                    }
+                val workInput: InputStream =
+                    InflaterInputStream(
+                        object : InputStream() {
+                            @Throws(IOException::class)
+                            override fun read(): Int {
+                                val result = input.read()
+                                if (result >= 0 && output[0] != null) {
+                                    output[0]!!.write(result)
+                                }
+                                return result
+                            }
 
-                    @Throws(IOException::class)
-                    override fun read(b: ByteArray, off: Int, len: Int): Int {
-                        val result = input.read(b, off, len)
-                        if (result > 0 && output[0] != null) {
-                            output[0]!!.write(b, off, result)
-                        }
-                        return result
-                    }
-                }, Inflater(false))
+                            @Throws(IOException::class)
+                            override fun read(
+                                b: ByteArray,
+                                off: Int,
+                                len: Int,
+                            ): Int {
+                                val result = input.read(b, off, len)
+                                if (result > 0 && output[0] != null) {
+                                    output[0]!!.write(b, off, result)
+                                }
+                                return result
+                            }
+                        },
+                        Inflater(false),
+                    )
                 var success = false
                 var firstByte = -1
                 try {
@@ -662,7 +727,7 @@ class HttpClient private constructor() {
                     if (firstByte >= 0) {
                         return SequenceInputStream(
                             ByteArrayInputStream(byteArrayOf(firstByte.toByte())),
-                            workInput
+                            workInput,
                         )
                     } else {
                         workInput.close()
@@ -681,7 +746,7 @@ class HttpClient private constructor() {
 
     private class ClientInputStream(
         private val input: InputStream,
-        private val session: HttpSession?
+        private val session: HttpSession?,
     ) : InputStream() {
         @Throws(IOException::class)
         override fun read(): Int {
@@ -690,12 +755,14 @@ class HttpClient private constructor() {
         }
 
         @Throws(IOException::class)
-        override fun read(b: ByteArray): Int {
-            return read(b, 0, b.size)
-        }
+        override fun read(b: ByteArray): Int = read(b, 0, b.size)
 
         @Throws(IOException::class)
-        override fun read(b: ByteArray, off: Int, len: Int): Int {
+        override fun read(
+            b: ByteArray,
+            off: Int,
+            len: Int,
+        ): Int {
             Companion.checkInterruptedAndClose(session!!, this)
             return input.read(b, off, len)
         }
@@ -736,9 +803,7 @@ class HttpClient private constructor() {
             input.mark(readlimit)
         }
 
-        override fun markSupported(): Boolean {
-            return input.markSupported()
-        }
+        override fun markSupported(): Boolean = input.markSupported()
 
         @Throws(IOException::class)
         override fun reset() {
@@ -747,8 +812,10 @@ class HttpClient private constructor() {
     }
 
     private class ClientOutputStream(
-        private val output: OutputStream, private val session: HttpSession,
-        listener: HttpRequest.OutputListener?, private val contentLength: Long
+        private val output: OutputStream,
+        private val session: HttpSession,
+        listener: HttpRequest.OutputListener?,
+        private val contentLength: Long,
     ) : OutputStream() {
         private val listener: HttpRequest.OutputListener?
 
@@ -776,7 +843,11 @@ class HttpClient private constructor() {
         }
 
         @Throws(IOException::class)
-        override fun write(buffer: ByteArray, offset: Int, length: Int) {
+        override fun write(
+            buffer: ByteArray,
+            offset: Int,
+            length: Int,
+        ) {
             checkInterruptedAndClose(session, this)
             output.write(buffer, offset, length)
             updateProgress(length.toLong())
@@ -808,7 +879,11 @@ class HttpClient private constructor() {
 
     // Called from HttpSession
     @Throws(InterruptedHttpException::class)
-    fun onConnect(chan: Chan, call: Call, delay: Int) {
+    fun onConnect(
+        chan: Chan,
+        call: Call,
+        delay: Int,
+    ) {
         if (isSingleConnection(chan.name)) {
             synchronized(singleConnections) {
                 while (singleConnections.containsKey(chan.name)) {
@@ -827,10 +902,10 @@ class HttpClient private constructor() {
             val key = call.request().url.host + ":" + call.request().url.port
             var delayLock: AtomicBoolean?
             synchronized(delayLocks) {
-                delayLock = delayLocks.get(key)
+                delayLock = delayLocks[key]
                 if (delayLock == null) {
                     delayLock = AtomicBoolean(false)
-                    delayLocks.put(key, delayLock)
+                    delayLocks[key] = delayLock
                 }
             }
             synchronized(delayLock!!) {
@@ -875,21 +950,26 @@ class HttpClient private constructor() {
             HostnameVerifier { hostname: String?, session: SSLSession? -> true }
 
         @SuppressLint("TrustAllX509TrustManager")
-        private val UNSAFE_TRUST_MANAGER: X509TrustManager = object : X509TrustManager {
-            override fun checkClientTrusted(chain: Array<X509Certificate?>?, authType: String?) {}
+        private val UNSAFE_TRUST_MANAGER: X509TrustManager =
+            object : X509TrustManager {
+                override fun checkClientTrusted(
+                    chain: Array<X509Certificate?>?,
+                    authType: String?,
+                ) {}
 
-            override fun checkServerTrusted(chain: Array<X509Certificate?>?, authType: String?) {}
+                override fun checkServerTrusted(
+                    chain: Array<X509Certificate?>?,
+                    authType: String?,
+                ) {}
 
-            override fun getAcceptedIssuers(): Array<X509Certificate?> {
-                return arrayOfNulls<X509Certificate>(0)
+                override fun getAcceptedIssuers(): Array<X509Certificate?> = arrayOfNulls<X509Certificate>(0)
             }
-        }
 
         const val HTTP_TEMPORARY_REDIRECT: Int = 307
 
         init {
-            SHORT_RESPONSE_MESSAGES.put("Internal Server Error", "Internal Error")
-            SHORT_RESPONSE_MESSAGES.put("Service Temporarily Unavailable", "Service Unavailable")
+            SHORT_RESPONSE_MESSAGES["Internal Server Error"] = "Internal Error"
+            SHORT_RESPONSE_MESSAGES["Service Temporarily Unavailable"] = "Service Unavailable"
         }
 
         private val INSTANCE = HttpClient()
@@ -901,11 +981,15 @@ class HttpClient private constructor() {
 
         private fun encodeUriBufferPart(
             uriStringBuilder: StringBuilder,
-            chars: CharArray?, i: Int, start: Int, ascii: Boolean
+            chars: CharArray?,
+            i: Int,
+            start: Int,
+            ascii: Boolean,
         ) {
             if (!ascii) {
                 try {
-                    for (b in kotlin.text.String(chars!!, start, i - start)
+                    for (b in kotlin.text
+                        .String(chars!!, start, i - start)
                         .toByteArray(charset("UTF-8"))) {
                         val s = (b.toInt() and 0xff).toString(16).uppercase()
                         uriStringBuilder.append('%')
@@ -919,7 +1003,10 @@ class HttpClient private constructor() {
             }
         }
 
-        private fun encodeUriAppend(uriStringBuilder: StringBuilder, part: String) {
+        private fun encodeUriAppend(
+            uriStringBuilder: StringBuilder,
+            part: String,
+        ) {
             val chars = part.toCharArray()
             var ascii = true
             var start = 0
@@ -980,7 +1067,7 @@ class HttpClient private constructor() {
         }
 
         fun transformResponseMessage(originalMessage: String?): String? {
-            val message: String? = SHORT_RESPONSE_MESSAGES.get(originalMessage)
+            val message: String? = SHORT_RESPONSE_MESSAGES[originalMessage]
             return if (message != null) message else originalMessage
         }
 
@@ -1044,15 +1131,19 @@ class HttpClient private constructor() {
                 return true
             }
             val message = exception.message
-            return message != null && (message.contains("Connection reset by peer")
-                    || message.contains("Connection closed by peer") || message.contains("unexpected end of stream")
-                    || message.contains("Connection refused"))
+            return message != null &&
+                (
+                    message.contains("Connection reset by peer") ||
+                        message.contains("Connection closed by peer") ||
+                        message.contains("unexpected end of stream") ||
+                        message.contains("Connection refused")
+                )
         }
 
         @Throws(InterruptedHttpException::class)
         private fun checkInterruptedAndClose(
             session: HttpSession,
-            closeable: Closeable?
+            closeable: Closeable?,
         ) {
             try {
                 session.holder.checkInterrupted()

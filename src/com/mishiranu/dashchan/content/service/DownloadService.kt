@@ -1,7 +1,5 @@
 package com.mishiranu.dashchan.content.service
 
-import chan.util.StringUtils
-
 import android.app.Notification
 import android.app.Notification.ProgressStyle
 import android.app.NotificationChannel
@@ -29,6 +27,7 @@ import chan.content.ChanManager.Fingerprints
 import chan.util.CommonUtils.equals
 import chan.util.DataFile
 import chan.util.DataFile.Companion.obtain
+import chan.util.StringUtils
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.getFileExtension
 import chan.util.StringUtils.isEmpty
@@ -76,7 +75,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.math.max
 
-class DownloadService : BaseService(), ReadFileTask.Callback {
+class DownloadService :
+    BaseService(),
+    ReadFileTask.Callback {
     private var notificationManager: NotificationManager? = null
     private var notificationColor = 0
     private var wakeLock: WakeLock? = null
@@ -116,27 +117,29 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         var notificationColor = 0
         val theme = ThemeEngine.attachAndApply(this)
-        notificationColor = theme!!.accent
+        notificationColor = theme.accent
 
         this.notificationColor = notificationColor
         notificationManager!!.createNotificationChannel(
             NotificationChannel(
                 C.NOTIFICATION_CHANNEL_DOWNLOADING,
-                getString(R.string.downloads), NotificationManager.IMPORTANCE_LOW
-            )
+                getString(R.string.downloads),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
         )
         notificationManager!!.createNotificationChannel(
             createHeadsUpNotificationChannel(
                 C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE,
-                getString(R.string.completed_downloads)
-            )
+                getString(R.string.completed_downloads),
+            ),
         )
 
         val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            getPackageName() + ":DownloadServiceWakeLock"
-        )
+        wakeLock =
+            powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                getPackageName() + ":DownloadServiceWakeLock",
+            )
         wakeLock!!.setReferenceCounted(false)
         addOnDestroyListener(ChanDatabase.getInstance().requireCookies())
     }
@@ -171,9 +174,11 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_NOT_STICKY
-    }
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int = START_NOT_STICKY
 
     private fun cleanupRequests() {
         if (primaryRequest != null) {
@@ -251,10 +256,12 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         if (primaryRequest is ChoiceRequest) {
             val choiceRequest = primaryRequest as ChoiceRequest
             if (!choiceRequest.shouldHandle) {
-                val directRequest = choiceRequest.complete(
-                    null, isDownloadDetailName,
-                    isDownloadOriginalName
-                )
+                val directRequest =
+                    choiceRequest.complete(
+                        null,
+                        isDownloadDetailName,
+                        isDownloadOriginalName,
+                    )
                 primaryRequest = null
                 handlePrimaryDirectRequest(directRequest)
             }
@@ -265,7 +272,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         for (directRequest in directRequests) {
             if (directRequest.input != null) {
                 check(directRequest.downloadItems.size == 1)
-                val downloadItem = directRequest.downloadItems.get(0)
+                val downloadItem = directRequest.downloadItems[0]
                 enqueue(
                     TaskData(
                         downloadItem.chanName,
@@ -274,8 +281,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         directRequest.target,
                         directRequest.path,
                         downloadItem.name,
-                        directRequest.allowWrite
-                    )
+                        directRequest.allowWrite,
+                    ),
                 )
             } else {
                 for (downloadItem in directRequest.downloadItems) {
@@ -289,15 +296,14 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                             directRequest.target,
                             directRequest.path,
                             downloadItem.name,
-                            directRequest.allowWrite
-                        )
+                            directRequest.allowWrite,
+                        ),
                     )
                 }
             }
         }
         directRequests.clear()
     }
-
 
     private fun enqueue(taskData: TaskData) {
         val key = taskData.key
@@ -311,7 +317,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
         successTasks.remove(key)
         errorTasks.remove(key)
-        queuedTasks.put(key, taskData)
+        queuedTasks[key] = taskData
     }
 
     private fun startNextTask() {
@@ -319,46 +325,56 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             val iterator = queuedTasks.values.iterator()
             val taskData = iterator.next()
             iterator.remove()
-            SINGLE_THREAD_EXECUTOR.execute(Runnable {
-                val taskDataFile = getDataFile(taskData)
-                activeTaskDataFile = taskDataFile
-                if (taskData.input != null) {
-                    var success = false
-                    try {
-                        taskData.input.use { input ->
-                            taskDataFile.openOutputStream().use { output ->
-                                copyStream(input, output)
-                                success = true
+            SINGLE_THREAD_EXECUTOR.execute(
+                Runnable {
+                    val taskDataFile = getDataFile(taskData)
+                    activeTaskDataFile = taskDataFile
+                    if (taskData.input != null) {
+                        var success = false
+                        try {
+                            taskData.input.use { input ->
+                                taskDataFile.openOutputStream().use { output ->
+                                    copyStream(input, output)
+                                    success = true
+                                }
                             }
+                        } catch (e: IOException) {
+                            e.printStackTrace()
                         }
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }
-                    val finalSuccess = success
-                    ConcurrentUtils.HANDLER.post(Runnable {
-                        onFinishDownloadingInternal(
-                            finalSuccess, TaskData(
-                                taskData.chanName,
-                                taskData.overwrite,
-                                null,
-                                taskData.target,
-                                taskData.path,
-                                taskData.name,
-                                taskData.allowWrite
-                            )
+                        val finalSuccess = success
+                        ConcurrentUtils.HANDLER.post(
+                            Runnable {
+                                onFinishDownloadingInternal(
+                                    finalSuccess,
+                                    TaskData(
+                                        taskData.chanName,
+                                        taskData.overwrite,
+                                        null,
+                                        taskData.target,
+                                        taskData.path,
+                                        taskData.name,
+                                        taskData.allowWrite,
+                                    ),
+                                )
+                            },
                         )
-                    })
-                } else {
-                    val chan = getPreferred(taskData.chanName, taskData.uri)
-                    val readFileTask = ReadFileTask.createShared(
-                        this, chan,
-                        taskData.uri!!, taskDataFile, taskData.overwrite,
-                        taskData.checkSha256, taskData.checkFingerprints
-                    )
-                    activeTask = Pair<TaskData?, ReadFileTask?>(taskData, readFileTask)
-                    readFileTask.execute(SINGLE_THREAD_EXECUTOR)
-                }
-            })
+                    } else {
+                        val chan = getPreferred(taskData.chanName, taskData.uri)
+                        val readFileTask =
+                            ReadFileTask.createShared(
+                                this,
+                                chan,
+                                taskData.uri!!,
+                                taskDataFile,
+                                taskData.overwrite,
+                                taskData.checkSha256,
+                                taskData.checkFingerprints,
+                            )
+                        activeTask = Pair<TaskData?, ReadFileTask?>(taskData, readFileTask)
+                        readFileTask.execute(SINGLE_THREAD_EXECUTOR)
+                    }
+                },
+            )
         } else {
             cachedDirectories.clear()
         }
@@ -366,17 +382,19 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
     private fun getDataFile(taskData: TaskData): DataFile {
         val key: String = getTargetPathKey(taskData.target, emptyIfNull(taskData.path))
-        var file = cachedDirectories.get(key)
+        var file = cachedDirectories[key]
         if (file == null) {
             file = obtain(taskData.target, taskData.path)
             if (file.exists()) {
-                cachedDirectories.put(key, file)
+                cachedDirectories[key] = file
             }
         }
         return file.getChild(taskData.name)
     }
 
-    internal class PrepareTask<T>(internal val innerTask: Task<T?>) : ExecutorTask<Void?, T?>() {
+    internal class PrepareTask<T>(
+        internal val innerTask: Task<T?>,
+    ) : ExecutorTask<Unit?, T?>() {
         interface Task<T> {
             fun cleanup()
 
@@ -410,7 +428,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     @Throws(InterruptedException::class)
     private fun createReplaceRequest(
         directRequest: DirectRequest,
-        activeKeys: HashSet<String?>
+        activeKeys: HashSet<String?>,
     ): ReplaceRequest? {
         var queued = 0
         var exists = 0
@@ -422,7 +440,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val childrenList = parent.getChildren()
         if (childrenList != null) {
             for (file in childrenList) {
-                children.put(file.getName()!!.lowercase(Locale.getDefault()), file)
+                children[file.getName()!!.lowercase(Locale.getDefault())] = file
             }
         }
         for (downloadItem in directRequest.downloadItems) {
@@ -431,7 +449,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             if (keys.contains(key) || activeKeys.contains(key)) {
                 queued++
             } else {
-                val file = children.get(downloadItem.name!!.lowercase(Locale.getDefault()))
+                val file = children[downloadItem.name!!.lowercase(Locale.getDefault())]
                 if (file != null) {
                     exists++
                     lastExistingFile = file
@@ -444,32 +462,34 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 throw InterruptedException()
             }
         }
-        return if (availableItems.size == directRequest.downloadItems.size)
+        return if (availableItems.size == directRequest.downloadItems.size) {
             null
-        else
+        } else {
             ReplaceRequest(directRequest, availableItems, lastExistingFile, queued, exists)
+        }
     }
 
     private fun handlePrimaryDirectRequest(directRequest: DirectRequest) {
         val activeKeys = collectActiveKeys()
-        val task = PrepareTask<ReplaceRequest?>(object : PrepareTask.Task<ReplaceRequest?> {
-            override fun cleanup() {
-                directRequest.cleanup()
-            }
+        val task =
+            PrepareTask<ReplaceRequest?>(
+                object : PrepareTask.Task<ReplaceRequest?> {
+                    override fun cleanup() {
+                        directRequest.cleanup()
+                    }
 
-            @Throws(InterruptedException::class)
-            override fun run(): ReplaceRequest? {
-                return createReplaceRequest(directRequest, activeKeys)
-            }
+                    @Throws(InterruptedException::class)
+                    override fun run(): ReplaceRequest? = createReplaceRequest(directRequest, activeKeys)
 
-            override fun onResult(result: ReplaceRequest?) {
-                primaryRequest = result
-                if (result == null) {
-                    directRequests.add(directRequest)
-                }
-                handleRequests()
-            }
-        })
+                    override fun onResult(result: ReplaceRequest?) {
+                        primaryRequest = result
+                        if (result == null) {
+                            directRequests.add(directRequest)
+                        }
+                        handleRequests()
+                    }
+                },
+            )
         task.execute(ConcurrentUtils.SEPARATE_EXECUTOR)
         primaryRequest = PrepareRequest(task)
     }
@@ -477,7 +497,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     @Throws(InterruptedException::class)
     private fun createDirectRequestKeepAll(
         replaceRequest: ReplaceRequest,
-        activeKeys: HashSet<String?>
+        activeKeys: HashSet<String?>,
     ): DirectRequest {
         val keys = HashSet<String?>()
         val target = replaceRequest.directRequest.target
@@ -498,17 +518,18 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     getTargetPathKey(
                         target,
                         replaceRequest.directRequest.path,
-                        downloadItem.name
-                    )
+                        downloadItem.name,
+                    ),
                 )
                 finalItems.add(downloadItem)
             } else {
                 val extension = getFileExtension(downloadItem.name)
                 val dotExtension = if (isEmpty(extension)) "" else "." + extension
-                val nameWithoutExtension = downloadItem.name!!.substring(
-                    0,
-                    downloadItem.name.length - dotExtension.length
-                )
+                val nameWithoutExtension =
+                    downloadItem.name!!.substring(
+                        0,
+                        downloadItem.name.length - dotExtension.length,
+                    )
                 var name: String?
                 var key: String?
                 var i = 0
@@ -518,14 +539,18 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     key = getTargetPathKey(target, path, nameWithoutExtension + append)
                     i++
                 } while (children.contains(name.lowercase(Locale.getDefault())) ||
-                    keys.contains(key) || activeKeys.contains(key)
+                    keys.contains(key) ||
+                    activeKeys.contains(key)
                 )
                 keys.add(key)
                 finalItems.add(
                     DownloadItem(
-                        downloadItem.chanName, downloadItem.uri, name,
-                        downloadItem.checkSha256, downloadItem.checkFingerprints
-                    )
+                        downloadItem.chanName,
+                        downloadItem.uri,
+                        name,
+                        downloadItem.checkSha256,
+                        downloadItem.checkFingerprints,
+                    ),
                 )
             }
             if (Thread.interrupted()) {
@@ -533,41 +558,48 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
         }
         return DirectRequest(
-            target, path, replaceRequest.directRequest.overwrite,
-            finalItems, replaceRequest.directRequest.input, replaceRequest.directRequest.allowWrite
+            target,
+            path,
+            replaceRequest.directRequest.overwrite,
+            finalItems,
+            replaceRequest.directRequest.input,
+            replaceRequest.directRequest.allowWrite,
         )
     }
 
     private fun handlePrimaryReplaceKeepAllReplace(replaceRequest: ReplaceRequest) {
         val activeKeys = collectActiveKeys()
-        val task = PrepareTask<DirectRequest?>(object : PrepareTask.Task<DirectRequest?> {
-            override fun cleanup() {
-                replaceRequest.cleanup()
-            }
+        val task =
+            PrepareTask<DirectRequest?>(
+                object : PrepareTask.Task<DirectRequest?> {
+                    override fun cleanup() {
+                        replaceRequest.cleanup()
+                    }
 
-            @Throws(InterruptedException::class)
-            override fun run(): DirectRequest {
-                return createDirectRequestKeepAll(replaceRequest, activeKeys)
-            }
+                    @Throws(InterruptedException::class)
+                    override fun run(): DirectRequest = createDirectRequestKeepAll(replaceRequest, activeKeys)
 
-            override fun onResult(result: DirectRequest?) {
-                primaryRequest = null
-                directRequests.add(result!!)
-                handleRequests()
-            }
-        })
+                    override fun onResult(result: DirectRequest?) {
+                        primaryRequest = null
+                        directRequests.add(result!!)
+                        handleRequests()
+                    }
+                },
+            )
         task.execute(ConcurrentUtils.SEPARATE_EXECUTOR)
         primaryRequest = PrepareRequest(task)
     }
 
     interface Callback {
         fun requestHandleRequest() {}
+
         fun requestPermission() {}
+
         fun onFinishDownloading(
             success: Boolean,
             target: DataFile.Target?,
             path: String?,
-            name: String?
+            name: String?,
         ) {
         }
 
@@ -575,7 +607,9 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     enum class PermissionResult {
-        SUCCESS, FAIL, CANCEL
+        SUCCESS,
+        FAIL,
+        CANCEL,
     }
 
     inner class Binder : android.os.Binder() {
@@ -591,7 +625,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             handleRequests()
         }
 
-        fun resolve(choiceRequest: ChoiceRequest, directRequest: DirectRequest?) {
+        fun resolve(
+            choiceRequest: ChoiceRequest,
+            directRequest: DirectRequest?,
+        ) {
             if (primaryRequest === choiceRequest) {
                 primaryRequest = null
                 if (directRequest != null) {
@@ -603,7 +640,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
         }
 
-        fun resolve(replaceRequest: ReplaceRequest, action: ReplaceRequest.Action?) {
+        fun resolve(
+            replaceRequest: ReplaceRequest,
+            action: ReplaceRequest.Action?,
+        ) {
             if (primaryRequest === replaceRequest) {
                 primaryRequest = null
                 if (action != null) {
@@ -625,8 +665,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                                         replaceRequest.directRequest.overwrite,
                                         replaceRequest.availableItems,
                                         replaceRequest.directRequest.input,
-                                        replaceRequest.directRequest.allowWrite
-                                    )
+                                        replaceRequest.directRequest.allowWrite,
+                                    ),
                                 )
                             } else {
                                 // Request with input should contain only 1 download item.
@@ -650,9 +690,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
         }
 
-        fun getPrimaryRequest(): Request? {
-            return if (hasStoragePermission()) primaryRequest else null
-        }
+        fun getPrimaryRequest(): Request? = if (hasStoragePermission()) primaryRequest else null
 
         fun onPermissionResult(result: PermissionResult?) {
             if (result != PermissionResult.SUCCESS) {
@@ -705,25 +743,28 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
         }
 
-        internal fun open(file: DataFile, allowWrite: Boolean) {
+        internal fun open(
+            file: DataFile,
+            allowWrite: Boolean,
+        ) {
             refreshNotification(NotificationUpdate.SYNC)
             val extension = getFileExtension(file.getName())
             val type = forExtension(extension, "image/jpeg")
             if (file.exists()) {
-                val callback = DownloadService.ScanCallback { uri: Uri? ->
-                    try {
-                        startActivity(
-                            Intent(Intent.ACTION_VIEW)
-                                .setFlags(
-                                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                            (if (allowWrite) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0)
-                                )
-                                .setDataAndType(uri, type)
-                        )
-                    } catch (e: ActivityNotFoundException) {
-                        ClickableToast.show(R.string.unknown_address)
+                val callback =
+                    DownloadService.ScanCallback { uri: Uri? ->
+                        try {
+                            startActivity(
+                                Intent(Intent.ACTION_VIEW)
+                                    .setFlags(
+                                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                            (if (allowWrite) Intent.FLAG_GRANT_WRITE_URI_PERMISSION else 0),
+                                    ).setDataAndType(uri, type),
+                            )
+                        } catch (e: ActivityNotFoundException) {
+                            ClickableToast.show(R.string.unknown_address)
+                        }
                     }
-                }
                 val fileOrUri = file.getFileOrUri()
                 if (fileOrUri.first != null) {
                     scanFileLegacy(fileOrUri.first!!, Pair<String?, ScanCallback?>(type, callback))
@@ -756,8 +797,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
 
         fun downloadDirect(
-            target: DataFile.Target, path: String?, overwrite: Boolean,
-            downloadItems: List<DownloadItem>
+            target: DataFile.Target,
+            path: String?,
+            overwrite: Boolean,
+            downloadItems: List<DownloadItem>,
         ) {
             directRequests.add(DirectRequest(target, path, overwrite, downloadItems, null, false))
             handleRequestsOrAccumulate()
@@ -767,7 +810,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             target: DataFile.Target,
             path: String?,
             name: String?,
-            input: InputStream?
+            input: InputStream?,
         ) {
             directRequests.add(
                 DirectRequest(
@@ -776,35 +819,54 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     true,
                     mutableListOf<DownloadItem>(DownloadItem(null, null, name, null, null)),
                     input,
-                    false
-                )
+                    false,
+                ),
             )
             handleRequestsOrAccumulate()
         }
 
         fun downloadStorage(
-            uri: Uri?, fileName: String, originalName: String?,
-            chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
+            uri: Uri?,
+            fileName: String,
+            originalName: String?,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            threadTitle: String?,
         ) {
             downloadStorage(
                 RequestItem(uri, fileName, originalName),
-                chanName, boardName, threadNumber, threadTitle
+                chanName,
+                boardName,
+                threadNumber,
+                threadTitle,
             )
         }
 
         fun downloadStorage(
             requestItem: RequestItem?,
-            chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            threadTitle: String?,
         ) {
             downloadStorage(
-                mutableListOf<RequestItem>(requestItem!!), false,
-                chanName, boardName, threadNumber, threadTitle
+                mutableListOf<RequestItem>(requestItem!!),
+                false,
+                chanName,
+                boardName,
+                threadNumber,
+                threadTitle,
             )
         }
 
         fun downloadStorage(
-            requestItems: MutableList<RequestItem>, multiple: Boolean,
-            chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
+            requestItems: MutableList<RequestItem>,
+            multiple: Boolean,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            threadTitle: String?,
         ) {
             var modifyingAllowed = false
             var hasOriginalNames = false
@@ -818,28 +880,46 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
             val allowDetailName = modifyingAllowed
             val allowOriginalName = modifyingAllowed && hasOriginalNames
-            primaryRequest = UriRequest(
-                downloadSubdirMode!!.isEnabled(multiple), requestItems,
-                allowDetailName, allowOriginalName, chanName, boardName, threadNumber, threadTitle
-            )
+            primaryRequest =
+                UriRequest(
+                    downloadSubdirMode!!.isEnabled(multiple),
+                    requestItems,
+                    allowDetailName,
+                    allowOriginalName,
+                    chanName,
+                    boardName,
+                    threadNumber,
+                    threadTitle,
+                )
             handleRequestsOrAccumulate()
         }
 
         fun downloadStorage(
-            input: InputStream?, chanName: String?, boardName: String?, threadNumber: String?,
-            threadTitle: String?, fileName: String, allowDialog: Boolean, allowWrite: Boolean
+            input: InputStream?,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
+            threadTitle: String?,
+            fileName: String,
+            allowDialog: Boolean,
+            allowWrite: Boolean,
         ) {
-            primaryRequest = StreamRequest(
-                downloadSubdirMode!!.isEnabled(false) && allowDialog,
-                allowWrite, input, fileName, chanName, boardName, threadNumber, threadTitle
-            )
+            primaryRequest =
+                StreamRequest(
+                    downloadSubdirMode!!.isEnabled(false) && allowDialog,
+                    allowWrite,
+                    input,
+                    fileName,
+                    chanName,
+                    boardName,
+                    threadNumber,
+                    threadTitle,
+                )
             handleRequestsOrAccumulate()
         }
     }
 
-    override fun onBind(intent: Intent?): Binder? {
-        return this.Binder()
-    }
+    override fun onBind(intent: Intent?): Binder? = this.Binder()
 
     private class NotificationData(
         val type: Type?,
@@ -855,12 +935,14 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val progress: Int,
         val progressMax: Int,
         val updateImageOnly: Boolean,
-        val syncLatch: CountDownLatch?
+        val syncLatch: CountDownLatch?,
     ) {
-        enum class Type(val iconResId: Int) {
+        enum class Type(
+            val iconResId: Int,
+        ) {
             PROGRESS(android.R.drawable.stat_sys_download),
             RESULT(android.R.drawable.stat_sys_download_done),
-            REQUEST(android.R.drawable.stat_sys_warning)
+            REQUEST(android.R.drawable.stat_sys_warning),
         }
 
         companion object {
@@ -876,59 +958,95 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 allowWrite: Boolean,
                 activeName: String?,
                 progress: Int,
-                progressMax: Int
-            ): NotificationData {
-                return NotificationData(
-                    type, allowHeadsUp, queuedTasks, successTasks, errorTasks,
-                    allowRetry, hasExternal, lastSuccessFile, allowWrite,
-                    activeName, progress, progressMax, false, null
+                progressMax: Int,
+            ): NotificationData =
+                NotificationData(
+                    type,
+                    allowHeadsUp,
+                    queuedTasks,
+                    successTasks,
+                    errorTasks,
+                    allowRetry,
+                    hasExternal,
+                    lastSuccessFile,
+                    allowWrite,
+                    activeName,
+                    progress,
+                    progressMax,
+                    false,
+                    null,
                 )
-            }
 
-            fun updateImageOnly(lastSuccessFile: DataFile?, allowWrite: Boolean): NotificationData {
-                return DownloadService.NotificationData(
-                    null, false, 0, 0, 0, false, false,
-                    lastSuccessFile, allowWrite, null, 0, 0, true, null
+            fun updateImageOnly(
+                lastSuccessFile: DataFile?,
+                allowWrite: Boolean,
+            ): NotificationData =
+                DownloadService.NotificationData(
+                    null,
+                    false,
+                    0,
+                    0,
+                    0,
+                    false,
+                    false,
+                    lastSuccessFile,
+                    allowWrite,
+                    null,
+                    0,
+                    0,
+                    true,
+                    null,
                 )
-            }
 
-            fun sync(syncLatch: CountDownLatch?): NotificationData {
-                return DownloadService.NotificationData(
-                    null, false, 0, 0, 0, false, false,
-                    null, false, null, 0, 0, false, syncLatch
+            fun sync(syncLatch: CountDownLatch?): NotificationData =
+                DownloadService.NotificationData(
+                    null,
+                    false,
+                    0,
+                    0,
+                    0,
+                    false,
+                    false,
+                    null,
+                    false,
+                    null,
+                    0,
+                    0,
+                    false,
+                    syncLatch,
                 )
-            }
         }
     }
 
-    private val notificationsRunnable = Runnable {
-        var interrupted = false
-        while (true) {
-            var notificationData: NotificationData? = null
-            if (!interrupted) {
-                try {
-                    notificationData = notificationsQueue.take()
-                } catch (e: InterruptedException) {
-                    interrupted = true
+    private val notificationsRunnable =
+        Runnable {
+            var interrupted = false
+            while (true) {
+                var notificationData: NotificationData? = null
+                if (!interrupted) {
+                    try {
+                        notificationData = notificationsQueue.take()
+                    } catch (e: InterruptedException) {
+                        interrupted = true
+                    }
                 }
-            }
-            if (interrupted) {
-                notificationData = notificationsQueue.poll()
-            }
-            if (notificationData == null) {
-                return@Runnable
-            }
-            if (notificationData.syncLatch != null) {
-                notificationData.syncLatch.countDown()
-            } else if (notificationData.updateImageOnly) {
-                if (builder != null) {
-                    setBuilderImage(notificationData.lastSuccessFile!!)
+                if (interrupted) {
+                    notificationData = notificationsQueue.poll()
                 }
-            } else {
-                refreshNotificationFromThread(notificationData)
+                if (notificationData == null) {
+                    return@Runnable
+                }
+                if (notificationData.syncLatch != null) {
+                    notificationData.syncLatch.countDown()
+                } else if (notificationData.updateImageOnly) {
+                    if (builder != null) {
+                        setBuilderImage(notificationData.lastSuccessFile!!)
+                    }
+                } else {
+                    refreshNotificationFromThread(notificationData)
+                }
             }
         }
-    }
 
     private class TaskData(
         val chanName: String?,
@@ -941,7 +1059,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val target: DataFile.Target,
         val path: String?,
         val name: String?,
-        val allowWrite: Boolean
+        val allowWrite: Boolean,
     ) : Parcelable {
         constructor(
             chanName: String?,
@@ -950,46 +1068,66 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             target: DataFile.Target,
             path: String?,
             name: String?,
-            allowWrite: Boolean
+            allowWrite: Boolean,
         ) : this(chanName, true, overwrite, input, null, null, null, target, path, name, allowWrite)
 
         constructor(
-            chanName: String?, overwrite: Boolean,
-            from: Uri?, checkSha256: ByteArray?, checkFingerprints: Fingerprints?,
-            target: DataFile.Target, path: String?, name: String?, allowWrite: Boolean
+            chanName: String?,
+            overwrite: Boolean,
+            from: Uri?,
+            checkSha256: ByteArray?,
+            checkFingerprints: Fingerprints?,
+            target: DataFile.Target,
+            path: String?,
+            name: String?,
+            allowWrite: Boolean,
         ) : this(
-            chanName, false, overwrite, null, from, checkSha256, checkFingerprints,
-            target, path, name, allowWrite
+            chanName,
+            false,
+            overwrite,
+            null,
+            from,
+            checkSha256,
+            checkFingerprints,
+            target,
+            path,
+            name,
+            allowWrite,
         )
 
-        fun newFinishedFromCache(finishedFromCache: Boolean): TaskData {
-            return if (this.finishedFromCache == finishedFromCache) this else TaskData(
-                chanName,
-                finishedFromCache,
-                overwrite,
-                input,
-                uri,
-                checkSha256,
-                checkFingerprints,
-                target,
-                path,
-                name,
-                allowWrite
-            )
-        }
+        fun newFinishedFromCache(finishedFromCache: Boolean): TaskData =
+            if (this.finishedFromCache == finishedFromCache) {
+                this
+            } else {
+                TaskData(
+                    chanName,
+                    finishedFromCache,
+                    overwrite,
+                    input,
+                    uri,
+                    checkSha256,
+                    checkFingerprints,
+                    target,
+                    path,
+                    name,
+                    allowWrite,
+                )
+            }
 
         val key: String
-            get() = getTargetPathKey(
-                target,
-                path,
-                name
-            )
+            get() =
+                getTargetPathKey(
+                    target,
+                    path,
+                    name,
+                )
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeString(chanName)
             dest.writeByte((if (finishedFromCache) 1 else 0).toByte())
             dest.writeByte((if (checkFingerprints != null) 1 else 0).toByte())
@@ -1007,39 +1145,53 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
         companion object {
             @JvmField
-            val CREATOR: Parcelable.Creator<TaskData> = object : Parcelable.Creator<TaskData> {
-                override fun createFromParcel(source: Parcel): TaskData {
-                    val chanName = source.readString()
-                    val finishedFromCache = source.readByte().toInt() != 0
-                    val overwrite = source.readByte().toInt() != 0
-                    val uri = ParcelCompat.readParcelable<Uri?>(
-                        source,
-                        javaClass.getClassLoader(),
-                        Uri::class.java
-                    )
-                    val checkSha256 = source.createByteArray()
-                    val checkFingerprints = if (source.readByte().toInt() != 0)
-                        Fingerprints.CREATOR.createFromParcel(source)
-                    else
-                        null
-                    val target = DataFile.Target.valueOf(source.readString()!!)
-                    val path = source.readString()
-                    val name = source.readString()
-                    val allowWrite = source.readByte().toInt() != 0
-                    return TaskData(
-                        chanName, finishedFromCache, overwrite, null, uri,
-                        checkSha256, checkFingerprints, target, path, name, allowWrite
-                    )
-                }
+            val CREATOR: Parcelable.Creator<TaskData> =
+                object : Parcelable.Creator<TaskData> {
+                    override fun createFromParcel(source: Parcel): TaskData {
+                        val chanName = source.readString()
+                        val finishedFromCache = source.readByte().toInt() != 0
+                        val overwrite = source.readByte().toInt() != 0
+                        val uri =
+                            ParcelCompat.readParcelable<Uri?>(
+                                source,
+                                javaClass.getClassLoader(),
+                                Uri::class.java,
+                            )
+                        val checkSha256 = source.createByteArray()
+                        val checkFingerprints =
+                            if (source.readByte().toInt() != 0) {
+                                Fingerprints.CREATOR.createFromParcel(source)
+                            } else {
+                                null
+                            }
+                        val target = DataFile.Target.valueOf(source.readString()!!)
+                        val path = source.readString()
+                        val name = source.readString()
+                        val allowWrite = source.readByte().toInt() != 0
+                        return TaskData(
+                            chanName,
+                            finishedFromCache,
+                            overwrite,
+                            null,
+                            uri,
+                            checkSha256,
+                            checkFingerprints,
+                            target,
+                            path,
+                            name,
+                            allowWrite,
+                        )
+                    }
 
-                override fun newArray(size: Int): Array<TaskData?> {
-                    return arrayOfNulls<TaskData>(size)
+                    override fun newArray(size: Int): Array<TaskData?> = arrayOfNulls<TaskData>(size)
                 }
-            }
         }
     }
 
-    private fun startStopForeground(foreground: Boolean, notification: Notification?) {
+    private fun startStopForeground(
+        foreground: Boolean,
+        notification: Notification?,
+    ) {
         synchronized(this) {
             if (foreground) {
                 if (!isForegroundWorker) {
@@ -1081,8 +1233,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     0,
                     Intent(this, Receiver::class.java)
                         .setAction(ACTION_CANCEL),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
             builder!!.setSmallIcon(notificationData.type!!.iconResId)
             builder!!.setColor(notificationColor)
@@ -1092,28 +1244,34 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             when (notificationData.type) {
                 NotificationData.Type.PROGRESS, NotificationData.Type.REQUEST -> {
                     builder!!.addAction(
-                        Notification.Action.Builder(
-                            null,
-                            getString(android.R.string.cancel), PendingIntent.getBroadcast(
-                                this, 0,
-                                Intent(this, Receiver::class.java).setAction(ACTION_CANCEL),
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                            )
-                        ).build()
+                        Notification.Action
+                            .Builder(
+                                null,
+                                getString(android.R.string.cancel),
+                                PendingIntent.getBroadcast(
+                                    this,
+                                    0,
+                                    Intent(this, Receiver::class.java).setAction(ACTION_CANCEL),
+                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                                ),
+                            ).build(),
                     )
                 }
 
                 NotificationData.Type.RESULT -> {
                     if (notificationData.allowRetry) {
                         builder!!.addAction(
-                            Notification.Action.Builder(
-                                null,
-                                getString(R.string.retry), PendingIntent.getBroadcast(
-                                    this, 0,
-                                    Intent(this, Receiver::class.java).setAction(ACTION_RETRY),
-                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                                )
-                            ).build()
+                            Notification.Action
+                                .Builder(
+                                    null,
+                                    getString(R.string.retry),
+                                    PendingIntent.getBroadcast(
+                                        this,
+                                        0,
+                                        Intent(this, Receiver::class.java).setAction(ACTION_RETRY),
+                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                                    ),
+                                ).build(),
                         )
                     }
                 }
@@ -1124,8 +1282,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         this,
                         0,
                         Intent(this, MainActivity::class.java),
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
                 )
             } else if (notificationData.lastSuccessFile != null) {
                 builder!!.setContentIntent(
@@ -1135,16 +1293,14 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         Intent(this, Receiver::class.java)
                             .putExtra(
                                 EXTRA_FILE_TARGET,
-                                notificationData.lastSuccessFile.target.name
-                            )
-                            .putExtra(
+                                notificationData.lastSuccessFile.target.name,
+                            ).putExtra(
                                 EXTRA_FILE_PATH,
-                                notificationData.lastSuccessFile.getRelativePath()
-                            )
-                            .putExtra(EXTRA_ALLOW_WRITE, notificationData.allowWrite)
+                                notificationData.lastSuccessFile.getRelativePath(),
+                            ).putExtra(EXTRA_ALLOW_WRITE, notificationData.allowWrite)
                             .setAction(ACTION_OPEN),
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
                 )
             }
         }
@@ -1164,35 +1320,43 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 foreground = true
                 val progressStyle = ProgressStyle()
                 val indeterminate =
-                    notificationData.progressMax == 0 || notificationData.progress > notificationData.progressMax || notificationData.progress < 0
+                    notificationData.progressMax == 0 ||
+                        notificationData.progress > notificationData.progressMax ||
+                        notificationData.progress < 0
                 if (indeterminate) {
                     progressStyle.setProgressIndeterminate(true)
                 } else {
                     progressStyle.setProgressSegments(
                         mutableListOf<ProgressStyle.Segment?>(
-                            ProgressStyle.Segment(notificationData.progressMax)
-                        )
+                            ProgressStyle.Segment(notificationData.progressMax),
+                        ),
                     )
                     progressStyle.setProgress(notificationData.progress)
                     builder!!.setShortCriticalText(
-                        (100 * notificationData.progress
-                                / notificationData.progressMax).toString() + "%"
+                        (
+                            100 * notificationData.progress /
+                                notificationData.progressMax
+                        ).toString() + "%",
                     )
                 }
                 builder!!.setStyle(progressStyle)
             }
 
             NotificationData.Type.RESULT -> {
-                contentTitle = getString(
-                    if (notificationData.hasNotFromCache)
-                        R.string.download_completed
-                    else
-                        R.string.save_completed
-                )
-                contentText = getString(
-                    R.string.success_number_not_loaded_number__format,
-                    notificationData.successTasks, notificationData.errorTasks
-                )
+                contentTitle =
+                    getString(
+                        if (notificationData.hasNotFromCache) {
+                            R.string.download_completed
+                        } else {
+                            R.string.save_completed
+                        },
+                    )
+                contentText =
+                    getString(
+                        R.string.success_number_not_loaded_number__format,
+                        notificationData.successTasks,
+                        notificationData.errorTasks,
+                    )
                 headsUp = notificationData.allowHeadsUp
                 foreground = false
             }
@@ -1205,17 +1369,18 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
 
             else -> {
-                throw IllegalStateException()
+                error("Unsupported notification state")
             }
         }
         builder!!.setContentTitle(contentTitle)
         builder!!.setContentText(contentText)
         // Importance, sound and vibration are governed by the channels themselves.
         builder!!.setChannelId(
-            if (headsUp && isNotifyDownloadComplete)
+            if (headsUp && isNotifyDownloadComplete) {
                 C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE
-            else
+            } else {
                 C.NOTIFICATION_CHANNEL_DOWNLOADING
+            },
         )
 
         startStopForeground(foreground, if (foreground) builder!!.build() else null)
@@ -1248,7 +1413,9 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     private enum class NotificationUpdate {
-        NORMAL, HEADS_UP, SYNC
+        NORMAL,
+        HEADS_UP,
+        SYNC,
     }
 
     private fun refreshNotification(notificationUpdate: NotificationUpdate?) {
@@ -1281,12 +1448,17 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
             val allowWrite = lastSuccessFileTaskData != null && lastSuccessFileTaskData.allowWrite
 
-            val type = if (hasActiveTask) NotificationData.Type.PROGRESS else if (hasRequests)
-                NotificationData.Type.REQUEST
-            else
-                NotificationData.Type.RESULT
+            val type =
+                if (hasActiveTask) {
+                    NotificationData.Type.PROGRESS
+                } else if (hasRequests) {
+                    NotificationData.Type.REQUEST
+                } else {
+                    NotificationData.Type.RESULT
+                }
 
-            val allowHeadsUp = type == NotificationData.Type.RESULT &&
+            val allowHeadsUp =
+                type == NotificationData.Type.RESULT &&
                     notificationUpdate == NotificationUpdate.HEADS_UP
             val activeName = if (hasActiveTask) activeTask!!.second!!.getFileName() else null
 
@@ -1303,8 +1475,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                     allowWrite,
                     activeName,
                     progress,
-                    progressMax
-                )
+                    progressMax,
+                ),
             )
         }
         if (hasActiveTask) {
@@ -1336,7 +1508,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         success: Boolean,
         uri: Uri,
         file: DataFile,
-        errorItem: ErrorItem?
+        errorItem: ErrorItem?,
     ) {
         val taskData =
             activeTask!!.first!!.newFinishedFromCache(activeTask!!.second!!.isDownloadingFromCache())
@@ -1344,7 +1516,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         onFinishDownloadingInternal(success, taskData)
     }
 
-    private fun onFinishDownloadingInternal(success: Boolean, taskData: TaskData) {
+    private fun onFinishDownloadingInternal(
+        success: Boolean,
+        taskData: TaskData,
+    ) {
         val file = activeTaskDataFile!!.getFileOrUri().first
 
         if (success) {
@@ -1358,9 +1533,9 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
         if (success) {
             lastSuccessTaskDataFile = activeTaskDataFile
-            successTasks.put(taskData.key, taskData)
+            successTasks[taskData.key] = taskData
         } else {
-            errorTasks.put(taskData.key, taskData)
+            errorTasks[taskData.key] = taskData
         }
         if (!queuedTasks.isEmpty()) {
             if (success && taskData.target.isExternal) {
@@ -1368,8 +1543,8 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 notificationsQueue.add(
                     NotificationData.Companion.updateImageOnly(
                         lastSuccessTaskDataFile,
-                        taskData.allowWrite
-                    )
+                        taskData.allowWrite,
+                    ),
                 )
             }
             startNextTask()
@@ -1380,8 +1555,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-
-    override fun onUpdateProgress(progress: Long, progressMax: Long) {
+    override fun onUpdateProgress(
+        progress: Long,
+        progressMax: Long,
+    ) {
         this.progress = (progress / 1000).toInt()
         this.progressMax = (progressMax / 1000).toInt()
         val t = SystemClock.elapsedRealtime()
@@ -1395,32 +1572,39 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         fun onComplete(uri: Uri?)
     }
 
-    private fun scanFileLegacy(file: File, callback: Pair<String?, ScanCallback?>?) {
+    private fun scanFileLegacy(
+        file: File,
+        callback: Pair<String?, ScanCallback?>?,
+    ) {
         val fileArray = arrayOf<String?>(file.getAbsolutePath())
         val listener: OnScanCompletedListener?
         if (callback != null) {
             val handled = booleanArrayOf(false)
-            listener = OnScanCompletedListener { f: String?, uri: Uri? ->
-                synchronized(handled) {
-                    if (!handled[0]) {
-                        handled[0] = true
-                        callback.second!!.onComplete(uri)
+            listener =
+                OnScanCompletedListener { f: String?, uri: Uri? ->
+                    synchronized(handled) {
+                        if (!handled[0]) {
+                            handled[0] = true
+                            callback.second!!.onComplete(uri)
+                        }
                     }
                 }
-            }
-            ConcurrentUtils.HANDLER.postDelayed(Runnable {
-                synchronized(handled) {
-                    if (!handled[0]) {
-                        handled[0] = true
-                        callback.second!!.onComplete(
-                            convertDownloadsLegacyFile(
-                                file,
-                                callback.first
+            ConcurrentUtils.HANDLER.postDelayed(
+                Runnable {
+                    synchronized(handled) {
+                        if (!handled[0]) {
+                            handled[0] = true
+                            callback.second!!.onComplete(
+                                convertDownloadsLegacyFile(
+                                    file,
+                                    callback.first,
+                                ),
                             )
-                        )
+                        }
                     }
-                }
-            }, 1000)
+                },
+                1000,
+            )
         } else {
             listener = null
         }
@@ -1436,22 +1620,24 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     abstract class ChoiceRequest protected constructor(
-		internal val shouldHandle: Boolean,
-	    val allowWrite: Boolean,
-	    @JvmField val chanName: String?,
-	    @JvmField val boardName: String?,
-	    @JvmField val threadNumber: String?,
-	    @JvmField val threadTitle: String?
+        internal val shouldHandle: Boolean,
+        val allowWrite: Boolean,
+        @JvmField val chanName: String?,
+        @JvmField val boardName: String?,
+        @JvmField val threadNumber: String?,
+        @JvmField val threadTitle: String?,
     ) : Request {
         @JvmField
         var state: Any? = null
 
         abstract fun allowDetailName(): Boolean
+
         abstract fun allowOriginalName(): Boolean
+
         abstract fun complete(
             path: String?,
             detailName: Boolean,
-            originalName: Boolean
+            originalName: Boolean,
         ): DirectRequest
     }
 
@@ -1461,7 +1647,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         val overwrite: Boolean,
         val downloadItems: List<DownloadItem>,
         val input: InputStream?,
-        val allowWrite: Boolean
+        val allowWrite: Boolean,
     ) {
         internal fun cleanup() {
             if (input != null) {
@@ -1471,14 +1657,16 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     class ReplaceRequest internal constructor(
-		internal val directRequest: DirectRequest,
-	    internal val availableItems: MutableList<DownloadItem>,
-	    @JvmField val lastExistingFile: DataFile?,
-	    @JvmField val queued: Int,
-	    @JvmField val exists: Int
+        internal val directRequest: DirectRequest,
+        internal val availableItems: MutableList<DownloadItem>,
+        @JvmField val lastExistingFile: DataFile?,
+        @JvmField val queued: Int,
+        @JvmField val exists: Int,
     ) : Request {
         enum class Action {
-            REPLACE, KEEP_ALL, SKIP
+            REPLACE,
+            KEEP_ALL,
+            SKIP,
         }
 
         @JvmField
@@ -1489,7 +1677,9 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-    class PrepareRequest internal constructor(internal val task: PrepareTask<*>) : Request {
+    class PrepareRequest internal constructor(
+        internal val task: PrepareTask<*>,
+    ) : Request {
         override fun cleanup() {
             task.innerTask.cleanup()
             task.cancel()
@@ -1497,37 +1687,42 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     private class UriRequest(
-        shouldHandle: Boolean, val items: MutableList<RequestItem>,
-        val allowDetailName: Boolean, val allowOriginalName: Boolean,
-        chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
+        shouldHandle: Boolean,
+        val items: MutableList<RequestItem>,
+        val allowDetailName: Boolean,
+        val allowOriginalName: Boolean,
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        threadTitle: String?,
     ) : ChoiceRequest(shouldHandle, false, chanName, boardName, threadNumber, threadTitle) {
-        override fun allowDetailName(): Boolean {
-            return allowDetailName
-        }
+        override fun allowDetailName(): Boolean = allowDetailName
 
-        override fun allowOriginalName(): Boolean {
-            return allowOriginalName
-        }
+        override fun allowOriginalName(): Boolean = allowOriginalName
 
         override fun complete(
             path: String?,
             detailName: Boolean,
-            originalName: Boolean
+            originalName: Boolean,
         ): DirectRequest {
             val downloadItems: MutableList<DownloadItem> = ArrayList<DownloadItem>(items.size)
             for (requestItem in items) {
                 downloadItems.add(
                     DownloadItem(
-                        chanName, requestItem.uri, Companion.getDesiredFileName(
+                        chanName,
+                        requestItem.uri,
+                        Companion.getDesiredFileName(
                             requestItem.uri,
                             requestItem.fileName,
                             (if (originalName) requestItem.originalName else null),
                             detailName,
                             chanName,
                             boardName,
-                            threadNumber
-                        ), null, null
-                    )
+                            threadNumber,
+                        ),
+                        null,
+                        null,
+                    ),
                 )
             }
             return DirectRequest(
@@ -1536,36 +1731,49 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 true,
                 downloadItems,
                 null,
-                allowWrite
+                allowWrite,
             )
         }
     }
 
     private class StreamRequest(
-        shouldHandle: Boolean, allowWrite: Boolean, val input: InputStream?, val fileName: String,
-        chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?
+        shouldHandle: Boolean,
+        allowWrite: Boolean,
+        val input: InputStream?,
+        val fileName: String,
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        threadTitle: String?,
     ) : ChoiceRequest(shouldHandle, allowWrite, chanName, boardName, threadNumber, threadTitle) {
-        override fun allowDetailName(): Boolean {
-            return true
-        }
+        override fun allowDetailName(): Boolean = true
 
-        override fun allowOriginalName(): Boolean {
-            return false
-        }
+        override fun allowOriginalName(): Boolean = false
 
         override fun complete(
             path: String?,
             detailName: Boolean,
-            originalName: Boolean
+            originalName: Boolean,
         ): DirectRequest {
-            val fileName = if (detailName) getFileNameWithChanBoardThreadData(
-                this.fileName,
-                chanName, boardName, threadNumber
-            ) else this.fileName
+            val fileName =
+                if (detailName) {
+                    getFileNameWithChanBoardThreadData(
+                        this.fileName,
+                        chanName,
+                        boardName,
+                        threadNumber,
+                    )
+                } else {
+                    this.fileName
+                }
             val downloadItem = DownloadItem(chanName, null, fileName, null, null)
             return DirectRequest(
-                DataFile.Target.DOWNLOADS, path, true,
-                mutableListOf<DownloadItem>(downloadItem), input, allowWrite
+                DataFile.Target.DOWNLOADS,
+                path,
+                true,
+                mutableListOf<DownloadItem>(downloadItem),
+                input,
+                allowWrite,
             )
         }
 
@@ -1576,17 +1784,25 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         }
     }
 
-    class RequestItem(val uri: Uri?, val fileName: String, val originalName: String?)
+    class RequestItem(
+        val uri: Uri?,
+        val fileName: String,
+        val originalName: String?,
+    )
 
     class DownloadItem(
-        val chanName: String?, val uri: Uri?, val name: String?,
-        val checkSha256: ByteArray?, val checkFingerprints: Fingerprints?
+        val chanName: String?,
+        val uri: Uri?,
+        val name: String?,
+        val checkSha256: ByteArray?,
+        val checkFingerprints: Fingerprints?,
     ) : Parcelable {
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeString(chanName)
             dest.writeString(if (uri != null) uri.toString() else null)
             dest.writeString(name)
@@ -1603,7 +1819,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
             if (other is DownloadItem) {
                 return (equals(uri, other.uri)) &&
-                        equals(name, other.name)
+                    equals(name, other.name)
             }
             return false
         }
@@ -1620,22 +1836,25 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             @JvmField
             val CREATOR: Parcelable.Creator<DownloadItem?> =
                 object : Parcelable.Creator<DownloadItem?> {
-                    override fun newArray(size: Int): Array<DownloadItem?> {
-                        return arrayOfNulls<DownloadItem>(size)
-                    }
+                    override fun newArray(size: Int): Array<DownloadItem?> = arrayOfNulls<DownloadItem>(size)
 
                     override fun createFromParcel(source: Parcel): DownloadItem {
                         val chanName = source.readString()
                         val uriString = source.readString()
                         val name = source.readString()
                         val checkSha256 = source.createByteArray()
-                        val checkFingerprints = if (source.readByte().toInt() != 0)
-                            Fingerprints.CREATOR.createFromParcel(source)
-                        else
-                            null
+                        val checkFingerprints =
+                            if (source.readByte().toInt() != 0) {
+                                Fingerprints.CREATOR.createFromParcel(source)
+                            } else {
+                                null
+                            }
                         return DownloadItem(
-                            chanName, if (uriString != null) Uri.parse(uriString) else null, name,
-                            checkSha256, checkFingerprints
+                            chanName,
+                            if (uriString != null) Uri.parse(uriString) else null,
+                            name,
+                            checkSha256,
+                            checkFingerprints,
                         )
                     }
                 }
@@ -1643,7 +1862,10 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
     }
 
     class Receiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent?) {
+        override fun onReceive(
+            context: Context,
+            intent: Intent?,
+        ) {
             val action = if (intent != null) intent.getAction() else null
             val cancel = ACTION_CANCEL == action
             val retry = ACTION_RETRY == action
@@ -1653,34 +1875,37 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                 val targetString = intent!!.getStringExtra(EXTRA_FILE_TARGET)
                 val path = intent.getStringExtra(EXTRA_FILE_PATH)
                 val allowWrite = intent.getBooleanExtra(EXTRA_ALLOW_WRITE, false)
-                val file = if (targetString != null && path != null)
-                    obtain(DataFile.Target.valueOf(targetString), path)
-                else
-                    null
+                val file =
+                    if (targetString != null && path != null) {
+                        obtain(DataFile.Target.valueOf(targetString), path)
+                    } else {
+                        null
+                    }
                 // Broadcast receivers can't bind to services
                 val connection = arrayOf<ServiceConnection?>(null)
-                connection[0] = object : ServiceConnection {
-                    override fun onServiceConnected(
-                        componentName: ComponentName?,
-                        binder: IBinder?
-                    ) {
-                        val downloadBinder = binder as Binder
-                        if (cancel) {
-                            downloadBinder.cancelAll()
-                        } else if (retry) {
-                            downloadBinder.retry()
-                        } else if (open) {
-                            downloadBinder.open(file!!, allowWrite)
+                connection[0] =
+                    object : ServiceConnection {
+                        override fun onServiceConnected(
+                            componentName: ComponentName?,
+                            binder: IBinder?,
+                        ) {
+                            val downloadBinder = binder as Binder
+                            if (cancel) {
+                                downloadBinder.cancelAll()
+                            } else if (retry) {
+                                downloadBinder.retry()
+                            } else if (open) {
+                                downloadBinder.open(file!!, allowWrite)
+                            }
+                            bindContext.unbindService(connection[0]!!)
                         }
-                        bindContext.unbindService(connection[0]!!)
-                    }
 
-                    override fun onServiceDisconnected(componentName: ComponentName?) {}
-                }
+                        override fun onServiceDisconnected(componentName: ComponentName?) {}
+                    }
                 bindContext.bindService(
                     Intent(context, DownloadService::class.java),
                     connection[0]!!,
-                    BIND_AUTO_CREATE
+                    BIND_AUTO_CREATE,
                 )
             }
         }
@@ -1700,14 +1925,15 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
         private val savedDownloadRetryFile: File
             get() = CacheManager.getInstance().getInternalCacheFile("saved-download-retry")!!
 
-        private fun getTargetPathKey(target: DataFile.Target?, path: String): String {
-            return target.toString() + ":" + path.lowercase(Locale.getDefault())
-        }
+        private fun getTargetPathKey(
+            target: DataFile.Target?,
+            path: String,
+        ): String = target.toString() + ":" + path.lowercase(Locale.getDefault())
 
         private fun getTargetPathKey(
             target: DataFile.Target?,
             path: String?,
-            name: String?
+            name: String?,
         ): String {
             val fullPath: String =
                 (if (!StringUtils.isEmpty(path)) path + "/" + name else name)!!
@@ -1716,13 +1942,14 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
         private fun getFileNameWithChanBoardThreadData(
             fileName: String,
-            chanName: String?, boardName: String?, threadNumber: String?
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
         ): String {
-            var fileName = fileName
             val extension = getFileExtension(fileName)
-            fileName = fileName.substring(0, fileName.length - extension!!.length - 1)
+            val baseName = fileName.substring(0, fileName.length - extension!!.length - 1)
             val builder = StringBuilder()
-            builder.append(fileName)
+            builder.append(baseName)
             if (chanName != null) {
                 builder.append('-').append(chanName)
             }
@@ -1735,30 +1962,39 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             return builder.append('.').append(extension).toString()
         }
 
-        private fun isFileNameModifyingAllowed(chanName: String?, uri: Uri?): Boolean {
+        private fun isFileNameModifyingAllowed(
+            chanName: String?,
+            uri: Uri?,
+        ): Boolean {
             val chan = getPreferred(chanName, uri)
             return chanName != null && chan.locator.safe(false).isAttachmentUri(uri)
         }
 
         private fun getDesiredFileName(
-            uri: Uri?, fileName: String, originalName: String?, detailName: Boolean,
-            chanName: String?, boardName: String?, threadNumber: String?
+            uri: Uri?,
+            fileName: String,
+            originalName: String?,
+            detailName: Boolean,
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String?,
         ): String {
-            var fileName = fileName
+            var desiredFileName = fileName
             if (isFileNameModifyingAllowed(chanName, uri)) {
                 if (!originalName.isNullOrEmpty() && isDownloadOriginalName) {
-                    fileName = originalName
+                    desiredFileName = originalName
                 }
                 if (detailName) {
-                    fileName = getFileNameWithChanBoardThreadData(
-                        fileName,
-                        chanName,
-                        boardName,
-                        threadNumber
-                    )
+                    desiredFileName =
+                        getFileNameWithChanBoardThreadData(
+                            desiredFileName,
+                            chanName,
+                            boardName,
+                            threadNumber,
+                        )
                 }
             }
-            return fileName
+            return desiredFileName
         }
     }
 }

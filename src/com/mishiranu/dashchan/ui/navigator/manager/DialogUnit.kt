@@ -1,7 +1,5 @@
 package com.mishiranu.dashchan.ui.navigator.manager
 
-import chan.util.StringUtils
-
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
@@ -42,7 +40,7 @@ import chan.content.ChanConfiguration.Archivation
 import chan.content.ChanLocator.NavigationData
 import chan.content.ChanManager
 import chan.util.CommonUtils.equals
-import chan.util.StringUtils.copyToClipboard
+import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.ImageLoader
 import com.mishiranu.dashchan.content.Preferences.getPassword
@@ -105,17 +103,23 @@ import com.mishiranu.dashchan.widget.ThemeEngine.Companion.applyStyle
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.markDecorAsDialog
 import com.mishiranu.dashchan.widget.ViewFactory.createProgressLayout
 
-class DialogUnit internal constructor(private val uiManager: UiManager) {
-    class StackInstance internal constructor(internal val dialogStack: DialogStack<DialogFactory?>) {
+class DialogUnit internal constructor(
+    private val uiManager: UiManager,
+) {
+    class StackInstance internal constructor(
+        internal val dialogStack: DialogStack<DialogFactory?>,
+    ) {
         internal class AttachmentDialog(
-            val attachmentItems: List<AttachmentItem>, val startImageIndex: Int,
-            val navigatePostMode: NavigatePostMode?, val gallerySet: GalleryItem.Set
+            val attachmentItems: List<AttachmentItem>,
+            val startImageIndex: Int,
+            val navigatePostMode: NavigatePostMode?,
+            val gallerySet: GalleryItem.Set,
         )
 
         class State internal constructor(
             internal val factories: MutableList<DialogProvider.Factory<*>>,
             internal val attachmentDialog: AttachmentDialog?,
-            internal val postContextMenu: PostNumber?
+            internal val postContextMenu: PostNumber?,
         ) {
             fun dropState() {
                 for (factory in factories) {
@@ -134,22 +138,24 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     pair.first!!.delegate.saveState(pair.second!!)
                 }
                 factories.add(pair.first!!.delegate.factory)
-                pair.first!!.delegate.factory.use()
+                pair.first!!
+                    .delegate.factory
+                    .use()
             }
             return State(
-                factories, if (attachmentDialog != null) attachmentDialog!!.first else null,
-                if (postContextMenu != null) postContextMenu!!.first else null
+                factories,
+                if (attachmentDialog != null) attachmentDialog!!.first else null,
+                if (postContextMenu != null) postContextMenu!!.first else null,
             )
         }
     }
 
-    fun createStackInstance(): StackInstance {
-        return StackInstance(DialogStack<DialogFactory?>(uiManager.context!!))
-    }
+    fun createStackInstance(): StackInstance = StackInstance(DialogStack<DialogFactory?>(uiManager.context!!))
 
     internal class DialogFactory(
         factory: DialogProvider.Factory<*>,
-        uiManager: UiManager, configurationSet: ConfigurationSet?
+        uiManager: UiManager,
+        configurationSet: ConfigurationSet?,
     ) : DialogStack.ViewFactory<DialogFactory?> {
         val delegate: TypedDialogFactory<*>
 
@@ -158,26 +164,24 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             delegate = TypedDialogFactory(factory as DialogProvider.Factory<Any?>, uiManager, configurationSet)
         }
 
-        override fun createView(dialogStack: DialogStack<DialogFactory?>): View {
-            return delegate.createView(dialogStack)
-        }
+        override fun createView(dialogStack: DialogStack<DialogFactory?>): View = delegate.createView(dialogStack)
 
-        override fun destroyView(view: View, remove: Boolean) {
+        override fun destroyView(
+            view: View,
+            remove: Boolean,
+        ) {
             delegate.destroyView(view, remove)
         }
 
-        override fun isScrolledToTop(view: View): Boolean {
-            return delegate.isScrolledToTop(view)
-        }
+        override fun isScrolledToTop(view: View): Boolean = delegate.isScrolledToTop(view)
 
-        override fun isScrolledToBottom(view: View): Boolean {
-            return delegate.isScrolledToBottom(view)
-        }
+        override fun isScrolledToBottom(view: View): Boolean = delegate.isScrolledToBottom(view)
     }
 
     internal class TypedDialogFactory<T>(
         factory: DialogProvider.Factory<T>,
-        uiManager: UiManager, configurationSet: ConfigurationSet?
+        uiManager: UiManager,
+        configurationSet: ConfigurationSet?,
     ) {
         internal val provider: DialogProvider<T>
         internal val factory: DialogProvider.Factory<T>
@@ -195,13 +199,14 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             content.setLayoutParams(
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
             val recyclerView = PaddedRecyclerView(context)
             content.addView(
-                recyclerView, FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
+                recyclerView,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
             )
             recyclerView.setMotionEventSplittingEnabled(false)
             recyclerView.setVerticalScrollBarEnabled(true)
@@ -217,10 +222,12 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 DividerItemDecoration(
                     recyclerView.getContext(),
                     DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
-                        c!!.need(
-                            true
-                        ).horizontal(dividerPadding, dividerPadding)
-                    })
+                        c!!
+                            .need(
+                                true,
+                            ).horizontal(dividerPadding, dividerPadding)
+                    },
+                ),
             )
             val holder = DialogHolder(adapter, provider, recyclerView, progress)
             provider.uiManager.observable().register(holder)
@@ -229,35 +236,40 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 factory.listPosition!!.apply(recyclerView)
                 factory.listPosition = null
             }
-            provider.setStateListener(StateListener { state: State? ->
-                when (state) {
-                    State.LIST -> {
-                        holder.setShowLoading(false)
-                        holder.requestUpdate()
-                        return@StateListener true
-                    }
-
-                    State.LOADING -> {
-                        holder.setShowLoading(true)
-                        return@StateListener true
-                    }
-
-                    State.ERROR -> {
-                        if (!holder.cancelled) {
-                            dialogStack.pop()
+            provider.setStateListener(
+                StateListener { state: State? ->
+                    when (state) {
+                        State.LIST -> {
+                            holder.setShowLoading(false)
+                            holder.requestUpdate()
                             return@StateListener true
                         }
-                        return@StateListener false
-                    }
 
-                    else -> {}
-                }
-                false
-            })
+                        State.LOADING -> {
+                            holder.setShowLoading(true)
+                            return@StateListener true
+                        }
+
+                        State.ERROR -> {
+                            if (!holder.cancelled) {
+                                dialogStack.pop()
+                                return@StateListener true
+                            }
+                            return@StateListener false
+                        }
+
+                        else -> {}
+                    }
+                    false
+                },
+            )
             return content
         }
 
-        fun destroyView(view: View, remove: Boolean) {
+        fun destroyView(
+            view: View,
+            remove: Boolean,
+        ) {
             saveState(view)
             if (remove) {
                 factory.release()
@@ -287,22 +299,27 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             val holder = view.getTag() as DialogHolder<*>
             if (holder.recyclerView.getVisibility() == View.VISIBLE) {
                 return holder.recyclerView.computeVerticalScrollOffset() +
-                        holder.recyclerView.computeVerticalScrollExtent() >=
-                        holder.recyclerView.computeVerticalScrollRange()
+                    holder.recyclerView.computeVerticalScrollExtent() >=
+                    holder.recyclerView.computeVerticalScrollRange()
             }
             return true
         }
     }
 
     private class DialogHolder<T>(
-        val adapter: DialogPostsAdapter<T>, val dialogProvider: DialogProvider<T>,
-        val recyclerView: RecyclerView, val progress: View
+        val adapter: DialogPostsAdapter<T>,
+        val dialogProvider: DialogProvider<T>,
+        val recyclerView: RecyclerView,
+        val progress: View,
     ) : UiManager.Observer {
         var cancelled: Boolean = false
 
         private var postNotifyDataSetChanged: Runnable? = null
 
-        override fun onPostItemMessage(postItem: PostItem, message: UiManager.Message) {
+        override fun onPostItemMessage(
+            postItem: PostItem,
+            message: UiManager.Message,
+        ) {
             dialogProvider.onPostItemMessage(postItem, message)
             when (message) {
                 UiManager.Message.POST_INVALIDATE_ALL_VIEWS -> {
@@ -379,19 +396,26 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     alphaAnimator.addListener(
                         AnimationUtils.VisibilityListener(
                             progress,
-                            View.GONE
-                        )
+                            View.GONE,
+                        ),
                     )
                     alphaAnimator.start()
                     recyclerView.setAlpha(0f)
-                    recyclerView.animate().alpha(1f).setStartDelay(200).setDuration(200).start()
+                    recyclerView
+                        .animate()
+                        .alpha(1f)
+                        .setStartDelay(200)
+                        .setDuration(200)
+                        .start()
                 }
             }
         }
     }
 
     internal enum class State {
-        LIST, LOADING, ERROR
+        LIST,
+        LOADING,
+        ERROR,
     }
 
     internal fun interface StateListener {
@@ -400,8 +424,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     internal abstract class DialogProvider<T>(
         uiManager: UiManager,
-        configurationSetProvider: ConfigurationSetProvider<T>
-    ) : UiManager.Observer, Iterable<PostItem>, ClickCallback<PostItem?, RecyclerView.ViewHolder> {
+        configurationSetProvider: ConfigurationSetProvider<T>,
+    ) : UiManager.Observer,
+        Iterable<PostItem>,
+        ClickCallback<PostItem?, RecyclerView.ViewHolder> {
         fun interface ConfigurationSetProvider<T> {
             fun create(dialogProvider: T): ConfigurationSet
         }
@@ -412,7 +438,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
             abstract fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
+                configurationSet: ConfigurationSet,
             ): DialogProvider<T>
 
             open fun destroy() {}
@@ -434,7 +460,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
         protected abstract fun getThis(): T
 
-        open fun onRequestUpdateDemandSet(demandSet: DemandSet, index: Int) {}
+        open fun onRequestUpdateDemandSet(
+            demandSet: DemandSet,
+            index: Int,
+        ) {}
 
         open fun onRequestUpdate() {}
 
@@ -461,7 +490,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             }
         }
 
-        protected fun switchState(state: State?, changeCallback: Runnable?) {
+        protected fun switchState(
+            state: State?,
+            changeCallback: Runnable?,
+        ) {
             if (stateListenerField != null) {
                 invokeStateChanged(state, changeCallback)
             } else {
@@ -470,7 +502,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             }
         }
 
-        fun invokeStateChanged(state: State?, changeCallback: Runnable?) {
+        fun invokeStateChanged(
+            state: State?,
+            changeCallback: Runnable?,
+        ) {
             val success = stateListenerField!!.onStateChanged(state)
             if (success && changeCallback != null) {
                 changeCallback.run()
@@ -481,14 +516,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             holder: RecyclerView.ViewHolder,
             position: Int,
             item: PostItem?,
-            longClick: Boolean
+            longClick: Boolean,
         ): Boolean {
             if (longClick) {
                 uiManager.interaction().handlePostContextMenu(configurationSet, item!!)
             } else {
                 uiManager.interaction().handlePostClick(
                     holder.itemView,
-                    configurationSet.postStateProvider!!, item!!, this
+                    configurationSet.postStateProvider!!,
+                    item!!,
+                    this,
                 )
             }
             return true
@@ -498,57 +535,60 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     private class SingleDialogProvider(
         uiManager: UiManager,
         configurationSetProvider: ConfigurationSetProvider<SingleDialogProvider>,
-        internal val postItem: PostItem
+        internal val postItem: PostItem,
     ) : DialogProvider<SingleDialogProvider>(uiManager, configurationSetProvider) {
-        class Factory internal constructor(internal val postItem: PostItem) :
-            DialogProvider.Factory<SingleDialogProvider>() {
+        class Factory internal constructor(
+            internal val postItem: PostItem,
+        ) : DialogProvider.Factory<SingleDialogProvider>() {
             override fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
-            ): SingleDialogProvider {
-                return SingleDialogProvider(
+                configurationSet: ConfigurationSet,
+            ): SingleDialogProvider =
+                SingleDialogProvider(
                     uiManager,
                     ConfigurationSetProvider { dialogProvider: SingleDialogProvider ->
                         configurationSet
                             .copy(dialogProvider, false, true, null)
                     },
-                    postItem
+                    postItem,
                 )
-            }
         }
 
-        override fun getThis(): SingleDialogProvider {
-            return this
-        }
+        override fun getThis(): SingleDialogProvider = this
 
-        override fun iterator(): Iterator<PostItem> {
-            return mutableListOf(postItem).iterator()
-        }
+        override fun iterator(): Iterator<PostItem> = mutableListOf(postItem).iterator()
     }
 
     private class ThreadDialogProvider(
         uiManager: UiManager,
         configurationSetProvider: ConfigurationSetProvider<ThreadDialogProvider>,
-        postItem: PostItem, gallerySet: GalleryItem.Set
-    ) : DialogProvider<ThreadDialogProvider>(uiManager, configurationSetProvider), LinkListener,
+        postItem: PostItem,
+        gallerySet: GalleryItem.Set,
+    ) : DialogProvider<ThreadDialogProvider>(uiManager, configurationSetProvider),
+        LinkListener,
         UiManager.PostsProvider {
-        class Factory(val postItem: PostItem) : DialogProvider.Factory<ThreadDialogProvider>() {
+        class Factory(
+            val postItem: PostItem,
+        ) : DialogProvider.Factory<ThreadDialogProvider>() {
             override fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
+                configurationSet: ConfigurationSet,
             ): ThreadDialogProvider {
                 val chanName = configurationSet.chanName
-                val replyable: Replyable = Replyable { click: Boolean, data: Array<out ReplyData> ->
-                    val chan = get(chanName)
-                    val board = chan.configuration.safe().obtainBoard(postItem.getBoardName())
-                    if (click && board.allowPosting) {
-                        uiManager.navigator()!!.navigatePosting(
-                            chanName,
-                            postItem.getBoardName(), postItem.getThreadNumber(), *data
-                        )
+                val replyable: Replyable =
+                    Replyable { click: Boolean, data: Array<out ReplyData> ->
+                        val chan = get(chanName)
+                        val board = chan.configuration.safe().obtainBoard(postItem.getBoardName())
+                        if (click && board.allowPosting) {
+                            uiManager.navigator()!!.navigatePosting(
+                                chanName,
+                                postItem.getBoardName(),
+                                postItem.getThreadNumber(),
+                                *data,
+                            )
+                        }
+                        board.allowPosting
                     }
-                    board.allowPosting
-                }
                 val gallerySet = GalleryItem.Set(false)
                 return ThreadDialogProvider(
                     uiManager,
@@ -568,11 +608,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                             false,
                             false,
                             false,
-                            null
+                            null,
                         )
                     },
                     postItem,
-                    gallerySet
+                    gallerySet,
                 )
             }
         }
@@ -590,11 +630,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 postItem.getThreadPosts(get(configurationSet.chanName))
             if (!childPostItems.isEmpty()) {
                 for (i in childPostItems.indices) {
-                    val childPostItem = childPostItems.get(i)
+                    val childPostItem = childPostItems[i]
                     postItems.add(childPostItem)
                     for (postNumber in childPostItem.getReferencesTo()) {
                         for (j in 0..<i + 1) {
-                            val foundPostItem = postItems.get(j)
+                            val foundPostItem = postItems[j]
                             if (postNumber.equals(foundPostItem.getPostNumber())) {
                                 foundPostItem.addReferenceFrom(childPostItem.getPostNumber())
                             }
@@ -602,15 +642,13 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     }
                 }
             }
-            gallerySet.setThreadTitle(this.postItems.get(0).getSubjectOrComment())
+            gallerySet.setThreadTitle(this.postItems[0].getSubjectOrComment())
             for (childPostItem in postItems) {
                 gallerySet.put(childPostItem.getPostNumber(), childPostItem.getAttachmentItems())
             }
         }
 
-        override fun getThis(): ThreadDialogProvider {
-            return this
-        }
+        override fun getThis(): ThreadDialogProvider = this
 
         override fun findPostItem(postNumber: PostNumber?): PostItem? {
             for (postItem in postItems) {
@@ -621,25 +659,35 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return null
         }
 
-        override fun iterator(): MutableIterator<PostItem> {
-            return postItems.iterator()
-        }
+        override fun iterator(): MutableIterator<PostItem> = postItems.iterator()
 
-        override fun onRequestUpdateDemandSet(demandSet: DemandSet, index: Int) {
+        override fun onRequestUpdateDemandSet(
+            demandSet: DemandSet,
+            index: Int,
+        ) {
             demandSet.showOpenThreadButton = index == 0
         }
 
-        override fun onLinkClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra, confirmed: Boolean) {
-            val originalPostItem = postItems.get(0)
+        override fun onLinkClick(
+            view: CommentTextView,
+            uri: Uri,
+            extra: LinkListener.Extra,
+            confirmed: Boolean,
+        ) {
+            val originalPostItem = postItems[0]
             val boardName = originalPostItem.getBoardName()
             val threadNumber = originalPostItem.getThreadNumber()
             val chan = get(configurationSet.chanName)
-            if (extra.chanName != null && chan.locator.safe(false).isThreadUri(uri)
-                && (extra.inBoardLink || equals(
-                    boardName,
-                    chan.locator.safe(false).getBoardName(uri)
-                ))
-                && equals(threadNumber, chan.locator.safe(false).getThreadNumber(uri))
+            if (extra.chanName != null &&
+                chan.locator.safe(false).isThreadUri(uri) &&
+                (
+                    extra.inBoardLink ||
+                        equals(
+                            boardName,
+                            chan.locator.safe(false).getBoardName(uri),
+                        )
+                ) &&
+                equals(threadNumber, chan.locator.safe(false).getThreadNumber(uri))
             ) {
                 val postNumber = chan.locator.safe(false).getPostNumber(uri)
                 if (postNumber != null) {
@@ -657,7 +705,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             uiManager.interaction().handleLinkClick(configurationSet, uri, extra, confirmed)
         }
 
-        override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra) {
+        override fun onLinkLongClick(
+            view: CommentTextView,
+            uri: Uri,
+            extra: LinkListener.Extra,
+        ) {
             uiManager.interaction().handleLinkLongClick(configurationSet, uri)
         }
     }
@@ -665,23 +717,23 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     private class RepliesDialogProvider(
         uiManager: UiManager,
         configurationSetProvider: ConfigurationSetProvider<RepliesDialogProvider>,
-        internal val postItem: PostItem
+        internal val postItem: PostItem,
     ) : DialogProvider<RepliesDialogProvider>(uiManager, configurationSetProvider) {
-        class Factory(internal val postItem: PostItem) :
-            DialogProvider.Factory<RepliesDialogProvider>() {
+        class Factory(
+            internal val postItem: PostItem,
+        ) : DialogProvider.Factory<RepliesDialogProvider>() {
             override fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
-            ): RepliesDialogProvider {
-                return RepliesDialogProvider(
+                configurationSet: ConfigurationSet,
+            ): RepliesDialogProvider =
+                RepliesDialogProvider(
                     uiManager,
                     ConfigurationSetProvider { dialogProvider: RepliesDialogProvider ->
                         configurationSet
                             .copy(dialogProvider, false, true, postItem.getPostNumber())
                     },
-                    postItem
+                    postItem,
                 )
-            }
         }
 
         private val postItems = ArrayList<PostItem>()
@@ -690,13 +742,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             onRequestUpdate()
         }
 
-        override fun getThis(): RepliesDialogProvider {
-            return this
-        }
+        override fun getThis(): RepliesDialogProvider = this
 
-        override fun iterator(): MutableIterator<PostItem> {
-            return postItems.iterator()
-        }
+        override fun iterator(): MutableIterator<PostItem> = postItems.iterator()
 
         override fun onRequestUpdate() {
             super.onRequestUpdate()
@@ -715,10 +763,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     private class ListDialogProvider(
         uiManager: UiManager,
         configurationSetProvider: ConfigurationSetProvider<ListDialogProvider>,
-        private val postNumbers: HashSet<PostNumber?>
+        private val postNumbers: HashSet<PostNumber?>,
     ) : DialogProvider<ListDialogProvider>(uiManager, configurationSetProvider) {
-        class Factory(postNumbers: Collection<PostNumber>) :
-            DialogProvider.Factory<ListDialogProvider>() {
+        class Factory(
+            postNumbers: Collection<PostNumber>,
+        ) : DialogProvider.Factory<ListDialogProvider>() {
             private val postNumbers: HashSet<PostNumber?>
 
             init {
@@ -727,17 +776,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
             override fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
-            ): ListDialogProvider {
-                return ListDialogProvider(
+                configurationSet: ConfigurationSet,
+            ): ListDialogProvider =
+                ListDialogProvider(
                     uiManager,
                     ConfigurationSetProvider { dialogProvider: ListDialogProvider ->
                         configurationSet
                             .copy(dialogProvider, false, true, null)
                     },
-                    postNumbers
+                    postNumbers,
                 )
-            }
         }
 
         private val postItems = ArrayList<PostItem>()
@@ -746,13 +794,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             onRequestUpdate()
         }
 
-        override fun getThis(): ListDialogProvider {
-            return this
-        }
+        override fun getThis(): ListDialogProvider = this
 
-        override fun iterator(): MutableIterator<PostItem> {
-            return postItems.iterator()
-        }
+        override fun iterator(): MutableIterator<PostItem> = postItems.iterator()
 
         override fun onRequestUpdate() {
             super.onRequestUpdate()
@@ -773,15 +817,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         private val boardName: String?,
         private val threadNumber: String?,
         private val postNumber: PostNumber?,
-        private val gallerySet: GalleryItem.Set
+        private val gallerySet: GalleryItem.Set,
     ) : DialogProvider<AsyncDialogProvider>(uiManager, configurationSetProvider),
         UiManager.PostsProvider {
         class Factory(
             private val chanName: String?,
             private val boardName: String?,
             private val threadNumber: String?,
-            private val postNumber: PostNumber?
-        ) : DialogProvider.Factory<AsyncDialogProvider>(), ReadSinglePostTask.Callback {
+            private val postNumber: PostNumber?,
+        ) : DialogProvider.Factory<AsyncDialogProvider>(),
+            ReadSinglePostTask.Callback {
             internal val observable = WeakObservable<Runnable>()
 
             internal var postItem: PostItem? = null
@@ -790,7 +835,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
             override fun create(
                 uiManager: UiManager,
-                configurationSet: ConfigurationSet
+                configurationSet: ConfigurationSet,
             ): AsyncDialogProvider {
                 val gallerySet = GalleryItem.Set(false)
                 if (postItem == null && errorItem == null && readTask == null) {
@@ -799,7 +844,8 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     readTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                 }
                 return AsyncDialogProvider(
-                    uiManager, ConfigurationSetProvider { dialogProvider: AsyncDialogProvider ->
+                    uiManager,
+                    ConfigurationSetProvider { dialogProvider: AsyncDialogProvider ->
                         ConfigurationSet(
                             configurationSet.chanName,
                             null,
@@ -815,10 +861,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                             false,
                             false,
                             false,
-                            null
+                            null,
                         )
-                    }, this,
-                    chanName, boardName, threadNumber, postNumber, gallerySet
+                    },
+                    this,
+                    chanName,
+                    boardName,
+                    threadNumber,
+                    postNumber,
+                    gallerySet,
                 )
             }
 
@@ -858,18 +909,18 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             }
         }
 
-        override fun getThis(): AsyncDialogProvider {
-            return this
-        }
+        override fun getThis(): AsyncDialogProvider = this
 
-        override fun findPostItem(postNumber: PostNumber?): PostItem? {
-            return if (factory.postItem != null && factory.postItem!!.getPostNumber()
+        override fun findPostItem(postNumber: PostNumber?): PostItem? =
+            if (factory.postItem != null &&
+                factory.postItem!!
+                    .getPostNumber()
                     .equals(postNumber)
-            )
+            ) {
                 factory.postItem
-            else
+            } else {
                 null
-        }
+            }
 
         override fun iterator(): MutableIterator<PostItem> {
             val list: MutableList<PostItem>
@@ -881,7 +932,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             return list.iterator()
         }
 
-        override fun onRequestUpdateDemandSet(demandSet: DemandSet, index: Int) {
+        override fun onRequestUpdateDemandSet(
+            demandSet: DemandSet,
+            index: Int,
+        ) {
             demandSet.showOpenThreadButton = true
         }
 
@@ -902,15 +956,26 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         }
 
         fun updateErrorItem() {
-            val errorItem = factory.errorItem
-            switchState(State.ERROR, Runnable {
-                show(
-                    errorItem.toString(), null,
-                    ClickableToast.Button(R.string.open_thread, false, Runnable {
-                        uiManager.navigator()!!.navigatePosts(chanName, boardName, threadNumber, postNumber, null)
-                    })
-                )
-            })
+            // Without the fallback this is Any?.toString(), which renders the toast as
+            // the literal text "null" whenever the error state is entered before
+            // onReadSinglePostFail() has populated the field.
+            val errorItem = factory.errorItem ?: ErrorItem(ErrorItem.Type.UNKNOWN)
+            switchState(
+                State.ERROR,
+                Runnable {
+                    show(
+                        errorItem.toString(),
+                        null,
+                        ClickableToast.Button(
+                            R.string.open_thread,
+                            false,
+                            Runnable {
+                                uiManager.navigator()!!.navigatePosts(chanName, boardName, threadNumber, postNumber, null)
+                            },
+                        ),
+                    )
+                },
+            )
         }
 
         fun takeResult() {
@@ -963,69 +1028,89 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         stackInstance.dialogStack.clear()
     }
 
-    fun displaySingle(configurationSet: ConfigurationSet, postItem: PostItem?) {
+    fun displaySingle(
+        configurationSet: ConfigurationSet,
+        postItem: PostItem?,
+    ) {
         display(configurationSet, SingleDialogProvider.Factory(postItem!!))
     }
 
-    fun displayThread(configurationSet: ConfigurationSet, postItem: PostItem) {
+    fun displayThread(
+        configurationSet: ConfigurationSet,
+        postItem: PostItem,
+    ) {
         display(configurationSet, ThreadDialogProvider.Factory(postItem))
     }
 
-    fun displayReplies(configurationSet: ConfigurationSet, postItem: PostItem) {
+    fun displayReplies(
+        configurationSet: ConfigurationSet,
+        postItem: PostItem,
+    ) {
         display(configurationSet, RepliesDialogProvider.Factory(postItem))
     }
 
     fun displayList(
         configurationSet: ConfigurationSet,
-        postNumbers: Collection<PostNumber>
+        postNumbers: Collection<PostNumber>,
     ) {
         display(configurationSet, ListDialogProvider.Factory(postNumbers))
     }
 
     fun displayReplyAsync(
         configurationSet: ConfigurationSet,
-        chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        postNumber: PostNumber?,
     ) {
         display(
             configurationSet,
-            AsyncDialogProvider.Factory(chanName, boardName, threadNumber, postNumber)
+            AsyncDialogProvider.Factory(chanName, boardName, threadNumber, postNumber),
         )
     }
 
-    private fun display(configurationSet: ConfigurationSet, factory: DialogProvider.Factory<*>) {
+    private fun display(
+        configurationSet: ConfigurationSet,
+        factory: DialogProvider.Factory<*>,
+    ) {
         configurationSet.stackInstance!!.dialogStack.push(
             DialogFactory(
                 factory,
                 uiManager,
-                configurationSet
-            )
+                configurationSet,
+            ),
         )
         uiManager.callback()!!.onDialogStackOpen()
     }
 
-    fun restoreState(configurationSet: ConfigurationSet, state: StackInstance.State) {
-        var configurationSet = configurationSet
+    fun restoreState(
+        configurationSet: ConfigurationSet,
+        state: StackInstance.State,
+    ) {
+        var currentConfigurationSet = configurationSet
         if (!state.factories.isEmpty()) {
             val dialogFactories: ArrayList<DialogFactory?> = ArrayList<DialogFactory?>()
             for (factory in state.factories) {
-                val dialogFactory = DialogFactory(factory, uiManager, configurationSet)
-                configurationSet = dialogFactory.delegate.provider.configurationSet
+                val dialogFactory = DialogFactory(factory, uiManager, currentConfigurationSet)
+                currentConfigurationSet = dialogFactory.delegate.provider.configurationSet
                 dialogFactories.add(dialogFactory)
             }
-            configurationSet.stackInstance!!.dialogStack.addAll(dialogFactories)
+            currentConfigurationSet.stackInstance!!.dialogStack.addAll(dialogFactories)
             uiManager.callback()!!.onDialogStackOpen()
         }
         if (state.attachmentDialog != null) {
             showAttachmentsGrid(
-                configurationSet,
-                state.attachmentDialog.attachmentItems, state.attachmentDialog.startImageIndex,
-                state.attachmentDialog.navigatePostMode, state.attachmentDialog.gallerySet
+                currentConfigurationSet,
+                state.attachmentDialog.attachmentItems,
+                state.attachmentDialog.startImageIndex,
+                state.attachmentDialog.navigatePostMode,
+                state.attachmentDialog.gallerySet,
             )
         }
-        if (state.postContextMenu != null && configurationSet.postsProvider != null) {
-            val postItem = configurationSet.postsProvider.findPostItem(state.postContextMenu)
+        if (state.postContextMenu != null && currentConfigurationSet.postsProvider != null) {
+            val postItem = currentConfigurationSet.postsProvider.findPostItem(state.postContextMenu)
             if (postItem != null) {
-                uiManager.interaction().handlePostContextMenu(configurationSet, postItem)
+                uiManager.interaction().handlePostContextMenu(currentConfigurationSet, postItem)
             }
         }
     }
@@ -1033,7 +1118,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     private class DialogPostsAdapter<T>(
         private val uiManager: UiManager,
         private val dialogProvider: DialogProvider<T>,
-        recyclerView: RecyclerView
+        recyclerView: RecyclerView,
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder?>() {
         private val demandSet = DemandSet()
         private val updateObserver: AdapterDataObserver
@@ -1043,16 +1128,17 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         val postNumbers: HashSet<PostNumber?> = HashSet<PostNumber?>()
 
         init {
-            updateObserver = object : AdapterDataObserver() {
-                override fun onChanged() {
-                    postItems.clear()
-                    postNumbers.clear()
-                    for (postItem in dialogProvider) {
-                        postItems.add(postItem)
-                        postNumbers.add(postItem.getPostNumber())
+            updateObserver =
+                object : AdapterDataObserver() {
+                    override fun onChanged() {
+                        postItems.clear()
+                        postNumbers.clear()
+                        for (postItem in dialogProvider) {
+                            postItems.add(postItem)
+                            postNumbers.add(postItem.getPostNumber())
+                        }
                     }
                 }
-            }
             recyclerKeeper = RecyclerKeeper(recyclerView)
             super.registerAdapterDataObserver(updateObserver)
             super.registerAdapterDataObserver(recyclerKeeper)
@@ -1070,33 +1156,37 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             super.registerAdapterDataObserver(recyclerKeeper)
         }
 
-        override fun getItemCount(): Int {
-            return postItems.size
-        }
+        override fun getItemCount(): Int = postItems.size
 
         override fun getItemViewType(position: Int): Int {
             val postItem = getItem(position)
-            return (if (dialogProvider.configurationSet.postStateProvider!!.isHiddenResolve(postItem))
-                ViewUnit.ViewType.POST_HIDDEN
-            else
-                ViewUnit.ViewType.POST).ordinal
+            return (
+                if (dialogProvider.configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                    ViewUnit.ViewType.POST_HIDDEN
+                } else {
+                    ViewUnit.ViewType.POST
+                }
+            ).ordinal
         }
 
-        fun getItem(position: Int): PostItem {
-            return postItems.get(position)
-        }
+        fun getItem(position: Int): PostItem = postItems[position]
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return uiManager.view().createView(parent, ViewUnit.ViewType.entries[viewType])
-        }
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): RecyclerView.ViewHolder = uiManager.view().createView(parent, ViewUnit.ViewType.entries[viewType])
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        override fun onBindViewHolder(
+            holder: RecyclerView.ViewHolder,
+            position: Int,
+        ) {
             onBindViewHolder(holder, position, mutableListOf<Any?>())
         }
 
         override fun onBindViewHolder(
-            holder: RecyclerView.ViewHolder, position: Int,
-            payloads: MutableList<Any?>
+            holder: RecyclerView.ViewHolder,
+            position: Int,
+            payloads: MutableList<Any?>,
         ) {
             val postItem = getItem(position)
             when (ViewUnit.ViewType.entries[holder.getItemViewType()]) {
@@ -1107,7 +1197,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                             holder,
                             postItem,
                             dialogProvider.configurationSet,
-                            demandSet
+                            demandSet,
                         )
                     } else {
                         if (payloads.contains(PAYLOAD_INVALIDATE_COMMENT)) {
@@ -1122,10 +1212,11 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 }
 
                 ViewUnit.ViewType.POST_HIDDEN -> {
-                    uiManager.view()
+                    uiManager
+                        .view()
                         .bindPostHiddenView(holder, postItem, dialogProvider.configurationSet)
                 }
-            
+
                 else -> {}
             }
         }
@@ -1136,7 +1227,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
         fun reloadAttachment(attachmentItem: AttachmentItem) {
             for (i in postItems.indices) {
-                val postItem = postItems.get(i)
+                val postItem = postItems[i]
                 if (postItem.getPostNumber().equals(attachmentItem.getPostNumber())) {
                     notifyItemChanged(i, attachmentItem)
                     break
@@ -1151,48 +1242,58 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun showAttachmentsGrid(
-        configurationSet: ConfigurationSet, attachmentItems: List<AttachmentItem>,
-        startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set
+        configurationSet: ConfigurationSet,
+        attachmentItems: List<AttachmentItem>,
+        startImageIndex: Int,
+        navigatePostMode: NavigatePostMode?,
+        gallerySet: GalleryItem.Set,
     ) {
         val context = uiManager.context
         val dialog = Dialog(context!!, R.style.Theme_Gallery)
         val styledContext = dialog.getContext()
-        val attachmentDialog = Pair<AttachmentDialog?, Dialog?>(
-            AttachmentDialog(
-                attachmentItems,
-                startImageIndex,
-                navigatePostMode,
-                gallerySet
-            ), dialog
-        )
+        val attachmentDialog =
+            Pair<AttachmentDialog?, Dialog?>(
+                AttachmentDialog(
+                    attachmentItems,
+                    startImageIndex,
+                    navigatePostMode,
+                    gallerySet,
+                ),
+                dialog,
+            )
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setOnKeyListener(DialogInterface.OnKeyListener { d: DialogInterface?, keyCode: Int, event: KeyEvent? ->
-            if (keyCode == KeyEvent.KEYCODE_BACK && event!!.getAction() == KeyEvent.ACTION_DOWN && event.isLongPress()) {
-                closeDialogs(configurationSet.stackInstance!!)
-                return@OnKeyListener true
-            }
-            false
-        })
+        dialog.setOnKeyListener(
+            DialogInterface.OnKeyListener { d: DialogInterface?, keyCode: Int, event: KeyEvent? ->
+                if (keyCode == KeyEvent.KEYCODE_BACK && event!!.getAction() == KeyEvent.ACTION_DOWN && event.isLongPress()) {
+                    closeDialogs(configurationSet.stackInstance!!)
+                    return@OnKeyListener true
+                }
+                false
+            },
+        )
         val closeListener = View.OnClickListener { v: View? -> dialog.cancel() }
         val inflater = LayoutInflater.from(styledContext)
         val rootView = InsetsLayout(styledContext)
         rootView.setOnClickListener(closeListener)
-        val scrollView: ScrollView = object : ScrollView(styledContext) {
-            override fun draw(canvas: Canvas) {
-                super.draw(canvas)
-                drawSystemInsetsOver(this, canvas, isTargetGesture29(this))
+        val scrollView: ScrollView =
+            object : ScrollView(styledContext) {
+                override fun draw(canvas: Canvas) {
+                    super.draw(canvas)
+                    drawSystemInsetsOver(this, canvas, isTargetGesture29(this))
+                }
             }
-        }
         scrollView.setWillNotDraw(false)
 
         scrollView.setVerticalScrollBarEnabled(false)
         scrollView.setClipToPadding(false)
         rootView.setOnApplyInsetsTarget(scrollView)
         rootView.addView(
-            scrollView, FrameLayout.LayoutParams(
+            scrollView,
+            FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER
-            )
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
         )
         val container = LinearLayout(styledContext)
         container.setOrientation(LinearLayout.VERTICAL)
@@ -1201,30 +1302,47 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         scrollView.addView(
             container,
             ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams.WRAP_CONTENT,
         )
-        val clickListener = View.OnClickListener { v: View? ->
-            val index = v!!.getTag() as Int
-            var imageIndex = startImageIndex
-            for (i in 0..<index) {
-                if (attachmentItems.get(i).isShowInGallery()) {
-                    imageIndex++
+        val clickListener =
+            View.OnClickListener { v: View? ->
+                val index = v!!.getTag() as Int
+                var imageIndex = startImageIndex
+                for (i in 0..<index) {
+                    if (attachmentItems[i].isShowInGallery()) {
+                        imageIndex++
+                    }
                 }
+                openAttachment(
+                    v,
+                    configurationSet.chanName,
+                    attachmentItems,
+                    index,
+                    imageIndex,
+                    navigatePostMode,
+                    gallerySet,
+                )
             }
-            openAttachment(
-                v, configurationSet.chanName,
-                attachmentItems, index, imageIndex, navigatePostMode, gallerySet
-            )
-        }
         val chan = get(configurationSet.chanName)
-        val configuration = context!!.getResources().getConfiguration()
+        val configuration = context.getResources().getConfiguration()
         val tablet = isTablet(configuration)
         val tabletLarge = isTabletLarge(configuration)
         val density = obtainDensity(context)
         var total = 0
         var linearLayout: LinearLayout? = null
         val padding = (8f * density).toInt()
-        val size = ((if (tabletLarge) 180f else if (tablet) 160f else 120f) * density).toInt()
+        val size =
+            (
+                (
+                    if (tabletLarge) {
+                        180f
+                    } else if (tablet) {
+                        160f
+                    } else {
+                        120f
+                    }
+                ) * density
+            ).toInt()
         val columns = if (tablet) 3 else 2
         val attachmentViews = HashMap<AttachmentItem?, AttachmentView?>()
         for (i in attachmentItems.indices) {
@@ -1235,8 +1353,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 linearLayout.setOrientation(LinearLayout.HORIZONTAL)
                 linearLayout.setMotionEventSplittingEnabled(false)
                 container.addView(
-                    linearLayout, ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+                    linearLayout,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
                 )
                 if (first) {
                     linearLayout.setPadding(0, padding, 0, padding)
@@ -1244,8 +1363,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     linearLayout.setPadding(0, 0, 0, padding)
                 }
             }
-            val attachmentItem = attachmentItems.get(i)
-            @SuppressLint("InflateParams") val view =
+            val attachmentItem = attachmentItems[i]
+
+            @SuppressLint("InflateParams")
+            val view =
                 inflater.inflate(R.layout.list_item_attachment, null)
             makeRoundedCorners(view, (2f * density + 0.5f).toInt(), true)
             val attachmentView = view.findViewById<AttachmentView>(R.id.thumbnail)
@@ -1257,13 +1378,17 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             textView.setText(attachmentItem.getDescription(AttachmentItem.FormatMode.TWO_LINES))
             val clickView = view.findViewById<View>(R.id.attachment_click)
             clickView.setOnClickListener(clickListener)
-            clickView.setOnLongClickListener(OnLongClickListener { v: View? ->
-                uiManager.interaction().showThumbnailLongClickDialog(
-                    configurationSet,
-                    attachmentItem, attachmentView, gallerySet.getThreadTitle()
-                )
-                true
-            })
+            clickView.setOnLongClickListener(
+                OnLongClickListener { v: View? ->
+                    uiManager.interaction().showThumbnailLongClickDialog(
+                        configurationSet,
+                        attachmentItem,
+                        attachmentView,
+                        gallerySet.getThreadTitle(),
+                    )
+                    true
+                },
+            )
             clickView.setTag(i)
             var totalSize = size
             if (column == 0) {
@@ -1274,7 +1399,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 totalSize += padding
             }
             linearLayout!!.addView(view, totalSize, size)
-            attachmentViews.put(attachmentItem, attachmentView)
+            attachmentViews[attachmentItem] = attachmentView
         }
         dialog.setContentView(rootView)
         val window = dialog.getWindow()
@@ -1293,38 +1418,47 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         ViewUtils.setWindowLayoutFullscreen(window)
 
         markDecorAsDialog(window.getDecorView())
-        val observer: UiManager.Observer = object : UiManager.Observer {
-            override fun onReloadAttachmentItem(attachmentItem: AttachmentItem) {
-                val attachmentView = attachmentViews.get(attachmentItem)
-                if (attachmentView != null) {
-                    attachmentItem.configureAndLoad(
-                        attachmentView,
-                        get(configurationSet.chanName),
-                        false,
-                        true
-                    )
+        val observer: UiManager.Observer =
+            object : UiManager.Observer {
+                override fun onReloadAttachmentItem(attachmentItem: AttachmentItem) {
+                    val attachmentView = attachmentViews[attachmentItem]
+                    if (attachmentView != null) {
+                        attachmentItem.configureAndLoad(
+                            attachmentView,
+                            get(configurationSet.chanName),
+                            false,
+                            true,
+                        )
+                    }
                 }
             }
-        }
         if (configurationSet.stackInstance!!.attachmentDialog != null) {
-            configurationSet.stackInstance!!.attachmentDialog!!.second!!.dismiss()
-            configurationSet.stackInstance!!.attachmentDialog = null
+            configurationSet.stackInstance
+                .attachmentDialog!!
+                .second!!
+                .dismiss()
+            configurationSet.stackInstance.attachmentDialog = null
         }
-        configurationSet.stackInstance!!.attachmentDialog = attachmentDialog
+        configurationSet.stackInstance.attachmentDialog = attachmentDialog
         uiManager.observable().register(observer)
-        dialog.setOnDismissListener(DialogInterface.OnDismissListener { dialogInterface: DialogInterface? ->
-            if (configurationSet.stackInstance!!.attachmentDialog === attachmentDialog) {
-                configurationSet.stackInstance!!.attachmentDialog = null
-            }
-            uiManager.observable().unregister(observer)
-        })
+        dialog.setOnDismissListener(
+            DialogInterface.OnDismissListener { dialogInterface: DialogInterface? ->
+                if (configurationSet.stackInstance.attachmentDialog === attachmentDialog) {
+                    configurationSet.stackInstance.attachmentDialog = null
+                }
+                uiManager.observable().unregister(observer)
+            },
+        )
         dialog.show()
     }
 
     fun openAttachmentOrDialog(
-        configurationSet: ConfigurationSet, imageView: View?,
-        attachmentItems: List<AttachmentItem>, imageIndex: Int,
-        navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set
+        configurationSet: ConfigurationSet,
+        imageView: View?,
+        attachmentItems: List<AttachmentItem>,
+        imageIndex: Int,
+        navigatePostMode: NavigatePostMode?,
+        gallerySet: GalleryItem.Set,
     ) {
         if (attachmentItems.size > 1) {
             showAttachmentsGrid(
@@ -1332,12 +1466,17 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 attachmentItems,
                 imageIndex,
                 navigatePostMode,
-                gallerySet
+                gallerySet,
             )
         } else {
             openAttachment(
-                imageView, configurationSet.chanName,
-                attachmentItems, 0, imageIndex, navigatePostMode, gallerySet
+                imageView,
+                configurationSet.chanName,
+                attachmentItems,
+                0,
+                imageIndex,
+                navigatePostMode,
+                gallerySet,
             )
         }
     }
@@ -1349,48 +1488,61 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         index: Int,
         imageIndex: Int,
         navigatePostMode: NavigatePostMode?,
-        gallerySet: GalleryItem.Set?
+        gallerySet: GalleryItem.Set?,
     ) {
         val context = uiManager.context
-        val attachmentItem = attachmentItems.get(index)
+        val attachmentItem = attachmentItems[index]
         val canDownload = attachmentItem.canDownloadToStorage()
         val chan = get(chanName)
         val uri = attachmentItem.getFileUri(chan)
         val type = attachmentItem.getType()
         if (canDownload && type == AttachmentItem.Type.AUDIO) {
             start(context!!, chanName, uri, attachmentItem.getFileName(chan))
-        } else if (canDownload && (type == AttachmentItem.Type.IMAGE || type == AttachmentItem.Type.VIDEO &&
-                    isOpenableVideoExtension(attachmentItem.getExtension()))
+        } else if (canDownload &&
+            (
+                type == AttachmentItem.Type.IMAGE ||
+                    type == AttachmentItem.Type.VIDEO &&
+                    isOpenableVideoExtension(attachmentItem.getExtension())
+            )
         ) {
             uiManager.navigator()!!.navigateGallery(
-                chanName, gallerySet!!, imageIndex,
-                imageView, navigatePostMode, false
+                chanName,
+                gallerySet!!,
+                imageIndex,
+                imageView,
+                navigatePostMode,
+                false,
             )
         } else {
             NavigationUtils.handleUri(
                 context!!,
                 chanName,
                 uri!!,
-                NavigationUtils.BrowserType.EXTERNAL
+                NavigationUtils.BrowserType.EXTERNAL,
             )
         }
     }
 
     fun handlePostContextMenu(
-        configurationSet: ConfigurationSet, postNumber: PostNumber?,
-        show: Boolean, dialog: AlertDialog?
+        configurationSet: ConfigurationSet,
+        postNumber: PostNumber?,
+        show: Boolean,
+        dialog: AlertDialog?,
     ) {
         if (show) {
             if (configurationSet.stackInstance!!.postContextMenu != null) {
-                configurationSet.stackInstance!!.postContextMenu!!.second!!.dismiss()
+                configurationSet.stackInstance
+                    .postContextMenu!!
+                    .second!!
+                    .dismiss()
             }
-            configurationSet.stackInstance!!.postContextMenu =
+            configurationSet.stackInstance.postContextMenu =
                 Pair<PostNumber?, Dialog?>(postNumber, dialog)
         } else {
             if (configurationSet.stackInstance!!.postContextMenu != null &&
-                configurationSet.stackInstance!!.postContextMenu!!.second === dialog
+                configurationSet.stackInstance.postContextMenu!!.second === dialog
             ) {
-                configurationSet.stackInstance!!.postContextMenu = null
+                configurationSet.stackInstance.postContextMenu = null
             }
         }
     }
@@ -1415,7 +1567,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
 
     fun showPostDescriptionDialog(
         fragmentManager: FragmentManager,
-        icons: MutableCollection<IconData>, chanName: String?, emailToCopy: String?
+        icons: MutableCollection<IconData>,
+        chanName: String?,
+        emailToCopy: String?,
     ) {
         showPostDescriptionDialogStatic(fragmentManager, icons, chanName, emailToCopy)
     }
@@ -1425,7 +1579,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: List<PostNumber>?
+        postNumbers: List<PostNumber>?,
     ) {
         val chan = get(chanName)
         val deleting = chan.configuration.safe().obtainDeleting(boardName)
@@ -1439,20 +1593,21 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             options.add(
                 Pair(
                     SendMultifunctionalTask.OPTION_FILES_ONLY,
-                    context!!.getString(R.string.files_only)
-                )
+                    context!!.getString(R.string.files_only),
+                ),
             )
         }
-        val state = SendMultifunctionalTask.State(
-            SendMultifunctionalTask
-                .Operation.DELETE,
-            chanName,
-            boardName,
-            threadNumber,
-            null,
-            options,
-            deleting.password
-        )
+        val state =
+            SendMultifunctionalTask.State(
+                SendMultifunctionalTask
+                    .Operation.DELETE,
+                chanName,
+                boardName,
+                threadNumber,
+                null,
+                options,
+                deleting.password,
+            )
         state.postNumbers = postNumbers
         Companion.showPerformSendDialog(
             fragmentManager,
@@ -1461,7 +1616,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             getPassword(chan),
             null,
             null,
-            true
+            true,
         )
     }
 
@@ -1470,18 +1625,24 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         chanName: String?,
         boardName: String?,
         threadNumber: String?,
-        postNumbers: List<PostNumber>?
+        postNumbers: List<PostNumber>?,
     ) {
         val chan = get(chanName)
         val reporting = chan.configuration.safe().obtainReporting(boardName)
         if (reporting == null) {
             return
         }
-        val state = SendMultifunctionalTask.State(
-            SendMultifunctionalTask
-                .Operation.REPORT, chanName, boardName, threadNumber, reporting.types,
-            reporting.options, reporting.comment
-        )
+        val state =
+            SendMultifunctionalTask.State(
+                SendMultifunctionalTask
+                    .Operation.REPORT,
+                chanName,
+                boardName,
+                threadNumber,
+                reporting.types,
+                reporting.options,
+                reporting.comment,
+            )
         state.postNumbers = postNumbers
         Companion.showPerformSendDialog(fragmentManager, state, null, null, null, null, true)
     }
@@ -1492,11 +1653,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         boardName: String?,
         threadNumber: String?,
         threadTitle: String?,
-        posts: Collection<Post>?
+        posts: Collection<Post>?,
     ) {
         performSendArchiveThread(
-            uiManager.context!!, fragmentManager,
-            chanName, boardName, threadNumber, threadTitle, posts
+            uiManager.context!!,
+            fragmentManager,
+            chanName,
+            boardName,
+            threadNumber,
+            threadTitle,
+            posts,
         )
     }
 
@@ -1506,27 +1672,34 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         boardName: String?,
         threadNumber: String?,
         postNumber: PostNumber?,
-        isLike: Boolean
+        isLike: Boolean,
     ) {
         val chan = get(chanName)
         val voting = chan.configuration.safe().obtainVoting(boardName)
         if (voting == null) {
             return
         }
-        val state = SendMultifunctionalTask.State(
-            SendMultifunctionalTask
-                .Operation.VOTE, chanName, boardName, threadNumber, null, null, false
-        )
+        val state =
+            SendMultifunctionalTask.State(
+                SendMultifunctionalTask
+                    .Operation.VOTE,
+                chanName,
+                boardName,
+                threadNumber,
+                null,
+                null,
+                false,
+            )
         state.postNumbers = listOf(postNumber!!)
         state.like = isLike
         state.dislike = !isLike
         startMultifunctionalProcess(fragmentManager, state, null, null, null)
     }
 
-    class MultifunctionalViewModel :
-        TaskViewModel.Proxy<SendMultifunctionalTask, SendMultifunctionalTask.Callback?>()
+    class MultifunctionalViewModel : TaskViewModel.Proxy<SendMultifunctionalTask, SendMultifunctionalTask.Callback?>()
 
-    class LocalArchiveViewModel : TaskViewModel<SendLocalArchiveTask, DownloadResult?>(),
+    class LocalArchiveViewModel :
+        TaskViewModel<SendLocalArchiveTask, DownloadResult?>(),
         SendLocalArchiveTask.Callback {
         val progress: MutableLiveData<Int?> = MutableLiveData<Int?>()
 
@@ -1542,7 +1715,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
     companion object {
         private fun showPostDescriptionDialogStatic(
             fragmentManager: FragmentManager,
-            icons: MutableCollection<IconData>, chanName: String?, emailToCopy: String?
+            icons: MutableCollection<IconData>,
+            chanName: String?,
+            emailToCopy: String?,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1550,14 +1725,19 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     DialogUnit.Companion.createPostDescriptionDialog(
                         provider!!.context,
-                        icons, chanName, emailToCopy
+                        icons,
+                        chanName,
+                        emailToCopy,
                     )!!
-                })
+                },
+            )
         }
 
         private fun createPostDescriptionDialog(
             context: Context,
-            icons: MutableCollection<IconData>, chanName: String?, emailToCopy: String?
+            icons: MutableCollection<IconData>,
+            chanName: String?,
+            emailToCopy: String?,
         ): AlertDialog? {
             val density = obtainDensity(context)
             val imageLoader: ImageLoader = ImageLoader.getInstance()
@@ -1569,8 +1749,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             for (icon in icons) {
                 val linearLayout = LinearLayout(context)
                 container.addView(
-                    linearLayout, LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    linearLayout,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
                 )
                 linearLayout.setOrientation(LinearLayout.HORIZONTAL)
                 linearLayout.setGravity(Gravity.CENTER_VERTICAL)
@@ -1579,7 +1760,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     (18f * density).toInt(),
                     0,
                     (8f * density).toInt(),
-                    0
+                    0,
                 ) // 18f = 16f + 2f
                 val imageView = ImageView(context)
                 linearLayout.addView(imageView, (20f * density).toInt(), (20f * density).toInt())
@@ -1590,14 +1771,14 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     imageView.setImageTintList(
                         getColorStateList(
                             imageView.getContext(),
-                            android.R.attr.textColorSecondary
-                        )
+                            android.R.attr.textColorSecondary,
+                        ),
                     )
                 }
                 val textView = TextView(context, null, android.R.attr.textAppearanceListItem)
                 linearLayout.addView(
                     textView,
-                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
                 )
                 textView.setSingleLine(true)
                 textView.setText(icon.title)
@@ -1612,9 +1793,10 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
                         StringUtils.copyToClipboard(
                             context,
-                            emailToCopy
+                            emailToCopy,
                         )
-                    })
+                    },
+                )
             }
             builder.setView(container)
             return builder.create()
@@ -1627,15 +1809,22 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             boardName: String?,
             threadNumber: String?,
             threadTitle: String?,
-            posts: Collection<Post>?
+            posts: Collection<Post>?,
         ) {
             val chan = get(chanName)
             val canArchiveLocal = !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
             val archiveChanNames = ChanManager.getInstance().getArchiveChanNames(chanName)
-            val state = SendMultifunctionalTask.State(
-                SendMultifunctionalTask
-                    .Operation.ARCHIVE, chanName, boardName, threadNumber, null, null, false
-            )
+            val state =
+                SendMultifunctionalTask.State(
+                    SendMultifunctionalTask
+                        .Operation.ARCHIVE,
+                    chanName,
+                    boardName,
+                    threadNumber,
+                    null,
+                    null,
+                    false,
+                )
             state.archiveThreadTitle = threadTitle
             if (canArchiveLocal && archiveChanNames.size > 0 || archiveChanNames.size > 1) {
                 InstanceDialog(
@@ -1650,12 +1839,13 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                             items[0] = provider!!.context.getString(R.string.local_archive)
                         }
                         for (i in archiveChanNames.indices) {
-                            val archiveChan = get(archiveChanNames.get(i))
+                            val archiveChan = get(archiveChanNames[i])
                             chanNameItems[if (canArchiveLocal) i + 1 else i] = archiveChan.name
                             items[if (canArchiveLocal) i + 1 else i] =
                                 archiveChan.configuration.getTitle()
                         }
-                        AlertDialog.Builder(provider!!.context)
+                        AlertDialog
+                            .Builder(provider!!.context)
                             .setTitle(R.string.archive__verb)
                             .setItems(
                                 items,
@@ -1665,11 +1855,12 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                         provider.fragmentManager,
                                         state,
                                         chanNameItems[which],
-                                        posts
+                                        posts,
                                     )
-                                })
-                            .create()
-                    })
+                                },
+                            ).create()
+                    },
+                )
             } else if (canArchiveLocal) {
                 performSendArchiveThreadInternal(context, fragmentManager, state, null, posts)
             }
@@ -1683,7 +1874,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             fragmentManager: FragmentManager,
             state: SendMultifunctionalTask.State,
             archiveChanName: String?,
-            posts: Collection<Post>?
+            posts: Collection<Post>?,
         ) {
             val archivation: Archivation?
             if (archiveChanName == null) {
@@ -1691,14 +1882,14 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 archivation.options.add(
                     Pair(
                         OPTION_THUMBNAILS,
-                        context.getString(R.string.save_thumbnails)
-                    )
+                        context.getString(R.string.save_thumbnails),
+                    ),
                 )
                 archivation.options.add(
                     Pair(
                         OPTION_FILES,
-                        context.getString(R.string.save_files)
-                    )
+                        context.getString(R.string.save_files),
+                    ),
                 )
             } else {
                 val archiveChan = get(archiveChanName)
@@ -1724,7 +1915,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             defaultText: String?,
             defaultOptions: List<String>?,
             posts: Collection<Post>?,
-            firstTime: Boolean
+            firstTime: Boolean,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1732,9 +1923,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     Companion.createPerformSendDialog(
                         provider!!,
-                        state, defaultType, defaultText, defaultOptions, posts, firstTime
+                        state,
+                        defaultType,
+                        defaultText,
+                        defaultOptions,
+                        posts,
+                        firstTime,
                     )!!
-                })
+                },
+            )
         }
 
         private fun createPerformSendDialog(
@@ -1744,7 +1941,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             defaultText: String?,
             defaultOptions: List<String>?,
             posts: Collection<Post>?,
-            firstTime: Boolean
+            firstTime: Boolean,
         ): Dialog? {
             val context = provider.context
             val radioGroup: RadioGroup?
@@ -1831,8 +2028,9 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             if (linearLayout.getChildCount() > 0) {
                 val scrollView = ScrollView(context)
                 scrollView.addView(
-                    linearLayout, ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
+                    linearLayout,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
                 )
                 var resId = 0
                 when (state.operation) {
@@ -1875,46 +2073,49 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                 builder.setMessage(resId)
             }
 
-            return builder.setPositiveButton(
-                android.R.string.ok,
-                DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
-                    val type =
-                        if (radioGroup != null) state.types!!.get(radioGroup.getCheckedRadioButtonId()).first else null
-                    val text = if (editText != null) editText.getText().toString() else null
-                    var options: ArrayList<String>? = null
-                    if (checkBoxGroup != null) {
-                        options = ArrayList<String>()
-                        for (i in 0..<checkBoxGroup.getChildCount()) {
-                            val checkBox = checkBoxGroup.getChildAt(i) as CheckBox
-                            if (checkBox.isChecked()) {
-                                options.add(checkBox.getTag() as String)
+            return builder
+                .setPositiveButton(
+                    android.R.string.ok,
+                    DialogInterface.OnClickListener { d: DialogInterface?, which: Int ->
+                        val type =
+                            if (radioGroup != null) state.types!![radioGroup.getCheckedRadioButtonId()].first else null
+                        val text = if (editText != null) editText.getText().toString() else null
+                        var options: ArrayList<String>? = null
+                        if (checkBoxGroup != null) {
+                            options = ArrayList<String>()
+                            for (i in 0..<checkBoxGroup.getChildCount()) {
+                                val checkBox = checkBoxGroup.getChildAt(i) as CheckBox
+                                if (checkBox.isChecked()) {
+                                    options.add(checkBox.getTag() as String)
+                                }
                             }
                         }
-                    }
-                    if (state.operation == SendMultifunctionalTask.Operation.ARCHIVE && state.archiveChanName == null) {
-                        if (posts!!.isEmpty()) {
-                            show(R.string.cache_is_unavailable)
+                        if (state.operation == SendMultifunctionalTask.Operation.ARCHIVE && state.archiveChanName == null) {
+                            if (posts!!.isEmpty()) {
+                                show(R.string.cache_is_unavailable)
+                            } else {
+                                startLocalArchiveProcess(
+                                    provider.fragmentManager,
+                                    state.chanName,
+                                    state.boardName,
+                                    state.threadNumber,
+                                    posts,
+                                    options!!.contains(OPTION_THUMBNAILS),
+                                    options.contains(OPTION_FILES),
+                                )
+                            }
                         } else {
-                            startLocalArchiveProcess(
+                            startMultifunctionalProcess(
                                 provider.fragmentManager,
-                                state.chanName,
-                                state.boardName,
-                                state.threadNumber,
-                                posts,
-                                options!!.contains(OPTION_THUMBNAILS),
-                                options.contains(OPTION_FILES)
+                                state,
+                                type,
+                                text,
+                                options,
                             )
                         }
-                    } else {
-                        startMultifunctionalProcess(
-                            provider.fragmentManager,
-                            state,
-                            type,
-                            text,
-                            options
-                        )
-                    }
-                }).setNegativeButton(android.R.string.cancel, null).create()
+                    },
+                ).setNegativeButton(android.R.string.cancel, null)
+                .create()
         }
 
         private fun startMultifunctionalProcess(
@@ -1922,7 +2123,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             state: SendMultifunctionalTask.State,
             type: String?,
             text: String?,
-            options: List<String>?
+            options: List<String>?,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -1932,19 +2133,24 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     val dialog = ProgressDialog(context, null)
                     dialog.setMessage(
                         context.getString(
-                            if (state.archiveQueryOnly)
+                            if (state.archiveQueryOnly) {
                                 R.string.loading__ellipsis
-                            else
+                            } else {
                                 R.string.sending__ellipsis
-                        )
+                            },
+                        ),
                     )
                     val viewModel =
                         provider.getViewModel<MultifunctionalViewModel>(MultifunctionalViewModel::class.java)
                     if (!viewModel.hasTaskOrValue()) {
-                        val task = SendMultifunctionalTask(
-                            viewModel.callback!!,
-                            state, type, text, options
-                        )
+                        val task =
+                            SendMultifunctionalTask(
+                                viewModel.callback!!,
+                                state,
+                                type,
+                                text,
+                                options,
+                            )
                         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                         viewModel.attach(task)
                     }
@@ -1953,7 +2159,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                         object : SendMultifunctionalTask.Callback {
                             override fun onSendSuccess(
                                 archiveBoardName: String?,
-                                archiveThreadNumber: String?
+                                archiveThreadNumber: String?,
                             ) {
                                 provider.dismiss()
                                 when (state.operation) {
@@ -1964,16 +2170,20 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                     SendMultifunctionalTask.Operation.ARCHIVE -> {
                                         if (archiveThreadNumber != null) {
                                             val chanName = state.archiveChanName
-                                            val navigationData = NavigationData(
-                                                NavigationData.Target.POSTS,
-                                                archiveBoardName, archiveThreadNumber, null, null
-                                            )
+                                            val navigationData =
+                                                NavigationData(
+                                                    NavigationData.Target.POSTS,
+                                                    archiveBoardName,
+                                                    archiveThreadNumber,
+                                                    null,
+                                                    null,
+                                                )
                                             val uiManager: UiManager? =
                                                 UiManager.Companion.extract(provider)
                                             if (state.archiveQueryOnly) {
                                                 uiManager!!.navigator()!!.navigateTargetAllowReturn(
                                                     chanName,
-                                                    navigationData
+                                                    navigationData,
                                                 )
                                             } else {
                                                 getInstance().add(
@@ -1981,20 +2191,23 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                                     archiveBoardName,
                                                     archiveThreadNumber,
                                                     state.archiveThreadTitle,
-                                                    false
+                                                    false,
                                                 )
                                                 show(
-                                                    context.getString(R.string.completed), null,
+                                                    context.getString(R.string.completed),
+                                                    null,
                                                     ClickableToast.Button(
                                                         R.string.open_thread,
                                                         false,
                                                         Runnable {
                                                             uiManager!!
-                                                                .navigator()!!.navigateTargetAllowReturn(
+                                                                .navigator()!!
+                                                                .navigateTargetAllowReturn(
                                                                     chanName,
-                                                                    navigationData
+                                                                    navigationData,
                                                                 )
-                                                        })
+                                                        },
+                                                    ),
                                                 )
                                             }
                                         } else if (state.archiveQueryOnly) {
@@ -2017,13 +2230,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                         text,
                                         options,
                                         null,
-                                        false
+                                        false,
                                     )
                                 }
                             }
-                        })
+                        },
+                    )
                     dialog
-                })
+                },
+            )
         }
 
         private val DOWNLOAD_RESULT_ERROR = DownloadResult { binder: DownloadService.Binder? -> }
@@ -2035,7 +2250,7 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
             threadNumber: String?,
             posts: Collection<Post>?,
             saveThumbnails: Boolean,
-            saveFiles: Boolean
+            saveFiles: Boolean,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -2048,10 +2263,16 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                     val viewModel =
                         provider.getViewModel<LocalArchiveViewModel>(LocalArchiveViewModel::class.java)
                     if (!viewModel.hasTaskOrValue()) {
-                        val task = SendLocalArchiveTask(
-                            viewModel, get(chanName),
-                            boardName, threadNumber, posts!!, saveThumbnails, saveFiles
-                        )
+                        val task =
+                            SendLocalArchiveTask(
+                                viewModel,
+                                get(chanName),
+                                boardName,
+                                threadNumber,
+                                posts,
+                                saveThumbnails,
+                                saveFiles,
+                            )
                         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                         viewModel.attach(task)
                     }
@@ -2065,12 +2286,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
                                 val uiManager: UiManager? = UiManager.Companion.extract(provider)
                                 result!!.run(uiManager!!.callback()!!.getDownloadBinder()!!)
                             }
-                        })
+                        },
+                    )
                     viewModel.progress.observe(
                         provider.lifecycleOwner,
-                        Observer { value: Int? -> dialog.setValue(value!!) })
+                        Observer { value: Int? -> dialog.setValue(value!!) },
+                    )
                     dialog
-                })
+                },
+            )
         }
     }
 }

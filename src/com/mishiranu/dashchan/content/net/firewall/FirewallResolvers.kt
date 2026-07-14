@@ -44,17 +44,21 @@ import com.mishiranu.dashchan.util.Hasher.Companion.getInstanceSha256
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.util.Arrays
 import java.util.UUID
 import kotlin.math.min
 
 class FirewallResolvers : FirewallResolver.Implementation() {
-    private class Key(private val hash: String?) : FirewallResolver.Exclusive.Key {
+    private class Key(
+        private val hash: String?,
+    ) : FirewallResolver.Exclusive.Key {
         class Generator {
             private var output: ByteArrayOutputStream? = null
             private var writer: OutputStreamWriter? = null
 
-            fun append(key: String?, value: String?) {
+            fun append(
+                key: String?,
+                value: String?,
+            ) {
                 try {
                     if (output == null) {
                         output = ByteArrayOutputStream()
@@ -82,34 +86,30 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             }
         }
 
-        override fun formatKey(value: String?): String? {
-            return if (hash != null) value + "_" + hash else value
-        }
+        override fun formatKey(value: String?): String? = if (hash != null) value + "_" + hash else value
 
-        override fun formatTitle(value: String?): String? {
-            return if (hash != null) value + " #" + hash.substring(
-                0,
-                min(8, hash.length)
-            ) else value
-        }
+        override fun formatTitle(value: String?): String? =
+            if (hash != null) {
+                value + " #" +
+                    hash.substring(
+                        0,
+                        min(8, hash.length),
+                    )
+            } else {
+                value
+            }
     }
 
     private abstract class BaseSession(
         private val uri: Uri?,
         override val chan: Chan,
-        private val identifier: FirewallResolver.Identifier
+        private val identifier: FirewallResolver.Identifier,
     ) : FirewallResolver.Session {
-        override fun getUri(): Uri? {
-            return uri
-        }
+        override fun getUri(): Uri? = uri
 
-        override fun getChanConfiguration(): ChanConfiguration? {
-            return chan.configuration
-        }
+        override fun getChanConfiguration(): ChanConfiguration? = chan.configuration
 
-        override fun getIdentifier(): FirewallResolver.Identifier {
-            return identifier
-        }
+        override fun getIdentifier(): FirewallResolver.Identifier = identifier
 
         override fun getKey(vararg flags: FirewallResolver.Identifier.Flag): FirewallResolver.Exclusive.Key? {
             val identifier = this.identifier
@@ -122,10 +122,12 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                         }
                     }
 
-                    FirewallResolver.Identifier.Flag.HOST -> generator.append(
-                        "host",
-                        identifier.host
-                    )
+                    FirewallResolver.Identifier.Flag.HOST -> {
+                        generator.append(
+                            "host",
+                            identifier.host,
+                        )
+                    }
                 }
             }
             return Key(generator.generate())
@@ -138,7 +140,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         chan: Chan,
         identifier: FirewallResolver.Identifier,
         internal val resolve: Boolean,
-        private val exclusive: Boolean
+        private val exclusive: Boolean,
     ) : BaseSession(uri, chan, identifier) {
         override val holder: HttpHolder
             get() {
@@ -149,9 +151,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 }
             }
 
-        override fun isResolveRequest(): Boolean {
-            return resolve
-        }
+        override fun isResolveRequest(): Boolean = resolve
 
         @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
         override fun <Result : Any> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result>): Result? {
@@ -163,22 +163,19 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         }
     }
 
-    private class CookieSession(uri: Uri?, chan: Chan, identifier: FirewallResolver.Identifier) :
-        BaseSession(uri, chan, identifier) {
-        public override fun getUri(): Uri? {
-            throw IllegalStateException()
-        }
+    private class CookieSession(
+        uri: Uri?,
+        chan: Chan,
+        identifier: FirewallResolver.Identifier,
+    ) : BaseSession(uri, chan, identifier) {
+        public override fun getUri(): Uri? = throw IllegalStateException()
 
         override val holder: HttpHolder?
             get() = throw IllegalStateException()
 
-        override fun isResolveRequest(): Boolean {
-            return false
-        }
+        override fun isResolveRequest(): Boolean = false
 
-        override fun <Result : Any> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result>): Result? {
-            throw IllegalStateException()
-        }
+        override fun <Result : Any> resolveWebView(webViewClient: FirewallResolver.WebViewClient<Result>): Result? = throw IllegalStateException()
     }
 
     private class CheckHolder {
@@ -187,8 +184,10 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     }
 
     private class FirewallResolverCaptchaReader(
-        private val apiKey: String?, private val referer: String?,
-        private val challengeExtra: Any?, private val allowSolveAutomatically: Boolean
+        private val apiKey: String?,
+        private val referer: String?,
+        private val challengeExtra: Any?,
+        private val allowSolveAutomatically: Boolean,
     ) : CaptchaReader {
         override fun onReadCaptcha(data: ReadCaptchaData): RemoteResult {
             val captchaData = CaptchaData()
@@ -197,16 +196,22 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             return RemoteResult(
                 ReadCaptchaResult(ChanPerformer.CaptchaState.CAPTCHA, captchaData),
                 challengeExtra,
-                allowSolveAutomatically
+                allowSolveAutomatically,
             )
         }
     }
 
     private class WebViewRequestCallback(
         val client: FirewallResolver.WebViewClient<*>,
-        val initialUri: Uri?, val chanTitle: String?, val cancel: Runnable
+        val initialUri: Uri?,
+        val chanTitle: String?,
+        val cancel: Runnable,
     ) : IRequestCallback.Stub() {
-        override fun onPageFinished(uriString: String?, cookie: String?, title: String?): Boolean {
+        override fun onPageFinished(
+            uriString: String?,
+            cookie: String?,
+            title: String?,
+        ): Boolean {
             var uri: Uri?
             try {
                 uri = Uri.parse(uriString)
@@ -269,17 +274,25 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         }
 
         fun requireUserCaptcha(
-            captchaType: String?, apiKey: String?, referer: String?,
-            challengeExtra: Any?, allowSolveAutomatically: Boolean, retry: Boolean
+            captchaType: String?,
+            apiKey: String?,
+            referer: String?,
+            challengeExtra: Any?,
+            allowSolveAutomatically: Boolean,
+            retry: Boolean,
         ): String? {
-            val description = MainApplication.getInstance().localizedContext.getString(
-                R.string.firewall_block__format_sentence,
-                client.name + " (" + chanTitle + ")"
-            )
-            val reader = FirewallResolverCaptchaReader(
-                apiKey, referer,
-                challengeExtra, allowSolveAutomatically
-            )
+            val description =
+                MainApplication.getInstance().localizedContext.getString(
+                    R.string.firewall_block__format_sentence,
+                    client.name + " (" + chanTitle + ")",
+                )
+            val reader =
+                FirewallResolverCaptchaReader(
+                    apiKey,
+                    referer,
+                    challengeExtra,
+                    allowSolveAutomatically,
+                )
             var captchaData: CaptchaData?
             synchronized(this) {
                 if (interrupted) {
@@ -288,10 +301,17 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 requireThread = Thread.currentThread()
             }
             try {
-                captchaData = ForegroundManager.getInstance().requireUserCaptcha(
-                    reader,
-                    captchaType, null, null, null, null, description, retry
-                )
+                captchaData =
+                    ForegroundManager.getInstance().requireUserCaptcha(
+                        reader,
+                        captchaType,
+                        null,
+                        null,
+                        null,
+                        null,
+                        description,
+                        retry,
+                    )
             } catch (e: InterruptedException) {
                 return null
             } finally {
@@ -309,22 +329,33 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             return if (captchaData != null) captchaData.get(CaptchaData.INPUT) else null
         }
 
-        override fun onRecaptchaV2(apiKey: String?, invisible: Boolean, referer: String?): String? {
+        override fun onRecaptchaV2(
+            apiKey: String?,
+            invisible: Boolean,
+            referer: String?,
+        ): String? {
             val retry = this.isRetry
             val allowSolveAutomatically = !retry
-            val captchaType = if (invisible)
-                ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE
-            else
-                ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2
+            val captchaType =
+                if (invisible) {
+                    ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE
+                } else {
+                    ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2
+                }
             val challengeExtra: ChallengeExtra?
             val holder = HttpHolder(getFallback())
             try {
                 holder.use().use { ignored ->
-                    challengeExtra = RecaptchaReader.getInstance().getChallenge2(
-                        holder,
-                        apiKey!!, invisible, referer, isRecaptchaJavascript,
-                        true, allowSolveAutomatically
-                    )
+                    challengeExtra =
+                        RecaptchaReader.getInstance().getChallenge2(
+                            holder,
+                            apiKey!!,
+                            invisible,
+                            referer,
+                            isRecaptchaJavascript,
+                            true,
+                            allowSolveAutomatically,
+                        )
                 }
             } catch (e: RecaptchaReader.CancelException) {
                 return null
@@ -336,8 +367,12 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                     return challengeExtra.response
                 }
                 return requireUserCaptcha(
-                    captchaType, apiKey, referer, challengeExtra,
-                    allowSolveAutomatically, retry
+                    captchaType,
+                    apiKey,
+                    referer,
+                    challengeExtra,
+                    allowSolveAutomatically,
+                    retry,
                 )
             } finally {
                 if (challengeExtra != null) {
@@ -346,17 +381,24 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             }
         }
 
-        override fun onHcaptcha(apiKey: String?, referer: String?): String? {
+        override fun onHcaptcha(
+            apiKey: String?,
+            referer: String?,
+        ): String? {
             val retry = this.isRetry
             val allowSolveAutomatically = !retry
             val challengeExtra: ChallengeExtra?
             val holder = HttpHolder(getFallback())
             try {
                 holder.use().use { ignored ->
-                    challengeExtra = RecaptchaReader.getInstance().getChallengeHcaptcha(
-                        holder,
-                        apiKey!!, referer, true, allowSolveAutomatically
-                    )
+                    challengeExtra =
+                        RecaptchaReader.getInstance().getChallengeHcaptcha(
+                            holder,
+                            apiKey!!,
+                            referer,
+                            true,
+                            allowSolveAutomatically,
+                        )
                 }
             } catch (e: RecaptchaReader.CancelException) {
                 return null
@@ -369,7 +411,11 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 }
                 return requireUserCaptcha(
                     ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA,
-                    apiKey, referer, challengeExtra, allowSolveAutomatically, retry
+                    apiKey,
+                    referer,
+                    challengeExtra,
+                    allowSolveAutomatically,
+                    retry,
                 )
             } finally {
                 if (challengeExtra != null) {
@@ -379,15 +425,23 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         }
     }
 
-    abstract class WebViewClientWithExtra<Result>(name: String?, internal val extra: WebViewExtra?) :
-        FirewallResolver.WebViewClient<Result>(name)
+    abstract class WebViewClientWithExtra<Result>(
+        name: String?,
+        internal val extra: WebViewExtra?,
+    ) : FirewallResolver.WebViewClient<Result>(name)
 
     @Throws(FirewallResolver.CancelException::class, InterruptedException::class)
     private fun <T : Any> resolveWebView(
         session: FirewallResolver.Session,
-        client: FirewallResolver.WebViewClient<T>
+        client: FirewallResolver.WebViewClient<T>,
     ): T? {
-        val initialUri = session.getUri()!!.buildUpon().clearQuery().encodedFragment(null).build()
+        val initialUri =
+            session
+                .getUri()!!
+                .buildUpon()
+                .clearQuery()
+                .encodedFragment(null)
+                .build()
         val chan: Chan = session.chan!!
         val userAgent = session.getIdentifier()!!.userAgent
         val proxyData: HttpClient.ProxyData? = HttpClient.getInstance().getProxyData(chan)
@@ -423,11 +477,12 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         initialUri: Uri,
         userAgent: String?,
         proxyData: HttpClient.ProxyData?,
-        client: FirewallResolver.WebViewClient<T>
+        client: FirewallResolver.WebViewClient<T>,
     ): T? {
         val firewallResolutionDialogRequest =
             FirewallResolutionDialogRequest(initialUri.toString(), userAgent, proxyData, client)
-        return ForegroundManager.getInstance()
+        return ForegroundManager
+            .getInstance()
             .requireUserResolveFirewall(firewallResolutionDialogRequest)
     }
 
@@ -437,7 +492,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         userAgent: String?,
         proxyData: HttpClient.ProxyData?,
         client: FirewallResolver.WebViewClient<T>,
-        chan: Chan
+        chan: Chan,
     ): T? {
         val context: Context = MainApplication.getInstance()
 
@@ -448,29 +503,33 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         }
 
         val status = Status()
-        val connection: ServiceConnection = object : ServiceConnection {
-            override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
-                synchronized(status) {
-                    status.established = true
-                    status.service = IWebViewService.Stub.asInterface(binder)
-                    (status as Object).notifyAll()
+        val connection: ServiceConnection =
+            object : ServiceConnection {
+                override fun onServiceConnected(
+                    componentName: ComponentName?,
+                    binder: IBinder?,
+                ) {
+                    synchronized(status) {
+                        status.established = true
+                        status.service = IWebViewService.Stub.asInterface(binder)
+                        (status as Object).notifyAll()
+                    }
                 }
-            }
 
-            override fun onServiceDisconnected(componentName: ComponentName?) {
-                synchronized(status) {
-                    status.established = true
-                    status.service = null
-                    (status as Object).notifyAll()
+                override fun onServiceDisconnected(componentName: ComponentName?) {
+                    synchronized(status) {
+                        status.established = true
+                        status.service = null
+                        (status as Object).notifyAll()
+                    }
                 }
             }
-        }
 
         try {
             context.bindService(
                 Intent(context, WebViewService::class.java),
                 connection,
-                Context.BIND_AUTO_CREATE
+                Context.BIND_AUTO_CREATE,
             )
             val service: IWebViewService?
             synchronized(status) {
@@ -489,35 +548,45 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 val chanTitle = chan.configuration.getTitle()
                 val finished = booleanArrayOf(false)
                 val verifyCertificate = chan.locator.isUseHttps() && isVerifyCertificate
-                val requestCallback = WebViewRequestCallback(
-                    client, initialUri, chanTitle,
-                    Runnable { status.cancel = true })
+                val requestCallback =
+                    WebViewRequestCallback(
+                        client,
+                        initialUri,
+                        chanTitle,
+                        Runnable { status.cancel = true },
+                    )
                 val requestId = UUID.randomUUID().toString()
-                val blockingCallThread = Thread(Runnable {
-                    val extra = if (client is WebViewClientWithExtra<*>)
-                        (client as WebViewClientWithExtra<*>).extra
-                    else
-                        null
-                    try {
-                        val result = service.loadWithCookieResult(
-                            requestId,
-                            initialUri.toString(),
-                            userAgent,
-                            proxyData != null && proxyData.socks,
-                            if (proxyData != null) proxyData.host else null,
-                            if (proxyData != null) proxyData.port else 0,
-                            verifyCertificate,
-                            WEB_VIEW_TIMEOUT.toLong(),
-                            extra,
-                            requestCallback
-                        )
-                        synchronized(finished) {
-                            finished[0] = result
-                        }
-                    } catch (e: RemoteException) {
-                        e.printStackTrace()
-                    }
-                })
+                val blockingCallThread =
+                    Thread(
+                        Runnable {
+                            val extra =
+                                if (client is WebViewClientWithExtra<*>) {
+                                    (client as WebViewClientWithExtra<*>).extra
+                                } else {
+                                    null
+                                }
+                            try {
+                                val result =
+                                    service.loadWithCookieResult(
+                                        requestId,
+                                        initialUri.toString(),
+                                        userAgent,
+                                        proxyData != null && proxyData.socks,
+                                        if (proxyData != null) proxyData.host else null,
+                                        if (proxyData != null) proxyData.port else 0,
+                                        verifyCertificate,
+                                        WEB_VIEW_TIMEOUT.toLong(),
+                                        extra,
+                                        requestCallback,
+                                    )
+                                synchronized(finished) {
+                                    finished[0] = result
+                                }
+                            } catch (e: RemoteException) {
+                                e.printStackTrace()
+                            }
+                        },
+                    )
                 blockingCallThread.start()
                 try {
                     blockingCallThread.join()
@@ -555,23 +624,24 @@ class FirewallResolvers : FirewallResolver.Implementation() {
 
     @Throws(HttpException::class, InterruptedException::class)
     private fun runExclusive(
-        session: CheckSession, key: FirewallResolver.Exclusive.Key?,
-        exclusive: FirewallResolver.Exclusive
+        session: CheckSession,
+        key: FirewallResolver.Exclusive.Key?,
+        exclusive: FirewallResolver.Exclusive,
     ): Boolean {
         checkNotNull(session.checkHolder)
         var checkHolder: CheckHolder?
         var handle = false
         synchronized(lastCheckCancel) {
-            val cancel = lastCheckCancel.get(key)
+            val cancel = lastCheckCancel[key]
             if (cancel != null && cancel + 15 * 1000 > SystemClock.elapsedRealtime()) {
                 return false
             }
         }
         synchronized(checkHolders) {
-            checkHolder = checkHolders.get(key)
+            checkHolder = checkHolders[key]
             if (checkHolder == null) {
                 checkHolder = CheckHolder()
-                checkHolders.put(key, checkHolder)
+                checkHolders[key] = checkHolder
                 handle = true
             }
         }
@@ -580,15 +650,20 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             try {
                 try {
                     session.checkHolder.use().use { ignored ->
-                        val exclusiveSession = CheckSession(
-                            session.getUri(), session.checkHolder,
-                            session.chan, session.getIdentifier(), session.resolve, true
-                        )
+                        val exclusiveSession =
+                            CheckSession(
+                                session.getUri(),
+                                session.checkHolder,
+                                session.chan,
+                                session.getIdentifier(),
+                                session.resolve,
+                                true,
+                            )
                         checkHolder!!.success = exclusive.resolve(exclusiveSession, key!!)
                     }
                 } catch (e: FirewallResolver.CancelException) {
                     synchronized(lastCheckCancel) {
-                        lastCheckCancel.put(key, SystemClock.elapsedRealtime())
+                        lastCheckCancel[key] = SystemClock.elapsedRealtime()
                     }
                 }
             } finally {
@@ -619,7 +694,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         holder: HttpHolder,
         response: HttpResponse?,
         identifier: FirewallResolver.Identifier,
-        resolve: Boolean
+        resolve: Boolean,
     ): FirewallResolver.CheckResult? {
         if (chan.locator.getChanHosts(false).contains(uri.getHost())) {
             val session = CheckSession(uri, holder, chan, identifier, resolve, false)
@@ -651,7 +726,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         chan: Chan,
         uri: Uri?,
         identifier: FirewallResolver.Identifier,
-        safe: Boolean
+        safe: Boolean,
     ): CookieBuilder {
         val cookieBuilder = CookieBuilder()
         val session = CookieSession(uri, chan, identifier)

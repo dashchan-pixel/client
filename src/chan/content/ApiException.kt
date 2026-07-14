@@ -40,9 +40,7 @@ class ApiException : Exception {
         this.extra = null
     }
 
-    fun checkFlag(flag: Int): Boolean {
-        return get(flags, flag)
-    }
+    fun checkFlag(flag: Int): Boolean = get(flags, flag)
 
     fun getExtra(): Extra? {
         when (errorType) {
@@ -73,103 +71,109 @@ class ApiException : Exception {
     interface Extra : Parcelable
 
     @Public
-    class BanExtra @Public constructor() : Extra {
-        var id: String? = null
-        var message: String? = null
-        var startDate: Long = 0
-        var expireDate: Long = 0
-
+    class BanExtra
         @Public
-        fun setId(id: String?): BanExtra {
-            this.id = id
-            return this
-        }
+        constructor() : Extra {
+            var id: String? = null
+            var message: String? = null
+            var startDate: Long = 0
+            var expireDate: Long = 0
 
-        @Public
-        fun setMessage(message: String?): BanExtra {
-            this.message = message
-            return this
-        }
+            @Public
+            fun setId(id: String?): BanExtra {
+                this.id = id
+                return this
+            }
 
-        @Public
-        fun setStartDate(startDate: Long): BanExtra {
-            this.startDate = startDate
-            return this
-        }
+            @Public
+            fun setMessage(message: String?): BanExtra {
+                this.message = message
+                return this
+            }
 
-        @Public
-        fun setExpireDate(expireDate: Long): BanExtra {
-            this.expireDate = expireDate
-            return this
-        }
+            @Public
+            fun setStartDate(startDate: Long): BanExtra {
+                this.startDate = startDate
+                return this
+            }
 
-        override fun describeContents(): Int {
-            return 0
-        }
+            @Public
+            fun setExpireDate(expireDate: Long): BanExtra {
+                this.expireDate = expireDate
+                return this
+            }
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeString(id)
-            dest.writeString(message)
-            dest.writeLong(startDate)
-            dest.writeLong(expireDate)
-        }
+            override fun describeContents(): Int = 0
 
-        companion object {
-            @JvmField
-            val CREATOR: Parcelable.Creator<BanExtra?> = object : Parcelable.Creator<BanExtra?> {
-                override fun createFromParcel(`in`: Parcel): BanExtra {
-                    val id = `in`.readString()
-                    val message = `in`.readString()
-                    val startDate = `in`.readLong()
-                    val expireDate = `in`.readLong()
-                    return BanExtra().setId(id).setMessage(message).setStartDate(startDate)
-                        .setExpireDate(expireDate)
-                }
+            override fun writeToParcel(
+                dest: Parcel,
+                flags: Int,
+            ) {
+                dest.writeString(id)
+                dest.writeString(message)
+                dest.writeLong(startDate)
+                dest.writeLong(expireDate)
+            }
 
-                override fun newArray(size: Int): Array<BanExtra?> {
-                    return arrayOfNulls<BanExtra>(size)
-                }
+            companion object {
+                @JvmField
+                val CREATOR: Parcelable.Creator<BanExtra?> =
+                    object : Parcelable.Creator<BanExtra?> {
+                        override fun createFromParcel(`in`: Parcel): BanExtra {
+                            val id = `in`.readString()
+                            val message = `in`.readString()
+                            val startDate = `in`.readLong()
+                            val expireDate = `in`.readLong()
+                            return BanExtra()
+                                .setId(id)
+                                .setMessage(message)
+                                .setStartDate(startDate)
+                                .setExpireDate(expireDate)
+                        }
+
+                        override fun newArray(size: Int): Array<BanExtra?> = arrayOfNulls<BanExtra>(size)
+                    }
             }
         }
-    }
 
     @Public
-    class WordsExtra @Public constructor() : Extra {
-        val words: LinkedHashSet<String?> = LinkedHashSet<String?>()
-
+    class WordsExtra
         @Public
-        fun addWord(word: String?): WordsExtra {
-            words.add(word)
-            return this
-        }
+        constructor() : Extra {
+            val words: LinkedHashSet<String?> = LinkedHashSet<String?>()
 
-        override fun describeContents(): Int {
-            return 0
-        }
+            @Public
+            fun addWord(word: String?): WordsExtra {
+                words.add(word)
+                return this
+            }
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeStringList(ArrayList<String?>(words))
-        }
+            override fun describeContents(): Int = 0
 
-        companion object {
-            @JvmField
-            val CREATOR: Parcelable.Creator<WordsExtra?> =
-                object : Parcelable.Creator<WordsExtra?> {
-                    override fun createFromParcel(`in`: Parcel): WordsExtra {
-                        val words = `in`.createStringArrayList()
-                        val wordsExtra = WordsExtra()
-                        for (word in words!!) {
-                            wordsExtra.addWord(word)
+            override fun writeToParcel(
+                dest: Parcel,
+                flags: Int,
+            ) {
+                dest.writeStringList(ArrayList<String?>(words))
+            }
+
+            companion object {
+                @JvmField
+                val CREATOR: Parcelable.Creator<WordsExtra?> =
+                    object : Parcelable.Creator<WordsExtra?> {
+                        override fun createFromParcel(`in`: Parcel): WordsExtra {
+                            val words = `in`.createStringArrayList()
+                            val wordsExtra = WordsExtra()
+                            for (word in words!!) {
+                                wordsExtra.addWord(word)
+                            }
+                            return wordsExtra
                         }
-                        return wordsExtra
-                    }
 
-                    override fun newArray(size: Int): Array<WordsExtra?> {
-                        return arrayOfNulls<WordsExtra>(size)
+                        override fun newArray(size: Int): Array<WordsExtra?> = arrayOfNulls<WordsExtra>(size)
                     }
-                }
+            }
         }
-    }
 
     companion object {
         @Public

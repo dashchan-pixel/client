@@ -29,33 +29,38 @@ class UpdaterActivity : StateActivity() {
     private val files: MutableList<String?>?
         get() = getIntent().getStringArrayListExtra(EXTRA_FILES)
 
-    private val installStatusReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            val status =
-                intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
-            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-                val confirmIntent =
-                    intent.getParcelableExtra<Intent?>(Intent.EXTRA_INTENT, Intent::class.java)
-                if (confirmIntent != null) {
-                    startActivity(confirmIntent)
+    private val installStatusReceiver: BroadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context?,
+                intent: Intent,
+            ) {
+                val status =
+                    intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+                if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                    val confirmIntent =
+                        intent.getParcelableExtra<Intent?>(Intent.EXTRA_INTENT, Intent::class.java)
+                    if (confirmIntent != null) {
+                        startActivity(confirmIntent)
+                    } else {
+                        finish()
+                    }
+                } else if (status == PackageInstaller.STATUS_SUCCESS) {
+                    index++
+                    performInstallation()
                 } else {
                     finish()
                 }
-            } else if (status == PackageInstaller.STATUS_SUCCESS) {
-                index++
-                performInstallation()
-            } else {
-                finish()
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         registerReceiver(
-            installStatusReceiver, IntentFilter(ACTION_INSTALL_STATUS),
-            RECEIVER_NOT_EXPORTED
+            installStatusReceiver,
+            IntentFilter(ACTION_INSTALL_STATUS),
+            RECEIVER_NOT_EXPORTED,
         )
         if (savedInstanceState == null) {
             performInstallation()
@@ -77,7 +82,7 @@ class UpdaterActivity : StateActivity() {
     private fun performInstallation() {
         val files = this.files
         if (files != null && files.size > index) {
-            val file: File? = FileProvider.Companion.getUpdatesFile(files.get(index)!!)
+            val file: File? = FileProvider.Companion.getUpdatesFile(files[index]!!)
             if (file == null) {
                 index++
                 performInstallation()
@@ -105,10 +110,13 @@ class UpdaterActivity : StateActivity() {
                 }
                 val statusIntent: Intent =
                     Intent(ACTION_INSTALL_STATUS).setPackage(getPackageName())
-                val pendingIntent = PendingIntent.getBroadcast(
-                    this, sessionId, statusIntent,
-                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                )
+                val pendingIntent =
+                    PendingIntent.getBroadcast(
+                        this,
+                        sessionId,
+                        statusIntent,
+                        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                    )
                 session.commit(pendingIntent.getIntentSender())
             }
         } catch (e: IOException) {
@@ -135,8 +143,9 @@ class UpdaterActivity : StateActivity() {
 
     private class Connection(
         private val context: Context,
-        private val downloadItems: MutableList<DownloadItem>
-    ) : ServiceConnection, DownloadService.Callback {
+        private val downloadItems: MutableList<DownloadItem>,
+    ) : ServiceConnection,
+        DownloadService.Callback {
         private val status = HashMap<String?, Boolean?>()
 
         private var binder: DownloadService.Binder? = null
@@ -145,11 +154,14 @@ class UpdaterActivity : StateActivity() {
             context.bindService(
                 Intent(context, DownloadService::class.java),
                 this,
-                BIND_AUTO_CREATE
+                BIND_AUTO_CREATE,
             )
         }
 
-        override fun onServiceConnected(componentName: ComponentName?, binder: IBinder?) {
+        override fun onServiceConnected(
+            componentName: ComponentName?,
+            binder: IBinder?,
+        ) {
             this.binder = binder as DownloadService.Binder?
             this.binder!!.register(this)
             this.binder!!.downloadDirect(DataFile.Target.UPDATES, null, true, downloadItems)
@@ -182,15 +194,15 @@ class UpdaterActivity : StateActivity() {
             success: Boolean,
             target: DataFile.Target?,
             path: String?,
-            name: String?
+            name: String?,
         ) {
             if (target == DataFile.Target.UPDATES && isEmpty(path)) {
-                status.put(name, success)
+                status[name] = success
             }
             if (success) {
                 var successAll = true
                 for (downloadItem in downloadItems) {
-                    val status = this.status.get(downloadItem.name)
+                    val status = this.status[downloadItem.name]
                     if (status == null || !status) {
                         successAll = false
                         break
@@ -203,17 +215,17 @@ class UpdaterActivity : StateActivity() {
                         for (downloadItem in downloadItems) {
                             // DownloadItem.name is typed nullable; a nameless item can
                             // never resolve to a downloaded file, so treat it as missing.
-                            val name = downloadItem.name
-                            if (name == null || !File(directory, name).exists()) {
+                            val itemName = downloadItem.name
+                            if (itemName == null || !File(directory, itemName).exists()) {
                                 break
                             }
-                            files.add(name)
+                            files.add(itemName)
                         }
                         if (files.size == downloadItems.size) {
                             context.startActivity(
                                 Intent(context, UpdaterActivity::class.java)
                                     .putStringArrayListExtra(EXTRA_FILES, files)
-                                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             )
                         }
                     }
@@ -235,8 +247,11 @@ class UpdaterActivity : StateActivity() {
     }
 
     class Request(
-        val extensionName: String?, val versionName: String?, val uri: Uri?,
-        val sha256sum: ByteArray?, val checkFingerprints: Fingerprints?
+        val extensionName: String?,
+        val versionName: String?,
+        val uri: Uri?,
+        val sha256sum: ByteArray?,
+        val checkFingerprints: Fingerprints?,
     )
 
     companion object {
@@ -253,10 +268,14 @@ class UpdaterActivity : StateActivity() {
             val downloadItems = ArrayList<DownloadItem>()
             for (request in requests) {
                 val name = request.extensionName + "-" + request.versionName + ".apk"
-                val downloadItem = DownloadItem(
-                    null,
-                    request.uri, name, request.sha256sum, request.checkFingerprints
-                )
+                val downloadItem =
+                    DownloadItem(
+                        null,
+                        request.uri,
+                        name,
+                        request.sha256sum,
+                        request.checkFingerprints,
+                    )
                 if (ChanManager.EXTENSION_NAME_CLIENT == request.extensionName) {
                     clientDownloadItem = downloadItem
                 } else {

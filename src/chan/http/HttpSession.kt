@@ -15,7 +15,7 @@ class HttpSession internal constructor(
     val verifyCertificate: Boolean,
     val mayCheckFirewallBlock: Boolean,
     val delay: Int,
-    var attempt: Int
+    var attempt: Int,
 ) {
     var response: HttpResponse? = null
 
@@ -50,7 +50,7 @@ class HttpSession internal constructor(
     val currentRequestedUri: Uri?
         get() {
             checkThread()
-            return requestedUris.get(requestedUris.size - 1)
+            return requestedUris[requestedUris.size - 1]
         }
 
     fun setNextRequestedUri(uri: Uri?) {
@@ -59,7 +59,10 @@ class HttpSession internal constructor(
     }
 
     @Throws(InterruptedHttpException::class)
-    private fun setCallInternal(call: Call?, callback: HttpHolder.Callback?) {
+    private fun setCallInternal(
+        call: Call?,
+        callback: HttpHolder.Callback?,
+    ) {
         checkThread()
         this.currentCall = call
         this.currentCallback = callback
@@ -120,12 +123,15 @@ class HttpSession internal constructor(
     fun checkResponseCode() {
         checkThread()
         val responseCode = this.responseCode
-        val success = responseCode >= 200 && responseCode <= 303
-                || responseCode == HttpClient.Companion.HTTP_TEMPORARY_REDIRECT
+        val success =
+            responseCode >= 200 &&
+                responseCode <= 303 ||
+                responseCode == HttpClient.Companion.HTTP_TEMPORARY_REDIRECT
         if (!success) {
-            val message: String? = HttpClient.Companion.transformResponseMessage(
-                this.responseMessage
-            )
+            val message: String? =
+                HttpClient.Companion.transformResponseMessage(
+                    this.responseMessage,
+                )
             disconnectAndClear()
             throw HttpException(responseCode, message)
         }
@@ -165,10 +171,10 @@ class HttpSession internal constructor(
                 LinkedHashMap<String?, MutableList<String>?>()
             for (i in 0..<headers.size) {
                 val name = headers.name(i)
-                var values = map.get(name)
+                var values = map[name]
                 if (values == null) {
                     values = ArrayList(1)
-                    map.put(name, values)
+                    map[name] = values
                 }
                 values.add(headers.value(i))
             }
@@ -178,9 +184,9 @@ class HttpSession internal constructor(
     fun getCookieValue(name: String?): String? {
         val headers =
             this.headerFields
-        var cookies = headers.get("Set-Cookie")
+        var cookies = headers["Set-Cookie"]
         if (cookies == null) {
-            cookies = headers.get("set-cookie")
+            cookies = headers["set-cookie"]
         }
         if (cookies != null) {
             val start = name + "="

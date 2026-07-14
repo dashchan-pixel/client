@@ -7,53 +7,57 @@ import androidx.lifecycle.ViewModel
 import java.lang.reflect.ParameterizedType
 
 open class TaskViewModel<Task : ExecutorTask<*, *>, Result> : ViewModel() {
-	internal var task: Task? = null
-	private val result = MutableLiveData<Result?>()
+    internal var task: Task? = null
+    private val result = MutableLiveData<Result?>()
 
-	fun hasTaskOrValue(): Boolean {
-		return task != null || result.value != null
-	}
+    fun hasTaskOrValue(): Boolean = task != null || result.value != null
 
-	fun getTask(): Task? = task
+    fun getTask(): Task? = task
 
-	fun attach(task: Task?) {
-		result.value = null
-		this.task?.cancel()
-		this.task = task
-	}
+    fun attach(task: Task?) {
+        result.value = null
+        this.task?.cancel()
+        this.task = task
+    }
 
-	fun observe(owner: LifecycleOwner, observer: Observer<in Result>) {
-		result.observe(owner) { result ->
-			if (result != null) {
-				this.result.value = null
-				observer.onChanged(result)
-			}
-		}
-	}
+    fun observe(
+        owner: LifecycleOwner,
+        observer: Observer<in Result>,
+    ) {
+        result.observe(owner) { result ->
+            if (result != null) {
+                this.result.value = null
+                observer.onChanged(result)
+            }
+        }
+    }
 
-	override fun onCleared() {
-		task?.cancel()
-		task = null
-	}
+    override fun onCleared() {
+        task?.cancel()
+        task = null
+    }
 
-	fun handleResult(result: Result) {
-		task = null
-		this.result.value = result
-	}
+    fun handleResult(result: Result) {
+        task = null
+        this.result.value = result
+    }
 
-	open class Proxy<Task : ExecutorTask<*, *>, Callback> :
-			TaskViewModel<Task, CallbackProxy<Callback>>() {
-		@JvmField val callback: Callback
+    open class Proxy<Task : ExecutorTask<*, *>, Callback> : TaskViewModel<Task, CallbackProxy<Callback>>() {
+        @JvmField val callback: Callback
 
-		init {
-			val type = javaClass.genericSuperclass as ParameterizedType
-			@Suppress("UNCHECKED_CAST")
-			val callbackClass = type.actualTypeArguments[1] as Class<Callback>
-			callback = CallbackProxy.create(callbackClass, this::handleResult)
-		}
+        init {
+            val type = javaClass.genericSuperclass as ParameterizedType
 
-		fun observe(owner: LifecycleOwner, callback: Callback) {
-			observe(owner) { result -> result.invoke(callback) }
-		}
-	}
+            @Suppress("UNCHECKED_CAST")
+            val callbackClass = type.actualTypeArguments[1] as Class<Callback>
+            callback = CallbackProxy.create(callbackClass, this::handleResult)
+        }
+
+        fun observe(
+            owner: LifecycleOwner,
+            callback: Callback,
+        ) {
+            observe(owner) { result -> result.invoke(callback) }
+        }
+    }
 }

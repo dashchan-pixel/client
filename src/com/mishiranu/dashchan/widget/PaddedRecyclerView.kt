@@ -28,7 +28,10 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
+open class PaddedRecyclerView :
+    RecyclerView,
+    Shift,
+    PullableWrapper.Wrapped {
     private val edgeEffectHandlerField = bind(this, this)
     private var shift: Shift? = null
     private var pullableWrapper: PullableWrapper? = null
@@ -66,10 +69,10 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
         context,
         attrs,
-        defStyleAttr
+        defStyleAttr,
     )
 
-    /* init */
+    // init
     init {
         val theme: ThemeEngine.Theme = ThemeEngine.Companion.getTheme(getContext())
         edgeEffectHandlerField.setColor(theme.accent)
@@ -77,10 +80,11 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
         val density = obtainDensity(this)
         val thumbDrawable = getDrawable(getContext(), android.R.attr.fastScrollThumbDrawable, 0)
         this.thumbDrawable = thumbDrawable
-        val states = arrayOf<IntArray?>(
-            intArrayOf(android.R.attr.state_enabled, android.R.attr.state_pressed),
-            intArrayOf(android.R.attr.state_enabled)
-        )
+        val states =
+            arrayOf<IntArray?>(
+                intArrayOf(android.R.attr.state_enabled, android.R.attr.state_pressed),
+                intArrayOf(android.R.attr.state_enabled),
+            )
         val colors = intArrayOf(theme.accent, theme.controlNormal21)
         thumbDrawable!!.setTintList(ColorStateList(states, colors))
 
@@ -89,47 +93,64 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
         minTrackSize = (16f * density).toInt()
 
         setRecycledViewPool(UnlimitedRecycledViewPool())
-        addOnScrollListener(object : OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                val regularScrolling = newState != SCROLL_STATE_IDLE
-                updateFastScroller(
-                    false,
-                    fastScrollerEnabled,
-                    fastScrollerAllowed,
-                    regularScrolling,
-                    fastScrolling
-                )
-            }
-        })
-        addOnItemTouchListener(object : OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                return handleTouchEvent(e)
-            }
+        addOnScrollListener(
+            object : OnScrollListener() {
+                override fun onScrollStateChanged(
+                    recyclerView: RecyclerView,
+                    newState: Int,
+                ) {
+                    val regularScrolling = newState != SCROLL_STATE_IDLE
+                    updateFastScroller(
+                        false,
+                        fastScrollerEnabled,
+                        fastScrollerAllowed,
+                        regularScrolling,
+                        fastScrolling,
+                    )
+                }
+            },
+        )
+        addOnItemTouchListener(
+            object : OnItemTouchListener {
+                override fun onInterceptTouchEvent(
+                    rv: RecyclerView,
+                    e: MotionEvent,
+                ): Boolean = handleTouchEvent(e)
 
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-                handleTouchEvent(e)
-            }
+                override fun onTouchEvent(
+                    rv: RecyclerView,
+                    e: MotionEvent,
+                ) {
+                    handleTouchEvent(e)
+                }
 
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                if (disallowIntercept) {
-                    fastScrollingDown = false
-                    if (fastScrolling) {
-                        updateFastScroller(
-                            true,
-                            fastScrollerEnabled,
-                            fastScrollerAllowed,
-                            regularScrolling,
-                            false
-                        )
+                override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                    if (disallowIntercept) {
+                        fastScrollingDown = false
+                        if (fastScrolling) {
+                            updateFastScroller(
+                                true,
+                                fastScrollerEnabled,
+                                fastScrollerAllowed,
+                                regularScrolling,
+                                false,
+                            )
+                        }
                     }
                 }
-            }
-        })
-        addItemDecoration(object : ItemDecoration() {
-            override fun onDrawOver(c: Canvas, parent: RecyclerView, state: State) {
-                onDrawFastScroller(c)
-            }
-        })
+            },
+        )
+        addItemDecoration(
+            object : ItemDecoration() {
+                override fun onDrawOver(
+                    c: Canvas,
+                    parent: RecyclerView,
+                    state: State,
+                ) {
+                    onDrawFastScroller(c)
+                }
+            },
+        )
     }
 
     private fun initializeRealThumbDrawable() {
@@ -139,7 +160,9 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
             ColorDrawable(ColorUtils.setAlphaComponent(realThumbDrawableColor, realThumbColorAlpha))
     }
 
-    fun setImportantPostsMarksFastScrollBarDecoration(importantPostsMarksFastScrollBarDecoration: ImportantPostsMarksFastScrollBarDecoration?) {
+    fun setImportantPostsMarksFastScrollBarDecoration(
+        importantPostsMarksFastScrollBarDecoration: ImportantPostsMarksFastScrollBarDecoration?,
+    ) {
         this.importantPostsMarksFastScrollBarDecoration = importantPostsMarksFastScrollBarDecoration
         minRealThumbSize = Math.round(obtainDensity(this))
         initializeRealThumbDrawable()
@@ -153,7 +176,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                 fastScrollerEnabled,
                 fastScrollerAllowed,
                 regularScrolling,
-                false
+                false,
             )
         }
     }
@@ -168,16 +191,16 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
         l: Int,
         t: Int,
         r: Int,
-        b: Int
+        b: Int,
     ) {
-        var t = t
-        var b = b
+        var top = t
+        var bottom = b
         if (!this.isFastScrollerAvailable) {
-            if (b - t == getHeight()) {
-                t += getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
-                b -= getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
+            if (bottom - top == getHeight()) {
+                top += getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
+                bottom -= getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
             }
-            scrollBar.setBounds(l, t, r, b)
+            scrollBar.setBounds(l, top, r, bottom)
             scrollBar.draw(canvas)
         }
     }
@@ -186,19 +209,26 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
         this.shift = shift
     }
 
-    override fun getEdgeEffectHandler(): EdgeEffectHandler {
-        return edgeEffectHandlerField
-    }
+    override fun getEdgeEffectHandler(): EdgeEffectHandler = edgeEffectHandlerField
 
-    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int {
-        return if (shift != null) shift!!.getEdgeEffectShift(side) else obtainEdgeEffectShift(side)
-    }
+    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int = if (shift != null) shift!!.getEdgeEffectShift(side) else obtainEdgeEffectShift(side)
 
-    fun obtainEdgeEffectShift(side: EdgeEffectHandler.Side?): Int {
-        return if (getClipToPadding()) 0 else if (side == EdgeEffectHandler.Side.TOP) getPaddingTop() else getPaddingBottom()
-    }
+    fun obtainEdgeEffectShift(side: EdgeEffectHandler.Side?): Int =
+        if (getClipToPadding()) {
+            0
+        } else if (side == EdgeEffectHandler.Side.TOP) {
+            getPaddingTop()
+        } else {
+            getPaddingBottom()
+        }
 
-    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+    override fun onLayout(
+        changed: Boolean,
+        l: Int,
+        t: Int,
+        r: Int,
+        b: Int,
+    ) {
         super.onLayout(changed, l, t, r, b)
 
         val range = computeVerticalScrollRange()
@@ -209,7 +239,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
             fastScrollerEnabled,
             allowFastScrolling,
             regularScrolling,
-            fastScrolling
+            fastScrolling,
         )
         // OVER_SCROLL_IF_CONTENT_SCROLLS it not supported, see https://issuetracker.google.com/issues/37076456
         setOverScrollMode(if (range > extent) OVER_SCROLL_ALWAYS else OVER_SCROLL_NEVER)
@@ -226,7 +256,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                     fastScrollerEnabled,
                     fastScrollerAllowed,
                     regularScrolling,
-                    false
+                    false,
                 )
             }
         }
@@ -235,12 +265,19 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
     private val invalidateRunnable = Runnable { this.invalidate() }
 
     private fun updateFastScroller(
-        immediately: Boolean, fastScrollerEnabled: Boolean, fastScrollerAllowed: Boolean,
-        regularScrolling: Boolean, fastScrolling: Boolean
+        immediately: Boolean,
+        fastScrollerEnabled: Boolean,
+        fastScrollerAllowed: Boolean,
+        regularScrolling: Boolean,
+        fastScrolling: Boolean,
     ) {
-        val oldShow = this.fastScrollerAllowed && this.fastScrollerEnabled &&
+        val oldShow =
+            this.fastScrollerAllowed &&
+                this.fastScrollerEnabled &&
                 (this.regularScrolling || this.fastScrolling)
-        val newShow = fastScrollerAllowed && fastScrollerEnabled &&
+        val newShow =
+            fastScrollerAllowed &&
+                fastScrollerEnabled &&
                 (regularScrolling || fastScrolling)
         this.fastScrollerEnabled = fastScrollerEnabled
         this.fastScrollerAllowed = fastScrollerAllowed
@@ -253,19 +290,32 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
             val start: Long
             if (newShow && passed < FAST_SCROLLER_TRANSITION_OUT + FAST_SCROLLER_TRANSITION_OUT_DELAY) {
                 start =
-                    if (passed <= FAST_SCROLLER_TRANSITION_OUT_DELAY) 0L else time - ((FAST_SCROLLER_TRANSITION_OUT_DELAY +
-                            FAST_SCROLLER_TRANSITION_OUT - passed).toFloat() /
-                            FAST_SCROLLER_TRANSITION_OUT * FAST_SCROLLER_TRANSITION_IN).toLong()
+                    if (passed <= FAST_SCROLLER_TRANSITION_OUT_DELAY) {
+                        0L
+                    } else {
+                        time -
+                            (
+                                (
+                                    FAST_SCROLLER_TRANSITION_OUT_DELAY +
+                                        FAST_SCROLLER_TRANSITION_OUT - passed
+                                ).toFloat() /
+                                    FAST_SCROLLER_TRANSITION_OUT * FAST_SCROLLER_TRANSITION_IN
+                            ).toLong()
+                    }
             } else if (!newShow && passed < FAST_SCROLLER_TRANSITION_IN) {
                 if (immediately) {
-                    start = time - ((FAST_SCROLLER_TRANSITION_IN - passed).toFloat() /
-                            FAST_SCROLLER_TRANSITION_IN * FAST_SCROLLER_TRANSITION_OUT).toLong() -
-                            FAST_SCROLLER_TRANSITION_IN - FAST_SCROLLER_TRANSITION_OUT_DELAY
+                    start = time -
+                        (
+                            (FAST_SCROLLER_TRANSITION_IN - passed).toFloat() /
+                                FAST_SCROLLER_TRANSITION_IN * FAST_SCROLLER_TRANSITION_OUT
+                        ).toLong() -
+                        FAST_SCROLLER_TRANSITION_IN - FAST_SCROLLER_TRANSITION_OUT_DELAY
                 } else {
                     start = time - passed
                     postDelayed(
-                        invalidateRunnable, FAST_SCROLLER_TRANSITION_IN - passed +
-                                FAST_SCROLLER_TRANSITION_OUT_DELAY
+                        invalidateRunnable,
+                        FAST_SCROLLER_TRANSITION_IN - passed +
+                            FAST_SCROLLER_TRANSITION_OUT_DELAY,
                     )
                 }
             } else {
@@ -287,14 +337,15 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
 
     private fun calculateOffset(): Float {
         val result: Float
-        val height = getHeight() - getEdgeEffectShift(EdgeEffectHandler.Side.TOP) -
+        val height =
+            getHeight() - getEdgeEffectShift(EdgeEffectHandler.Side.TOP) -
                 getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
         if (fastScrollingStartOffset != null) {
             result = fastScrollingStartOffset!! + (fastScrollingCurrentY - fastScrollingStartY) /
-                    (height - thumbDrawable!!.getIntrinsicHeight())
+                (height - thumbDrawable!!.getIntrinsicHeight())
         } else {
             result = (fastScrollingCurrentY - thumbDrawable!!.getIntrinsicHeight() / 2f) /
-                    (height - thumbDrawable.getIntrinsicHeight())
+                (height - thumbDrawable.getIntrinsicHeight())
         }
         return max(0f, min(result, 1f))
     }
@@ -305,7 +356,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
             val range = computeVerticalScrollRange() - computeVerticalScrollExtent()
             return max(
                 0f,
-                min(if (range > 0) offset.toFloat() / range else 0f, 1f)
+                min(if (range > 0) offset.toFloat() / range else 0f, 1f),
             )
         }
 
@@ -341,12 +392,14 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                 return false
             }
             val rtl = this.getLayoutDirection() == LAYOUT_DIRECTION_RTL
-            val trackWidth = max(
-                minTrackSize, max(
-                    thumbDrawable!!.getIntrinsicWidth(),
-                    trackDrawable!!.getIntrinsicWidth()
+            val trackWidth =
+                max(
+                    minTrackSize,
+                    max(
+                        thumbDrawable!!.getIntrinsicWidth(),
+                        trackDrawable!!.getIntrinsicWidth(),
+                    ),
                 )
-            )
             val atThumbVertical =
                 if (rtl) event.getX() <= trackWidth else event.getX() >= getWidth() - trackWidth
             if (atThumbVertical) {
@@ -367,7 +420,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                         fastScrollerEnabled,
                         fastScrollerAllowed,
                         regularScrolling,
-                        true
+                        true,
                     )
                     if (!atThumb) {
                         scroll(calculateOffset())
@@ -391,7 +444,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                         fastScrollerEnabled,
                         fastScrollerAllowed,
                         regularScrolling,
-                        true
+                        true,
                     )
                     if (pullableWrapper != null) {
                         pullableWrapper!!.onTouchEventOrNull(null)
@@ -410,7 +463,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                         fastScrollerEnabled,
                         fastScrollerAllowed,
                         regularScrolling,
-                        false
+                        false,
                     )
                 }
                 return true
@@ -427,7 +480,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
         if (!showFastScrolling && passed >= FAST_SCROLLER_TRANSITION_IN) {
             passed -= FAST_SCROLLER_TRANSITION_IN
             shouldInvalidate = passed >= FAST_SCROLLER_TRANSITION_OUT_DELAY &&
-                    passed < FAST_SCROLLER_TRANSITION_OUT_DELAY + FAST_SCROLLER_TRANSITION_OUT
+                passed < FAST_SCROLLER_TRANSITION_OUT_DELAY + FAST_SCROLLER_TRANSITION_OUT
             stateValue =
                 1f - (passed - FAST_SCROLLER_TRANSITION_OUT_DELAY).toFloat() / FAST_SCROLLER_TRANSITION_OUT
         } else {
@@ -463,13 +516,14 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                     Math.round(realThumbCenter - (realThumbCenter * scrollPercentToMid))
                 val thumbYMin = 0
                 val thumbYMax = height - thumbHeight
-                thumbY = max(
-                    thumbYMin,
-                    min(
-                        thumbYMax,
-                        scrollPositionOnTrack - (thumbHeight / 2) + realThumbCenterOffset
+                thumbY =
+                    max(
+                        thumbYMin,
+                        min(
+                            thumbYMax,
+                            scrollPositionOnTrack - (thumbHeight / 2) + realThumbCenterOffset,
+                        ),
                     )
-                )
             } else {
                 thumbY = ((height - thumbHeight) * offset).toInt()
             }
@@ -498,12 +552,14 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                     thumbExtra - translateX,
                     top + thumbY,
                     thumbExtra + thumbDrawable.getIntrinsicWidth() - translateX,
-                    top + thumbY + thumbHeight
+                    top + thumbY + thumbHeight,
                 )
             } else {
                 thumbDrawable.setBounds(
                     getWidth() - thumbExtra - thumbDrawable.getIntrinsicWidth() + translateX,
-                    top + thumbY, getWidth() - thumbExtra + translateX, top + thumbY + thumbHeight
+                    top + thumbY,
+                    getWidth() - thumbExtra + translateX,
+                    top + thumbY + thumbHeight,
                 )
             }
             thumbDrawable.draw(canvas)
@@ -516,7 +572,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                     trackTop,
                     trackRight,
                     trackBottom,
-                    canvas
+                    canvas,
                 )
 
                 val drawRealThumb = realThumbHeight <= thumbHeight * 0.2
@@ -533,7 +589,7 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
                         trackLeft,
                         realThumbTop,
                         trackRight,
-                        realThumbBottom
+                        realThumbBottom,
                     )
                     realThumbDrawable!!.draw(canvas)
                 }
@@ -550,45 +606,50 @@ open class PaddedRecyclerView : RecyclerView, Shift, PullableWrapper.Wrapped {
             if (pullableWrapper == null) {
                 val wrapper = PullableWrapper(this)
                 this.pullableWrapper = wrapper
-                addOnItemTouchListener(object : OnItemTouchListener {
-                    private var intercepted = false
-                    private var downY = 0f
+                addOnItemTouchListener(
+                    object : OnItemTouchListener {
+                        private var intercepted = false
+                        private var downY = 0f
 
-                    override fun onInterceptTouchEvent(
-                        rv: RecyclerView,
-                        e: MotionEvent
-                    ): Boolean {
-                        val y = e.getY()
-                        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                            intercepted = false
-                            downY = y
-                        }
-                        if (wrapper.onTouchEventOrNull(e)) {
-                            if (!intercepted && abs(downY - y) > touchSlop) {
-                                intercepted = true
+                        override fun onInterceptTouchEvent(
+                            rv: RecyclerView,
+                            e: MotionEvent,
+                        ): Boolean {
+                            val y = e.getY()
+                            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                                intercepted = false
+                                downY = y
                             }
-                            return intercepted
+                            if (wrapper.onTouchEventOrNull(e)) {
+                                if (!intercepted && abs(downY - y) > touchSlop) {
+                                    intercepted = true
+                                }
+                                return intercepted
+                            }
+                            return false
                         }
-                        return false
-                    }
 
-                    override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-                        val result = wrapper.onTouchEventOrNull(e)
-                        if (intercepted && !result) {
-                            intercepted = false
-                            // Reset intercepted state
-                            removeOnItemTouchListener(this)
-                            addOnItemTouchListener(this)
+                        override fun onTouchEvent(
+                            rv: RecyclerView,
+                            e: MotionEvent,
+                        ) {
+                            val result = wrapper.onTouchEventOrNull(e)
+                            if (intercepted && !result) {
+                                intercepted = false
+                                // Reset intercepted state
+                                removeOnItemTouchListener(this)
+                                addOnItemTouchListener(this)
+                            }
                         }
-                    }
 
-                    override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                        if (disallowIntercept && intercepted) {
-                            intercepted = false
-                            wrapper.onTouchEventOrNull(null)
+                        override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                            if (disallowIntercept && intercepted) {
+                                intercepted = false
+                                wrapper.onTouchEventOrNull(null)
+                            }
                         }
-                    }
-                })
+                    },
+                )
             }
             return pullableWrapper
         }

@@ -62,9 +62,14 @@ import java.lang.ref.WeakReference
 import kotlin.math.max
 import kotlin.math.min
 
-class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.Callback {
+class GalleryOverlay :
+    DialogFragment,
+    GalleryDialog.Callback,
+    GalleryInstance.Callback {
     enum class NavigatePostMode {
-        DISABLED, MANUALLY, ENABLED
+        DISABLED,
+        MANUALLY,
+        ENABLED,
     }
 
     internal var queuedGalleryItems: List<GalleryItem>? = null
@@ -132,10 +137,16 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         threadTitle: String?,
         fromView: View?,
         navigatePostMode: NavigatePostMode,
-        initialGalleryMode: Boolean
+        initialGalleryMode: Boolean,
     ) : this(
-        null, chanName, galleryItems, imageIndex, threadTitle, fromView,
-        navigatePostMode, initialGalleryMode
+        null,
+        chanName,
+        galleryItems,
+        imageIndex,
+        threadTitle,
+        fromView,
+        navigatePostMode,
+        initialGalleryMode,
     )
 
     val chanName: String?
@@ -149,7 +160,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         threadTitle: String?,
         fromView: View?,
         navigatePostMode: NavigatePostMode,
-        initialGalleryMode: Boolean
+        initialGalleryMode: Boolean,
     ) {
         val args = Bundle()
         args.putParcelable(EXTRA_URI, uri)
@@ -167,9 +178,13 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         get() {
             val name =
                 requireArguments().getString(EXTRA_NAVIGATE_POST_MODE)
-            return if (name != null) NavigatePostMode.valueOf(
-                name
-            ) else NavigatePostMode.DISABLED
+            return if (name != null) {
+                NavigatePostMode.valueOf(
+                    name,
+                )
+            } else {
+                NavigatePostMode.DISABLED
+            }
         }
 
     /** Start the opening video [position] ms in (a PiP window handing playback back).  */
@@ -216,13 +231,9 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): GalleryDialog {
-        return GalleryDialog(this)
-    }
+    override fun onCreateDialog(savedInstanceState: Bundle?): GalleryDialog = GalleryDialog(this)
 
-    override fun getDialog(): GalleryDialog? {
-        return super.getDialog() as GalleryDialog?
-    }
+    override fun getDialog(): GalleryDialog? = super.getDialog() as GalleryDialog?
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -264,19 +275,24 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         if (queuedFromView != null) {
             val location = IntArray(2)
             queuedFromView.getLocationOnScreen(location)
-            imageViewPosition = intArrayOf(
-                location[0], location[1],
-                queuedFromView.getWidth(), queuedFromView.getHeight()
-            )
+            imageViewPosition =
+                intArrayOf(
+                    location[0],
+                    location[1],
+                    queuedFromView.getWidth(),
+                    queuedFromView.getHeight(),
+                )
         }
         val attributes = getWindow()!!.getAttributes()
-        attributes.windowAnimations = if (imageViewPosition == null)
-            R.style.Animation_Gallery_Full
-        else
-            R.style.Animation_Gallery_Partial
-        attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams
-            .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-
+        attributes.windowAnimations =
+            if (imageViewPosition == null) {
+                R.style.Animation_Gallery_Full
+            } else {
+                R.style.Animation_Gallery_Partial
+            }
+        attributes.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams
+                .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         if (rootView == null) {
             val context =
@@ -284,44 +300,48 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             rootView = InsetsLayout(context)
             // The listeners below live as long as the retained rootView: route them through
             // retained.current so they always talk to the fragment instance that is alive.
-            rootView!!.addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(v: View) {
-                    val current = retained.current
-                    if (current != null && !current.galleryMode) {
-                        current.displayShowcase()
+            rootView!!.addOnAttachStateChangeListener(
+                object : OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(v: View) {
+                        val current = retained.current
+                        if (current != null && !current.galleryMode) {
+                            current.displayShowcase()
+                        }
                     }
-                }
 
-                override fun onViewDetachedFromWindow(v: View) {}
-            })
-            rootView!!.setOnApplyInsetsListener(OnApplyInsetsListener { apply: Apply? ->
-                val insets = apply!!.get()
-                val current = retained.current
-                if (current == null) {
-                    return@OnApplyInsetsListener
-                }
-                if (current.listUnit != null) {
-                    val invalidate = current.listUnit!!.onApplyWindowInsets(insets)
-                    if (invalidate) {
-                        current.postInvalidateSystemUIVisibility()
+                    override fun onViewDetachedFromWindow(v: View) {}
+                },
+            )
+            rootView!!.setOnApplyInsetsListener(
+                OnApplyInsetsListener { apply: Apply? ->
+                    val insets = apply!!.get()
+                    val current = retained.current
+                    if (current == null) {
+                        return@OnApplyInsetsListener
                     }
-                }
-                if (current.pagerUnit != null) {
-                    current.pagerUnit!!.onApplyWindowInsets(insets)
-                }
-            })
+                    if (current.listUnit != null) {
+                        val invalidate = current.listUnit!!.onApplyWindowInsets(insets)
+                        if (invalidate) {
+                            current.postInvalidateSystemUIVisibility()
+                        }
+                    }
+                    if (current.pagerUnit != null) {
+                        current.pagerUnit!!.onApplyWindowInsets(insets)
+                    }
+                },
+            )
             rootView!!.setLayoutParams(
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                ),
             )
             rootView!!.setBackground(
                 GalleryBackgroundDrawable(
                     rootView!!,
                     imageViewPosition,
-                    BACKGROUND_COLOR
-                )
+                    BACKGROUND_COLOR,
+                ),
             )
             retained.rootView = rootView
         }
@@ -330,11 +350,12 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         dialog!!.setContentView(rootView!!)
         dialog.show()
         dialog.getActionBar()!!.setDisplayHomeAsUpEnabled(true)
-        val invalidateSystemUiFlags = Runnable {
-            if (dialog.isShowing()) {
-                invalidateSystemUiFlags()
+        val invalidateSystemUiFlags =
+            Runnable {
+                if (dialog.isShowing()) {
+                    invalidateSystemUiFlags()
+                }
             }
-        }
         ViewUtils.addWindowFocusListener(
             rootView!!,
             OnFocusChangeListener { v: View?, hasFocus: Boolean ->
@@ -347,17 +368,20 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                     // Re-apply visibility flags after dialogs closed
                     ConcurrentUtils.HANDLER.postDelayed(invalidateSystemUiFlags, 100)
                 }
-            })
+            },
+        )
 
         var newImagePosition: Int? = null
         if (instance == null) {
             val uri =
                 BundleCompat.getParcelable<Uri?>(requireArguments(), EXTRA_URI, Uri::class.java)
             val chanNameFromArguments = requireArguments().getString(EXTRA_CHAN_NAME)
-            val chan = if (chanNameFromArguments == null && uri != null)
-                getPreferred(null, uri)
-            else
-                get(chanNameFromArguments)
+            val chan =
+                if (chanNameFromArguments == null && uri != null) {
+                    getPreferred(null, uri)
+                } else {
+                    get(chanNameFromArguments)
+                }
             val defaultLocator = chan.name == null
 
             val galleryItems: List<GalleryItem>?
@@ -375,15 +399,21 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             } else {
                 galleryItems = retained.queuedGalleryItems
                 retained.queuedGalleryItems = null
-                imagePosition = if (savedInstanceState != null)
-                    savedInstanceState.getInt(EXTRA_POSITION)
-                else
-                    requireArguments().getInt(EXTRA_IMAGE_INDEX)
+                imagePosition =
+                    if (savedInstanceState != null) {
+                        savedInstanceState.getInt(EXTRA_POSITION)
+                    } else {
+                        requireArguments().getInt(EXTRA_IMAGE_INDEX)
+                    }
             }
-            instance = GalleryInstance(
-                rootView!!.getContext(), this, ACTION_BAR_COLOR, chan.name,
-                galleryItems ?: mutableListOf()
-            )
+            instance =
+                GalleryInstance(
+                    rootView!!.getContext(),
+                    this,
+                    ACTION_BAR_COLOR,
+                    chan.name,
+                    galleryItems ?: mutableListOf(),
+                )
             retained.instance = instance!!
             if (!instance!!.galleryItems.isEmpty()) {
                 listUnit = ListUnit(instance!!)
@@ -396,12 +426,14 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 retained.listUnit = listUnit
                 retained.pagerUnit = pagerUnit
                 rootView!!.addView(
-                    listUnit!!.getRecyclerView(), ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                    listUnit!!.getRecyclerView(),
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
                 )
                 rootView!!.addView(
-                    pagerUnit!!.view, ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                    pagerUnit!!.view,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
                 )
                 pagerUnit!!.addAndInitViews(rootView!!, imagePosition)
             }
@@ -419,13 +451,14 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 switchMode(galleryMode, false)
                 modifySystemUiVisibility(
                     GalleryInstance.Flags.LOCKED_USER,
-                    savedInstanceState.getBoolean(EXTRA_SYSTEM_UI_VISIBILITY)
+                    savedInstanceState.getBoolean(EXTRA_SYSTEM_UI_VISIBILITY),
                 )
             } else if (newImagePosition != null) {
                 val imagePosition = newImagePosition
-                galleryWindow = imagePosition < 0 || requireArguments().getBoolean(
-                    EXTRA_INITIAL_GALLERY_MODE
-                )
+                galleryWindow = imagePosition < 0 ||
+                    requireArguments().getBoolean(
+                        EXTRA_INITIAL_GALLERY_MODE,
+                    )
                 if (galleryWindow && imagePosition >= 0) {
                     listUnit!!.scrollListToPosition(imagePosition, false)
                 }
@@ -504,10 +537,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         listUnit!!.scrollListToPosition(pagerUnit!!.currentIndex, true)
     }
 
-    private val returnToGalleryRunnable = Runnable {
-        switchMode(true, true)
-        invalidateListPosition()
-    }
+    private val returnToGalleryRunnable =
+        Runnable {
+            switchMode(true, true)
+            invalidateListPosition()
+        }
 
     private fun returnToGallery(): Boolean {
         if (galleryWindow && !galleryMode) {
@@ -527,13 +561,16 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
 
     override fun onCreateDialogMenu(menu: Menu) {
         if (instance != null) {
-            menu.add(0, R.id.menu_save, 0, R.string.save)
+            menu
+                .add(0, R.id.menu_save, 0, R.string.save)
                 .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionSave))
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu.add(0, R.id.menu_refresh, 0, R.string.refresh)
+            menu
+                .add(0, R.id.menu_refresh, 0, R.string.refresh)
                 .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionRefresh))
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu.add(0, R.id.menu_select, 0, R.string.select)
+            menu
+                .add(0, R.id.menu_select, 0, R.string.select)
                 .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionSelect))
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
@@ -544,10 +581,12 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             menu.getItem(i).setVisible(false)
         }
         if (!galleryMode) {
-            val capabilities = if (pagerUnit != null)
-                pagerUnit!!.obtainOptionsMenuCapabilities()
-            else
-                null
+            val capabilities =
+                if (pagerUnit != null) {
+                    pagerUnit!!.obtainOptionsMenuCapabilities()
+                } else {
+                    null
+                }
             if (capabilities != null && capabilities.available) {
                 menu.findItem(R.id.menu_save).setVisible(capabilities.save)
                 menu.findItem(R.id.menu_refresh).setVisible(capabilities.refresh)
@@ -582,8 +621,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
         // Open the video feed at the same attachment, then close the gallery so nothing keeps playing.
         show(
-            requireActivity().getSupportFragmentManager(), get(instance!!.chanName),
-            instance!!.galleryItems, holder.galleryItem, this.threadTitle
+            requireActivity().getSupportFragmentManager(),
+            get(instance!!.chanName),
+            instance!!.galleryItems,
+            holder.galleryItem,
+            this.threadTitle,
         )
         dismiss()
     }
@@ -597,10 +639,16 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         // close the gallery so the thread is visible behind it and nothing else keeps playing.
         // The item list and navigate mode let an expanded window reopen this gallery later.
         VideoPipActivity.start(
-            requireActivity(), get(instance!!.chanName), holder.galleryItem!!,
-            null, instance!!.galleryItems, requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
-            this.threadTitle, pagerUnit!!.videoPosition, pagerUnit!!.isVideoPlaying,
-            pagerUnit!!.videoDimensions
+            requireActivity(),
+            get(instance!!.chanName),
+            holder.galleryItem!!,
+            null,
+            instance!!.galleryItems,
+            requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
+            this.threadTitle,
+            pagerUnit!!.videoPosition,
+            pagerUnit!!.isVideoPlaying,
+            pagerUnit!!.videoDimensions,
         )
         dismiss()
     }
@@ -638,16 +686,21 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             requestItems.add(
                 RequestItem(
                     galleryItem.getFileUri(chan),
-                    galleryItem.getFileName(chan)!!, galleryItem.originalName
-                )
+                    galleryItem.getFileName(chan)!!,
+                    galleryItem.originalName,
+                ),
             )
         }
         if (requestItems.size > 0) {
             val binder = (requireActivity() as FragmentHandler).getDownloadBinder()
             if (binder != null) {
                 binder.downloadStorage(
-                    requestItems, true, instance!!.chanName,
-                    boardName, threadNumber, this.threadTitle
+                    requestItems,
+                    true,
+                    instance!!.chanName,
+                    boardName,
+                    threadNumber,
+                    this.threadTitle,
                 )
             }
         }
@@ -666,19 +719,23 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         outState.putBoolean(EXTRA_GALLERY_MODE, galleryMode)
         outState.putBoolean(
             EXTRA_SYSTEM_UI_VISIBILITY,
-            get(systemUiVisibilityFlags, GalleryInstance.Flags.LOCKED_USER)
+            get(systemUiVisibilityFlags, GalleryInstance.Flags.LOCKED_USER),
         )
     }
 
-    private fun switchMode(galleryMode: Boolean, animated: Boolean) {
+    private fun switchMode(
+        galleryMode: Boolean,
+        animated: Boolean,
+    ) {
         val duration = if (animated) GALLERY_TRANSITION_DURATION else 0
         pagerUnit!!.switchMode(galleryMode, duration)
         listUnit!!.switchMode(galleryMode, duration)
         if (galleryMode) {
             val count = instance!!.galleryItems.size
             getDialog()!!.setTitleSubtitle(
-                getString(R.string.gallery), getResources()
-                    .getQuantityString(R.plurals.number_files__format, count, count)
+                getString(R.string.gallery),
+                getResources()
+                    .getQuantityString(R.plurals.number_files__format, count, count),
             )
             titleSubtitle = null
         }
@@ -696,7 +753,10 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    private inner class CornerAnimator(actionBarAlpha: Int, fallbackAlpha: Int) : Runnable {
+    private inner class CornerAnimator(
+        actionBarAlpha: Int,
+        fallbackAlpha: Int,
+    ) : Runnable {
         private val startTime = SystemClock.elapsedRealtime()
 
         private val fromActionBarAlpha: Int
@@ -707,12 +767,14 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 cornerAnimator!!.cancel()
             }
             val drawable = getDialog()!!.actionBarView!!.getBackground()
-            fromActionBarAlpha = Color.alpha(
-                if (drawable is ColorDrawable)
-                    drawable.getColor()
-                else
-                    fallbackAlpha
-            )
+            fromActionBarAlpha =
+                Color.alpha(
+                    if (drawable is ColorDrawable) {
+                        drawable.getColor()
+                    } else {
+                        fallbackAlpha
+                    },
+                )
             toActionBarAlpha = actionBarAlpha
             if (fromActionBarAlpha != toActionBarAlpha) {
                 cornerAnimator = this
@@ -747,8 +809,6 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 cornerAnimator = null
             }
         }
-
-        private val INTERVAL = 200
     }
 
     override fun onCreateActionContextBarView() {
@@ -759,12 +819,15 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    override fun modifyVerticalSwipeState(ignoreIfGallery: Boolean, value: Float) {
-        var value = value
+    override fun modifyVerticalSwipeState(
+        ignoreIfGallery: Boolean,
+        value: Float,
+    ) {
+        var swipeValue = value
         if (ignoreIfGallery || galleryWindow) {
-            value = 0f
+            swipeValue = 0f
         }
-        rootView!!.getBackground().setAlpha((0xff * (1f - value)).toInt())
+        rootView!!.getBackground().setAlpha((0xff * (1f - swipeValue)).toInt())
     }
 
     override fun updateTitle() {
@@ -774,7 +837,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    private fun setTitle(galleryItem: GalleryItem, mediaSummary: MediaSummary, position: Int) {
+    private fun setTitle(
+        galleryItem: GalleryItem,
+        mediaSummary: MediaSummary,
+        position: Int,
+    ) {
         var fileName = galleryItem.getFileName(get(instance!!.chanName))
         if (!isEmpty(galleryItem.originalName)) {
             fileName = galleryItem.originalName
@@ -782,7 +849,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         val count = instance!!.galleryItems.size
         val builder = StringBuilder().append(position + 1).append('/').append(count)
         if (mediaSummary.width > 0 && mediaSummary.height > 0) {
-            builder.append(", ").append(mediaSummary.width).append('×').append(mediaSummary.height)
+            builder
+                .append(", ")
+                .append(mediaSummary.width)
+                .append('×')
+                .append(mediaSummary.height)
         }
         if (mediaSummary.size > 0) {
             builder.append(", ").append(formatFileSize(mediaSummary.size, false))
@@ -811,14 +882,22 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     private fun checkAllowNavigatePost(manually: Boolean): Boolean {
         val navigatePostMode = this.navigatePostMode
         return navigatePostMode == NavigatePostMode.ENABLED ||
-                navigatePostMode == NavigatePostMode.MANUALLY && manually
+            navigatePostMode == NavigatePostMode.MANUALLY &&
+            manually
     }
 
-    override fun navigatePost(galleryItem: GalleryItem, manually: Boolean, force: Boolean) {
+    override fun navigatePost(
+        galleryItem: GalleryItem,
+        manually: Boolean,
+        force: Boolean,
+    ) {
         if (checkAllowNavigatePost(manually) && (scrollThread || force)) {
             (requireActivity() as FragmentHandler).scrollToPost(
-                instance!!.chanName, galleryItem.boardName,
-                galleryItem.threadNumber, galleryItem.postNumber, force
+                instance!!.chanName,
+                galleryItem.boardName,
+                galleryItem.threadNumber,
+                galleryItem.postNumber,
+                force,
             )
             if (force) {
                 dismiss()
@@ -851,13 +930,9 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    override fun isGalleryWindow(): Boolean {
-        return galleryWindow
-    }
+    override fun isGalleryWindow(): Boolean = galleryWindow
 
-    override fun isGalleryMode(): Boolean {
-        return galleryMode
-    }
+    override fun isGalleryMode(): Boolean = galleryMode
 
     private fun postInvalidateSystemUIVisibility() {
         rootView!!.post(Runnable { this.invalidateSystemUiVisibility() })
@@ -896,11 +971,12 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         }
     }
 
-    override fun isSystemUiVisible(): Boolean {
-        return systemUiVisibilityFlags != 0
-    }
+    override fun isSystemUiVisible(): Boolean = systemUiVisibilityFlags != 0
 
-    override fun modifySystemUiVisibility(flag: Int, value: Boolean) {
+    override fun modifySystemUiVisibility(
+        flag: Int,
+        value: Boolean,
+    ) {
         systemUiVisibilityFlags = set(systemUiVisibilityFlags, flag, value)
         invalidateSystemUiVisibility()
     }
@@ -935,10 +1011,12 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         val linearLayout = LinearLayout(context)
         linearLayout.setOrientation(LinearLayout.VERTICAL)
         frameLayout.addView(
-            linearLayout, FrameLayout.LayoutParams(
+            linearLayout,
+            FrameLayout.LayoutParams(
                 (304f * density).toInt(),
-                FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.CENTER
-            )
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
         )
 
         val button = Button(context, null, android.R.attr.borderlessButtonStyle)
@@ -952,10 +1030,11 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         val paddingBottom = max(0, (24f * density).toInt() - paddingTop)
 
         val titles = intArrayOf(R.string.context_menu, R.string.gallery)
-        val messages = intArrayOf(
-            R.string.context_menu_description__sentence,
-            R.string.gallery_description__sentence
-        )
+        val messages =
+            intArrayOf(
+                R.string.context_menu_description__sentence,
+                R.string.gallery_description__sentence,
+            )
 
         for (i in titles.indices) {
             val textView1 = TextView(context, null, android.R.attr.textAppearanceLarge)
@@ -966,19 +1045,21 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             textView2.setText(messages[i])
             textView2.setPadding(paddingLeft, 0, paddingRight, paddingBottom)
             linearLayout.addView(
-                textView1, LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+                textView1,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
             )
             linearLayout.addView(
-                textView2, LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+                textView2,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
             )
         }
 
         linearLayout.addView(
             button,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         )
 
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -987,7 +1068,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT
         layoutParams.height = WindowManager.LayoutParams.MATCH_PARENT
         layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
         layoutParams.windowAnimations = R.style.Animation_Gallery_Full
         layoutParams.flags =
             layoutParams.flags or WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
@@ -999,6 +1080,8 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
     }
 
     companion object {
+        private const val INTERVAL = 200
+
         private const val EXTRA_URI = "uri"
         private const val EXTRA_CHAN_NAME = "chanName"
         private const val EXTRA_IMAGE_INDEX = "imageIndex"

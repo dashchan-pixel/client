@@ -14,7 +14,6 @@ import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.animation.Interpolator
 import android.view.animation.PathInterpolator
-import com.mishiranu.dashchan.util.AnimationUtils
 import com.mishiranu.dashchan.util.AnimationUtils.lerp
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.isTablet
@@ -26,14 +25,19 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sign
 
-class PullableWrapper(private val listView: Wrapped) {
+class PullableWrapper(
+    private val listView: Wrapped,
+) {
     private val topView: PullView
     private val bottomView: PullView
 
     private val pullDeltaGain: Float
 
     enum class Side {
-        NONE, BOTH, TOP, BOTTOM
+        NONE,
+        BOTH,
+        TOP,
+        BOTTOM,
     }
 
     fun setColor(color: Int) {
@@ -42,11 +46,17 @@ class PullableWrapper(private val listView: Wrapped) {
     }
 
     interface PullCallback {
-        fun onListPulled(wrapper: PullableWrapper, side: Side)
+        fun onListPulled(
+            wrapper: PullableWrapper,
+            side: Side,
+        )
     }
 
     fun interface PullStateListener {
-        fun onPullStateChanged(wrapper: PullableWrapper?, busy: Boolean)
+        fun onPullStateChanged(
+            wrapper: PullableWrapper?,
+            busy: Boolean,
+        )
     }
 
     private var pullCallback: PullCallback? = null
@@ -64,22 +74,26 @@ class PullableWrapper(private val listView: Wrapped) {
     private var busySide: Side? = Side.NONE
 
     fun setPullSides(sides: Side?) {
-        var sides = sides
-        if (sides == null) {
-            sides = Side.NONE
-        }
-        pullSides = sides
+        pullSides = sides ?: Side.NONE
     }
 
     fun startBusyState(side: Side) {
         startBusyState(side, false)
     }
 
-    private fun getSidePullView(side: Side?): PullView? {
-        return if (side == Side.TOP) topView else if (side == Side.BOTTOM) bottomView else null
-    }
+    private fun getSidePullView(side: Side?): PullView? =
+        if (side == Side.TOP) {
+            topView
+        } else if (side == Side.BOTTOM) {
+            bottomView
+        } else {
+            null
+        }
 
-    private fun startBusyState(side: Side?, useCallback: Boolean): Boolean {
+    private fun startBusyState(
+        side: Side?,
+        useCallback: Boolean,
+    ): Boolean {
         if (side == null || side == Side.NONE) {
             return false
         }
@@ -87,12 +101,14 @@ class PullableWrapper(private val listView: Wrapped) {
             if (side == Side.BOTH && (busySide == Side.TOP || busySide == Side.BOTTOM)) {
                 val pullView = getSidePullView(busySide)
                 pullView!!.setState(
-                    PullView.State.IDLE, listView.getEdgeEffectShift(
-                        if (side == Side.TOP)
+                    PullView.State.IDLE,
+                    listView.getEdgeEffectShift(
+                        if (side == Side.TOP) {
                             EdgeEffectHandler.Side.TOP
-                        else
+                        } else {
                             EdgeEffectHandler.Side.BOTTOM
-                    )
+                        },
+                    ),
                 )
                 busySide = Side.BOTH
             }
@@ -102,12 +118,14 @@ class PullableWrapper(private val listView: Wrapped) {
         val pullView = getSidePullView(side)
         if (pullView != null) {
             pullView.setState(
-                PullView.State.LOADING, listView.getEdgeEffectShift(
-                    if (side == Side.TOP)
+                PullView.State.LOADING,
+                listView.getEdgeEffectShift(
+                    if (side == Side.TOP) {
                         EdgeEffectHandler.Side.TOP
-                    else
+                    } else {
                         EdgeEffectHandler.Side.BOTTOM
-                )
+                    },
+                ),
             )
         }
         if (useCallback) {
@@ -122,11 +140,11 @@ class PullableWrapper(private val listView: Wrapped) {
             busySide = Side.NONE
             topView.setState(
                 PullView.State.IDLE,
-                listView.getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
+                listView.getEdgeEffectShift(EdgeEffectHandler.Side.TOP),
             )
             bottomView.setState(
                 PullView.State.IDLE,
-                listView.getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
+                listView.getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM),
             )
             notifyPullStateChanged(false)
             updateStartY = true
@@ -142,13 +160,9 @@ class PullableWrapper(private val listView: Wrapped) {
     private var updateStartY = true
     private var startY = 0f
 
-    private fun deltaToPullStrain(delta: Float): Int {
-        return (pullDeltaGain * delta / listView.getHeight() * PullView.MAX_STRAIN).toInt()
-    }
+    private fun deltaToPullStrain(delta: Float): Int = (pullDeltaGain * delta / listView.getHeight() * PullView.MAX_STRAIN).toInt()
 
-    private fun pullStrainToDelta(pullStrain: Int): Int {
-        return (pullStrain * listView.getHeight() / (pullDeltaGain * PullView.MAX_STRAIN)).toInt()
-    }
+    private fun pullStrainToDelta(pullStrain: Int): Int = (pullStrain * listView.getHeight() / (pullDeltaGain * PullView.MAX_STRAIN)).toInt()
 
     // Used to calculate list transition animation.
     private var topJumpStartTime: Long = 0
@@ -177,7 +191,8 @@ class PullableWrapper(private val listView: Wrapped) {
                 var resetBottom = true
                 if (action == MotionEvent.ACTION_MOVE) {
                     // Call getIdlePullStrain to get previous transient value
-                    if (dy > 0 && listView.isScrolledToTop() &&
+                    if (dy > 0 &&
+                        listView.isScrolledToTop() &&
                         (pullSides == Side.BOTH || pullSides == Side.TOP)
                     ) {
                         pull = true
@@ -194,7 +209,8 @@ class PullableWrapper(private val listView: Wrapped) {
                             edgeEffectHandler.finish(EdgeEffectHandler.Side.TOP)
                             edgeEffectHandler.setPullable(EdgeEffectHandler.Side.TOP, false)
                         }
-                    } else if (dy < 0 && listView.isScrolledToBottom() &&
+                    } else if (dy < 0 &&
+                        listView.isScrolledToBottom() &&
                         (pullSides == Side.BOTH || pullSides == Side.BOTTOM)
                     ) {
                         pull = true
@@ -237,13 +253,13 @@ class PullableWrapper(private val listView: Wrapped) {
                 if (resetTop) {
                     topView.setState(
                         PullView.State.IDLE,
-                        listView.getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
+                        listView.getEdgeEffectShift(EdgeEffectHandler.Side.TOP),
                     )
                 }
                 if (resetBottom) {
                     bottomView.setState(
                         PullView.State.IDLE,
-                        listView.getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
+                        listView.getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM),
                     )
                 }
             }
@@ -260,7 +276,7 @@ class PullableWrapper(private val listView: Wrapped) {
         topView = LollipopView(listView, true)
         bottomView = LollipopView(listView, false)
         pullDeltaGain = if (isTablet(context.getResources().getConfiguration())) 6f else 4f
-        setColor(ThemeEngine.Companion.getTheme(listView.getContext())!!.accent)
+        setColor(ThemeEngine.Companion.getTheme(listView.getContext()).accent)
     }
 
     fun drawBefore(canvas: Canvas) {
@@ -270,8 +286,12 @@ class PullableWrapper(private val listView: Wrapped) {
         if (shift != 0) {
             canvas.save()
             val height = listView.getHeight().toFloat()
-            val dy = ((abs(pullStrainToDelta(shift)) / height).toDouble()
-                .pow(2.5)).toFloat() * height * sign(shift.toFloat())
+            val dy =
+                (
+                    (abs(pullStrainToDelta(shift)) / height)
+                        .toDouble()
+                        .pow(2.5)
+                ).toFloat() * height * sign(shift.toFloat())
             canvas.translate(0f, dy)
             beforeRestoreCanvas = true
         }
@@ -294,16 +314,34 @@ class PullableWrapper(private val listView: Wrapped) {
 
     private interface PullView {
         enum class State {
-            IDLE, PULL, LOADING
+            IDLE,
+            PULL,
+            LOADING,
         }
 
         fun setColor(color: Int)
-        fun setState(state: State, padding: Int)
-        fun setPullStrain(pullStrain: Int, padding: Int)
+
+        fun setState(
+            state: State,
+            padding: Int,
+        )
+
+        fun setPullStrain(
+            pullStrain: Int,
+            padding: Int,
+        )
+
         fun getPullStrain(): Int
+
         fun getAndResetIdlePullStrain(): Int
-        fun draw(canvas: Canvas, padding: Int)
+
+        fun draw(
+            canvas: Canvas,
+            padding: Int,
+        )
+
         fun calculateJumpStartTime(): Long
+
         fun calculateJumpValue(jumpStartTime: Long): Int
 
         companion object {
@@ -311,280 +349,11 @@ class PullableWrapper(private val listView: Wrapped) {
         }
     }
 
-    private class JellyBeanView(wrapped: Wrapped, private val top: Boolean) : PullView {
-        private val wrapped: WeakReference<Wrapped?>
-        private val paint = Paint()
-        private val height: Int
-
-        private var previousState: PullView.State? = PullView.State.IDLE
-        private var state = PullView.State.IDLE
-
-        private var startIdlePullStrain = 0
-        private var timeIdleStart = 0L
-        private var timeLoadingStart = 0L
-        private var timeLoadingToIdleStart = 0L
-
-        private var pullStrain = 0
-
-        private var color = 0
-
-        init {
-            this.wrapped = WeakReference<Wrapped?>(wrapped)
-            this.height = (3f * ResourceUtils.obtainDensity(wrapped.getContext()) + 0.5f).toInt()
-        }
-
-        override fun setColor(color: Int) {
-            this.color = color
-        }
-
-        fun invalidate(padding: Int) {
-            val wrapped = this.wrapped.get()
-            if (wrapped != null) {
-                val offset = if (top) padding else wrapped.getHeight() - height - padding
-                invalidate(0, offset, wrapped.getWidth(), offset + height)
-            }
-        }
-
-        fun invalidate(l: Int, t: Int, r: Int, b: Int) {
-            val wrapped = this.wrapped.get()
-            if (wrapped != null) {
-                wrapped.invalidate(l, t, r, b)
-            }
-        }
-
-        override fun setState(state: PullView.State, padding: Int) {
-            if (this.state != state) {
-                val prePreviousState = previousState
-                previousState = this.state
-                this.state = state
-                val time = SystemClock.elapsedRealtime()
-                when (this.state) {
-                    PullView.State.IDLE -> {
-                        timeIdleStart = time
-                        if (previousState == PullView.State.LOADING) {
-                            timeLoadingToIdleStart = time
-                        }
-                        startIdlePullStrain =
-                            if (previousState == PullView.State.LOADING) 0 else pullStrain
-                        pullStrain = 0
-                    }
-
-                    PullView.State.PULL -> {}
-                    PullView.State.LOADING -> {
-                        // May continue use old animation until it over
-                        val loadingToLoading =
-                            prePreviousState == PullView.State.LOADING && previousState == PullView.State.IDLE && time - timeIdleStart < LOADING_HALF_CYCLE_TIME
-                        if (!loadingToLoading) {
-                            timeLoadingStart =
-                                if (previousState == PullView.State.IDLE) time + LOADING_HALF_CYCLE_TIME else time
-                        }
-                        timeLoadingToIdleStart = 0L
-                    }
-                }
-                invalidate(padding)
-            }
-        }
-
-        override fun setPullStrain(pullStrain: Int, padding: Int) {
-            this.pullStrain = pullStrain
-            if (this.pullStrain > PullView.MAX_STRAIN) {
-                this.pullStrain = PullView.MAX_STRAIN
-            } else if (this.pullStrain < 0) {
-                this.pullStrain = 0
-            }
-            if (state == PullView.State.PULL) {
-                invalidate(padding)
-            }
-        }
-
-        override fun getPullStrain(): Int {
-            return pullStrain
-        }
-
-        override fun getAndResetIdlePullStrain(): Int {
-            if (startIdlePullStrain == 0) {
-                return 0
-            }
-            try {
-                return (PullView.MAX_STRAIN * getIdleTransientPullStrainValue(SystemClock.elapsedRealtime())).toInt()
-            } finally {
-                startIdlePullStrain = 0
-            }
-        }
-
-        fun getIdleTransientPullStrainValue(time: Long): Float {
-            val foldTime = IDLE_FOLD_TIME * startIdlePullStrain / PullView.MAX_STRAIN
-            if (foldTime <= 0) {
-                return 0f
-            }
-            val value = min((time - timeIdleStart).toFloat() / foldTime, 1f)
-            return (1f - value) * startIdlePullStrain / PullView.MAX_STRAIN
-        }
-
-        override fun draw(canvas: Canvas, padding: Int) {
-            val wrapped = this.wrapped.get()
-            if (wrapped == null) {
-                return
-            }
-            val paint = this.paint
-            val time = SystemClock.elapsedRealtime()
-            val width = wrapped.getWidth()
-            val height = this.height
-            val offset = if (top) padding else wrapped.getHeight() - height - padding
-            val state = this.state
-            val previousState = this.previousState
-            val primaryColor = color
-            val secondaryColor = 0x80 shl 24 or (0x00ffffff and color)
-            var needInvalidate = false
-
-            if (state == PullView.State.PULL) {
-                val size = (width / 2f * (pullStrain.toFloat() / PullView.MAX_STRAIN).toDouble()
-                    .pow(2.0)).toInt()
-                paint.setColor(primaryColor)
-                canvas.drawRect(
-                    width / 2f - size,
-                    offset.toFloat(),
-                    width / 2f + size,
-                    (offset + height).toFloat(),
-                    paint
-                )
-            }
-
-            if (state == PullView.State.IDLE && previousState != PullView.State.LOADING) {
-                val value = getIdleTransientPullStrainValue(time)
-                val size = (width / 2f * value.toDouble().pow(4.0)).toInt()
-                paint.setColor(primaryColor)
-                canvas.drawRect(
-                    width / 2f - size,
-                    offset.toFloat(),
-                    width / 2f + size,
-                    (offset + height).toFloat(),
-                    paint
-                )
-                if (value != 0f) {
-                    needInvalidate = true
-                }
-            }
-
-            if (state == PullView.State.LOADING || timeLoadingToIdleStart > 0L) {
-                val interpolator = AnimationUtils.ACCELERATE_DECELERATE_INTERPOLATOR
-                val cycle = 2 * LOADING_HALF_CYCLE_TIME
-                val half = LOADING_HALF_CYCLE_TIME
-                var elapsed = time - timeLoadingStart
-                val startTransient = elapsed < 0
-                if (startTransient) {
-                    elapsed += cycle.toLong()
-                }
-                val phase = (elapsed % cycle).toInt()
-                var partWidth: Int
-                if (state != PullView.State.LOADING) {
-                    val elapsedIdle = time - timeLoadingToIdleStart
-                    val value = min(elapsedIdle.toFloat() / half, 1f)
-                    partWidth = (width / 2f * (1f - interpolator.getInterpolation(value))).toInt()
-                    if (partWidth <= 0) {
-                        partWidth = 0
-                        timeLoadingToIdleStart = 0L
-                    }
-                } else {
-                    partWidth = (width / 2f).toInt()
-                }
-                if (!startTransient) {
-                    paint.setColor(secondaryColor)
-                    canvas.drawRect(
-                        0f,
-                        offset.toFloat(),
-                        partWidth.toFloat(),
-                        (offset + height).toFloat(),
-                        paint
-                    )
-                    canvas.drawRect(
-                        (width - partWidth).toFloat(),
-                        offset.toFloat(),
-                        width.toFloat(),
-                        (offset + height).toFloat(),
-                        paint
-                    )
-                }
-                paint.setColor(primaryColor)
-                if (phase <= half) {
-                    val value = phase.toFloat() / half
-                    val size = (width / 2f * interpolator.getInterpolation(value)).toInt()
-                    val left = min(width / 2 - size, partWidth)
-                    val right = max(width / 2 + size, width - partWidth)
-                    canvas.drawRect(
-                        0f,
-                        offset.toFloat(),
-                        left.toFloat(),
-                        (offset + height).toFloat(),
-                        paint
-                    )
-                    canvas.drawRect(
-                        right.toFloat(),
-                        offset.toFloat(),
-                        width.toFloat(),
-                        (offset + height).toFloat(),
-                        paint
-                    )
-                } else {
-                    val value = (phase - half).toFloat() / half
-                    val size = (width / 2f * interpolator.getInterpolation(value)).toInt()
-                    val left = width / 2 - size
-                    val right = width / 2 + size
-                    if (left < partWidth) {
-                        canvas.drawRect(
-                            left.toFloat(),
-                            offset.toFloat(),
-                            partWidth.toFloat(),
-                            (offset + height).toFloat(),
-                            paint
-                        )
-                        canvas.drawRect(
-                            (width - partWidth).toFloat(),
-                            offset.toFloat(),
-                            right.toFloat(),
-                            (offset + height).toFloat(),
-                            paint
-                        )
-                    }
-                }
-                needInvalidate = true
-            }
-
-            if (needInvalidate) {
-                invalidate(0, offset, width, offset + height)
-            }
-        }
-
-        override fun calculateJumpStartTime(): Long {
-            return SystemClock.elapsedRealtime() - BUSY_JUMP_TIME * (PullView.MAX_STRAIN - pullStrain) / PullView.MAX_STRAIN
-        }
-
-        override fun calculateJumpValue(jumpStartTime: Long): Int {
-            var value = 0
-            when (state) {
-                PullView.State.PULL -> {
-                    value = pullStrain
-                }
-
-                PullView.State.IDLE, PullView.State.LOADING -> {
-                    if (jumpStartTime > 0) {
-                        value =
-                            (PullView.MAX_STRAIN * (SystemClock.elapsedRealtime() - jumpStartTime) / BUSY_JUMP_TIME).toInt()
-                        value = if (value < PullView.MAX_STRAIN) PullView.MAX_STRAIN - value else 0
-                    }
-                }
-            }
-            return value
-        }
-
-        companion object {
-            private const val IDLE_FOLD_TIME = 500
-            private const val LOADING_HALF_CYCLE_TIME = 600
-        }
-    }
-
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private class LollipopView(wrapped: Wrapped, private val top: Boolean) : PullView {
+    private class LollipopView(
+        wrapped: Wrapped,
+        private val top: Boolean,
+    ) : PullView {
         private val wrapped: WeakReference<Wrapped?>
         private val radius: Int
         private val commonShift: Int
@@ -614,9 +383,10 @@ class PullableWrapper(private val listView: Wrapped) {
 
         init {
             this.wrapped = WeakReference<Wrapped?>(wrapped)
-            val density = ResourceUtils.obtainDensity(
-                wrapped.getContext()
-            )
+            val density =
+                ResourceUtils.obtainDensity(
+                    wrapped.getContext(),
+                )
             radius = (CIRCLE_RADIUS * density).toInt()
             commonShift = (DEFAULT_CIRCLE_TARGET * density).toInt()
             shadowSize = (SHADOW_SIZE * density).toInt()
@@ -642,14 +412,14 @@ class PullableWrapper(private val listView: Wrapped) {
             shadowPaint.setMaskFilter(
                 BlurMaskFilter(
                     shadowSize.toFloat(),
-                    BlurMaskFilter.Blur.NORMAL
-                )
+                    BlurMaskFilter.Blur.NORMAL,
+                ),
             )
             canvas.drawCircle(
                 bitmapSize / 2f,
                 bitmapSize / 2f,
                 (radius - shadowSize).toFloat(),
-                shadowPaint
+                shadowPaint,
             )
         }
 
@@ -664,7 +434,11 @@ class PullableWrapper(private val listView: Wrapped) {
             }
         }
 
-        fun invalidate(wrapped: Wrapped, width: Int, padding: Int) {
+        fun invalidate(
+            wrapped: Wrapped,
+            width: Int,
+            padding: Int,
+        ) {
             val hw = width / 2
             val radius = this.radius
             val shadowSize = this.shadowSize
@@ -683,7 +457,10 @@ class PullableWrapper(private val listView: Wrapped) {
             wrapped.invalidate(l, t, r, b)
         }
 
-        override fun setState(state: PullView.State, padding: Int) {
+        override fun setState(
+            state: PullView.State,
+            padding: Int,
+        ) {
             if (this.state != state) {
                 val prePreviousState = previousState
                 previousState = this.state
@@ -692,8 +469,11 @@ class PullableWrapper(private val listView: Wrapped) {
                 when (this.state) {
                     PullView.State.IDLE -> {
                         if (previousState == PullView.State.LOADING) {
-                            val pullStrain = (PullView.MAX_STRAIN *
-                                    getIdleTransientPullStrainValue(IDLE_FOLD_TIME, time)).toInt()
+                            val pullStrain =
+                                (
+                                    PullView.MAX_STRAIN *
+                                        getIdleTransientPullStrainValue(IDLE_FOLD_TIME, time)
+                                ).toInt()
                             startFoldingPullStrain = max(PullView.MAX_STRAIN, pullStrain)
                         } else {
                             startFoldingPullStrain = pullStrain
@@ -703,6 +483,7 @@ class PullableWrapper(private val listView: Wrapped) {
                     }
 
                     PullView.State.PULL -> {}
+
                     PullView.State.LOADING -> {
                         // May continue use old animation until it over
                         val loadingToLoading =
@@ -722,7 +503,10 @@ class PullableWrapper(private val listView: Wrapped) {
             }
         }
 
-        override fun setPullStrain(pullStrain: Int, padding: Int) {
+        override fun setPullStrain(
+            pullStrain: Int,
+            padding: Int,
+        ) {
             this.pullStrain = pullStrain
             if (this.pullStrain > 2 * PullView.MAX_STRAIN) {
                 this.pullStrain = 2 * PullView.MAX_STRAIN
@@ -734,25 +518,29 @@ class PullableWrapper(private val listView: Wrapped) {
             }
         }
 
-        override fun getPullStrain(): Int {
-            return min(pullStrain, PullView.MAX_STRAIN)
-        }
+        override fun getPullStrain(): Int = min(pullStrain, PullView.MAX_STRAIN)
 
         override fun getAndResetIdlePullStrain(): Int {
             if (startFoldingPullStrain == 0) {
                 return 0
             }
             try {
-                return (PullView.MAX_STRAIN * getIdleTransientPullStrainValue(
-                    IDLE_FOLD_TIME,
-                    SystemClock.elapsedRealtime()
-                )).toInt()
+                return (
+                    PullView.MAX_STRAIN *
+                        getIdleTransientPullStrainValue(
+                            IDLE_FOLD_TIME,
+                            SystemClock.elapsedRealtime(),
+                        )
+                ).toInt()
             } finally {
                 startFoldingPullStrain = 0
             }
         }
 
-        fun getIdleTransientPullStrainValue(maxFoldTime: Int, time: Long): Float {
+        fun getIdleTransientPullStrainValue(
+            maxFoldTime: Int,
+            time: Long,
+        ): Float {
             val foldTime = maxFoldTime * startFoldingPullStrain / PullView.MAX_STRAIN
             if (foldTime <= 0) {
                 return 0f
@@ -761,7 +549,10 @@ class PullableWrapper(private val listView: Wrapped) {
             return (1f - value) * startFoldingPullStrain / PullView.MAX_STRAIN
         }
 
-        override fun draw(canvas: Canvas, padding: Int) {
+        override fun draw(
+            canvas: Canvas,
+            padding: Int,
+        ) {
             val wrapped = this.wrapped.get()
             if (wrapped == null) {
                 return
@@ -827,8 +618,10 @@ class PullableWrapper(private val listView: Wrapped) {
                 }
                 ringPaint.setStrokeWidth(strokeWidth)
                 canvas.drawBitmap(
-                    shadow, centerX - shadow.getWidth() / 2f,
-                    centerY - shadow.getHeight() / 2f + shadowShift, circlePaint
+                    shadow,
+                    centerX - shadow.getWidth() / 2f,
+                    centerY - shadow.getHeight() / 2f + shadowShift,
+                    circlePaint,
                 )
                 canvas.drawCircle(centerX, centerY, radius.toFloat(), circlePaint)
 
@@ -850,14 +643,17 @@ class PullableWrapper(private val listView: Wrapped) {
                     arcStart += rotation + spinOffset
                 } else {
                     val alphaThreshold = 0.95f
-                    ringAlpha = lerp(
-                        0x7f.toFloat(),
-                        0xff.toFloat(),
-                        (min(
-                            1f,
-                            max(value, alphaThreshold)
-                        ) - alphaThreshold) / (1f - alphaThreshold)
-                    ).toInt()
+                    ringAlpha =
+                        lerp(
+                            0x7f.toFloat(),
+                            0xff.toFloat(),
+                            (
+                                min(
+                                    1f,
+                                    max(value, alphaThreshold),
+                                ) - alphaThreshold
+                            ) / (1f - alphaThreshold),
+                        ).toInt()
                     arcStart = if (value > 1f) 0.25f + (value - 1f) * 0.5f else 0.25f * value
                     arcLength = 0.75f * min(value, 1f).toDouble().pow(0.75).toFloat()
                     if (value >= 1f) {
@@ -870,7 +666,7 @@ class PullableWrapper(private val listView: Wrapped) {
                     centerX - ringRadius,
                     centerY - ringRadius,
                     centerX + ringRadius,
-                    centerY + ringRadius
+                    centerY + ringRadius,
                 )
                 drawArc(canvas, ringPaint, size, arcStart, arcLength)
                 if (needRestore) {
@@ -883,29 +679,28 @@ class PullableWrapper(private val listView: Wrapped) {
             }
         }
 
-        fun drawArc(canvas: Canvas, paint: Paint, size: RectF, start: Float, length: Float) {
-            var length = length
-            if (length < 0.001f) {
-                length = 0.001f
-            }
+        fun drawArc(
+            canvas: Canvas,
+            paint: Paint,
+            size: RectF,
+            start: Float,
+            length: Float,
+        ) {
+            val arcLength = if (length < 0.001f) 0.001f else length
             val path = this.path
             path.reset()
-            if (length >= 1f) {
+            if (arcLength >= 1f) {
                 path.arcTo(size, 0f, 180f, false)
                 path.arcTo(size, 180f, 180f, false)
             } else {
-                path.arcTo(size, start * 360f - 90f, length * 360f, false)
+                path.arcTo(size, start * 360f - 90f, arcLength * 360f, false)
             }
             canvas.drawPath(path, paint)
         }
 
-        override fun calculateJumpStartTime(): Long {
-            return 0L
-        }
+        override fun calculateJumpStartTime(): Long = 0L
 
-        override fun calculateJumpValue(jumpStartTime: Long): Int {
-            return 0
-        }
+        override fun calculateJumpValue(jumpStartTime: Long): Int = 0
 
         companion object {
             private const val IDLE_FOLD_TIME = 100
@@ -923,13 +718,26 @@ class PullableWrapper(private val listView: Wrapped) {
 
     interface Wrapped : Shift {
         fun getContext(): Context
+
         fun getResources(): Resources
+
         fun getEdgeEffectHandler(): EdgeEffectHandler?
+
         fun isScrolledToTop(): Boolean
+
         fun isScrolledToBottom(): Boolean
-        fun invalidate(l: Int, t: Int, r: Int, b: Int)
+
+        fun invalidate(
+            l: Int,
+            t: Int,
+            r: Int,
+            b: Int,
+        )
+
         fun invalidate()
+
         fun getWidth(): Int
+
         fun getHeight(): Int
     }
 

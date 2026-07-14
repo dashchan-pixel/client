@@ -26,10 +26,12 @@ import kotlin.math.max
 class HttpResponse internal constructor(
     val session: HttpSession?,
     private val validator: HttpValidator?,
-    private var charsetName: String?
+    private var charsetName: String?,
 ) {
     private enum class ExtractCharset {
-        NONE, CHECK_HTML, FROM_HTML
+        NONE,
+        CHECK_HTML,
+        FROM_HTML,
     }
 
     private var extractCharset = ExtractCharset.NONE
@@ -39,9 +41,9 @@ class HttpResponse internal constructor(
     private var string: String? = null
 
     init {
-        val contentTypes = getHeaderFields().get("Content-Type")
+        val contentTypes = getHeaderFields()["Content-Type"]
         if (contentTypes != null && contentTypes.size == 1) {
-            val contentType = contentTypes.get(0)
+            val contentType = contentTypes[0]
             if ("text/html" == contentType) {
                 extractCharset = ExtractCharset.FROM_HTML
             }
@@ -91,14 +93,12 @@ class HttpResponse internal constructor(
     }
 
     @Public
-    fun getResponseCode(): Int {
-        return if (session != null) session.responseCode else HttpURLConnection.HTTP_OK
-    }
+    fun getResponseCode(): Int = if (session != null) session.responseCode else HttpURLConnection.HTTP_OK
 
     @Public
     fun getRequestedUri(): Uri? {
         if (session != null) {
-            return session.getRequestedUris().get(0)
+            return session.getRequestedUris()[0]
         } else {
             return null
         }
@@ -130,14 +130,10 @@ class HttpResponse internal constructor(
     }
 
     @Public
-    fun getHeaderFields(): MutableMap<String?, MutableList<String>?> {
-        return if (session != null) session.headerFields else mutableMapOf()
-    }
+    fun getHeaderFields(): MutableMap<String?, MutableList<String>?> = if (session != null) session.headerFields else mutableMapOf()
 
     @Public
-    fun getCookieValue(name: String?): String? {
-        return if (session != null) session.getCookieValue(name) else null
-    }
+    fun getCookieValue(name: String?): String? = if (session != null) session.getCookieValue(name) else null
 
     val length: Long
         get() = if (session != null) session.length else -1
@@ -152,10 +148,12 @@ class HttpResponse internal constructor(
         }
     }
 
-    private class ConcatInputStream(head: ByteArrayInputStream?, val tail: InputStream?) :
-        SequenceInputStream(
+    private class ConcatInputStream(
+        head: ByteArrayInputStream?,
+        val tail: InputStream?,
+    ) : SequenceInputStream(
             head,
-            tail
+            tail,
         )
 
     @Throws(HttpException::class)
@@ -168,10 +166,11 @@ class HttpResponse internal constructor(
                 this.input = input
                 if (extractCharset != ExtractCharset.NONE) {
                     try {
-                        val pair: Pair<InputStream?, String?> = extractCharsetFromHtml(
-                            input,
-                            extractCharset == ExtractCharset.CHECK_HTML
-                        )
+                        val pair: Pair<InputStream?, String?> =
+                            extractCharsetFromHtml(
+                                input,
+                                extractCharset == ExtractCharset.CHECK_HTML,
+                            )
                         this.input = pair.first
                         if (pair.second != null) {
                             charsetName = pair.second
@@ -287,42 +286,50 @@ class HttpResponse internal constructor(
         @Throws(IOException::class)
         private fun extractCharsetFromHtml(
             input: InputStream,
-            checkHtml: Boolean
+            checkHtml: Boolean,
         ): Pair<InputStream?, String?> {
-            var checkHtml = checkHtml
+            var htmlExpected = checkHtml
             val output = ByteArrayOutputStream()
-            val reader = InputStreamReader(object : InputStream() {
-                @Throws(IOException::class)
-                override fun read(): Int {
-                    val result = input.read()
-                    if (result >= 0) {
-                        output.write(result)
-                    }
-                    return result
-                }
+            val reader =
+                InputStreamReader(
+                    object : InputStream() {
+                        @Throws(IOException::class)
+                        override fun read(): Int {
+                            val result = input.read()
+                            if (result >= 0) {
+                                output.write(result)
+                            }
+                            return result
+                        }
 
-                @Throws(IOException::class)
-                override fun read(b: ByteArray, off: Int, len: Int): Int {
-                    val result = input.read(b, off, len)
-                    if (result > 0) {
-                        output.write(b, off, result)
-                    }
-                    return result
-                }
-            }, "ISO-8859-1")
+                        @Throws(IOException::class)
+                        override fun read(
+                            b: ByteArray,
+                            off: Int,
+                            len: Int,
+                        ): Int {
+                            val result = input.read(b, off, len)
+                            if (result > 0) {
+                                output.write(b, off, result)
+                            }
+                            return result
+                        }
+                    },
+                    "ISO-8859-1",
+                )
             val builder = StringBuilder()
-            if (checkHtml) {
+            if (htmlExpected) {
                 val minHtmlStart = "<!DOCTYPE html><html><head>"
                 val buffer = CharArray(minHtmlStart.length)
                 val count = reader.read(buffer)
                 if (count >= 0) {
                     builder.append(buffer, 0, count)
                     val string = builder.toString().lowercase()
-                    checkHtml = !string.contains("<!doctype html")
+                    htmlExpected = !string.contains("<!doctype html")
                 }
             }
             var foundHeadClose = false
-            if (!checkHtml) {
+            if (!htmlExpected) {
                 val headClose = "</head>"
                 val buffer = CharArray(1024)
                 var count: Int
@@ -341,7 +348,7 @@ class HttpResponse internal constructor(
                 }
             }
             val headInput = ByteArrayInputStream(output.toByteArray())
-            if (checkHtml) {
+            if (htmlExpected) {
                 return Pair<InputStream?, String?>(ConcatInputStream(headInput, input), null)
             }
             if (!foundHeadClose) {

@@ -24,65 +24,68 @@ import java.net.URLEncoder
 
 @Extendable
 open class UrlEncodedEntity : RequestEntity {
-	private val builder = StringBuilder()
-	private var bytes: ByteArray? = null
+    private val builder = StringBuilder()
+    private var bytes: ByteArray? = null
 
-	private var charsetName = "UTF-8"
+    private var charsetName = "UTF-8"
 
-	@Public
-	constructor()
+    @Public
+    constructor()
 
-	@Public
-	constructor(vararg params: String) {
-		var i = 0
-		while (i < params.size) {
-			add(params[i], params[i + 1])
-			i += 2
-		}
-	}
+    @Public
+    constructor(vararg params: String) {
+        var i = 0
+        while (i < params.size) {
+            add(params[i], params[i + 1])
+            i += 2
+        }
+    }
 
-	@Public
-	open fun setEncoding(charsetName: String) {
-		this.charsetName = charsetName
-	}
+    @Public
+    open fun setEncoding(charsetName: String) {
+        this.charsetName = charsetName
+    }
 
-	override fun add(name: String, value: String?) {
-		if (value != null) {
-			bytes = null
-			if (builder.isNotEmpty()) {
-				builder.append('&')
-			}
-			builder.append(encode(name))
-			builder.append('=')
-			builder.append(encode(value))
-		}
-	}
+    override fun add(
+        name: String,
+        value: String?,
+    ) {
+        if (value != null) {
+            bytes = null
+            if (builder.isNotEmpty()) {
+                builder.append('&')
+            }
+            builder.append(encode(name))
+            builder.append('=')
+            builder.append(encode(value))
+        }
+    }
 
-	override fun getContentType(): String = "application/x-www-form-urlencoded"
+    override fun getContentType(): String = "application/x-www-form-urlencoded"
 
-	override fun getContentLength(): Long = getBytes().size.toLong()
+    override fun getContentLength(): Long = getBytes().size.toLong()
 
-	@Throws(IOException::class)
-	override fun write(output: OutputStream) {
-		output.write(getBytes())
-		output.flush()
-	}
+    @Throws(IOException::class)
+    override fun write(output: OutputStream) {
+        output.write(getBytes())
+        output.flush()
+    }
 
-	override fun copy(): RequestEntity {
-		val entity = UrlEncodedEntity()
-		entity.setEncoding(charsetName)
-		entity.builder.append(builder)
-		return entity
-	}
+    override fun copy(): RequestEntity {
+        val entity = UrlEncodedEntity()
+        entity.setEncoding(charsetName)
+        entity.builder.append(builder)
+        return entity
+    }
 
-	private fun encode(string: String): String = URLEncoder.encode(string, charsetName)
+    private fun encode(string: String): String = URLEncoder.encode(string, charsetName)
 
-	private fun getBytes(): ByteArray {
-		var bytes = bytes
-		if (bytes == null) {
-			bytes = builder.toString().toByteArray(Charsets.ISO_8859_1)
-			this.bytes = bytes
-		}
-		return bytes
-	}
+    private fun getBytes(): ByteArray {
+        var bytes = bytes
+        if (bytes == null) {
+            bytes = builder.toString().toByteArray(Charsets.ISO_8859_1)
+            this.bytes = bytes
+        }
+        return bytes
+    }
 }

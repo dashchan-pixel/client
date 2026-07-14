@@ -5,7 +5,12 @@ package chan.annotation
  * This imposes some restrictions to deleting and modifying this element.
  */
 @MustBeDocumented
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.CONSTRUCTOR,
-		AnnotationTarget.FIELD, AnnotationTarget.PROPERTY)
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.CONSTRUCTOR,
+    AnnotationTarget.FIELD,
+    AnnotationTarget.PROPERTY,
+)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Public

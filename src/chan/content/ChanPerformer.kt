@@ -43,7 +43,9 @@ import java.util.Collections
 import java.util.Objects
 
 @Extendable
-open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Chan.Linked {
+open class ChanPerformer internal constructor(
+    chanProvider: Chan.Provider?,
+) : Chan.Linked {
     private val chanProvider: Chan.Provider?
     private val firewallResolvers = ArrayList<FirewallResolver>(0)
 
@@ -56,9 +58,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         isInitialized = true
     }
 
-    override fun get(): Chan {
-        return chanProvider!!.get()
-    }
+    override fun get(): Chan = chanProvider!!.get()
 
     private fun checkInit() {
         check(!isInitialized) { "This method available only from constructor" }
@@ -71,123 +71,86 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         firewallResolvers.add(firewallResolver!!)
     }
 
-    fun getFirewallResolvers(): List<FirewallResolver> {
-        return firewallResolvers
-    }
+    fun getFirewallResolvers(): List<FirewallResolver> = firewallResolvers
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class, RedirectException::class)
-    protected open fun onReadThreads(data: ReadThreadsData?): ReadThreadsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadThreads(data: ReadThreadsData?): ReadThreadsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(
         HttpException::class,
         InvalidResponseException::class,
         RedirectException::class,
-        ThreadRedirectException::class
+        ThreadRedirectException::class,
     )
-    protected open fun onReadPosts(data: ReadPostsData?): ReadPostsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadPosts(data: ReadPostsData?): ReadPostsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadSinglePost(data: ReadSinglePostData?): ReadSinglePostResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadSinglePost(data: ReadSinglePostData?): ReadSinglePostResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadSearchPosts(data: ReadSearchPostsData?): ReadSearchPostsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadSearchPosts(data: ReadSearchPostsData?): ReadSearchPostsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadBoards(data: ReadBoardsData?): ReadBoardsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadBoards(data: ReadBoardsData?): ReadBoardsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadUserBoards(data: ReadUserBoardsData?): ReadUserBoardsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadUserBoards(data: ReadUserBoardsData?): ReadUserBoardsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadThreadSummaries(data: ReadThreadSummariesData?): ReadThreadSummariesResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadThreadSummaries(data: ReadThreadSummariesData?): ReadThreadSummariesResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadPostsCount(data: ReadPostsCountData?): ReadPostsCountResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onReadPostsCount(data: ReadPostsCountData?): ReadPostsCountResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadContent(data: ReadContentData): ReadContentResult {
-        return ReadContentResult(HttpRequest(data.uri, data.direct).perform())
-    }
+    protected open fun onReadContent(data: ReadContentData): ReadContentResult = ReadContentResult(HttpRequest(data.uri, data.direct).perform())
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onCheckAuthorization(data: CheckAuthorizationData?): CheckAuthorizationResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onCheckAuthorization(data: CheckAuthorizationData?): CheckAuthorizationResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, InvalidResponseException::class)
-    protected open fun onReadCaptcha(data: ReadCaptchaData?): ReadCaptchaResult {
-        return ReadCaptchaResult(CaptchaState.SKIP, null)
-    }
+    protected open fun onReadCaptcha(data: ReadCaptchaData?): ReadCaptchaResult = ReadCaptchaResult(CaptchaState.SKIP, null)
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected open fun onSendPost(data: SendPostData?): SendPostResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onSendPost(data: SendPostData?): SendPostResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected open fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected open fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected open fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? = throw UnsupportedOperationException()
 
     @Extendable
     @Throws(HttpException::class, ApiException::class, InvalidResponseException::class)
-    protected open fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? {
-        throw UnsupportedOperationException()
-    }
+    protected open fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? = throw UnsupportedOperationException()
 
     @Public
     class ReadThreadsData(
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val pageNumber: Int,
         override val holder: HttpHolder?,
-        @field:Public @JvmField val validator: HttpValidator?
+        @field:Public @JvmField val validator: HttpValidator?,
     ) : HttpRequest.Preset {
         @Public
-        fun isCatalog(): Boolean {
-            return pageNumber == PAGE_NUMBER_CATALOG
-        }
-
+        fun isCatalog(): Boolean = pageNumber == PAGE_NUMBER_CATALOG
 
         companion object {
             @Public
@@ -197,72 +160,87 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class ReadThreadsResult @Public constructor(threads: MutableCollection<Posts?>?) {
-        class Thread(
-            val posts: List<Post>?, val threadNumber: String?,
-            val postsCount: Int, val filesCount: Int, val postsWithFilesCount: Int
-        )
-
-        val threads: MutableList<Thread?>
-
-        var boardSpeed: Int = 0
-        var validator: HttpValidator? = null
-
+    class ReadThreadsResult
         @Public
-        constructor(vararg threads: Posts?) : this(Arrays.asList<Posts?>(*threads))
+        constructor(
+            threads: MutableCollection<Posts?>?,
+        ) {
+            class Thread(
+                val posts: List<Post>?,
+                val threadNumber: String?,
+                val postsCount: Int,
+                val filesCount: Int,
+                val postsWithFilesCount: Int,
+            )
 
-        init {
-            var list = mutableListOf<Thread?>()
-            if (threads != null) {
-                list = ArrayList<Thread?>(threads.size)
-                for (thread in threads) {
-                    if (thread != null) {
-                        val postsArray = thread.getPosts()
-                        if (postsArray != null) {
-                            var threadNumber: String? = null
-                            val posts: MutableList<Post> = ArrayList()
-                            for (post in postsArray) {
-                                if (post != null) {
-                                    if (posts.isEmpty()) {
-                                        threadNumber = post.getThreadNumberOrOriginalPostNumber()
+            val threads: MutableList<Thread?>
+
+            var boardSpeed: Int = 0
+            var validator: HttpValidator? = null
+
+            @Public
+            constructor(vararg threads: Posts?) : this(Arrays.asList<Posts?>(*threads))
+
+            init {
+                var list = mutableListOf<Thread?>()
+                if (threads != null) {
+                    list = ArrayList<Thread?>(threads.size)
+                    for (thread in threads) {
+                        if (thread != null) {
+                            val postsArray = thread.getPosts()
+                            if (postsArray != null) {
+                                var threadNumber: String? = null
+                                val posts: MutableList<Post> = ArrayList()
+                                for (post in postsArray) {
+                                    if (post != null) {
+                                        if (posts.isEmpty()) {
+                                            threadNumber = post.getThreadNumberOrOriginalPostNumber()
+                                        }
+                                        posts.add(post.build())
                                     }
-                                    posts.add(post.build())
                                 }
-                            }
-                            if (!posts.isEmpty()) {
-                                require(!isEmpty(threadNumber)) { "Thread number is not defined" }
-                                list.add(
-                                    Thread(
-                                        posts, threadNumber, thread.getPostsCount(),
-                                        thread.getFilesCount(), thread.getPostsWithFilesCount()
+                                if (!posts.isEmpty()) {
+                                    require(!isEmpty(threadNumber)) { "Thread number is not defined" }
+                                    list.add(
+                                        Thread(
+                                            posts,
+                                            threadNumber,
+                                            thread.getPostsCount(),
+                                            thread.getFilesCount(),
+                                            thread.getPostsWithFilesCount(),
+                                        ),
                                     )
-                                )
+                                }
                             }
                         }
                     }
                 }
+                this.threads = list
             }
-            this.threads = list
-        }
 
-        @Public
-        fun setBoardSpeed(boardSpeed: Int): ReadThreadsResult {
-            this.boardSpeed = boardSpeed
-            return this
-        }
+            @Public
+            fun setBoardSpeed(boardSpeed: Int): ReadThreadsResult {
+                this.boardSpeed = boardSpeed
+                return this
+            }
 
-        @Public
-        fun setValidator(validator: HttpValidator?): ReadThreadsResult {
-            this.validator = validator
-            return this
+            @Public
+            fun setValidator(validator: HttpValidator?): ReadThreadsResult {
+                this.validator = validator
+                return this
+            }
         }
-    }
 
     @Public
     class ReadPostsData(
-        chanName: String, boardName: String?, threadNumber: String,
-        lastPostNumber: String?, partialThreadLoading: Boolean,
-        hasCachedPosts: Boolean, holder: HttpHolder?, validator: HttpValidator?
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+        lastPostNumber: String?,
+        partialThreadLoading: Boolean,
+        hasCachedPosts: Boolean,
+        holder: HttpHolder?,
+        validator: HttpValidator?,
     ) : HttpRequest.Preset {
         @Public
         @JvmField
@@ -299,14 +277,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             this.holder = holder
             this.validator = validator
         }
-
     }
 
     @Public
     class ReadPostsResult private constructor(
         posts: Collection<chan.content.model.Post?>?,
         archivedThreadUri: Uri?,
-        uniquePosters: Int
+        uniquePosters: Int,
     ) {
         val posts: MutableList<Post?>
         val archivedThreadUri: Uri?
@@ -319,7 +296,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         constructor(posts: Posts?) : this(
             posts?.getPosts()?.let { Arrays.asList(*it) },
             posts?.getArchivedThreadUri(),
-            posts?.getUniquePosters() ?: 0
+            posts?.getUniquePosters() ?: 0,
         )
 
         @Public
@@ -358,105 +335,120 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     class ReadSinglePostData(
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val postNumber: String?,
-        override val holder: HttpHolder?
-    ) : HttpRequest.Preset {
-    }
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
 
     @Public
-    class ReadSinglePostResult @Public constructor(post: chan.content.model.Post?) {
-        val post: SinglePost?
+    class ReadSinglePostResult
+        @Public
+        constructor(
+            post: chan.content.model.Post?,
+        ) {
+            val post: SinglePost?
 
-        init {
-            this.post = if (post != null) SinglePost(post) else null
+            init {
+                this.post = if (post != null) SinglePost(post) else null
+            }
         }
-    }
 
     @Public
     class ReadSearchPostsData(
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val searchQuery: String?,
         @field:Public @JvmField val pageNumber: Int,
-        override val holder: HttpHolder?
-    ) : HttpRequest.Preset {
-    }
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
 
     @Public
-    class ReadSearchPostsResult @Public constructor(posts: MutableCollection<chan.content.model.Post?>?) {
-        val posts: MutableList<SinglePost?>
-
+    class ReadSearchPostsResult
         @Public
-        constructor(vararg posts: chan.content.model.Post?) : this(
-            Arrays.asList<chan.content.model.Post?>(*posts)
-        )
+        constructor(
+            posts: MutableCollection<chan.content.model.Post?>?,
+        ) {
+            val posts: MutableList<SinglePost?>
 
-        init {
-            var list = mutableListOf<SinglePost?>()
-            if (posts != null) {
-                list = ArrayList<SinglePost?>(posts.size)
-                for (post in posts) {
-                    if (post != null) {
-                        list.add(SinglePost(post))
+            @Public
+            constructor(vararg posts: chan.content.model.Post?) : this(
+                Arrays.asList<chan.content.model.Post?>(*posts),
+            )
+
+            init {
+                var list = mutableListOf<SinglePost?>()
+                if (posts != null) {
+                    list = ArrayList<SinglePost?>(posts.size)
+                    for (post in posts) {
+                        if (post != null) {
+                            list.add(SinglePost(post))
+                        }
                     }
                 }
+                this.posts = list
             }
-            this.posts = list
         }
-    }
 
     @Public
-    class ReadBoardsData(override val holder: HttpHolder?) : HttpRequest.Preset {
-    }
+    class ReadBoardsData(
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
 
     @Public
-    class ReadBoardsResult @Public constructor(vararg boardCategories: BoardCategory?) {
-        val boardCategories: Array<BoardCategory>?
+    class ReadBoardsResult
+        @Public
+        constructor(
+            vararg boardCategories: BoardCategory?,
+        ) {
+            val boardCategories: Array<BoardCategory>?
 
-        init {
-            val categories: Array<BoardCategory?> = arrayOf(*boardCategories)
-            for (i in categories.indices) {
-                if (categories[i] != null) {
-                    val boards = categories[i]!!.getBoards()
-                    if (boards == null || boards.size == 0) {
-                        categories[i] = null
+            init {
+                val categories: Array<BoardCategory?> = arrayOf(*boardCategories)
+                for (i in categories.indices) {
+                    if (categories[i] != null) {
+                        val boards = categories[i]!!.getBoards()
+                        if (boards.isNullOrEmpty()) {
+                            categories[i] = null
+                        }
                     }
                 }
+                @Suppress("UNCHECKED_CAST")
+                this.boardCategories = CommonUtils.removeNullItems(categories, BoardCategory::class.java) as Array<BoardCategory>?
             }
-            @Suppress("UNCHECKED_CAST")
-            this.boardCategories = CommonUtils.removeNullItems(categories, BoardCategory::class.java) as Array<BoardCategory>?
+
+            @Public
+            constructor(boardCategories: Collection<BoardCategory>?) : this(
+                *(CommonUtils.toArray(boardCategories, BoardCategory::class.java) ?: arrayOfNulls(0)),
+            )
         }
 
+    @Public
+    class ReadUserBoardsData(
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
+
+    @Public
+    class ReadUserBoardsResult
         @Public
-        constructor(boardCategories: Collection<BoardCategory>?) : this(
-            *(CommonUtils.toArray(boardCategories, BoardCategory::class.java) ?: arrayOfNulls(0))
-        )
-    }
+        constructor(
+            vararg boards: Board?,
+        ) {
+            val boards: Array<Board?>?
 
-    @Public
-    class ReadUserBoardsData(override val holder: HttpHolder?) : HttpRequest.Preset {
-    }
+            init {
+                this.boards = CommonUtils.removeNullItems(arrayOf(*boards), Board::class.java)
+            }
 
-    @Public
-    class ReadUserBoardsResult @Public constructor(vararg boards: Board?) {
-        val boards: Array<Board?>?
-
-        init {
-            this.boards = CommonUtils.removeNullItems(arrayOf(*boards), Board::class.java)
+            @Public
+            constructor(boards: Collection<Board>?) : this(
+                *(CommonUtils.toArray(boards, Board::class.java) ?: arrayOfNulls(0)),
+            )
         }
-
-        @Public
-        constructor(boards: Collection<Board>?) : this(
-            *(CommonUtils.toArray(boards, Board::class.java) ?: arrayOfNulls(0))
-        )
-    }
 
     @Public
     class ReadThreadSummariesData(
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val pageNumber: Int,
         @field:Public @JvmField val type: Int,
-        override val holder: HttpHolder?
+        override val holder: HttpHolder?,
     ) : HttpRequest.Preset {
-
         companion object {
             @Public
             const val TYPE_ARCHIVED_THREADS: Int = 0
@@ -464,18 +456,22 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class ReadThreadSummariesResult @Public constructor(vararg threadSummaries: ThreadSummary?) {
-        val threadSummaries: Array<ThreadSummary?>?
-
-        init {
-            this.threadSummaries = CommonUtils.removeNullItems(arrayOf(*threadSummaries), ThreadSummary::class.java)
-        }
-
+    class ReadThreadSummariesResult
         @Public
-        constructor(threadSummaries: Collection<ThreadSummary>?) : this(
-            *(CommonUtils.toArray(threadSummaries, ThreadSummary::class.java) ?: arrayOfNulls(0))
-        )
-    }
+        constructor(
+            vararg threadSummaries: ThreadSummary?,
+        ) {
+            val threadSummaries: Array<ThreadSummary?>?
+
+            init {
+                this.threadSummaries = CommonUtils.removeNullItems(arrayOf(*threadSummaries), ThreadSummary::class.java)
+            }
+
+            @Public
+            constructor(threadSummaries: Collection<ThreadSummary>?) : this(
+                *(CommonUtils.toArray(threadSummaries, ThreadSummary::class.java) ?: arrayOfNulls(0)),
+            )
+        }
 
     @Public
     class ReadPostsCountData(
@@ -484,37 +480,41 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         override val connectTimeout: Int,
         override val readTimeout: Int,
         override val holder: HttpHolder?,
-        @field:Public @JvmField val validator: HttpValidator?
-    ) : TimeoutsPreset {
-
-
-    }
+        @field:Public @JvmField val validator: HttpValidator?,
+    ) : TimeoutsPreset
 
     @Public
-    class ReadPostsCountResult @Public constructor(val postsCount: Int) {
-        var validator: HttpValidator? = null
-
+    class ReadPostsCountResult
         @Public
-        fun setValidator(validator: HttpValidator?): ReadPostsCountResult {
-            this.validator = validator
-            return this
+        constructor(
+            val postsCount: Int,
+        ) {
+            var validator: HttpValidator? = null
+
+            @Public
+            fun setValidator(validator: HttpValidator?): ReadPostsCountResult {
+                this.validator = validator
+                return this
+            }
         }
-    }
 
     private class ReadContentDirectPreset(
-        override val connectTimeout: Int, override val readTimeout: Int, override val holder: HttpHolder?,
-        override val rangeStart: Long, override val rangeEnd: Long
-    ) : TimeoutsPreset, RangePreset {
-
-
-
-
-    }
+        override val connectTimeout: Int,
+        override val readTimeout: Int,
+        override val holder: HttpHolder?,
+        override val rangeStart: Long,
+        override val rangeEnd: Long,
+    ) : TimeoutsPreset,
+        RangePreset
 
     @Public
     class ReadContentData(
-        @field:Public @JvmField val uri: Uri?, connectTimeout: Int, readTimeout: Int, holder: HttpHolder?,
-        rangeStart: Long, rangeEnd: Long
+        @field:Public @JvmField val uri: Uri?,
+        connectTimeout: Int,
+        readTimeout: Int,
+        holder: HttpHolder?,
+        rangeStart: Long,
+        rangeEnd: Long,
     ) : TimeoutsPreset {
         @Public
         @JvmField
@@ -536,15 +536,18 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class ReadContentResult @Public constructor(val response: HttpResponse?)
+    class ReadContentResult
+        @Public
+        constructor(
+            val response: HttpResponse?,
+        )
 
     @Public
     class CheckAuthorizationData(
         @field:Public @JvmField val type: Int,
         @field:Public @JvmField val authorizationData: Array<String?>?,
-        override val holder: HttpHolder?
+        override val holder: HttpHolder?,
     ) : HttpRequest.Preset {
-
         companion object {
             @Public
             const val TYPE_CAPTCHA_PASS: Int = 0
@@ -555,7 +558,11 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     }
 
     @Public
-    class CheckAuthorizationResult @Public constructor(val success: Boolean)
+    class CheckAuthorizationResult
+        @Public
+        constructor(
+            val success: Boolean,
+        )
 
     @Public
     class ReadCaptchaData(
@@ -565,9 +572,8 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val requirement: String?,
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val threadNumber: String?,
-        override val holder: HttpHolder?
-    ) : HttpRequest.Preset {
-    }
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
 
     @Public
     enum class CaptchaState {
@@ -581,76 +587,79 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         PASS,
 
         @Public
-        NEED_LOAD
+        NEED_LOAD,
     }
 
     @Public
-    class ReadCaptchaResult @Public constructor(
-        val captchaState: CaptchaState?,
-        val captchaData: CaptchaData?
-    ) {
-        var captchaType: String? = null
-        var input: ChanConfiguration.Captcha.Input? = null
-        var validity: ChanConfiguration.Captcha.Validity? = null
-        var image: Bitmap? = null
-        var large: Boolean = false
-
+    class ReadCaptchaResult
         @Public
-        fun setCaptchaType(captchaType: String?): ReadCaptchaResult {
-            this.captchaType = captchaType
-            return this
-        }
+        constructor(
+            val captchaState: CaptchaState?,
+            val captchaData: CaptchaData?,
+        ) {
+            var captchaType: String? = null
+            var input: ChanConfiguration.Captcha.Input? = null
+            var validity: ChanConfiguration.Captcha.Validity? = null
+            var image: Bitmap? = null
+            var large: Boolean = false
 
-        @Public
-        fun setInput(input: ChanConfiguration.Captcha.Input?): ReadCaptchaResult {
-            this.input = input
-            return this
-        }
+            @Public
+            fun setCaptchaType(captchaType: String?): ReadCaptchaResult {
+                this.captchaType = captchaType
+                return this
+            }
 
-        @Public
-        fun setValidity(validity: ChanConfiguration.Captcha.Validity?): ReadCaptchaResult {
-            this.validity = validity
-            return this
-        }
+            @Public
+            fun setInput(input: ChanConfiguration.Captcha.Input?): ReadCaptchaResult {
+                this.input = input
+                return this
+            }
 
-        @Public
-        fun setImage(image: Bitmap?): ReadCaptchaResult {
-            this.image = image
-            return this
-        }
+            @Public
+            fun setValidity(validity: ChanConfiguration.Captcha.Validity?): ReadCaptchaResult {
+                this.validity = validity
+                return this
+            }
 
-        @Public
-        fun setLarge(large: Boolean): ReadCaptchaResult {
-            this.large = large
-            return this
+            @Public
+            fun setImage(image: Bitmap?): ReadCaptchaResult {
+                this.image = image
+                return this
+            }
+
+            @Public
+            fun setLarge(large: Boolean): ReadCaptchaResult {
+                this.large = large
+                return this
+            }
         }
-    }
 
     @Public
-    class CaptchaData private constructor(private val data: MutableMap<String?, String?>) :
-        Parcelable {
+    class CaptchaData private constructor(
+        private val data: MutableMap<String?, String?>,
+    ) : Parcelable {
         @Public
         constructor() : this(HashMap<String?, String?>())
 
         @Public
-        fun put(key: String?, value: String?) {
-            data.put(key, value)
+        fun put(
+            key: String?,
+            value: String?,
+        ) {
+            data[key] = value
         }
 
         @Public
-        fun get(key: String?): String? {
-            return data.get(key)
-        }
+        fun get(key: String?): String? = data[key]
 
-        fun copy(): CaptchaData {
-            return CaptchaData(HashMap<String?, String?>(data))
-        }
+        fun copy(): CaptchaData = CaptchaData(HashMap<String?, String?>(data))
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
-        override fun writeToParcel(dest: Parcel, flags: Int) {
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
             dest.writeInt(data.size)
             for (entry in data.entries) {
                 dest.writeString(entry.key)
@@ -678,14 +687,12 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                         val count = source.readInt()
                         val data = HashMap<String?, String?>(count)
                         for (i in 0..<count) {
-                            data.put(source.readString(), source.readString())
+                            data[source.readString()] = source.readString()
                         }
                         return CaptchaData(data)
                     }
 
-                    override fun newArray(size: Int): Array<CaptchaData?> {
-                        return arrayOfNulls<CaptchaData>(size)
-                    }
+                    override fun newArray(size: Int): Array<CaptchaData?> = arrayOfNulls<CaptchaData>(size)
                 }
         }
     }
@@ -708,8 +715,9 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val captchaData: CaptchaData?,
         val captchaNeedLoad: Boolean,
         override val connectTimeout: Int,
-        override val readTimeout: Int
-    ) : TimeoutsPreset, OutputListenerPreset {
+        override val readTimeout: Int,
+    ) : TimeoutsPreset,
+        OutputListenerPreset {
         override var holder: HttpHolder? = null
         var listener: HttpRequest.OutputListener? = null
 
@@ -722,7 +730,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             val optionRemoveMetadata: Boolean,
             val optionRemoveFileName: Boolean,
             @field:Public @JvmField val optionSpoiler: Boolean,
-            val reencoding: Reencoding?
+            val reencoding: Reencoding?,
         ) {
             var listener: OpenableOutputListener? = null
 
@@ -730,15 +738,23 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
             private fun ensureOpenable() {
                 if (openable == null) {
-                    openable = ChanFileOpenable(
-                        fileHolder, fileName, optionUniqueHash, optionRemoveMetadata,
-                        optionRemoveFileName, reencoding
-                    )
+                    openable =
+                        ChanFileOpenable(
+                            fileHolder,
+                            fileName,
+                            optionUniqueHash,
+                            optionRemoveMetadata,
+                            optionRemoveFileName,
+                            reencoding,
+                        )
                 }
             }
 
             @Public
-            fun addToEntity(entity: MultipartEntity, name: String?) {
+            fun addToEntity(
+                entity: MultipartEntity,
+                name: String?,
+            ) {
                 ensureOpenable()
                 entity.add(name, openable, listener)
             }
@@ -793,7 +809,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
             private inner class InputStreamForSending(
                 private val inputStream: InputStream,
-                private val progressMax: Long
+                private val progressMax: Long,
             ) : InputStream() {
                 private var progress: Long = 0
 
@@ -812,12 +828,14 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 }
 
                 @Throws(IOException::class)
-                override fun read(buffer: ByteArray): Int {
-                    return read(buffer, 0, buffer.size)
-                }
+                override fun read(buffer: ByteArray): Int = read(buffer, 0, buffer.size)
 
                 @Throws(IOException::class)
-                override fun read(buffer: ByteArray, byteOffset: Int, byteCount: Int): Int {
+                override fun read(
+                    buffer: ByteArray,
+                    byteOffset: Int,
+                    byteCount: Int,
+                ): Int {
                     val result = inputStream.read(buffer, byteOffset, byteCount)
                     if (result > 0) {
                         notify(result)
@@ -837,11 +855,16 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 }
                 if (other is Attachment) {
                     val attachment = other
-                    return attachment.fileHolder == fileHolder && equals(
-                        attachment.rating,
-                        rating
-                    ) && attachment.optionUniqueHash == optionUniqueHash && attachment.optionRemoveMetadata ==
-                            optionRemoveMetadata && attachment.optionRemoveFileName == optionRemoveFileName && attachment.optionSpoiler == optionSpoiler
+                    return attachment.fileHolder == fileHolder &&
+                        equals(
+                            attachment.rating,
+                            rating,
+                        ) &&
+                        attachment.optionUniqueHash == optionUniqueHash &&
+                        attachment.optionRemoveMetadata ==
+                        optionRemoveMetadata &&
+                        attachment.optionRemoveFileName == optionRemoveFileName &&
+                        attachment.optionSpoiler == optionSpoiler
                 }
                 return false
             }
@@ -859,22 +882,24 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             }
         }
 
-
-
-
         override val outputListener: HttpRequest.OutputListener?
             get() = listener
     }
 
     @Public
-    class SendPostResult @Public constructor(val threadNumber: String?, postNumber: String?) {
-        val postNumber: PostNumber?
+    class SendPostResult
+        @Public
+        constructor(
+            val threadNumber: String?,
+            postNumber: String?,
+        ) {
+            val postNumber: PostNumber?
 
-        init {
-            this.postNumber = if (postNumber != null) parseOrThrow(postNumber) else null
-            validateThreadNumber(threadNumber, true)
+            init {
+                this.postNumber = if (postNumber != null) parseOrThrow(postNumber) else null
+                validateThreadNumber(threadNumber, true)
+            }
         }
-    }
 
     @Public
     class SendDeletePostsData(
@@ -883,12 +908,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val postNumbers: List<String>?,
         @field:Public @JvmField val password: String?,
         @field:Public @JvmField val optionFilesOnly: Boolean,
-        override val holder: HttpHolder?
-    ) : HttpRequest.Preset {
-    }
+        override val holder: HttpHolder?,
+    ) : HttpRequest.Preset
 
     @Public
-    class SendDeletePostsResult @Public constructor()
+    class SendDeletePostsResult
+        @Public
+        constructor()
 
     @Public
     class SendReportPostsData(
@@ -898,7 +924,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val type: String?,
         options: List<String>?,
         @field:Public @JvmField val comment: String?,
-        override val holder: HttpHolder?
+        override val holder: HttpHolder?,
     ) : HttpRequest.Preset {
         @Public
         @JvmField
@@ -908,7 +934,6 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             this.options =
                 if (options != null) Collections.unmodifiableList(options) else null
         }
-
     }
 
     @Public
@@ -920,7 +945,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val type: String?,
         options: List<String>?,
         comment: String?,
-        override val holder: HttpHolder?
+        override val holder: HttpHolder?,
     ) : HttpRequest.Preset {
         @Public
         @JvmField
@@ -930,14 +955,17 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             this.options =
                 if (options != null) Collections.unmodifiableList(options) else null
         }
-
     }
 
     @Public
-    class SendReportPostsResult @Public constructor()
+    class SendReportPostsResult
+        @Public
+        constructor()
 
     @Public
-    class SendVotePostResult @Public constructor()
+    class SendVotePostResult
+        @Public
+        constructor()
 
     @Public
     class SendAddToArchiveData(
@@ -945,7 +973,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val threadNumber: String?,
         options: List<String>?,
-        override val holder: HttpHolder?
+        override val holder: HttpHolder?,
     ) : HttpRequest.Preset {
         @Public
         @JvmField
@@ -955,26 +983,28 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             this.options =
                 if (options != null) Collections.unmodifiableList(options) else null
         }
-
     }
 
     @Public
-    class SendAddToArchiveResult @Public constructor(
-        val boardName: String?,
-        val threadNumber: String?
-    ) {
-        init {
-            validateThreadNumber(threadNumber, true)
+    class SendAddToArchiveResult
+        @Public
+        constructor(
+            val boardName: String?,
+            val threadNumber: String?,
+        ) {
+            init {
+                validateThreadNumber(threadNumber, true)
+            }
         }
-    }
 
-    private val requireCallState: ThreadLocal<Boolean?> = object : ThreadLocal<Boolean?>() {
-        override fun initialValue(): Boolean {
-            return false
+    private val requireCallState: ThreadLocal<Boolean?> =
+        object : ThreadLocal<Boolean?>() {
+            override fun initialValue(): Boolean = false
         }
-    }
 
-    private class PerformerContext(val requireCallState: Boolean)
+    private class PerformerContext(
+        val requireCallState: Boolean,
+    )
 
     private fun enterContext(): PerformerContext {
         val requireCallState = this.requireCallState.get()!!
@@ -993,14 +1023,19 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     @Throws(HttpException::class)
     fun requireUserCaptcha(
-        requirement: String?, boardName: String?, threadNumber: String?,
-        retry: Boolean
+        requirement: String?,
+        boardName: String?,
+        threadNumber: String?,
+        retry: Boolean,
     ): CaptchaData? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserCaptcha(
                 get(),
-                requirement, boardName, threadNumber, retry
+                requirement,
+                boardName,
+                threadNumber,
+                retry,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1011,14 +1046,18 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     @Throws(HttpException::class)
     fun requireUserItemSingleChoice(
-        selected: Int, item: Array<CharSequence?>?, descriptionText: String?,
-        descriptionImage: Bitmap?
+        selected: Int,
+        item: Array<CharSequence?>?,
+        descriptionText: String?,
+        descriptionImage: Bitmap?,
     ): Int? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserItemSingleChoice(
-                selected, item,
-                descriptionText, descriptionImage
+                selected,
+                item,
+                descriptionText,
+                descriptionImage,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1029,14 +1068,18 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     @Throws(HttpException::class)
     fun requireUserItemMultipleChoice(
-        selected: BooleanArray?, item: Array<CharSequence?>?,
-        descriptionText: String?, descriptionImage: Bitmap?
+        selected: BooleanArray?,
+        item: Array<CharSequence?>?,
+        descriptionText: String?,
+        descriptionImage: Bitmap?,
     ): BooleanArray? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserItemMultipleChoice(
-                selected, item!!,
-                descriptionText, descriptionImage
+                selected,
+                item!!,
+                descriptionText,
+                descriptionImage,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1047,14 +1090,19 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     @Throws(HttpException::class)
     fun requireUserImageSingleChoice(
-        selected: Int, images: Array<Bitmap?>?, descriptionText: String?,
-        descriptionImage: Bitmap?
+        selected: Int,
+        images: Array<Bitmap?>?,
+        descriptionText: String?,
+        descriptionImage: Bitmap?,
     ): Int? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserImageSingleChoice(
-                3, selected, images,
-                descriptionText, descriptionImage
+                3,
+                selected,
+                images,
+                descriptionText,
+                descriptionImage,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1065,14 +1113,19 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
     @Public
     @Throws(HttpException::class)
     fun requireUserImageMultipleChoice(
-        selected: BooleanArray?, images: Array<Bitmap?>?,
-        descriptionText: String?, descriptionImage: Bitmap?
+        selected: BooleanArray?,
+        images: Array<Bitmap?>?,
+        descriptionText: String?,
+        descriptionImage: Bitmap?,
     ): BooleanArray? {
         checkPerformerRequireCall()
         try {
             return ForegroundManager.getInstance().requireUserImageMultipleChoice(
-                3, selected, images!!,
-                descriptionText, descriptionImage
+                3,
+                selected,
+                images!!,
+                descriptionText,
+                descriptionImage,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1080,12 +1133,14 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         }
     }
 
-    class Safe internal constructor(private val performer: ChanPerformer) {
+    class Safe internal constructor(
+        private val performer: ChanPerformer,
+    ) {
         @Throws(
             ExtensionException::class,
             HttpException::class,
             InvalidResponseException::class,
-            RedirectException::class
+            RedirectException::class,
         )
         fun onReadThreads(data: ReadThreadsData?): ReadThreadsResult? {
             val context = performer.enterContext()
@@ -1105,7 +1160,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             HttpException::class,
             InvalidResponseException::class,
             RedirectException::class,
-            ThreadRedirectException::class
+            ThreadRedirectException::class,
         )
         fun onReadPosts(data: ReadPostsData?): ReadPostsResult? {
             val context = performer.enterContext()
@@ -1250,7 +1305,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             ExtensionException::class,
             HttpException::class,
             ApiException::class,
-            InvalidResponseException::class
+            InvalidResponseException::class,
         )
         fun onSendPost(data: SendPostData?): SendPostResult? {
             val context = performer.enterContext()
@@ -1269,7 +1324,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             ExtensionException::class,
             HttpException::class,
             ApiException::class,
-            InvalidResponseException::class
+            InvalidResponseException::class,
         )
         fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? {
             val context = performer.enterContext()
@@ -1288,7 +1343,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             ExtensionException::class,
             HttpException::class,
             ApiException::class,
-            InvalidResponseException::class
+            InvalidResponseException::class,
         )
         fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? {
             val context = performer.enterContext()
@@ -1307,7 +1362,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             ExtensionException::class,
             HttpException::class,
             ApiException::class,
-            InvalidResponseException::class
+            InvalidResponseException::class,
         )
         fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? {
             val context = performer.enterContext()
@@ -1326,7 +1381,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
             ExtensionException::class,
             HttpException::class,
             ApiException::class,
-            InvalidResponseException::class
+            InvalidResponseException::class,
         )
         fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? {
             val context = performer.enterContext()
@@ -1353,17 +1408,13 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         }
     }
 
-    fun safe(): Safe {
-        return safe
-    }
+    fun safe(): Safe = safe
 
     companion object {
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
 
         @Public
         @JvmStatic
-        fun get(`object`: Any): ChanPerformer {
-            return (`object` as Chan.Linked).get().performer
-        }
+        fun get(`object`: Any): ChanPerformer = (`object` as Chan.Linked).get().performer
     }
 }

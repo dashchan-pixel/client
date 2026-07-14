@@ -6,45 +6,58 @@ import androidx.fragment.app.FragmentManager
 import com.mishiranu.dashchan.ui.StackItem
 
 class PageItem : Parcelable {
-	@JvmField var createdRealtime = 0L
-	@JvmField var threadTitle: String? = null
-	@JvmField var allowReturn = false
+    @JvmField var createdRealtime = 0L
 
-	fun toSaved(fragmentManager: FragmentManager, fragment: PageFragment): SavedPageItem {
-		return SavedPageItem(StackItem(fragmentManager, fragment, SAVE),
-				createdRealtime, threadTitle, allowReturn)
-	}
+    @JvmField var threadTitle: String? = null
 
-	override fun describeContents(): Int = 0
+    @JvmField var allowReturn = false
 
-	override fun writeToParcel(dest: Parcel, flags: Int) {
-		dest.writeLong(createdRealtime)
-		dest.writeString(threadTitle)
-		dest.writeByte(if (allowReturn) 1 else 0)
-	}
+    fun toSaved(
+        fragmentManager: FragmentManager,
+        fragment: PageFragment,
+    ): SavedPageItem =
+        SavedPageItem(
+            StackItem(fragmentManager, fragment, SAVE),
+            createdRealtime,
+            threadTitle,
+            allowReturn,
+        )
 
-	companion object {
-		private val SAVE = StackItem.SaveFragment { fragmentManager, fragment ->
-			val pageFragment = fragment as PageFragment
-			try {
-				pageFragment.setSaveToStack(true)
-				fragmentManager.saveFragmentInstanceState(fragment)
-			} finally {
-				pageFragment.setSaveToStack(false)
-			}
-		}
+    override fun describeContents(): Int = 0
 
-		@JvmField
-		val CREATOR: Parcelable.Creator<PageItem> = object : Parcelable.Creator<PageItem> {
-			override fun createFromParcel(source: Parcel): PageItem {
-				val pageItem = PageItem()
-				pageItem.createdRealtime = source.readLong()
-				pageItem.threadTitle = source.readString()
-				pageItem.allowReturn = source.readByte().toInt() != 0
-				return pageItem
-			}
+    override fun writeToParcel(
+        dest: Parcel,
+        flags: Int,
+    ) {
+        dest.writeLong(createdRealtime)
+        dest.writeString(threadTitle)
+        dest.writeByte(if (allowReturn) 1 else 0)
+    }
 
-			override fun newArray(size: Int): Array<PageItem?> = arrayOfNulls(size)
-		}
-	}
+    companion object {
+        private val SAVE =
+            StackItem.SaveFragment { fragmentManager, fragment ->
+                val pageFragment = fragment as PageFragment
+                try {
+                    pageFragment.setSaveToStack(true)
+                    fragmentManager.saveFragmentInstanceState(fragment)
+                } finally {
+                    pageFragment.setSaveToStack(false)
+                }
+            }
+
+        @JvmField
+        val CREATOR: Parcelable.Creator<PageItem> =
+            object : Parcelable.Creator<PageItem> {
+                override fun createFromParcel(source: Parcel): PageItem {
+                    val pageItem = PageItem()
+                    pageItem.createdRealtime = source.readLong()
+                    pageItem.threadTitle = source.readString()
+                    pageItem.allowReturn = source.readByte().toInt() != 0
+                    return pageItem
+                }
+
+                override fun newArray(size: Int): Array<PageItem?> = arrayOfNulls(size)
+            }
+    }
 }

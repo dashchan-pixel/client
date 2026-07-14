@@ -3,25 +3,20 @@ package com.mishiranu.dashchan.content.database
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteStatement
 import android.util.LongSparseArray
-import chan.util.CommonUtils
 import java.util.Objects
 import kotlin.concurrent.Volatile
 
 object Expression {
-    fun filter(): Filter.Builder {
-        return Filter.Builder(false)
-    }
+    fun filter(): Filter.Builder = Filter.Builder(false)
 
-    fun filterOr(): Filter.Builder {
-        return Filter.Builder(true)
-    }
+    fun filterOr(): Filter.Builder = Filter.Builder(true)
 
     fun batchInsert(
         totalItems: Int,
         batchSize: Int,
         args: Int,
         createBatchInsertStatement: CreateBatchInsertStatement,
-        bindBatchInsertArgs: BindBatchInsertArgs
+        bindBatchInsertArgs: BindBatchInsertArgs,
     ) {
         val lastBatchSize = totalItems % batchSize
         var index = 0
@@ -44,7 +39,10 @@ object Expression {
         }
     }
 
-    private fun buildInsertValues(count: Int, args: Int): String {
+    private fun buildInsertValues(
+        count: Int,
+        args: Int,
+    ): String {
         val builder = StringBuilder()
         for (i in 0..<count) {
             if (i > 0) {
@@ -63,8 +61,12 @@ object Expression {
     }
 
     fun updateById(
-        database: SQLiteDatabase, iterator: LongIterator,
-        table: String?, idColumn: String?, set: String?, filter: Filter?
+        database: SQLiteDatabase,
+        iterator: LongIterator,
+        table: String?,
+        idColumn: String?,
+        set: String?,
+        filter: Filter?,
     ) {
         val builder = StringBuilder()
         val maxCount = 100
@@ -79,15 +81,20 @@ object Expression {
             }
             database.execSQL(
                 "UPDATE " + table + " SET " + set + " " +
-                        "WHERE " + idColumn + " IN (" + builder + ") AND " +
-                        (if (filter != null && filter.value != null) filter.value else "1"),
-                filter?.args ?: arrayOfNulls<String>(0)
+                    "WHERE " + idColumn + " IN (" + builder + ") AND " +
+                    (if (filter != null && filter.value != null) filter.value else "1"),
+                filter?.args ?: arrayOfNulls<String>(0),
             )
         }
     }
 
-    class Filter private constructor(val value: String?, val args: Array<String?>?) {
-        class Builder internal constructor(private val or: Boolean) {
+    class Filter private constructor(
+        val value: String?,
+        val args: Array<String?>?,
+    ) {
+        class Builder internal constructor(
+            private val or: Boolean,
+        ) {
             private val builder = StringBuilder()
             private val args = ArrayList<String?>()
 
@@ -97,7 +104,10 @@ object Expression {
                 }
             }
 
-            fun equals(name: String, value: String?): Builder {
+            fun equals(
+                name: String,
+                value: String?,
+            ): Builder {
                 Objects.requireNonNull<String?>(name)
                 append()
                 if (value != null) {
@@ -109,7 +119,10 @@ object Expression {
                 return this
             }
 
-            fun like(name: String, value: String): Builder {
+            fun like(
+                name: String,
+                value: String,
+            ): Builder {
                 Objects.requireNonNull<String?>(name)
                 Objects.requireNonNull<String?>(value)
                 append()
@@ -118,7 +131,10 @@ object Expression {
                 return this
             }
 
-            fun `in`(name: String, values: Collection<*>): Builder {
+            fun `in`(
+                name: String,
+                values: Collection<*>,
+            ): Builder {
                 Objects.requireNonNull<String?>(name)
                 Objects.requireNonNull(values)
                 append()
@@ -146,7 +162,10 @@ object Expression {
 
             fun append(builder: Builder): Builder {
                 append()
-                this.builder.append('(').append(builder.builder).append(')')
+                this.builder
+                    .append('(')
+                    .append(builder.builder)
+                    .append(')')
                 args.addAll(builder.args)
                 return this
             }
@@ -157,7 +176,7 @@ object Expression {
                 } else {
                     return Filter(
                         builder.toString(),
-                        args.toTypedArray()
+                        args.toTypedArray(),
                     )
                 }
             }
@@ -169,45 +188,40 @@ object Expression {
     }
 
     fun interface BindBatchInsertArgs {
-        fun bind(statement: SQLiteStatement?, start: Int)
+        fun bind(
+            statement: SQLiteStatement?,
+            start: Int,
+        )
     }
 
     interface LongIterator {
         fun hasNext(): Boolean
+
         fun next(): Long
 
         companion object {
-            fun create(array: LongSparseArray<*>): LongIterator {
-                return SparseArrayLongIterator(array)
-            }
+            fun create(array: LongSparseArray<*>): LongIterator = SparseArrayLongIterator(array)
 
-            fun create(iterator: MutableIterator<Long?>): LongIterator {
-                return IteratorLongIterator(iterator)
-            }
+            fun create(iterator: MutableIterator<Long?>): LongIterator = IteratorLongIterator(iterator)
         }
     }
 
-    private class SparseArrayLongIterator(private val array: LongSparseArray<*>) : LongIterator {
+    private class SparseArrayLongIterator(
+        private val array: LongSparseArray<*>,
+    ) : LongIterator {
         private var index = 0
 
-        override fun hasNext(): Boolean {
-            return index < array.size()
-        }
+        override fun hasNext(): Boolean = index < array.size()
 
-        override fun next(): Long {
-            return array.keyAt(index++)
-        }
+        override fun next(): Long = array.keyAt(index++)
     }
 
-    private class IteratorLongIterator(private val iterator: MutableIterator<Long?>) :
-        LongIterator {
-        override fun hasNext(): Boolean {
-            return iterator.hasNext()
-        }
+    private class IteratorLongIterator(
+        private val iterator: MutableIterator<Long?>,
+    ) : LongIterator {
+        override fun hasNext(): Boolean = iterator.hasNext()
 
-        override fun next(): Long {
-            return iterator.next()!!
-        }
+        override fun next(): Long = iterator.next()!!
     }
 
     class KeyLock<T> {
@@ -222,13 +236,16 @@ object Expression {
 
         private val locks: HashMap<T?, ReferenceCount?> = HashMap<T?, ReferenceCount?>()
 
-        fun <R, E : Throwable?> lock(key: T?, callback: Callback<R?, E?>): R? {
+        fun <R, E : Throwable?> lock(
+            key: T?,
+            callback: Callback<R?, E?>,
+        ): R? {
             var lock: ReferenceCount?
             synchronized(locks) {
-                lock = locks.get(key)
+                lock = locks[key]
                 if (lock == null) {
                     lock = ReferenceCount()
-                    locks.put(key, lock)
+                    locks[key] = lock
                 }
                 lock.count++
             }

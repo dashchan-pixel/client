@@ -1,7 +1,5 @@
 package com.mishiranu.dashchan.ui.gallery
 
-import chan.util.StringUtils
-
 import android.app.AlertDialog
 import android.content.Context
 import android.content.res.Configuration
@@ -25,6 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ItemDecoration
 import chan.content.Chan.Companion.get
+import chan.util.StringUtils
 import chan.util.StringUtils.copyToClipboard
 import chan.util.StringUtils.formatFileSize
 import chan.util.StringUtils.getFileExtension
@@ -58,29 +57,29 @@ import com.mishiranu.dashchan.widget.PaddedRecyclerView
 import java.util.Locale
 import kotlin.math.max
 
-class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
+class ListUnit(
+    private val instance: GalleryInstance,
+) : ActionMode.Callback {
     private val recyclerView: PaddedRecyclerView
     private val selected = SparseIntArray()
 
     private var selectionMode: ActionMode? = null
 
-    private val callback: GridAdapter.Callback = object : GridAdapter.Callback {
-        override fun isItemChecked(position: Int): Boolean {
-            return selected.indexOfKey(position) >= 0
+    private val callback: GridAdapter.Callback =
+        object : GridAdapter.Callback {
+            override fun isItemChecked(position: Int): Boolean = selected.indexOfKey(position) >= 0
+
+            override fun onItemClick(
+                view: View,
+                position: Int,
+            ) {
+                this@ListUnit.onItemClick(view, position)
+            }
+
+            override fun onItemLongClick(position: Int): Boolean = this@ListUnit.onItemLongClick(position)
         }
 
-        override fun onItemClick(view: View, position: Int) {
-            this@ListUnit.onItemClick(view, position)
-        }
-
-        override fun onItemLongClick(position: Int): Boolean {
-            return this@ListUnit.onItemLongClick(position)
-        }
-    }
-
-    fun getRecyclerView(): RecyclerView {
-        return recyclerView
-    }
+    fun getRecyclerView(): RecyclerView = recyclerView
 
     private val adapter: GridAdapter?
         get() = recyclerView.getAdapter() as GridAdapter?
@@ -104,7 +103,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             return null
         }
 
-    fun scrollListToPosition(position: Int, checkVisibility: Boolean) {
+    fun scrollListToPosition(
+        position: Int,
+        checkVisibility: Boolean,
+    ) {
         val layoutManager = recyclerView.getLayoutManager() as GridLayoutManager?
         if (checkVisibility) {
             if (position >= layoutManager!!.findFirstCompletelyVisibleItemPosition() &&
@@ -116,9 +118,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         layoutManager!!.scrollToPositionWithOffset(position, 0)
     }
 
-    fun areItemsSelectable(): Boolean {
-        return this.adapter!!.getItemCount() > 0
-    }
+    fun areItemsSelectable(): Boolean = this.adapter!!.getItemCount() > 0
 
     fun startSelectionMode(selected: IntArray?) {
         this.selected.clear()
@@ -136,8 +136,9 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             selectionMode!!.setTitle(
                 getColonString(
                     instance.context.getResources(),
-                    R.string.selected, selectedCount
-                )
+                    R.string.selected,
+                    selectedCount,
+                ),
             )
         }
     }
@@ -163,7 +164,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         updateGridMetrics(instance.context.getResources().getConfiguration())
     }
 
-    fun switchMode(galleryMode: Boolean, duration: Int) {
+    fun switchMode(
+        galleryMode: Boolean,
+        duration: Int,
+    ) {
         if (galleryMode) {
             recyclerView.setVisibility(View.VISIBLE)
             this.adapter!!.activate()
@@ -171,24 +175,38 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 recyclerView.setAlpha(0f)
                 recyclerView.setScaleX(GRID_SCALE)
                 recyclerView.setScaleY(GRID_SCALE)
-                recyclerView.animate().alpha(1f).scaleX(1f).scaleY(1f)
-                    .setDuration(duration.toLong()).setListener(null).start()
+                recyclerView
+                    .animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(duration.toLong())
+                    .setListener(null)
+                    .start()
             }
         } else {
             if (duration > 0) {
                 recyclerView.setAlpha(1f)
                 recyclerView.setScaleX(1f)
                 recyclerView.setScaleY(1f)
-                recyclerView.animate().alpha(0f).scaleX(GRID_SCALE).scaleY(GRID_SCALE)
+                recyclerView
+                    .animate()
+                    .alpha(0f)
+                    .scaleX(GRID_SCALE)
+                    .scaleY(GRID_SCALE)
                     .setDuration(duration.toLong())
-                    .setListener(AnimationUtils.VisibilityListener(recyclerView, View.GONE)).start()
+                    .setListener(AnimationUtils.VisibilityListener(recyclerView, View.GONE))
+                    .start()
             } else {
                 recyclerView.setVisibility(View.GONE)
             }
         }
     }
 
-    private fun onItemClick(view: View, position: Int) {
+    private fun onItemClick(
+        view: View,
+        position: Int,
+    ) {
         if (selectionMode != null) {
             val index = selected.indexOfKey(position)
             if (index >= 0) {
@@ -200,8 +218,9 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             selectionMode!!.setTitle(
                 getColonString(
                     instance.context.getResources(),
-                    R.string.selected, selected.size()
-                )
+                    R.string.selected,
+                    selected.size(),
+                ),
             )
         } else {
             instance.callback.navigatePageFromList(position)
@@ -213,8 +232,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             return false
         }
         showItemMenu(
-            instance.callback.getChildFragmentManager(), instance.chanName,
-            this.adapter!!.getItem(position), instance.callback.isAllowNavigatePostManually(false)
+            instance.callback.getChildFragmentManager(),
+            instance.chanName,
+            this.adapter!!.getItem(position),
+            instance.callback.isAllowNavigatePostManually(false),
         )
         return true
     }
@@ -225,7 +246,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         }
     }
 
-    private fun updateGalleryItemChecked(view: View, position: Int) {
+    private fun updateGalleryItemChecked(
+        view: View,
+        position: Int,
+    ) {
         val checked = callback.isItemChecked(position)
         val holder = recyclerView.getChildViewHolder(view) as GridAdapter.ViewHolder
         holder.selectorCheckDrawable.setSelected(checked, true)
@@ -240,23 +264,32 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         }
     }
 
-    override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+    override fun onCreateActionMode(
+        mode: ActionMode,
+        menu: Menu,
+    ): Boolean {
         selected.clear()
         mode.setTitle(getColonString(instance.context.getResources(), R.string.selected, 0))
-        menu.add(0, R.id.menu_select_all, 0, R.string.select_all)
+        menu
+            .add(0, R.id.menu_select_all, 0, R.string.select_all)
             .setIcon(getActionBarIcon(instance.context, R.attr.iconActionSelectAll))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        menu.add(0, R.id.menu_download, 0, R.string.download_files)
+        menu
+            .add(0, R.id.menu_download, 0, R.string.download_files)
             .setIcon(getActionBarIcon(instance.context, R.attr.iconActionDownload))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        return false
-    }
+    override fun onPrepareActionMode(
+        mode: ActionMode?,
+        menu: Menu?,
+    ): Boolean = false
 
-    override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+    override fun onActionItemClicked(
+        mode: ActionMode,
+        item: MenuItem,
+    ): Boolean {
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_select_all) {
             val count = this.adapter!!.getItemCount()
@@ -266,8 +299,9 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             selectionMode!!.setTitle(
                 getColonString(
                     instance.context.getResources(),
-                    R.string.selected, count
-                )
+                    R.string.selected,
+                    count,
+                ),
             )
             updateAllGalleryItemsChecked()
             return true
@@ -313,8 +347,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         (recyclerView.getLayoutManager() as GridLayoutManager).setSpanCount(spanCount)
     }
 
-    private class GalleryRecyclerView(context: Context, private val spacing: Int) :
-        PaddedRecyclerView(context) {
+    private class GalleryRecyclerView(
+        context: Context,
+        private val spacing: Int,
+    ) : PaddedRecyclerView(context) {
         private val rect = Rect()
         private val paint = Paint()
 
@@ -328,10 +364,10 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             l: Int,
             t: Int,
             r: Int,
-            b: Int
+            b: Int,
         ) {
-            var t = t
-            var b = b
+            var top = t
+            var bottom = b
             val spacing = this.spacing
             val thickness = (spacing * 2f / 3f + 0.5f).toInt()
             val rect = this.rect
@@ -344,28 +380,35 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             } else {
                 return
             }
-            if (b - t == getHeight()) {
-                t += getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
-                b -= getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
+            if (bottom - top == getHeight()) {
+                top += getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
+                bottom -= getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
             }
-            t += spacing
-            b -= spacing
+            top += spacing
+            bottom -= spacing
             val range = computeVerticalScrollRange()
             if (range > 0) {
-                val height = b - t
+                val height = bottom - top
                 val extent = computeVerticalScrollExtent()
                 var length = (height * (extent.toFloat() / range) + 0.5f).toInt()
                 length = max(length, 2 * spacing)
-                val offset = ((height - length) * (computeVerticalScrollOffset().toFloat() /
-                        (range - extent)) + 0.5f).toInt()
+                val offset =
+                    (
+                        (height - length) * (
+                            computeVerticalScrollOffset().toFloat() /
+                                (range - extent)
+                        ) + 0.5f
+                    ).toInt()
                 if (length > 0) {
-                    rect.top = t + offset
-                    rect.bottom = t + offset + length
+                    rect.top = top + offset
+                    rect.bottom = top + offset + length
                     paint.setColor(
                         Color.argb(
                             0x7f * (scrollBar.getAlpha()) / 0xff,
-                            0xff, 0xff, 0xff
-                        )
+                            0xff,
+                            0xff,
+                            0xff,
+                        ),
                     )
                     canvas.drawRect(rect, paint)
                 }
@@ -376,18 +419,23 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
     private class GridAdapter(
         private val callback: Callback,
         private val chanName: String?,
-        private val galleryItems: List<GalleryItem>
+        private val galleryItems: List<GalleryItem>,
     ) : RecyclerView.Adapter<GridAdapter.ViewHolder>() {
-        interface Callback : ClickCallback<Void?, ViewHolder> {
+        interface Callback : ClickCallback<Unit?, ViewHolder> {
             fun isItemChecked(position: Int): Boolean
-            fun onItemClick(view: View, position: Int)
+
+            fun onItemClick(
+                view: View,
+                position: Int,
+            )
+
             fun onItemLongClick(position: Int): Boolean
 
             override fun onItemClick(
                 holder: ViewHolder,
                 position: Int,
-                item: Void?,
-                longClick: Boolean
+                item: Unit?,
+                longClick: Boolean,
             ): Boolean {
                 if (longClick) {
                     return onItemLongClick(position)
@@ -398,12 +446,19 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             }
         }
 
-        internal class ViewHolder(parent: ViewGroup, callback: Callback) :
-            RecyclerView.ViewHolder(object : FrameLayout(parent.getContext()) {
-                override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-                    super.onMeasure(widthMeasureSpec, widthMeasureSpec)
-                }
-            }) {
+        internal class ViewHolder(
+            parent: ViewGroup,
+            callback: Callback,
+        ) : RecyclerView.ViewHolder(
+                object : FrameLayout(parent.getContext()) {
+                    override fun onMeasure(
+                        widthMeasureSpec: Int,
+                        heightMeasureSpec: Int,
+                    ) {
+                        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+                    }
+                },
+            ) {
             val thumbnail: AttachmentView
             val attachmentInfo: TextView
             val selectorBorderDrawable: SelectorBorderDrawable?
@@ -414,10 +469,11 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 layout.setLayoutParams(
                     RecyclerView.LayoutParams(
                         RecyclerView.LayoutParams.MATCH_PARENT,
-                        RecyclerView.LayoutParams.WRAP_CONTENT
-                    )
+                        RecyclerView.LayoutParams.WRAP_CONTENT,
+                    ),
                 )
-                LayoutInflater.from(layout.getContext())
+                LayoutInflater
+                    .from(layout.getContext())
                     .inflate(R.layout.list_item_attachment, layout)
                 val child = layout.getChildAt(0) as FrameLayout
                 child.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT
@@ -431,12 +487,12 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 attachmentInfo.setSingleLine(true)
                 attachmentInfo.setTypeface(ResourceUtils.TYPEFACE_MEDIUM)
 
-                ListViewUtils.bind<Void?, ViewHolder>(
+                ListViewUtils.bind<Unit?, ViewHolder>(
                     this,
                     itemView.findViewById<View>(R.id.attachment_click),
                     true,
                     null,
-                    callback
+                    callback,
                 )
                 selectorBorderDrawable = null
                 selectorCheckDrawable = SelectorCheckDrawable()
@@ -450,35 +506,43 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             enabled = true
         }
 
-        override fun getItemCount(): Int {
-            return if (enabled) galleryItems.size else 0
-        }
+        override fun getItemCount(): Int = if (enabled) galleryItems.size else 0
 
-        fun getItem(position: Int): GalleryItem {
-            return galleryItems.get(position)
-        }
+        fun getItem(position: Int): GalleryItem = galleryItems[position]
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            return ViewHolder(parent, callback)
-        }
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): ViewHolder = ViewHolder(parent, callback)
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        override fun onBindViewHolder(
+            holder: ViewHolder,
+            position: Int,
+        ) {
             val galleryItem = getItem(position)
             val chan = get(chanName)
             holder.attachmentInfo.setText(
                 getFileExtension(galleryItem.getFileName(chan))!!
                     .uppercase(Locale.getDefault()) +
-                        (if (galleryItem.size > 0) " " + StringUtils.formatFileSize(
-                            galleryItem.size.toLong(),
-                            true
-                        ) else "")
+                    (
+                        if (galleryItem.size > 0) {
+                            " " +
+                                StringUtils.formatFileSize(
+                                    galleryItem.size.toLong(),
+                                    true,
+                                )
+                        } else {
+                            ""
+                        }
+                    ),
             )
             val thumbnailUri = galleryItem.getThumbnailUri(chan)
             if (thumbnailUri != null) {
                 val cacheManager: CacheManager = CacheManager.getInstance()
                 val key = cacheManager.getCachedFileKey(thumbnailUri)
                 holder.thumbnail.resetImage(key, AttachmentView.Overlay.NONE)
-                ImageLoader.getInstance()
+                ImageLoader
+                    .getInstance()
                     .loadImage(chan, thumbnailUri, key, false, holder.thumbnail)
             } else {
                 holder.thumbnail.resetImage(null, AttachmentView.Overlay.WARNING)
@@ -489,10 +553,14 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
         }
     }
 
-    private class SpacingItemDecoration(private val spacing: Int) : ItemDecoration() {
+    private class SpacingItemDecoration(
+        private val spacing: Int,
+    ) : ItemDecoration() {
         override fun getItemOffsets(
-            outRect: Rect, view: View, parent: RecyclerView,
-            state: RecyclerView.State
+            outRect: Rect,
+            view: View,
+            parent: RecyclerView,
+            state: RecyclerView.State,
         ) {
             val position = parent.getChildAdapterPosition(view)
             val column = (view.getLayoutParams() as GridLayoutManager.LayoutParams).getSpanIndex()
@@ -502,11 +570,12 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             if (columns >= 2) {
                 val total = (columns + 1) * spacing
                 val average = total.toFloat() / columns
-                left = lerp(
-                    spacing.toFloat(),
-                    average - spacing,
-                    column.toFloat() / (columns - 1)
-                ).toInt()
+                left =
+                    lerp(
+                        spacing.toFloat(),
+                        average - spacing,
+                        column.toFloat() / (columns - 1),
+                    ).toInt()
                 right = average.toInt() - left
             } else {
                 left = spacing
@@ -524,7 +593,9 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
 
         private fun showItemMenu(
             fragmentManager: FragmentManager,
-            chanName: String?, galleryItem: GalleryItem, allowNavigatePostManually: Boolean
+            chanName: String?,
+            galleryItem: GalleryItem,
+            allowNavigatePostManually: Boolean,
         ) {
             InstanceDialog(
                 fragmentManager,
@@ -532,53 +603,71 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
                     Companion.createItemMenu(
                         provider!!,
-                        chanName, galleryItem, allowNavigatePostManually
+                        chanName,
+                        galleryItem,
+                        allowNavigatePostManually,
                     )
-                })
+                },
+            )
         }
 
         private fun createItemMenu(
             provider: InstanceDialog.Provider,
-            chanName: String?, galleryItem: GalleryItem, allowNavigatePostManually: Boolean
+            chanName: String?,
+            galleryItem: GalleryItem,
+            allowNavigatePostManually: Boolean,
         ): AlertDialog {
             val callback = getCallback(provider)
             val context = callback.getWindow()!!.getContext()
             val chan = get(chanName)
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
-                if (!StringUtils.isEmpty(galleryItem.originalName))
+                if (!StringUtils.isEmpty(galleryItem.originalName)) {
                     galleryItem.originalName
-                else
+                } else {
                     galleryItem.getFileName(chan)
+                },
             )
             dialogMenu.add(
                 R.string.download_file,
-                Runnable { callback.downloadGalleryItem(galleryItem) })
+                Runnable { callback.downloadGalleryItem(galleryItem) },
+            )
             if (galleryItem.getDisplayImageUri(chan) != null) {
-                dialogMenu.add(R.string.search_image, Runnable {
-                    SearchImageDialog(
-                        chanName,
-                        galleryItem.getDisplayImageUri(chan)
-                    ).show(provider.fragmentManager, null)
-                })
-            }
-            dialogMenu.add(R.string.copy_link, Runnable {
-                StringUtils.copyToClipboard(
-                    context,
-                    galleryItem.getFileUri(chan).toString()
+                dialogMenu.add(
+                    R.string.search_image,
+                    Runnable {
+                        SearchImageDialog(
+                            chanName,
+                            galleryItem.getDisplayImageUri(chan),
+                        ).show(provider.fragmentManager, null)
+                    },
                 )
-            })
+            }
+            dialogMenu.add(
+                R.string.copy_link,
+                Runnable {
+                    StringUtils.copyToClipboard(
+                        context,
+                        galleryItem.getFileUri(chan).toString(),
+                    )
+                },
+            )
             if (allowNavigatePostManually && galleryItem.postNumber != null) {
                 dialogMenu.add(
                     R.string.go_to_post,
-                    Runnable { callback.navigatePost(galleryItem, true, true) })
-            }
-            dialogMenu.add(R.string.share_link, Runnable {
-                NavigationUtils.shareLink(
-                    context, null,
-                    galleryItem.getFileUri(chan)!!
+                    Runnable { callback.navigatePost(galleryItem, true, true) },
                 )
-            })
+            }
+            dialogMenu.add(
+                R.string.share_link,
+                Runnable {
+                    NavigationUtils.shareLink(
+                        context,
+                        null,
+                        galleryItem.getFileUri(chan)!!,
+                    )
+                },
+            )
             return dialogMenu.create()
         }
     }

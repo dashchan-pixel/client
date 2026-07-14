@@ -27,7 +27,9 @@ import java.io.IOException
 import java.io.OutputStream
 
 @Extendable
-open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) : Chan.Linked {
+open class ChanConfiguration internal constructor(
+    chanProvider: Chan.Provider?,
+) : Chan.Linked {
     private val chanProvider: Chan.Provider?
     private val resources: Resources?
     private val editData: HashMap<ChanDatabase.DataKey?, Any?>?
@@ -41,9 +43,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         isInitialized = true
     }
 
-    override fun get(): Chan {
-        return chanProvider!!.get()
-    }
+    override fun get(): Chan = chanProvider!!.get()
 
     @Public
     enum class BumpLimitMode {
@@ -54,249 +54,269 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         AFTER_REPLY,
 
         @Public
-        BEFORE_POST
+        BEFORE_POST,
     }
 
     @Public
-    class Board @Public constructor() {
+    class Board
         @Public
-        @JvmField
-        var allowSearch: Boolean = false
-
-        @Public
-        @JvmField
-        var allowCatalog: Boolean = false
-
-        @Public
-        @JvmField
-        var allowArchive: Boolean = false
-
-        @JvmField
-        @Public
-        var allowPosting: Boolean = false
-
-        @JvmField
-        @Public
-        var allowDeleting: Boolean = false
-
-        @JvmField
-        @Public
-        var allowReporting: Boolean = false
-
-        @Public
-        @JvmField
-        var allowVotes: Boolean = false
-    }
-
-    @Public
-    class Captcha @Public constructor() {
-        @Public
-        enum class Input {
+        constructor() {
             @Public
-            ALL,
+            @JvmField
+            var allowSearch: Boolean = false
 
             @Public
-            LATIN,
+            @JvmField
+            var allowCatalog: Boolean = false
 
             @Public
-            NUMERIC
+            @JvmField
+            var allowArchive: Boolean = false
+
+            @JvmField
+            @Public
+            var allowPosting: Boolean = false
+
+            @JvmField
+            @Public
+            var allowDeleting: Boolean = false
+
+            @JvmField
+            @Public
+            var allowReporting: Boolean = false
+
+            @Public
+            @JvmField
+            var allowVotes: Boolean = false
         }
 
+    @Public
+    class Captcha
         @Public
-        enum class Validity {
+        constructor() {
             @Public
-            SHORT_LIFETIME,
+            enum class Input {
+                @Public
+                ALL,
+
+                @Public
+                LATIN,
+
+                @Public
+                NUMERIC,
+            }
 
             @Public
-            IN_THREAD,
+            enum class Validity {
+                @Public
+                SHORT_LIFETIME,
+
+                @Public
+                IN_THREAD,
+
+                @Public
+                IN_BOARD_SEPARATELY,
+
+                @Public
+                IN_BOARD,
+
+                @Public
+                LONG_LIFETIME,
+            }
 
             @Public
-            IN_BOARD_SEPARATELY,
+            @JvmField
+            var title: String? = null
 
+            @JvmField
             @Public
-            IN_BOARD,
+            var input: Input = Input.ALL
 
+            @JvmField
             @Public
-            LONG_LIFETIME
+            var validity: Validity = Validity.LONG_LIFETIME
+
+            @JvmField
+            @Public
+            var ttl: Int = -1
         }
 
+    @Public
+    class Posting
         @Public
-        @JvmField
-        var title: String? = null
+        constructor() {
+            @JvmField
+            @Public
+            var allowName: Boolean = false
 
-        @JvmField
-        @Public
-        var input: Input = Input.ALL
+            @JvmField
+            @Public
+            var allowTripcode: Boolean = false
 
-        @JvmField
-        @Public
-        var validity: Validity = Validity.LONG_LIFETIME
+            @JvmField
+            @Public
+            var allowEmail: Boolean = false
 
-        @JvmField
-        @Public
-        var ttl: Int = -1
-    }
+            @JvmField
+            @Public
+            var allowSubject: Boolean = false
+
+            @JvmField
+            @Public
+            var optionSage: Boolean = false
+
+            @JvmField
+            @Public
+            var optionSpoiler: Boolean = false
+
+            @JvmField
+            @Public
+            var optionOriginalPoster: Boolean = false
+
+            @JvmField
+            @Public
+            var maxCommentLength: Int = 0
+
+            @JvmField
+            @Public
+            var maxCommentLengthEncoding: String? = null
+
+            @JvmField
+            @Public
+            var attachmentCount: Int = 0
+
+            @JvmField
+            @Public
+            val attachmentMimeTypes: MutableSet<String> = HashSet()
+
+            @JvmField
+            @Public
+            val attachmentRatings: MutableList<Pair<String, String>> =
+                ArrayList()
+
+            @JvmField
+            @Public
+            var attachmentSpoiler: Boolean = false
+
+            @JvmField
+            @Public
+            val userIcons: MutableList<Pair<String, String>> = ArrayList()
+
+            @Public
+            @JvmField
+            var hasCountryFlags: Boolean = false
+        }
 
     @Public
-    class Posting @Public constructor() {
-        @JvmField
+    class Deleting
         @Public
-        var allowName: Boolean = false
+        constructor() {
+            @JvmField
+            @Public
+            var password: Boolean = false
 
-        @JvmField
-        @Public
-        var allowTripcode: Boolean = false
+            @JvmField
+            @Public
+            var multiplePosts: Boolean = false
 
-        @JvmField
-        @Public
-        var allowEmail: Boolean = false
-
-        @JvmField
-        @Public
-        var allowSubject: Boolean = false
-
-        @JvmField
-        @Public
-        var optionSage: Boolean = false
-
-        @JvmField
-        @Public
-        var optionSpoiler: Boolean = false
-
-        @JvmField
-        @Public
-        var optionOriginalPoster: Boolean = false
-
-        @JvmField
-        @Public
-        var maxCommentLength: Int = 0
-
-        @JvmField
-        @Public
-        var maxCommentLengthEncoding: String? = null
-
-        @JvmField
-        @Public
-        var attachmentCount: Int = 0
-
-        @JvmField
-        @Public
-        val attachmentMimeTypes: MutableSet<String> = HashSet()
-
-        @JvmField
-        @Public
-        val attachmentRatings: MutableList<Pair<String, String>> =
-            ArrayList()
-
-        @JvmField
-        @Public
-        var attachmentSpoiler: Boolean = false
-
-        @JvmField
-        @Public
-        val userIcons: MutableList<Pair<String, String>> = ArrayList()
-
-        @Public
-        @JvmField
-        var hasCountryFlags: Boolean = false
-    }
+            @Public
+            @JvmField
+            var optionFilesOnly: Boolean = false
+        }
 
     @Public
-    class Deleting @Public constructor() {
-        @JvmField
+    class Reporting
         @Public
-        var password: Boolean = false
+        constructor() {
+            @Public
+            @JvmField
+            var comment: Boolean = false
 
-        @JvmField
-        @Public
-        var multiplePosts: Boolean = false
+            @JvmField
+            @Public
+            var multiplePosts: Boolean = false
 
-        @Public
-        @JvmField
-        var optionFilesOnly: Boolean = false
-    }
+            @Public
+            @JvmField
+            val types: MutableList<Pair<String, String>> = ArrayList()
 
-    @Public
-    class Reporting @Public constructor() {
-        @Public
-        @JvmField
-        var comment: Boolean = false
-
-        @JvmField
-        @Public
-        var multiplePosts: Boolean = false
-
-        @Public
-        @JvmField
-        val types: MutableList<Pair<String, String>> = ArrayList()
-
-        @Public
-        @JvmField
-        val options: MutableList<Pair<String, String>> = ArrayList()
-    }
+            @Public
+            @JvmField
+            val options: MutableList<Pair<String, String>> = ArrayList()
+        }
 
     @Public
-    class Voting @Public constructor() {
+    class Voting
         @Public
-        @JvmField
-        var allowLike: Boolean = true
+        constructor() {
+            @Public
+            @JvmField
+            var allowLike: Boolean = true
 
-        @Public
-        @JvmField
-        var allowDislike: Boolean = true
-    }
-
-    @Public
-    class Authorization @Public constructor() {
-        @Public
-        @JvmField
-        var fieldsCount: Int = 0
-
-        @Public
-        @JvmField
-        var hints: Array<String?>? = null
-    }
+            @Public
+            @JvmField
+            var allowDislike: Boolean = true
+        }
 
     @Public
-    class Archivation @Public constructor() {
+    class Authorization
         @Public
-        @JvmField
-        val hosts: MutableList<String?> = ArrayList<String?>()
+        constructor() {
+            @Public
+            @JvmField
+            var fieldsCount: Int = 0
 
-        @Public
-        @JvmField
-        val options: MutableList<Pair<String, String>> = ArrayList()
-
-        @Public
-        @JvmField
-        var queryOnly: Boolean = false
-    }
+            @Public
+            @JvmField
+            var hints: Array<String?>? = null
+        }
 
     @Public
-    class Statistics @Public constructor() {
+    class Archivation
         @Public
-        @JvmField
-        var threadsViewed: Boolean = true
+        constructor() {
+            @Public
+            @JvmField
+            val hosts: MutableList<String?> = ArrayList<String?>()
 
-        @Public
-        @JvmField
-        var postsSent: Boolean = true
+            @Public
+            @JvmField
+            val options: MutableList<Pair<String, String>> = ArrayList()
 
-        @Public
-        @JvmField
-        var threadsCreated: Boolean = true
-    }
+            @Public
+            @JvmField
+            var queryOnly: Boolean = false
+        }
 
     @Public
-    class CustomPreference @Public constructor() {
+    class Statistics
         @Public
-        @JvmField
-        var title: String? = null
+        constructor() {
+            @Public
+            @JvmField
+            var threadsViewed: Boolean = true
 
+            @Public
+            @JvmField
+            var postsSent: Boolean = true
+
+            @Public
+            @JvmField
+            var threadsCreated: Boolean = true
+        }
+
+    @Public
+    class CustomPreference
         @Public
-        @JvmField
-        var summary: String? = null
-    }
+        constructor() {
+            @Public
+            @JvmField
+            var title: String? = null
+
+            @Public
+            @JvmField
+            var summary: String? = null
+        }
 
     fun commit() {
         if (editData != null) {
@@ -308,13 +328,17 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun get(boardName: String?, key: String?, defaultValue: Boolean): Boolean {
+    fun get(
+        boardName: String?,
+        key: String?,
+        defaultValue: Boolean,
+    ): Boolean {
         if (editData == null) {
             return defaultValue
         }
         val dataKey = ChanDatabase.DataKey(boardName, key)
         synchronized(editData) {
-            val result = editData.get(dataKey)
+            val result = editData[dataKey]
             if (result != null) {
                 return if (result is Boolean) result else defaultValue
             }
@@ -325,13 +349,17 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun get(boardName: String?, key: String?, defaultValue: Int): Int {
+    fun get(
+        boardName: String?,
+        key: String?,
+        defaultValue: Int,
+    ): Int {
         if (editData == null) {
             return defaultValue
         }
         val dataKey = ChanDatabase.DataKey(boardName, key)
         synchronized(editData) {
-            val result = editData.get(dataKey)
+            val result = editData[dataKey]
             if (result != null) {
                 return if (result is Int) result else defaultValue
             }
@@ -346,13 +374,17 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun get(boardName: String?, key: String?, defaultValue: String?): String? {
+    fun get(
+        boardName: String?,
+        key: String?,
+        defaultValue: String?,
+    ): String? {
         if (editData == null) {
             return defaultValue
         }
         val dataKey = ChanDatabase.DataKey(boardName, key)
         synchronized(editData) {
-            val result = editData.get(dataKey)
+            val result = editData[dataKey]
             if (result != null) {
                 return if (result is String) result else defaultValue
             }
@@ -362,27 +394,43 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         return if (value != null) value else defaultValue
     }
 
-    private fun set(boardName: String?, key: String?, value: Any?) {
+    private fun set(
+        boardName: String?,
+        key: String?,
+        value: Any?,
+    ) {
         if (editData != null) {
             val dataKey = ChanDatabase.DataKey(boardName, key)
             synchronized(editData) {
-                editData.put(dataKey, value)
+                editData[dataKey] = value
             }
         }
     }
 
     @Public
-    fun set(boardName: String?, key: String?, value: Boolean) {
+    fun set(
+        boardName: String?,
+        key: String?,
+        value: Boolean,
+    ) {
         set(boardName, key, value as Any?)
     }
 
     @Public
-    fun set(boardName: String?, key: String?, value: Int) {
+    fun set(
+        boardName: String?,
+        key: String?,
+        value: Int,
+    ) {
         set(boardName, key, value as Any?)
     }
 
     @Public
-    fun set(boardName: String?, key: String?, value: String?) {
+    fun set(
+        boardName: String?,
+        key: String?,
+        value: String?,
+    ) {
         set(boardName, key, value as Any?)
     }
 
@@ -395,7 +443,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
                 var title: String? = null
                 val hosts = get().locator.getChanHosts(false)
                 if (hosts.size > 0) {
-                    title = hosts.get(0)
+                    title = hosts[0]
                 }
                 if (title == null) {
                     title = ""
@@ -419,9 +467,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         options.add(option)
     }
 
-    fun getOption(option: String?): Boolean {
-        return options.contains(option)
-    }
+    fun getOption(option: String?): Boolean = options.contains(option)
 
     private var singleBoardName: String? = null
 
@@ -431,48 +477,58 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         singleBoardName = boardName
     }
 
-    fun getSingleBoardName(): String? {
-        return singleBoardName
-    }
+    fun getSingleBoardName(): String? = singleBoardName
 
     private var boardTitlesMap: HashMap<String?, String?>? = null
     private var boardDescriptionsMap: HashMap<String?, String?>? = null
 
     @Public
-    fun setBoardTitle(boardName: String?, title: String?) {
+    fun setBoardTitle(
+        boardName: String?,
+        title: String?,
+    ) {
         checkInit()
         if (boardTitlesMap == null) {
             boardTitlesMap = HashMap<String?, String?>()
         }
-        boardTitlesMap!!.put(boardName, title)
+        boardTitlesMap!![boardName] = title
     }
 
     @Public
-    fun storeBoardTitle(boardName: String?, title: String?) {
+    fun storeBoardTitle(
+        boardName: String?,
+        title: String?,
+    ) {
         set(boardName, KEY_TITLE, title)
     }
 
     @Public
-    fun setBoardDescription(boardName: String?, description: String?) {
+    fun setBoardDescription(
+        boardName: String?,
+        description: String?,
+    ) {
         checkInit()
         if (boardDescriptionsMap == null) {
             boardDescriptionsMap = HashMap<String?, String?>()
         }
-        boardDescriptionsMap!!.put(boardName, description)
+        boardDescriptionsMap!![boardName] = description
     }
 
     @Public
-    fun storeBoardDescription(boardName: String?, description: String?) {
+    fun storeBoardDescription(
+        boardName: String?,
+        description: String?,
+    ) {
         set(boardName, KEY_DESCRIPTION, description)
     }
 
     private val titleFallbackProvider: BoardExtraFallbackProvider =
         BoardExtraFallbackProvider { boardName: String? ->
-            if (boardTitlesMap != null) boardTitlesMap!!.get(boardName) else null
+            if (boardTitlesMap != null) boardTitlesMap!![boardName] else null
         }
     private val descriptionFallbackProvider: BoardExtraFallbackProvider =
         BoardExtraFallbackProvider { boardName: String? ->
-            if (boardDescriptionsMap != null) boardDescriptionsMap!!.get(boardName) else null
+            if (boardDescriptionsMap != null) boardDescriptionsMap!![boardName] else null
         }
 
     fun getBoardTitle(boardName: String?): String? {
@@ -485,20 +541,29 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         return if (description != null) description else get(boardName, KEY_DESCRIPTION, null)
     }
 
-    fun getBoards(searchQuery: String?, signal: CancellationSignal?): BoardCursor {
-        return ChanDatabase.getInstance()
+    fun getBoards(
+        searchQuery: String?,
+        signal: CancellationSignal?,
+    ): BoardCursor =
+        ChanDatabase
+            .getInstance()
             .getBoards(get().name!!, searchQuery, KEY_TITLE, titleFallbackProvider, signal)
-    }
 
     fun getUserBoards(
         boardNames: List<String>?,
-        searchQuery: String?, signal: CancellationSignal?
-    ): BoardCursor {
-        return ChanDatabase.getInstance().getBoards(
-            get().name!!, boardNames!!, searchQuery,
-            KEY_TITLE, KEY_DESCRIPTION, titleFallbackProvider, descriptionFallbackProvider, signal
+        searchQuery: String?,
+        signal: CancellationSignal?,
+    ): BoardCursor =
+        ChanDatabase.getInstance().getBoards(
+            get().name!!,
+            boardNames!!,
+            searchQuery,
+            KEY_TITLE,
+            KEY_DESCRIPTION,
+            titleFallbackProvider,
+            descriptionFallbackProvider,
+            signal,
         )
-    }
 
     private var defaultName: String? = null
     private var defaultNameMap: HashMap<String?, String?>? = null
@@ -510,22 +575,28 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun setDefaultName(boardName: String?, defaultName: String?) {
+    fun setDefaultName(
+        boardName: String?,
+        defaultName: String?,
+    ) {
         checkInit()
         if (defaultNameMap == null) {
             defaultNameMap = HashMap<String?, String?>()
         }
-        defaultNameMap!!.put(boardName, defaultName)
+        defaultNameMap!![boardName] = defaultName
     }
 
     @Public
-    fun storeDefaultName(boardName: String?, defaultName: String?) {
+    fun storeDefaultName(
+        boardName: String?,
+        defaultName: String?,
+    ) {
         set(boardName, KEY_DEFAULT_NAME, defaultName)
     }
 
     fun getDefaultName(boardName: String?): String? {
         if (defaultNameMap != null) {
-            val defaultName = defaultNameMap!!.get(boardName)
+            val defaultName = defaultNameMap!![boardName]
             if (defaultName != null) {
                 return defaultName
             }
@@ -550,23 +621,29 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun setBumpLimit(boardName: String?, bumpLimit: Int) {
+    fun setBumpLimit(
+        boardName: String?,
+        bumpLimit: Int,
+    ) {
         checkInit()
         if (bumpLimitMap == null) {
             bumpLimitMap = HashMap<String?, Int?>()
         }
-        bumpLimitMap!!.put(boardName, bumpLimit)
+        bumpLimitMap!![boardName] = bumpLimit
     }
 
     @Public
-    fun storeBumpLimit(boardName: String?, bumpLimit: Int) {
+    fun storeBumpLimit(
+        boardName: String?,
+        bumpLimit: Int,
+    ) {
         set(boardName, KEY_BUMP_LIMIT, bumpLimit)
     }
 
     fun getBumpLimit(boardName: String?): Int {
         var bumpLimit: Int = BUMP_LIMIT_INVALID
         if (bumpLimitMap != null) {
-            val bumpLimitValue = bumpLimitMap!!.get(boardName)
+            val bumpLimitValue = bumpLimitMap!![boardName]
             if (bumpLimitValue != null) {
                 bumpLimit = bumpLimitValue
             }
@@ -585,6 +662,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         if (bumpLimit != BUMP_LIMIT_INVALID) {
             when (bumpLimitMode) {
                 BumpLimitMode.AFTER_POST -> {}
+
                 BumpLimitMode.AFTER_REPLY -> {
                     bumpLimit++
                 }
@@ -608,22 +686,28 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     private var pagesCountMap: HashMap<String?, Int?>? = null
 
     @Public
-    fun setPagesCount(boardName: String?, pagesCount: Int) {
+    fun setPagesCount(
+        boardName: String?,
+        pagesCount: Int,
+    ) {
         checkInit()
         if (pagesCountMap == null) {
             pagesCountMap = HashMap<String?, Int?>()
         }
-        pagesCountMap!!.put(boardName, pagesCount)
+        pagesCountMap!![boardName] = pagesCount
     }
 
     @Public
-    fun storePagesCount(boardName: String?, pagesCount: Int) {
+    fun storePagesCount(
+        boardName: String?,
+        pagesCount: Int,
+    ) {
         set(boardName, KEY_PAGES_COUNT, pagesCount)
     }
 
     fun getPagesCount(boardName: String?): Int {
         if (pagesCountMap != null) {
-            val pagesCount = pagesCountMap!!.get(boardName)
+            val pagesCount = pagesCountMap!![boardName]
             if (pagesCount != null) {
                 return pagesCount
             }
@@ -642,9 +726,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         supportedCaptchaTypes!!.add(captchaType)
     }
 
-    fun getSupportedCaptchaTypes(): MutableCollection<String?>? {
-        return supportedCaptchaTypes
-    }
+    fun getSupportedCaptchaTypes(): MutableCollection<String?>? = supportedCaptchaTypes
 
     val captchaType: String?
         get() = getCaptchaTypeForChan(get())
@@ -653,17 +735,18 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         private set
 
     @Public
-    fun addCustomPreference(key: String?, defaultValue: Boolean) {
+    fun addCustomPreference(
+        key: String?,
+        defaultValue: Boolean,
+    ) {
         if (customPreferences == null) {
             customPreferences = LinkedHashMap<String?, Boolean?>()
         }
-        customPreferences!!.put(key, defaultValue)
+        customPreferences!![key] = defaultValue
     }
 
     @Extendable
-    protected open fun obtainBoardConfiguration(boardName: String?): Board? {
-        return null
-    }
+    protected open fun obtainBoardConfiguration(boardName: String?): Board? = null
 
     private fun obtainCaptchaConfigurationSafe(captchaType: String?): Captcha? {
         if (CAPTCHA_TYPE_RECAPTCHA_2 == captchaType) {
@@ -697,29 +780,22 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Extendable
-    protected open fun obtainCustomCaptchaConfiguration(captchaType: String?): Captcha? {
-        return null
-    }
+    protected open fun obtainCustomCaptchaConfiguration(captchaType: String?): Captcha? = null
 
     @Extendable
-    protected open fun obtainPostingConfiguration(boardName: String?, newThread: Boolean): Posting? {
-        return null
-    }
+    protected open fun obtainPostingConfiguration(
+        boardName: String?,
+        newThread: Boolean,
+    ): Posting? = null
 
     @Extendable
-    protected open fun obtainDeletingConfiguration(boardName: String?): Deleting? {
-        return null
-    }
+    protected open fun obtainDeletingConfiguration(boardName: String?): Deleting? = null
 
     @Extendable
-    protected open fun obtainReportingConfiguration(boardName: String?): Reporting? {
-        return null
-    }
+    protected open fun obtainReportingConfiguration(boardName: String?): Reporting? = null
 
     @Extendable
-    protected open fun obtainVotingConfiguration(boardName: String?): Voting? {
-        return null
-    }
+    protected open fun obtainVotingConfiguration(boardName: String?): Voting? = null
 
     @Extendable
     protected open fun obtainCaptchaPassConfiguration(): Authorization {
@@ -738,29 +814,19 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Extendable
-    protected open fun obtainArchivationConfiguration(): Archivation? {
-        return null
-    }
+    protected open fun obtainArchivationConfiguration(): Archivation? = null
 
     @Extendable
-    protected open fun obtainStatisticsConfiguration(): Statistics {
-        return Statistics()
-    }
+    protected open fun obtainStatisticsConfiguration(): Statistics = Statistics()
 
     @Extendable
-    protected open fun obtainCustomPreferenceConfiguration(key: String?): CustomPreference? {
-        return null
-    }
+    protected open fun obtainCustomPreferenceConfiguration(key: String?): CustomPreference? = null
 
     @Public
-    fun getContext(): Context {
-        return getInstance()
-    }
+    fun getContext(): Context = getInstance()
 
     @Public
-    fun getResources(): Resources? {
-        return resources
-    }
+    fun getResources(): Resources? = resources
 
     private val resourceUris = SparseArray<Uri?>()
 
@@ -787,7 +853,10 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Throws(IOException::class)
-    fun readResourceUri(uri: Uri, output: OutputStream): Boolean {
+    fun readResourceUri(
+        uri: Uri,
+        output: OutputStream,
+    ): Boolean {
         val chan = get()
         if (chan.name == null) {
             return false
@@ -797,11 +866,11 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
             return false
         }
         val pathSegments = uri.getPathSegments()
-        if (pathSegments == null || pathSegments.size != 3 || ("res" != pathSegments.get(0))) {
+        if (pathSegments == null || pathSegments.size != 3 || ("res" != pathSegments[0])) {
             return false
         }
-        val type = pathSegments.get(1)
-        val name = pathSegments.get(2)
+        val type = pathSegments[1]
+        val name = pathSegments[2]
         val id = resources!!.getIdentifier(name, type, chan.packageName)
         if (id == 0) {
             return false
@@ -813,19 +882,25 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun getCookie(cookie: String?): String? {
-        return if (editData == null || cookie == null)
+    fun getCookie(cookie: String?): String? =
+        if (editData == null || cookie == null) {
             null
-        else
+        } else {
             ChanDatabase.getInstance().getCookieChecked(get().name!!, cookie)
-    }
+        }
 
     @Public
-    fun storeCookie(cookie: String, value: String?, displayName: String?) {
+    fun storeCookie(
+        cookie: String,
+        value: String?,
+        displayName: String?,
+    ) {
         if (editData != null) {
             ChanDatabase.getInstance().setCookie(
-                get().name!!, cookie, value,
-                if (isEmptyOrWhitespace(displayName)) null else displayName
+                get().name!!,
+                cookie,
+                value,
+                if (isEmptyOrWhitespace(displayName)) null else displayName,
             )
         }
     }
@@ -837,9 +912,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     }
 
     @Public
-    fun getDownloadDirectory(): DataFile {
-        return obtain(DataFile.Target.DOWNLOADS, null)
-    }
+    fun getDownloadDirectory(): DataFile = obtain(DataFile.Target.DOWNLOADS, null)
 
     fun updateFromBoards(boardCategories: Array<BoardCategory>) {
         for (boardCategory in boardCategories) {
@@ -860,7 +933,9 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         }
     }
 
-    class Safe internal constructor(private val configuration: ChanConfiguration) {
+    class Safe internal constructor(
+        private val configuration: ChanConfiguration,
+    ) {
         fun obtainBoard(boardName: String?): Board {
             var board: Board? = null
             try {
@@ -884,7 +959,10 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
             return captcha
         }
 
-        fun obtainPosting(boardName: String?, newThread: Boolean): Posting? {
+        fun obtainPosting(
+            boardName: String?,
+            newThread: Boolean,
+        ): Posting? {
             var posting: Posting? = null
             try {
                 posting = configuration.obtainPostingConfiguration(boardName, newThread)
@@ -1025,9 +1103,7 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
         }
     }
 
-    fun safe(): Safe {
-        return safe
-    }
+    fun safe(): Safe = safe
 
     companion object {
         val INITIALIZER: ChanManager.Initializer = ChanManager.Initializer()
@@ -1081,8 +1157,6 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
 
         @Public
         @JvmStatic
-        fun get(`object`: Any): ChanConfiguration {
-            return (`object` as Chan.Linked).get().configuration
-        }
+        fun get(`object`: Any): ChanConfiguration = (`object` as Chan.Linked).get().configuration
     }
 }

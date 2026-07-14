@@ -50,16 +50,24 @@ class PostsAdapter(
     fragmentManager: FragmentManager?,
     recyclerView: RecyclerView,
     postItemsMap: MutableMap<PostNumber?, PostItem>,
-    hiddenPosts: PostItem.HideState.Map<PostNumber?>
-) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(), LinkListener, UiManager.PostsProvider,
+    hiddenPosts: PostItem.HideState.Map<PostNumber?>,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(),
+    LinkListener,
+    UiManager.PostsProvider,
     HidePerformer.PostsProvider {
     interface Callback : ClickCallback<PostItem?, RecyclerView.ViewHolder> {
-        fun onItemClick(view: View?, postItem: PostItem?)
+        fun onItemClick(
+            view: View?,
+            postItem: PostItem?,
+        )
+
         fun onItemLongClick(postItem: PostItem?): Boolean
 
         override fun onItemClick(
             holder: RecyclerView.ViewHolder,
-            position: Int, item: PostItem?, longClick: Boolean
+            position: Int,
+            item: PostItem?,
+            longClick: Boolean,
         ): Boolean {
             if (longClick) {
                 return onItemLongClick(item)
@@ -73,6 +81,7 @@ class PostsAdapter(
     @JvmField
     val configurationSet: ConfigurationSet
     private val demandSet = DemandSet()
+
     @JvmField
     val gallerySet: GalleryItem.Set = GalleryItem.Set(true)
     private val recyclerKeeper: RecyclerKeeper
@@ -86,9 +95,10 @@ class PostsAdapter(
     private var bumpLimitOrdinalIndex = PostItem.ORDINAL_INDEX_NONE
     private var selection = false
 
-    fun createPostItemDecoration(context: Context, dividerPadding: Int): ItemDecoration {
-        return BumpLimitItemDecorator(context, dividerPadding)
-    }
+    fun createPostItemDecoration(
+        context: Context,
+        dividerPadding: Int,
+    ): ItemDecoration = BumpLimitItemDecorator(context, dividerPadding)
 
     override fun registerAdapterDataObserver(observer: AdapterDataObserver) {
         super.registerAdapterDataObserver(observer)
@@ -98,42 +108,53 @@ class PostsAdapter(
         super.registerAdapterDataObserver(recyclerKeeper)
     }
 
-    override fun getItemCount(): Int {
-        return postNumbers.size
-    }
+    override fun getItemCount(): Int = postNumbers.size
 
     val hiddenPostsCount: Int
         get() = hiddenPosts.count(PostItem.HideState.HIDDEN)
 
     override fun getItemViewType(position: Int): Int {
         val postItem = getItem(position)
-        return (if (configurationSet.postStateProvider!!.isHiddenResolve(postItem))
-            ViewUnit.ViewType.POST_HIDDEN
-        else
-            ViewUnit.ViewType.POST).ordinal
+        return (
+            if (configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                ViewUnit.ViewType.POST_HIDDEN
+            } else {
+                ViewUnit.ViewType.POST
+            }
+        ).ordinal
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return uiManager.view().createView(parent, ViewUnit.ViewType.values()[viewType])
-    }
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): RecyclerView.ViewHolder = uiManager.view().createView(parent, ViewUnit.ViewType.values()[viewType])
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+    ) {
         onBindViewHolder(holder, position, mutableListOf<Any?>())
     }
 
     override fun onBindViewHolder(
-        holder: RecyclerView.ViewHolder, position: Int,
-        payloads: MutableList<Any?>
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any?>,
     ) {
         val postItem = getItem(position)
         when (ViewUnit.ViewType.values()[holder.getItemViewType()]) {
             ViewUnit.ViewType.POST -> {
                 val demandSet = this.demandSet
                 demandSet.selection =
-                    if (selection) if (selected.contains(postItem.getPostNumber()))
-                        UiManager.Selection.SELECTED
-                    else
-                        UiManager.Selection.NOT_SELECTED else UiManager.Selection.DISABLED
+                    if (selection) {
+                        if (selected.contains(postItem.getPostNumber())) {
+                            UiManager.Selection.SELECTED
+                        } else {
+                            UiManager.Selection.NOT_SELECTED
+                        }
+                    } else {
+                        UiManager.Selection.DISABLED
+                    }
                 demandSet.lastInList = position == getItemCount() - 1
                 if (payloads.isEmpty() || payloads.contains(SimpleViewHolder.EMPTY_PAYLOAD)) {
                     uiManager.view().bindPostView(holder, postItem, configurationSet, demandSet)
@@ -157,17 +178,11 @@ class PostsAdapter(
         }
     }
 
-    fun copyItems(): MutableList<PostItem> {
-        return java.util.ArrayList(postItemsMap.values)
-    }
+    fun copyItems(): MutableList<PostItem> = java.util.ArrayList(postItemsMap.values)
 
-    fun getItem(position: Int): PostItem {
-        return postItemsMap.get(postNumbers.get(position))!!
-    }
+    fun getItem(position: Int): PostItem = postItemsMap[postNumbers[position]]!!
 
-    fun positionOfPostNumber(postNumber: PostNumber): Int {
-        return Collections.binarySearch<PostNumber?>(postNumbers, postNumber)
-    }
+    fun positionOfPostNumber(postNumber: PostNumber): Int = Collections.binarySearch<PostNumber?>(postNumbers, postNumber)
 
     fun positionOfOrdinalIndex(ordinalIndex: Int): Int {
         for (i in 0..<getItemCount()) {
@@ -179,22 +194,24 @@ class PostsAdapter(
         return -1
     }
 
-    override fun findPostItem(postNumber: PostNumber?): PostItem? {
-        return postItemsMap.get(postNumber)
-    }
+    override fun findPostItem(postNumber: PostNumber?): PostItem? = postItemsMap[postNumber]
 
-    override fun iterator(): MutableIterator<PostItem> {
-        return PostsIterator(true, 0)
-    }
+    override fun iterator(): MutableIterator<PostItem> = PostsIterator(true, 0)
 
-    override fun onLinkClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra, confirmed: Boolean) {
+    override fun onLinkClick(
+        view: CommentTextView,
+        uri: Uri,
+        extra: LinkListener.Extra,
+        confirmed: Boolean,
+    ) {
         val originalPostItem = getItem(0)
         val chan = get(extra.chanName)
         val boardName = originalPostItem.getBoardName()
         val threadNumber = originalPostItem.getThreadNumber()
-        if (extra.chanName != null && chan.locator.safe(false).isThreadUri(uri)
-            && (extra.inBoardLink || equals(boardName, chan.locator.safe(false).getBoardName(uri)))
-            && equals(threadNumber, chan.locator.safe(false).getThreadNumber(uri))
+        if (extra.chanName != null &&
+            chan.locator.safe(false).isThreadUri(uri) &&
+            (extra.inBoardLink || equals(boardName, chan.locator.safe(false).getBoardName(uri))) &&
+            equals(threadNumber, chan.locator.safe(false).getThreadNumber(uri))
         ) {
             val postNumber = chan.locator.safe(false).getPostNumber(uri)
             val position = if (postNumber == null) 0 else positionOfPostNumber(postNumber)
@@ -208,17 +225,21 @@ class PostsAdapter(
         }
     }
 
-    override fun onLinkLongClick(view: CommentTextView, uri: Uri, extra: LinkListener.Extra) {
+    override fun onLinkLongClick(
+        view: CommentTextView,
+        uri: Uri,
+        extra: LinkListener.Extra,
+    ) {
         uiManager.interaction().handleLinkLongClick(configurationSet, uri)
     }
 
     private fun removeOldReferences(changedOrRemoved: Collection<PostNumber?>) {
         for (postNumber in changedOrRemoved) {
-            val oldPostItem = postItemsMap.get(postNumber)
+            val oldPostItem = postItemsMap[postNumber]
             if (oldPostItem != null) {
                 gallerySet.remove(oldPostItem.getPostNumber())
                 for (referenceTo in oldPostItem.getReferencesTo()) {
-                    val referenced = postItemsMap.get(referenceTo)
+                    val referenced = postItemsMap[referenceTo]
                     if (referenced != null) {
                         referenced.removeReferenceFrom(oldPostItem.getPostNumber())
                     }
@@ -229,14 +250,14 @@ class PostsAdapter(
 
     fun insertItems(
         changed: Map<out PostNumber?, PostItem>,
-        removed: Collection<PostNumber?>
+        removed: Collection<PostNumber?>,
     ) {
         cancelPreloading()
 
         removeOldReferences(changed.keys)
         removeOldReferences(removed)
         for (postItem in changed.values) {
-            val oldPostItem = postItemsMap.get(postItem.getPostNumber())
+            val oldPostItem = postItemsMap[postItem.getPostNumber()]
             if (oldPostItem != null) {
                 for (postNumber in oldPostItem.getReferencesFrom()) {
                     if (!changed.containsKey(postNumber)) {
@@ -258,7 +279,7 @@ class PostsAdapter(
             }
             gallerySet.put(postItem.getPostNumber(), postItem.getAttachmentItems())
             for (referenceTo in postItem.getReferencesTo()) {
-                val referenced = postItemsMap.get(referenceTo)
+                val referenced = postItemsMap[referenceTo]
                 if (referenced != null) {
                     referenced.addReferenceFrom(postItem.getPostNumber())
                 }
@@ -275,9 +296,10 @@ class PostsAdapter(
                 postItem.setOrdinalIndex(PostItem.ORDINAL_INDEX_DELETED)
             } else {
                 postItem.setOrdinalIndex(ordinalIndex++)
-                if (ordinalIndex == bumpLimit && getItem(0).getBumpLimitReachedState(
+                if (ordinalIndex == bumpLimit &&
+                    getItem(0).getBumpLimitReachedState(
                         chan,
-                        ordinalIndex
+                        ordinalIndex,
                     ) ==
                     PostItem.BumpLimitState.REACHED
                 ) {
@@ -294,7 +316,10 @@ class PostsAdapter(
         notifyItemChanged(position, PAYLOAD_INVALIDATE_COMMENT)
     }
 
-    fun reloadAttachment(position: Int, attachmentItem: AttachmentItem?) {
+    fun reloadAttachment(
+        position: Int,
+        attachmentItem: AttachmentItem?,
+    ) {
         notifyItemChanged(position, attachmentItem)
     }
 
@@ -314,7 +339,7 @@ class PostsAdapter(
             recyclerView.post(
                 Runnable {
                     for (referenceTo in post.getReferencesTo()) {
-                        val referenced = postItemsMap.get(referenceTo)
+                        val referenced = postItemsMap[referenceTo]
                         if (referenced != null) {
                             referenced.removeReferenceFrom(post.getPostNumber())
                         }
@@ -325,7 +350,7 @@ class PostsAdapter(
                     postNumbers.addAll(postItemsMap.keys)
                     postNumbers.sortWith(nullsFirst(naturalOrder()))
                     notifyDataSetChanged()
-                }
+                },
             )
         }
     }
@@ -341,7 +366,7 @@ class PostsAdapter(
                     cancelPreloading()
                 }
                 for (referenceTo in postItem.getReferencesTo()) {
-                    val referenced = postItemsMap.get(referenceTo)
+                    val referenced = postItemsMap[referenceTo]
                     if (referenced != null) {
                         referenced.removeReferenceFrom(postItem.getPostNumber())
                     }
@@ -359,13 +384,11 @@ class PostsAdapter(
         return removed
     }
 
-    fun hasOldPosts(): Boolean {
-        return getItemCount() >= 2 && getItem(0).isCyclical() && getItem(1).isDeleted()
-    }
+    fun hasOldPosts(): Boolean = getItemCount() >= 2 && getItem(0).isCyclical() && getItem(1).isDeleted()
 
     fun hasDeletedPosts(): Boolean {
         for (postItem in this) {
-            if (postItem!!.isDeleted()) {
+            if (postItem.isDeleted()) {
                 return true
             }
         }
@@ -398,7 +421,7 @@ class PostsAdapter(
             val selected =
                 java.util.ArrayList<PostItem>(this.selected.size)
             for (postNumber in this.selected) {
-                val postItem = postItemsMap.get(postNumber)
+                val postItem = postItemsMap[postNumber]
                 if (postItem != null) {
                     selected.add(postItem)
                 }
@@ -416,13 +439,11 @@ class PostsAdapter(
 
     private class PreloadIterator(
         private val ascending: MutableIterator<PostItem>,
-        private val descending: MutableIterator<PostItem>
+        private val descending: MutableIterator<PostItem>,
     ) : MutableIterator<PostItem?> {
         private var lastAscending = false
 
-        override fun hasNext(): Boolean {
-            return ascending.hasNext() || descending.hasNext()
-        }
+        override fun hasNext(): Boolean = ascending.hasNext() || descending.hasNext()
 
         override fun next(): PostItem {
             if (lastAscending) {
@@ -434,9 +455,7 @@ class PostsAdapter(
             }
         }
 
-        override fun remove() {
-            throw UnsupportedOperationException()
-        }
+        override fun remove(): Unit = throw UnsupportedOperationException()
     }
 
     fun preloadPosts(fromPostNumber: PostNumber?) {
@@ -452,7 +471,8 @@ class PostsAdapter(
             // Preload to both sides
             val ascending: MutableIterator<PostItem> = PostsIterator(true, from)
             val descending: MutableIterator<PostItem> = PostsIterator(false, from)
-            preloadHandler.obtainMessage(0, 0, 0, PreloadIterator(ascending, descending))
+            preloadHandler
+                .obtainMessage(0, 0, 0, PreloadIterator(ascending, descending))
                 .sendToTarget()
         }
     }
@@ -460,11 +480,24 @@ class PostsAdapter(
     private val preloadHandler = Handler(Looper.getMainLooper(), PreloadCallback())
 
     init {
-        configurationSet = ConfigurationSet(
-            chanName, replyable, this, postStateProvider,
-            gallerySet, fragmentManager, uiManager.dialog().createStackInstance(), this, callback,
-            true, false, true, true, true, null
-        )
+        configurationSet =
+            ConfigurationSet(
+                chanName,
+                replyable,
+                this,
+                postStateProvider,
+                gallerySet,
+                fragmentManager,
+                uiManager.dialog().createStackInstance(),
+                this,
+                callback,
+                true,
+                false,
+                true,
+                true,
+                true,
+                null,
+            )
         recyclerKeeper = RecyclerKeeper(recyclerView)
         this.recyclerView = recyclerView
         super.registerAdapterDataObserver(recyclerKeeper)
@@ -502,7 +535,7 @@ class PostsAdapter(
     fun invalidateHidden() {
         cancelPreloading()
         for (postItem in this) {
-            postItem!!.setHidden(PostItem.HideState.UNDEFINED, null)
+            postItem.setHidden(PostItem.HideState.UNDEFINED, null)
         }
     }
 
@@ -511,24 +544,25 @@ class PostsAdapter(
         notifyDataSetChanged()
     }
 
-    fun iterate(ascending: Boolean, from: Int): Iterable<PostItem> {
-        return Iterable { PostsIterator(ascending, from) }
-    }
+    fun iterate(
+        ascending: Boolean,
+        from: Int,
+    ): Iterable<PostItem> = Iterable { PostsIterator(ascending, from) }
 
     fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
-        position: Int
-    ): DividerItemDecoration.Configuration {
-        return configuration.need(!needBumpLimitDividerAbove(position + 1))
-    }
+        position: Int,
+    ): DividerItemDecoration.Configuration = configuration.need(!needBumpLimitDividerAbove(position + 1))
 
     private fun needBumpLimitDividerAbove(position: Int): Boolean {
         val postItem = if (position >= 0 && position < getItemCount()) getItem(position) else null
         return postItem != null && bumpLimitOrdinalIndex >= 0 && postItem.getOrdinalIndex() == bumpLimitOrdinalIndex
     }
 
-    private inner class BumpLimitItemDecorator(context: Context, dividerPadding: Int) :
-        ItemDecoration() {
+    private inner class BumpLimitItemDecorator(
+        context: Context,
+        dividerPadding: Int,
+    ) : ItemDecoration() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         private val rect = Rect()
         private val height: Int
@@ -540,7 +574,11 @@ class PostsAdapter(
             padding = dividerPadding
         }
 
-        override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+        override fun onDraw(
+            c: Canvas,
+            parent: RecyclerView,
+            state: RecyclerView.State,
+        ) {
             val childCount = parent.getChildCount()
             val left = parent.getPaddingLeft()
             val right = parent.getWidth() - parent.getPaddingRight()
@@ -554,15 +592,17 @@ class PostsAdapter(
                         rect.top.toFloat(),
                         (right - padding).toFloat(),
                         (rect.top + height).toFloat(),
-                        paint
+                        paint,
                     )
                 }
             }
         }
 
         override fun getItemOffsets(
-            outRect: Rect, view: View, parent: RecyclerView,
-            state: RecyclerView.State
+            outRect: Rect,
+            view: View,
+            parent: RecyclerView,
+            state: RecyclerView.State,
         ) {
             val position = parent.getChildAdapterPosition(view)
             if (needBumpLimitDividerAbove(position)) {
@@ -573,8 +613,10 @@ class PostsAdapter(
         }
     }
 
-    private inner class PostsIterator(private val ascending: Boolean, private var position: Int) :
-        MutableIterator<PostItem> {
+    private inner class PostsIterator(
+        private val ascending: Boolean,
+        private var position: Int,
+    ) : MutableIterator<PostItem> {
         override fun hasNext(): Boolean {
             val count = getItemCount()
             return if (ascending) position < count else position >= 0
@@ -590,13 +632,9 @@ class PostsAdapter(
             return postItem
         }
 
-        override fun next(): PostItem {
-            return nextInternal()
-        }
+        override fun next(): PostItem = nextInternal()
 
-        override fun remove() {
-            throw UnsupportedOperationException()
-        }
+        override fun remove(): Unit = throw UnsupportedOperationException()
     }
 
     companion object {

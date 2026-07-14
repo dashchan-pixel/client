@@ -17,12 +17,17 @@ import java.util.concurrent.Executor
 
 class CommonDatabase private constructor() {
     enum class Migration {
-        FROM_8_TO_9
+        FROM_8_TO_9,
     }
 
     interface Instance {
         fun create(database: SQLiteDatabase)
-        fun upgrade(database: SQLiteDatabase, migration: Migration)
+
+        fun upgrade(
+            database: SQLiteDatabase,
+            migration: Migration,
+        )
+
         fun open(database: SQLiteDatabase) {}
     }
 
@@ -61,13 +66,9 @@ class CommonDatabase private constructor() {
         helper = Helper(listOf<Instance>(this.history, this.threads, this.posts))
     }
 
-    fun query(callback: QueryCallback): Cursor? {
-        return callback.query(helper.database)
-    }
+    fun query(callback: QueryCallback): Cursor? = callback.query(helper.database)
 
-    fun <T> execute(callback: ExecuteCallback<T?>): T? {
-        return callback.run(helper.database)
-    }
+    fun <T> execute(callback: ExecuteCallback<T?>): T? = callback.run(helper.database)
 
     fun <T> enqueue(callback: ExecuteCallback<T?>) {
         executor.execute(Runnable { execute(callback) })
@@ -119,8 +120,9 @@ class CommonDatabase private constructor() {
         }
     }
 
-    private class Helper(instances: Collection<Instance>) :
-        SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
+    private class Helper(
+        instances: Collection<Instance>,
+    ) : SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
         private val instances: Collection<Instance>
         internal val database: SQLiteDatabase
 
@@ -169,7 +171,11 @@ class CommonDatabase private constructor() {
             }
         }
 
-        override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        override fun onUpgrade(
+            db: SQLiteDatabase,
+            oldVersion: Int,
+            newVersion: Int,
+        ) {
             if (oldVersion <= 7) {
                 dropAllTables(db)
                 onCreate(db)
@@ -199,15 +205,16 @@ class CommonDatabase private constructor() {
     }
 
     companion object {
-        private val IGNORE_TABLES: MutableSet<String?> = Collections.unmodifiableSet<String?>(
-            HashSet<String?>(
-                mutableListOf<String?>(
-                    "sqlite_sequence",
-                    "sqlite_master",
-                    "android_metadata"
-                )
+        private val IGNORE_TABLES: MutableSet<String?> =
+            Collections.unmodifiableSet<String?>(
+                HashSet<String?>(
+                    mutableListOf<String?>(
+                        "sqlite_sequence",
+                        "sqlite_master",
+                        "android_metadata",
+                    ),
+                ),
             )
-        )
 
         private val INSTANCE = CommonDatabase()
 
@@ -217,61 +224,80 @@ class CommonDatabase private constructor() {
         @Throws(IOException::class)
         private fun copyDatabase(
             database: SQLiteDatabase,
-            fromPrefix: String?, toPrefix: String
+            fromPrefix: String?,
+            toPrefix: String,
         ) {
             val tablesProjection = arrayOf<String?>("name", "sql")
             val tablesFilter = Expression.filter().equals("type", "table").build()
-            database.query(
-                fromPrefix + "sqlite_master", tablesProjection,
-                tablesFilter.value, tablesFilter.args, null, null, null
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val name = cursor.getString(0)
-                    if (!IGNORE_TABLES.contains(name)) {
-                        var sql = cursor.getString(1)
-                        val index = sql.indexOf(name)
-                        if (index < 0) {
-                            throw IOException()
+            database
+                .query(
+                    fromPrefix + "sqlite_master",
+                    tablesProjection,
+                    tablesFilter.value,
+                    tablesFilter.args,
+                    null,
+                    null,
+                    null,
+                ).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(0)
+                        if (!IGNORE_TABLES.contains(name)) {
+                            var sql = cursor.getString(1)
+                            val index = sql.indexOf(name)
+                            if (index < 0) {
+                                throw IOException()
+                            }
+                            sql = sql.substring(0, index) + toPrefix + sql.substring(index)
+                            database.execSQL(sql)
+                            database.execSQL("INSERT INTO " + toPrefix + name + " SELECT * FROM " + fromPrefix + name)
                         }
-                        sql = sql.substring(0, index) + toPrefix + sql.substring(index)
-                        database.execSQL(sql)
-                        database.execSQL("INSERT INTO " + toPrefix + name + " SELECT * FROM " + fromPrefix + name)
                     }
                 }
-            }
             val indexesProjection = arrayOf<String?>("name", "sql")
             val indexesFilter = Expression.filter().equals("type", "index").build()
-            database.query(
-                fromPrefix + "sqlite_master", indexesProjection,
-                indexesFilter.value, indexesFilter.args, null, null, null
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val name = cursor.getString(0)
-                    var sql = cursor.getString(1)
-                    if (sql != null) {
-                        val index = sql.indexOf(name)
-                        if (index < 0) {
-                            throw IOException()
+            database
+                .query(
+                    fromPrefix + "sqlite_master",
+                    indexesProjection,
+                    indexesFilter.value,
+                    indexesFilter.args,
+                    null,
+                    null,
+                    null,
+                ).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(0)
+                        var sql = cursor.getString(1)
+                        if (sql != null) {
+                            val index = sql.indexOf(name)
+                            if (index < 0) {
+                                throw IOException()
+                            }
+                            sql = sql.substring(0, index) + toPrefix + sql.substring(index)
+                            database.execSQL(sql)
                         }
-                        sql = sql.substring(0, index) + toPrefix + sql.substring(index)
-                        database.execSQL(sql)
                     }
                 }
-            }
         }
 
         private fun dropAllTables(database: SQLiteDatabase) {
             val projection = arrayOf<String?>("name")
             val filter = Expression.filter().equals("type", "table").build()
             val names = ArrayList<String?>()
-            database.query(
-                "sqlite_master",
-                projection, filter.value, filter.args, null, null, null
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    names.add(cursor.getString(0))
+            database
+                .query(
+                    "sqlite_master",
+                    projection,
+                    filter.value,
+                    filter.args,
+                    null,
+                    null,
+                    null,
+                ).use { cursor ->
+                    while (cursor.moveToNext()) {
+                        names.add(cursor.getString(0))
+                    }
                 }
-            }
             for (name in names) {
                 if (!IGNORE_TABLES.contains(name)) {
                     database.execSQL("DROP TABLE IF EXISTS " + name)

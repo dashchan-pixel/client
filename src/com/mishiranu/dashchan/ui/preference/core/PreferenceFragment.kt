@@ -40,13 +40,16 @@ abstract class PreferenceFragment : ContentFragment() {
     private abstract class Dependency(
         val key: String,
         val dependencyKey: String,
-        val positive: Boolean
+        val positive: Boolean,
     ) {
         abstract fun checkDependency(dependencyPreference: Preference<*>?): Boolean
     }
 
-    private class BooleanDependency(key: String, dependencyKey: String, positive: Boolean) :
-        Dependency(key, dependencyKey, positive) {
+    private class BooleanDependency(
+        key: String,
+        dependencyKey: String,
+        positive: Boolean,
+    ) : Dependency(key, dependencyKey, positive) {
         override fun checkDependency(dependencyPreference: Preference<*>?): Boolean {
             if (dependencyPreference is CheckPreference) {
                 return dependencyPreference.value == positive
@@ -59,7 +62,7 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String,
         dependencyKey: String,
         positive: Boolean,
-        vararg values: String?
+        vararg values: String?,
     ) : Dependency(key, dependencyKey, positive) {
         private val values = HashSet<String?>()
 
@@ -85,7 +88,7 @@ abstract class PreferenceFragment : ContentFragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         recyclerView = PaddedRecyclerView(container!!.getContext())
         recyclerView!!.setId(android.R.id.list)
@@ -98,21 +101,24 @@ abstract class PreferenceFragment : ContentFragment() {
             DividerItemDecoration(
                 recyclerView!!.getContext(),
                 DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
-                    val current = preferences.get(position)
+                    val current = preferences[position]
                     val next =
-                        if (preferences.size > position + 1) preferences.get(position + 1) else null
-                    var need = current !is HeaderPreference &&
+                        if (preferences.size > position + 1) preferences[position + 1] else null
+                    var need =
+                        current !is HeaderPreference &&
                             (next !is HeaderPreference || true)
                     if (need) {
                         need = current !is CategoryPreference && next !is CategoryPreference
                     }
                     c!!.need(need)
-                })
+                },
+            ),
         )
         val layout = ExpandedLayout(container.getContext(), true)
         layout.addView(
-            recyclerView, ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
+            recyclerView,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
         )
         return layout
     }
@@ -126,7 +132,10 @@ abstract class PreferenceFragment : ContentFragment() {
         recyclerView = null
     }
 
-    private fun <T> onChange(preference: Preference<T>, newValue: Boolean) {
+    private fun <T> onChange(
+        preference: Preference<T>,
+        newValue: Boolean,
+    ) {
         if (newValue) {
             if (persistent.contains(preference)) {
                 preference.persist(getPreferences()!!)
@@ -140,7 +149,10 @@ abstract class PreferenceFragment : ContentFragment() {
         }
     }
 
-    fun <T> addPreference(preference: Preference<T>, persistent: Boolean) {
+    fun <T> addPreference(
+        preference: Preference<T>,
+        persistent: Boolean,
+    ) {
         preferences.add(preference)
         if (preference.key != null && persistent) {
             preference.extract(getPreferences()!!)
@@ -149,7 +161,10 @@ abstract class PreferenceFragment : ContentFragment() {
         preference.setOnChangeListener { newValue -> onChange(preference, newValue) }
     }
 
-    fun movePreference(which: Preference<*>?, after: Preference<*>?) {
+    fun movePreference(
+        which: Preference<*>?,
+        after: Preference<*>?,
+    ) {
         val removeIndex = preferences.indexOf(which)
         check(removeIndex >= 0)
         preferences.removeAt(removeIndex)
@@ -164,7 +179,7 @@ abstract class PreferenceFragment : ContentFragment() {
         preference.setOnClickListener { p ->
             PreferenceDialog(p!!.key).show(
                 getChildFragmentManager(),
-                PreferenceDialog::class.java.getName()
+                PreferenceDialog::class.java.getName(),
             )
         }
     }
@@ -192,20 +207,23 @@ abstract class PreferenceFragment : ContentFragment() {
         return preference
     }
 
-    fun addButton(titleResId: Int, summaryResId: Int): Preference<Void?> {
-        return addButton(
+    fun addButton(
+        titleResId: Int,
+        summaryResId: Int,
+    ): Preference<Void?> =
+        addButton(
             if (titleResId != 0) getString(titleResId) else null,
-            if (summaryResId != 0) getString(summaryResId) else null
+            if (summaryResId != 0) getString(summaryResId) else null,
         )
-    }
-
-    fun addButton(title: CharSequence?, summary: CharSequence?): Preference<Void?> {
-        return addButton(title, SummaryProvider { p: Preference<Void?>? -> summary })
-    }
 
     fun addButton(
         title: CharSequence?,
-        summaryProvider: SummaryProvider<Void?>?
+        summary: CharSequence?,
+    ): Preference<Void?> = addButton(title, SummaryProvider { p: Preference<Void?>? -> summary })
+
+    fun addButton(
+        title: CharSequence?,
+        summaryProvider: SummaryProvider<Void?>?,
     ): Preference<Void?> {
         val preference: Preference<Void?> =
             ButtonPreference(requireContext(), title, summaryProvider)
@@ -213,41 +231,55 @@ abstract class PreferenceFragment : ContentFragment() {
         return preference
     }
 
-    fun addCategory(titleResId: Int): Preference<Void?> {
-        return addCategory(getString(titleResId), null)
-    }
+    fun addCategory(titleResId: Int): Preference<Void?> = addCategory(getString(titleResId), null)
 
-    fun addCategory(titleResId: Int, iconResId: Int): Preference<Void?> {
-        return addCategory(
+    fun addCategory(
+        titleResId: Int,
+        iconResId: Int,
+    ): Preference<Void?> =
+        addCategory(
             getString(titleResId),
-            ContextCompat.getDrawable(requireContext(), iconResId)
+            ContextCompat.getDrawable(requireContext(), iconResId),
         )
-    }
 
-    fun addCategory(title: CharSequence?, icon: Drawable?): Preference<Void?> {
+    fun addCategory(
+        title: CharSequence?,
+        icon: Drawable?,
+    ): Preference<Void?> {
         val preference: Preference<Void?> = CategoryPreference(requireContext(), title, icon)
         addPreference(preference, false)
         return preference
     }
 
-    fun setCategoryTint(preference: Preference<Void?>?, tintList: ColorStateList?) {
+    fun setCategoryTint(
+        preference: Preference<Void?>?,
+        tintList: ColorStateList?,
+    ) {
         require(preference is CategoryPreference)
         preference.setTint(tintList)
     }
 
     fun addCheck(
-        persistent: Boolean, key: String, defaultValue: Boolean,
-        titleResId: Int, summaryResId: Int
-    ): CheckPreference {
-        return addCheck(
-            persistent, key, defaultValue, if (titleResId != 0) getString(titleResId) else null,
-            if (summaryResId != 0) getString(summaryResId) else null
+        persistent: Boolean,
+        key: String,
+        defaultValue: Boolean,
+        titleResId: Int,
+        summaryResId: Int,
+    ): CheckPreference =
+        addCheck(
+            persistent,
+            key,
+            defaultValue,
+            if (titleResId != 0) getString(titleResId) else null,
+            if (summaryResId != 0) getString(summaryResId) else null,
         )
-    }
 
     fun addCheck(
-        persistent: Boolean, key: String, defaultValue: Boolean,
-        title: CharSequence?, summary: CharSequence?
+        persistent: Boolean,
+        key: String,
+        defaultValue: Boolean,
+        title: CharSequence?,
+        summary: CharSequence?,
     ): CheckPreference {
         val preference = CheckPreference(requireContext(), key, defaultValue, title, summary)
         addPreference(preference, persistent)
@@ -258,31 +290,51 @@ abstract class PreferenceFragment : ContentFragment() {
     }
 
     fun addEdit(
-        key: String, defaultValue: String?,
-        titleResId: Int, hint: CharSequence?, inputType: Int
-    ): EditPreference {
-        return addEdit(key, defaultValue, titleResId, SummaryProvider { p: Preference<String>? ->
-            var summary: CharSequence? = p!!.value
-            if (summary == null || summary.length == 0) {
-                summary = (p as EditPreference).hint
-            }
-            summary
-        }, hint, inputType)
-    }
+        key: String,
+        defaultValue: String?,
+        titleResId: Int,
+        hint: CharSequence?,
+        inputType: Int,
+    ): EditPreference =
+        addEdit(
+            key,
+            defaultValue,
+            titleResId,
+            SummaryProvider { p: Preference<String>? ->
+                var summary: CharSequence? = p!!.value
+                if (summary == null || summary.length == 0) {
+                    summary = (p as EditPreference).hint
+                }
+                summary
+            },
+            hint,
+            inputType,
+        )
 
     fun addEdit(
-        key: String, defaultValue: String?,
-        titleResId: Int, summaryResId: Int, hint: CharSequence?, inputType: Int
-    ): EditPreference {
-        return addEdit(
-            key, defaultValue, titleResId,
+        key: String,
+        defaultValue: String?,
+        titleResId: Int,
+        summaryResId: Int,
+        hint: CharSequence?,
+        inputType: Int,
+    ): EditPreference =
+        addEdit(
+            key,
+            defaultValue,
+            titleResId,
             SummaryProvider { p: Preference<String>? ->
-                if (summaryResId != 0) getString(
-                    summaryResId
-                ) else null
-            }, hint, inputType
+                if (summaryResId != 0) {
+                    getString(
+                        summaryResId,
+                    )
+                } else {
+                    null
+                }
+            },
+            hint,
+            inputType,
         )
-    }
 
     fun addEdit(
         key: String,
@@ -290,19 +342,28 @@ abstract class PreferenceFragment : ContentFragment() {
         titleResId: Int,
         summaryProvider: SummaryProvider<String>?,
         hint: CharSequence?,
-        inputType: Int
+        inputType: Int,
     ): EditPreference {
-        val preference = EditPreference(
-            requireContext(), key, defaultValue,
-            getString(titleResId), summaryProvider, hint, inputType
-        )
+        val preference =
+            EditPreference(
+                requireContext(),
+                key,
+                defaultValue,
+                getString(titleResId),
+                summaryProvider,
+                hint,
+                inputType,
+            )
         addDialogPreference(preference)
         return preference
     }
 
-    fun createInputTypes(count: Int, inputType: Int): MutableList<Int> {
+    fun createInputTypes(
+        count: Int,
+        inputType: Int,
+    ): MutableList<Int> {
         val inputTypes = ArrayList<Int>(count)
-        for (i in 0..<count) {
+        repeat(count) {
             inputTypes.add(inputType)
         }
         return inputTypes
@@ -314,17 +375,16 @@ abstract class PreferenceFragment : ContentFragment() {
         summaryResId: Int,
         hints: List<CharSequence?>?,
         inputTypes: List<Int>?,
-        valueCodec: ValueCodec<T>
-    ): MultipleEditPreference<T> {
-        return addMultipleEdit(
+        valueCodec: ValueCodec<T>,
+    ): MultipleEditPreference<T> =
+        addMultipleEdit(
             key,
             titleResId,
             SummaryProvider { p: Preference<T>? -> if (summaryResId != 0) getString(summaryResId) else null },
             hints,
             inputTypes,
-            valueCodec
+            valueCodec,
         )
-    }
 
     fun <T> addMultipleEdit(
         key: String?,
@@ -332,20 +392,22 @@ abstract class PreferenceFragment : ContentFragment() {
         summaryPattern: String?,
         hints: List<CharSequence?>?,
         inputTypes: List<Int>?,
-        valueCodec: ValueCodec<T>
-    ): MultipleEditPreference<T> {
-        return addMultipleEdit(
-            key, titleResId,
+        valueCodec: ValueCodec<T>,
+    ): MultipleEditPreference<T> =
+        addMultipleEdit(
+            key,
+            titleResId,
             SummaryProvider { p: Preference<T>? ->
                 MultipleEditPreference.formatValues(
                     valueCodec,
                     summaryPattern,
-                    p!!.value
+                    p!!.value,
                 )
             },
-            hints, inputTypes, valueCodec
+            hints,
+            inputTypes,
+            valueCodec,
         )
-    }
 
     fun <T> addMultipleEdit(
         key: String?,
@@ -353,56 +415,101 @@ abstract class PreferenceFragment : ContentFragment() {
         summaryProvider: SummaryProvider<T>?,
         hints: List<CharSequence?>?,
         inputTypes: List<Int>?,
-        valueCodec: ValueCodec<T>
+        valueCodec: ValueCodec<T>,
     ): MultipleEditPreference<T> {
-        val preference = MultipleEditPreference<T>(
-            requireContext(), key!!,
-            getString(titleResId), summaryProvider, hints, inputTypes, valueCodec
-        )
+        val preference =
+            MultipleEditPreference<T>(
+                requireContext(),
+                key!!,
+                getString(titleResId),
+                summaryProvider,
+                hints,
+                inputTypes,
+                valueCodec,
+            )
         addDialogPreference(preference)
         return preference
     }
 
     fun addList(
-        key: String, values: List<String>,
-        defaultValue: String?, titleResId: Int, entries: List<CharSequence>
+        key: String,
+        values: List<String>,
+        defaultValue: String?,
+        titleResId: Int,
+        entries: List<CharSequence>,
     ): ListPreference {
-        val preference = ListPreference(
-            requireContext(), key, defaultValue, getString(titleResId),
-            entries, values
-        )
+        val preference =
+            ListPreference(
+                requireContext(),
+                key,
+                defaultValue,
+                getString(titleResId),
+                entries,
+                values,
+            )
         addDialogPreference(preference)
         return preference
     }
 
     fun addSeek(
-        key: String, defaultValue: Int, titleResId: Int, summaryFormatResId: Int,
-        specialValue: Pair<Int, Int>?, minValue: Int, maxValue: Int, step: Int
-    ): SeekPreference {
-        return addSeek(
-            key, defaultValue, if (titleResId != 0) getString(titleResId) else null,
+        key: String,
+        defaultValue: Int,
+        titleResId: Int,
+        summaryFormatResId: Int,
+        specialValue: Pair<Int, Int>?,
+        minValue: Int,
+        maxValue: Int,
+        step: Int,
+    ): SeekPreference =
+        addSeek(
+            key,
+            defaultValue,
+            if (titleResId != 0) getString(titleResId) else null,
             if (summaryFormatResId != 0) getString(summaryFormatResId) else null,
-            if (specialValue != null) Pair(
-                specialValue.first,
-                getString(specialValue.second)
-            ) else null,
-            minValue, maxValue, step
+            if (specialValue != null) {
+                Pair(
+                    specialValue.first,
+                    getString(specialValue.second),
+                )
+            } else {
+                null
+            },
+            minValue,
+            maxValue,
+            step,
         )
-    }
 
     fun addSeek(
-        key: String, defaultValue: Int, title: String?, summaryFormat: String?,
-        specialValue: Pair<Int, String>?, minValue: Int, maxValue: Int, step: Int
+        key: String,
+        defaultValue: Int,
+        title: String?,
+        summaryFormat: String?,
+        specialValue: Pair<Int, String>?,
+        minValue: Int,
+        maxValue: Int,
+        step: Int,
     ): SeekPreference {
-        val preference = SeekPreference(
-            requireContext(), key, defaultValue, title, summaryFormat,
-            specialValue, minValue, maxValue, step
-        )
+        val preference =
+            SeekPreference(
+                requireContext(),
+                key,
+                defaultValue,
+                title,
+                summaryFormat,
+                specialValue,
+                minValue,
+                maxValue,
+                step,
+            )
         addDialogPreference(preference)
         return preference
     }
 
-    fun addDependency(key: String, dependencyKey: String, positive: Boolean) {
+    fun addDependency(
+        key: String,
+        dependencyKey: String,
+        positive: Boolean,
+    ) {
         val dependency: Dependency = BooleanDependency(key, dependencyKey, positive)
         dependencies.add(dependency)
         updateDependency(dependency)
@@ -412,7 +519,7 @@ abstract class PreferenceFragment : ContentFragment() {
         key: String,
         dependencyKey: String,
         positive: Boolean,
-        vararg values: String?
+        vararg values: String?,
     ) {
         val dependency: Dependency = StringDependency(key, dependencyKey, positive, *values)
         dependencies.add(dependency)
@@ -429,7 +536,7 @@ abstract class PreferenceFragment : ContentFragment() {
 
     fun <T : Enum<T>> enumList(
         enumValues: Array<T>,
-        callback: EnumString<T>
+        callback: EnumString<T>,
     ): MutableList<String> {
         val list = ArrayList<String>(enumValues.size)
         for (value in enumValues) {
@@ -440,7 +547,7 @@ abstract class PreferenceFragment : ContentFragment() {
 
     fun <T : Enum<T>> enumResList(
         enumValues: Array<T>,
-        callback: EnumStringResource<T>
+        callback: EnumStringResource<T>,
     ): MutableList<CharSequence> {
         val list = ArrayList<CharSequence>(enumValues.size)
         for (value in enumValues) {
@@ -465,7 +572,10 @@ abstract class PreferenceFragment : ContentFragment() {
         }
     }
 
-    private fun updateDependency(dependency: Dependency, dependencyPreference: Preference<*>?) {
+    private fun updateDependency(
+        dependency: Dependency,
+        dependencyPreference: Preference<*>?,
+    ) {
         val preference = findPreference(dependency.key)
         if (preference != null) {
             preference.setEnabled(dependency.checkDependency(dependencyPreference))
@@ -482,19 +592,22 @@ abstract class PreferenceFragment : ContentFragment() {
 
     fun getDialog(preference: Preference<*>?): AlertDialog? {
         getChildFragmentManager().executePendingTransactions()
-        val preferenceDialog = getChildFragmentManager()
-            .findFragmentByTag(PreferenceDialog::class.java.getName()) as PreferenceDialog?
-        return if (preferenceDialog != null && preferenceDialog.preference === preference)
+        val preferenceDialog =
+            getChildFragmentManager()
+                .findFragmentByTag(PreferenceDialog::class.java.getName()) as PreferenceDialog?
+        return if (preferenceDialog != null && preferenceDialog.preference === preference) {
             preferenceDialog.getDialog() as AlertDialog?
-        else
+        } else {
             null
+        }
     }
 
     private inner class Adapter : RecyclerView.Adapter<Adapter.ViewHolder?>() {
         private inner class ViewHolder(
             itemView: View,
-            internal val viewHolder: Preference.ViewHolder
-        ) : RecyclerView.ViewHolder(itemView), ClickCallback<Void, ViewHolder> {
+            internal val viewHolder: Preference.ViewHolder,
+        ) : RecyclerView.ViewHolder(itemView),
+            ClickCallback<Unit, ViewHolder> {
             init {
                 ListViewUtils.bind(this, false, null, this)
                 if (itemView.getBackground() == null) {
@@ -505,47 +618,52 @@ abstract class PreferenceFragment : ContentFragment() {
             override fun onItemClick(
                 holder: ViewHolder,
                 position: Int,
-                item: Void?,
-                longClick: Boolean
+                item: Unit?,
+                longClick: Boolean,
             ): Boolean {
-                preferences.get(position).performClick()
+                preferences[position].performClick()
                 return true
             }
         }
 
         private val viewProviders = HashMap<Preference.ViewType?, Preference<*>?>()
 
-        override fun getItemCount(): Int {
-            return preferences.size
-        }
+        override fun getItemCount(): Int = preferences.size
 
         override fun getItemViewType(position: Int): Int {
-            val preference = preferences.get(position)
-            viewProviders.put(preference.getViewType(), preference)
+            val preference = preferences[position]
+            viewProviders[preference.getViewType()] = preference
             return preference.getViewType().ordinal
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val preferenceViewHolder = viewProviders
-                .get(com.mishiranu.dashchan.ui.preference.core.Preference.ViewType.entries[viewType])!!
-                .createViewHolder(parent)
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): ViewHolder {
+            val preferenceViewHolder =
+                viewProviders[
+                    com.mishiranu.dashchan.ui.preference.core.Preference.ViewType.entries[viewType],
+                ]!!.createViewHolder(parent)
             return ViewHolder(preferenceViewHolder.view, preferenceViewHolder)
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            preferences.get(position).bindViewHolder(holder.viewHolder)
+        override fun onBindViewHolder(
+            holder: ViewHolder,
+            position: Int,
+        ) {
+            preferences[position].bindViewHolder(holder.viewHolder)
         }
     }
 
-    private class HeaderPreference(context: Context?, title: CharSequence?) :
-        Preference.Runtime<Void?>(context, null, null, title, null) {
+    private class HeaderPreference(
+        context: Context?,
+        title: CharSequence?,
+    ) : Preference.Runtime<Void?>(context, null, null, title, null) {
         init {
             setSelectable(false)
         }
 
-        override fun getViewType(): ViewType {
-            return ViewType.HEADER
-        }
+        override fun getViewType(): ViewType = ViewType.HEADER
 
         override fun createViewHolder(parent: ViewGroup): ViewHolder {
             val layout = FrameLayout(parent.getContext())
@@ -554,8 +672,8 @@ abstract class PreferenceFragment : ContentFragment() {
             layout.setLayoutParams(
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
             return ViewHolder(layout, header, null, null)
         }
@@ -564,28 +682,24 @@ abstract class PreferenceFragment : ContentFragment() {
     private open class ButtonPreference(
         context: Context?,
         title: CharSequence?,
-        summaryProvider: SummaryProvider<Void?>?
+        summaryProvider: SummaryProvider<Void?>?,
     ) : Preference.Runtime<Void?>(context, null, null, title, summaryProvider)
 
     private class CategoryPreference(
         context: Context?,
         title: CharSequence?,
-        private val icon: Drawable?
+        private val icon: Drawable?,
     ) : ButtonPreference(context, title, null) {
         private var tintList: ColorStateList? = null
 
-        override fun getViewType(): ViewType {
-            return ViewType.CATEGORY
-        }
+        override fun getViewType(): ViewType = ViewType.CATEGORY
 
         fun setTint(tintList: ColorStateList?) {
             this.tintList = tintList
             invalidate()
         }
 
-        override fun createViewHolder(parent: ViewGroup): ViewHolder {
-            return createIconViewHolder(parent)
-        }
+        override fun createViewHolder(parent: ViewGroup): ViewHolder = createIconViewHolder(parent)
 
         override fun bindViewHolder(viewHolder: ViewHolder) {
             super.bindViewHolder(viewHolder)
@@ -602,9 +716,13 @@ abstract class PreferenceFragment : ContentFragment() {
                 iconViewHolder.icon!!.setImageDrawable(icon)
                 iconViewHolder.icon.setVisibility(if (icon != null) View.VISIBLE else View.GONE)
                 iconViewHolder.icon.setImageTintList(
-                    if (tintList != null) tintList else ColorStateList.valueOf(
-                        getColor(viewHolder.view.getContext(), android.R.attr.textColorSecondary)
-                    )
+                    if (tintList != null) {
+                        tintList
+                    } else {
+                        ColorStateList.valueOf(
+                            getColor(viewHolder.view.getContext(), android.R.attr.textColorSecondary),
+                        )
+                    },
                 )
             }
         }
@@ -624,13 +742,11 @@ abstract class PreferenceFragment : ContentFragment() {
                 val key =
                     requireArguments().getString(EXTRA_KEY)
                 return (getParentFragment() as PreferenceFragment).findPreference(
-                    key!!
+                    key!!,
                 ) as DialogPreference<*>?
             }
 
-        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
-            return this.preference!!.createDialog(savedInstanceState)
-        }
+        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog = this.preference!!.createDialog(savedInstanceState)
 
         override fun onStart() {
             super.onStart()

@@ -21,15 +21,13 @@ import android.util.AttributeSet
 import android.widget.AutoCompleteTextView
 
 class ForcedAutoCompleteTextView : AutoCompleteTextView {
-	constructor(context: Context) : super(context)
+    constructor(context: Context) : super(context)
 
-	constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-	override fun getThreshold(): Int = 0
+    override fun getThreshold(): Int = 0
 
-	override fun setThreshold(threshold: Int) {
-		throw UnsupportedOperationException()
-	}
+    override fun setThreshold(threshold: Int): Unit = throw UnsupportedOperationException()
 
-	override fun enoughToFilter(): Boolean = isEnabled
+    override fun enoughToFilter(): Boolean = isEnabled
 }

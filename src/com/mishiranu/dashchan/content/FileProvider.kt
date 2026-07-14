@@ -14,11 +14,13 @@ import java.io.File
 import java.io.FileNotFoundException
 
 class FileProvider : ContentProvider() {
-    override fun onCreate(): Boolean {
-        return true
-    }
+    override fun onCreate(): Boolean = true
 
-    private class InternalFile(val file: File?, val type: String?, val uri: Uri?)
+    private class InternalFile(
+        val file: File?,
+        val type: String?,
+        val uri: Uri?,
+    )
 
     override fun getType(uri: Uri): String? {
         val uriMatcherCode: Int = URI_MATCHER.match(uri)
@@ -26,16 +28,16 @@ class FileProvider : ContentProvider() {
             return "application/vnd.android.package-archive"
         } else {
             val internalFile: InternalFile? = getInternalFileForUriMatcherCode(uriMatcherCode)
-            if (internalFile != null) {
-                return internalFile.type
-            } else {
-                throw IllegalArgumentException("Unknown URI: " + uri)
-            }
+            requireNotNull(internalFile) { "Unknown URI: " + uri }
+            return internalFile.type
         }
     }
 
     @Throws(FileNotFoundException::class)
-    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+    override fun openFile(
+        uri: Uri,
+        mode: String,
+    ): ParcelFileDescriptor? {
         val uriMatcherCode: Int = URI_MATCHER.match(uri)
         var file: File? = null
         if (uriMatcherCode == URI_MATCHER_CODE_UPDATES && "r" == mode) {
@@ -55,17 +57,20 @@ class FileProvider : ContentProvider() {
     }
 
     override fun query(
-        uri: Uri, projection: Array<String?>?,
-        selection: String?, selectionArgs: Array<String?>?, sortOrder: String?
+        uri: Uri,
+        projection: Array<String?>?,
+        selection: String?,
+        selectionArgs: Array<String?>?,
+        sortOrder: String?,
     ): Cursor {
-        var projection = projection
+        var columns = projection
         val uriMatcherCode: Int = URI_MATCHER.match(uri)
         require(uriMatcherCode != UriMatcher.NO_MATCH) { "Unknown URI: " + uri }
 
-        if (projection == null) {
-            projection = ALLOWED_PROJECTION
+        if (columns == null) {
+            columns = ALLOWED_PROJECTION
         } else {
-            OUTER@ for (column in projection) {
+            OUTER@ for (column in columns) {
                 for (allowedColumn in ALLOWED_PROJECTION) {
                     if (equals(column, allowedColumn)) {
                         continue@OUTER
@@ -75,7 +80,7 @@ class FileProvider : ContentProvider() {
             }
         }
 
-        val cursor = MatrixCursor(projection)
+        val cursor = MatrixCursor(columns)
         val file: File?
         if (uriMatcherCode == URI_MATCHER_CODE_UPDATES) {
             file = Companion.getUpdatesFile(uri.getLastPathSegment()!!)
@@ -84,11 +89,11 @@ class FileProvider : ContentProvider() {
             file = if (internalFile != null) internalFile.file else null
         }
         if (file != null) {
-            val values = arrayOfNulls<Any>(projection.size)
-            for (i in projection.indices) {
-                if (OpenableColumns.DISPLAY_NAME == projection[i]) {
+            val values = arrayOfNulls<Any>(columns.size)
+            for (i in columns.indices) {
+                if (OpenableColumns.DISPLAY_NAME == columns[i]) {
                     values[i] = file.getName()
-                } else if (OpenableColumns.SIZE == projection[i]) {
+                } else if (OpenableColumns.SIZE == columns[i]) {
                     values[i] = file.length()
                 }
             }
@@ -97,22 +102,23 @@ class FileProvider : ContentProvider() {
         return cursor
     }
 
-    override fun insert(uri: Uri, values: ContentValues?): Uri? {
-        throw UnsupportedOperationException()
-    }
+    override fun insert(
+        uri: Uri,
+        values: ContentValues?,
+    ): Uri? = throw UnsupportedOperationException()
 
     override fun update(
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<String?>?
-    ): Int {
-        throw UnsupportedOperationException()
-    }
+        selectionArgs: Array<String?>?,
+    ): Int = throw UnsupportedOperationException()
 
-    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String?>?): Int {
-        throw UnsupportedOperationException()
-    }
+    override fun delete(
+        uri: Uri,
+        selection: String?,
+        selectionArgs: Array<String?>?,
+    ): Int = throw UnsupportedOperationException()
 
     companion object {
         private const val AUTHORITY = "com.mishiranu.providers.dashchan"
@@ -167,8 +173,13 @@ class FileProvider : ContentProvider() {
                 val directory: File? =
                     updatesDirectory
                 if (fileParent != null && fileParent == directory) {
-                    return Uri.Builder().scheme("content").authority(AUTHORITY)
-                        .appendPath(PATH_UPDATES).appendPath(uri.getLastPathSegment()).build()
+                    return Uri
+                        .Builder()
+                        .scheme("content")
+                        .authority(AUTHORITY)
+                        .appendPath(PATH_UPDATES)
+                        .appendPath(uri.getLastPathSegment())
+                        .build()
                 }
             }
             return uri
@@ -179,36 +190,43 @@ class FileProvider : ContentProvider() {
         private var clipboardFile: InternalFile? = null
 
         @JvmStatic
-        fun convertDownloadsLegacyFile(file: File, type: String?): Uri? {
-            return convertToInternalFile(
+        fun convertDownloadsLegacyFile(
+            file: File,
+            type: String?,
+        ): Uri? =
+            convertToInternalFile(
                 Preferences.downloadDirectoryLegacy,
                 file,
                 type,
                 PATH_DOWNLOADS,
-                URI_MATCHER_CODE_DOWNLOADS
+                URI_MATCHER_CODE_DOWNLOADS,
             )
-        }
 
-        fun convertShareFile(directory: File, file: File, type: String?): Uri? {
-            return convertToInternalFile(directory, file, type, PATH_SHARE, URI_MATCHER_CODE_SHARE)
-        }
+        fun convertShareFile(
+            directory: File,
+            file: File,
+            type: String?,
+        ): Uri? = convertToInternalFile(directory, file, type, PATH_SHARE, URI_MATCHER_CODE_SHARE)
 
-        fun convertClipboardFile(directory: File, file: File, type: String?): Uri? {
-            return convertToInternalFile(
+        fun convertClipboardFile(
+            directory: File,
+            file: File,
+            type: String?,
+        ): Uri? =
+            convertToInternalFile(
                 directory,
                 file,
                 type,
                 PATH_CLIPBOARD,
-                URI_MATCHER_CODE_CLIPBOARD
+                URI_MATCHER_CODE_CLIPBOARD,
             )
-        }
 
         private fun convertToInternalFile(
             directory: File,
             file: File,
             type: String?,
             path: String?,
-            uriMatcherCode: Int
+            uriMatcherCode: Int,
         ): Uri? {
             val internalFile: InternalFile? = createInternalFile(directory, file, type, path)
             if (internalFile != null) {
@@ -238,7 +256,7 @@ class FileProvider : ContentProvider() {
             directory: File,
             file: File,
             type: String?,
-            providerPath: String?
+            providerPath: String?,
         ): InternalFile? {
             var filePath = file.getAbsolutePath()
             val directoryPath = directory.getAbsolutePath()
@@ -247,8 +265,14 @@ class FileProvider : ContentProvider() {
                 if (filePath.startsWith("/")) {
                     filePath = filePath.substring(1)
                 }
-                val uri = Uri.Builder().scheme("content").authority(AUTHORITY)
-                    .appendPath(providerPath).appendEncodedPath(filePath).build()
+                val uri =
+                    Uri
+                        .Builder()
+                        .scheme("content")
+                        .authority(AUTHORITY)
+                        .appendPath(providerPath)
+                        .appendEncodedPath(filePath)
+                        .build()
                 return InternalFile(file, type, uri)
             }
 

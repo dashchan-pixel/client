@@ -43,7 +43,7 @@ class WebViewService : Service() {
         val verifyCertificate: Boolean,
         val timeout: Long,
         val extra: WebViewExtra?,
-        val requestCallback: IRequestCallback
+        val requestCallback: IRequestCallback,
     ) {
         var ready: Boolean = false
         var finished: Boolean = false
@@ -59,91 +59,99 @@ class WebViewService : Service() {
     private var cookieRequest: CookieRequest? = null
     private var captchaThread: Thread? = null
 
-    private val handler = Handler(Looper.getMainLooper(), Handler.Callback { message: Message? ->
-        if (webView == null) {
-            return@Callback false
-        }
-        when (message!!.what) {
-            MESSAGE_HANDLE_NEXT -> {
-                handleNextCookieRequest()
-                return@Callback true
-            }
+    private val handler =
+        Handler(
+            Looper.getMainLooper(),
+            Handler.Callback { message: Message? ->
+                if (webView == null) {
+                    return@Callback false
+                }
+                when (message!!.what) {
+                    MESSAGE_HANDLE_NEXT -> {
+                        handleNextCookieRequest()
+                        return@Callback true
+                    }
 
-            MESSAGE_HANDLE_FINISH -> {
-                val cookieRequest = this.cookieRequest
-                if (cookieRequest != null) {
-                    synchronized(cookieRequest) {
-                        if (!cookieRequest.ready) {
-                            cookieRequest.ready = true
-                            (cookieRequest as Object).notifyAll()
+                    MESSAGE_HANDLE_FINISH -> {
+                        val cookieRequest = this.cookieRequest
+                        if (cookieRequest != null) {
+                            synchronized(cookieRequest) {
+                                if (!cookieRequest.ready) {
+                                    cookieRequest.ready = true
+                                    (cookieRequest as Object).notifyAll()
+                                }
+                            }
+                            this.cookieRequest = null
                         }
+                        handleNextCookieRequest()
+                        return@Callback true
                     }
-                    this.cookieRequest = null
-                }
-                handleNextCookieRequest()
-                return@Callback true
-            }
 
-            MESSAGE_HANDLE_AFTER_INTERRUPT -> {
-                val cookieRequest: CookieRequest? = message.obj as CookieRequest?
-                if (cookieRequest === this.cookieRequest) {
-                    this.cookieRequest = null
-                    handleNextCookieRequest()
-                }
-                return@Callback true
-            }
-
-            MESSAGE_HANDLE_CAPTCHA -> {
-                val cookieRequest: CookieRequest = message.obj as CookieRequest
-                if (cookieRequest === this.cookieRequest) {
-                    message.getTarget().removeMessages(MESSAGE_HANDLE_FINISH)
-                    if (cookieRequest.recaptchaV2Result != null) {
-                        webView!!.loadUrl("javascript:handleResult('" + cookieRequest.recaptchaV2Result + "')")
-                        message.getTarget()
-                            .sendEmptyMessageDelayed(MESSAGE_HANDLE_FINISH, cookieRequest.timeout)
-                    } else {
-                        message.getTarget().sendEmptyMessage(MESSAGE_HANDLE_FINISH)
-                    }
-                }
-                return@Callback true
-            }
-
-            MESSAGE_DRAW_TO_FILE -> {
-                if (captureImageFile != null && webView != null) {
-                    val bitmap = Bitmap.createBitmap(
-                        webView!!.getLayoutParams().width,
-                        webView!!.getLayoutParams().height, Bitmap.Config.ARGB_8888
-                    )
-                    webView!!.draw(Canvas(bitmap))
-                    try {
-                        FileOutputStream(captureImageFile).use { output ->
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                    MESSAGE_HANDLE_AFTER_INTERRUPT -> {
+                        val cookieRequest: CookieRequest? = message.obj as CookieRequest?
+                        if (cookieRequest === this.cookieRequest) {
+                            this.cookieRequest = null
+                            handleNextCookieRequest()
                         }
-                    } catch (e: IOException) {
-                        // Ignore exception
-                    } finally {
-                        bitmap.recycle()
+                        return@Callback true
                     }
-                    message.getTarget().sendEmptyMessageDelayed(
-                        MESSAGE_DRAW_TO_FILE,
-                        DRAW_TO_FILE_INTERVAL.toLong()
-                    )
+
+                    MESSAGE_HANDLE_CAPTCHA -> {
+                        val cookieRequest: CookieRequest = message.obj as CookieRequest
+                        if (cookieRequest === this.cookieRequest) {
+                            message.getTarget().removeMessages(MESSAGE_HANDLE_FINISH)
+                            if (cookieRequest.recaptchaV2Result != null) {
+                                webView!!.loadUrl("javascript:handleResult('" + cookieRequest.recaptchaV2Result + "')")
+                                message
+                                    .getTarget()
+                                    .sendEmptyMessageDelayed(MESSAGE_HANDLE_FINISH, cookieRequest.timeout)
+                            } else {
+                                message.getTarget().sendEmptyMessage(MESSAGE_HANDLE_FINISH)
+                            }
+                        }
+                        return@Callback true
+                    }
+
+                    MESSAGE_DRAW_TO_FILE -> {
+                        if (captureImageFile != null && webView != null) {
+                            val bitmap =
+                                Bitmap.createBitmap(
+                                    webView!!.getLayoutParams().width,
+                                    webView!!.getLayoutParams().height,
+                                    Bitmap.Config.ARGB_8888,
+                                )
+                            webView!!.draw(Canvas(bitmap))
+                            try {
+                                FileOutputStream(captureImageFile).use { output ->
+                                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                                }
+                            } catch (e: IOException) {
+                                // Ignore exception
+                            } finally {
+                                bitmap.recycle()
+                            }
+                            message.getTarget().sendEmptyMessageDelayed(
+                                MESSAGE_DRAW_TO_FILE,
+                                DRAW_TO_FILE_INTERVAL.toLong(),
+                            )
+                        }
+                        return@Callback true
+                    }
                 }
-                return@Callback true
-            }
-        }
-        false
-    })
+                false
+            },
+        )
 
     private inner class ServiceClient : WebViewClient() {
         override fun shouldOverrideUrlLoading(
             view: WebView?,
-            request: WebResourceRequest?
-        ): Boolean {
-            return false
-        }
+            request: WebResourceRequest?,
+        ): Boolean = false
 
-        override fun onPageFinished(view: WebView, url: String?) {
+        override fun onPageFinished(
+            view: WebView,
+            url: String?,
+        ) {
             super.onPageFinished(view, url)
 
             val cookieRequest = this@WebViewService.cookieRequest
@@ -161,8 +169,11 @@ class WebViewService : Service() {
                     if (cookieRequest.extra != null) {
                         val injectJavascript = cookieRequest.extra.getInjectJavascript()
                         if (injectJavascript != null) {
-                            val sanitized = injectJavascript
-                                .replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
+                            val sanitized =
+                                injectJavascript
+                                    .replace("\\", "\\\\")
+                                    .replace("\n", "\\n")
+                                    .replace("\"", "\\\"")
                             view.loadUrl("javascript:eval(\"" + sanitized + "\")")
                         }
                     }
@@ -178,7 +189,7 @@ class WebViewService : Service() {
         override fun onReceivedSslError(
             view: WebView?,
             handler: SslErrorHandler,
-            error: SslError?
+            error: SslError?,
         ) {
             val cookieRequest = this@WebViewService.cookieRequest
             if (cookieRequest != null) {
@@ -197,7 +208,7 @@ class WebViewService : Service() {
         override fun onReceivedError(
             view: WebView?,
             request: WebResourceRequest,
-            error: WebResourceError?
+            error: WebResourceError?,
         ) {
             super.onReceivedError(view, request, error)
 
@@ -209,17 +220,19 @@ class WebViewService : Service() {
         }
 
         fun getCaptchaApi(onLoad: String?): WebResourceResponse {
-            val stub = readRawResourceString(getResources(), R.raw.web_captcha_api)
-                .replace("__REPLACE_ON_LOAD__", if (onLoad != null) "'" + onLoad + "'" else "null")
+            val stub =
+                readRawResourceString(getResources(), R.raw.web_captcha_api)
+                    .replace("__REPLACE_ON_LOAD__", if (onLoad != null) "'" + onLoad + "'" else "null")
             return WebResourceResponse(
-                "application/javascript", "UTF-8",
-                ByteArrayInputStream(stub.toByteArray())
+                "application/javascript",
+                "UTF-8",
+                ByteArrayInputStream(stub.toByteArray()),
             )
         }
 
         override fun shouldInterceptRequest(
             view: WebView?,
-            request: WebResourceRequest
+            request: WebResourceRequest,
         ): WebResourceResponse? {
             var allowed = false
             val cookieRequest = this@WebViewService.cookieRequest
@@ -252,43 +265,49 @@ class WebViewService : Service() {
     }
 
     @Suppress("unused")
-    private val javascriptInterface: Any = object : Any() {
-        @JavascriptInterface
-        fun onRequestRecaptcha(apiKey: String?) {
-            val cookieRequest = this@WebViewService.cookieRequest
-            if (cookieRequest != null) {
-                if (apiKey != null) {
-                    cookieRequest.recaptchaV2ApiKey = apiKey
+    private val javascriptInterface: Any =
+        object : Any() {
+            @JavascriptInterface
+            fun onRequestRecaptcha(apiKey: String?) {
+                val cookieRequest = this@WebViewService.cookieRequest
+                if (cookieRequest != null) {
+                    if (apiKey != null) {
+                        cookieRequest.recaptchaV2ApiKey = apiKey
+                    }
+                    handler.removeMessages(MESSAGE_HANDLE_FINISH)
+                    startCaptchaThread(cookieRequest)
                 }
-                handler.removeMessages(MESSAGE_HANDLE_FINISH)
-                startCaptchaThread(cookieRequest)
             }
         }
-    }
 
     private fun startCaptchaThread(cookieRequest: CookieRequest) {
         synchronized(this) {
             if (captchaThread != null) {
                 captchaThread!!.interrupt()
             }
-            captchaThread = Thread(Runnable {
-                try {
-                    if (cookieRequest.recaptchaIsHcaptcha) {
-                        cookieRequest.recaptchaV2Result = cookieRequest.requestCallback
-                            .onHcaptcha(cookieRequest.recaptchaV2ApiKey, cookieRequest.uriString)
-                    } else {
-                        cookieRequest.recaptchaV2Result = cookieRequest.requestCallback
-                            .onRecaptchaV2(
-                                cookieRequest.recaptchaV2ApiKey,
-                                true,
-                                cookieRequest.uriString
-                            )
-                    }
-                } catch (e: RemoteException) {
-                    // Ignore
-                }
-                handler.obtainMessage(MESSAGE_HANDLE_CAPTCHA, cookieRequest).sendToTarget()
-            })
+            captchaThread =
+                Thread(
+                    Runnable {
+                        try {
+                            if (cookieRequest.recaptchaIsHcaptcha) {
+                                cookieRequest.recaptchaV2Result =
+                                    cookieRequest.requestCallback
+                                        .onHcaptcha(cookieRequest.recaptchaV2ApiKey, cookieRequest.uriString)
+                            } else {
+                                cookieRequest.recaptchaV2Result =
+                                    cookieRequest.requestCallback
+                                        .onRecaptchaV2(
+                                            cookieRequest.recaptchaV2ApiKey,
+                                            true,
+                                            cookieRequest.uriString,
+                                        )
+                            }
+                        } catch (e: RemoteException) {
+                            // Ignore
+                        }
+                        handler.obtainMessage(MESSAGE_HANDLE_CAPTCHA, cookieRequest).sendToTarget()
+                    },
+                )
             captchaThread!!.start()
         }
     }
@@ -312,15 +331,19 @@ class WebViewService : Service() {
                 handler.removeMessages(MESSAGE_HANDLE_FINISH)
                 handler.sendEmptyMessageDelayed(MESSAGE_HANDLE_FINISH, cookieRequest.timeout)
                 webView!!.getSettings().setUserAgentString(cookieRequest.userAgent)
-                setProxy(this, cookieRequest.proxyData, Runnable {
-                    if (this.cookieRequest === cookieRequest && webView != null) {
-                        webView!!.loadUrl(cookieRequest.uriString)
-                    }
-                })
+                setProxy(
+                    this,
+                    cookieRequest.proxyData,
+                    Runnable {
+                        if (this.cookieRequest === cookieRequest && webView != null) {
+                            webView!!.loadUrl(cookieRequest.uriString)
+                        }
+                    },
+                )
                 if (captureImageFile != null) {
                     handler.sendEmptyMessageDelayed(
                         MESSAGE_DRAW_TO_FILE,
-                        DRAW_TO_FILE_INTERVAL.toLong()
+                        DRAW_TO_FILE_INTERVAL.toLong(),
                     )
                 }
             } else {
@@ -345,22 +368,30 @@ class WebViewService : Service() {
                 verifyCertificate: Boolean,
                 timeout: Long,
                 extra: WebViewExtra?,
-                requestCallback: IRequestCallback
+                requestCallback: IRequestCallback,
             ): Boolean {
-                val proxyData = if (proxyHost != null)
-                    HttpClient.ProxyData(proxySocks, proxyHost, proxyPort)
-                else
-                    null
-                val cookieRequest = CookieRequest(
-                    uriString, userAgent, proxyData,
-                    verifyCertificate, timeout, extra, requestCallback
-                )
+                val proxyData =
+                    if (proxyHost != null) {
+                        HttpClient.ProxyData(proxySocks, proxyHost, proxyPort)
+                    } else {
+                        null
+                    }
+                val cookieRequest =
+                    CookieRequest(
+                        uriString,
+                        userAgent,
+                        proxyData,
+                        verifyCertificate,
+                        timeout,
+                        extra,
+                        requestCallback,
+                    )
                 synchronized(interruptedRequests) {
                     if (interruptedRequests.containsKey(requestId)) {
                         interruptedRequests.remove(requestId)
                         return false
                     } else {
-                        interruptedRequests.put(requestId, cookieRequest)
+                        interruptedRequests[requestId] = cookieRequest
                     }
                 }
                 try {
@@ -388,16 +419,17 @@ class WebViewService : Service() {
 
             override fun interrupt(requestId: String?) {
                 synchronized(interruptedRequests) {
-                    val cookieRequest = interruptedRequests.get(requestId)
+                    val cookieRequest = interruptedRequests[requestId]
                     if (cookieRequest != null) {
                         synchronized(cookieRequest) {
                             cookieRequest.ready = true
                             (cookieRequest as Object).notifyAll()
                         }
-                        handler.obtainMessage(MESSAGE_HANDLE_AFTER_INTERRUPT, cookieRequest)
+                        handler
+                            .obtainMessage(MESSAGE_HANDLE_AFTER_INTERRUPT, cookieRequest)
                             .sendToTarget()
                     } else {
-                        interruptedRequests.put(requestId, null)
+                        interruptedRequests[requestId] = null
                     }
                 }
             }
@@ -422,17 +454,19 @@ class WebViewService : Service() {
         webView!!.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE)
         webView!!.addJavascriptInterface(javascriptInterface, "jsi")
         webView!!.setWebViewClient(ServiceClient())
-        webView!!.setWebChromeClient(object : WebChromeClient() {
-            override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                val text = consoleMessage.message()
-                if (text != null && text.contains("SyntaxError")) {
-                    handler.removeMessages(MESSAGE_HANDLE_FINISH)
-                    handler.sendEmptyMessage(MESSAGE_HANDLE_FINISH)
-                    return true
+        webView!!.setWebChromeClient(
+            object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                    val text = consoleMessage.message()
+                    if (text != null && text.contains("SyntaxError")) {
+                        handler.removeMessages(MESSAGE_HANDLE_FINISH)
+                        handler.sendEmptyMessage(MESSAGE_HANDLE_FINISH)
+                        return true
+                    }
+                    return false
                 }
-                return false
-            }
-        })
+            },
+        )
         webView!!.setLayoutParams(ViewGroup.LayoutParams(480, 270))
         var initialScale = 25
         if (captureImageFile != null) {
@@ -447,7 +481,7 @@ class WebViewService : Service() {
             0,
             0,
             webView!!.getLayoutParams().width,
-            webView!!.getLayoutParams().height
+            webView!!.getLayoutParams().height,
         )
         webView!!.setInitialScale(initialScale)
     }
