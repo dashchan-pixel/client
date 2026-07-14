@@ -201,10 +201,13 @@ class UpdaterActivity : StateActivity() {
                         val files = ArrayList<String?>(downloadItems.size)
                         val directory: File? = FileProvider.Companion.updatesDirectory
                         for (downloadItem in downloadItems) {
-                            if (!File(directory, downloadItem.name).exists()) {
+                            // DownloadItem.name is typed nullable; a nameless item can
+                            // never resolve to a downloaded file, so treat it as missing.
+                            val name = downloadItem.name
+                            if (name == null || !File(directory, name).exists()) {
                                 break
                             }
-                            files.add(downloadItem.name)
+                            files.add(name)
                         }
                         if (files.size == downloadItems.size) {
                             context.startActivity(

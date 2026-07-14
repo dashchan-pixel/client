@@ -75,13 +75,12 @@ class CacheManager private constructor() : Runnable {
             return "CacheItem [\"" + name + "\", " + length + "]"
         }
 
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is CacheItem) {
-                val co = o
-                return type == co.type && nameLc == co.nameLc
+            if (other is CacheItem) {
+                return type == other.type && nameLc == other.nameLc
             }
             return false
         }
@@ -536,7 +535,7 @@ class CacheManager private constructor() : Runnable {
     private val directoryLocker = Any()
 
     @Volatile
-    internal var cacheDirectory: File? = null
+    private var cacheDirectory: File? = null
 
     @Volatile
     private var tempDirectory: File? = null
@@ -548,7 +547,8 @@ class CacheManager private constructor() : Runnable {
         syncCache()
     }
 
-    fun getCacheDirectory(): File {
+    // May be null: getExternalCacheDir() returns null while external storage is unmounted.
+    fun getCacheDirectory(): File? {
         if (cacheDirectory == null) {
             synchronized(directoryLocker) {
                 if (cacheDirectory == null) {
@@ -558,7 +558,7 @@ class CacheManager private constructor() : Runnable {
                 }
             }
         }
-        return cacheDirectory!!
+        return cacheDirectory
     }
 
     private fun getTempDirectory(): File? {
@@ -575,11 +575,10 @@ class CacheManager private constructor() : Runnable {
     }
 
     fun getInternalCacheFile(fileName: String): File? {
+        // Context.getCacheDir() is declared @NonNull by the framework, so the
+        // defensive null check the Java had here can never fire.
         val cacheDirectory = MainApplication.getInstance().getCacheDir()
-        if (cacheDirectory != null) {
-            return File(cacheDirectory, fileName)
-        }
-        return null
+        return File(cacheDirectory, fileName)
     }
 
     init {
@@ -691,10 +690,13 @@ class CacheManager private constructor() : Runnable {
     @Throws(CacheException::class)
     fun getMediaFileOrThrow(uri: Uri?, touch: Boolean): File {
         val directory = this.mediaDirectoryOrThrow
-        val fileName = getCachedFileKey(uri)
+        // getCachedFileKey() only returns null for a null uri, on which the Java
+        // blew up inside new File(parent, null). Report it as a CacheException
+        // instead: callers of this method already handle that.
+        val fileName = getCachedFileKey(uri) ?: throw CacheException("Cache file key is not available")
         val file = File(directory, fileName)
         if (touch) {
-            updateCachedFileLastModified(file, fileName!!, CacheItem.Type.MEDIA)
+            updateCachedFileLastModified(file, fileName, CacheItem.Type.MEDIA)
         }
         return file
     }

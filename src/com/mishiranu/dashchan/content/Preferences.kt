@@ -142,7 +142,7 @@ object Preferences {
             } catch (e: JSONException) {
                 // Migration
                 val list = unpackOrCastMultipleValues(value, keys.size)
-                if (list != null && list.size == keys.size) {
+                if (list.size == keys.size) {
                     var i = 0
                     while (i < keys.size) {
                         values.put(keys.get(i), list.get(i))
@@ -353,7 +353,7 @@ object Preferences {
     @JvmStatic
     fun getCaptchaPass(chan: Chan): List<String>? {
         val authorization = chan.configuration.safe().obtainCaptchaPass()
-        if (authorization != null && authorization.fieldsCount > 0) {
+        if (authorization.fieldsCount > 0) {
             val value = PREFERENCES!!.getString(KEY_CAPTCHA_PASS.bind(chan.name), null)
             @Suppress("UNCHECKED_CAST")
             return unpackOrCastMultipleValues(value, authorization.fieldsCount) as List<String>?
@@ -366,12 +366,11 @@ object Preferences {
     const val SUB_KEY_CAPTCHA_SOLVING_ENDPOINT: String = "endpoint"
     const val SUB_KEY_CAPTCHA_SOLVING_TOKEN: String = "token"
     const val SUB_KEY_CAPTCHA_SOLVING_TIMEOUT: String = "timeout"
-    val KEYS_CAPTCHA_SOLVING: List<String> = Arrays
-        .asList<String?>(
-            SUB_KEY_CAPTCHA_SOLVING_ENDPOINT,
-            SUB_KEY_CAPTCHA_SOLVING_TOKEN,
-            SUB_KEY_CAPTCHA_SOLVING_TIMEOUT
-        )
+    val KEYS_CAPTCHA_SOLVING: List<String> = listOf(
+        SUB_KEY_CAPTCHA_SOLVING_ENDPOINT,
+        SUB_KEY_CAPTCHA_SOLVING_TOKEN,
+        SUB_KEY_CAPTCHA_SOLVING_TIMEOUT
+    )
 
     val captchaSolving: MutableMap<String?, String?>
         get() {
@@ -604,14 +603,15 @@ object Preferences {
 
     const val KEY_DOWNLOAD_PATH: String = "download_path"
 
-    private val downloadPathLegacy: String?
+    // Never null: falls back to the default path, exactly as the Java did.
+    private val downloadPathLegacy: String
         get() {
             val path =
                 PREFERENCES!!.getString(
                     KEY_DOWNLOAD_PATH,
                     null
                 )
-            return if (!isEmptyOrWhitespace(path)) path else C.DEFAULT_DOWNLOAD_PATH
+            return path?.takeIf { !isEmptyOrWhitespace(it) } ?: C.DEFAULT_DOWNLOAD_PATH
         }
 
     private var externalStorageDirectory: File? = null
@@ -620,7 +620,7 @@ object Preferences {
     val downloadDirectoryLegacy: File
         // Environment.getExternalStorageDirectory has no replacement for resolving the legacy
         get() {
-            val path: String? = downloadPathLegacy
+            val path: String = downloadPathLegacy
             var dir = File(path)
             var absolute = false
             val uri = Uri.fromFile(dir)
@@ -649,10 +649,8 @@ object Preferences {
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun getDownloadUriTree(context: Context): Uri? {
         val contentResolver = context.getContentResolver()
+        // getPersistedUriPermissions() is declared @NonNull by the framework.
         val uriPermissions = contentResolver.getPersistedUriPermissions()
-        if (uriPermissions == null) {
-            return null
-        }
         for (uriPermission in uriPermissions) {
             if (uriPermission.isReadPermission() && uriPermission.isWritePermission()) {
                 val treeUri = uriPermission.getUri()
@@ -1089,14 +1087,12 @@ object Preferences {
     const val SUB_KEY_PROXY_HOST: String = "host"
     const val SUB_KEY_PROXY_PORT: String = "port"
     const val SUB_KEY_PROXY_TYPE: String = "type"
-    val KEYS_PROXY: List<String> = Arrays
-        .asList<String?>(SUB_KEY_PROXY_HOST, SUB_KEY_PROXY_PORT, SUB_KEY_PROXY_TYPE)
+    val KEYS_PROXY: List<String> = listOf(SUB_KEY_PROXY_HOST, SUB_KEY_PROXY_PORT, SUB_KEY_PROXY_TYPE)
     const val VALUE_PROXY_TYPE_HTTP: String = "http"
     const val VALUE_PROXY_TYPE_SOCKS: String = "socks"
     val ENTRIES_PROXY_TYPE: MutableList<CharSequence?> =
         mutableListOf<CharSequence?>("HTTP", "SOCKS")
-    val VALUES_PROXY_TYPE: List<String> = Arrays
-        .asList<String?>(VALUE_PROXY_TYPE_HTTP, VALUE_PROXY_TYPE_SOCKS)
+    val VALUES_PROXY_TYPE: List<String> = listOf(VALUE_PROXY_TYPE_HTTP, VALUE_PROXY_TYPE_SOCKS)
 
     @JvmStatic
     fun getProxy(chan: Chan): Map<String, String>? {
@@ -1439,7 +1435,7 @@ object Preferences {
     @JvmStatic
     fun getUserAuthorizationData(chan: Chan): MutableList<String?>? {
         val authorization = chan.configuration.safe().obtainUserAuthorization()
-        if (authorization != null && authorization.fieldsCount > 0) {
+        if (authorization.fieldsCount > 0) {
             val value = PREFERENCES!!.getString(KEY_USER_AUTHORIZATION.bind(chan.name), null)
             return unpackOrCastMultipleValues(value, authorization.fieldsCount)
         } else {

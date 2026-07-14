@@ -480,15 +480,15 @@ class DialogUnit internal constructor(private val uiManager: UiManager) {
         override fun onItemClick(
             holder: RecyclerView.ViewHolder,
             position: Int,
-            postItem: PostItem?,
+            item: PostItem?,
             longClick: Boolean
         ): Boolean {
             if (longClick) {
-                uiManager.interaction().handlePostContextMenu(configurationSet, postItem!!)
+                uiManager.interaction().handlePostContextMenu(configurationSet, item!!)
             } else {
                 uiManager.interaction().handlePostClick(
                     holder.itemView,
-                    configurationSet.postStateProvider!!, postItem!!, this
+                    configurationSet.postStateProvider!!, item!!, this
                 )
             }
             return true

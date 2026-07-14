@@ -83,7 +83,7 @@ class MainApplication : Application() {
 		return super.getCacheDir()
 	}
 
-	override fun getDir(name: String?, mode: Int): File {
+	override fun getDir(name: String, mode: Int): File {
 		return if (checkProcess(PROCESS_WEB_VIEW)) {
 			val dir = File(getWebViewCacheDir(), name)
 			dir.mkdirs()

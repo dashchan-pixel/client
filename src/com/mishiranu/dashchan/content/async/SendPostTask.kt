@@ -205,11 +205,11 @@ class SendPostTask<Key>(private val key: Key, private val callback: Callback<Key
 		updateProgressValue(index, progress, progressMax)
 	}
 
-	override fun onComplete(success: Boolean) {
+	override fun onComplete(result: Boolean) {
 		if (callback != null) {
-			if (success) {
+			if (result) {
 				callback.onSendPostSuccess(key, data, chan.name,
-						result?.threadNumber, result?.postNumber)
+						this.result?.threadNumber, this.result?.postNumber)
 			} else {
 				callback.onSendPostFail(key, data, chan.name, errorItem, extra, captchaError, keepCaptcha)
 			}

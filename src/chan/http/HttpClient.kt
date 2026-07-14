@@ -77,12 +77,12 @@ class HttpClient private constructor() {
             }
             private set
 
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is ProxyData) {
-                val proxyData = o
+            if (other is ProxyData) {
+                val proxyData = other
                 return socks == proxyData.socks &&
                         equals(host, proxyData.host) && port == proxyData.port
             }
@@ -185,12 +185,12 @@ class HttpClient private constructor() {
         val connectTimeout: Int,
         val readTimeout: Int
     ) {
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is ClientKey) {
-                val key: ClientKey = o
+            if (other is ClientKey) {
+                val key: ClientKey = other
                 return equals(
                     proxy,
                     key.proxy

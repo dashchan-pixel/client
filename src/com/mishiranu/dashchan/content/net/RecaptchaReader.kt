@@ -205,18 +205,20 @@ class RecaptchaReader private constructor() {
                             if (!hasSelected) {
                                 continue
                             }
-                            val responseText: String? =
+                            // readString() is null only for an empty body, which matches
+                            // neither pattern; the Java simply NPE'd on it.
+                            val responseText: String =
                                 HttpRequest(uri, holder!!).setPostMethod(entity)
                                     .addCookie(getGoogleCookie())
                                     .setRedirectHandler(HttpRequest.RedirectHandler.STRICT)
                                     .addHeader("Accept-Language", acceptLanguage)
                                     .addHeader("Referer", referer)
-                                    .perform()!!.readString()
+                                    .perform()!!.readString().orEmpty()
                             val matcher: Matcher = RECAPTCHA_RESULT_PATTERN.matcher(responseText)
                             if (matcher.find()) {
                                 return@ForegroundSolver matcher.group(1)
                             }
-                            response = parseResponse2(responseText!!)
+                            response = parseResponse2(responseText)
                             continue
                         }
                         throw CancelException()

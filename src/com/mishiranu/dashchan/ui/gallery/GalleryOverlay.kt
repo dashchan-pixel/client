@@ -269,7 +269,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
                 queuedFromView.getWidth(), queuedFromView.getHeight()
             )
         }
-        val attributes = getWindow().getAttributes()
+        val attributes = getWindow()!!.getAttributes()
         attributes.windowAnimations = if (imageViewPosition == null)
             R.style.Animation_Gallery_Full
         else
@@ -605,9 +605,9 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         dismiss()
     }
 
-    override fun getWindow(): Window {
+    override fun getWindow(): Window? {
         val dialog = getDialog()
-        return (if (dialog != null) dialog.getWindow() else null)!!
+        return dialog?.getWindow()
     }
 
     override fun downloadGalleryItem(galleryItem: GalleryItem) {
@@ -799,7 +799,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             galleryWindow = true
         }
         if (!returnToGallery()) {
-            getWindow().getDecorView().post(Runnable { this.dismiss() })
+            getWindow()!!.getDecorView().post(Runnable { this.dismiss() })
         }
     }
 
@@ -842,7 +842,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
         screenOnFixed = fixed
         val dialog = getDialog()
         if (dialog != null) {
-            val window = getWindow()
+            val window = getWindow()!!
             if (fixed) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             } else {
@@ -886,7 +886,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
 
     private fun invalidateSystemUiFlags() {
         val visible = isSystemUiVisible()
-        val window = getWindow()
+        val window = getWindow()!!
         val controller = window.getInsetsController()
         controller!!.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
         if (visible) {
@@ -928,7 +928,7 @@ class GalleryOverlay : DialogFragment, GalleryDialog.Callback, GalleryInstance.C
             return
         }
 
-        val context = getWindow().getContext()
+        val context = getWindow()!!.getContext()
         val density = obtainDensity(context)
         val frameLayout = FrameLayout(context)
         frameLayout.setBackgroundColor(-0xfddddde)

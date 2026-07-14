@@ -206,7 +206,7 @@ class UpdateFragment : BaseListFragment {
 		val targets = ArrayList<String>()
 		val repositories = ArrayList<String?>()
 		val targetIndex: Int
-		val applicationItem = updateDataMap!!.get(listItem.extensionName, listItem.installed)
+		val applicationItem = updateDataMap!!.get(listItem.extensionName, listItem.installed)!!
 		if (listItem.installed) {
 			targets.add(getString(R.string.keep_current_version))
 			repositories.add(null)
@@ -243,7 +243,7 @@ class UpdateFragment : BaseListFragment {
 			val adapter = recyclerView.adapter as Adapter
 			for (listItem in adapter.listItems) {
 				if (listItem.willBeInstalled()) {
-					length += updateDataMap!!.get(listItem.extensionName, listItem.installed)
+					length += updateDataMap!!.get(listItem.extensionName, listItem.installed)!!
 							.packageItems[listItem.targetIndex].length
 				}
 			}
@@ -265,7 +265,7 @@ class UpdateFragment : BaseListFragment {
 				val adapter = getRecyclerView()!!.adapter as Adapter
 				for (listItem in adapter.listItems) {
 					if (listItem.willBeInstalled()) {
-						val packageItem = updateDataMap!!.get(listItem.extensionName, listItem.installed)
+						val packageItem = updateDataMap!!.get(listItem.extensionName, listItem.installed)!!
 								.packageItems[listItem.targetIndex]
 						if (packageItem.source != null) {
 							requests.add(UpdaterActivity.Request(listItem.extensionName,
@@ -294,7 +294,7 @@ class UpdateFragment : BaseListFragment {
 		for (i in adapter.listItems.indices) {
 			val listItem = adapter.listItems[i]
 			if (extensionName == listItem.extensionName) {
-				val applicationItem = updateDataMap!!.get(extensionName, listItem.installed)
+				val applicationItem = updateDataMap!!.get(extensionName, listItem.installed)!!
 				if (!listItem.installed) {
 					targetIndex--
 				}
@@ -320,8 +320,8 @@ class UpdateFragment : BaseListFragment {
 			fun onItemClick(listItem: ListItem)
 
 			override fun onItemClick(holder: RecyclerView.ViewHolder, position: Int,
-					listItem: ListItem?, longClick: Boolean): Boolean {
-				onItemClick(listItem!!)
+					item: ListItem?, longClick: Boolean): Boolean {
+				onItemClick(item!!)
 				return true
 			}
 		}
@@ -517,7 +517,8 @@ class UpdateFragment : BaseListFragment {
 				installed: Boolean): ArrayList<ReadUpdateTask.ApplicationItem> {
 			val applicationItems = ArrayList<ReadUpdateTask.ApplicationItem>()
 			for (extensionName in updateDataMap.extensionNames(installed)) {
-				applicationItems.add(updateDataMap.get(extensionName, installed))
+				// Keys come from this map's own key set, so the lookup always hits
+				applicationItems.add(updateDataMap.get(extensionName, installed)!!)
 			}
 			applicationItems.sortWith(UPDATE_DATA_COMPARATOR)
 			return applicationItems
@@ -531,7 +532,7 @@ class UpdateFragment : BaseListFragment {
 			val minApiVersion: Int
 			val maxApiVersion: Int
 			run {
-				val applicationItem = updateDataMap.get(ChanManager.EXTENSION_NAME_CLIENT, true)
+				val applicationItem = updateDataMap.get(ChanManager.EXTENSION_NAME_CLIENT, true)!!
 				val listItem = ListItem(ChanManager.EXTENSION_NAME_CLIENT,
 						if (context != null) AndroidUtils.getApplicationLabel(context) else null,
 						applicationItem.packageItems.size >= 2, true)
@@ -618,7 +619,7 @@ class UpdateFragment : BaseListFragment {
 				listItem: ListItem, minApiVersion: Int, maxApiVersion: Int, warningUnsupported: String?) {
 			var valid = true
 			if (listItem.targetIndex >= 0) {
-				val applicationItem = updateDataMap.get(listItem.extensionName, listItem.installed)
+				val applicationItem = updateDataMap.get(listItem.extensionName, listItem.installed)!!
 				val packageItem = applicationItem.packageItems[listItem.targetIndex]
 				valid = checkVersionValid(applicationItem, packageItem, minApiVersion, maxApiVersion)
 			}
@@ -633,7 +634,7 @@ class UpdateFragment : BaseListFragment {
 				throw IllegalStateException()
 			}
 			val applicationPackageItem = updateDataMap
-					.get(ChanManager.EXTENSION_NAME_CLIENT, true).packageItems[applicationListItem.targetIndex]
+					.get(ChanManager.EXTENSION_NAME_CLIENT, true)!!.packageItems[applicationListItem.targetIndex]
 			val minApiVersion = applicationPackageItem.minApiVersion
 			val maxApiVersion = applicationPackageItem.maxApiVersion
 			if (ChanManager.EXTENSION_NAME_CLIENT == listItem.extensionName) {

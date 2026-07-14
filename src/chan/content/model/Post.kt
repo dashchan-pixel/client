@@ -347,11 +347,8 @@ class Post : Comparable<Post> {
 		}
 		val vote = builder.vote
 		if (vote != null) {
-			val postVote = com.mishiranu.dashchan.content.model.Post.Vote
+			builder.builder.vote = com.mishiranu.dashchan.content.model.Post.Vote
 					.createExternal(vote.getLikes(), vote.getDislikes())
-			if (postVote != null) {
-				builder.builder.vote = postVote
-			}
 		}
 
 		return builder.builder.build(false)

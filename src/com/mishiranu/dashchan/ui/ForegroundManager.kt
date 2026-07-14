@@ -187,6 +187,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         val pendingData: T?
             get() {
+                @Suppress("UNCHECKED_CAST")
                 val result =
                     getInstance().getPendingData(this.pendingDataId) as T?
                 return result
@@ -443,7 +444,7 @@ class ForegroundManager private constructor() : Handler.Callback {
                 .safe().obtainCaptcha(args.getString(EXTRA_CAPTCHA_TYPE))
             captchaLifetimeSeconds = captchaConfiguration.ttl
             refreshCaptchaWhenLifetimeEnd = isCaptchaAutoReload
-            val captchaInputView = container.findViewById<EditText?>(R.id.captcha_input)
+            val captchaInputView = container.findViewById<EditText>(R.id.captcha_input)
             captchaForm = CaptchaForm(
                 this,
                 false,
@@ -822,8 +823,8 @@ class ForegroundManager private constructor() : Handler.Callback {
                 EXTRA_IMAGES,
                 Bitmap::class.java
             )
-            val images = arrayOfNulls<Bitmap>(if (parcelables != null) parcelables.size else 0)
-            if (images.size > 0) {
+            val images = arrayOfNulls<Bitmap>(parcelables?.size ?: 0)
+            if (parcelables != null && images.size > 0) {
                 // noinspection SuspiciousSystemArraycopy
                 System.arraycopy(parcelables, 0, images, 0, images.size)
             }

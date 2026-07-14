@@ -188,10 +188,6 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             ViewType.POST_HIDDEN -> {
                 return HiddenViewHolder(parent, false, false)
             }
-
-            else -> {
-                throw IllegalArgumentException()
-            }
         }
     }
 
@@ -1059,7 +1055,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             R.attr.iconPostEmail,
             TitleProvider { context: Context?, postItem: PostItem? ->
                 var email = postItem!!.getEmail()
-                if (email != null && email.startsWith("mailto:")) {
+                if (email.startsWith("mailto:")) {
                     email = email.substring(7)
                 }
                 email
@@ -1107,26 +1103,24 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
         )
 
         companion object {
-            val POST_ITEM_STATES: MutableList<PostState> = Arrays
-                .asList<PostState?>(
-                    PostState.USER_POST,
-                    PostState.ORIGINAL_POSTER,
-                    PostState.SAGE,
-                    PostState.EMAIL,
-                    PostState.STICKY,
-                    PostState.CLOSED,
-                    PostState.CYCLICAL,
-                    PostState.WARNED,
-                    PostState.BANNED
-                )
+            val POST_ITEM_STATES: List<PostState> = listOf(
+                PostState.USER_POST,
+                PostState.ORIGINAL_POSTER,
+                PostState.SAGE,
+                PostState.EMAIL,
+                PostState.STICKY,
+                PostState.CLOSED,
+                PostState.CYCLICAL,
+                PostState.WARNED,
+                PostState.BANNED
+            )
 
-            val THREAD_ITEM_STATES: MutableList<PostState> = Arrays
-                .asList<PostState?>(
-                    PostState.SAGE,
-                    PostState.STICKY,
-                    PostState.CLOSED,
-                    PostState.CYCLICAL
-                )
+            val THREAD_ITEM_STATES: List<PostState> = listOf(
+                PostState.SAGE,
+                PostState.STICKY,
+                PostState.CLOSED,
+                PostState.CYCLICAL
+            )
         }
     }
 
@@ -1712,7 +1706,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             index = itemView.findViewById<TextView>(R.id.index)
             number = itemView.findViewById<TextView>(R.id.number)
             comment = itemView.findViewById<TextView>(R.id.comment)
-            itemView.findViewById<View?>(R.id.head).setAlpha(ALPHA_HIDDEN_POST)
+            itemView.findViewById<View>(R.id.head).setAlpha(ALPHA_HIDDEN_POST)
 
             val textScale = textScale
             applyScaleSize(textScale, index, number, comment)
@@ -1808,7 +1802,7 @@ class ViewUnit @SuppressLint("InflateParams") internal constructor(uiManager: Ui
             parent: ViewGroup,
             anchorIndex: Int,
             images: Array<ImageView?>,
-            states: MutableList<PostState>,
+            states: List<PostState>,
             topDp: Float,
             startDp: Float,
             endDp: Float

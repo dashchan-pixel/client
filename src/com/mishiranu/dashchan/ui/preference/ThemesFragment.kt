@@ -276,7 +276,7 @@ class ThemesFragment : BaseListFragment() {
 				(if (listItems[position].title != null) ViewType.HEADER else ViewType.ITEM).ordinal
 
 		override fun onItemClick(holder: RecyclerView.ViewHolder, position: Int,
-				nothing: Void?, longClick: Boolean): Boolean {
+				item: Void?, longClick: Boolean): Boolean {
 			val listItem = listItems[position]
 			return callback.onThemeClick(listItem.theme!!, listItem.installed, longClick)
 		}
@@ -351,7 +351,9 @@ class ThemesFragment : BaseListFragment() {
 				var uri = Chan.getFallback().locator.setSchemeIfEmpty(Uri.parse(Preferences.uriThemes), null)
 				var redirects = 0
 				while (redirects++ < 5) {
-					val jsonObject = JSONObject(HttpRequest(uri, holder).perform()!!.readString())
+					val responseString = HttpRequest(uri, holder).perform()!!.readString()
+							?: return Pair(ErrorItem(ErrorItem.Type.INVALID_RESPONSE), null)
+					val jsonObject = JSONObject(responseString)
 					val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
 					if (redirect != null) {
 						uri = ReadUpdateTask.normalizeRelativeUri(uri!!, redirect)

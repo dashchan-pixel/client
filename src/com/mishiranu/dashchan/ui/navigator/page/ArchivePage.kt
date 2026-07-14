@@ -81,16 +81,16 @@ class ArchivePage : ListPage(), ArchiveAdapter.Callback, ReadThreadSummariesTask
 				StringUtils.formatBoardTitle(page.chanName!!, page.boardName, null)
 	}
 
-	override fun onItemClick(threadNumber: String?) {
-		if (threadNumber != null) {
+	override fun onItemClick(item: String?) {
+		if (item != null) {
 			val page = getPage()
-			uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName, threadNumber, null, null)
+			uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName, item, null, null)
 		}
 	}
 
-	override fun onItemLongClick(threadNumber: String?): Boolean {
+	override fun onItemLongClick(item: String?): Boolean {
 		val page = getPage()
-		showItemPopupMenu(fragmentManager, page.chanName, page.boardName, threadNumber)
+		showItemPopupMenu(fragmentManager, page.chanName, page.boardName, item)
 		return true
 	}
 

@@ -686,7 +686,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                                 val data = output.toByteArray()
                                 parcel.unmarshall(data, 0, data.size)
                                 parcel.setDataPosition(0)
-                                errorTasks.addAll(parcel.createTypedArrayList<TaskData?>(TaskData.CREATOR)!!)
+                                errorTasks.addAll(parcel.createTypedArrayList(TaskData.CREATOR).orEmpty())
                             }
                         } catch (e: Exception) {
                             // Ignore
@@ -1007,7 +1007,7 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
 
         companion object {
             @JvmField
-            val CREATOR: Parcelable.Creator<TaskData?> = object : Parcelable.Creator<TaskData?> {
+            val CREATOR: Parcelable.Creator<TaskData> = object : Parcelable.Creator<TaskData> {
                 override fun createFromParcel(source: Parcel): TaskData {
                     val chanName = source.readString()
                     val finishedFromCache = source.readByte().toInt() != 0
@@ -1117,8 +1117,6 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
                         )
                     }
                 }
-
-                else -> {}
             }
             if (notificationData.type == NotificationData.Type.REQUEST) {
                 builder!!.setContentIntent(
@@ -1599,14 +1597,13 @@ class DownloadService : BaseService(), ReadFileTask.Callback {
             }
         }
 
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is DownloadItem) {
-                val co = o
-                return (equals(uri, co.uri)) &&
-                        equals(name, co.name)
+            if (other is DownloadItem) {
+                return (equals(uri, other.uri)) &&
+                        equals(name, other.name)
             }
             return false
         }

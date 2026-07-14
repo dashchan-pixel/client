@@ -154,14 +154,14 @@ class SearchPage : ListPage(), SearchAdapter.Callback, UiManager.Observer, ReadS
 
 	override fun obtainTitle(): String = getPage().searchQuery!!
 
-	override fun onItemClick(postItem: PostItem?) {
+	override fun onItemClick(item: PostItem?) {
 		val page = getPage()
 		uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName,
-				postItem!!.threadNumber, postItem.getPostNumber(), null)
+				item!!.threadNumber, item.getPostNumber(), null)
 	}
 
-	override fun onItemLongClick(postItem: PostItem?): Boolean {
-		uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, postItem!!)
+	override fun onItemLongClick(item: PostItem?): Boolean {
+		uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, item!!)
 		return true
 	}
 

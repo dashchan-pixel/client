@@ -87,7 +87,7 @@ class DropdownView(context: Context, attrs: AttributeSet?) : FrameLayout(context
 		}
 	}
 
-	fun setItems(collection: Collection<out CharSequence>) {
+	fun setItems(collection: Collection<CharSequence>) {
 		val adapter = object : ArrayAdapter<CharSequence>(context, android.R.layout.simple_spinner_item) {
 			override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
 				val view = convertView ?: factory()

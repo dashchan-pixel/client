@@ -386,7 +386,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             override fun onItemClick(
                 holder: ViewHolder,
                 position: Int,
-                nothing: Void?,
+                item: Void?,
                 longClick: Boolean
             ): Boolean {
                 if (longClick) {
@@ -433,7 +433,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
 
                 ListViewUtils.bind<Void?, ViewHolder>(
                     this,
-                    itemView.findViewById<View?>(R.id.attachment_click),
+                    itemView.findViewById<View>(R.id.attachment_click),
                     true,
                     null,
                     callback
@@ -542,7 +542,7 @@ class ListUnit(private val instance: GalleryInstance) : ActionMode.Callback {
             chanName: String?, galleryItem: GalleryItem, allowNavigatePostManually: Boolean
         ): AlertDialog {
             val callback = getCallback(provider)
-            val context = callback.getWindow().getContext()
+            val context = callback.getWindow()!!.getContext()
             val chan = get(chanName)
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(

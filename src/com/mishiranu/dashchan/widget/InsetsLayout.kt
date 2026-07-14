@@ -18,12 +18,13 @@ class InsetsLayout(context: Context) : FrameLayout(context) {
 		@RequiresApi(api = Build.VERSION_CODES.Q)
 		constructor(insets: android.graphics.Insets) : this(insets.left, insets.top, insets.right, insets.bottom)
 
-		override fun equals(o: Any?): Boolean {
-			if (o === this) {
+		override fun equals(other: Any?): Boolean {
+			if (other === this) {
 				return true
 			}
-			if (o is Insets) {
-				return left == o.left && top == o.top && right == o.right && bottom == o.bottom
+			if (other is Insets) {
+				return left == other.left && top == other.top &&
+						right == other.right && bottom == other.bottom
 			}
 			return false
 		}

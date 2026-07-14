@@ -376,10 +376,6 @@ class InteractionUnit internal constructor(private val uiManager: UiManager) {
                             NavigationData.Target.SEARCH -> {
                                 messageId = R.string.go_to_search__sentence
                             }
-
-                            else -> {
-                                throw IllegalArgumentException()
-                            }
                         }
                     } else {
                         messageId = R.string.follow_the_link__sentence

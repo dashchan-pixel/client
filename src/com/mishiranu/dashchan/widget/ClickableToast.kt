@@ -349,7 +349,7 @@ class ClickableToast private constructor(private val activity: ComponentActivity
         var measureView: View? = message1
         while (true) {
             val parent = measureView!!.getParent() as View?
-            if (parent == null || backgroundDrawable != null && measureView === backgroundView) {
+            if (parent == null || measureView === backgroundView) {
                 break
             }
             totalPadding.left += measureView.getLeft()

@@ -119,7 +119,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
         this.contentView = contentView
         rootView = ContentView(context, DragLayout.Side.TOP, object : DragLayout.Callback {
             private val lastVisibleDialog: DialogView?
-                get() = if (visibleViews.isEmpty()) null else visibleViews.getLast().second
+                get() = if (visibleViews.isEmpty()) null else visibleViews.last().second
 
             override val isScrolled: Boolean
                 get() {
@@ -254,7 +254,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             }
         }
         if (!visibleViews.isEmpty()) {
-            visibleViews.getLast().second!!.setActive(false)
+            visibleViews.last().second!!.setActive(false)
             if (visibleViews.size == VISIBLE_COUNT) {
                 val first: Pair<T?, DialogView?> = visibleViews.removeFirst()
                 first.first!!.destroyView(first.second!!.content, false)
@@ -304,7 +304,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
 
     private fun popInternal(): T? {
         if (hiddenViews.size > 0) {
-            val index = rootView.indexOfChild(visibleViews.getFirst().second!!.container)
+            val index = rootView.indexOfChild(visibleViews.first().second!!.container)
             val last = hiddenViews.removeLast()
             val dialogView = addDialogView(last, index)
             dialogView.setActive(false)
@@ -318,7 +318,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
             currentActionMode = null
             removeFromParent(contentView)
         } else {
-            visibleViews.getLast().second!!.setActive(true)
+            visibleViews.last().second!!.setActive(true)
         }
         last.first!!.destroyView(last.second!!.content, true)
         return last.first
@@ -345,7 +345,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
     }
 
     private fun handlePopSelf(dialogView: DialogView?) {
-        if (!visibleViews.isEmpty() && visibleViews.getLast().second === dialogView) {
+        if (!visibleViews.isEmpty() && visibleViews.last().second === dialogView) {
             popInternal()
         }
     }
@@ -441,10 +441,9 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                 override fun clampViewPositionVertical(child: View, top: Int, dy: Int): Int {
                     val layoutTop = getChildInitialTop(child)
                     val scrolled = intercepted || callback.isScrolled
-                    when (side) {
-                        Side.TOP -> return if (scrolled) max(layoutTop, top) else layoutTop
-                        Side.BOTTOM -> return if (scrolled) min(layoutTop, top) else layoutTop
-                        else -> throw IllegalStateException()
+                    return when (side) {
+                        Side.TOP -> if (scrolled) max(layoutTop, top) else layoutTop
+                        Side.BOTTOM -> if (scrolled) min(layoutTop, top) else layoutTop
                     }
                 }
 
@@ -500,10 +499,6 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(private val context: Context
                             Side.BOTTOM -> {
                                 maxTop = -getHeight()
                                 minTop = max(targetTop, maxTop)
-                            }
-
-                            else -> {
-                                throw IllegalStateException()
                             }
                         }
                         if (velocity > 0) {

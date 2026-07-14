@@ -198,15 +198,14 @@ class PagesDatabase private constructor() {
                 .equals(Schema.Posts.Columns.Companion.THREAD_NUMBER, threadNumber)
         }
 
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is ThreadKey) {
-                val threadKey = o
-                return chanName == threadKey.chanName &&
-                        boardName == threadKey.boardName &&
-                        threadNumber == threadKey.threadNumber
+            if (other is ThreadKey) {
+                return chanName == other.chanName &&
+                        boardName == other.boardName &&
+                        threadNumber == other.threadNumber
             }
             return false
         }
@@ -257,12 +256,12 @@ class PagesDatabase private constructor() {
                     return false
                 }
 
-            override fun equals(o: Any?): Boolean {
-                if (o === this) {
+            override fun equals(other: Any?): Boolean {
+                if (other === this) {
                     return true
                 }
-                if (o is State) {
-                    return o.id == id
+                if (other is State) {
+                    return other.id == id
                 }
                 return false
             }
@@ -948,10 +947,6 @@ class PagesDatabase private constructor() {
                     .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
                     .build()
                 database.delete(Schema.Posts.Companion.TABLE_NAME, filter.value, filter.args)
-            }
-
-            else -> {
-                throw IllegalArgumentException()
             }
         }
 

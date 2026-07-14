@@ -9,6 +9,12 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
+// isNull() is true for both an absent key and a JSON null, which is exactly when the
+// Java's optString(name, null) fell back to null. Null must be preserved here: callers
+// such as HidePerformer distinguish a null boardName from an empty one.
+private fun JSONObject.optStringOrNull(name: String): String? =
+		if (isNull(name)) null else optString(name)
+
 class AutohideStorage private constructor() :
 		StorageManager.JsonOrgStorage<List<AutohideStorage.AutohideItem>>("autohide", 1000, 10000) {
 	private val autohideItems = ArrayList<AutohideItem>()
@@ -45,15 +51,15 @@ class AutohideStorage private constructor() :
 						}
 					}
 				}
-				val boardName = item.optString(KEY_BOARD_NAME, null)
-				val threadNumber = item.optString(KEY_THREAD_NUMBER, null)
+				val boardName = item.optStringOrNull(KEY_BOARD_NAME)
+				val threadNumber = item.optStringOrNull(KEY_THREAD_NUMBER)
 				val optionOriginalPost = item.optBoolean(KEY_OPTION_ORIGINAL_POST)
 				val optionSage = item.optBoolean(KEY_OPTION_SAGE)
 				val optionSubject = item.optBoolean(KEY_OPTION_SUBJECT)
 				val optionComment = item.optBoolean(KEY_OPTION_COMMENT)
 				val optionName = item.optBoolean(KEY_OPTION_NAME)
 				val optionFileName = item.optBoolean(KEY_OPTION_FILE_NAME)
-				val value = item.optString(KEY_VALUE, null)
+				val value = item.optStringOrNull(KEY_VALUE)
 				autohideItems.add(AutohideItem(chanNames, boardName, threadNumber, optionOriginalPost,
 						optionSage, optionSubject, optionComment, optionName, optionFileName, value))
 			}
@@ -171,7 +177,7 @@ class AutohideStorage private constructor() :
 			try {
 				val matcher = pattern!!.matcher(data)
 				if (matcher.find()) {
-					var result = matcher.group()
+					var result: String? = matcher.group()
 					if (StringUtils.isEmpty(result)) {
 						result = value
 					}

@@ -102,7 +102,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 		}
 		if (chan.configuration.getOption(ChanConfiguration.OPTION_ALLOW_CAPTCHA_PASS)) {
 			val authorization = chan.configuration.safe().obtainCaptchaPass()
-			if (authorization != null && authorization.fieldsCount > 0) {
+			if (authorization.fieldsCount > 0) {
 				captchaPassPreference = addMultipleEdit(Preferences.KEY_CAPTCHA_PASS.bind(chanName),
 						R.string.captcha_pass, R.string.captcha_pass__summary,
 						authorization.hints?.asList(),
@@ -120,7 +120,7 @@ class ChanFragment : PreferenceFragment, FragmentHandler.Callback {
 		}
 		if (chan.configuration.getOption(ChanConfiguration.OPTION_ALLOW_USER_AUTHORIZATION)) {
 			val authorization = chan.configuration.safe().obtainUserAuthorization()
-			if (authorization != null && authorization.fieldsCount > 0) {
+			if (authorization.fieldsCount > 0) {
 				userAuthorizationPreference = addMultipleEdit(Preferences.KEY_USER_AUTHORIZATION.bind(chanName),
 						R.string.user_authorization, 0,
 						authorization.hints?.asList(),

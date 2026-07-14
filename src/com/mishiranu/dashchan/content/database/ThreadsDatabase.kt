@@ -83,10 +83,6 @@ class ThreadsDatabase internal constructor(private val database: CommonDatabase)
                 )
                 database.execSQL("DROP TABLE hidden_threads")
             }
-
-            else -> {
-                throw UnsupportedOperationException()
-            }
         }
     }
 

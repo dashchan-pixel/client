@@ -209,7 +209,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         var validator: HttpValidator? = null
 
         @Public
-        constructor(vararg threads: Posts?) : this(if (threads != null) Arrays.asList<Posts?>(*threads) else null)
+        constructor(vararg threads: Posts?) : this(Arrays.asList<Posts?>(*threads))
 
         init {
             var list = mutableListOf<Thread?>()
@@ -386,9 +386,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
 
         @Public
         constructor(vararg posts: chan.content.model.Post?) : this(
-            if (posts != null) Arrays.asList<chan.content.model.Post?>(
-                *posts
-            ) else null
+            Arrays.asList<chan.content.model.Post?>(*posts)
         )
 
         init {
@@ -833,12 +831,12 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
                 }
             }
 
-            override fun equals(o: Any?): Boolean {
-                if (o === this) {
+            override fun equals(other: Any?): Boolean {
+                if (other === this) {
                     return true
                 }
-                if (o is Attachment) {
-                    val attachment = o
+                if (other is Attachment) {
+                    val attachment = other
                     return attachment.fileHolder == fileHolder && equals(
                         attachment.rating,
                         rating
@@ -1207,7 +1205,7 @@ open class ChanPerformer internal constructor(chanProvider: Chan.Provider?) : Ch
         }
 
         @Throws(ExtensionException::class, HttpException::class, InvalidResponseException::class)
-        fun onReadContent(data: ReadContentData): ReadContentResult {
+        fun onReadContent(data: ReadContentData): ReadContentResult? {
             val context = performer.enterContext()
             try {
                 return performer.onReadContent(data)

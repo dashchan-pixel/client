@@ -30,11 +30,11 @@ class GetHistoryTask(private val callback: Callback, private val chanName: Strin
 		}
 	}
 
-	override fun onCancel(cursor: HistoryDatabase.HistoryCursor?) {
-		cursor?.close()
+	override fun onCancel(result: HistoryDatabase.HistoryCursor?) {
+		result?.close()
 	}
 
-	override fun onComplete(cursor: HistoryDatabase.HistoryCursor?) {
-		callback.onGetHistoryResult(cursor)
+	override fun onComplete(result: HistoryDatabase.HistoryCursor?) {
+		callback.onGetHistoryResult(result)
 	}
 }

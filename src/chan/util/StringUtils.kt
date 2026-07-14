@@ -109,7 +109,7 @@ object StringUtils {
 	@Extendable
 	fun interface ReplacementCallback {
 		@Extendable
-		open fun getReplacement(matcher: Matcher): String?
+		fun getReplacement(matcher: Matcher): String?
 	}
 
 	@Public
@@ -131,8 +131,11 @@ object StringUtils {
 			if (buffer == null) {
 				buffer = StringBuffer()
 			}
-			val replacement = replacementCallback.getReplacement(matcher)?.let { Matcher.quoteReplacement(it) }
-			matcher.appendReplacement(buffer, replacement)
+			// Matches the Java: a null replacement was passed straight to appendReplacement,
+			// which throws NPE. Kept as an NPE rather than silently substituting a default.
+			val replacement = replacementCallback.getReplacement(matcher)
+					?: throw NullPointerException("replacement is null")
+			matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement))
 		}
 		if (buffer != null) {
 			matcher.appendTail(buffer)

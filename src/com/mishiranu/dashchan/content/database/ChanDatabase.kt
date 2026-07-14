@@ -164,13 +164,12 @@ class ChanDatabase private constructor() {
             this.name = emptyIfNull(name)
         }
 
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is DataKey) {
-                val dataKey = o
-                return boardName == dataKey.boardName && name == dataKey.name
+            if (other is DataKey) {
+                return boardName == other.boardName && name == other.name
             }
             return false
         }

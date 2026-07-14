@@ -126,10 +126,6 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                         "host",
                         identifier.host
                     )
-
-                    else -> {
-                        throw IllegalArgumentException()
-                    }
                 }
             }
             return Key(generator.generate())

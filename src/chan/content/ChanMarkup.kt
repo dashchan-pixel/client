@@ -300,7 +300,7 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
 
             override fun onTagStart(
                 parser: HtmlParser<MarkupExtra?, TagItem?, ChanSpanProvider>,
-                builder: StringBuilder, tagName: String, attributes: Attributes, tagItem: TagItem?
+                builder: StringBuilder, tagName: String, attributes: Attributes, obj: TagItem?
             ) {
                 val provider = parser.getSpanProvider()
                 var tag = 0
@@ -310,10 +310,10 @@ open class ChanMarkup internal constructor(chanProvider: Chan.Provider?) : Chan.
                     val linkHolder = LinkHolder()
                     linkHolder.uriString = nullIfEmpty(attributes.getValue("", "href"))
                     extra = linkHolder
-                } else if (tagItem != null) {
-                    if (tagItem.tag != 0) {
-                        tag = tagItem.tag
-                    } else if (tagItem.colorable) {
+                } else if (obj != null) {
+                    if (obj.tag != 0) {
+                        tag = obj.tag
+                    } else if (obj.colorable) {
                         extra = parser.getColorAttribute(attributes)
                         if (extra != null) {
                             tag = TAG_SPECIAL_COLOR

@@ -36,7 +36,9 @@ class GithubRepository(private val holder: HttpHolder, githubUri: Uri) {
 			val item = array.getJSONObject(i)
 			val name = item.getString("name")
 			val directory = "dir" == item.optString("type")
-			val downloadUrl = if (item.isNull("download_url")) null else item.optString("download_url", null)
+			// isNull() is already true for both an absent key and a JSON null, so in the
+			// else branch the value exists and optString() can never fall back to null.
+			val downloadUrl = if (item.isNull("download_url")) null else item.optString("download_url")
 			files[name] = Entry(directory, if (downloadUrl != null) Uri.parse(downloadUrl) else null)
 		}
 		return files

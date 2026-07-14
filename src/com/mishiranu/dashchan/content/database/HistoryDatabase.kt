@@ -123,10 +123,6 @@ class HistoryDatabase internal constructor(private val database: CommonDatabase)
                 database.execSQL("CREATE INDEX history_order ON history (chan_name, time)")
                 database.execSQL("DROP TABLE history_old")
             }
-
-            else -> {
-                throw UnsupportedOperationException()
-            }
         }
     }
 

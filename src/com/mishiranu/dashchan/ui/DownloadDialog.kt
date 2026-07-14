@@ -323,7 +323,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
             }
         })
         radioGroup.check(if (state.subdirectory) R.id.download_subdirectory else R.id.download_common)
-        view.findViewById<RadioButton?>(R.id.download_common)
+        view.findViewById<RadioButton>(R.id.download_common)
             .setText(context.getString(R.string.save_to_directory__format, root.getName()))
 
         val adapter = Adapter(root, Runnable {
@@ -378,7 +378,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
 
     private fun refreshDropDownContents(editText: AutoCompleteTextView) {
         val editable = editText.getEditableText()
-        val watchers = editable.getSpans<TextWatcher?>(0, editable.length, TextWatcher::class.java)
+        val watchers = editable.getSpans<TextWatcher>(0, editable.length, TextWatcher::class.java)
         if (watchers != null) {
             for (watcher in watchers) {
                 watcher.beforeTextChanged(editable, 0, 0, 0)
@@ -695,7 +695,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
                 }
 
                 val name = constraintString.substring(separatorIndex + 1)
-                val result: ArrayList<DialogDirectory?> = ArrayList<DialogDirectory?>()
+                val result: ArrayList<DialogDirectory> = ArrayList<DialogDirectory>()
                 for (item in items) {
                     if (item.filter(name)) {
                         result.add(item)
@@ -709,6 +709,7 @@ class DownloadDialog(context: Context?, callback: Callback) {
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults) {
+                @Suppress("UNCHECKED_CAST")
                 val items: ArrayList<DialogDirectory> = results.values as ArrayList<DialogDirectory>
                 this@Adapter.items = items
                 notifyDataSetChanged()

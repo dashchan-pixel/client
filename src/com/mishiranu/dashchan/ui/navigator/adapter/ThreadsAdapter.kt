@@ -263,13 +263,11 @@ class ThreadsAdapter(
             val comparator =
                 if (catalogSort != null) catalogSort!!.comparator else null
             if (catalog && comparator != null) {
-                if (catalogSortedPostItems == null) {
-                    catalogSortedPostItems = ArrayList<PostItem>(postItems)
-                } else {
-                    catalogSortedPostItems!!.clear()
-                    catalogSortedPostItems!!.addAll(postItems)
-                }
-                Collections.sort<PostItem?>(catalogSortedPostItems, comparator)
+                val sortedPostItems = catalogSortedPostItems
+                    ?: ArrayList<PostItem>().also { catalogSortedPostItems = it }
+                sortedPostItems.clear()
+                sortedPostItems.addAll(postItems)
+                Collections.sort(sortedPostItems, comparator)
             } else {
                 catalogSortedPostItems = null
             }

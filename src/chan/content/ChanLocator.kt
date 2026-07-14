@@ -178,9 +178,6 @@ open class ChanLocator internal constructor(chanProvider: Chan.Provider?) : Chan
 
     @Public
     fun setHttpsMode(httpsMode: HttpsMode) {
-        if (httpsMode == null) {
-            throw NullPointerException()
-        }
         this.httpsMode = httpsMode
     }
 

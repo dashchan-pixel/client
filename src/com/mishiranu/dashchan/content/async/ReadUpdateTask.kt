@@ -32,8 +32,8 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 		constructor(update: HashMap<String, ApplicationItem>,
 				install: HashMap<String, ApplicationItem>) : this(update as Map<String, ApplicationItem>, install)
 
-		fun get(extensionName: String?, installed: Boolean): ApplicationItem {
-			return (if (installed) update else install)[extensionName]!!
+		fun get(extensionName: String?, installed: Boolean): ApplicationItem? {
+			return (if (installed) update else install)[extensionName]
 		}
 
 		fun extensionNames(installed: Boolean): Collection<String> {
@@ -681,7 +681,9 @@ class ReadUpdateTask(context: Context, private val callback: Callback) :
 							responseText = HttpRequest(uri, holder).perform()!!.readString()
 							responseDataVersion = DataVersion.LEGACY
 						}
-						val jsonObject = JSONObject(responseText)
+						// An empty body is not valid JSON; JSONException is already handled
+						// below, whereas the Java's null would have thrown an NPE.
+						val jsonObject = JSONObject(responseText.orEmpty())
 						val redirect = CommonUtils.optJsonString(jsonObject, "redirect")
 						if (redirect != null) {
 							val uri = normalizeRelativeUri(responseUri!!, redirect)

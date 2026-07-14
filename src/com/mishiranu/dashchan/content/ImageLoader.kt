@@ -162,18 +162,18 @@ class ImageLoader private constructor() {
             return if (bitmap != null) toHardware(bitmap) else null
         }
 
-        override fun onComplete(bitmap: Bitmap?) {
+        override fun onComplete(result: Bitmap?) {
             // Don't remove task but instead mark it as finished,
             // so targets could be extracted later.
             finished = true
             if (notFound) {
                 notFoundMap.put(key, SystemClock.elapsedRealtime())
             }
-            if (bitmap != null) {
-                bitmapCache.put(key, bitmap)
+            if (result != null) {
+                bitmapCache.put(key, result)
             }
             for (callback in callbacks) {
-                callback.onTaskFinished(key, bitmap, !fromCacheOnly)
+                callback.onTaskFinished(key, result, !fromCacheOnly)
             }
         }
     }
@@ -242,6 +242,9 @@ class ImageLoader private constructor() {
 
     private val detachCallback = DetachCallback { view: View? -> this.cancel(view!!) }
 
+    // View.getTag() is erased to Any?; only this loader ever writes tag_image_loader,
+    // so the tag is always the matching WrapperTarget.
+    @Suppress("UNCHECKED_CAST")
     private fun <T : View?> getWrapperTarget(
         view: T?,
         wrapperCallback: WrapperCallback<T?>?

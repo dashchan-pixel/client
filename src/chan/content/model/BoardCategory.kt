@@ -14,6 +14,7 @@ class BoardCategory @Public constructor(private val title: String?, boards: Arra
 	fun getBoards(): Array<Board?>? = boards
 
 	@Public
+	@Suppress("UNCHECKED_CAST") // Array<Board> and Array<Board?> share the Board[] erasure
 	constructor(title: String?, boards: Collection<Board>?) :
 			this(title, CommonUtils.toArray(boards, Board::class.java) as Array<Board?>?)
 }

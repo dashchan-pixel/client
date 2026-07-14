@@ -161,7 +161,9 @@ class FileProvider : ContentProvider() {
 
         fun convertUpdatesUri(uri: Uri): Uri? {
             if ("file" == uri.getScheme()) {
-                val fileParent = File(uri.getPath()).getParentFile()
+                // Uri.getPath() is nullable (opaque URIs); a null path simply
+                // can't match the updates directory, so fall through to return uri.
+                val fileParent = uri.getPath()?.let { File(it).getParentFile() }
                 val directory: File? =
                     updatesDirectory
                 if (fileParent != null && fileParent == directory) {

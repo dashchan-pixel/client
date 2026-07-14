@@ -82,7 +82,6 @@ class ReadCaptchaTask(private val callback: Callback, captchaReader: CaptchaRead
 				ChanPerformer.CaptchaState.SKIP -> CaptchaState.SKIP
 				ChanPerformer.CaptchaState.PASS -> CaptchaState.PASS
 				ChanPerformer.CaptchaState.NEED_LOAD -> CaptchaState.NEED_LOAD
-				else -> null
 			}
 		}
 		val captchaData = result.result.captchaData

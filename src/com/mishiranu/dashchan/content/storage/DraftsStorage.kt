@@ -584,7 +584,7 @@ class DraftsStorage private constructor() :
 		}
 
 		private fun getAttachmentDraftsDirectory(): File? {
-			val directory = CacheManager.getInstance().cacheDirectory ?: return null
+			val directory = CacheManager.getInstance().getCacheDirectory() ?: return null
 			val attachments = File(directory, "attachments")
 			return if (attachments.isDirectory || attachments.mkdirs()) attachments else null
 		}

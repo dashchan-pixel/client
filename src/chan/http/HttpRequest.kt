@@ -175,9 +175,6 @@ class HttpRequest {
 
     @Public
     fun setRedirectHandler(redirectHandler: RedirectHandler): HttpRequest {
-        if (redirectHandler == null) {
-            throw NullPointerException()
-        }
         this.redirectHandler = redirectHandler
         return this
     }
@@ -293,9 +290,7 @@ class HttpRequest {
         request.setOutputListener(outputListener)
         request.setTimeouts(connectTimeout, readTimeout)
         request.setDelay(delay)
-        if (headers != null) {
-            request.headers = ArrayList<Pair<String?, String?>?>(headers)
-        }
+        headers?.let { request.headers = ArrayList<Pair<String?, String?>?>(it) }
         request.addCookie(cookieBuilder)
         return request
     }

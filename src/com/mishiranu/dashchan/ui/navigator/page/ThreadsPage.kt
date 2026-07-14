@@ -320,22 +320,22 @@ class ThreadsPage : ListPage(), ThreadsAdapter.Callback,
 		return Pair<String?, String?>(title, subtitle)
 	}
 
-	override fun onItemClick(postItem: PostItem?) {
-		if (postItem != null) {
+	override fun onItemClick(item: PostItem?) {
+		if (item != null) {
 			val page = getPage()
-			if (postItem.getHideState().hidden) {
-				setThreadHideState(postItem, PostItem.HideState.SHOWN)
-				getAdapter().notifyThreadShown(postItem)
+			if (item.getHideState().hidden) {
+				setThreadHideState(item, PostItem.HideState.SHOWN)
+				getAdapter().notifyThreadShown(item)
 			} else {
 				uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName,
-						postItem.getThreadNumber(), null, postItem.getSubjectOrComment())
+						item.getThreadNumber(), null, item.getSubjectOrComment())
 			}
 		}
 	}
 
-	override fun onItemLongClick(postItem: PostItem?): Boolean {
-		if (postItem != null) {
-			showItemPopupMenu(fragmentManager, postItem)
+	override fun onItemLongClick(item: PostItem?): Boolean {
+		if (item != null) {
+			showItemPopupMenu(fragmentManager, item)
 			return true
 		}
 		return false

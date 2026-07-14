@@ -133,15 +133,14 @@ class WatcherService : BaseService() {
         val boardName: String?,
         val threadNumber: String
     ) {
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is ThreadKey) {
-                val threadKey = o
-                return chanName == threadKey.chanName &&
-                        equals(boardName, threadKey.boardName) &&
-                        threadNumber == threadKey.threadNumber
+            if (other is ThreadKey) {
+                return chanName == other.chanName &&
+                        equals(boardName, other.boardName) &&
+                        threadNumber == other.threadNumber
             }
             return false
         }
@@ -746,15 +745,13 @@ class WatcherService : BaseService() {
                 }
 
                 FavoritesStorage.Action.WATCHER_ENABLE -> {
-                    val watcherItem = watcherItems.get(threadKey)
-                    if (watcherItem!!.state != WatcherState.ENQUEUED) {
+                    val watcherItem = checkNotNull(watcherItems.get(threadKey))
+                    if (watcherItem.state != WatcherState.ENQUEUED) {
                         watcherItem.state = WatcherState.ENQUEUED
                         enqueuedWatcherItems.add(watcherItem)
                         enqueuedWatcherItems.sort()
                     }
-                    if (watcherItem != null) {
-                        notifyWatcherUpdate(watcherItem)
-                    }
+                    notifyWatcherUpdate(watcherItem)
                     startNext()
                 }
 

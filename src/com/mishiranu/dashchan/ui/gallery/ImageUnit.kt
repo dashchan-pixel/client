@@ -338,7 +338,7 @@ class ImageUnit(private val instance: PagerInstance) {
                 fragmentManager,
                 null,
                 InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = GalleryInstance.getCallback(provider!!).getWindow().getContext()
+                    val context = GalleryInstance.getCallback(provider!!).getWindow()!!.getContext()
                     val dialogBuilder = AlertDialog.Builder(context)
                         .setTitle(R.string.metadata)
                         .setPositiveButton(android.R.string.ok, null)

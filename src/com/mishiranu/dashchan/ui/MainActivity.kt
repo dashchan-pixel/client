@@ -377,11 +377,11 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             }
             if (savedInstanceState != null) {
                 currentFragmentFromSaved = BundleCompat
-                    .getParcelable<com.mishiranu.dashchan.ui.StackItem?>(
+                    .getParcelable(
                         savedInstanceState,
                         MainActivity.Companion.EXTRA_CURRENT_FRAGMENT,
-                        com.mishiranu.dashchan.ui.StackItem::class.java
-                    )!!.create(null) as ContentFragment
+                        StackItem::class.java
+                    )?.create(null) as? ContentFragment
                 if (currentFragmentFromSaved == null) {
                     savedInstanceState = null
                 }
@@ -390,21 +390,21 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
 
         if (savedInstanceState != null) {
             fragments.addAll(
-                BundleCompat.getParcelableArrayList<StackItem?>(
+                BundleCompat.getParcelableArrayList(
                     savedInstanceState,
                     MainActivity.Companion.EXTRA_FRAGMENTS,
-                    com.mishiranu.dashchan.ui.StackItem::class.java
+                    StackItem::class.java
                 )!!
             )
             stackPageItems.addAll(
-                BundleCompat.getParcelableArrayList<SavedPageItem?>(
+                BundleCompat.getParcelableArrayList(
                     savedInstanceState,
                     MainActivity.Companion.EXTRA_STACK_PAGE_ITEMS,
                     SavedPageItem::class.java
                 )!!
             )
             preservedPageItems.addAll(
-                BundleCompat.getParcelableArrayList<SavedPageItem?>(
+                BundleCompat.getParcelableArrayList(
                     savedInstanceState,
                     MainActivity.Companion.EXTRA_PRESERVED_PAGE_ITEMS,
                     SavedPageItem::class.java
@@ -502,8 +502,8 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         outState.putParcelable(EXTRA_CURRENT_PAGE_ITEM, currentPageItem)
     }
 
-    private val savedPagesFile: File
-        get() = CacheManager.getInstance().getInternalCacheFile("saved-pages")!!
+    private val savedPagesFile: File?
+        get() = CacheManager.getInstance().getInternalCacheFile("saved-pages")
 
     private val openUriTreeLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
@@ -614,18 +614,18 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
         )
     }
 
-    override fun navigateTargetAllowReturn(chanName: String?, data: NavigationData) {
-        when (data.target) {
+    override fun navigateTargetAllowReturn(chanName: String?, navigationData: NavigationData) {
+        when (navigationData.target) {
             NavigationData.Target.THREADS -> {
-                navigateBoardsOrThreads(chanName, data.boardName, false, true)
+                navigateBoardsOrThreads(chanName, navigationData.boardName, false, true)
             }
 
             NavigationData.Target.POSTS -> {
                 navigatePosts(
                     chanName,
-                    data.boardName,
-                    data.threadNumber,
-                    data.postNumber,
+                    navigationData.boardName,
+                    navigationData.threadNumber,
+                    navigationData.postNumber,
                     null,
                     false,
                     true
@@ -633,11 +633,7 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             }
 
             NavigationData.Target.SEARCH -> {
-                navigateSearch(chanName, data.boardName, data.searchQuery, true)
-            }
-
-            else -> {
-                throw IllegalArgumentException()
+                navigateSearch(chanName, navigationData.boardName, navigationData.searchQuery, true)
             }
         }
     }
@@ -1105,36 +1101,31 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
                 return
             }
         }
-        val pair: Pair<PageFragment, PageItem>
         val fromCache = get(pageFlags, FLAG_PAGE_FROM_CACHE)
-        when (content) {
+        val pair: Pair<PageFragment, PageItem> = when (content) {
             Page.Content.THREADS -> {
-                pair = prepareAddPage(
+                prepareAddPage(
                     content, chanName, boardName, null, null,
                     InitRequest(!fromCache, null, null)
                 )
             }
 
             Page.Content.POSTS -> {
-                pair = prepareAddPage(
+                prepareAddPage(
                     content, chanName, boardName, threadNumber, null,
                     InitRequest(!fromCache, postNumber, threadTitle)
                 )
             }
 
             Page.Content.SEARCH -> {
-                pair = prepareAddPage(
+                prepareAddPage(
                     content, chanName, boardName, null, searchQuery,
                     InitRequest(!fromCache, null, null)
                 )
             }
 
             Page.Content.ARCHIVE, Page.Content.BOARDS, Page.Content.USER_BOARDS, Page.Content.HISTORY -> {
-                pair = prepareAddPage(content, chanName, boardName, null, null, null)
-            }
-
-            else -> {
-                throw RuntimeException()
+                prepareAddPage(content, chanName, boardName, null, null, null)
             }
         }
         pair.second!!.allowReturn = get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
@@ -1294,21 +1285,17 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             val displayUp: Boolean
             if (currentFragment is PageFragment) {
                 val page = currentFragment.page
-                when (page!!.content) {
+                displayUp = when (page!!.content) {
                     Page.Content.THREADS -> {
-                        displayUp = getPagesStackSize(page!!.chanName) > 1
+                        getPagesStackSize(page.chanName) > 1
                     }
 
                     Page.Content.POSTS, Page.Content.SEARCH, Page.Content.ARCHIVE -> {
-                        displayUp = true
+                        true
                     }
 
                     Page.Content.BOARDS, Page.Content.USER_BOARDS, Page.Content.HISTORY -> {
-                        displayUp = page!!.boardName != null || getPagesStackSize(page!!.chanName) > 1
-                    }
-
-                    else -> {
-                        displayUp = false
+                        page.boardName != null || getPagesStackSize(page.chanName) > 1
                     }
                 }
             } else {
@@ -1510,18 +1497,16 @@ class MainActivity : StateActivity(), DrawerForm.Callback, ThemeDialog.Callback,
             if (currentFragment is PageFragment) {
                 val savedPageItem = prepareTargetPreviousPage(true)
                 if (savedPageItem != null) {
-                    if (currentFragment is PageFragment) {
-                        val page = currentFragment.page
-                        if (!(page!!.isThreadsOrPosts && isCloseOnBack)) {
-                            preservedPageItems.add(
-                                currentPageItem!!.toSaved(
-                                    getSupportFragmentManager(),
-                                    currentFragment
-                                )
+                    val page = currentFragment.page
+                    if (!(page!!.isThreadsOrPosts && isCloseOnBack)) {
+                        preservedPageItems.add(
+                            currentPageItem!!.toSaved(
+                                getSupportFragmentManager(),
+                                currentFragment
                             )
-                        }
-                        currentPageItem = null
+                        )
                     }
+                    currentPageItem = null
                     navigateSavedPage(savedPageItem, true)
                     handled = true
                 }

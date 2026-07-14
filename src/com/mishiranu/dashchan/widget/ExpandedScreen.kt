@@ -513,7 +513,7 @@ class ExpandedScreen(
             contentForeground = LollipopContentForeground(statusBarColor, navigationBarColor)
             statusBarContentForeground = LollipopStatusBarForeground(statusBarColor)
             statusBarDrawerForeground = LollipopDrawerForeground()
-            foregroundDrawables = Arrays.asList<ForegroundDrawable?>(
+            foregroundDrawables = Arrays.asList<ForegroundDrawable>(
                 contentForeground,
                 statusBarContentForeground, statusBarDrawerForeground
             )
@@ -571,7 +571,7 @@ class ExpandedScreen(
                     activity.getResources().getIdentifier("action_mode_bar", "id", "android")
                 val actionModeView =
                     if (actionModeBarId != 0) activity.findViewById<View?>(actionModeBarId) else null
-                if (drawerInterlayer != null && actionModeView != null) {
+                if (actionModeView != null) {
                     actionModeViewInitialized = true
                     removeFromParent(actionModeView)
                     var maxZ = 0f

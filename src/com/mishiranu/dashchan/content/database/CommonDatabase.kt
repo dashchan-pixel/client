@@ -12,7 +12,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.Arrays
 import java.util.Collections
 import java.util.concurrent.Executor
 
@@ -49,7 +48,7 @@ class CommonDatabase private constructor() {
         if (oldFile.exists()) {
             val parent = oldFile.getParentFile()
             val oldName = oldFile.getName()
-            for (file in oldFile.getParentFile().listFiles()) {
+            for (file in parent?.listFiles().orEmpty()) {
                 val name = file.getName()
                 if (name.startsWith(oldName)) {
                     file.renameTo(File(parent, "common.db" + name.substring(oldName.length)))
@@ -59,13 +58,7 @@ class CommonDatabase private constructor() {
         this.history = HistoryDatabase(this)
         this.threads = ThreadsDatabase(this)
         this.posts = PostsDatabase(this)
-        helper = Helper(
-            Arrays.asList<Instance?>(
-                this.history,
-                this.threads,
-                this.posts
-            )
-        )
+        helper = Helper(listOf<Instance>(this.history, this.threads, this.posts))
     }
 
     fun query(callback: QueryCallback): Cursor? {
@@ -100,7 +93,7 @@ class CommonDatabase private constructor() {
                 copyStream(input, output)
             }
         } finally {
-            for (file in backupFile.getParentFile().listFiles()) {
+            for (file in backupFile.getParentFile()?.listFiles().orEmpty()) {
                 if (file.getName().startsWith(backupFile.getName())) {
                     file.delete()
                 }
@@ -112,7 +105,7 @@ class CommonDatabase private constructor() {
     fun readBackup(input: InputStream) {
         val restoreFile =
             MainApplication.getInstance().getDatabasePath(Helper.Companion.DATABASE_RESTORE_NAME)
-        val files = restoreFile.getParentFile().listFiles()
+        val files = restoreFile.getParentFile()?.listFiles()
         if (files != null) {
             for (file in files) {
                 if (file.getName().startsWith(restoreFile.getName())) {
@@ -120,15 +113,15 @@ class CommonDatabase private constructor() {
                 }
             }
         }
-        restoreFile.getParentFile().mkdirs()
+        restoreFile.getParentFile()?.mkdirs()
         FileOutputStream(restoreFile).use { output ->
             copyStream(input, output)
         }
     }
 
-    private class Helper(instances: MutableCollection<Instance>) :
+    private class Helper(instances: Collection<Instance>) :
         SQLiteOpenHelper(MainApplication.getInstance(), DATABASE_NAME, null, DATABASE_VERSION) {
-        private val instances: MutableCollection<Instance>
+        private val instances: Collection<Instance>
         internal val database: SQLiteDatabase
 
         init {
@@ -161,7 +154,7 @@ class CommonDatabase private constructor() {
                 } catch (e: IOException) {
                     e.printStackTrace()
                 } finally {
-                    for (file in restoreFile.getParentFile().listFiles()) {
+                    for (file in restoreFile.getParentFile()?.listFiles().orEmpty()) {
                         if (file.getName().startsWith(restoreFile.getName())) {
                             file.delete()
                         }

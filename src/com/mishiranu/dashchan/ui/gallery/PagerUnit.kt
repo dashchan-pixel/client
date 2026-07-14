@@ -312,9 +312,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
         val uri = galleryItem.getFileUri(chan)
         try {
             val cachedFile = cacheManager.getMediaFileOrThrow(uri, true)
-            if (cachedFile == null) {
-                showError(holder, "Cached file not found")
-            } else if (isImage) {
+            if (isImage) {
                 imageUnit.applyImage(uri!!, cachedFile, reload)
             } else if (isVideo) {
                 imageUnit.interrupt(true)
@@ -438,7 +436,7 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
                 if (distance <= size / 3f * 2f) {
                     if (!galleryItem.isOpenableVideo(chan)) {
                         NavigationUtils.handleUri(
-                            galleryInstance.callback.getWindow().getContext(),
+                            galleryInstance.callback.getWindow()!!.getContext(),
                             galleryInstance.chanName, galleryItem.getFileUri(chan)!!,
                             NavigationUtils.BrowserType.EXTERNAL
                         )
@@ -652,9 +650,9 @@ class PagerUnit(private val galleryInstance: GalleryInstance) : PagerInstance.Ca
     private fun buildPopupMenu(): DialogMenu? {
         val galleryItem = pagerInstance.currentHolder!!.galleryItem
         val capabilities = obtainOptionsMenuCapabilities()
-        if (capabilities != null && capabilities.available) {
+        if (capabilities.available) {
             val chan = get(galleryInstance.chanName)
-            val context = galleryInstance.callback.getWindow().getContext()
+            val context = galleryInstance.callback.getWindow()!!.getContext()
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
                 if (!StringUtils.isEmpty(galleryItem!!.originalName))

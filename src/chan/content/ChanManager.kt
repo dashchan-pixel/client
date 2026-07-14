@@ -47,8 +47,8 @@ class ChanManager private constructor() {
     private var archiveMap: Map<String?, MutableList<String?>> = mutableMapOf()
 
     class Fingerprints(val fingerprints: Set<String>) : Parcelable {
-        override fun equals(o: Any?): Boolean {
-            return o is Fingerprints && o.fingerprints == fingerprints
+        override fun equals(other: Any?): Boolean {
+            return other is Fingerprints && other.fingerprints == fingerprints
         }
 
         override fun hashCode(): Int {

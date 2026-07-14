@@ -1530,12 +1530,13 @@ class PostsPage : ListPage(), PostsAdapter.Callback, FavoritesStorage.Observer, 
     private val lastToast = LastToast()
 
     override fun onExtractPostsComplete(result: ExtractPostsTask.Result?, cancelled: Boolean) {
-        val result = result!!
         val page = getPage()
-        WatcherNotifications.cancelReplies(
-            context,
-            page.chanName, page.boardName, page.threadNumber, result.replyPosts
-        )
+        if (result != null) {
+            WatcherNotifications.cancelReplies(
+                context,
+                page.chanName, page.boardName, page.threadNumber, result.replyPosts
+            )
+        }
         if (cancelled) {
             return
         }

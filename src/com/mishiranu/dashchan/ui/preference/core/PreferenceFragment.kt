@@ -505,7 +505,7 @@ abstract class PreferenceFragment : ContentFragment() {
             override fun onItemClick(
                 holder: ViewHolder,
                 position: Int,
-                nothing: Void?,
+                item: Void?,
                 longClick: Boolean
             ): Boolean {
                 preferences.get(position).performClick()

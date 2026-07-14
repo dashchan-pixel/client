@@ -968,51 +968,45 @@ class DrawerForm(
 
     override fun getItemViewType(position: Int): Int {
         val listItem = getItem(position)
-        val viewType: ViewType?
-        when (listItem.type) {
+        val viewType: ViewType = when (listItem.type) {
             ListItem.Type.HEADER -> {
-                viewType = ViewType.HEADER
+                ViewType.HEADER
             }
 
             ListItem.Type.RESTART -> {
-                viewType = ViewType.RESTART
+                ViewType.RESTART
             }
 
             ListItem.Type.SECTION -> {
-                viewType = if (listItem.iconChan || listItem.iconResId != 0)
+                if (listItem.iconChan || listItem.iconResId != 0)
                     ViewType.SECTION_BUTTON
                 else
                     ViewType.SECTION
             }
 
             ListItem.Type.PAGE -> {
-                viewType = if (mergeChans) ViewType.CLOSEABLE_ICON else ViewType.CLOSEABLE
+                if (mergeChans) ViewType.CLOSEABLE_ICON else ViewType.CLOSEABLE
             }
 
             ListItem.Type.FAVORITE -> {
                 if (listItem.threadNumber != null) {
                     val watcherSupported = watcherSupportSet.contains(listItem.chanName)
                     if (mergeChans) {
-                        viewType =
-                            if (watcherSupported) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
+                        if (watcherSupported) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
                     } else {
-                        viewType = if (watcherSupported) ViewType.WATCHER else ViewType.ITEM
+                        if (watcherSupported) ViewType.WATCHER else ViewType.ITEM
                     }
                 } else {
-                    viewType = if (mergeChans) ViewType.ITEM_ICON else ViewType.ITEM
+                    if (mergeChans) ViewType.ITEM_ICON else ViewType.ITEM
                 }
             }
 
             ListItem.Type.MENU -> {
-                viewType = ViewType.ITEM_ICON
+                ViewType.ITEM_ICON
             }
 
             ListItem.Type.CHAN -> {
-                viewType = ViewType.ITEM_ICON
-            }
-
-            else -> {
-                throw IllegalStateException()
+                ViewType.ITEM_ICON
             }
         }
         return viewType.ordinal
@@ -1247,30 +1241,26 @@ class DrawerForm(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val density = obtainDensity(context)
         val enumViewType = ViewType.entries[viewType]
-        when (enumViewType) {
+        return when (enumViewType) {
             ViewType.HEADER -> {
-                return DrawerForm.ViewHolder(headerView, null, null, null)
+                DrawerForm.ViewHolder(headerView, null, null, null)
             }
 
             ViewType.RESTART -> {
-                return DrawerForm.ViewHolder(restartView, null, null, null)
+                DrawerForm.ViewHolder(restartView, null, null, null)
             }
 
             ViewType.SECTION, ViewType.SECTION_BUTTON -> {
-                return createSection(parent, enumViewType.icon, density)
+                createSection(parent, enumViewType.icon, density)
             }
 
             ViewType.ITEM, ViewType.ITEM_ICON, ViewType.WATCHER, ViewType.WATCHER_ICON, ViewType.CLOSEABLE, ViewType.CLOSEABLE_ICON -> {
-                return ListViewUtils.bind<Void?, ViewHolder>(
+                ListViewUtils.bind<Void?, ViewHolder>(
                     createItem(enumViewType, density),
                     true,
                     null,
                     clickCallback
                 )
-            }
-
-            else -> {
-                throw IllegalStateException()
             }
         }
     }
@@ -1297,7 +1287,7 @@ class DrawerForm(
                 holder.text!!.setText(listItem.title)
             }
         }
-        if (holder != null && holder.icon != null) {
+        if (holder.icon != null) {
             if (listItem.iconChan) {
                 if (!chanIcons.containsKey(listItem.chanName)) {
                     val drawable = ChanManager.getInstance().getIcon(get(listItem.chanName))
@@ -1447,14 +1437,12 @@ class DrawerForm(
         counter: WatcherService.Counter
     ) {
         if (counter.deleted && isFavoritesHidedDeleted) {
-            if (favorites != null) {
-                favorites.removeIf { fav: ListItem? ->
-                    fav!!.type == ListItem.Type.FAVORITE &&
-                            (fav.chanName == chanName &&
-                                    fav.boardName == boardName && fav.threadNumber != null && fav.threadNumber == threadNumber)
-                }
-                notifyDataSetChanged()
+            favorites.removeIf { fav ->
+                fav.type == ListItem.Type.FAVORITE &&
+                        (fav.chanName == chanName &&
+                                fav.boardName == boardName && fav.threadNumber != null && fav.threadNumber == threadNumber)
             }
+            notifyDataSetChanged()
         } else if (!isFavoritesHidedAll) {
             if (mergeChans || chanName == this.chanName) {
                 val childCount = recyclerView.getChildCount()

@@ -53,7 +53,9 @@ object AdvancedPreferences {
 								}
 							}
 						} else {
-							val userAgent = jsonObject.optString("userAgent", null)
+							// optString(name) yields "" when absent, which the isEmpty guard
+							// below rejects just like the original null fallback did.
+							val userAgent = jsonObject.optString("userAgent")
 							if (!StringUtils.isEmpty(userAgent)) {
 								USER_AGENTS[ChanManager.EXTENSION_NAME_CLIENT] = userAgent
 							}
@@ -77,7 +79,7 @@ object AdvancedPreferences {
 								}
 							}
 						} else {
-							val googleCookie = jsonObject.optString("googleCookie", null)
+							val googleCookie = jsonObject.optString("googleCookie")
 							if (!StringUtils.isEmpty(googleCookie)) {
 								googleCookieBuilder = CookieBuilder().append(googleCookie)
 							}

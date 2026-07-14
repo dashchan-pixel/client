@@ -103,12 +103,12 @@ class UserBoardsPage : ListPage(), UserBoardsAdapter.Callback,
 
 	override fun obtainTitle(): String = getString(R.string.user_boards)
 
-	override fun onItemClick(boardItem: ChanDatabase.BoardItem?) {
-		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
+	override fun onItemClick(item: ChanDatabase.BoardItem?) {
+		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
 	}
 
-	override fun onItemLongClick(boardItem: ChanDatabase.BoardItem?): Boolean {
-		showItemPopupMenu(fragmentManager, getPage().chanName, boardItem!!)
+	override fun onItemLongClick(item: ChanDatabase.BoardItem?): Boolean {
+		showItemPopupMenu(fragmentManager, getPage().chanName, item!!)
 		return true
 	}
 

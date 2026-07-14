@@ -77,12 +77,12 @@ class BoardsPage : ListPage(), BoardsAdapter.Callback, GetBoardsTask.Callback, R
 		return getString(if (hasUserBoards) R.string.general_boards else R.string.boards)
 	}
 
-	override fun onItemClick(boardItem: ChanDatabase.BoardItem?) {
-		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, boardItem!!.boardName)
+	override fun onItemClick(item: ChanDatabase.BoardItem?) {
+		uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
 	}
 
-	override fun onItemLongClick(boardItem: ChanDatabase.BoardItem?): Boolean {
-		showItemPopupMenu(fragmentManager, getPage().chanName, boardItem!!)
+	override fun onItemLongClick(item: ChanDatabase.BoardItem?): Boolean {
+		showItemPopupMenu(fragmentManager, getPage().chanName, item!!)
 		return true
 	}
 

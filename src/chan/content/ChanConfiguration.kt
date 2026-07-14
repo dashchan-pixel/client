@@ -602,9 +602,6 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     @Public
     fun setBumpLimitMode(mode: BumpLimitMode) {
         checkInit()
-        if (mode == null) {
-            throw NullPointerException()
-        }
         bumpLimitMode = mode
     }
 
@@ -639,9 +636,6 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     @Public
     fun addCaptchaType(captchaType: String) {
         checkInit()
-        if (captchaType == null) {
-            throw NullPointerException()
-        }
         if (supportedCaptchaTypes == null) {
             supportedCaptchaTypes = LinkedHashSet<String?>()
         }
@@ -829,9 +823,6 @@ open class ChanConfiguration internal constructor(chanProvider: Chan.Provider?) 
     @Public
     fun storeCookie(cookie: String, value: String?, displayName: String?) {
         if (editData != null) {
-            if (cookie == null) {
-                throw NullPointerException("Сookie must not be null")
-            }
             ChanDatabase.getInstance().setCookie(
                 get().name!!, cookie, value,
                 if (isEmptyOrWhitespace(displayName)) null else displayName

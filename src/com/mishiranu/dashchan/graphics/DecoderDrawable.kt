@@ -232,8 +232,8 @@ class DecoderDrawable @Throws(IOException::class) constructor(private val scaled
 			super.cancel()
 		}
 
-		override fun onCancel(bitmap: Bitmap?) {
-			bitmap?.recycle()
+		override fun onCancel(result: Bitmap?) {
+			result?.recycle()
 		}
 
 		override fun onComplete(result: Bitmap?) {

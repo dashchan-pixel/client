@@ -400,6 +400,7 @@ abstract class ListPage : LifecycleOwner, PullCallback {
         }
 
         @JvmStatic
+        @Suppress("UNCHECKED_CAST")
         protected fun <T : ListPage?> extract(provider: InstanceDialog.Provider): T? {
             val viewModel: PageViewModel = Companion.getViewModel(provider.parentFragment!!)
             val listPage = if (viewModel.listPage != null) viewModel.listPage!!.get() else null

@@ -100,12 +100,12 @@ class Page(
         return equals(this.boardName, boardName) && equals(this.threadNumber, threadNumber)
     }
 
-    override fun equals(o: Any?): Boolean {
-        if (o === this) {
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
             return true
         }
-        if (o is Page) {
-            val page = o
+        if (other is Page) {
+            val page = other
             return content == page.content &&
                     equals(chanName, page.chanName) &&
                     equals(boardName, page.boardName) &&

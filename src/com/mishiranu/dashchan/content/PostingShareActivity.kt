@@ -29,7 +29,8 @@ class PostingShareActivity : Activity() {
 			} else {
 				val text = StringUtils.emptyIfNull(intent.getStringExtra(Intent.EXTRA_SUBJECT)) + '\n' +
 						StringUtils.emptyIfNull(intent.getStringExtra(Intent.EXTRA_TEXT))
-				val matcher = PATTERN_HREF.matcher(StringUtils.linkify(text))
+				// linkify() only returns null for a null argument; text is a non-null concatenation.
+				val matcher = PATTERN_HREF.matcher(StringUtils.linkify(text).orEmpty())
 				if (matcher.find()) {
 					contentUri = Uri.parse(matcher.group(2))
 				}

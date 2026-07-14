@@ -77,10 +77,6 @@ class PostsDatabase internal constructor(private val database: CommonDatabase) :
                             "post_number_major, post_number_minor))"
                 )
             }
-
-            else -> {
-                throw UnsupportedOperationException()
-            }
         }
     }
 

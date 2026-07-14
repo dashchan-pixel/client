@@ -179,12 +179,10 @@ class CommentTextView @JvmOverloads constructor(
         val hasComment = !isEmpty(comment)
         if (hasComment && comment is Spanned) {
             val spoilerSpans =
-                comment.getSpans<SpoilerSpan?>(0, comment.length, SpoilerSpan::class.java)
-            if (spoilerSpans != null) {
-                val enabled = spoilersEnabled
-                for (spoilerSpan in spoilerSpans) {
-                    spoilerSpan.setEnabled(enabled)
-                }
+                comment.getSpans<SpoilerSpan>(0, comment.length, SpoilerSpan::class.java)
+            val enabled = spoilersEnabled
+            for (spoilerSpan in spoilerSpans) {
+                spoilerSpan.setEnabled(enabled)
             }
         }
         if (hasSubject) {

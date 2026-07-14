@@ -77,15 +77,14 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
         val boardName: String?,
         val threadNumber: String?
     ) {
-        override fun equals(o: Any?): Boolean {
-            if (o === this) {
+        override fun equals(other: Any?): Boolean {
+            if (other === this) {
                 return true
             }
-            if (o is Key) {
-                val key = o
-                return equals(key.chanName, chanName) &&
-                        equals(key.boardName, boardName) &&
-                        equals(key.threadNumber, threadNumber)
+            if (other is Key) {
+                return equals(other.chanName, chanName) &&
+                        equals(other.boardName, boardName) &&
+                        equals(other.threadNumber, threadNumber)
             }
             return false
         }
@@ -715,7 +714,7 @@ class PostingService : BaseService(), SendPostTask.Callback<PostingService.Key> 
             chan: Chan, boardName: String?, threadNumber: String?,
             postNumber: PostNumber?
         ): String {
-            val builder = StringBuilder(chan.configuration.getTitle()).append(", ")
+            val builder = StringBuilder(chan.configuration.getTitle().orEmpty()).append(", ")
             builder.append(
                 StringUtils.formatThreadTitle(
                     chan.name!!,

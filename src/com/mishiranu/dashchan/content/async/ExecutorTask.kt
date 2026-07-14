@@ -139,19 +139,14 @@ abstract class ExecutorTask<Progress, Result> {
                     Message.PROGRESS -> {
                         val progressHolder: ProgressHolder<*> = msg.obj as ProgressHolder<*>
                         progressHolder.handle()
-                        return@Callback true
                     }
 
                     Message.RESULT -> {
                         val resultHolder: ResultHolder<*> = msg.obj as ResultHolder<*>
                         resultHolder.handle()
-                        return@Callback true
-                    }
-
-                    else -> {
-                        return@Callback false
                     }
                 }
+                true
             })
     }
 }

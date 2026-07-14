@@ -59,12 +59,12 @@ class PostsAdapter(
 
         override fun onItemClick(
             holder: RecyclerView.ViewHolder,
-            position: Int, postItem: PostItem?, longClick: Boolean
+            position: Int, item: PostItem?, longClick: Boolean
         ): Boolean {
             if (longClick) {
-                return onItemLongClick(postItem)
+                return onItemLongClick(item)
             } else {
-                onItemClick(holder.itemView, postItem)
+                onItemClick(holder.itemView, item)
                 return true
             }
         }

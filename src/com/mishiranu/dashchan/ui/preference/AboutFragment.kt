@@ -75,7 +75,7 @@ class AboutFragment : PreferenceFragment(), FragmentHandler.Callback {
 			}
 		} else {
 			val backupFiles = BackupManager.getAvailableBackups(requireContext())
-			if (backupFiles != null && !backupFiles.isEmpty()) {
+			if (backupFiles.isNotEmpty()) {
 				val dialog = RestoreListDialog(backupFiles)
 				dialog.show(childFragmentManager, RestoreListDialog::class.java.name)
 			} else {

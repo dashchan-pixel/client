@@ -159,7 +159,9 @@ class ReadChangelogTask(private val callback: Callback, private val locales: Lis
 						if (isCancelled()) {
 							return null
 						}
-						if (changelogFiles != null && changelogFiles.isNotEmpty()) {
+						// listFiles() never returns null; the post-loop null check below
+						// still matters because the loop may never assign at all.
+						if (changelogFiles.isNotEmpty()) {
 							break
 						}
 					} catch (e: HttpException) {

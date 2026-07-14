@@ -55,13 +55,13 @@ class HistoryPage : ListPage(), HistoryAdapter.Callback, GetHistoryTask.Callback
 
 	override fun obtainTitle(): String = getString(R.string.history)
 
-	override fun onItemClick(historyItem: HistoryDatabase.HistoryItem?) {
-		uiManager!!.navigator()!!.navigatePosts(historyItem!!.chanName, historyItem.boardName,
-				historyItem.threadNumber, null, null)
+	override fun onItemClick(item: HistoryDatabase.HistoryItem?) {
+		uiManager!!.navigator()!!.navigatePosts(item!!.chanName, item.boardName,
+				item.threadNumber, null, null)
 	}
 
-	override fun onItemLongClick(historyItem: HistoryDatabase.HistoryItem?): Boolean {
-		showItemPopupMenu(fragmentManager, historyItem!!)
+	override fun onItemLongClick(item: HistoryDatabase.HistoryItem?): Boolean {
+		showItemPopupMenu(fragmentManager, item!!)
 		return true
 	}
 

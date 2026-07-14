@@ -49,7 +49,8 @@ class CloudFlareResolver : FirewallResolver() {
 	@Throws(HttpException::class)
 	private fun responseContainsCloudflareTitle(response: HttpResponse): Boolean {
 		val titlePattern = Pattern.compile("<title>(.*?)</title>")
-		val responseText = response.readString()
+		// An empty body carries no <title>, so treat null as "" rather than NPE-ing.
+		val responseText = response.readString().orEmpty()
 		val titleMatcher = titlePattern.matcher(responseText)
 		if (titleMatcher.find()) {
 			val cloudflareTitles = arrayOf("Attention Required! | Cloudflare", "Just a moment...", "Please wait…")

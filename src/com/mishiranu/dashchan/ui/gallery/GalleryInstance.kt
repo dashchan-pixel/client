@@ -19,7 +19,7 @@ class GalleryInstance(@JvmField val context: Context, @JvmField var callback: Ca
 	}
 
 	interface Callback : ViewModelStoreOwner {
-		fun getWindow(): Window
+		fun getWindow(): Window?
 		fun getChildFragmentManager(): FragmentManager
 
 		fun downloadGalleryItem(galleryItem: GalleryItem)

@@ -130,8 +130,8 @@ class ThemeEngine {
             }
         }
 
-        override fun compareTo(theme: Theme): Int {
-            return name.compareTo(theme.name)
+        override fun compareTo(other: Theme): Int {
+            return name.compareTo(other.name)
         }
     }
 
@@ -458,7 +458,7 @@ class ThemeEngine {
                 }
                 if (theme != null) {
                     themes.put(name, theme)
-                } else if (theme == null) {
+                } else {
                     additionalThemes.remove(name)
                     additionalChanged = true
                 }
@@ -576,7 +576,7 @@ class ThemeEngine {
             internal val MAP: MutableMap<String?, Value>
 
             init {
-                val map = HashMap<String?, Value?>()
+                val map = HashMap<String?, Value>()
                 map.put(
                     "window", Value(
                         ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.window = c },
@@ -689,7 +689,7 @@ class ThemeEngine {
                         R.attr.colorPostQuoteNeuroslop
                     )
                 )
-                MAP = Collections.unmodifiableMap<String?, Value?>(map)
+                MAP = Collections.unmodifiableMap<String?, Value>(map)
             }
         }
     }
@@ -845,13 +845,11 @@ class ThemeEngine {
                             // On newer Android versions "compound drawable" is used instead of "check mark"
                             textView.setCompoundDrawableTintList(themeContext.checkBoxColors)
                         } else if (view is Button) {
-                            if (view is Button) {
-                                val button = view
-                                if (button.getTextColors().getDefaultColor() ==
-                                    getColor(button.getContext(), android.R.attr.colorAccent)
-                                ) {
-                                    button.setTextColor(themeContext.buttonColors)
-                                }
+                            val button = view
+                            if (button.getTextColors().getDefaultColor() ==
+                                getColor(button.getContext(), android.R.attr.colorAccent)
+                            ) {
+                                button.setTextColor(themeContext.buttonColors)
                             }
                         }
                     } else if (view is ProgressBar) {
@@ -876,29 +874,27 @@ class ThemeEngine {
             val tag = view.getTag()
             if (tag is String) {
                 val options = tag.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                if (options != null) {
-                    var unhandledOptions: StringBuilder? = null
-                    for (option in options) {
-                        var handled = false
-                        val index = option.indexOf("=")
-                        if (index >= 0) {
-                            val name = option.substring(0, index)
-                            val value = option.substring(index + 1)
-                            if (name.startsWith("theme.")) {
-                                handled = handleTagValue(theme, view, name.substring(6), value)
-                            }
-                        }
-                        if (!handled) {
-                            if (unhandledOptions == null) {
-                                unhandledOptions = StringBuilder()
-                            } else {
-                                unhandledOptions.append(':')
-                            }
-                            unhandledOptions.append(option)
+                var unhandledOptions: StringBuilder? = null
+                for (option in options) {
+                    var handled = false
+                    val index = option.indexOf("=")
+                    if (index >= 0) {
+                        val name = option.substring(0, index)
+                        val value = option.substring(index + 1)
+                        if (name.startsWith("theme.")) {
+                            handled = handleTagValue(theme, view, name.substring(6), value)
                         }
                     }
-                    view.setTag(if (unhandledOptions != null) unhandledOptions.toString() else null)
+                    if (!handled) {
+                        if (unhandledOptions == null) {
+                            unhandledOptions = StringBuilder()
+                        } else {
+                            unhandledOptions.append(':')
+                        }
+                        unhandledOptions.append(option)
+                    }
                 }
+                view.setTag(if (unhandledOptions != null) unhandledOptions.toString() else null)
             }
         }
 

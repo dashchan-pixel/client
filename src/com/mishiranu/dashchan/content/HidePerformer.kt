@@ -119,10 +119,9 @@ class HidePerformer(context: Context?) {
     private fun checkHiddenGlobalAutohide(chan: Chan, postItem: PostItem): String? {
         val boardName = postItem.getBoardName()
         val originalPostNumber = postItem.getOriginalPostNumber()
-        val originalPostNumberString: String = (if (originalPostNumber != null)
-            originalPostNumber.toString()
-        else
-            null)!!
+        // PostItem.getOriginalPostNumber() is non-null (PostItem dereferences it
+        // unconditionally in isOriginalPost()), so the Java's null branch was dead.
+        val originalPostNumberString: String = originalPostNumber.toString()
         val originalPost = postItem.isOriginalPost()
         val sage = postItem.isSage()
         var subject: String? = null

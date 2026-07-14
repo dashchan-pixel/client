@@ -222,7 +222,7 @@ class AutohideFragment : BaseListFragment() {
 		}
 
 		override fun onItemClick(holder: RecyclerView.ViewHolder, position: Int,
-				nothing: Void?, longClick: Boolean): Boolean {
+				item: Void?, longClick: Boolean): Boolean {
 			val autohideItem = getItem(position)
 			editRule(autohideItem, items.indexOf(autohideItem))
 			return true

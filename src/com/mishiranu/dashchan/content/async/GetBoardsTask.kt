@@ -35,11 +35,11 @@ class GetBoardsTask(private val callback: Callback, private val chan: Chan,
 		}
 	}
 
-	override fun onCancel(cursor: ChanDatabase.BoardCursor?) {
-		cursor?.close()
+	override fun onCancel(result: ChanDatabase.BoardCursor?) {
+		result?.close()
 	}
 
-	override fun onComplete(cursor: ChanDatabase.BoardCursor?) {
-		callback.onGetBoardsResult(cursor)
+	override fun onComplete(result: ChanDatabase.BoardCursor?) {
+		callback.onGetBoardsResult(result)
 	}
 }

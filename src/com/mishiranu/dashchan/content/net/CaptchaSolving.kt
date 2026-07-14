@@ -320,7 +320,9 @@ class CaptchaSolving private constructor() {
 			val responseText = HttpRequest(endpointUri.buildUpon().appendPath(method).build(), holder)
 					.setPostMethod(entity).setSuccessOnly(false).perform()!!.readString()
 			return try {
-				JSONObject(responseText)
+				// An empty body is not valid JSON: surface it as InvalidResponseException
+				// (which callers handle) rather than the NPE the Java would have thrown.
+				JSONObject(responseText.orEmpty())
 			} catch (e: JSONException) {
 				throw InvalidResponseException()
 			}
