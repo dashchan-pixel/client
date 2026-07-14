@@ -1,0 +1,39 @@
+# Advisory-only pass for '!!' (double-bang).
+#
+# Run by the `detektDoubleBang` task, which sets ignoreFailures = true: findings are
+# printed but never fail the build. This exists because detekt 1.x fails on *any* finding
+# in a given config (build.maxIssues), so "report but do not block" needs its own config.
+#
+# There are ~3.1k double-bangs in the legacy J2K output. They are being worked down rather
+# than swept in one pass, because a '!!' is often load-bearing -- it marks a place the old
+# Java code assumed non-null, and blindly rewriting it can turn a loud NPE into a silent
+# wrong-behaviour bug.
+#
+# To promote '!!' to a build-breaking error later: set UnsafeCallOnNullableType active in
+# detekt.yml, regenerate the baseline, and delete this file plus the detektDoubleBang task.
+
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+
+# Without this, detekt's default console reporters each re-print every finding and the
+# ~3k double-bangs come out as ~9k lines of noise. LiteFindingsReport gives exactly one
+# `file:line: message` per finding.
+console-reports:
+  active: true
+  exclude:
+    - 'ProjectStatisticsReport'
+    - 'ComplexityReport'
+    - 'NotificationReport'
+    - 'FindingsReport'
+    - 'FileBasedFindingsReport'
+
+comments:
+  active: false
+
+potential-bugs:
+  active: true
+  UnsafeCallOnNullableType:
+    active: true

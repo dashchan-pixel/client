@@ -1,0 +1,231 @@
+# Strict quality gate. Layered over detekt's default config (buildUponDefaultConfig = true),
+# so this file only records the deliberate deviations.
+#
+# Any finding not present in detekt-baseline.xml fails the build (build.maxIssues = 0).
+# The baseline freezes the pre-existing legacy findings; new code gets no such amnesty.
+
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+  # Rule names in this file are checked against detekt's real rule set, so a typo
+  # (e.g. the IntelliJ name "DoubleBangExpression", which detekt does not have)
+  # fails loudly instead of silently enforcing nothing.
+  warningsAsErrors: false
+
+complexity:
+  LongMethod:
+    active: true
+    # 60, not 40. The 328 flagged legacy methods have a median length of exactly 60,
+    # so a 40-line limit sits *below* the median method it flags: it would mostly tax
+    # routine Android lifecycle wiring (onCreate/onViewCreated are sequential view
+    # setup, and splitting those yields setupViews1()/setupViews2() -- fragmentation,
+    # not abstraction) rather than catching genuine sprawl. 60 is detekt's default and
+    # still fails anything meaningfully long in new code.
+    threshold: 60
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 10
+    ignoreDefaultParameters: true
+  # The legacy UI/parser code is deeply nested and branchy by nature. These add noise
+  # without catching the class of defect this gate exists to catch.
+  ComplexCondition:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  NestedBlockDepth:
+    active: false
+  TooManyFunctions:
+    active: false
+  LargeClass:
+    active: false
+
+empty-blocks:
+  # An empty catch is the single most effective way to hide a crash. No exemptions:
+  # detekt's default lets you name the variable "ignored"/"expected" to opt out, and
+  # an empty regex removes that escape hatch.
+  EmptyCatchBlock:
+    active: true
+    allowedExceptionNameRegex: ''
+  EmptyFunctionBlock:
+    active: true
+    ignoreOverridden: true
+  EmptyDefaultConstructor:
+    active: true
+
+exceptions:
+  # Catching an exception and throwing/logging something that drops the cause.
+  SwallowedException:
+    active: true
+    ignoredExceptionTypes:
+      - 'InterruptedException'
+      - 'NumberFormatException'
+      - 'ParseException'
+      - 'MalformedURLException'
+    # A sample of 9 legacy swallows found 9/9 were deliberate: parse fallbacks,
+    # capability probes (ChanDatabase.supportsCte), cancellation handling. Rather than
+    # let the baseline grow every time new code legitimately swallows, give it one
+    # sanctioned and greppable spelling -- `catch (ignored: ParseException)`. A reviewer
+    # can then grep for it; a silent `e` that goes nowhere still fails.
+    # (EmptyCatchBlock below keeps its no-exemptions hard line -- different rule: a
+    # swallow *with* a fallback value is not the same thing as an empty catch.)
+    allowedExceptionNameRegex: '_|(ignore|expected).*'
+
+  # DO NOT "fix" the 58 printStackTrace() calls -- printStackTrace IS this project's
+  # persisted diagnostic channel. Logger.write() formats a Throwable as
+  # `class : index : "message"` with NO stack frames, while Logger's LogcatThread
+  # captures the app's logcat (including System.err, where Android sends
+  # printStackTrace output) into the rotating log files shipped with bug reports.
+  # Routing these through Logger would silently delete stack traces from crash reports.
+  PrintStackTrace:
+    active: false
+  TooGenericExceptionCaught:
+    active: true
+    exceptionNames:
+      - 'Error'
+      - 'Throwable'
+    allowedExceptionNameRegex: ''
+  ReturnFromFinally:
+    active: true
+  ThrowingExceptionFromFinally:
+    active: true
+  RethrowCaughtException:
+    active: false
+
+potential-bugs:
+  # '!!' is deliberately NOT enforced here. detekt 1.x has no severity-based gating --
+  # build.maxIssues=0 means any finding in this config fails the build -- so the only way
+  # to have '!!' reported-but-not-blocking is to run it as a separate advisory pass.
+  # It lives in detekt-doublebang.yml, run by the `detektDoubleBang` task, which prints
+  # findings and never fails. Flip this to `active: true` (and drop that task) to make
+  # new '!!' a hard error once the ~3.1k legacy ones are worked down.
+  UnsafeCallOnNullableType:
+    active: false
+  UnsafeCast:
+    active: true
+  CastToNullableType:
+    active: true
+  # Disabled deliberately, and NOT because it is inconvenient.
+  #
+  # detekt 1.23.8 is built against Kotlin 2.0.21; this project compiles with Kotlin 2.3.21.
+  # detekt's type-resolution frontend therefore analyses source it does not fully
+  # understand, and UnreachableCode is where that shows: it flagged 40 sites, including
+  # plainly reachable statements in FlowDialog.updateActive(). They are false positives.
+  #
+  # Nothing is lost by turning it off. Kotlin itself reports unreachable code as a
+  # warning, and this build sets allWarningsAsErrors = true, so genuinely unreachable
+  # code is already a hard compile error -- enforced by the current compiler frontend
+  # rather than a three-versions-stale one.
+  UnreachableCode:
+    active: false
+  # Redundant '!!' on an already non-null type is always a plain mistake, and unlike
+  # UnsafeCallOnNullableType there is no legacy excuse for it.
+  UnnecessaryNotNullOperator:
+    active: true
+  # Calling toString() on a nullable and silently getting "null" in the UI -- a classic
+  # artefact of Java code that never modelled nullability.
+  NullableToStringCall:
+    active: true
+
+style:
+  # Line length is not capped -- see .editorconfig for the reasoning.
+  MaxLineLength:
+    active: false
+  # ktlint owns pure formatting; detekt should only speak to semantics here.
+  WildcardImport:
+    active: false
+  MagicNumber:
+    active: false
+  ReturnCount:
+    active: false
+  ThrowsCount:
+    active: false
+  UnusedPrivateMember:
+    active: true
+  ForbiddenComment:
+    active: false
+  # Same rationale as the disabled ComplexCondition/NestedBlockDepth family above: this
+  # is a readability opinion aimed squarely at the branchy hand-rolled parser code
+  # (GroupParser, HtmlParser, HttpResponse's stream chain-walk) that this project is
+  # made of. Restructuring working parsers with no tests is risk with no payoff.
+  LoopWithTooManyJumpStatements:
+    active: false
+  # All 10 hits are either @Public extension-API base classes in src/chan/ (making them
+  # concrete or an interface is a binary-incompatible change for extension APKs that
+  # subclass them) or UI base classes where `abstract` documents "do not instantiate
+  # directly". Nothing here is fixable without breaking ABI or erasing intent.
+  UnnecessaryAbstractClass:
+    active: false
+
+  # --- Java-smell rules -------------------------------------------------------------
+  # These are the ones that actually push J2K output towards idiomatic Kotlin. Several
+  # need type resolution (marked TR) and report nothing without the compile classpath
+  # wired into the Detekt tasks in build.gradle.kts.
+
+  # TR. A nullable that is never actually null -- the single biggest J2K artefact, and
+  # the root cause of most of the '!!' below it. Fixing these is what retires '!!'.
+  CanBeNonNullable:
+    active: true
+  # TR. `var` that is never reassigned.
+  VarCouldBeVal:
+    active: true
+  # TR. `map.get(k)` / `list.get(i)` instead of `map[k]` / `list[i]`.
+  ExplicitCollectionElementAccessMethod:
+    active: true
+  # Hand-rolled `if (x == null) throw ...` instead of require/check/requireNotNull.
+  UseRequire:
+    active: true
+  UseRequireNotNull:
+    active: true
+  UseCheckOrError:
+    active: true
+  UseCheckNotNull:
+    active: true
+  # `if (nullableBool == true)` -- Java-brained nullable Boolean handling.
+  NullableBooleanCheck:
+    active: true
+  # Java static-holder classes carried over as classes with a public constructor.
+  UtilityClassWithPublicConstructor:
+    active: true
+  # `object : Runnable { ... }` where a lambda (SAM) would do.
+  ObjectLiteralToLambda:
+    active: true
+  # Java's Void instead of Kotlin's Unit.
+  ForbiddenVoid:
+    active: true
+  ExplicitItLambdaParameter:
+    active: true
+  UnnecessaryLet:
+    active: true
+  UnnecessaryApply:
+    active: true
+  UnnecessaryFilter:
+    active: true
+  SerialVersionUIDInSerializableClass:
+    active: true
+
+performance:
+  # Every hit is a vararg pass-through, which Kotlin cannot express *without* `*array`.
+  # The rule is a performance advisory about an unavoidable copy on cold paths
+  # (extension loading, request construction). There is no alternative spelling to
+  # migrate to, so it is pure noise here.
+  SpreadOperator:
+    active: false
+
+naming:
+  # J2K carried over Java naming that is not worth churning now.
+  FunctionNaming:
+    active: false
+  VariableNaming:
+    active: false
+  ConstructorParameterNaming:
+    active: false
+  TopLevelPropertyNaming:
+    active: false
+  ObjectPropertyNaming:
+    active: false
+
+comments:
+  active: false

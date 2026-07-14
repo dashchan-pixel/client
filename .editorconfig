@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 4
+
+ktlint_code_style = ktlint_official
+
+# Line length is deliberately not capped. The source is AI-generated, and a hard
+# column limit mostly produces awkward wrapping rather than more readable code;
+# the rules worth failing a build over are the semantic ones in detekt.yml.
+max_line_length = off
+ktlint_standard_max-line-length = disabled
+
+# Trailing commas are the point of this file. With both switches on, ktlintFormat
+# *adds* the dangling comma after the last parameter/argument; with them off it
+# strips them. Every added or removed entry then touches exactly one line, so two
+# branches appending to the same list no longer collide on the final element.
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true

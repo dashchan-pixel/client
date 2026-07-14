@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+#
+# Pre-commit quality gate.
+#
+# Runs the same checks CI does, so bad code cannot reach a commit in the first place:
+#
+#   compileDebugKotlin  -- allWarningsAsErrors + -progressive: any warning is an error
+#   ktlintCheck         -- formatting, incl. the trailing commas that keep diffs small
+#   detekt              -- '!!'-free* new code, no empty catches, no swallowed exceptions
+#
+#   (*) '!!' is advisory only for now; `detektDoubleBang` reports it without failing.
+#
+# Only runs when Kotlin/Gradle files are actually staged -- a docs- or resource-only
+# commit should not pay for a Gradle run.
+#
+# Escape hatches:
+#   git commit --no-verify     skip entirely (use sparingly)
+#   SKIP_GRADLE_HOOK=1 git ...  same, but explicit about why
+#
+# Enable in a fresh clone (hooks are not cloned by git):
+#   git config core.hooksPath scripts/git-hooks
+
+set -uo pipefail
+
+if [ "${SKIP_GRADLE_HOOK:-0}" = "1" ]; then
+    echo "pre-commit: skipped (SKIP_GRADLE_HOOK=1)"
+    exit 0
+fi
+
+# Only consider files staged for this commit (Added/Copied/Modified/Renamed).
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts' 2>/dev/null)
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root" || exit 1
+
+echo "pre-commit: $(echo "$staged" | wc -l | tr -d ' ') Kotlin file(s) staged — running quality gate..."
+
+# --quiet keeps the hook readable; failures still print their own diagnostics.
+if ! ./gradlew --quiet compileDebugKotlin ktlintCheck detekt; then
+    cat >&2 <<'EOF'
+
+pre-commit: FAILED — commit aborted.
+
+  Formatting problems?      ./gradlew ktlintFormat   (auto-fixes most of them)
+  Warning treated as error? allWarningsAsErrors is on; fix the warning, do not suppress it.
+  detekt finding?           New code must not add empty catches, swallowed exceptions,
+                            or over-long methods. Existing legacy findings are frozen in
+                            detekt-baseline.xml — do NOT regenerate the baseline just to
+                            make a new finding disappear.
+
+  Genuinely need to bypass: git commit --no-verify
+EOF
+    exit 1
+fi
+
+echo "pre-commit: OK"
+exit 0

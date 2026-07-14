@@ -1,0 +1,682 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>AvoidReferentialEquality:StringUtils.kt$StringUtils$first === second</ID>
+    <ID>CanBeNonNullable:ArchivePage.kt$ArchivePage.Companion$chanName: String?</ID>
+    <ID>CanBeNonNullable:ArchivePage.kt$ArchivePage.Companion$threadNumber: String?</ID>
+    <ID>CanBeNonNullable:AutohideFragment.kt$AutohideFragment.Adapter$searchQuery: String?</ID>
+    <ID>CanBeNonNullable:BoardsPage.kt$BoardsPage.Companion$chanName: String?</ID>
+    <ID>CanBeNonNullable:CaptchaForm.kt$CaptchaForm$private var captchaInput: ChanConfiguration.Captcha.Input?</ID>
+    <ID>CanBeNonNullable:ChanConfiguration.kt$ChanConfiguration$boardNames: List&lt;String&gt;?</ID>
+    <ID>CanBeNonNullable:ChanPerformer.kt$ChanPerformer$firewallResolver: FirewallResolver?</ID>
+    <ID>CanBeNonNullable:ChanPerformer.kt$ChanPerformer$images: Array&lt;Bitmap?&gt;?</ID>
+    <ID>CanBeNonNullable:ChanPerformer.kt$ChanPerformer$item: Array&lt;CharSequence?&gt;?</ID>
+    <ID>CanBeNonNullable:ChanPerformer.kt$ChanPerformer.ReadPostsData$@Public @JvmField val threadNumber: String?</ID>
+    <ID>CanBeNonNullable:ColorScheme.kt$ColorScheme$spans: Array&lt;Span&gt;?</ID>
+    <ID>CanBeNonNullable:CommentTextView.kt$CommentTextView$selectionMode: SelectionMode?</ID>
+    <ID>CanBeNonNullable:CookieBuilder.kt$CookieBuilder$cookie: String?</ID>
+    <ID>CanBeNonNullable:CookieBuilder.kt$CookieBuilder$value: String?</ID>
+    <ID>CanBeNonNullable:CookiesFragment.kt$CookiesFragment$cookie: String?</ID>
+    <ID>CanBeNonNullable:DialogStack.kt$DialogStack$viewFactory: T?</ID>
+    <ID>CanBeNonNullable:DialogUnit.kt$DialogUnit$gallerySet: GalleryItem.Set?</ID>
+    <ID>CanBeNonNullable:DialogUnit.kt$DialogUnit$postItem: PostItem?</ID>
+    <ID>CanBeNonNullable:DialogUnit.kt$DialogUnit$postNumber: PostNumber?</ID>
+    <ID>CanBeNonNullable:DialogUnit.kt$DialogUnit.Companion$posts: Collection&lt;Post&gt;?</ID>
+    <ID>CanBeNonNullable:DownloadDialog.kt$DownloadDialog$prepareRequest: PrepareRequest?</ID>
+    <ID>CanBeNonNullable:DownloadService.kt$DownloadService.Binder$requestItem: RequestItem?</ID>
+    <ID>CanBeNonNullable:DraftsStorage.kt$DraftsStorage$postDraft: PostDraft?</ID>
+    <ID>CanBeNonNullable:DraftsStorage.kt$DraftsStorage.Companion$hash: String?</ID>
+    <ID>CanBeNonNullable:DrawerForm.kt$DrawerForm$chanName: String?</ID>
+    <ID>CanBeNonNullable:DrawerForm.kt$DrawerForm$threadNumber: String?</ID>
+    <ID>CanBeNonNullable:DrawerForm.kt$DrawerForm.Companion$threadNumber: String?</ID>
+    <ID>CanBeNonNullable:EmbeddedType.kt$EmbeddedType$text: String?</ID>
+    <ID>CanBeNonNullable:ExpandedScreen.kt$ExpandedScreen$view: View?</ID>
+    <ID>CanBeNonNullable:ExtensionException.kt$ExtensionException.Companion$t: Throwable?</ID>
+    <ID>CanBeNonNullable:FirewallResolvers.kt$FirewallResolvers$key: FirewallResolver.Exclusive.Key?</ID>
+    <ID>CanBeNonNullable:FirewallResolvers.kt$FirewallResolvers.CookieSession$override val holder: HttpHolder? get() = throw IllegalStateException()</ID>
+    <ID>CanBeNonNullable:FirewallResolvers.kt$FirewallResolvers.Key.Generator$value: String?</ID>
+    <ID>CanBeNonNullable:GalleryItem.kt$GalleryItem.Set$attachmentItems: Collection&lt;AttachmentItem&gt;?</ID>
+    <ID>CanBeNonNullable:GalleryOverlay.kt$GalleryOverlay$private val threadTitle: String? get() = requireArguments().getString(EXTRA_THREAD_TITLE)</ID>
+    <ID>CanBeNonNullable:GalleryOverlay.kt$GalleryOverlay$val chanName: String? get() = requireArguments().getString(EXTRA_CHAN_NAME)</ID>
+    <ID>CanBeNonNullable:GroupParser.kt$GroupParser.ReaderWrapper$builder: StringBuilder?</ID>
+    <ID>CanBeNonNullable:HttpClient.kt$HttpClient$chan: Chan?</ID>
+    <ID>CanBeNonNullable:HttpClient.kt$HttpClient$resolverIdentifier: FirewallResolver.Identifier?</ID>
+    <ID>CanBeNonNullable:HttpClient.kt$HttpClient.Companion$chars: CharArray?</ID>
+    <ID>CanBeNonNullable:HttpHolder.kt$HttpHolder$client: HttpClient?</ID>
+    <ID>CanBeNonNullable:HttpResponse.kt$HttpResponse$exception: IOException?</ID>
+    <ID>CanBeNonNullable:ImageLoader.kt$ImageLoader$view: T?</ID>
+    <ID>CanBeNonNullable:ImageUnit.kt$ImageUnit$holder: PagerInstance.ViewHolder?</ID>
+    <ID>CanBeNonNullable:InteractionUnit.kt$InteractionUnit$view: View?</ID>
+    <ID>CanBeNonNullable:ListPage.kt$ListPage$postNumber: PostNumber?</ID>
+    <ID>CanBeNonNullable:MainActivity.kt$MainActivity$content: Page.Content?</ID>
+    <ID>CanBeNonNullable:MainActivity.kt$MainActivity$uri: Uri?</ID>
+    <ID>CanBeNonNullable:MultipartEntity.kt$MultipartEntity$openable: Openable?</ID>
+    <ID>CanBeNonNullable:MultipleEditPreference.kt$MultipleEditPreference.Companion$format: String?</ID>
+    <ID>CanBeNonNullable:PageFragment.kt$PageFragment$override val toolbarContext: Context? get() = (requireActivity() as FragmentHandler).getToolbarContext()</ID>
+    <ID>CanBeNonNullable:PageFragment.kt$PageFragment$val page: Page? get() = BundleCompat.getParcelable&lt;Page?&gt;( requireArguments(), EXTRA_PAGE, Page::class.java, )</ID>
+    <ID>CanBeNonNullable:PageFragment.kt$PageFragment$val retainId: String? get() = requireArguments().getString(EXTRA_RETAIN_ID)</ID>
+    <ID>CanBeNonNullable:PagerUnit.kt$PagerUnit$imageViewPosition: IntArray?</ID>
+    <ID>CanBeNonNullable:PostingFragment.kt$PostingFragment$private val boardName: String? get() = requireArguments().getString(EXTRA_BOARD_NAME)</ID>
+    <ID>CanBeNonNullable:PostingFragment.kt$PostingFragment$private val chanName: String? get() = requireArguments().getString(EXTRA_CHAN_NAME)</ID>
+    <ID>CanBeNonNullable:PostingFragment.kt$PostingFragment$private val threadNumber: String? get() = requireArguments().getString(EXTRA_THREAD_NUMBER)</ID>
+    <ID>CanBeNonNullable:PostingService.kt$PostingService.NewPostData$val key: Key?</ID>
+    <ID>CanBeNonNullable:PostsPage.kt$PostsPage$listPosition: ListPosition?</ID>
+    <ID>CanBeNonNullable:PostsPage.kt$PostsPage.ReadViewModel$callback: WatcherService.Session.Callback?</ID>
+    <ID>CanBeNonNullable:PostsPage.kt$PostsPage.ReadViewModel$chanName: String?</ID>
+    <ID>CanBeNonNullable:PostsPage.kt$PostsPage.ReadViewModel$threadNumber: String?</ID>
+    <ID>CanBeNonNullable:PreferenceFragment.kt$PreferenceFragment$key: String?</ID>
+    <ID>CanBeNonNullable:PreferenceFragment.kt$PreferenceFragment$which: Preference&lt;*&gt;?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.AppIcon$// Suffix of the launcher activity-alias in com.mishiranu.dashchan.ui carrying this icon. val componentSuffix: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.AppIcon$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.CatalogSort$internal val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.CyclicalRefreshMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.DownloadSubdirMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.DrawerInitialPosition$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.FavoriteOnReplyMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.FavoritesOrder$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.FirewallResolutionMethod$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.HighlightUnreadMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.MediaLoadingAction$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.NetworkMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.PagesListMode$val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.ThreadsView$internal val value: String?</ID>
+    <ID>CanBeNonNullable:Preferences.kt$Preferences.VideoCompletionMode$val value: String?</ID>
+    <ID>CanBeNonNullable:PullableWrapper.kt$PullableWrapper$ev: MotionEvent?</ID>
+    <ID>CanBeNonNullable:PullableWrapper.kt$PullableWrapper$private var pullSides: Side? = Side.NONE</ID>
+    <ID>CanBeNonNullable:PullableWrapper.kt$PullableWrapper.LollipopView$private var previousState: PullView.State? = PullView.State.IDLE</ID>
+    <ID>CanBeNonNullable:RecaptchaReader.kt$RecaptchaReader$holder: HttpHolder?</ID>
+    <ID>CanBeNonNullable:SearchImageDialog.kt$SearchImageDialog$searchUri: Uri?</ID>
+    <ID>CanBeNonNullable:ThreadDescriptionView.kt$ThreadDescriptionView$value: String?</ID>
+    <ID>CanBeNonNullable:ThreadsPage.kt$ThreadsPage.Companion$chanName: String?</ID>
+    <ID>CanBeNonNullable:UiManager.kt$UiManager$attachmentItem: AttachmentItem?</ID>
+    <ID>CanBeNonNullable:UiManager.kt$UiManager$message: Message?</ID>
+    <ID>CanBeNonNullable:UiManager.kt$UiManager$postItem: PostItem?</ID>
+    <ID>CanBeNonNullable:UpdaterActivity.kt$UpdaterActivity$private val files: MutableList&lt;String?&gt;? get() = getIntent().getStringArrayListExtra(EXTRA_FILES)</ID>
+    <ID>CanBeNonNullable:UserBoardsPage.kt$UserBoardsPage.Companion$chanName: String?</ID>
+    <ID>CanBeNonNullable:VideoUnit.kt$VideoUnit$holder: PagerInstance.ViewHolder?</ID>
+    <ID>CanBeNonNullable:ViewUnit.kt$ViewUnit$configurationSet: ConfigurationSet?</ID>
+    <ID>CanBeNonNullable:ViewUnit.kt$ViewUnit.PostViewHolder$val defaultLinkListener: LinkListener?</ID>
+    <ID>CanBeNonNullable:ViewUnit.kt$ViewUnit.PostViewHolder$val textSelectionPadding: View?</ID>
+    <ID>CanBeNonNullable:ViewUnit.kt$ViewUnit.ThreadViewHolder$val showOriginalPost: View?</ID>
+    <ID>CanBeNonNullable:ViewUnit.kt$ViewUnit.ThreadViewHolder$val threadContent: View?</ID>
+    <ID>CanBeNonNullable:WatcherService.kt$WatcherService$session: InternalSession?</ID>
+    <ID>CastToNullableType:AttachmentOptionsDialog.kt$AttachmentOptionsDialog$as</ID>
+    <ID>CastToNullableType:BoardCategory.kt$BoardCategory$as</ID>
+    <ID>CastToNullableType:CaptchaForm.kt$CaptchaForm$as</ID>
+    <ID>CastToNullableType:ChanConfiguration.kt$ChanConfiguration$as</ID>
+    <ID>CastToNullableType:ChanFragment.kt$ChanFragment.CheckAuthorizationTask$as</ID>
+    <ID>CastToNullableType:ChanPerformer.kt$ChanPerformer.ReadBoardsResult$as</ID>
+    <ID>CastToNullableType:ClickableToast.kt$ClickableToast$as</ID>
+    <ID>CastToNullableType:ClickableToast.kt$ClickableToast.Companion$as</ID>
+    <ID>CastToNullableType:ClickableToast.kt$ClickableToast.PartialClickDrawable$as</ID>
+    <ID>CastToNullableType:CommentTextView.kt$CommentTextView$as</ID>
+    <ID>CastToNullableType:ConcurrentUtils.kt$ConcurrentUtils$as</ID>
+    <ID>CastToNullableType:ContentFragment.kt$ContentFragment$as</ID>
+    <ID>CastToNullableType:ContentFragment.kt$ContentFragment.Companion$as</ID>
+    <ID>CastToNullableType:DataFile.kt$DataFile.SafFile.Companion$as</ID>
+    <ID>CastToNullableType:DialogStack.kt$DialogStack.DialogView$as</ID>
+    <ID>CastToNullableType:DialogStack.kt$DialogStack.DragLayout.Companion$as</ID>
+    <ID>CastToNullableType:DownloadDialog.kt$DownloadDialog$as</ID>
+    <ID>CastToNullableType:DrawerForm.kt$DrawerForm$as</ID>
+    <ID>CastToNullableType:ForegroundManager.kt$ForegroundManager$as</ID>
+    <ID>CastToNullableType:ForegroundManager.kt$ForegroundManager.PendingDataDialog$as</ID>
+    <ID>CastToNullableType:GalleryOverlay.kt$GalleryOverlay$as</ID>
+    <ID>CastToNullableType:ImageLoader.kt$ImageLoader$as</ID>
+    <ID>CastToNullableType:InstanceDialog.kt$InstanceDialog$as</ID>
+    <ID>CastToNullableType:ListPage.kt$ListPage.Companion$as</ID>
+    <ID>CastToNullableType:ListUnit.kt$ListUnit$as</ID>
+    <ID>CastToNullableType:MainActivity.kt$MainActivity$as</ID>
+    <ID>CastToNullableType:MainActivity.kt$MainActivity.&lt;no name provided&gt;$as</ID>
+    <ID>CastToNullableType:MainApplication.kt$MainApplication$as</ID>
+    <ID>CastToNullableType:MultipleEditPreference.kt$MultipleEditPreference$as</ID>
+    <ID>CastToNullableType:MultipleEditPreference.kt$MultipleEditPreference.ListValueCodec$as</ID>
+    <ID>CastToNullableType:PaddedRecyclerView.kt$PaddedRecyclerView$as</ID>
+    <ID>CastToNullableType:PagerUnit.kt$PagerUnit$as</ID>
+    <ID>CastToNullableType:PagerUnit.kt$PagerUnit.PagerAdapter$as</ID>
+    <ID>CastToNullableType:PagesDatabase.kt$PagesDatabase$as</ID>
+    <ID>CastToNullableType:Post.kt$Post$as</ID>
+    <ID>CastToNullableType:PostingFragment.kt$PostingFragment$as</ID>
+    <ID>CastToNullableType:PostingFragment.kt$PostingFragment.&lt;no name provided&gt;$as</ID>
+    <ID>CastToNullableType:Posts.kt$Posts.LazyProvider$as</ID>
+    <ID>CastToNullableType:PostsPage.kt$PostsPage$as</ID>
+    <ID>CastToNullableType:PreferenceFragment.kt$PreferenceFragment$as</ID>
+    <ID>CastToNullableType:PreferenceFragment.kt$PreferenceFragment.CategoryPreference$as</ID>
+    <ID>CastToNullableType:PreferenceFragment.kt$PreferenceFragment.PreferenceDialog$as</ID>
+    <ID>CastToNullableType:Preferences.kt$Preferences$as</ID>
+    <ID>CastToNullableType:ReadCaptchaTask.kt$ReadCaptchaTask$as</ID>
+    <ID>CastToNullableType:SendLocalArchiveTask.kt$SendLocalArchiveTask$as</ID>
+    <ID>CastToNullableType:SendPostTask.kt$SendPostTask$as</ID>
+    <ID>CastToNullableType:UpdaterActivity.kt$UpdaterActivity.Connection$as</ID>
+    <ID>CastToNullableType:ViewUtils.kt$ViewUtils$as</ID>
+    <ID>CastToNullableType:WebViewService.kt$WebViewService$as</ID>
+    <ID>DoubleMutabilityForCollection:AutohideStorage.kt$AutohideStorage$var chanNames: HashSet&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:AutohideStorage.kt$AutohideStorage.AutohideItem$@JvmField var chanNames: HashSet&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:BaseService.kt$BaseService$private var onDestroyListeners: ArrayList&lt;Runnable&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:CacheManager.kt$CacheManager$var cleanupCacheItems: ArrayList&lt;CacheItem?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var boardDescriptionsMap: HashMap&lt;String?, String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var boardTitlesMap: HashMap&lt;String?, String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var bumpLimitMap: HashMap&lt;String?, Int?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var defaultNameMap: HashMap&lt;String?, String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var pagesCountMap: HashMap&lt;String?, Int?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$private var supportedCaptchaTypes: LinkedHashSet&lt;String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanConfiguration.kt$ChanConfiguration$var customPreferences: LinkedHashMap&lt;String?, Boolean?&gt;? = null private set</ID>
+    <ID>DoubleMutabilityForCollection:ChanManager.kt$ChanManager$private var sortedExtensionNames: MutableList&lt;String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanManager.kt$ChanManager$var archiveChanNames = archiveMap[chanName]</ID>
+    <ID>DoubleMutabilityForCollection:ChanManager.kt$ChanManager$var orderedChanNames: MutableList&lt;String?&gt;? = chansOrder</ID>
+    <ID>DoubleMutabilityForCollection:ChanMarkup.kt$ChanMarkup.MarkupItem$var attrubuteItems: ArrayList&lt;AttributeItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanMarkup.kt$ChanMarkup.MarkupItem$var cssClassTagItems: HashMap&lt;String?, TagItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ChanPerformer.kt$ChanPerformer.ReadPostsResult$var list = mutableListOf&lt;Post?&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:ChanPerformer.kt$ChanPerformer.ReadSearchPostsResult$var list = mutableListOf&lt;SinglePost?&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:ChanPerformer.kt$ChanPerformer.ReadThreadsResult$var list = mutableListOf&lt;Thread?&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:CommentTextView.kt$CommentTextView$private var extraButtons: MutableList&lt;ExtraButton?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:CommentTextView.kt$CommentTextView$var spoilerSpans: ArrayList&lt;SpoilerSpan&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:CookieBuilder.kt$CookieBuilder$private var list: ArrayList&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DialogUnit.kt$DialogUnit$var options: ArrayList&lt;Pair&lt;String, String&gt;&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DialogUnit.kt$DialogUnit.AsyncDialogProvider.Factory$var observers: ArrayList&lt;Runnable&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DialogUnit.kt$DialogUnit.Companion$var options: ArrayList&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DownloadDialog.kt$DownloadDialog.Adapter$internal var items: MutableList&lt;DialogDirectory&gt; = mutableListOf&lt;DialogDirectory&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:DownloadDialog.kt$DownloadDialog.Adapter$private var lastDirectoryItems: MutableList&lt;DialogDirectory&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DraftsStorage.kt$DraftsStorage.PostDraft.Companion$var attachmentDrafts: ArrayList&lt;AttachmentDraft&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:DrawerForm.kt$DrawerForm$var workList: ArrayList&lt;ListItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:FlowDialog.kt$FlowDialog.Companion$private var pendingItems: MutableList&lt;GalleryItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:FlowDialog.kt$FlowDialog.FlowViewModel$/** The video-only subset actually shown in the feed; unplayable videos are removed. */ var items: MutableList&lt;GalleryItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:GraphicsUtils.kt$GraphicsUtils$var skipRanges: ArrayList&lt;SkipRange&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HidePerformer.kt$HidePerformer$private var names: LinkedHashSet&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HidePerformer.kt$HidePerformer$private var replies: LinkedHashSet&lt;PostNumber&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HidePerformer.kt$HidePerformer$private var similar: ArrayList&lt;WordsData&lt;PostNumber?&gt;&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HidePerformer.kt$HidePerformer$var names: MutableList&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HttpHolder.kt$HttpHolder$private var sessions: ArrayList&lt;HttpSession?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HttpRequest.kt$HttpRequest$var headers: ArrayList&lt;Pair&lt;String?, String?&gt;?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:HttpSession.kt$HttpSession$var cookies = headers["Set-Cookie"]</ID>
+    <ID>DoubleMutabilityForCollection:HttpSession.kt$HttpSession$var values = map[name]</ID>
+    <ID>DoubleMutabilityForCollection:LruCache.kt$LruCache$var copied: ArrayList&lt;MutableMap.MutableEntry&lt;K, V&gt;&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:NavigationUtils.kt$NavigationUtils$var infos = packageManager.queryIntentActivities( Intent(Intent.ACTION_VIEW, targetUri), PackageManager.MATCH_DEFAULT_ONLY, )</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var changed: MutableList&lt;Post&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var deletedPosts: MutableMap&lt;PostNumber, Long&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var editedPosts: MutableMap&lt;PostNumber, Long&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var existing: ArrayList&lt;PostNumber&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var extractedList: MutableList&lt;Extracted&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var newItems: MutableMap&lt;PostNumber, DiffItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var newPosts: MutableMap&lt;PostNumber, Long&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var removeThreads: HashSet&lt;ThreadKey&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PagesDatabase.kt$PagesDatabase$var replyPosts: MutableMap&lt;PostNumber, Long&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:Post.kt$Post.Builder$@JvmField var attachments: MutableList&lt;Attachment&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:Post.kt$Post.Builder$@JvmField var icons: MutableList&lt;Icon&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostItem.kt$PostItem.Companion$var result = references</ID>
+    <ID>DoubleMutabilityForCollection:PostingFragment.kt$PostingFragment$private var attachmentRatingItems: MutableList&lt;Pair&lt;String, String&gt;&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostingFragment.kt$PostingFragment$private var userIconItems: MutableList&lt;Pair&lt;String, String&gt;&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostingFragment.kt$PostingFragment$var attachmentDrafts: ArrayList&lt;AttachmentDraft&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostingService.kt$PostingService$var newPostDataList: ArrayList&lt;NewPostData&gt;? = NEW_POST_DATA_MAP[arrayKey]</ID>
+    <ID>DoubleMutabilityForCollection:PostingService.kt$PostingService$var pendingUserPosts: HashSet&lt;PendingUserPost&gt;? = PENDING_USER_POST_MAP[arrayKey]</ID>
+    <ID>DoubleMutabilityForCollection:PostingService.kt$PostingService.Binder$var callbacks = this@PostingService.callbacks[key]</ID>
+    <ID>DoubleMutabilityForCollection:PostingShareActivity.kt$PostingShareActivity$var uris: ArrayList&lt;Uri&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostsPage.kt$PostsPage$private var lastEditedPostNumbers = mutableSetOf&lt;PostNumber?&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:PostsPage.kt$PostsPage$private var lastNewPostNumbers = mutableSetOf&lt;PostNumber?&gt;()</ID>
+    <ID>DoubleMutabilityForCollection:PostsPage.kt$PostsPage.ParcelableExtra$var selectedPosts: MutableSet&lt;PostNumber&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:PostsPage.kt$PostsPage.RetainableExtra$var searchPostNumbers: MutableList&lt;PostNumber&gt; = mutableListOf()</ID>
+    <ID>DoubleMutabilityForCollection:Preferences.kt$Preferences$@JvmStatic var chansOrder: ArrayList&lt;String?&gt;? get() { val data = PREFERENCES!!.getString( KEY_CHANS_ORDER, null, ) if (data != null) { try { val jsonArray = JSONArray(data) val chanNames = java.util.ArrayList&lt;String?&gt;() for (i in 0..&lt;jsonArray.length()) { chanNames.add(jsonArray.getString(i)) } return chanNames } catch (e: JSONException) { // Invalid or unspecified data, ignore exception } } return null } set(chanNames) { val jsonArray = JSONArray() for (chanName in chanNames!!) { jsonArray.put(chanName) } PREFERENCES!! .edit() .put( KEY_CHANS_ORDER, jsonArray.toString(), ).close() }</ID>
+    <ID>DoubleMutabilityForCollection:Preferences.kt$Preferences$var packageNameFingerprints: MutableSet&lt;String&gt; = PREFERENCES!! .getStringSet( KEY_TRUSTED_EXSTENSIONS, null, )?.let { HashSet(it) } ?: HashSet()</ID>
+    <ID>DoubleMutabilityForCollection:ReadPostsTask.kt$ReadPostsTask$var removedPendingUserPosts: HashSet&lt;PendingUserPost&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ReadUpdateTask.kt$ReadUpdateTask.Companion$var extensionNames = targets[targetUri]</ID>
+    <ID>DoubleMutabilityForCollection:SearchAdapter.kt$SearchAdapter$var postItems = map[threadNumber]</ID>
+    <ID>DoubleMutabilityForCollection:SimilarTextEstimator.kt$SimilarTextEstimator$var words: HashSet&lt;String&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:StringUtils.kt$StringUtils$var candidates: ArrayList&lt;IntArray&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ThemeEngine.kt$ThemeEngine$private var themes: LinkedHashMap&lt;String?, Theme&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ThreadsAdapter.kt$ThreadsAdapter$private var catalogSortedPostItems: ArrayList&lt;PostItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ThreadsAdapter.kt$ThreadsAdapter$private var filteredPostItems: ArrayList&lt;PostItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ThreadsPage.kt$ThreadsPage$var newList: ArrayList&lt;PostItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:VideoPipActivity.kt$VideoPipActivity$/** * When launched from the Flow feed: its video list, so completed videos advance to the * next one (wrapping around) like the feed itself; unplayable entries are dropped. * Null when launched from the gallery, which honours the completion preference instead. */ private var playlist: MutableList&lt;GalleryItem&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ViewUnit.kt$ViewUnit$var attachmentHolders = holder.attachmentHolders</ID>
+    <ID>DoubleMutabilityForCollection:ViewUnit.kt$ViewUnit.PostViewHolder$var attachmentHolders: ArrayList&lt;AttachmentHolder&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:ViewUnit.kt$ViewUnit.PostViewHolder$var badgeImages: ArrayList&lt;ImageView&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:WatcherNotifications.kt$WatcherNotifications.Task$var tags: MutableSet&lt;String?&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:WatcherService.kt$WatcherService$var resolveThreads: HashSet&lt;ThreadKey&gt;? = null</ID>
+    <ID>DoubleMutabilityForCollection:WatcherService.kt$WatcherService$var sessions = sessionsMap[threadKey]</ID>
+    <ID>EmptyCatchBlock:ChanDatabase.kt$ChanDatabase${ }</ID>
+    <ID>EmptyCatchBlock:ExecutorTask.kt$ExecutorTask.&lt;no name provided&gt;${ }</ID>
+    <ID>EmptyCatchBlock:ImageUnit.kt$ImageUnit.DecodeBitmapTask${ }</ID>
+    <ID>EmptyCatchBlock:UpdaterActivity.kt$UpdaterActivity${ }</ID>
+    <ID>EmptyFunctionBlock:ListPage.kt$ListPage${}</ID>
+    <ID>ExceptionRaisedInUnexpectedLocation:MultipleEditPreference.kt$MultipleEditPreference.MapValueCodec$override fun toString(value: Map&lt;String, String&gt;?): String</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$chanIcons.get(listItem.chanName)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$chanIcons.put(listItem.chanName, drawable)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$chans.get(position)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$favorites.get(favoriteMovedTo - 1)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$favorites.get(favoriteMovedTo)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$listItems.get(position)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:DrawerForm.kt$DrawerForm$menu.get(position)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$attachmentRatingItems!!.get(0)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$attachments.get(i)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$attachments.get(index)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$first.get(i)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$mimeTypes.get(0)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$replyDataList.get(i)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$userIconItems!!.get(i)</ID>
+    <ID>ExplicitCollectionElementAccessMethod:PostingFragment.kt$PostingFragment$userIconItems!!.get(position)</ID>
+    <ID>ForbiddenVoid:ContentsFragment.kt$ContentsFragment$Void?</ID>
+    <ID>ForbiddenVoid:DrawerForm.kt$DrawerForm$Void?</ID>
+    <ID>ForbiddenVoid:MediaFragment.kt$MediaFragment$Void?</ID>
+    <ID>ForbiddenVoid:PreferenceFragment.kt$PreferenceFragment$Void?</ID>
+    <ID>ForbiddenVoid:PreferenceFragment.kt$PreferenceFragment.ButtonPreference$Void?</ID>
+    <ID>ForbiddenVoid:PreferenceFragment.kt$PreferenceFragment.HeaderPreference$Void?</ID>
+    <ID>FunctionParameterNaming:ChanConfiguration.kt$ChanConfiguration.Companion$`object`: Any</ID>
+    <ID>FunctionParameterNaming:ChanLocator.kt$ChanLocator.Companion$`object`: Any</ID>
+    <ID>FunctionParameterNaming:ChanMarkup.kt$ChanMarkup.Companion$`object`: Any</ID>
+    <ID>FunctionParameterNaming:ChanPerformer.kt$ChanPerformer.Companion$`object`: Any</ID>
+    <ID>ImplicitDefaultLocale:SendLocalArchiveTask.kt$SendLocalArchiveTask$String.format("%06x", 0x00ffffff and extra as Int)</ID>
+    <ID>InstanceOfCheckForException:DataFile.kt$DataFile.SafFile.Companion$e !is IllegalArgumentException</ID>
+    <ID>IteratorNotThrowingNoSuchElementException:DialogStack.kt$DialogStack$&lt;no name provided&gt; : Iterator</ID>
+    <ID>LongMethod:ApiException.kt$ApiException.Companion$fun getResId(errorType: Int): Int</ID>
+    <ID>LongMethod:AttachmentOptionsDialog.kt$AttachmentOptionsDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:AttachmentView.kt$AttachmentView$override fun draw(canvas: Canvas)</ID>
+    <ID>LongMethod:AudioPlayerDialog.kt$AudioPlayerDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:AudioPlayerService.kt$AudioPlayerService$private fun getDownloadingNotification( recreate: Boolean, error: Boolean, uri: Uri?, ): NotificationCompat.Builder</ID>
+    <ID>LongMethod:AutohideFragment.kt$AutohideFragment.Adapter$override fun onBindViewHolder( holder: RecyclerView.ViewHolder, position: Int, )</ID>
+    <ID>LongMethod:AutohideFragment.kt$AutohideFragment.AutohideDialog$@SuppressLint("InflateParams") override fun onCreate(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:ChanDatabase.kt$ChanDatabase$@Throws(OperationCanceledException::class) fun getBoards( chanName: String, searchQuery: String?, extraName: String, provider: BoardExtraFallbackProvider?, signal: CancellationSignal?, ): BoardCursor</ID>
+    <ID>LongMethod:ChanDatabase.kt$ChanDatabase$fun setCookie( chanName: String, name: String, value: String?, title: String?, )</ID>
+    <ID>LongMethod:ChanDatabase.kt$ChanDatabase$fun setData( chanName: String, map: MutableMap&lt;DataKey?, Any?&gt;?, )</ID>
+    <ID>LongMethod:ChanDatabase.kt$ChanDatabase$private fun getBoards( chanName: String, boardNames: List&lt;String&gt;, filter: Expression.Filter, extra1Name: String, extra2Name: String, signal: CancellationSignal?, ): Cursor?</ID>
+    <ID>LongMethod:ChanFragment.kt$ChanFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:ChanManager.kt$ChanManager$private fun registerReceiver()</ID>
+    <ID>LongMethod:ChanManager.kt$ChanManager.Companion$private fun loadChan( chanItem: ExtensionItem, packageManager: PackageManager, ): Chan?</ID>
+    <ID>LongMethod:ChanManager.kt$ChanManager.Companion$private fun loadExtension( packageInfo: PackageInfo, chanExtension: Boolean, libExtension: Boolean, applicationFingerprints: Fingerprints?, usedExtensionNames: MutableCollection&lt;String?&gt;, // Read-only: the body only looks names up. Widening this from MutableMap lets // the `extensions` field carry the read-only type it actually holds. extensions: Map&lt;String?, Extension&gt;, ): Extension?</ID>
+    <ID>LongMethod:ChanMarkup.kt$ChanMarkup$private fun obtainTagItem( tagName: String, withCssClass: Boolean, cssClass: String?, withAttribute: Boolean, attribute: String?, value: String?, ): TagItem?</ID>
+    <ID>LongMethod:ChanMarkup.kt$ChanMarkup.ChanSpanProvider$@SuppressLint("ResourceAsColor") override fun transformBuilder( parser: HtmlParser&lt;MarkupExtra?, *, *&gt;, builder: StringBuilder, ): CharSequence</ID>
+    <ID>LongMethod:ChanMarkup.kt$ChanMarkup.ChanSpanProvider$internal fun modifyLink( parser: HtmlParser&lt;MarkupExtra?, *, *&gt;, start: Int, end: Int, linkHolder: LinkHolder, )</ID>
+    <ID>LongMethod:CircularProgressBar.kt$CircularProgressBar$override fun onDraw(canvas: Canvas)</ID>
+    <ID>LongMethod:CommentEditWatcher.kt$CommentEditWatcher$override fun onTextChanged( s: CharSequence, start: Int, before: Int, count: Int, )</ID>
+    <ID>LongMethod:CommentEditor.kt$CommentEditor$private fun formatSelectedTextOneLine( editable: Editable, what: Int, tag: Tag, startArg: Int, endArg: Int, ): FormatResult</ID>
+    <ID>LongMethod:CommentTextView.kt$CommentTextView$@SuppressLint("ClickableViewAccessibility") override fun onTouchEvent(event: MotionEvent): Boolean</ID>
+    <ID>LongMethod:CommentTextView.kt$CommentTextView$private fun startSelection( x: Int, y: Int, start: Int, end: Int, )</ID>
+    <ID>LongMethod:CommonUtils.kt$CommonUtils$@Public @JvmStatic fun restoreCloudFlareProtectedEmails(string: String): String</ID>
+    <ID>LongMethod:CommonUtils.kt$CommonUtils$@Public @JvmStatic fun trimBitmap( bitmap: Bitmap?, backgroundColor: Int, ): Bitmap?</ID>
+    <ID>LongMethod:ContentsFragment.kt$ContentsFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:CustomDrawerLayout.kt$CustomDrawerLayout$override fun onInterceptTouchEvent(ev: MotionEvent): Boolean</ID>
+    <ID>LongMethod:DataFile.kt$DataFile.SafFile$@Throws(IOException::class) override fun openOutputStream(): OutputStream</ID>
+    <ID>LongMethod:DecoderDrawable.kt$DecoderDrawable$override fun draw(canvas: Canvas)</ID>
+    <ID>LongMethod:DialogStack.kt$DialogStack.DialogView$override fun draw(canvas: Canvas)</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit$@TargetApi(Build.VERSION_CODES.LOLLIPOP) private fun showAttachmentsGrid( configurationSet: ConfigurationSet, attachmentItems: List&lt;AttachmentItem&gt;, startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set, )</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPerformSendDialog( provider: InstanceDialog.Provider, state: SendMultifunctionalTask.State, defaultType: String?, defaultText: String?, defaultOptions: List&lt;String&gt;?, posts: Collection&lt;Post&gt;?, firstTime: Boolean, ): Dialog?</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPostDescriptionDialog( context: Context, icons: MutableCollection&lt;IconData&gt;, chanName: String?, emailToCopy: String?, ): AlertDialog?</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit.TypedDialogFactory$fun createView(dialogStack: DialogStack&lt;DialogFactory?&gt;): View</ID>
+    <ID>LongMethod:DownloadDialog.kt$DownloadDialog$fun handleRequest(request: DownloadService.Request?)</ID>
+    <ID>LongMethod:DownloadDialog.kt$DownloadDialog$private fun createChoice( choiceRequest: ChoiceRequest, onDismissListener: DialogInterface.OnDismissListener, ): AlertDialog</ID>
+    <ID>LongMethod:DownloadDialog.kt$DownloadDialog$private fun createReplace( replaceRequest: ReplaceRequest, onDismissListener: DialogInterface.OnDismissListener?, ): AlertDialog</ID>
+    <ID>LongMethod:DownloadDialog.kt$DownloadDialog.Adapter.&lt;no name provided&gt;$override fun performFiltering(constraint: CharSequence): FilterResults</ID>
+    <ID>LongMethod:DownloadService.kt$DownloadService$@Throws(InterruptedException::class) private fun createDirectRequestKeepAll( replaceRequest: ReplaceRequest, activeKeys: HashSet&lt;String?&gt;, ): DirectRequest</ID>
+    <ID>LongMethod:DownloadService.kt$DownloadService$private fun refreshNotification(notificationUpdate: NotificationUpdate?)</ID>
+    <ID>LongMethod:DownloadService.kt$DownloadService$private fun refreshNotificationFromThread(notificationData: NotificationData)</ID>
+    <ID>LongMethod:DraftsStorage.kt$DraftsStorage.AttachmentDraft.Companion$@Throws(IOException::class, ParseException::class) fun deserialize(reader: JsonSerial.Reader): AttachmentDraft?</ID>
+    <ID>LongMethod:DraftsStorage.kt$DraftsStorage.PostDraft.Companion$@Throws(IOException::class, ParseException::class) fun deserialize(reader: JsonSerial.Reader): PostDraft</ID>
+    <ID>LongMethod:DrawerForm.kt$DrawerForm$private fun createItem( viewType: ViewType, density: Float, ): ViewHolder</ID>
+    <ID>LongMethod:DrawerForm.kt$DrawerForm$private fun onSearchClick()</ID>
+    <ID>LongMethod:DrawerForm.kt$DrawerForm$private fun updateConfigurationInternal( chanName: String?, force: Boolean, )</ID>
+    <ID>LongMethod:DrawerForm.kt$DrawerForm$private fun updateListFavorites()</ID>
+    <ID>LongMethod:DrawerForm.kt$DrawerForm.Companion$private fun showPageFavoriteMenu( fragmentManager: FragmentManager, isFavorite: Boolean, isThread: Boolean, chanName: String, boardName: String?, threadNumber: String?, title: String?, )</ID>
+    <ID>LongMethod:ExifData.kt$ExifData.Companion$private fun extractIfd( exif: MutableMap&lt;String, String?&gt;, ifd: Ifd, exifBytes: ByteArray, offset: Int, littleEndian: Boolean, ): Boolean</ID>
+    <ID>LongMethod:ExpandedScreen.kt$ExpandedScreen$fun updatePaddings()</ID>
+    <ID>LongMethod:ExtensionsTrustLoop.kt$ExtensionsTrustLoop$@JvmStatic fun handleUntrustedExtensions( context: Context, state: State, )</ID>
+    <ID>LongMethod:FileHolder.kt$FileHolder$private fun obtainImageData(): ImageData</ID>
+    <ID>LongMethod:FirewallResolvers.kt$FirewallResolvers$@Throws(FirewallResolver.CancelException::class, InterruptedException::class) private fun &lt;T : Any&gt; resolveWebViewBackground( initialUri: Uri, userAgent: String?, proxyData: HttpClient.ProxyData?, client: FirewallResolver.WebViewClient&lt;T&gt;, chan: Chan, ): T?</ID>
+    <ID>LongMethod:ForegroundManager.kt$ForegroundManager$override fun handleMessage(msg: Message): Boolean</ID>
+    <ID>LongMethod:ForegroundManager.kt$ForegroundManager.ImageChoiceDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:ForegroundManager.kt$ForegroundManager.ItemChoiceDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:GalleryOverlay.kt$GalleryOverlay$private fun displayShowcase()</ID>
+    <ID>LongMethod:GalleryOverlay.kt$GalleryOverlay$private fun initializeDialog(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:GeneralFragment.kt$GeneralFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:GeneralFragment.kt$GeneralFragment$private fun configureCaptchaSolvingSummary(resetAndShowDialog: Boolean): CharSequence</ID>
+    <ID>LongMethod:GraphicsUtils.kt$GraphicsUtils$@JvmStatic fun transformImageForPosting( fileHolder: FileHolder, fileName: String, removeMetadata: Boolean, reencoding: Reencoding?, ): TransformationData?</ID>
+    <ID>LongMethod:GroupParser.kt$GroupParser$@Throws(IOException::class, ParseException::class) private fun convertInternal(reader: ReaderWrapper)</ID>
+    <ID>LongMethod:HidePerformer.kt$HidePerformer$@Throws(IOException::class, ParseException::class) fun decodeLocalFilters(reader: JsonSerial.Reader?)</ID>
+    <ID>LongMethod:HidePerformer.kt$HidePerformer$private fun checkHiddenGlobalAutohide( chan: Chan, postItem: PostItem, ): String?</ID>
+    <ID>LongMethod:HistoryDatabase.kt$HistoryDatabase$@Throws(OperationCanceledException::class) fun getHistory( chanName: String?, searchQuery: String?, signal: CancellationSignal?, ): HistoryCursor</ID>
+    <ID>LongMethod:HtmlParser.kt$HtmlParser$override fun startElement( uri: String?, tagName: String, qName: String?, attributes: Attributes, )</ID>
+    <ID>LongMethod:HttpClient.kt$HttpClient$@Throws(HttpException::class, RetryException::class) private fun executeInternal( session: HttpSession, request: HttpRequest, ): HttpResponse</ID>
+    <ID>LongMethod:HttpResponse.kt$HttpResponse.Companion$@Throws(IOException::class) private fun extractCharsetFromHtml( input: InputStream, checkHtml: Boolean, ): Pair&lt;InputStream?, String?&gt;</ID>
+    <ID>LongMethod:ImageLoader.kt$ImageLoader.LoaderTask$override fun run(holder: HttpHolder): Bitmap?</ID>
+    <ID>LongMethod:InteractionUnit.kt$InteractionUnit$fun handleLinkClick( configurationSet: ConfigurationSet, uri: Uri, extra: LinkListener.Extra, confirmed: Boolean, )</ID>
+    <ID>LongMethod:InteractionUnit.kt$InteractionUnit$fun handlePostContextMenu( configurationSet: ConfigurationSet, postItem: PostItem, )</ID>
+    <ID>LongMethod:InteractionUnit.kt$InteractionUnit.Companion$private fun createLinkLongClick( provider: InstanceDialog.Provider, uri: Uri, ): AlertDialog</ID>
+    <ID>LongMethod:InteractionUnit.kt$InteractionUnit.Companion$private fun createThumbnailLongClickDialog( provider: InstanceDialog.Provider, chanName: String?, attachmentItem: AttachmentItem, threadTitle: String?, canLoadThumbnailManually: Boolean, ): AlertDialog</ID>
+    <ID>LongMethod:InterfaceFragment.kt$InterfaceFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:JpegData.kt$JpegData.Companion$@JvmStatic @Throws(IOException::class) fun extract(fileInput: InputStream): JpegData</ID>
+    <ID>LongMethod:LinebreakLayout.kt$LinebreakLayout$override fun onMeasure( widthMeasureSpec: Int, heightMeasureSpec: Int, )</ID>
+    <ID>LongMethod:Logger.kt$Logger$@JvmStatic fun write( type: Type, tag: String, vararg data: Any?, )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onCloseAllPages()</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onClosePage( chanName: String?, boardName: String?, threadNumber: String?, )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onOptionsItemSelected(item: MenuItem): Boolean</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$override fun onPrepareOptionsMenu(menu: Menu): Boolean</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$private fun navigateData( chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?, threadTitle: String?, searchQuery: String?, dataFlags: Int, )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$private fun navigateFragment( fragment: ContentFragment, pageItem: PageItem?, closeOverlays: Boolean, )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$private fun navigateIntentUnchecked(intent: Intent)</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$private fun navigatePage( content: Page.Content, chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?, threadTitle: String?, searchQuery: String?, pageFlags: Int, )</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$private fun navigateUri(uri: Uri?): Boolean</ID>
+    <ID>LongMethod:MainActivity.kt$MainActivity$public override fun onCreate(savedInstanceState: Bundle?)</ID>
+    <ID>LongMethod:MediaFragment.kt$MediaFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:NavigationUtils.kt$NavigationUtils$@JvmStatic fun handleUri( context: Context, chanName: String?, uri: Uri, browserType: BrowserType, )</ID>
+    <ID>LongMethod:PaddedRecyclerView.kt$PaddedRecyclerView$private fun handleTouchEvent(event: MotionEvent): Boolean</ID>
+    <ID>LongMethod:PaddedRecyclerView.kt$PaddedRecyclerView$private fun onDrawFastScroller(canvas: Canvas)</ID>
+    <ID>LongMethod:PaddedRecyclerView.kt$PaddedRecyclerView$private fun updateFastScroller( immediately: Boolean, fastScrollerEnabled: Boolean, fastScrollerAllowed: Boolean, regularScrolling: Boolean, fastScrolling: Boolean, )</ID>
+    <ID>LongMethod:PagerUnit.kt$PagerUnit$private fun buildPopupMenu(): DialogMenu?</ID>
+    <ID>LongMethod:PagesDatabase.kt$PagesDatabase$@Throws(IOException::class) private fun insertNewPostsLocked( threadKey: ThreadKey, meta: Meta, temporary: Boolean, newThread: Boolean, partial: Boolean, serializedMap: HashMap&lt;PostNumber?, Serialized&gt;, userPosts: MutableSet&lt;PostNumber&gt;, ): InsertResult</ID>
+    <ID>LongMethod:PagesDatabase.kt$PagesDatabase$@Throws(ParseException::class, OperationCanceledException::class) private fun collectDiffPostsLocked( threadKey: ThreadKey, cache: Cache?, cleanup: Cleanup, signal: CancellationSignal?, ): Diff</ID>
+    <ID>LongMethod:PagesDatabase.kt$PagesDatabase$private fun migratePostsLocked(threadKey: ThreadKey): Boolean</ID>
+    <ID>LongMethod:PhotoView.kt$PhotoView$override fun draw(canvas: Canvas)</ID>
+    <ID>LongMethod:PhotoView.kt$PhotoView$private fun onCommonTouchEvent(event: MotionEvent): Boolean</ID>
+    <ID>LongMethod:PhotoView.kt$PhotoView.InitialScaleListener$override fun onAnimationUpdate(animation: ValueAnimator)</ID>
+    <ID>LongMethod:PhotoViewPager.kt$PhotoViewPager$@SuppressLint("ClickableViewAccessibility") override fun onTouchEvent(event: MotionEvent): Boolean</ID>
+    <ID>LongMethod:Post.kt$Post$@Throws(IOException::class) fun serialize(writer: JsonSerial.Writer)</ID>
+    <ID>LongMethod:Post.kt$Post.Companion$@JvmStatic @Throws(IOException::class, ParseException::class) fun deserialize( number: PostNumber, deleted: Boolean, reader: JsonSerial.Reader, ): Post</ID>
+    <ID>LongMethod:PostItem.kt$PostItem.Companion$@JvmStatic fun collectReferences( references: MutableSet&lt;PostNumber&gt;?, comment: String?, ): Set&lt;PostNumber&gt;?</ID>
+    <ID>LongMethod:PostingFragment.kt$PostingFragment$private fun addNewAttachment(): AttachmentHolder</ID>
+    <ID>LongMethod:PostingFragment.kt$PostingFragment$private fun executeSendPost()</ID>
+    <ID>LongMethod:PostingFragment.kt$PostingFragment$private fun updatePostingConfiguration( views: Boolean, attachmentOptions: Boolean, attachmentCount: Boolean, )</ID>
+    <ID>LongMethod:PostingFragment.kt$PostingFragment$public override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:PostingFragment.kt$PostingFragment.MarkupButtonsBuilder$fun fillContainer()</ID>
+    <ID>LongMethod:PostingService.kt$PostingService$override fun onSendPostSuccess( key: Key, data: SendPostData, chanName: String?, threadNumber: String?, postNumber: PostNumber?, )</ID>
+    <ID>LongMethod:PostsDatabase.kt$PostsDatabase$fun getFlags( chanName: String, boardName: String?, threadNumber: String, ): Flags</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$override fun onCreate()</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$override fun onExtractPostsComplete( result: ExtractPostsTask.Result?, cancelled: Boolean, )</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$override fun onPostItemMessage( postItem: PostItem, message: UiManager.Message, )</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$private fun onExtractPostsCompleteInternal( firstLayout: Boolean, listPositionFromState: ListPosition?, )</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$private fun onSelectionItemSelected( mode: ActionMode, item: MenuItem, ): Boolean</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage$public override fun onOptionsItemSelected(item: MenuItem): Boolean</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage.Companion$private fun showSummaryDialog(fragmentManager: FragmentManager)</ID>
+    <ID>LongMethod:PostsPage.kt$PostsPage.SearchWorker$override fun run()</ID>
+    <ID>LongMethod:Preferences.kt$Preferences$@JvmStatic fun formatSubdir( pattern: String, chanName: String?, chanTitle: String?, boardName: String?, threadNumber: String?, threadTitle: String?, ): String</ID>
+    <ID>LongMethod:PullableWrapper.kt$PullableWrapper$fun onTouchEventOrNull(ev: MotionEvent?): Boolean</ID>
+    <ID>LongMethod:PullableWrapper.kt$PullableWrapper.LollipopView$override fun draw( canvas: Canvas, padding: Int, )</ID>
+    <ID>LongMethod:QuoteEditWatcher.kt$QuoteEditWatcher$override fun afterTextChanged(s: Editable)</ID>
+    <ID>LongMethod:ReadCaptchaTask.kt$ReadCaptchaTask$override fun run(): Pair&lt;ErrorItem?, Result?&gt;?</ID>
+    <ID>LongMethod:ReadChangelogTask.kt$ReadChangelogTask$override fun run(holder: HttpHolder): Pair&lt;ErrorItem?, List&lt;Entry&gt;?&gt;?</ID>
+    <ID>LongMethod:ReadFileTask.kt$ReadFileTask$override fun run(holder: HttpHolder): Boolean</ID>
+    <ID>LongMethod:ReadPostsTask.kt$ReadPostsTask$override fun run(holder: HttpHolder): Result</ID>
+    <ID>LongMethod:ReadThreadsTask.kt$ReadThreadsTask$override fun run(holder: HttpHolder): Boolean</ID>
+    <ID>LongMethod:ReadUpdateTask.kt$ReadUpdateTask$override fun run(holder: HttpHolder): Pair&lt;ErrorItem?, UpdateDataMap?&gt;?</ID>
+    <ID>LongMethod:ReadUpdateTask.kt$ReadUpdateTask.Companion$@Throws(JSONException::class) private fun extractPackageItem( dataVersion: DataVersion, chanObject: JSONObject, extensionName: String, repository: String?, uri: Uri, installedCode: Long?, requireFingerprints: ChanManager.Fingerprints?, ): PackageItem?</ID>
+    <ID>LongMethod:ReadUpdateTask.kt$ReadUpdateTask.Companion$private fun readData( holder: HttpHolder, extensionItems: Iterable&lt;ChanManager.ExtensionItem&gt;, ): Iterable&lt;Response&gt;</ID>
+    <ID>LongMethod:ReadVideoTask.kt$ReadVideoTask$override fun run(holder: HttpHolder): Boolean</ID>
+    <ID>LongMethod:RecaptchaReader.kt$RecaptchaReader$@Throws(CancelException::class, HttpException::class) fun getChallenge2( initialHolder: HttpHolder, apiKey: String, invisible: Boolean, referer: String?, useJavaScript: Boolean, solveInBackground: Boolean, solveAutomatically: Boolean, ): ChallengeExtra?</ID>
+    <ID>LongMethod:RecaptchaReader.kt$RecaptchaReader.WebViewHolder$@SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface") fun obtainWebView( context: Context, newParent: ViewGroup?, index: Int, argumentsProvider: ArgumentsProvider, ): WebView?</ID>
+    <ID>LongMethod:ReencodingDialog.kt$ReencodingDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:SearchHelper.kt$SearchHelper$fun handleQueries( locale: Locale, query: String, ): HashSet&lt;String&gt;</ID>
+    <ID>LongMethod:SearchImageDialog.kt$SearchImageDialog$override fun onCreateDialog(savedInstanceState: Bundle?): Dialog</ID>
+    <ID>LongMethod:SearchPage.kt$SearchPage$override fun onCreate()</ID>
+    <ID>LongMethod:SelectorCheckDrawable.kt$SelectorCheckDrawable$override fun draw(canvas: Canvas)</ID>
+    <ID>LongMethod:SendLocalArchiveTask.kt$SendLocalArchiveTask$override fun run(): Result?</ID>
+    <ID>LongMethod:SendLocalArchiveTask.kt$SendLocalArchiveTask$private fun makeSpanItem( what: Int, extra: Any?, ): SpanItem?</ID>
+    <ID>LongMethod:SendMultifunctionalTask.kt$SendMultifunctionalTask$override fun run(holder: HttpHolder): Boolean</ID>
+    <ID>LongMethod:SendPostTask.kt$SendPostTask$override fun run(): Boolean</ID>
+    <ID>LongMethod:SimilarTextEstimator.kt$SimilarTextEstimator$fun &lt;E&gt; getWords(text: String?): WordsData&lt;E&gt;?</ID>
+    <ID>LongMethod:StatisticsFragment.kt$StatisticsFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:StringUtils.kt$StringUtils$@Public @JvmStatic fun linkify(string: String?): String?</ID>
+    <ID>LongMethod:SummaryLayout.kt$SummaryLayout$fun add( title: CharSequence, text: CharSequence, )</ID>
+    <ID>LongMethod:TextFragment.kt$TextFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
+    <ID>LongMethod:TextFragment.kt$TextFragment.Companion$private fun formatChangelogEntries( context: Context, changelogEntries: List&lt;ReadChangelogTask.Entry&gt;, ): List&lt;CharSequence&gt;</ID>
+    <ID>LongMethod:ThemeEngine.kt$ThemeEngine.ThemeBuilder$fun create( base: Theme.Base?, name: String, builtIn: Boolean, json: String?, context: Context, ): Theme</ID>
+    <ID>LongMethod:ThreadsPage.kt$ThreadsPage$override fun onCreate()</ID>
+    <ID>LongMethod:ThreadsPage.kt$ThreadsPage$override fun onReadThreadsSuccess( postItems: List&lt;PostItem&gt;?, pageNumber: Int, boardSpeed: Int, append: Boolean, checkModified: Boolean, validator: HttpValidator?, hiddenThreads: PostItem.HideState.Map&lt;String&gt;?, )</ID>
+    <ID>LongMethod:ThreadsPage.kt$ThreadsPage.Companion$private fun showSummaryDialog( fragmentManager: FragmentManager, chanName: String?, boardName: String?, )</ID>
+    <ID>LongMethod:ThreadshotPerformer.kt$ThreadshotPerformer.&lt;no name provided&gt;$override fun run(): InputStream?</ID>
+    <ID>LongMethod:UpdateFragment.kt$UpdateFragment.Companion$private fun buildData( context: Context?, updateDataMap: ReadUpdateTask.UpdateDataMap, savedInstanceState: Bundle?, ): List&lt;ListItem&gt;</ID>
+    <ID>LongMethod:VideoUnit.kt$VideoUnit$private fun recreateVideoControls()</ID>
+    <ID>LongMethod:VideoUnit.kt$VideoUnit.Companion$private fun showMetadata( fragmentManager: FragmentManager, metadata: Map&lt;String, String&gt;, )</ID>
+    <ID>LongMethod:ViewFactory.kt$ViewFactory$@JvmStatic fun makeTwoLinesListItem( parent: ViewGroup, features: Int, ): TwoLinesViewHolder</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit$@SuppressLint("InflateParams") private fun handlePostViewAttachments(holder: PostViewHolder)</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit$fun bindPostView( viewHolder: RecyclerView.ViewHolder?, postItem: PostItem, configurationSet: ConfigurationSet, demandSet: DemandSet, )</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit$fun bindThreadCellView( viewHolder: RecyclerView.ViewHolder?, postItem: PostItem, configurationSet: ConfigurationSet, small: Boolean, contentHeight: Int, )</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit$fun bindThreadView( viewHolder: RecyclerView.ViewHolder?, postItem: PostItem, configurationSet: ConfigurationSet, )</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit.&lt;no name provided&gt;$@SuppressLint("ClickableViewAccessibility") override fun onTouch( v: View, event: MotionEvent, ): Boolean</ID>
+    <ID>LongMethod:ViewUnit.kt$ViewUnit.Companion$private fun fillVoting( parent: ViewGroup, voteState: VoteState, topDp: Float, startDp: Float, endDp: Float, )</ID>
+    <ID>LongMethod:WakabaLikeHtmlBuilder.kt$WakabaLikeHtmlBuilder$private fun appendFile( fileItem: FileItem, multiple: Boolean, )</ID>
+    <ID>LongMethod:WakabaLikeHtmlBuilder.kt$WakabaLikeHtmlBuilder$private fun appendHeader(originalPost: Boolean)</ID>
+    <ID>LongParameterList:AutohideStorage.kt$AutohideStorage.AutohideItem$( chanNames: HashSet&lt;String&gt;?, boardName: String?, threadNumber: String?, optionOriginalPost: Boolean, optionSage: Boolean, optionSubject: Boolean, optionComment: Boolean, optionName: Boolean, optionFileName: Boolean, value: String?, )</ID>
+    <ID>LongParameterList:ChanDatabase.kt$ChanDatabase$( chanName: String, boardNames: List&lt;String&gt;, searchQuery: String?, extra1Name: String, extra2Name: String, provider1: BoardExtraFallbackProvider?, provider2: BoardExtraFallbackProvider?, signal: CancellationSignal?, )</ID>
+    <ID>LongParameterList:ChanManager.kt$ChanManager.ExtensionItem$( name: String?, title: String?, packageName: String, versionName: String?, versionCode: Long, applicationInfo: ApplicationInfo, fingerprints: Fingerprints, apiVersion: Int, supported: Boolean, iconResId: Int, updateUri: Uri?, classConfiguration: String, classPerformer: String, classLocator: String, classMarkup: String, )</ID>
+    <ID>LongParameterList:ChanManager.kt$ChanManager.ExtensionItem$( val type: Type?, val name: String?, val title: String?, val trustState: TrustState?, val packageName: String, val versionName: String?, val versionCode: Long, internal val applicationInfo: ApplicationInfo, val fingerprints: Fingerprints, val apiVersion: Int, val supported: Boolean, val iconResId: Int, val updateUri: Uri?, val classConfiguration: String?, val classPerformer: String?, val classLocator: String?, val classMarkup: String?, )</ID>
+    <ID>LongParameterList:ChanPerformer.kt$ChanPerformer.SendPostData$( @field:Public @JvmField val boardName: String?, @field:Public @JvmField val threadNumber: String?, @field:Public @JvmField val subject: String?, @field:Public @JvmField val comment: String?, @field:Public @JvmField val name: String?, @field:Public @JvmField val email: String?, @field:Public @JvmField val password: String?, @field:Public @JvmField val attachments: Array&lt;Attachment?&gt;?, @field:Public @JvmField val optionSage: Boolean, @field:Public @JvmField val optionSpoiler: Boolean, @field:Public @JvmField val optionOriginalPoster: Boolean, @field:Public @JvmField val userIcon: String?, @field:Public @JvmField val captchaType: String?, @field:Public @JvmField val captchaData: CaptchaData?, val captchaNeedLoad: Boolean, override val connectTimeout: Int, override val readTimeout: Int, )</ID>
+    <ID>LongParameterList:DownloadService.kt$DownloadService.Binder$( input: InputStream?, chanName: String?, boardName: String?, threadNumber: String?, threadTitle: String?, fileName: String, allowDialog: Boolean, allowWrite: Boolean, )</ID>
+    <ID>LongParameterList:DownloadService.kt$DownloadService.NotificationData$( val type: Type?, val allowHeadsUp: Boolean, val queuedTasks: Int, val successTasks: Int, val errorTasks: Int, val allowRetry: Boolean, val hasNotFromCache: Boolean, val lastSuccessFile: DataFile?, val allowWrite: Boolean, val activeName: String?, val progress: Int, val progressMax: Int, val updateImageOnly: Boolean, val syncLatch: CountDownLatch?, )</ID>
+    <ID>LongParameterList:DownloadService.kt$DownloadService.NotificationData.Companion$( type: Type, allowHeadsUp: Boolean, queuedTasks: Int, successTasks: Int, errorTasks: Int, allowRetry: Boolean, hasExternal: Boolean, lastSuccessFile: DataFile?, allowWrite: Boolean, activeName: String?, progress: Int, progressMax: Int, )</ID>
+    <ID>LongParameterList:DownloadService.kt$DownloadService.TaskData$( val chanName: String?, val finishedFromCache: Boolean, val overwrite: Boolean, val input: InputStream?, val uri: Uri?, val checkSha256: ByteArray?, val checkFingerprints: Fingerprints?, val target: DataFile.Target, val path: String?, val name: String?, val allowWrite: Boolean, )</ID>
+    <ID>LongParameterList:DraftsStorage.kt$DraftsStorage.AttachmentDraft$( @JvmField val hash: String, @JvmField val name: String?, @JvmField val newname: String?, @JvmField val rating: String?, @JvmField val optionUniqueHash: Boolean, @JvmField val optionRemoveMetadata: Boolean, @JvmField val optionRemoveFileName: Boolean, @JvmField val optionSpoiler: Boolean, @JvmField val reencoding: GraphicsUtils.Reencoding?, @JvmField val optionCustomName: Boolean, )</ID>
+    <ID>LongParameterList:DraftsStorage.kt$DraftsStorage.CaptchaDraft$( @JvmField val captchaType: String?, @JvmField val captchaState: ReadCaptchaTask.CaptchaState?, @JvmField val captchaData: ChanPerformer.CaptchaData?, @JvmField val loadedCaptchaType: String?, @JvmField val loadedInput: ChanConfiguration.Captcha.Input?, @JvmField val loadedValidity: ChanConfiguration.Captcha.Validity?, @JvmField val text: String?, @JvmField val captcha: CaptchaForm.Captcha?, @JvmField val large: Boolean, @JvmField val blackAndWhite: Boolean, @JvmField val boardName: String?, @JvmField val threadNumber: String?, )</ID>
+    <ID>LongParameterList:DraftsStorage.kt$DraftsStorage.PostDraft$( @JvmField val chanName: String?, @JvmField val boardName: String?, @JvmField val threadNumber: String?, @JvmField val name: String?, @JvmField val email: String?, @JvmField val password: String?, @JvmField val subject: String?, @JvmField val comment: String?, @JvmField val commentCarriage: Int, @JvmField val attachmentDrafts: ArrayList&lt;AttachmentDraft&gt;?, @JvmField val optionSage: Boolean, @JvmField val optionSpoiler: Boolean, @JvmField val optionOriginalPoster: Boolean, @JvmField val userIcon: String?, )</ID>
+    <ID>LongParameterList:ExtractPostsTask.kt$ExtractPostsTask.Result$( @JvmField val newPosts: Set&lt;PostNumber&gt;, @JvmField val deletedPosts: Set&lt;PostNumber&gt;, @JvmField val editedPosts: Set&lt;PostNumber&gt;, @JvmField val replyPosts: Set&lt;PostNumber&gt;, @JvmField val cache: PagesDatabase.Cache, @JvmField val cacheChanged: Boolean, @JvmField val postItems: Map&lt;PostNumber, PostItem&gt;, @JvmField val removedPosts: Collection&lt;PostNumber&gt;, @JvmField val flags: PostsDatabase.Flags?, @JvmField val stateExtra: ThreadsDatabase.StateExtra?, @JvmField val archivedThreadUri: Uri?, @JvmField val uniquePosters: Int, )</ID>
+    <ID>LongParameterList:ForegroundManager.kt$ForegroundManager$( captchaReader: CaptchaReader?, captchaType: String?, requirement: String?, chanName: String?, boardName: String?, threadNumber: String?, description: String?, retry: Boolean, )</ID>
+    <ID>LongParameterList:ForegroundManager.kt$ForegroundManager$( columns: Int, selected: BooleanArray?, items: Array&lt;CharSequence?&gt;?, images: Array&lt;Bitmap?&gt;?, descriptionText: String?, descriptionImage: Bitmap?, multiple: Boolean, imageChoice: Boolean, )</ID>
+    <ID>LongParameterList:LinebreakLayout.kt$LinebreakLayout$( child: View, layoutParams: LayoutParams, widthUnspecified: Boolean, linebreak: Boolean, maxWidth: Int, lineWidth: Int, heightMeasureSpec: Int, vertialPaddings: Int, matchLineHeight: Int, horizontalSpacing: Int, )</ID>
+    <ID>LongParameterList:ListPage.kt$ListPage$( page: Page, callback: Callback, fragment: Fragment, recyclerView: PaddedRecyclerView, listPosition: ListPosition?, uiManager: UiManager?, retainableExtra: Retainable?, parcelableExtra: Parcelable?, initRequest: InitRequest?, initSearch: InitSearch?, )</ID>
+    <ID>LongParameterList:MainActivity.kt$MainActivity$( content: Page.Content, chanName: String?, boardName: String?, threadNumber: String?, postNumber: PostNumber?, threadTitle: String?, searchQuery: String?, pageFlags: Int, )</ID>
+    <ID>LongParameterList:Post.kt$Post$( @JvmField val number: PostNumber, @JvmField val deleted: Boolean, private val flags: Int, @JvmField val timestamp: Long, @JvmField val subject: String, @JvmField val comment: String, @JvmField val commentMarkup: String, @JvmField val name: String, @JvmField val identifier: String, @JvmField val tripcode: String, @JvmField val capcode: String, @JvmField val email: String, @JvmField val attachments: List&lt;Attachment&gt;, @JvmField val icons: List&lt;Icon&gt;, @JvmField val vote: Vote?, )</ID>
+    <ID>LongParameterList:PostingFragment.kt$PostingFragment$( captchaState: ReadCaptchaTask.CaptchaState, captchaData: CaptchaData?, captchaType: String?, input: ChanConfiguration.Captcha.Input?, validity: ChanConfiguration.Captcha.Validity?, captcha: CaptchaForm.Captcha?, large: Boolean, blackAndWhite: Boolean, )</ID>
+    <ID>LongParameterList:PreferenceFragment.kt$PreferenceFragment$( key: String, defaultValue: Int, title: String?, summaryFormat: String?, specialValue: Pair&lt;Int, String&gt;?, minValue: Int, maxValue: Int, step: Int, )</ID>
+    <ID>LongParameterList:PreferenceFragment.kt$PreferenceFragment$( key: String, defaultValue: Int, titleResId: Int, summaryFormatResId: Int, specialValue: Pair&lt;Int, Int&gt;?, minValue: Int, maxValue: Int, step: Int, )</ID>
+    <ID>LongParameterList:ReadCaptchaTask.kt$ReadCaptchaTask$( private val callback: Callback, captchaReader: CaptchaReader?, private val captchaType: String?, private val requirement: String?, private val captchaPass: List&lt;String&gt;?, private val mayShowLoadButton: Boolean, private val allowSolveAutomatically: Boolean, private val chan: Chan, private val boardName: String?, private val threadNumber: String?, )</ID>
+    <ID>LongParameterList:ReadUpdateTask.kt$ReadUpdateTask.PackageItem$( @JvmField val repository: String?, @JvmField val title: String?, @JvmField val versionName: String?, @JvmField val versionCode: Long, @JvmField val minApiVersion: Int, @JvmField val maxApiVersion: Int, @JvmField val apiVersion: Int, @JvmField val length: Long, @JvmField val source: Uri?, @JvmField val sha256sum: ByteArray?, @JvmField val fingerprints: ChanManager.Fingerprints?, )</ID>
+    <ID>LongParameterList:ThemeEngine.kt$ThemeEngine.Theme$( val base: Base?, @JvmField val name: String, val builtIn: Boolean, private val json: String?, @JvmField val window: Int, val primary: Int, @JvmField val accent: Int, @JvmField val card: Int, val thread: Int, val post: Int, @JvmField val meta: Int, val spoiler: Int, val link: Int, val quote: Int, val tripcode: Int, val capcode: Int, val highlight: Int, val colorGainFactor: Float, @JvmField val controlNormal21: Int, val neuroslop: Int, val neuroslopQuote: Int, @JvmField val disabledAlpha21: Float, )</ID>
+    <ID>LongParameterList:ThreadsDatabase.kt$ThreadsDatabase$( async: Boolean, chanName: String, boardName: String?, threadNumber: String, hasState: Boolean, state: ByteArray?, hasExtra: Boolean, extra: ByteArray?, )</ID>
+    <ID>LongParameterList:UiManager.kt$UiManager.ConfigurationSet$( @JvmField val chanName: String?, val replyable: Replyable?, val postsProvider: PostsProvider?, @JvmField val postStateProvider: PostStateProvider?, val galleryProvider: GalleryItem.Provider?, val fragmentManager: FragmentManager?, @JvmField val stackInstance: StackInstance?, val linkListener: LinkListener?, val clickCallback: ClickCallback&lt;PostItem?, RecyclerView.ViewHolder&gt;?, val mayCollapse: Boolean, val isDialog: Boolean, val allowMyMarkEdit: Boolean, val allowHiding: Boolean, val allowGoToPost: Boolean, val repliesToPost: PostNumber?, )</ID>
+    <ID>LongParameterList:VideoPipActivity.kt$VideoPipActivity.Companion$( activity: Activity, chan: Chan, galleryItem: GalleryItem, playlist: List&lt;GalleryItem&gt;?, allItems: List&lt;GalleryItem&gt;?, navigatePostMode: String?, threadTitle: String?, position: Long, playing: Boolean, dimensions: Point?, )</ID>
+    <ID>LongParameterList:WakabaLikeHtmlBuilder.kt$WakabaLikeHtmlBuilder$( number: String, subject: String?, name: String?, identifier: String?, tripcode: String?, capcode: String?, email: String?, sage: Boolean, originalPoster: Boolean, timestamp: Long, deleted: Boolean, useDefaultName: Boolean, comment: String?, )</ID>
+    <ID>LongParameterList:WatcherNotifications.kt$WatcherNotifications$( context: Context, color: Int, important: Boolean, sound: Boolean, vibration: Boolean, title: String?, chanName: String?, boardName: String?, threadNumber: String?, replies: List&lt;Reply&gt;, )</ID>
+    <ID>LongParameterList:WatcherNotifications.kt$WatcherNotifications.Task$( context: Context, val color: Int, val important: Boolean, val sound: Boolean, val vibration: Boolean, val title: String?, val chanName: String?, val boardName: String?, val threadNumber: String?, val replies: List&lt;Reply&gt;, val removePostNumbers: Collection&lt;PostNumber&gt;, )</ID>
+    <ID>MapGetWithNotNullAssertionOperator:HttpClient.kt$HttpClient$map[Preferences.SUB_KEY_PROXY_PORT]!!</ID>
+    <ID>MayBeConst:Preferences.kt$Preferences$val DEFAULT_AUTO_REFRESH_INTERVAL: Int = DISABLED_AUTO_REFRESH_INTERVAL</ID>
+    <ID>MemberNameEqualsClassName:Expression.kt$Expression.Filter.Builder$private val builder = StringBuilder()</ID>
+    <ID>MemberNameEqualsClassName:HttpException.kt$HttpException$private val httpException: Boolean</ID>
+    <ID>MemberNameEqualsClassName:PostItem.kt$PostItem.HideState.Map$private val map = HashMap&lt;T, Boolean&gt;()</ID>
+    <ID>MemberNameEqualsClassName:Preferences.kt$Preferences$@JvmField val PREFERENCES: SharedPreferences? = run { val application = MainApplication.getInstance() if (application.isMainProcess()) { val newFile = getPreferencesFile(application, PREFERENCES_NAME) val newBackupFile = File(newFile.getParentFile(), newFile.getName() + ".bak") if (!newFile.exists() &amp;&amp; !newBackupFile.exists()) { // Rename preferences file val oldFile = getPreferencesFile(application, application.getPackageName() + "_preferences") val oldBackupFile = File(oldFile.getParentFile(), oldFile.getName() + ".bak") if (oldBackupFile.exists()) { oldBackupFile.renameTo(newBackupFile) } if (oldFile.exists()) { oldFile.renameTo(newFile) } } val restoreFile = getPreferencesFile(application, PREFERENCES_RESTORE_NAME) if (restoreFile.exists()) { newBackupFile.delete() restoreFile.renameTo(newFile) } SharedPreferences(application, PREFERENCES_NAME) } else { null } }</ID>
+    <ID>MemberNameEqualsClassName:SharedPreferences.kt$SharedPreferences.Editor$private val editor: android.content.SharedPreferences.Editor = preferences.shared.edit()</ID>
+    <ID>NoNameShadowing:DrawerForm.kt$DrawerForm$position</ID>
+    <ID>NoNameShadowing:PostingFragment.kt$PostingFragment$input</ID>
+    <ID>NoNameShadowing:PostingFragment.kt$PostingFragment$validity</ID>
+    <ID>NullableBooleanCheck:PostItem.kt$PostItem$post.vote?.showVotes ?: false</ID>
+    <ID>NullableToStringCall:DownloadService.kt$DownloadService.Companion$target.toString()</ID>
+    <ID>NullableToStringCall:DraftsStorage.kt$DraftsStorage.Companion$$boardName</ID>
+    <ID>NullableToStringCall:DraftsStorage.kt$DraftsStorage.Companion$$chanName</ID>
+    <ID>NullableToStringCall:DraftsStorage.kt$DraftsStorage.Companion$$threadNumber</ID>
+    <ID>NullableToStringCall:DrawerForm.kt$DrawerForm$$pagesListMode</ID>
+    <ID>NullableToStringCall:Expression.kt$Expression.Filter.Builder$value.toString()</ID>
+    <ID>NullableToStringCall:FavoritesStorage.kt$FavoritesStorage.Companion$$boardName</ID>
+    <ID>NullableToStringCall:FavoritesStorage.kt$FavoritesStorage.Companion$$chanName</ID>
+    <ID>NullableToStringCall:FavoritesStorage.kt$FavoritesStorage.Companion$$threadNumber</ID>
+    <ID>NullableToStringCall:HidePerformer.kt$HidePerformer$wordsData.extra.toString()</ID>
+    <ID>NullableToStringCall:InteractionUnit.kt$InteractionUnit.Companion$attachmentItem.getFileUri(chan).toString()</ID>
+    <ID>NullableToStringCall:InterfaceFragment.kt$InterfaceFragment$${icon.componentSuffix}</ID>
+    <ID>NullableToStringCall:ListUnit.kt$ListUnit.Companion$galleryItem.getFileUri(chan).toString()</ID>
+    <ID>NullableToStringCall:PagerUnit.kt$PagerUnit$galleryItem.getFileUri(chan).toString()</ID>
+    <ID>NullableToStringCall:PostNumber.kt$PostNumber.Companion$$postNumber</ID>
+    <ID>NullableToStringCall:SearchImageDialog.kt$SearchImageDialog$Chan .get(chanName) .locator .convert(uri) .toString()</ID>
+    <ID>NullableToStringCall:SendLocalArchiveTask.kt$SendLocalArchiveTask$$extension</ID>
+    <ID>NullableToStringCall:SendLocalArchiveTask.kt$SendLocalArchiveTask$$extra</ID>
+    <ID>NullableToStringCall:SendLocalArchiveTask.kt$SendLocalArchiveTask$$postNumberString</ID>
+    <ID>NullableToStringCall:SendLocalArchiveTask.kt$SendLocalArchiveTask$uri.toString()</ID>
+    <ID>NullableToStringCall:ThreadsPage.kt$ThreadsPage.Companion$uri.toString()</ID>
+    <ID>NullableToStringCall:ViewUnit.kt$ViewUnit$text.toString()</ID>
+    <ID>ObjectLiteralToLambda:PostingFragment.kt$PostingFragment$object : View.OnClickListener { override fun onClick(v: View) { val holder = v.getTag() as AttachmentHolder if (attachments.remove(holder)) { if (attachmentColumnCount == 1) { attachmentContainer!!.removeView(holder.view) } else { invalidateAttachments(true) } invalidateOptionsMenu() resizeComment(true) getInstance().store(obtainPostDraft()) } } }</ID>
+    <ID>ObjectLiteralToLambda:PostingFragment.kt$PostingFragment$object : View.OnClickListener { override fun onClick(v: View) { val what = v.getTag() as Int when (what) { ChanMarkup.TAG_QUOTE -&gt; { formatQuote() } else -&gt; { commentEditor!!.formatSelectedText(commentView!!, what) } } val inputMethodManager = requireContext() .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager? if (inputMethodManager != null) { inputMethodManager.showSoftInput(commentView, 0) } } }</ID>
+    <ID>ProtectedMemberInFinalClass:CaptchaForm.kt$CaptchaForm.Captcha$protected constructor(`in`: Parcel) { image = ParcelCompat.readParcelable&lt;Bitmap?&gt;( `in`, Bitmap::class.java.getClassLoader(), Bitmap::class.java, ) lifetimeSeconds = `in`.readInt() creationTimeMillis = `in`.readLong() }</ID>
+    <ID>SafeCast:CommentTextView.kt$CommentTextView$if (text is Spannable) text else null</ID>
+    <ID>SafeCast:CommentTextView.kt$CommentTextView$if (text is Spanned) text else null</ID>
+    <ID>SwallowedException:AudioPlayerService.kt$AudioPlayerService$e: Exception</ID>
+    <ID>SwallowedException:AutohideStorage.kt$AutohideStorage.AutohideItem$e: Exception</ID>
+    <ID>SwallowedException:BrowserFragment.kt$BrowserFragment$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:CacheManager.kt$CacheManager$e: IOException</ID>
+    <ID>SwallowedException:CacheManager.kt$CacheManager$e: ImageDecoder.DecodeException</ID>
+    <ID>SwallowedException:CallbackProxy.kt$CallbackProxy$e: InvocationTargetException</ID>
+    <ID>SwallowedException:CaptchaOptionsDialog.kt$CaptchaOptionsDialog.CaptchaOptionsViewModel$e: IOException</ID>
+    <ID>SwallowedException:CaptchaSolving.kt$CaptchaSolving$e: InvalidTokenException</ID>
+    <ID>SwallowedException:CaptchaSolving.kt$CaptchaSolving$e: UnsupportedServiceException</ID>
+    <ID>SwallowedException:CaptchaSolving.kt$CaptchaSolving.AntigateModernService$e: InvalidResponseException</ID>
+    <ID>SwallowedException:CaptchaSolving.kt$CaptchaSolving.AntigateModernService$e: JSONException</ID>
+    <ID>SwallowedException:ChanConfiguration.kt$ChanConfiguration$e: Exception</ID>
+    <ID>SwallowedException:ChanDatabase.kt$ChanDatabase$e: Exception</ID>
+    <ID>SwallowedException:ChanDatabase.kt$ChanDatabase$e: IOException</ID>
+    <ID>SwallowedException:ChanDatabase.kt$ChanDatabase$e: JSONException</ID>
+    <ID>SwallowedException:ChanDatabase.kt$ChanDatabase$e: XmlPullParserException</ID>
+    <ID>SwallowedException:ChanManager.kt$ChanManager$e: PackageManager.NameNotFoundException</ID>
+    <ID>SwallowedException:ChanManager.kt$ChanManager.Companion$e: PackageManager.NameNotFoundException</ID>
+    <ID>SwallowedException:ChanMarkup.kt$ChanMarkup.ChanSpanProvider$e: NotImplementedException</ID>
+    <ID>SwallowedException:CommentEditWatcher.kt$CommentEditWatcher$e: Exception</ID>
+    <ID>SwallowedException:CommonUtils.kt$CommonUtils$e: JSONException</ID>
+    <ID>SwallowedException:DownloadDialog.kt$DownloadDialog$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:DownloadService.kt$DownloadService$e: Exception</ID>
+    <ID>SwallowedException:DownloadService.kt$DownloadService.Binder$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:DownloadService.kt$DownloadService.Binder$e: Exception</ID>
+    <ID>SwallowedException:DraftsStorage.kt$DraftsStorage$e: IOException</ID>
+    <ID>SwallowedException:ExecutorTask.kt$ExecutorTask.&lt;no name provided&gt;$e: CancellationException</ID>
+    <ID>SwallowedException:ExecutorTask.kt$ExecutorTask.&lt;no name provided&gt;$e: ExecutionException</ID>
+    <ID>SwallowedException:ExtractPostsTask.kt$ExtractPostsTask$e: Exception</ID>
+    <ID>SwallowedException:ExtractPostsTask.kt$ExtractPostsTask$e: OperationCanceledException</ID>
+    <ID>SwallowedException:FileHolder.kt$FileHolder$e: IOException</ID>
+    <ID>SwallowedException:FileHolder.kt$FileHolder$e: XmlPullParserException</ID>
+    <ID>SwallowedException:FileHolder.kt$FileHolder.ContentFileHolder$e: IOException</ID>
+    <ID>SwallowedException:FirewallResolvers.kt$FirewallResolvers$e: FirewallResolver.CancelException</ID>
+    <ID>SwallowedException:FirewallResolvers.kt$FirewallResolvers.WebViewRequestCallback$e: Exception</ID>
+    <ID>SwallowedException:FirewallResolvers.kt$FirewallResolvers.WebViewRequestCallback$e: HttpException</ID>
+    <ID>SwallowedException:FirewallResolvers.kt$FirewallResolvers.WebViewRequestCallback$e: RecaptchaReader.CancelException</ID>
+    <ID>SwallowedException:FlowVideoView.kt$FlowVideoView$e: CacheManager.CacheException</ID>
+    <ID>SwallowedException:FlowVideoView.kt$FlowVideoView$e: IOException</ID>
+    <ID>SwallowedException:GeneralFragment.kt$GeneralFragment.CheckCaptchaSolvingTask$e: CaptchaSolving.InvalidTokenException</ID>
+    <ID>SwallowedException:GeneralFragment.kt$GeneralFragment.CheckCaptchaSolvingTask$e: CaptchaSolving.UnsupportedServiceException</ID>
+    <ID>SwallowedException:GetBoardsTask.kt$GetBoardsTask$e: Exception</ID>
+    <ID>SwallowedException:GetBoardsTask.kt$GetBoardsTask$e: OperationCanceledException</ID>
+    <ID>SwallowedException:GetHistoryTask.kt$GetHistoryTask$e: Exception</ID>
+    <ID>SwallowedException:GetHistoryTask.kt$GetHistoryTask$e: OperationCanceledException</ID>
+    <ID>SwallowedException:GraphicsUtils.kt$GraphicsUtils$e: Exception</ID>
+    <ID>SwallowedException:GraphicsUtils.kt$GraphicsUtils$e: OutOfMemoryError</ID>
+    <ID>SwallowedException:HtmlParser.kt$HtmlParser$e: Exception</ID>
+    <ID>SwallowedException:HtmlParser.kt$HtmlParser$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient$e: Exception</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient$e: RetryException</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient.ClientInputStream$e: Exception</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient.Companion$e: InterruptedIOException</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient.Companion$e: UnsupportedCharsetException</ID>
+    <ID>SwallowedException:HttpClient.kt$HttpClient.DeflateInputStream.Companion$e: ZipException</ID>
+    <ID>SwallowedException:IOUtils.kt$IOUtils$e: IOException</ID>
+    <ID>SwallowedException:ImageUnit.kt$ImageUnit.DecodeBitmapTask$e: IOException</ID>
+    <ID>SwallowedException:ImageUnit.kt$ImageUnit.DecodeBitmapTask$e: OutOfMemoryError</ID>
+    <ID>SwallowedException:Logger.kt$Logger$t: Throwable</ID>
+    <ID>SwallowedException:MainActivity.kt$MainActivity$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:MainActivity.kt$MainActivity$e: IOException</ID>
+    <ID>SwallowedException:MainActivity.kt$MainActivity$e: IllegalStateException</ID>
+    <ID>SwallowedException:NavigationUtils.kt$NavigationUtils$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:PagesDatabase.kt$PagesDatabase$e: Exception</ID>
+    <ID>SwallowedException:PagesDatabase.kt$PagesDatabase$e: IOException</ID>
+    <ID>SwallowedException:PhotoView.kt$PhotoView$e: Exception</ID>
+    <ID>SwallowedException:Post.kt$Post.Companion$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:PostingFragment.kt$PostingFragment$e: ActivityNotFoundException</ID>
+    <ID>SwallowedException:PostingFragment.kt$PostingFragment$e: OutOfMemoryError</ID>
+    <ID>SwallowedException:Preferences.kt$Preferences$e: Exception</ID>
+    <ID>SwallowedException:Preferences.kt$Preferences$e: JSONException</ID>
+    <ID>SwallowedException:ReadCaptchaTask.kt$ReadCaptchaTask$e: RecaptchaReader.CancelException</ID>
+    <ID>SwallowedException:ReadCaptchaTask.kt$ReadCaptchaTask.Companion$e: RecaptchaReader.CancelException</ID>
+    <ID>SwallowedException:ReadPostsTask.kt$ReadPostsTask$e: IOException</ID>
+    <ID>SwallowedException:ResourceUtils.kt$ResourceUtils$e: Exception</ID>
+    <ID>SwallowedException:SendLocalArchiveTask.kt$SendLocalArchiveTask$e: IOException</ID>
+    <ID>SwallowedException:SendPostTask.kt$SendPostTask$e: RedirectException</ID>
+    <ID>SwallowedException:StorageManager.kt$StorageManager.JsonOrgStorage$e: JSONException</ID>
+    <ID>SwallowedException:StorageManager.kt$StorageManager.Storage$e: FileNotFoundException</ID>
+    <ID>SwallowedException:ThemeEngine.kt$ThemeEngine.Companion$e: JSONException</ID>
+    <ID>SwallowedException:ThemeEngine.kt$ThemeEngine.ThemeLayoutInflater$e: ClassNotFoundException</ID>
+    <ID>SwallowedException:ThemesFragment.kt$ThemesFragment$e: JSONException</ID>
+    <ID>SwallowedException:ThemesFragment.kt$ThemesFragment.ReadThemesTask$e: JSONException</ID>
+    <ID>SwallowedException:UpdaterActivity.kt$UpdaterActivity$abandonException: RuntimeException</ID>
+    <ID>SwallowedException:VideoPlayer.kt$VideoPlayer$e: IOException</ID>
+    <ID>SwallowedException:VideoPlayer.kt$VideoPlayer$e: IllegalArgumentException</ID>
+    <ID>SwallowedException:VideoUnit.kt$VideoUnit$e: IOException</ID>
+    <ID>SwallowedException:VideoUnit.kt$VideoUnit.ReadVideoCallback$e: IOException</ID>
+    <ID>SwallowedException:WebViewDecoder.kt$WebViewDecoder$e: IOException</ID>
+    <ID>SwallowedException:WebViewDecoder.kt$WebViewDecoder$e: OutOfMemoryError</ID>
+    <ID>SwallowedException:WebViewDecoder.kt$WebViewDecoder.Companion$e: IOException</ID>
+    <ID>SwallowedException:WebViewService.kt$WebViewService$e: IOException</ID>
+    <ID>SwallowedException:WebViewService.kt$WebViewService$e: RemoteException</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:ChanLocator.kt$ChanLocator.NavigationData.Companion$IllegalArgumentException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:ChanManager.kt$ChanManager$RuntimeException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:ChanManager.kt$ChanManager.Companion$RuntimeException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:ConcurrentUtils.kt$ConcurrentUtils.&lt;no name provided&gt;$RuntimeException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:DrawerForm.kt$DrawerForm$IllegalStateException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:DrawerForm.kt$DrawerForm$IndexOutOfBoundsException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:FirewallResolvers.kt$FirewallResolvers.CheckSession$IllegalStateException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:FirewallResolvers.kt$FirewallResolvers.CookieSession$IllegalStateException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:PhotoView.kt$PhotoView$RuntimeException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:PostsPage.kt$PostsPage$RuntimeException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:ThemeEngine.kt$ThemeEngine.Theme$IllegalArgumentException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:WatcherService.kt$WatcherService.ConcurrentIterable.Companion.&lt;no name provided&gt;$IndexOutOfBoundsException()</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:WatcherView.kt$WatcherView$IllegalStateException()</ID>
+    <ID>TooGenericExceptionCaught:ConcurrentUtils.kt$ConcurrentUtils$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:DecoderDrawable.kt$DecoderDrawable.DecodeTask$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Logger.kt$Logger$t: Throwable</ID>
+    <ID>TooGenericExceptionThrown:CacheManager.kt$CacheManager$throw RuntimeException("Unknown cache type")</ID>
+    <ID>TooGenericExceptionThrown:CallbackProxy.kt$CallbackProxy$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:CallbackProxy.kt$CallbackProxy$throw RuntimeException(target)</ID>
+    <ID>TooGenericExceptionThrown:CaptchaSolving.kt$CaptchaSolving.AntigateModernService$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ChanLocator.kt$ChanLocator$throw RuntimeException("Chan hosts not defined")</ID>
+    <ID>TooGenericExceptionThrown:ChanManager.kt$ChanManager$throw RuntimeException()</ID>
+    <ID>TooGenericExceptionThrown:ChanManager.kt$ChanManager$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ChanManager.kt$ChanManager.Companion$throw RuntimeException()</ID>
+    <ID>TooGenericExceptionThrown:ConcurrentUtils.kt$ConcurrentUtils$throw RuntimeException(error as Throwable)</ID>
+    <ID>TooGenericExceptionThrown:ConcurrentUtils.kt$ConcurrentUtils.&lt;no name provided&gt;$throw RuntimeException()</ID>
+    <ID>TooGenericExceptionThrown:CustomDrawerLayout.kt$CustomDrawerLayout$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:DialogUnit.kt$DialogUnit.ThreadDialogProvider$throw RuntimeException("Not thread item")</ID>
+    <ID>TooGenericExceptionThrown:DownloadService.kt$DownloadService$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:DrawerToggle.kt$DrawerToggle.Companion$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ExecutorTask.kt$ExecutorTask.&lt;no name provided&gt;$throw RuntimeException(cause)</ID>
+    <ID>TooGenericExceptionThrown:FileHolder.kt$FileHolder.Companion$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:FirewallResolvers.kt$FirewallResolvers.Key.Generator$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:Hasher.kt$Hasher$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:HtmlParser.kt$HtmlParser$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:HttpClient.kt$HttpClient$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:HttpClient.kt$HttpClient.Companion$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:IOUtils.kt$IOUtils$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:MultipartEntity.kt$MultipartEntity$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:MultipartEntity.kt$MultipartEntity.StringPart$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:MultipleEditPreference.kt$MultipleEditPreference.MapValueCodec$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:PaddedRecyclerView.kt$PaddedRecyclerView.Companion$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:PagesDatabase.kt$PagesDatabase$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:PhotoView.kt$PhotoView$throw RuntimeException()</ID>
+    <ID>TooGenericExceptionThrown:PostingService.kt$PostingService$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:PostsPage.kt$PostsPage$throw RuntimeException()</ID>
+    <ID>TooGenericExceptionThrown:PostsPage.kt$PostsPage$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ReadFileTask.kt$ReadFileTask$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ReadUpdateTask.kt$ReadUpdateTask$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:StackItem.kt$StackItem$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:StorageManager.kt$StorageManager.JsonOrgStorage$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ThemeEngine.kt$ThemeEngine$throw RuntimeException("No themes found")</ID>
+    <ID>TooGenericExceptionThrown:ThemeEngine.kt$ThemeEngine$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ThemeEngine.kt$ThemeEngine.Theme$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:ThemesFragment.kt$ThemesFragment$throw RuntimeException(e)</ID>
+    <ID>TooGenericExceptionThrown:WebViewExtra.kt$WebViewExtra.Companion.&lt;no name provided&gt;$throw RuntimeException(e)</ID>
+    <ID>UnnecessaryNotNullOperator:AttachmentOptionsDialog.kt$AttachmentOptionsDialog$holder!!</ID>
+    <ID>UnnecessaryNotNullOperator:DrawerForm.kt$DrawerForm$getTheme(context)!!</ID>
+    <ID>UnnecessaryNotNullOperator:DrawerForm.kt$DrawerForm$watcherServiceClient .getCounter( favoriteItem.chanName, favoriteItem.boardName, favoriteItem.threadNumber!!, )!!</ID>
+    <ID>UnnecessaryNotNullOperator:MultipleEditPreference.kt$MultipleEditPreference$( if (inputTypes != null &amp;&amp; inputTypes.size &gt; i) { inputTypes[i] } else { android.text.InputType.TYPE_CLASS_TEXT } )!!</ID>
+    <ID>UnnecessaryNotNullOperator:PostingFragment.kt$PostingFragment$first.get(i)!!</ID>
+    <ID>UnnecessaryNotNullOperator:PostingFragment.kt$PostingFragment$getTheme(view.getContext())!!</ID>
+    <ID>UnnecessaryNotNullOperator:PostingFragment.kt$PostingFragment$theme!!</ID>
+    <ID>UnnecessaryNotNullOperator:PostsPage.kt$PostsPage$retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex]!!</ID>
+    <ID>UnnecessaryNotNullOperator:ViewUnit.kt$ViewUnit.ThreadViewHolder$(if (threadViewType == ThreadViewType.CELL) description else showOriginalPost)!!</ID>
+    <ID>UnusedParameter:ArchiveAdapter.kt$ArchiveAdapter$position: Int</ID>
+    <ID>UnusedParameter:DrawerForm.kt$DrawerForm$parent: ViewGroup?</ID>
+    <ID>UnusedParameter:HistoryAdapter.kt$HistoryAdapter$position: Int</ID>
+    <ID>UnusedParameter:SearchAdapter.kt$SearchAdapter$position: Int</ID>
+    <ID>UnusedParameter:WebViewUtils.kt$WebViewUtils$context: Context</ID>
+    <ID>UnusedPrivateProperty:ChanPerformer.kt$ChanPerformer.SendVotePostData$comment: String?</ID>
+    <ID>UnusedPrivateProperty:PostingFragment.kt$PostingFragment$val captchaInputRootView = footerContainer.findViewById&lt;LinearLayout?&gt;(R.id.captcha_input_root)</ID>
+    <ID>UnusedPrivateProperty:PostingFragment.kt$PostingFragment$val commentFormat = view.findViewById&lt;LinearLayout?&gt;(R.id.comment_format)</ID>
+    <ID>UnusedPrivateProperty:PullableWrapper.kt$PullableWrapper.Companion$private const val BUSY_JUMP_TIME = 200</ID>
+    <ID>UseCheckOrError:DrawerForm.kt$DrawerForm$throw IllegalStateException()</ID>
+    <ID>UseCheckOrError:FirewallResolvers.kt$FirewallResolvers.CheckSession$throw IllegalStateException()</ID>
+    <ID>UseCheckOrError:FirewallResolvers.kt$FirewallResolvers.CookieSession$throw IllegalStateException()</ID>
+    <ID>UseCheckOrError:WatcherView.kt$WatcherView$throw IllegalStateException()</ID>
+    <ID>UseIsNullOrEmpty:CloudFlareResolver.kt$CloudFlareResolver.WebViewClient$path == null || path.isEmpty()</ID>
+    <ID>UseRequire:DownloadDialog.kt$DownloadDialog$throw IllegalArgumentException("Request is not supported")</ID>
+    <ID>UtilityClassWithPublicConstructor:OverlineSpan.kt$OverlineSpan</ID>
+    <ID>VarCouldBeVal:DrawerForm.kt$DrawerForm.ListItem.Companion$private var nextItemId: kotlin.Long = 0 get() = field++</ID>
+    <ID>VarCouldBeVal:LinebreakLayout.kt$LinebreakLayout$var layoutParams = child.layoutParams</ID>
+    <ID>VarCouldBeVal:Preferences.kt$Preferences$var packageNameFingerprints: MutableSet&lt;String&gt; = PREFERENCES!! .getStringSet( KEY_TRUSTED_EXSTENSIONS, null, )?.let { HashSet(it) } ?: HashSet()</ID>
+  </CurrentIssues>
+</SmellBaseline>
