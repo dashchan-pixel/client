@@ -58,17 +58,20 @@ class PagerInstance(
     class ViewHolder {
         @JvmField var galleryItem: GalleryItem? = null
 
-        @JvmField var mediaSummary: MediaSummary? = null
+        // Assigned once when the page view is created (photoView..errorHolder) or bound
+        // (mediaSummary), never cleared afterwards. No @JvmField: a lateinit property already
+        // exposes its backing field, and the two annotations are mutually exclusive.
+        lateinit var mediaSummary: MediaSummary
 
-        @JvmField var photoView: PhotoView? = null
+        lateinit var photoView: PhotoView
 
-        @JvmField var surfaceParent: FrameLayout? = null
+        lateinit var surfaceParent: FrameLayout
 
-        @JvmField var progressBar: CircularProgressBar? = null
+        lateinit var progressBar: CircularProgressBar
 
-        @JvmField var playButton: View? = null
+        lateinit var playButton: View
 
-        @JvmField var errorHolder: ViewFactory.ErrorHolder? = null
+        lateinit var errorHolder: ViewFactory.ErrorHolder
 
         @JvmField var simpleBitmapDrawable: SimpleBitmapDrawable? = null
 
@@ -87,7 +90,7 @@ class PagerInstance(
         @JvmField var decodeBitmapTask: Any? = null
 
         fun recyclePhotoView() {
-            photoView!!.recycle()
+            photoView.recycle()
             simpleBitmapDrawable?.let {
                 it.recycle()
                 simpleBitmapDrawable = null

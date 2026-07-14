@@ -29,6 +29,7 @@ import com.mishiranu.dashchan.ui.InstanceDialog
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ConcurrentUtils.newSingleThreadPool
 import com.mishiranu.dashchan.util.GraphicsUtils
+import com.mishiranu.dashchan.widget.CircularProgressBar
 import com.mishiranu.dashchan.widget.PhotoView
 import com.mishiranu.dashchan.widget.SummaryLayout
 import java.io.File
@@ -42,9 +43,10 @@ class ImageUnit(
     private var readBitmapCallback: ReadBitmapCallback? = null
 
     fun interrupt(force: Boolean) {
+        val readFileTask = this.readFileTask
         if (force && readFileTask != null) {
-            readFileTask!!.cancel()
-            readFileTask = null
+            readFileTask.cancel()
+            this.readFileTask = null
             readBitmapCallback = null
         }
         interruptHolder(instance.leftHolder)
@@ -56,7 +58,7 @@ class ImageUnit(
         if (holder != null) {
             if (holder.decodeBitmapTask != null) {
                 (holder.decodeBitmapTask as DecodeBitmapTask).cancel()
-                holder.progressBar!!.setVisible(false, true)
+                holder.progressBar.setVisible(false, true)
                 holder.decodeBitmapTask = null
             }
         }
@@ -79,13 +81,13 @@ class ImageUnit(
         if (attachReadBitmapCallback(holder)) {
             return
         }
-        if (holder!!.mediaSummary!!.updateSize(file.length())) {
+        if (holder!!.mediaSummary.updateSize(file.length())) {
             instance.galleryInstance.callback.updateTitle()
         }
         val fileHolder = obtain(file)
         if (holder.decodeBitmapTask != null) {
             (holder.decodeBitmapTask as DecodeBitmapTask).cancel()
-            holder.progressBar!!.setVisible(false, true)
+            holder.progressBar.setVisible(false, true)
         }
         val decodeBitmapTask = DecodeBitmapTask(file, fileHolder)
         decodeBitmapTask.execute(EXECUTOR)
@@ -95,9 +97,9 @@ class ImageUnit(
             loadNearestImage!!
                 .isNetworkAvailable(getInstance())
         ) {
-            val nextGalleryItem = nextHolder.galleryItem
+            val nextGalleryItem = nextHolder.galleryItem!!
             val chan = get(instance.galleryInstance.chanName)
-            if (nextGalleryItem!!.isImage(chan)) {
+            if (nextGalleryItem.isImage(chan)) {
                 val nextUri = nextGalleryItem.getFileUri(chan)
                 val nextCachedFile: File? = CacheManager.getInstance().getMediaFile(nextUri, true)
                 if (nextCachedFile != null && !nextCachedFile.exists()) {
@@ -115,19 +117,20 @@ class ImageUnit(
         if (attachReadBitmapCallback(holder)) {
             return
         }
-        if (readFileTask != null) {
-            readFileTask!!.cancel()
-        }
-        readBitmapCallback = ReadBitmapCallback(holder.galleryItem)
+        readFileTask?.cancel()
+        val readBitmapCallback = ReadBitmapCallback(holder.galleryItem)
+        this.readBitmapCallback = readBitmapCallback
         val chan = getPreferred(instance.galleryInstance.chanName, uri)
-        readFileTask =
-            ReadFileTask.createCachedMediaFile(readBitmapCallback!!, chan, uri, cachedFile)
-        readFileTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        val readFileTask =
+            ReadFileTask.createCachedMediaFile(readBitmapCallback, chan, uri, cachedFile)
+        this.readFileTask = readFileTask
+        readFileTask.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
     }
 
     private fun attachReadBitmapCallback(holder: PagerInstance.ViewHolder?): Boolean {
-        if (readBitmapCallback != null && readBitmapCallback!!.isHolder(holder)) {
-            readBitmapCallback!!.attachDownloading()
+        val readBitmapCallback = this.readBitmapCallback
+        if (readBitmapCallback != null && readBitmapCallback.isHolder(holder)) {
+            readBitmapCallback.attachDownloading()
             return true
         }
         return false
@@ -141,10 +144,15 @@ class ImageUnit(
 
         fun isHolder(holder: PagerInstance.ViewHolder?): Boolean = holder != null && holder.galleryItem == galleryItem
 
+        // Only valid while isCurrentHolder is true
+        private val currentProgressBar: CircularProgressBar
+            get() = instance.currentHolder!!.progressBar
+
         override fun onStartDownloading() {
             if (this.isCurrentHolder) {
-                instance.currentHolder!!.progressBar!!.setVisible(true, false)
-                instance.currentHolder!!.progressBar!!.setIndeterminate(true)
+                val progressBar = currentProgressBar
+                progressBar.setVisible(true, false)
+                progressBar.setIndeterminate(true)
             }
         }
 
@@ -153,10 +161,11 @@ class ImageUnit(
 
         fun attachDownloading() {
             if (this.isCurrentHolder) {
-                instance.currentHolder!!.progressBar!!.setVisible(true, false)
-                instance.currentHolder!!.progressBar!!.setIndeterminate(pendingProgressMax <= 0)
+                val progressBar = currentProgressBar
+                progressBar.setVisible(true, false)
+                progressBar.setIndeterminate(pendingProgressMax <= 0)
                 if (pendingProgressMax > 0) {
-                    instance.currentHolder!!.progressBar!!.setProgress(
+                    progressBar.setProgress(
                         pendingProgress,
                         pendingProgressMax,
                         true,
@@ -174,13 +183,14 @@ class ImageUnit(
             readFileTask = null
             readBitmapCallback = null
             if (this.isCurrentHolder) {
-                instance.currentHolder!!.progressBar!!.setVisible(false, false)
+                val holder = instance.currentHolder!!
+                holder.progressBar.setVisible(false, false)
                 if (success) {
                     applyImageFromFile(file)
                 } else {
                     // errorItem is nullable here; a bare toString() would show "null".
                     instance.callback.showError(
-                        instance.currentHolder!!,
+                        holder,
                         (errorItem ?: ErrorItem(ErrorItem.Type.UNKNOWN)).toString(),
                     )
                 }
@@ -189,7 +199,7 @@ class ImageUnit(
 
         override fun onCancelDownloading() {
             if (this.isCurrentHolder) {
-                instance.currentHolder!!.progressBar!!.setVisible(false, true)
+                currentProgressBar.setVisible(false, true)
             }
         }
 
@@ -198,8 +208,9 @@ class ImageUnit(
             progressMax: Long,
         ) {
             if (this.isCurrentHolder) {
-                instance.currentHolder!!.progressBar!!.setIndeterminate(false)
-                instance.currentHolder!!.progressBar!!.setProgress(
+                val progressBar = currentProgressBar
+                progressBar.setIndeterminate(false)
+                progressBar.setProgress(
                     progress.toInt(),
                     progressMax.toInt(),
                     progress == 0L,
@@ -221,13 +232,14 @@ class ImageUnit(
     }
 
     fun viewMetadata() {
+        val holder = instance.currentHolder!!
         val fileName =
-            instance.currentHolder!!
+            holder
                 .galleryItem!!
                 .getFileName(get(instance.galleryInstance.chanName))
         showMetadata(
             instance.galleryInstance.callback.getChildFragmentManager(),
-            instance.currentHolder!!.jpegData,
+            holder.jpegData,
             fileName,
         )
     }
@@ -236,7 +248,7 @@ class ImageUnit(
         private val file: File,
         private val fileHolder: FileHolder,
     ) : ExecutorTask<Unit?, Unit?>() {
-        private val photoView: PhotoView?
+        private val photoView: PhotoView
 
         private var bitmap: Bitmap? = null
         private var decoderDrawable: DecoderDrawable? = null
@@ -244,13 +256,15 @@ class ImageUnit(
         private var errorMessageId = 0
 
         init {
-            photoView = instance.currentHolder!!.photoView
+            val holder = instance.currentHolder!!
+            photoView = holder.photoView
             if (fileHolder.imageWidth >= 2048 &&
                 fileHolder.imageHeight >= 2048 ||
                 fileHolder.imageType == FileHolder.ImageType.IMAGE_SVG
             ) {
-                instance.currentHolder!!.progressBar!!.setVisible(true, false)
-                instance.currentHolder!!.progressBar!!.setIndeterminate(true)
+                val progressBar = holder.progressBar
+                progressBar.setVisible(true, false)
+                progressBar.setIndeterminate(true)
             }
         }
 
@@ -271,19 +285,21 @@ class ImageUnit(
                 }
             }
             try {
-                val maxSize = photoView!!.maximumImageSizeAsync
-                bitmap = fileHolder.readImageBitmap(maxSize, true, true)
-                if (bitmap == null) {
+                val maxSize = photoView.maximumImageSizeAsync
+                val decoded = fileHolder.readImageBitmap(maxSize, true, true)
+                bitmap = decoded
+                if (decoded == null) {
                     errorMessageId = R.string.image_is_corrupted
                 } else {
                     // Display-only from here on: move to GPU memory. DecoderDrawable
                     // also only draws the scaled bitmap, never touches its pixels.
-                    bitmap = GraphicsUtils.toHardware(bitmap!!)
-                    if (bitmap!!.getWidth() < fileHolder.imageWidth ||
-                        bitmap!!.getHeight() < fileHolder.imageHeight
+                    val hardware = GraphicsUtils.toHardware(decoded)
+                    bitmap = hardware
+                    if (hardware.getWidth() < fileHolder.imageWidth ||
+                        hardware.getHeight() < fileHolder.imageHeight
                     ) {
                         try {
-                            decoderDrawable = DecoderDrawable(bitmap!!, fileHolder)
+                            decoderDrawable = DecoderDrawable(hardware, fileHolder)
                             bitmap = null
                         } catch (e: OutOfMemoryError) {
                             // Ignore exception
@@ -303,34 +319,38 @@ class ImageUnit(
         }
 
         override fun onComplete(result: Unit?) {
-            val holder = instance.currentHolder
-            holder!!.decodeBitmapTask = null
-            holder.progressBar!!.setVisible(false, false)
+            val holder = instance.currentHolder!!
+            val bitmap = this.bitmap
+            val decoderDrawable = this.decoderDrawable
+            val animatedImageDecoder = this.animatedImageDecoder
+            holder.decodeBitmapTask = null
+            holder.progressBar.setVisible(false, false)
             if (bitmap != null || decoderDrawable != null || animatedImageDecoder != null) {
                 val width: Int
                 val height: Int
                 if (animatedImageDecoder != null) {
                     holder.animatedImageDecoder = animatedImageDecoder
-                    val drawable = animatedImageDecoder!!.getDrawable()
+                    val drawable = animatedImageDecoder.getDrawable()
                     width = drawable.getIntrinsicWidth()
                     height = drawable.getIntrinsicHeight()
                     setPhotoViewImage(holder, drawable, true)
                 } else if (decoderDrawable != null) {
                     holder.decoderDrawable = decoderDrawable
-                    width = decoderDrawable!!.getIntrinsicWidth()
-                    height = decoderDrawable!!.getIntrinsicHeight()
-                    setPhotoViewImage(holder, decoderDrawable!!, decoderDrawable!!.hasAlpha())
+                    width = decoderDrawable.getIntrinsicWidth()
+                    height = decoderDrawable.getIntrinsicHeight()
+                    setPhotoViewImage(holder, decoderDrawable, decoderDrawable.hasAlpha())
                 } else {
-                    holder.simpleBitmapDrawable = SimpleBitmapDrawable(bitmap!!, true)
-                    width = bitmap!!.getWidth()
-                    height = bitmap!!.getHeight()
+                    val simpleBitmapDrawable = SimpleBitmapDrawable(bitmap!!, true)
+                    holder.simpleBitmapDrawable = simpleBitmapDrawable
+                    width = bitmap.getWidth()
+                    height = bitmap.getHeight()
                     setPhotoViewImage(
                         holder,
-                        holder.simpleBitmapDrawable!!,
-                        bitmap!!.hasAlpha(),
+                        simpleBitmapDrawable,
+                        bitmap.hasAlpha(),
                     )
                 }
-                if (holder.mediaSummary!!.updateDimensions(width, height)) {
+                if (holder.mediaSummary.updateDimensions(width, height)) {
                     instance.galleryInstance.callback.updateTitle()
                 }
                 holder.loadState = PagerInstance.LoadState.COMPLETE
@@ -348,7 +368,7 @@ class ImageUnit(
             drawable: Drawable,
             hasAlpha: Boolean,
         ) {
-            holder.photoView!!.setImage(drawable, hasAlpha, false, holder.photoViewThumbnail)
+            holder.photoView.setImage(drawable, hasAlpha, false, holder.photoViewThumbnail)
             holder.jpegData = fileHolder.jpegData
             holder.photoViewThumbnail = false
         }

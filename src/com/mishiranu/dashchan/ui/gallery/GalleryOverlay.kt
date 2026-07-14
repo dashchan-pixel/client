@@ -118,9 +118,7 @@ class GalleryOverlay :
         override fun onCleared() {
             val retained = this.retained
             this.retained = null
-            if (retained != null && retained.pagerUnit != null) {
-                retained.pagerUnit!!.onFinish()
-            }
+            retained?.pagerUnit?.onFinish()
         }
     }
 
@@ -226,9 +224,7 @@ class GalleryOverlay :
         titleSubtitle = retained.titleSubtitle
         screenOnFixed = retained.screenOnFixed
         systemUiVisibilityFlags = retained.systemUiVisibilityFlags
-        if (instance != null) {
-            instance!!.callback = this
-        }
+        instance?.callback = this
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): GalleryDialog = GalleryDialog(this)
@@ -238,13 +234,9 @@ class GalleryOverlay :
     override fun onDestroyView() {
         super.onDestroyView()
         destroyShowcase(false)
-        if (cornerAnimator != null) {
-            cornerAnimator!!.cancel()
-            cornerAnimator = null
-        }
-        if (rootView != null) {
-            rootView!!.removeCallbacks(returnToGalleryRunnable)
-        }
+        cornerAnimator?.cancel()
+        cornerAnimator = null
+        rootView?.removeCallbacks(returnToGalleryRunnable)
     }
 
     // GalleryOverlay has no fragment view, so view-bound callbacks like onViewStateRestored
@@ -269,7 +261,7 @@ class GalleryOverlay :
             // Dismissing after process death
             return
         }
-        val queuedFromView = if (this.queuedFromView != null) this.queuedFromView!!.get() else null
+        val queuedFromView = this.queuedFromView?.get()
         this.queuedFromView = null
         var imageViewPosition: IntArray? = null
         if (queuedFromView != null) {
@@ -294,13 +286,15 @@ class GalleryOverlay :
             WindowManager.LayoutParams
                 .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
+        var rootView = this.rootView
         if (rootView == null) {
             val context =
                 attach(ContextThemeWrapper(getInstance().localizedContext, R.style.Theme_Gallery))
             rootView = InsetsLayout(context)
+            this.rootView = rootView
             // The listeners below live as long as the retained rootView: route them through
             // retained.current so they always talk to the fragment instance that is alive.
-            rootView!!.addOnAttachStateChangeListener(
+            rootView.addOnAttachStateChangeListener(
                 object : OnAttachStateChangeListener {
                     override fun onViewAttachedToWindow(v: View) {
                         val current = retained.current
@@ -312,33 +306,32 @@ class GalleryOverlay :
                     override fun onViewDetachedFromWindow(v: View) {}
                 },
             )
-            rootView!!.setOnApplyInsetsListener(
+            rootView.setOnApplyInsetsListener(
                 OnApplyInsetsListener { apply: Apply? ->
                     val insets = apply!!.get()
                     val current = retained.current
                     if (current == null) {
                         return@OnApplyInsetsListener
                     }
-                    if (current.listUnit != null) {
-                        val invalidate = current.listUnit!!.onApplyWindowInsets(insets)
+                    val listUnit = current.listUnit
+                    if (listUnit != null) {
+                        val invalidate = listUnit.onApplyWindowInsets(insets)
                         if (invalidate) {
                             current.postInvalidateSystemUIVisibility()
                         }
                     }
-                    if (current.pagerUnit != null) {
-                        current.pagerUnit!!.onApplyWindowInsets(insets)
-                    }
+                    current.pagerUnit?.onApplyWindowInsets(insets)
                 },
             )
-            rootView!!.setLayoutParams(
+            rootView.setLayoutParams(
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 ),
             )
-            rootView!!.setBackground(
+            rootView.setBackground(
                 GalleryBackgroundDrawable(
-                    rootView!!,
+                    rootView,
                     imageViewPosition,
                     BACKGROUND_COLOR,
                 ),
@@ -346,8 +339,8 @@ class GalleryOverlay :
             retained.rootView = rootView
         }
         val dialog = getDialog()
-        ViewUtils.removeFromParent(rootView!!)
-        dialog!!.setContentView(rootView!!)
+        ViewUtils.removeFromParent(rootView)
+        dialog!!.setContentView(rootView)
         dialog.show()
         dialog.getActionBar()!!.setDisplayHomeAsUpEnabled(true)
         val invalidateSystemUiFlags =
@@ -357,12 +350,10 @@ class GalleryOverlay :
                 }
             }
         ViewUtils.addWindowFocusListener(
-            rootView!!,
+            rootView,
             OnFocusChangeListener { v: View?, hasFocus: Boolean ->
-                if (pagerUnit != null) {
-                    // Block touch events when dialogs are opened
-                    pagerUnit!!.setHasFocus(hasFocus)
-                }
+                // Block touch events when dialogs are opened
+                pagerUnit?.setHasFocus(hasFocus)
                 ConcurrentUtils.HANDLER.removeCallbacks(invalidateSystemUiFlags)
                 if (hasFocus) {
                     // Re-apply visibility flags after dialogs closed
@@ -372,6 +363,7 @@ class GalleryOverlay :
         )
 
         var newImagePosition: Int? = null
+        var instance = this.instance
         if (instance == null) {
             val uri =
                 BundleCompat.getParcelable<Uri?>(requireArguments(), EXTRA_URI, Uri::class.java)
@@ -408,42 +400,45 @@ class GalleryOverlay :
             }
             instance =
                 GalleryInstance(
-                    rootView!!.getContext(),
+                    rootView.getContext(),
                     this,
                     ACTION_BAR_COLOR,
                     chan.name,
                     galleryItems ?: mutableListOf(),
                 )
-            retained.instance = instance!!
-            if (!instance!!.galleryItems.isEmpty()) {
-                listUnit = ListUnit(instance!!)
-                pagerUnit = PagerUnit(instance!!)
+            this.instance = instance
+            retained.instance = instance
+            if (!instance.galleryItems.isEmpty()) {
+                val listUnit = ListUnit(instance)
+                val pagerUnit = PagerUnit(instance)
+                this.listUnit = listUnit
+                this.pagerUnit = pagerUnit
                 val initialVideoPosition = requireArguments().getLong(EXTRA_INITIAL_VIDEO_POSITION)
                 if (initialVideoPosition > 0) {
                     requireArguments().remove(EXTRA_INITIAL_VIDEO_POSITION)
-                    pagerUnit!!.setInitialVideoSeek(initialVideoPosition)
+                    pagerUnit.setInitialVideoSeek(initialVideoPosition)
                 }
                 retained.listUnit = listUnit
                 retained.pagerUnit = pagerUnit
-                rootView!!.addView(
-                    listUnit!!.getRecyclerView(),
+                rootView.addView(
+                    listUnit.getRecyclerView(),
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
-                rootView!!.addView(
-                    pagerUnit!!.view,
+                rootView.addView(
+                    pagerUnit.view,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
-                pagerUnit!!.addAndInitViews(rootView!!, imagePosition)
+                pagerUnit.addAndInitViews(rootView, imagePosition)
             }
             newImagePosition = imagePosition
         }
 
-        if (instance!!.galleryItems.isEmpty()) {
-            val errorHolder = ViewFactory.createErrorLayout(rootView!!)
+        if (instance.galleryItems.isEmpty()) {
+            val errorHolder = ViewFactory.createErrorLayout(rootView)
             errorHolder.text.setText(R.string.gallery_is_empty)
-            rootView!!.addView(errorHolder.layout)
+            rootView.addView(errorHolder.layout)
         } else {
             if (savedInstanceState != null && savedInstanceState.containsKey(EXTRA_GALLERY_MODE)) {
                 galleryMode = savedInstanceState.getBoolean(EXTRA_GALLERY_MODE)
@@ -479,15 +474,12 @@ class GalleryOverlay :
 
         if (newImagePosition == null) {
             val configuration = getResources().getConfiguration()
-            if (listUnit != null) {
-                listUnit!!.onConfigurationChanged(configuration)
-            }
-            if (pagerUnit != null) {
-                pagerUnit!!.onConfigurationChanged(configuration)
-            }
+            listUnit?.onConfigurationChanged(configuration)
+            pagerUnit?.onConfigurationChanged(configuration)
         }
+        val titleSubtitle = this.titleSubtitle
         if (titleSubtitle != null) {
-            dialog.setTitleSubtitle(titleSubtitle!!.first, titleSubtitle!!.second)
+            dialog.setTitleSubtitle(titleSubtitle.first, titleSubtitle.second)
         }
         val window = getWindow()
         if (window != null) {
@@ -501,17 +493,13 @@ class GalleryOverlay :
     override fun onResume() {
         super.onResume()
 
-        if (pagerUnit != null) {
-            pagerUnit!!.onResume()
-        }
+        pagerUnit?.onResume()
     }
 
     override fun onPause() {
         super.onPause()
 
-        if (pagerUnit != null) {
-            pagerUnit!!.onPause()
-        }
+        pagerUnit?.onPause()
     }
 
     override fun onDestroy() {
@@ -560,40 +548,33 @@ class GalleryOverlay :
     }
 
     override fun onCreateDialogMenu(menu: Menu) {
-        if (instance != null) {
-            menu
-                .add(0, R.id.menu_save, 0, R.string.save)
-                .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionSave))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu
-                .add(0, R.id.menu_refresh, 0, R.string.refresh)
-                .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionRefresh))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            menu
-                .add(0, R.id.menu_select, 0, R.string.select)
-                .setIcon(getActionBarIcon(instance!!.context, R.attr.iconActionSelect))
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        }
+        val instance = this.instance ?: return
+        menu
+            .add(0, R.id.menu_save, 0, R.string.save)
+            .setIcon(getActionBarIcon(instance.context, R.attr.iconActionSave))
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu
+            .add(0, R.id.menu_refresh, 0, R.string.refresh)
+            .setIcon(getActionBarIcon(instance.context, R.attr.iconActionRefresh))
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu
+            .add(0, R.id.menu_select, 0, R.string.select)
+            .setIcon(getActionBarIcon(instance.context, R.attr.iconActionSelect))
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
     }
 
     override fun onPrepareDialogMenu(menu: Menu) {
         for (i in 0..<menu.size()) {
             menu.getItem(i).setVisible(false)
         }
+        val pagerUnit = this.pagerUnit
         if (!galleryMode) {
-            val capabilities =
-                if (pagerUnit != null) {
-                    pagerUnit!!.obtainOptionsMenuCapabilities()
-                } else {
-                    null
-                }
+            val capabilities = pagerUnit?.obtainOptionsMenuCapabilities()
             if (capabilities != null && capabilities.available) {
                 menu.findItem(R.id.menu_save).setVisible(capabilities.save)
                 menu.findItem(R.id.menu_refresh).setVisible(capabilities.refresh)
             }
-            if (pagerUnit != null) {
-                pagerUnit!!.invalidatePopupMenu()
-            }
+            pagerUnit?.invalidatePopupMenu()
         } else {
             menu.findItem(R.id.menu_select).setVisible(listUnit!!.areItemsSelectable())
         }
@@ -615,24 +596,27 @@ class GalleryOverlay :
     }
 
     override fun switchToFlow() {
-        val holder = if (pagerUnit != null) pagerUnit!!.currentHolder else null
-        if (holder == null || holder.galleryItem == null || instance == null) {
+        val galleryItem = pagerUnit?.currentHolder?.galleryItem
+        val instance = this.instance
+        if (galleryItem == null || instance == null) {
             return
         }
         // Open the video feed at the same attachment, then close the gallery so nothing keeps playing.
         show(
             requireActivity().getSupportFragmentManager(),
-            get(instance!!.chanName),
-            instance!!.galleryItems,
-            holder.galleryItem,
+            get(instance.chanName),
+            instance.galleryItems,
+            galleryItem,
             this.threadTitle,
         )
         dismiss()
     }
 
     override fun switchToPip() {
-        val holder = if (pagerUnit != null) pagerUnit!!.currentHolder else null
-        if (holder == null || holder.galleryItem == null || instance == null) {
+        val pagerUnit = this.pagerUnit
+        val galleryItem = pagerUnit?.currentHolder?.galleryItem
+        val instance = this.instance
+        if (galleryItem == null || instance == null) {
             return
         }
         // Hand playback over to the floating window (it downloads and plays on its own), then
@@ -640,15 +624,15 @@ class GalleryOverlay :
         // The item list and navigate mode let an expanded window reopen this gallery later.
         VideoPipActivity.start(
             requireActivity(),
-            get(instance!!.chanName),
-            holder.galleryItem!!,
+            get(instance.chanName),
+            galleryItem,
             null,
-            instance!!.galleryItems,
+            instance.galleryItems,
             requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
             this.threadTitle,
-            pagerUnit!!.videoPosition,
-            pagerUnit!!.isVideoPlaying,
-            pagerUnit!!.videoDimensions,
+            pagerUnit.videoPosition,
+            pagerUnit.isVideoPlaying,
+            pagerUnit.videoDimensions,
         )
         dismiss()
     }
@@ -709,11 +693,13 @@ class GalleryOverlay :
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
+        val pagerUnit = this.pagerUnit
         if (pagerUnit != null) {
-            outState.putInt(EXTRA_POSITION, pagerUnit!!.currentIndex)
+            outState.putInt(EXTRA_POSITION, pagerUnit.currentIndex)
         }
+        val listUnit = this.listUnit
         if (listUnit != null) {
-            outState.putIntArray(EXTRA_SELECTED, listUnit!!.selectedPositions)
+            outState.putIntArray(EXTRA_SELECTED, listUnit.selectedPositions)
         }
         outState.putBoolean(EXTRA_GALLERY_WINDOW, galleryWindow)
         outState.putBoolean(EXTRA_GALLERY_MODE, galleryMode)
@@ -763,9 +749,7 @@ class GalleryOverlay :
         private val toActionBarAlpha: Int
 
         init {
-            if (cornerAnimator != null) {
-                cornerAnimator!!.cancel()
-            }
+            cornerAnimator?.cancel()
             val drawable = getDialog()!!.actionBarView!!.getBackground()
             fromActionBarAlpha =
                 Color.alpha(
@@ -831,9 +815,11 @@ class GalleryOverlay :
     }
 
     override fun updateTitle() {
-        val holder = pagerUnit!!.currentHolder
-        if (holder != null && holder.galleryItem != null) {
-            setTitle(holder.galleryItem!!, holder.mediaSummary!!, pagerUnit!!.currentIndex)
+        val pagerUnit = this.pagerUnit!!
+        val holder = pagerUnit.currentHolder
+        val galleryItem = holder?.galleryItem
+        if (galleryItem != null) {
+            setTitle(galleryItem, holder.mediaSummary, pagerUnit.currentIndex)
         }
     }
 
@@ -950,10 +936,11 @@ class GalleryOverlay :
                 actionBar.hide()
             }
             invalidateSystemUiFlags()
+            val pagerUnit = this.pagerUnit
             if (pagerUnit != null) {
-                pagerUnit!!.invalidateControlsVisibility()
+                pagerUnit.invalidateControlsVisibility()
                 if (changed) {
-                    pagerUnit!!.invalidatePopupMenu()
+                    pagerUnit.invalidatePopupMenu()
                 }
             }
         }
@@ -988,15 +975,13 @@ class GalleryOverlay :
     private var showcaseDestroy: Runnable? = null
 
     private fun destroyShowcase(consume: Boolean): Boolean {
-        if (showcaseDestroy != null) {
-            if (consume) {
-                consumeShowcaseGallery()
-            }
-            showcaseDestroy!!.run()
-            showcaseDestroy = null
-            return true
+        val showcaseDestroy = this.showcaseDestroy ?: return false
+        if (consume) {
+            consumeShowcaseGallery()
         }
-        return false
+        showcaseDestroy.run()
+        this.showcaseDestroy = null
+        return true
     }
 
     private fun displayShowcase() {

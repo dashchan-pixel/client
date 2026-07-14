@@ -88,8 +88,9 @@ class PagerUnit(
                 val location = IntArray(2)
                 view.getLocationOnScreen(location)
                 val holder = view.getTag() as PagerInstance.ViewHolder
-                if (holder.photoView!!.hasImage()) {
-                    holder.photoView!!.setInitialScaleAnimationData(
+                val photoView = holder.photoView
+                if (photoView.hasImage()) {
+                    photoView.setInitialScaleAnimationData(
                         imageViewPosition,
                         isCutThumbnails,
                     )
@@ -237,9 +238,9 @@ class PagerUnit(
         var shareFile = false
         if (holder != null) {
             available = true
-            val galleryItem = holder.galleryItem
+            val galleryItem = holder.galleryItem!!
             val chan = get(galleryInstance.chanName)
-            val isVideo = galleryItem!!.isVideo(chan)
+            val isVideo = galleryItem.isVideo(chan)
             val isOpenableVideo = isVideo && galleryItem.isOpenableVideo(chan)
             val isVideoInitialized = isOpenableVideo && videoUnit.isInitialized
             val imageHasMetadata = imageUnit.hasMetadata()
@@ -286,8 +287,9 @@ class PagerUnit(
                 pagerInstance.rightHolder,
             )
         for (holder in holders) {
-            if (holder != null && holder.thumbnailTarget != null) {
-                ImageLoader.getInstance().cancel(holder.thumbnailTarget!!)
+            val thumbnailTarget = holder?.thumbnailTarget
+            if (thumbnailTarget != null) {
+                ImageLoader.getInstance().cancel(thumbnailTarget)
             }
         }
         interrupt(true)
@@ -309,7 +311,6 @@ class PagerUnit(
         if (holder == null) {
             return
         }
-        val galleryItem = holder.galleryItem
         val chan = get(galleryInstance.chanName)
         interrupt(false)
         holder.loadState = PagerInstance.LoadState.PREVIEW_OR_LOADING
@@ -320,13 +321,16 @@ class PagerUnit(
             return
         }
         galleryInstance.callback.modifySystemUiVisibility(GalleryInstance.Flags.LOCKED_ERROR, false)
-        holder.errorHolder!!.layout.setVisibility(View.GONE)
+        holder.errorHolder.layout.setVisibility(View.GONE)
         var thumbnailReady = holder.photoViewThumbnail
         if (!thumbnailReady) {
             holder.recyclePhotoView()
             thumbnailReady = presetThumbnail(holder, reload)
         }
-        val isImage = galleryItem!!.isImage(chan)
+        val galleryItem = holder.galleryItem!!
+        val playButton = holder.playButton
+        val photoView = holder.photoView
+        val isImage = galleryItem.isImage(chan)
         val isVideo = galleryItem.isVideo(chan)
         val isOpenableVideo = isVideo && galleryItem.isOpenableVideo(chan)
         if (waitBeforeVideo > 0 && thumbnailReady && isOpenableVideo && !mayShowThumbnailOnly) {
@@ -337,14 +341,14 @@ class PagerUnit(
             return
         }
         if (isVideo && !isOpenableVideo || isOpenableVideo && mayShowThumbnailOnly) {
-            holder.playButton!!.setVisibility(View.VISIBLE)
-            holder.photoView!!.setDrawDimForCurrentImage(true)
+            playButton.setVisibility(View.VISIBLE)
+            photoView.setDrawDimForCurrentImage(true)
             return
         } else {
-            holder.playButton!!.setVisibility(View.GONE)
-            holder.photoView!!.setDrawDimForCurrentImage(false)
+            playButton.setVisibility(View.GONE)
+            photoView.setDrawDimForCurrentImage(false)
         }
-        holder.playButton!!.setVisibility(View.GONE)
+        playButton.setVisibility(View.GONE)
         val uri = galleryItem.getFileUri(chan)
         try {
             val cachedFile = cacheManager.getMediaFileOrThrow(uri, true)
@@ -384,28 +388,31 @@ class PagerUnit(
             val holder = this.holder.get()
             if (galleryInstance != null && holder != null && bitmap != null) {
                 val chan = get(galleryInstance.chanName)
+                val photoView = holder.photoView
+                val galleryItem = holder.galleryItem
                 val setImage =
                     awaitImmediate ||
-                        holder.galleryItem != null &&
-                        !holder.photoView!!.hasImage() &&
+                        galleryItem != null &&
+                        !photoView.hasImage() &&
                         key ==
                         CacheManager.getInstance().getCachedFileKey(
-                            holder.galleryItem!!
-                                .getThumbnailUri(chan),
+                            galleryItem.getThumbnailUri(chan),
                         )
                 if (setImage) {
+                    val currentItem = holder.galleryItem!!
                     holder.recyclePhotoView()
-                    holder.simpleBitmapDrawable =
+                    val simpleBitmapDrawable =
                         SimpleBitmapDrawable(
                             bitmap,
-                            holder.galleryItem!!.width,
-                            holder.galleryItem!!.height,
+                            currentItem.width,
+                            currentItem.height,
                             false,
                         )
-                    val fitScreen = holder.galleryItem!!.isVideo(chan)
+                    holder.simpleBitmapDrawable = simpleBitmapDrawable
+                    val fitScreen = currentItem.isVideo(chan)
                     val keepScale = this.keepScale && !fitScreen
-                    holder.photoView!!.setImage(
-                        holder.simpleBitmapDrawable!!,
+                    photoView.setImage(
+                        simpleBitmapDrawable,
                         bitmap.hasAlpha(),
                         fitScreen,
                         keepScale,
@@ -425,12 +432,13 @@ class PagerUnit(
             target = PageTarget(galleryInstance, holder)
             holder.thumbnailTarget = target
         }
-        if (holder.galleryItem == null) {
+        val galleryItem = holder.galleryItem
+        if (galleryItem == null) {
             return false
         }
         val chan = get(galleryInstance.chanName)
-        val uri = holder.galleryItem!!.getThumbnailUri(chan)
-        if (uri != null && holder.galleryItem!!.width > 0 && holder.galleryItem!!.height > 0) {
+        val uri = galleryItem.getThumbnailUri(chan)
+        if (uri != null && galleryItem.width > 0 && galleryItem.height > 0) {
             target.awaitImmediate = true
             target.keepScale = keepScale
             try {
@@ -455,18 +463,19 @@ class PagerUnit(
                 GalleryInstance.Flags.LOCKED_ERROR,
                 true,
             )
-            holder.photoView!!.clearInitialScaleAnimationData()
+            holder.photoView.clearInitialScaleAnimationData()
             holder.recyclePhotoView()
             interrupt(false)
-            holder.errorHolder!!.layout.setVisibility(View.VISIBLE)
-            holder.errorHolder!!.text.setText(
+            val errorHolder = holder.errorHolder
+            errorHolder.layout.setVisibility(View.VISIBLE)
+            errorHolder.text.setText(
                 if (!isEmpty(message)) {
                     message
                 } else {
                     galleryInstance.context.getString(R.string.unknown_error)
                 },
             )
-            holder.progressBar!!.cancelVisibilityTransient()
+            holder.progressBar.cancelVisibilityTransient()
             holder.loadState = PagerInstance.LoadState.ERROR
             galleryInstance.callback.invalidateOptionsMenu()
         }
@@ -480,10 +489,11 @@ class PagerUnit(
                 x: Float,
                 y: Float,
             ) {
-                val galleryItem = pagerInstance.currentHolder!!.galleryItem
+                val holder = pagerInstance.currentHolder!!
+                val galleryItem = holder.galleryItem
                 val chan = get(galleryInstance.chanName)
-                val playButton = pagerInstance.currentHolder!!.playButton
-                if (playButton!!.getVisibility() == View.VISIBLE &&
+                val playButton = holder.playButton
+                if (playButton.getVisibility() == View.VISIBLE &&
                     galleryItem!!.isVideo(chan) &&
                     !videoUnit.isCreated
                 ) {
@@ -588,14 +598,17 @@ class PagerUnit(
                     .from(galleryInstance.context)
                     .inflate(R.layout.list_item_gallery, parent, false) as FrameLayout
             val holder = PagerInstance.ViewHolder()
-            holder.photoView = view.findViewById<PhotoView?>(R.id.photo_view)
-            holder.surfaceParent = view.findViewById<FrameLayout?>(R.id.surface_parent)
-            holder.errorHolder = createErrorLayout(view)
-            holder.progressBar = view.findViewById<CircularProgressBar?>(android.R.id.progress)
-            holder.playButton = view.findViewById<View?>(R.id.play)
-            holder.playButton!!.setBackground(ShapeDrawable(PlayShape()))
-            holder.photoView!!.setListener(photoViewListener)
-            view.addView(holder.errorHolder!!.layout)
+            val photoView = view.findViewById<PhotoView>(R.id.photo_view)
+            val errorHolder = createErrorLayout(view)
+            val playButton = view.findViewById<View>(R.id.play)
+            holder.photoView = photoView
+            holder.surfaceParent = view.findViewById<FrameLayout>(R.id.surface_parent)
+            holder.errorHolder = errorHolder
+            holder.progressBar = view.findViewById<CircularProgressBar>(android.R.id.progress)
+            holder.playButton = playButton
+            playButton.setBackground(ShapeDrawable(PlayShape()))
+            photoView.setListener(photoViewListener)
+            view.addView(errorHolder.layout)
             view.setTag(holder)
             return view
         }
@@ -608,10 +621,10 @@ class PagerUnit(
             active: Boolean,
         ) {
             val galleryItem = galleryItems[index]
-            holder.playButton!!.setVisibility(View.GONE)
-            holder.errorHolder!!.layout.setVisibility(View.GONE)
+            holder.playButton.setVisibility(View.GONE)
+            holder.errorHolder.layout.setVisibility(View.GONE)
             if (!active) {
-                holder.progressBar!!.setVisible(false, true)
+                holder.progressBar.setVisible(false, true)
             }
             var hasValidImage =
                 holder.galleryItem == galleryItem &&
@@ -624,10 +637,8 @@ class PagerUnit(
                     holder.recyclePhotoView()
                     hasValidImage = false
                 } else {
-                    if (holder.decoderDrawable != null) {
-                        holder.decoderDrawable!!.setEnabled(active)
-                    }
-                    holder.photoView!!.resetScale()
+                    holder.decoderDrawable?.setEnabled(active)
+                    holder.photoView.resetScale()
                 }
             }
             if (!hasValidImage) {
@@ -659,17 +670,17 @@ class PagerUnit(
                 pagerInstance.scrollingLeft = false
             }
             previousIndex = index
-            pagerInstance.leftHolder =
-                if (leftView != null) leftView.getTag() as PagerInstance.ViewHolder? else null
+            val leftHolder = leftView?.getTag() as PagerInstance.ViewHolder?
+            val rightHolder = rightView?.getTag() as PagerInstance.ViewHolder?
+            pagerInstance.leftHolder = leftHolder
             pagerInstance.currentHolder = holder
-            pagerInstance.rightHolder =
-                if (rightView != null) rightView.getTag() as PagerInstance.ViewHolder? else null
+            pagerInstance.rightHolder = rightHolder
             interrupt(false)
-            if (pagerInstance.leftHolder != null) {
-                applySideViewData(pagerInstance.leftHolder!!, index - 1, false)
+            if (leftHolder != null) {
+                applySideViewData(leftHolder, index - 1, false)
             }
-            if (pagerInstance.rightHolder != null) {
-                applySideViewData(pagerInstance.rightHolder!!, index + 1, false)
+            if (rightHolder != null) {
+                applySideViewData(rightHolder, index + 1, false)
             }
             applySideViewData(holder, index, true)
             val galleryItem = galleryItems[index]
@@ -738,14 +749,17 @@ class PagerUnit(
     }
 
     private fun buildPopupMenu(): DialogMenu? {
-        val galleryItem = pagerInstance.currentHolder!!.galleryItem
+        // Read the holder only after the capability check: currentHolder is null in gallery mode,
+        // and invalidatePopupMenu can reach this while the menu is still shown.
         val capabilities = obtainOptionsMenuCapabilities()
-        if (capabilities.available) {
+        val holder = pagerInstance.currentHolder
+        if (capabilities.available && holder != null) {
+            val galleryItem = holder.galleryItem!!
             val chan = get(galleryInstance.chanName)
             val context = galleryInstance.callback.getWindow()!!.getContext()
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
-                if (!StringUtils.isEmpty(galleryItem!!.originalName)) {
+                if (!StringUtils.isEmpty(galleryItem.originalName)) {
                     galleryItem.originalName
                 } else {
                     galleryItem.getFileName(chan)
