@@ -78,11 +78,11 @@ import kotlin.math.max
 class DownloadService :
     BaseService(),
     ReadFileTask.Callback {
-    private var notificationManager: NotificationManager? = null
+    private lateinit var notificationManager: NotificationManager
     private var notificationColor = 0
-    private var wakeLock: WakeLock? = null
+    private lateinit var wakeLock: WakeLock
 
-    private var notificationsWorker: Thread? = null
+    private lateinit var notificationsWorker: Thread
     private val notificationsQueue = LinkedBlockingQueue<NotificationData?>()
     private var isForegroundWorker = false
 
@@ -95,7 +95,7 @@ class DownloadService :
     private val queuedTasks: LinkedHashMap<String?, TaskData> = LinkedHashMap<String?, TaskData>()
     private val successTasks: LinkedHashMap<String?, TaskData> = LinkedHashMap<String?, TaskData>()
     private val errorTasks: LinkedHashMap<String?, TaskData> = LinkedHashMap<String?, TaskData>()
-    private var activeTask: Pair<TaskData?, ReadFileTask?>? = null
+    private var activeTask: Pair<TaskData, ReadFileTask>? = null
 
     private var builder: Notification.Builder? = null
 
@@ -113,21 +113,21 @@ class DownloadService :
     override fun onCreate() {
         super.onCreate()
         notificationsWorker = Thread(notificationsRunnable, "DownloadServiceNotificationThread")
-        notificationsWorker!!.start()
+        notificationsWorker.start()
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         var notificationColor = 0
         val theme = ThemeEngine.attachAndApply(this)
         notificationColor = theme.accent
 
         this.notificationColor = notificationColor
-        notificationManager!!.createNotificationChannel(
+        notificationManager.createNotificationChannel(
             NotificationChannel(
                 C.NOTIFICATION_CHANNEL_DOWNLOADING,
                 getString(R.string.downloads),
                 NotificationManager.IMPORTANCE_LOW,
             ),
         )
-        notificationManager!!.createNotificationChannel(
+        notificationManager.createNotificationChannel(
             createHeadsUpNotificationChannel(
                 C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE,
                 getString(R.string.completed_downloads),
@@ -140,7 +140,7 @@ class DownloadService :
                 PowerManager.PARTIAL_WAKE_LOCK,
                 getPackageName() + ":DownloadServiceWakeLock",
             )
-        wakeLock!!.setReferenceCounted(false)
+        wakeLock.setReferenceCounted(false)
         addOnDestroyListener(ChanDatabase.getInstance().requireCookies())
     }
 
@@ -166,9 +166,9 @@ class DownloadService :
             }
         }
         cleanup()
-        notificationsWorker!!.interrupt()
+        notificationsWorker.interrupt()
         try {
-            notificationsWorker!!.join()
+            notificationsWorker.join()
         } catch (e: InterruptedException) {
             throw RuntimeException(e)
         }
@@ -181,10 +181,8 @@ class DownloadService :
     ): Int = START_NOT_STICKY
 
     private fun cleanupRequests() {
-        if (primaryRequest != null) {
-            primaryRequest!!.cleanup()
-            primaryRequest = null
-        }
+        primaryRequest?.cleanup()
+        primaryRequest = null
         for (directRequest in directRequests) {
             directRequest.cleanup()
         }
@@ -192,10 +190,8 @@ class DownloadService :
     }
 
     internal fun cleanup() {
-        if (activeTask != null) {
-            activeTask!!.second!!.cancel()
-            activeTask = null
-        }
+        activeTask?.second?.cancel()
+        activeTask = null
         cleanupRequests()
         for (taskData in queuedTasks.values) {
             if (taskData.input != null) {
@@ -210,7 +206,7 @@ class DownloadService :
         lastSuccessTaskDataFile = null
         refreshNotification(NotificationUpdate.SYNC)
         startStopForeground(false, null)
-        wakeLock!!.release()
+        wakeLock.release()
         for (callback in callbacks) {
             callback.requestHandleRequest()
             callback.onCleanup()
@@ -307,9 +303,10 @@ class DownloadService :
 
     private fun enqueue(taskData: TaskData) {
         val key = taskData.key
-        if (activeTask != null && activeTask!!.first!!.key == key) {
-            activeTask!!.second!!.cancel()
-            activeTask = null
+        val activeTask = this.activeTask
+        if (activeTask != null && activeTask.first.key == key) {
+            activeTask.second.cancel()
+            this.activeTask = null
         }
         val oldTaskData = queuedTasks.remove(key)
         if (oldTaskData != null && oldTaskData.input != null) {
@@ -370,7 +367,7 @@ class DownloadService :
                                 taskData.checkSha256,
                                 taskData.checkFingerprints,
                             )
-                        activeTask = Pair<TaskData?, ReadFileTask?>(taskData, readFileTask)
+                        activeTask = Pair(taskData, readFileTask)
                         readFileTask.execute(SINGLE_THREAD_EXECUTOR)
                     }
                 },
@@ -419,8 +416,9 @@ class DownloadService :
 
     private fun collectActiveKeys(): HashSet<String?> {
         val activeKeys = HashSet<String?>(queuedTasks.keys)
+        val activeTask = this.activeTask
         if (activeTask != null) {
-            activeKeys.add(activeTask!!.first!!.key)
+            activeKeys.add(activeTask.first.key)
         }
         return activeKeys
     }
@@ -882,7 +880,7 @@ class DownloadService :
             val allowOriginalName = modifyingAllowed && hasOriginalNames
             primaryRequest =
                 UriRequest(
-                    downloadSubdirMode!!.isEnabled(multiple),
+                    downloadSubdirMode.isEnabled(multiple),
                     requestItems,
                     allowDetailName,
                     allowOriginalName,
@@ -906,7 +904,7 @@ class DownloadService :
         ) {
             primaryRequest =
                 StreamRequest(
-                    downloadSubdirMode!!.isEnabled(false) && allowDialog,
+                    downloadSubdirMode.isEnabled(false) && allowDialog,
                     allowWrite,
                     input,
                     fileName,
@@ -1039,8 +1037,9 @@ class DownloadService :
                 if (notificationData.syncLatch != null) {
                     notificationData.syncLatch.countDown()
                 } else if (notificationData.updateImageOnly) {
+                    val builder = this.builder
                     if (builder != null) {
-                        setBuilderImage(notificationData.lastSuccessFile!!)
+                        setBuilderImage(builder, notificationData.lastSuccessFile!!)
                     }
                 } else {
                     refreshNotificationFromThread(notificationData)
@@ -1211,23 +1210,28 @@ class DownloadService :
 
     private var oldNotificationDataType: NotificationData.Type? = null
 
-    private fun setBuilderImage(file: DataFile) {
+    private fun setBuilderImage(
+        builder: Notification.Builder,
+        file: DataFile,
+    ) {
         if (file.exists()) {
             val fileHolder = obtain(file)
             if (fileHolder != null) {
                 val metrics = getResources().getDisplayMetrics()
                 val size = max(metrics.widthPixels, metrics.heightPixels)
-                builder!!.setLargeIcon(fileHolder.readImageBitmap(size / 4, false, false))
+                builder.setLargeIcon(fileHolder.readImageBitmap(size / 4, false, false))
             }
         }
     }
 
     private fun refreshNotificationFromThread(notificationData: NotificationData) {
+        var builder = this.builder
         if (builder == null || notificationData.type != oldNotificationDataType) {
             oldNotificationDataType = notificationData.type
-            notificationManager!!.cancel(C.NOTIFICATION_ID_DOWNLOADING)
+            notificationManager.cancel(C.NOTIFICATION_ID_DOWNLOADING)
             builder = Notification.Builder(this, C.NOTIFICATION_CHANNEL_DOWNLOADING)
-            builder!!.setDeleteIntent(
+            this.builder = builder
+            builder.setDeleteIntent(
                 PendingIntent.getBroadcast(
                     this,
                     0,
@@ -1236,14 +1240,14 @@ class DownloadService :
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 ),
             )
-            builder!!.setSmallIcon(notificationData.type!!.iconResId)
-            builder!!.setColor(notificationColor)
+            builder.setSmallIcon(notificationData.type!!.iconResId)
+            builder.setColor(notificationColor)
             if (notificationData.lastSuccessFile != null) {
-                setBuilderImage(notificationData.lastSuccessFile)
+                setBuilderImage(builder, notificationData.lastSuccessFile)
             }
             when (notificationData.type) {
                 NotificationData.Type.PROGRESS, NotificationData.Type.REQUEST -> {
-                    builder!!.addAction(
+                    builder.addAction(
                         Notification.Action
                             .Builder(
                                 null,
@@ -1260,7 +1264,7 @@ class DownloadService :
 
                 NotificationData.Type.RESULT -> {
                     if (notificationData.allowRetry) {
-                        builder!!.addAction(
+                        builder.addAction(
                             Notification.Action
                                 .Builder(
                                     null,
@@ -1277,7 +1281,7 @@ class DownloadService :
                 }
             }
             if (notificationData.type == NotificationData.Type.REQUEST) {
-                builder!!.setContentIntent(
+                builder.setContentIntent(
                     PendingIntent.getActivity(
                         this,
                         0,
@@ -1286,7 +1290,7 @@ class DownloadService :
                     ),
                 )
             } else if (notificationData.lastSuccessFile != null) {
-                builder!!.setContentIntent(
+                builder.setContentIntent(
                     PendingIntent.getBroadcast(
                         this,
                         0,
@@ -1332,14 +1336,14 @@ class DownloadService :
                         ),
                     )
                     progressStyle.setProgress(notificationData.progress)
-                    builder!!.setShortCriticalText(
+                    builder.setShortCriticalText(
                         (
                             100 * notificationData.progress /
                                 notificationData.progressMax
                         ).toString() + "%",
                     )
                 }
-                builder!!.setStyle(progressStyle)
+                builder.setStyle(progressStyle)
             }
 
             NotificationData.Type.RESULT -> {
@@ -1372,10 +1376,10 @@ class DownloadService :
                 error("Unsupported notification state")
             }
         }
-        builder!!.setContentTitle(contentTitle)
-        builder!!.setContentText(contentText)
+        builder.setContentTitle(contentTitle)
+        builder.setContentText(contentText)
         // Importance, sound and vibration are governed by the channels themselves.
-        builder!!.setChannelId(
+        builder.setChannelId(
             if (headsUp && isNotifyDownloadComplete) {
                 C.NOTIFICATION_CHANNEL_DOWNLOADING_COMPLETE
             } else {
@@ -1383,11 +1387,11 @@ class DownloadService :
             },
         )
 
-        startStopForeground(foreground, if (foreground) builder!!.build() else null)
+        startStopForeground(foreground, if (foreground) builder.build() else null)
         if (!foreground) {
             // Await notification removed so it could be dismissed by user
             for (i in 0..9) {
-                val notifications = notificationManager!!.getActiveNotifications()
+                val notifications = notificationManager.getActiveNotifications()
                 if (notifications == null) {
                     break
                 }
@@ -1408,7 +1412,7 @@ class DownloadService :
                 }
             }
 
-            notificationManager!!.notify(C.NOTIFICATION_ID_DOWNLOADING, builder!!.build())
+            notificationManager.notify(C.NOTIFICATION_ID_DOWNLOADING, builder.build())
         }
     }
 
@@ -1419,6 +1423,7 @@ class DownloadService :
     }
 
     private fun refreshNotification(notificationUpdate: NotificationUpdate?) {
+        val activeTask = this.activeTask
         val hasActiveTask = activeTask != null
         val hasResults = !queuedTasks.isEmpty() || !successTasks.isEmpty() || !errorTasks.isEmpty()
         val hasRequests = primaryRequest != null || !directRequests.isEmpty()
@@ -1460,7 +1465,7 @@ class DownloadService :
             val allowHeadsUp =
                 type == NotificationData.Type.RESULT &&
                     notificationUpdate == NotificationUpdate.HEADS_UP
-            val activeName = if (hasActiveTask) activeTask!!.second!!.getFileName() else null
+            val activeName = activeTask?.second?.getFileName()
 
             notificationsQueue.add(
                 NotificationData.Companion.updateData(
@@ -1480,9 +1485,9 @@ class DownloadService :
             )
         }
         if (hasActiveTask) {
-            wakeLock!!.acquire()
+            wakeLock.acquire()
         } else {
-            wakeLock!!.acquire(15000)
+            wakeLock.acquire(15000)
         }
         if (notificationUpdate == NotificationUpdate.SYNC || !needForegroundOrNotification) {
             val syncLatch = CountDownLatch(1)
@@ -1510,9 +1515,10 @@ class DownloadService :
         file: DataFile,
         errorItem: ErrorItem?,
     ) {
+        val activeTask = this.activeTask!!
         val taskData =
-            activeTask!!.first!!.newFinishedFromCache(activeTask!!.second!!.isDownloadingFromCache())
-        activeTask = null
+            activeTask.first.newFinishedFromCache(activeTask.second.isDownloadingFromCache())
+        this.activeTask = null
         onFinishDownloadingInternal(success, taskData)
     }
 

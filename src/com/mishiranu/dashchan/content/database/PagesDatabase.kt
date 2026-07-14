@@ -197,14 +197,14 @@ class PagesDatabase private constructor() {
             this.threadNumber = threadNumber
         }
 
-        internal fun filterMeta(): Expression.Filter.Builder? =
+        internal fun filterMeta(): Expression.Filter.Builder =
             Expression
                 .filter()
                 .equals(Schema.Meta.Columns.Companion.CHAN_NAME, chanName)
                 .equals(Schema.Meta.Columns.Companion.BOARD_NAME, boardName)
                 .equals(Schema.Meta.Columns.Companion.THREAD_NUMBER, threadNumber)
 
-        internal fun filterPosts(): Expression.Filter.Builder? =
+        internal fun filterPosts(): Expression.Filter.Builder =
             Expression
                 .filter()
                 .equals(Schema.Posts.Columns.Companion.CHAN_NAME, chanName)
@@ -456,7 +456,7 @@ class PagesDatabase private constructor() {
             database.beginTransaction()
             try {
                 for (threadKey in removeThreads) {
-                    val filter = threadKey.filterMeta()!!.build()
+                    val filter = threadKey.filterMeta().build()
                     database.delete(Schema.Meta.Companion.TABLE_NAME, filter.value, filter.args)
                 }
                 database.setTransactionSuccessful()
@@ -469,7 +469,7 @@ class PagesDatabase private constructor() {
 
     fun erase(keepThreads: Collection<ThreadKey>?) {
         val mainExcludeThreads =
-            mainGet<HashSet<ThreadKey?>?>(
+            mainGet<HashSet<ThreadKey?>>(
                 Callable {
                     val excludeThreads = HashSet<ThreadKey?>()
                     for (favoriteItem in FavoritesStorage.getInstance().getThreads(null)) {
@@ -483,11 +483,11 @@ class PagesDatabase private constructor() {
                     }
                     excludeThreads
                 },
-            )
+            )!!
         if (keepThreads != null) {
-            mainExcludeThreads!!.addAll(keepThreads)
+            mainExcludeThreads.addAll(keepThreads)
         }
-        cleanup(mainExcludeThreads!!, true)
+        cleanup(mainExcludeThreads, true)
     }
 
     fun eraseAll() {
@@ -520,7 +520,7 @@ class PagesDatabase private constructor() {
                 Schema.Meta.Columns.Companion.FLAGS,
                 Schema.Meta.Columns.Companion.DATA,
             )
-        val filter = threadKey.filterMeta()!!.build()
+        val filter = threadKey.filterMeta().build()
         var meta: Meta? = null
         database
             .query(
@@ -569,7 +569,7 @@ class PagesDatabase private constructor() {
         error: Boolean,
     ) {
         Objects.requireNonNull<ThreadKey?>(threadKey)
-        val filter = threadKey.filterMeta()!!.build()
+        val filter = threadKey.filterMeta().build()
         val clearFlags: Int =
             Schema.Meta.Flags.Companion.DELETED or Schema.Meta.Flags.Companion.ERROR
         val setFlags =
@@ -592,7 +592,7 @@ class PagesDatabase private constructor() {
             )
         val filter =
             threadKey
-                .filterPosts()!!
+                .filterPosts()
                 .raw("NOT (" + Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED + ")")
                 .build()
         database
@@ -625,7 +625,7 @@ class PagesDatabase private constructor() {
                 Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
                 Schema.Posts.Columns.Companion.DATA,
             )
-        val filter = threadKey.filterPosts()!!.build()
+        val filter = threadKey.filterPosts().build()
         database
             .query(
                 Schema.Posts.Companion.TABLE_NAME,
@@ -660,7 +660,7 @@ class PagesDatabase private constructor() {
                 Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR,
                 Schema.Posts.Columns.Companion.POST_NUMBER_MINOR,
             )
-        val filter = threadKey.filterPosts()!!.build()
+        val filter = threadKey.filterPosts().build()
         val postNumbers: ArrayList<PostNumber?>
         database
             .query(
@@ -687,7 +687,7 @@ class PagesDatabase private constructor() {
         var flags: Int = Schema.Meta.Flags.Companion.DELETED
         val newPostsFilter =
             threadKey
-                .filterPosts()!!
+                .filterPosts()
                 .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.MARK_NEW)
                 .build()
         database
@@ -699,7 +699,7 @@ class PagesDatabase private constructor() {
             ).use { cursor ->
                 newCount = if (cursor.moveToFirst()) cursor.getInt(0) else 0
             }
-        val metaFilter = threadKey.filterMeta()!!.build()
+        val metaFilter = threadKey.filterMeta().build()
         val metaProjection =
             arrayOf<String?>(
                 Schema.Meta.Columns.Companion.TIME,
@@ -748,7 +748,7 @@ class PagesDatabase private constructor() {
         transform: String?,
     ) {
         // Use filter to properly handle reused rowid
-        val filter = threadKey.filterPosts()!!.build()
+        val filter = threadKey.filterPosts().build()
         Expression.updateById(
             database,
             iterator,
@@ -766,7 +766,7 @@ class PagesDatabase private constructor() {
         meta: Meta,
     ) {
         check(database.inTransaction())
-        val filter = threadKey.filterMeta()!!.build()
+        val filter = threadKey.filterMeta().build()
         val values = ContentValues()
         values.put(Schema.Meta.Columns.Companion.TIME, time)
         val flags =
@@ -859,7 +859,7 @@ class PagesDatabase private constructor() {
                 Schema.Posts.Columns.Companion.FLAGS,
                 Schema.Posts.Columns.Companion.HASH,
             )
-        val filter = threadKey.filterPosts()!!.build()
+        val filter = threadKey.filterPosts().build()
         database
             .query(
                 Schema.Posts.Companion.TABLE_NAME,
@@ -1052,7 +1052,7 @@ class PagesDatabase private constructor() {
             Cleanup.NONE -> {}
 
             Cleanup.ERASE -> {
-                val filter = threadKey.filterMeta()!!.build()
+                val filter = threadKey.filterMeta().build()
                 database.delete(Schema.Meta.Companion.TABLE_NAME, filter.value, filter.args)
             }
 
@@ -1075,7 +1075,7 @@ class PagesDatabase private constructor() {
                     if (firstExistingPostNumber != null) {
                         val filter =
                             threadKey
-                                .filterPosts()!!
+                                .filterPosts()
                                 .append(
                                     Expression
                                         .filterOr()
@@ -1107,7 +1107,7 @@ class PagesDatabase private constructor() {
             Cleanup.DELETED -> {
                 val filter =
                     threadKey
-                        .filterPosts()!!
+                        .filterPosts()
                         .raw(Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED)
                         .build()
                 database.delete(Schema.Posts.Companion.TABLE_NAME, filter.value, filter.args)
@@ -1135,7 +1135,7 @@ class PagesDatabase private constructor() {
                 Schema.Posts.Columns.Companion.DATA,
                 Schema.Posts.Columns.Companion.HASH,
             )
-        val filter = threadKey.filterPosts()!!.build()
+        val filter = threadKey.filterPosts().build()
         database
             .query(
                 false,
@@ -1228,10 +1228,8 @@ class PagesDatabase private constructor() {
             if (cacheSize > existing.size) {
                 existing.sort()
                 removed = ArrayList(cacheSize - existing.size)
-                if (newItems == null) {
-                    newItems = HashMap(oldItems)
-                }
-                val iterator: MutableIterator<PostNumber> = newItems!!.keys.iterator()
+                val items = newItems ?: HashMap(oldItems).also { newItems = it }
+                val iterator: MutableIterator<PostNumber> = items.keys.iterator()
                 while (iterator.hasNext()) {
                     val postNumber = iterator.next()
                     if (Collections.binarySearch(existing, postNumber) < 0) {
@@ -1627,15 +1625,17 @@ class PagesDatabase private constructor() {
         } finally {
             postsFile.delete()
         }
-        if (legacyPosts == null || legacyPosts.mPosts == null || legacyPosts.mPosts!!.size == 0) {
+        val legacyPostList = legacyPosts?.mPosts
+        if (legacyPosts == null || legacyPostList == null || legacyPostList.size == 0) {
             return false
         }
 
+        val legacyValidator = legacyPosts.mHttpValidator
         val validator =
-            if (legacyPosts.mHttpValidator != null) {
+            if (legacyValidator != null) {
                 HttpValidator(
-                    legacyPosts.mHttpValidator!!.eTag,
-                    legacyPosts.mHttpValidator!!.lastModified,
+                    legacyValidator.eTag,
+                    legacyValidator.lastModified,
                 )
             } else {
                 null
@@ -1647,9 +1647,9 @@ class PagesDatabase private constructor() {
                 null
             }
         val meta = Meta(validator, archivedThreadUri, legacyPosts.mUniquePosters, false, false)
-        val posts = ArrayList<Post>(legacyPosts.mPosts!!.size)
+        val posts = ArrayList<Post>(legacyPostList.size)
         val flags = HashMap<PostNumber?, Pair<HideState?, Boolean?>?>()
-        for (legacyPost in legacyPosts.mPosts) {
+        for (legacyPost in legacyPostList) {
             val builder = Post.Builder()
             try {
                 builder.number = parseOrThrow(legacyPost.mPostNumber)
@@ -1699,9 +1699,11 @@ class PagesDatabase private constructor() {
             builder.tripcode = legacyPost.mTripcode
             builder.capcode = legacyPost.mCapcode
             builder.email = legacyPost.mEmail
-            if (legacyPost.mAttachments != null && legacyPost.mAttachments!!.size > 0) {
-                builder.attachments = ArrayList<Post.Attachment>(legacyPost.mAttachments!!.size)
-                for (legacyAttachment in legacyPost.mAttachments) {
+            val legacyAttachments = legacyPost.mAttachments
+            if (legacyAttachments != null && legacyAttachments.size > 0) {
+                val attachments = ArrayList<Post.Attachment>(legacyAttachments.size)
+                builder.attachments = attachments
+                for (legacyAttachment in legacyAttachments) {
                     if (legacyAttachment is Legacy.FileAttachment) {
                         val legacyFile = legacyAttachment
                         val fileUri =
@@ -1727,7 +1729,7 @@ class PagesDatabase private constructor() {
                                 legacyFile.mSpoiler,
                             )
                         if (file != null) {
-                            builder.attachments!!.add(file)
+                            attachments.add(file)
                         }
                     } else if (legacyAttachment is Legacy.EmbeddedAttachment) {
                         val legacyEmbedded = legacyAttachment
@@ -1768,14 +1770,16 @@ class PagesDatabase private constructor() {
                                 legacyEmbedded.mForcedName,
                             )
                         if (embedded != null) {
-                            builder.attachments!!.add(embedded)
+                            attachments.add(embedded)
                         }
                     }
                 }
             }
-            if (legacyPost.mIcons != null && legacyPost.mIcons!!.size > 0) {
-                builder.icons = ArrayList<Post.Icon>(legacyPost.mIcons!!.size)
-                for (legacyIcon in legacyPost.mIcons) {
+            val legacyIcons = legacyPost.mIcons
+            if (legacyIcons != null && legacyIcons.size > 0) {
+                val icons = ArrayList<Post.Icon>(legacyIcons.size)
+                builder.icons = icons
+                for (legacyIcon in legacyIcons) {
                     if (legacyIcon != null) {
                         val uri =
                             if (isEmpty(legacyIcon.mUriString)) {
@@ -1785,7 +1789,7 @@ class PagesDatabase private constructor() {
                             }
                         val icon = createExternal(uri, legacyIcon.mTitle)
                         if (icon != null) {
-                            builder.icons!!.add(icon)
+                            icons.add(icon)
                         }
                     }
                 }

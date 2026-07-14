@@ -65,20 +65,17 @@ class HidePerformer(
         return if (message != null) autohidePrefix + message else null
     }
 
-    private fun checkHiddenByReplies(postItem: PostItem?): String? {
-        var currentPostItem = postItem
-        if (replies != null && postsProvider != null) {
-            if (replies!!.contains(currentPostItem!!.getPostNumber())) {
-                return "replies tree " + currentPostItem.getPostNumber()
-            }
-            for (postNumber in currentPostItem.getReferencesTo()) {
-                currentPostItem = postsProvider!!.findPostItem(postNumber)
-                if (currentPostItem != null) {
-                    val message = checkHiddenByReplies(currentPostItem)
-                    if (message != null) {
-                        return message
-                    }
-                }
+    private fun checkHiddenByReplies(postItem: PostItem): String? {
+        val replies = this.replies ?: return null
+        val postsProvider = this.postsProvider ?: return null
+        if (replies.contains(postItem.getPostNumber())) {
+            return "replies tree " + postItem.getPostNumber()
+        }
+        for (postNumber in postItem.getReferencesTo()) {
+            val referencedPostItem = postsProvider.findPostItem(postNumber) ?: continue
+            val message = checkHiddenByReplies(referencedPostItem)
+            if (message != null) {
+                return message
             }
         }
         return null
@@ -88,11 +85,10 @@ class HidePerformer(
         chan: Chan,
         postItem: PostItem,
     ): String? {
-        if (names != null) {
-            val name = postItem.getFullName(chan).toString()
-            if (names!!.contains(name)) {
-                return "name " + name
-            }
+        val names = this.names ?: return null
+        val name = postItem.getFullName(chan).toString()
+        if (names.contains(name)) {
+            return "name " + name
         }
         return null
     }
@@ -101,15 +97,12 @@ class HidePerformer(
         chan: Chan,
         postItem: PostItem,
     ): String? {
-        if (similar != null) {
-            val wordsData =
-                estimator.getWords<PostNumber?>(postItem.getComment(chan).toString())
-            if (wordsData != null) {
-                for (similarWordsData in similar) {
-                    if (estimator.checkSimiliar<PostNumber?>(wordsData, similarWordsData)) {
-                        return "similar to " + similarWordsData.extra
-                    }
-                }
+        val similar = this.similar ?: return null
+        val wordsData =
+            estimator.getWords<PostNumber?>(postItem.getComment(chan).toString()) ?: return null
+        for (similarWordsData in similar) {
+            if (estimator.checkSimiliar<PostNumber?>(wordsData, similarWordsData)) {
+                return "similar to " + similarWordsData.extra
             }
         }
         return null
@@ -148,7 +141,8 @@ class HidePerformer(
         for (i in autohideItems.indices) {
             val autohideItem = autohideItems[i]
             // AND selection (only if chan, board, thread, op, and sage match the rule)
-            if (autohideItem.chanNames == null || autohideItem.chanNames!!.contains(chan.name!!)) {
+            val autohideChanNames = autohideItem.chanNames
+            if (autohideChanNames == null || autohideChanNames.contains(chan.name!!)) {
                 if (StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
                     if (StringUtils.isEmpty(autohideItem.threadNumber) ||
                         autohideItem.boardName != null &&
@@ -244,14 +238,12 @@ class HidePerformer(
     }
 
     fun addHideByReplies(postItem: PostItem): AddResult {
-        if (replies == null) {
-            replies = LinkedHashSet<PostNumber>()
-        }
+        val replies = this.replies ?: LinkedHashSet<PostNumber>().also { this.replies = it }
         val postNumber = postItem.getPostNumber()
-        if (replies!!.contains(postNumber)) {
+        if (replies.contains(postNumber)) {
             return AddResult.EXISTS
         }
-        replies!!.add(postNumber)
+        replies.add(postNumber)
         return AddResult.SUCCESS
     }
 
@@ -263,14 +255,12 @@ class HidePerformer(
             ClickableToast.show(R.string.default_name_cant_be_hidden)
             return AddResult.FAIL
         }
-        if (names == null) {
-            names = LinkedHashSet<String>()
-        }
+        val names = this.names ?: LinkedHashSet<String>().also { this.names = it }
         val fullName = postItem.getFullName(chan).toString()
-        if (names!!.contains(fullName)) {
+        if (names.contains(fullName)) {
             return AddResult.EXISTS
         }
-        names!!.add(fullName)
+        names.add(fullName)
         return AddResult.SUCCESS
     }
 
@@ -284,25 +274,23 @@ class HidePerformer(
             ClickableToast.show(R.string.too_few_meaningful_words)
             return AddResult.FAIL
         }
-        if (similar == null) {
-            similar = ArrayList<WordsData<PostNumber?>>()
-        }
+        val similar = this.similar ?: ArrayList<WordsData<PostNumber?>>().also { this.similar = it }
         val postNumber = postItem.getPostNumber()
         wordsData.extra = postNumber
         // Remove repeats
-        for (i in similar!!.indices.reversed()) {
-            if (postNumber.equals(similar!![i].extra)) {
-                similar!!.removeAt(i)
+        for (i in similar.indices.reversed()) {
+            if (postNumber.equals(similar[i].extra)) {
+                similar.removeAt(i)
             }
         }
-        similar!!.add(wordsData)
+        similar.add(wordsData)
         return AddResult.SUCCESS
     }
 
     fun hasLocalFilters(): Boolean {
-        val repliesLength = if (replies != null) replies!!.size else 0
-        val namesLength = if (names != null) names!!.size else 0
-        val similarLength = if (similar != null) similar!!.size else 0
+        val repliesLength = replies?.size ?: 0
+        val namesLength = names?.size ?: 0
+        val similarLength = similar?.size ?: 0
         return repliesLength + namesLength + similarLength > 0
     }
 
@@ -338,35 +326,38 @@ class HidePerformer(
 
     fun removeLocalFilter(index: Int) {
         var remainingIndex = index
+        val replies = this.replies
         if (replies != null) {
-            if (remainingIndex >= replies!!.size) {
-                remainingIndex -= replies!!.size
+            if (remainingIndex >= replies.size) {
+                remainingIndex -= replies.size
             } else {
-                Companion.removeFromLinkedHashSet(replies!!, remainingIndex)
-                if (replies!!.isEmpty()) {
-                    replies = null
+                Companion.removeFromLinkedHashSet(replies, remainingIndex)
+                if (replies.isEmpty()) {
+                    this.replies = null
                 }
                 return
             }
         }
+        val names = this.names
         if (names != null) {
-            if (remainingIndex >= names!!.size) {
-                remainingIndex -= names!!.size
+            if (remainingIndex >= names.size) {
+                remainingIndex -= names.size
             } else {
-                Companion.removeFromLinkedHashSet(names!!, remainingIndex)
-                if (names!!.isEmpty()) {
-                    names = null
+                Companion.removeFromLinkedHashSet(names, remainingIndex)
+                if (names.isEmpty()) {
+                    this.names = null
                 }
                 return
             }
         }
+        val similar = this.similar
         if (similar != null) {
-            if (remainingIndex >= similar!!.size) {
-                remainingIndex -= similar!!.size
+            if (remainingIndex >= similar.size) {
+                remainingIndex -= similar.size
             } else {
-                similar!!.removeAt(remainingIndex)
-                if (similar!!.isEmpty()) {
-                    similar = null
+                similar.removeAt(remainingIndex)
+                if (similar.isEmpty()) {
+                    this.similar = null
                 }
                 return
             }
@@ -375,14 +366,14 @@ class HidePerformer(
 
     @Throws(IOException::class)
     fun encodeLocalFilters(writer: JsonSerial.Writer) {
-        val repliesLength = if (replies != null) replies!!.size else 0
-        val namesLength = if (names != null) names!!.size else 0
-        val similarLength = if (similar != null) similar!!.size else 0
+        val repliesLength = replies?.size ?: 0
+        val namesLength = names?.size ?: 0
+        val similarLength = similar?.size ?: 0
         writer.startObject()
         if (repliesLength > 0) {
             writer.name("replies")
             writer.startArray()
-            for (postNumber in replies!!) {
+            for (postNumber in replies.orEmpty()) {
                 writer.value(postNumber.toString())
             }
             writer.endArray()
@@ -390,7 +381,7 @@ class HidePerformer(
         if (namesLength > 0) {
             writer.name("names")
             writer.startArray()
-            for (name in names!!) {
+            for (name in names.orEmpty()) {
                 writer.value(name)
             }
             writer.endArray()
@@ -398,7 +389,7 @@ class HidePerformer(
         if (similarLength > 0) {
             writer.name("similar")
             writer.startArray()
-            for (wordsData in similar!!) {
+            for (wordsData in similar.orEmpty()) {
                 writer.startObject()
                 writer.name("number")
                 writer.value(wordsData.extra.toString())
@@ -429,20 +420,19 @@ class HidePerformer(
                     "replies" -> {
                         reader.startArray()
                         while (!reader.endStruct()) {
-                            if (replies == null) {
-                                replies = LinkedHashSet<PostNumber>()
-                            }
-                            replies!!.add(parseOrThrow(reader.nextString()))
+                            val replies =
+                                this.replies
+                                    ?: LinkedHashSet<PostNumber>().also { this.replies = it }
+                            replies.add(parseOrThrow(reader.nextString()))
                         }
                     }
 
                     "names" -> {
                         reader.startArray()
                         while (!reader.endStruct()) {
-                            if (names == null) {
-                                names = LinkedHashSet<String>()
-                            }
-                            names!!.add(reader.nextString()!!)
+                            val names =
+                                this.names ?: LinkedHashSet<String>().also { this.names = it }
+                            names.add(reader.nextString()!!)
                         }
                     }
 
@@ -474,10 +464,10 @@ class HidePerformer(
                             val wordsData =
                                 WordsData<PostNumber?>(words, count)
                             wordsData.extra = postNumber
-                            if (similar == null) {
-                                similar = ArrayList<WordsData<PostNumber?>>()
-                            }
-                            similar!!.add(wordsData)
+                            val similar =
+                                this.similar
+                                    ?: ArrayList<WordsData<PostNumber?>>().also { this.similar = it }
+                            similar.add(wordsData)
                         }
                     }
 
@@ -502,19 +492,18 @@ class HidePerformer(
                     "replies" -> {
                         val postNumber = parseNullable(rule[1])
                         if (postNumber != null) {
-                            if (replies == null) {
-                                replies = LinkedHashSet<PostNumber>()
-                            }
-                            replies!!.add(postNumber)
+                            val replies =
+                                this.replies
+                                    ?: LinkedHashSet<PostNumber>().also { this.replies = it }
+                            replies.add(postNumber)
                         }
                     }
 
                     "name" -> {
                         if (!isEmpty(rule[1])) {
-                            if (names == null) {
-                                names = LinkedHashSet<String>()
-                            }
-                            names!!.add(rule[1]!!)
+                            val names =
+                                this.names ?: LinkedHashSet<String>().also { this.names = it }
+                            names.add(rule[1]!!)
                         }
                     }
 
@@ -538,10 +527,10 @@ class HidePerformer(
                                         val wordsData =
                                             WordsData<PostNumber?>(words, count)
                                         wordsData.extra = postNumber
-                                        if (similar == null) {
-                                            similar = ArrayList<WordsData<PostNumber?>>()
-                                        }
-                                        this.similar!!.add(wordsData)
+                                        val similar =
+                                            this.similar ?: ArrayList<WordsData<PostNumber?>>()
+                                                .also { this.similar = it }
+                                        similar.add(wordsData)
                                     }
                                 }
                             }
