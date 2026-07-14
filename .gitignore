@@ -3,6 +3,7 @@
 # Quality gate. This file is an allowlist (`/*` ignores everything), so each of these has
 # to be named explicitly or the gate silently does not exist on a fresh clone or in CI.
 !/.editorconfig
+!/.github
 !/detekt.yml
 !/detekt-doublebang.yml
 !/detekt-baseline.xml

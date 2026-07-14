@@ -7,10 +7,6 @@ plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    options.compilerArgs.addAll(listOf("-Xlint:unchecked", "-Xlint:deprecation"))
-}
-
 kotlin {
     compilerOptions {
         // Any warning fails the build: an AI-generated patch cannot leave behind a
@@ -85,7 +81,8 @@ android {
 
     sourceSets["main"].apply {
         manifest.srcFile("AndroidManifest.xml")
-        java.setSrcDirs(listOf("src"))
+        // No `java.srcDirs` here: src/ is Kotlin-only since the J2K conversion. AIDL still
+        // generates Java, but AGP registers those generated sources itself.
         kotlin.setSrcDirs(listOf("src"))
         aidl.setSrcDirs(listOf("src"))
         res.setSrcDirs(listOf("res", "lang"))
