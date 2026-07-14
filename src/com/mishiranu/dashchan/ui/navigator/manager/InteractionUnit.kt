@@ -449,7 +449,7 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     val messageId: Int
                     if (sameChan) {
                         when (navigationData.target) {
@@ -470,7 +470,7 @@ class InteractionUnit internal constructor(
                     }
                     val navigationDataFinal: NavigationData? = navigationData
                     AlertDialog
-                        .Builder(provider!!.context)
+                        .Builder(provider.context)
                         .setMessage(messageId)
                         .setNegativeButton(android.R.string.cancel, null)
                         .setPositiveButton(
@@ -495,9 +495,9 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     Companion.createLinkLongClick(
-                        provider!!,
+                        provider,
                         uri,
                     )
                 },
@@ -617,9 +617,9 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 configurationSet.fragmentManager!!,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     Companion.createThumbnailLongClickDialog(
-                        provider!!,
+                        provider,
                         chanName,
                         attachmentItem,
                         threadTitle,
@@ -719,8 +719,8 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val context = provider.context
                     val dialogMenu = DialogMenu(context)
                     dialogMenu.add(
                         R.string.copy_text,
@@ -768,8 +768,8 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val context = provider.context
                     val dialogMenu = DialogMenu(context)
                     dialogMenu.add(
                         R.string.share_text,
@@ -805,8 +805,8 @@ class InteractionUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val uiManager: UiManager? = UiManager.Companion.extract(provider!!)
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val uiManager: UiManager? = UiManager.Companion.extract(provider)
                     val dialogMenu = DialogMenu(provider.context)
                     dialogMenu.add(
                         R.string.this_post,

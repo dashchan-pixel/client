@@ -665,13 +665,13 @@ class ViewUnit
                                 view.findViewById<AttachmentView>(R.id.thumbnail)
                             attachmentHolder.attachmentInfo =
                                 view.findViewById<TextView>(R.id.attachment_info)
-                            attachmentHolder.thumbnail!!.setDrawTouching(true)
-                            attachmentHolder.thumbnail!!.applyRoundedCorners(postBackgroundColor)
-                            attachmentHolder.thumbnail!!.setOnClickListener(attachmentHolder.thumbnailClickListener)
-                            attachmentHolder.thumbnail!!.setOnLongClickListener(attachmentHolder.thumbnailLongClickListener)
-                            attachmentHolder.attachmentInfo!!.getLayoutParams().width =
+                            attachmentHolder.thumbnail.setDrawTouching(true)
+                            attachmentHolder.thumbnail.applyRoundedCorners(postBackgroundColor)
+                            attachmentHolder.thumbnail.setOnClickListener(attachmentHolder.thumbnailClickListener)
+                            attachmentHolder.thumbnail.setOnLongClickListener(attachmentHolder.thumbnailLongClickListener)
+                            attachmentHolder.attachmentInfo.getLayoutParams().width =
                                 holder.dimensions.multipleAttachmentInfoWidth
-                            val thumbnailLayoutParams = attachmentHolder.thumbnail!!.getLayoutParams()
+                            val thumbnailLayoutParams = attachmentHolder.thumbnail.getLayoutParams()
                             if (thumbnailsScale != 1f) {
                                 thumbnailLayoutParams.width =
                                     (holder.dimensions.thumbnailWidth * thumbnailsScale).toInt()
@@ -692,7 +692,7 @@ class ViewUnit
                         val attachmentHolder = attachmentHolders[i]
                         val attachmentItem = attachmentItems[i]
                         attachmentItem.configureAndLoad(
-                            attachmentHolder.thumbnail!!,
+                            attachmentHolder.thumbnail,
                             chan,
                             false,
                             false,
@@ -707,20 +707,20 @@ class ViewUnit
                             },
                         )
                         attachmentHolder.thumbnailLongClickListener.update(attachmentItem)
-                        attachmentHolder.thumbnail!!.setSfwMode(sfwMode)
-                        attachmentHolder.attachmentInfo!!.setText(
+                        attachmentHolder.thumbnail.setSfwMode(sfwMode)
+                        attachmentHolder.attachmentInfo.setText(
                             attachmentItem.getDescription(
                                 AttachmentItem.FormatMode
                                     .THREE_LINES,
                             ),
                         )
-                        attachmentHolder.container!!.setVisibility(View.VISIBLE)
+                        attachmentHolder.container.setVisibility(View.VISIBLE)
                     }
                     for (i in size..<holders) {
                         val attachmentHolder = attachmentHolders[i]
-                        ImageLoader.getInstance().cancel(attachmentHolder.thumbnail!!)
-                        attachmentHolder.thumbnail!!.resetImage(null)
-                        attachmentHolder.container!!.setVisibility(View.GONE)
+                        ImageLoader.getInstance().cancel(attachmentHolder.thumbnail)
+                        attachmentHolder.thumbnail.resetImage(null)
+                        attachmentHolder.container.setVisibility(View.GONE)
                     }
                     holder.attachments.setVisibility(View.VISIBLE)
                     holder.attachmentViewCount = size
@@ -766,15 +766,15 @@ class ViewUnit
             val chan = get(configurationSet.chanName)
             val icons = postItem.getIcons()
             if (!icons.isEmpty() && isDisplayIcons) {
-                if (holder.badgeImages == null) {
-                    holder.badgeImages = ArrayList<ImageView>()
-                }
-                val count = holder.badgeImages!!.size
+                val badgeImages =
+                    holder.badgeImages
+                        ?: ArrayList<ImageView>().also { holder.badgeImages = it }
+                val count = badgeImages.size
                 val add = icons.size - count
                 // Create more image views for icons
                 if (add > 0) {
                     val anchorView =
-                        if (count > 0) holder.badgeImages!![count - 1] else holder.index
+                        if (count > 0) badgeImages[count - 1] else holder.index
                     val anchorIndex = holder.head.indexOfChild(anchorView) + 1
                     val density = obtainDensity(context!!)
                     val size = (12f * density).toInt()
@@ -789,11 +789,11 @@ class ViewUnit
                         if (textScale != 1f) {
                             applyScaleSize(textScale, imageView)
                         }
-                        holder.badgeImages!!.add(imageView)
+                        badgeImages.add(imageView)
                     }
                 }
-                for (i in holder.badgeImages!!.indices) {
-                    val imageView = holder.badgeImages!![i]
+                for (i in badgeImages.indices) {
+                    val imageView = badgeImages[i]
                     if (i < icons.size) {
                         imageView.setVisibility(View.VISIBLE)
                         var uri = icons[i].uri
@@ -1247,12 +1247,12 @@ class ViewUnit
         }
 
         private inner class AttachmentHolder {
-            var thumbnail: AttachmentView? = null
+            lateinit var thumbnail: AttachmentView
             val thumbnailClickListener: ThumbnailClickListener
             val thumbnailLongClickListener: ThumbnailLongClickListener
 
-            var container: View? = null
-            var attachmentInfo: TextView? = null
+            lateinit var container: View
+            lateinit var attachmentInfo: TextView
 
             init {
                 thumbnailClickListener = uiManager.interaction().createThumbnailClickListener()
@@ -1468,10 +1468,11 @@ class ViewUnit
 
             override fun run() {
                 val startColor = drawable.getColor()
-                animator = ValueAnimator.ofObject(ArgbEvaluator(), startColor, endColor)
-                animator!!.addUpdateListener(this)
-                animator!!.setDuration(500)
-                animator!!.start()
+                val animator = ValueAnimator.ofObject(ArgbEvaluator(), startColor, endColor)
+                this.animator = animator
+                animator.addUpdateListener(this)
+                animator.setDuration(500)
+                animator.start()
             }
 
             override fun onAnimationUpdate(animation: ValueAnimator) {
@@ -1484,10 +1485,8 @@ class ViewUnit
 
             fun cancel() {
                 layout.removeCallbacks(this)
-                if (animator != null) {
-                    animator!!.cancel()
-                    animator = null
-                }
+                animator?.cancel()
+                animator = null
             }
         }
 

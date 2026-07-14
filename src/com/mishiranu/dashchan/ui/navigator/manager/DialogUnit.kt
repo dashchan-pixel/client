@@ -134,18 +134,19 @@ class DialogUnit internal constructor(
         fun collectState(): State {
             val factories = ArrayList<DialogProvider.Factory<*>>()
             for (pair in dialogStack) {
-                if (pair!!.second != null) {
-                    pair.first!!.delegate.saveState(pair.second!!)
+                val factory = pair!!.first!!
+                val dialog = pair.second
+                if (dialog != null) {
+                    factory.delegate.saveState(dialog)
                 }
-                factories.add(pair.first!!.delegate.factory)
-                pair.first!!
-                    .delegate.factory
+                factories.add(factory.delegate.factory)
+                factory.delegate.factory
                     .use()
             }
             return State(
                 factories,
-                if (attachmentDialog != null) attachmentDialog!!.first else null,
-                if (postContextMenu != null) postContextMenu!!.first else null,
+                attachmentDialog?.first,
+                postContextMenu?.first,
             )
         }
     }
@@ -232,10 +233,8 @@ class DialogUnit internal constructor(
             val holder = DialogHolder(adapter, provider, recyclerView, progress)
             provider.uiManager.observable().register(holder)
             content.setTag(holder)
-            if (factory.listPosition != null) {
-                factory.listPosition!!.apply(recyclerView)
-                factory.listPosition = null
-            }
+            factory.listPosition?.apply(recyclerView)
+            factory.listPosition = null
             provider.setStateListener(
                 StateListener { state: State? ->
                     when (state) {
@@ -902,10 +901,8 @@ class DialogUnit internal constructor(
             }
 
             override fun destroy() {
-                if (readTask != null) {
-                    readTask!!.cancel()
-                    readTask = null
-                }
+                readTask?.cancel()
+                readTask = null
             }
         }
 
@@ -1017,12 +1014,14 @@ class DialogUnit internal constructor(
     }
 
     fun closeDialogs(stackInstance: StackInstance) {
-        if (stackInstance.postContextMenu != null) {
-            stackInstance.postContextMenu!!.second!!.dismiss()
+        val postContextMenu = stackInstance.postContextMenu
+        if (postContextMenu != null) {
+            postContextMenu.second!!.dismiss()
             stackInstance.postContextMenu = null
         }
-        if (stackInstance.attachmentDialog != null) {
-            stackInstance.attachmentDialog!!.second!!.dismiss()
+        val attachmentDialog = stackInstance.attachmentDialog
+        if (attachmentDialog != null) {
+            attachmentDialog.second!!.dismiss()
             stackInstance.attachmentDialog = null
         }
         stackInstance.dialogStack.clear()
@@ -1722,9 +1721,9 @@ class DialogUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     DialogUnit.Companion.createPostDescriptionDialog(
-                        provider!!.context,
+                        provider.context,
                         icons,
                         chanName,
                         emailToCopy,
@@ -1830,13 +1829,13 @@ class DialogUnit internal constructor(
                 InstanceDialog(
                     fragmentManager,
                     null,
-                    InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                    InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                         val chanNameItems =
                             arrayOfNulls<String>(archiveChanNames.size + (if (canArchiveLocal) 1 else 0))
                         val items =
                             arrayOfNulls<String>(archiveChanNames.size + (if (canArchiveLocal) 1 else 0))
                         if (canArchiveLocal) {
-                            items[0] = provider!!.context.getString(R.string.local_archive)
+                            items[0] = provider.context.getString(R.string.local_archive)
                         }
                         for (i in archiveChanNames.indices) {
                             val archiveChan = get(archiveChanNames[i])
@@ -1845,7 +1844,7 @@ class DialogUnit internal constructor(
                                 archiveChan.configuration.getTitle()
                         }
                         AlertDialog
-                            .Builder(provider!!.context)
+                            .Builder(provider.context)
                             .setTitle(R.string.archive__verb)
                             .setItems(
                                 items,
@@ -1920,9 +1919,9 @@ class DialogUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     Companion.createPerformSendDialog(
-                        provider!!,
+                        provider,
                         state,
                         defaultType,
                         defaultText,
@@ -2128,8 +2127,8 @@ class DialogUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val context = provider.context
                     val dialog = ProgressDialog(context, null)
                     dialog.setMessage(
                         context.getString(
@@ -2255,8 +2254,8 @@ class DialogUnit internal constructor(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val context = provider.context
                     val dialog = ProgressDialog(context, "%d / %d")
                     dialog.setMessage(context.getString(R.string.processing_data__ellipsis))
                     dialog.setMax(posts!!.size)

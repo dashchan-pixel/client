@@ -180,26 +180,29 @@ class PageFragment :
         actionBarLockerSearch = "search-" + UUID.randomUUID()
 
         val layout = ExpandedLayout(container!!.getContext(), false)
-        recyclerView = PaddedRecyclerView(layout.getContext())
+        val recyclerView = PaddedRecyclerView(layout.getContext())
+        this.recyclerView = recyclerView
         layout.addView(
             recyclerView,
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT,
         )
         layout.setRecyclerView(recyclerView)
-        recyclerView!!.setMotionEventSplittingEnabled(false)
-        recyclerView!!.setVerticalScrollBarEnabled(true)
-        recyclerView!!.setClipToPadding(false)
-        recyclerView!!.setFastScrollerEnabled(isActiveScrollbar)
+        recyclerView.setMotionEventSplittingEnabled(false)
+        recyclerView.setVerticalScrollBarEnabled(true)
+        recyclerView.setClipToPadding(false)
+        recyclerView.setFastScrollerEnabled(isActiveScrollbar)
         progressView = createProgressLayout(layout)
-        errorHolder = createErrorLayout(layout)
-        errorHolder!!.layout.setVisibility(View.GONE)
-        layout.addView(errorHolder!!.layout)
+        val errorHolder = createErrorLayout(layout)
+        this.errorHolder = errorHolder
+        errorHolder.layout.setVisibility(View.GONE)
+        layout.addView(errorHolder.layout)
 
         allowShowScale = true
-        listPage = this.page!!.content.newPage()
-        recyclerView!!.pullable!!.setOnPullListener(listPage!!)
-        recyclerView!!.pullable!!.setPullStateListener(
+        val listPage = this.page!!.content.newPage()
+        this.listPage = listPage
+        recyclerView.pullable!!.setOnPullListener(listPage!!)
+        recyclerView.pullable!!.setPullStateListener(
             PullStateListener { wrapper: PullableWrapper?, busy: Boolean ->
                 (requireActivity() as FragmentHandler)
                     .setActionBarLocked(actionBarLockerPull!!, busy)
@@ -215,10 +218,8 @@ class PageFragment :
         fragmentHandler.setActionBarLocked(actionBarLockerPull!!, false)
         fragmentHandler.setActionBarLocked(actionBarLockerSearch!!, false)
 
-        if (listPage != null) {
-            listPage!!.destroy()
-            listPage = null
-        }
+        listPage?.destroy()
+        listPage = null
         progressView = null
         errorHolder = null
         recyclerView = null
@@ -268,9 +269,7 @@ class PageFragment :
     override fun onPause() {
         super.onPause()
 
-        if (listPage != null) {
-            listPage!!.pause()
-        }
+        listPage?.pause()
     }
 
     fun setSaveToStack(saveToStack: Boolean) {
@@ -280,9 +279,10 @@ class PageFragment :
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
+        val listPage = this.listPage
         if (listPage != null) {
-            listPosition = listPage!!.getListPosition()
-            val extraPair = listPage!!.getExtraToStore(saveToStack)
+            listPosition = listPage.getListPosition()
+            val extraPair = listPage.getExtraToStore(saveToStack)
             this.callback.storeRetainableExtra(this.retainId, extraPair.first)
             parcelableExtra = extraPair.second
             val searchView = getSearchView(false)
@@ -303,10 +303,8 @@ class PageFragment :
     public override fun onTerminate() {
         super.onTerminate()
 
-        if (listPage != null) {
-            listPage!!.destroy()
-            listPage = null
-        }
+        listPage?.destroy()
+        listPage = null
     }
 
     override fun onChansChanged(
@@ -321,8 +319,9 @@ class PageFragment :
 
     private fun getSearchView(required: Boolean): CustomSearchView? {
         if (searchView == null && required) {
-            searchView = obtainSearchView()
-            searchView!!.setOnSubmitListener(
+            val searchView = obtainSearchView()!!
+            this.searchView = searchView
+            searchView.setOnSubmitListener(
                 OnSubmitListener { query: String? ->
                     if (listPage!!.onSearchSubmit(query!!)) {
                         searchSubmitQuery = null
@@ -334,11 +333,9 @@ class PageFragment :
                     }
                 },
             )
-            searchView!!.setOnChangeListener(
+            searchView.setOnChangeListener(
                 CustomSearchView.OnChangeListener { query: String? ->
-                    if (listPage != null) {
-                        listPage!!.onSearchQueryChange(query)
-                    }
+                    listPage?.onSearchQueryChange(query)
                     if (searchCurrentQuery != null) {
                         searchCurrentQuery = query
                     }
@@ -399,8 +396,9 @@ class PageFragment :
     fun onDrawerNumberEntered(number: Int): Int = listPage!!.onDrawerNumberEntered(number)
 
     fun updatePageConfiguration(postNumber: PostNumber?) {
+        val listPage = this.listPage
         if (listPage != null) {
-            listPage!!.updatePageConfiguration(postNumber)
+            listPage.updatePageConfiguration(postNumber)
         } else {
             val last = this.initRequest
             initRequest =
@@ -421,7 +419,7 @@ class PageFragment :
     }
 
     override val isValidOptionsMenuState: Boolean
-        get() = listPage != null && listPage!!.isRunning
+        get() = listPage?.isRunning == true
 
     public override fun onCreateOptionsMenu(
         menu: Menu,

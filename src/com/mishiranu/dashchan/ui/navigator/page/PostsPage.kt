@@ -146,10 +146,8 @@ class PostsPage :
         fun shouldExtract(): Boolean = cache == null || !cache!!.state.equals(cacheState)
 
         override fun clear() {
-            if (dialogsState != null) {
-                dialogsState!!.dropState()
-                dialogsState = null
-            }
+            dialogsState?.dropState()
+            dialogsState = null
         }
 
         companion object {
@@ -330,13 +328,13 @@ class PostsPage :
     private var searchWorker: SearchWorker? = null
 
     private var replyable: Replyable? = null
-    private var hidePerformer: HidePerformer? = null
+    private lateinit var hidePerformer: HidePerformer
 
     private var selectionMode: ActionMode? = null
 
     private var searchControlView: View? = null
     private var searchProcessView: View? = null
-    private var searchResultText: Button? = null
+    private lateinit var searchResultText: Button
 
     private var lastNewPostNumbers = mutableSetOf<PostNumber?>()
     private var lastEditedPostNumbers = mutableSetOf<PostNumber?>()
@@ -352,7 +350,7 @@ class PostsPage :
                     if (hideState != HideState.UNDEFINED) {
                         postItem.setHidden(hideState, null)
                     } else {
-                        val hideReason = hidePerformer!!.checkHidden(chan, postItem)
+                        val hideReason = hidePerformer.checkHidden(chan, postItem)
                         if (hideReason != null) {
                             postItem.setHidden(HideState.HIDDEN, hideReason)
                         } else {
@@ -360,7 +358,7 @@ class PostsPage :
                         }
                     }
                     if (!isDisplayHiddenPostsEnabled && postItem.isHidden()) {
-                        adapter!!.removeHiddenPost(postItem)
+                        adapter.removeHiddenPost(postItem)
                         setPostHideState(postItem, postItem.getHideState())
                         notifyTitleChanged()
                     }
@@ -394,8 +392,8 @@ class PostsPage :
             }
         }
 
-    private val adapter: PostsAdapter?
-        get() = getRecyclerView().getAdapter() as PostsAdapter?
+    private val adapter: PostsAdapter
+        get() = getRecyclerView().getAdapter() as PostsAdapter
 
     override fun onCreate() {
         val context: Context = context
@@ -477,7 +475,7 @@ class PostsPage :
 
         uiManager.observable().register(this)
         FavoritesStorage.getInstance().getObservable().register(this)
-        hidePerformer!!.setPostsProvider(adapter)
+        hidePerformer.setPostsProvider(adapter)
 
         val toolbarContext: Context = toolbarContext!!
         val searchControlLayout = LinearLayout(toolbarContext)
@@ -486,11 +484,11 @@ class PostsPage :
         searchControlLayout.setGravity(Gravity.CENTER_VERTICAL)
         val buttonPadding = (10f * density).toInt()
         searchResultText = Button(toolbarContext, null, android.R.attr.borderlessButtonStyle)
-        ViewUtils.setTextSizeScaled(searchResultText!!, 11)
-        searchResultText!!.setPadding((14f * density).toInt(), 0, (14f * density).toInt(), 0)
-        searchResultText!!.setMinimumWidth(0)
-        searchResultText!!.setMinWidth(0)
-        searchResultText!!.setOnClickListener(View.OnClickListener { v: View? -> showSearchDialog() })
+        ViewUtils.setTextSizeScaled(searchResultText, 11)
+        searchResultText.setPadding((14f * density).toInt(), 0, (14f * density).toInt(), 0)
+        searchResultText.setMinimumWidth(0)
+        searchResultText.setMinWidth(0)
+        searchResultText.setOnClickListener(View.OnClickListener { v: View? -> showSearchDialog() })
         searchControlLayout.addView(
             searchResultText,
             LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -580,11 +578,12 @@ class PostsPage :
                     updateSearchTitle()
                 }
                 decodeThreadExtra()
-                if (retainableExtra.dialogsState != null) {
+                val dialogsState = retainableExtra.dialogsState
+                if (dialogsState != null) {
                     uiManager
                         .dialog()
-                        .restoreState(adapter.configurationSet, retainableExtra.dialogsState!!)
-                    retainableExtra.dialogsState!!.dropState()
+                        .restoreState(adapter.configurationSet, dialogsState)
+                    dialogsState.dropState()
                     retainableExtra.dialogsState = null
                 }
             } else {
@@ -617,34 +616,26 @@ class PostsPage :
         }
         extractViewModel.observe(this, this)
         readViewModel.observe(this, this)
-        if (retainableExtra.dialogsState != null) {
-            retainableExtra.dialogsState!!.dropState()
-            retainableExtra.dialogsState = null
-        }
+        retainableExtra.dialogsState?.dropState()
+        retainableExtra.dialogsState = null
         queueNextRefresh(true)
     }
 
     override fun onResume() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        if (retainableExtra.dialogsState != null) {
-            retainableExtra.dialogsState!!.dropState()
-            retainableExtra.dialogsState = null
-        }
+        retainableExtra.dialogsState?.dropState()
+        retainableExtra.dialogsState = null
     }
 
     override fun onDestroy() {
         stopRefresh()
-        if (selectionMode != null) {
-            selectionMode!!.finish()
-            selectionMode = null
-        }
-        this.adapter!!.cancelPreloading()
-        uiManager!!.dialog().closeDialogs(this.adapter!!.configurationSet.stackInstance!!)
+        selectionMode?.finish()
+        selectionMode = null
+        this.adapter.cancelPreloading()
+        uiManager!!.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
         uiManager!!.observable().unregister(this)
-        if (searchWorker != null) {
-            searchWorker!!.cancel()
-            searchWorker = null
-        }
+        searchWorker?.cancel()
+        searchWorker = null
         getRecyclerView().removeOnScrollListener(scrollListener)
         if (ConcurrentUtils.HANDLER.hasCallbacks(storePositionRunnable)) {
             ConcurrentUtils.HANDLER.removeCallbacks(storePositionRunnable)
@@ -657,7 +648,7 @@ class PostsPage :
     override fun onNotifyAllAdaptersChanged() {
         uiManager!!
             .dialog()
-            .notifyDataSetChangedToAll(this.adapter!!.configurationSet.stackInstance!!)
+            .notifyDataSetChangedToAll(this.adapter.configurationSet.stackInstance!!)
     }
 
     override fun onHandleNewPostDataList() {
@@ -667,9 +658,9 @@ class PostsPage :
     }
 
     override fun onScrollToPost(postNumber: PostNumber) {
-        val position = this.adapter!!.positionOfPostNumber(postNumber)
+        val position = this.adapter.positionOfPostNumber(postNumber)
         if (position >= 0) {
-            uiManager!!.dialog().closeDialogs(this.adapter!!.configurationSet.stackInstance!!)
+            uiManager!!.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
             smoothScrollToPosition(getRecyclerView(), position)
         }
     }
@@ -677,10 +668,8 @@ class PostsPage :
     override fun onRequestStoreExtra(saveToStack: Boolean) {
         val adapter = this.adapter
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        if (retainableExtra.dialogsState != null) {
-            retainableExtra.dialogsState!!.dropState()
-        }
-        retainableExtra.dialogsState = adapter!!.configurationSet.stackInstance!!.collectState()
+        retainableExtra.dialogsState?.dropState()
+        retainableExtra.dialogsState = adapter.configurationSet.stackInstance!!.collectState()
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         parcelableExtra.selectedPosts = null
         if (selectionMode != null && !saveToStack) {
@@ -709,7 +698,7 @@ class PostsPage :
     public override fun obtainTitleSubtitle(): Pair<String?, String?>? {
         var subtitle: String? = null
         if (!isDisplayHiddenPostsEnabled) {
-            val hidden = this.adapter!!.hiddenPostsCount
+            val hidden = this.adapter.hiddenPostsCount
             if (hidden > 0) subtitle = getString(R.string.hidden_posts_count__format, hidden)
         }
         return Pair<String?, String?>(this.obtainTitle(), subtitle)
@@ -719,25 +708,26 @@ class PostsPage :
         view: View?,
         postItem: PostItem?,
     ) {
+        val selectionMode = this.selectionMode
         if (selectionMode != null) {
-            this.adapter!!.toggleItemSelected(postItem!!)
-            selectionMode!!.setTitle(
+            this.adapter.toggleItemSelected(postItem!!)
+            selectionMode.setTitle(
                 getColonString(
                     resources,
                     R.string.selected,
-                    this.adapter!!.selectedCount,
+                    this.adapter.selectedCount,
                 ),
             )
             return
         }
-        uiManager!!.interaction().handlePostClick(view!!, postStateProvider, postItem!!, this.adapter!!)
+        uiManager!!.interaction().handlePostClick(view!!, postStateProvider, postItem!!, this.adapter)
     }
 
     override fun onItemLongClick(postItem: PostItem?): Boolean {
         if (selectionMode != null) {
             return false
         }
-        uiManager!!.interaction().handlePostContextMenu(this.adapter!!.configurationSet, postItem!!)
+        uiManager!!.interaction().handlePostContextMenu(this.adapter.configurationSet, postItem!!)
         return true
     }
 
@@ -824,11 +814,11 @@ class PostsPage :
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         menu
             .findItem(R.id.menu_add_post)
-            .setVisible(replyable != null && replyable!!.onRequestReply(false))
-        menu.findItem(R.id.menu_erase).setVisible(adapter!!.getItemCount() > 0)
+            .setVisible(replyable?.onRequestReply(false) == true)
+        menu.findItem(R.id.menu_erase).setVisible(adapter.getItemCount() > 0)
         menu.findItem(R.id.menu_clear_old).setVisible(adapter.hasOldPosts())
         menu.findItem(R.id.menu_clear_deleted).setVisible(adapter.hasDeletedPosts())
-        menu.findItem(R.id.menu_hidden_posts).setVisible(hidePerformer!!.hasLocalFilters())
+        menu.findItem(R.id.menu_hidden_posts).setVisible(hidePerformer.hasLocalFilters())
         val isFavorite =
             FavoritesStorage.getInstance().hasFavorite(
                 page.chanName,
@@ -864,7 +854,7 @@ class PostsPage :
             var imageIndex = -1
             val recyclerView = getRecyclerView()
             val child = recyclerView.getChildAt(0)
-            val gallerySet = adapter!!.gallerySet
+            val gallerySet = adapter.gallerySet
             if (child != null) {
                 val position = recyclerView.getChildAdapterPosition(child)
                 OUTER@ for (v in 0..1) {
@@ -887,7 +877,7 @@ class PostsPage :
             return true
         } else if (switchItemId0 == R.id.menu_flow) {
             val chan = chan
-            val gallerySet = adapter!!.gallerySet
+            val gallerySet = adapter.gallerySet
             show(
                 fragmentManager,
                 chan,
@@ -918,7 +908,7 @@ class PostsPage :
             showSummaryDialog(fragmentManager)
             return true
         } else if (switchItemId0 == R.id.menu_hidden_posts) {
-            val localFilters = hidePerformer!!.getReadableLocalFilters(context)
+            val localFilters = hidePerformer.getReadableLocalFilters(context)
             showHiddenPostsDialog(fragmentManager, localFilters)
             return true
         } else if (switchItemId0 == R.id.menu_star_text || switchItemId0 == R.id.menu_star_icon) {
@@ -944,7 +934,7 @@ class PostsPage :
                 val boardName = chan.locator.safe(true).getBoardName(uri)
                 val threadNumber = chan.locator.safe(true).getThreadNumber(uri)
                 if (threadNumber != null) {
-                    val threadTitle = adapter!!.getItem(0).getSubjectOrComment()
+                    val threadTitle = adapter.getItem(0).getSubjectOrComment()
                     uiManager!!
                         .navigator()!!
                         .navigatePosts(chan.name, boardName, threadNumber, null, threadTitle)
@@ -954,7 +944,7 @@ class PostsPage :
         } else if (switchItemId0 == R.id.menu_archive) {
             var threadTitle: String? = null
             val posts = ArrayList<Post>()
-            for (postItem in adapter!!) {
+            for (postItem in adapter) {
                 if (threadTitle == null) {
                     threadTitle =
                         StringUtils.emptyIfNull(postItem.getSubjectOrComment())
@@ -1003,12 +993,12 @@ class PostsPage :
     ): Boolean {
         val page = getPage()
         val chan = chan
-        this.adapter!!.setSelectionModeEnabled(true)
+        this.adapter.setSelectionModeEnabled(true)
         mode.setTitle(
             getColonString(
                 resources,
                 R.string.selected,
-                this.adapter!!.selectedCount,
+                this.adapter.selectedCount,
             ),
         )
         val board = chan.configuration.safe().obtainBoard(page.boardName)
@@ -1016,7 +1006,7 @@ class PostsPage :
             .add(0, R.id.menu_make_threadshot, 0, R.string.make_threadshot)
             .setIcon(getActionBarIcon(R.attr.iconActionMakeThreadshot))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
-        if (replyable != null && replyable!!.onRequestReply(false)) {
+        if (replyable?.onRequestReply(false) == true) {
             menu
                 .add(0, R.id.menu_reply, 0, R.string.reply)
                 .setIcon(getActionBarIcon(R.attr.iconActionPaste))
@@ -1050,7 +1040,7 @@ class PostsPage :
         val adapter = this.adapter
         val switchItemId2 = item.getItemId()
         if (switchItemId2 == R.id.menu_make_threadshot) {
-            val postItems = adapter!!.selectedItems
+            val postItems = adapter.selectedItems
             if (postItems.size > 0) {
                 val page = getPage()
                 val threadTitle = adapter.getItem(0).getSubjectOrComment()
@@ -1068,7 +1058,7 @@ class PostsPage :
             return true
         } else if (switchItemId2 == R.id.menu_reply) {
             val data = ArrayList<ReplyData>()
-            for (postItem in adapter!!.selectedItems) {
+            for (postItem in adapter.selectedItems) {
                 data.add(ReplyData(postItem.getPostNumber(), null))
             }
             if (data.size > 0) {
@@ -1080,7 +1070,7 @@ class PostsPage :
             mode.finish()
             return true
         } else if (switchItemId2 == R.id.menu_delete) {
-            val postItems = adapter!!.selectedItems
+            val postItems = adapter.selectedItems
             val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
                 if (!postItem.isDeleted()) {
@@ -1100,7 +1090,7 @@ class PostsPage :
             mode.finish()
             return true
         } else if (switchItemId2 == R.id.menu_report) {
-            val postItems = adapter!!.selectedItems
+            val postItems = adapter.selectedItems
             val postNumbers = ArrayList<PostNumber>()
             for (postItem in postItems) {
                 if (!postItem.isDeleted()) {
@@ -1124,19 +1114,17 @@ class PostsPage :
     }
 
     private fun onDestroySelection() {
-        this.adapter!!.setSelectionModeEnabled(false)
+        this.adapter.setSelectionModeEnabled(false)
         selectionMode = null
     }
 
     public override fun onSearchSubmit(query: String): Boolean {
         val adapter = this.adapter
-        if (adapter!!.getItemCount() == 0) {
+        if (adapter.getItemCount() == 0) {
             return true
         }
         val postItems: MutableList<PostItem> = adapter.copyItems()
-        if (searchWorker != null) {
-            searchWorker!!.cancel()
-        }
+        searchWorker?.cancel()
         searchWorker =
             SearchWorker(
                 postStateProvider,
@@ -1162,7 +1150,7 @@ class PostsPage :
             retainableExtra.searching = false
             setCustomSearchView(null)
             updateOptionsMenu()
-            this.adapter!!.setHighlightText(mutableListOf())
+            this.adapter.setHighlightText(mutableListOf())
         }
     }
 
@@ -1176,19 +1164,19 @@ class PostsPage :
         retainableExtra.searching = true
         if (foundPostNumbers.isEmpty()) {
             setCustomSearchView(null)
-            this.adapter!!.setHighlightText(mutableListOf())
+            this.adapter.setHighlightText(mutableListOf())
             show(R.string.not_found)
             updateSearchTitle()
         } else {
             setCustomSearchView(searchControlView)
-            this.adapter!!.setHighlightText(queries)
+            this.adapter.setHighlightText(queries)
             val listPosition =
                 (getRecyclerView().getLayoutManager() as LinearLayoutManager)
                     .findFirstVisibleItemPosition()
             clearSearchFocus()
             val postNumber =
                 if (listPosition >= 0) {
-                    this.adapter!!
+                    this.adapter
                         .getItem(listPosition)
                         .getPostNumber()
                 } else {
@@ -1213,7 +1201,7 @@ class PostsPage :
         if (!retainableExtra.searchPostNumbers.isEmpty()) {
             uiManager!!
                 .dialog()
-                .displayList(this.adapter!!.configurationSet, retainableExtra.searchPostNumbers)
+                .displayList(this.adapter.configurationSet, retainableExtra.searchPostNumbers)
         }
     }
 
@@ -1224,7 +1212,7 @@ class PostsPage :
             retainableExtra.searchLastIndex =
                 (retainableExtra.searchLastIndex + addIndex + count) % count
             val position =
-                this.adapter!!.positionOfPostNumber(
+                this.adapter.positionOfPostNumber(
                     retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex]!!,
                 )
             if (position >= 0) {
@@ -1236,7 +1224,7 @@ class PostsPage :
 
     private fun updateSearchTitle() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        searchResultText!!.setText(
+        searchResultText.setText(
             (retainableExtra.searchLastIndex + 1).toString() + "/" +
                 retainableExtra.searchPostNumbers.size,
         )
@@ -1249,7 +1237,7 @@ class PostsPage :
 
     public override fun onDrawerNumberEntered(number: Int): Int {
         val adapter = this.adapter
-        val count = adapter!!.getItemCount()
+        val count = adapter.getItemCount()
         var success = false
         if (count > 0 && number > 0) {
             if (number <= count) {
@@ -1297,7 +1285,7 @@ class PostsPage :
     private fun scrollToPostFromExtra(instantly: Boolean): Boolean {
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         if (parcelableExtra.scrollToPostNumber != null) {
-            val position = this.adapter!!.positionOfPostNumber(parcelableExtra.scrollToPostNumber!!)
+            val position = this.adapter.positionOfPostNumber(parcelableExtra.scrollToPostNumber!!)
             if (position >= 0) {
                 val recyclerView = getRecyclerView()
                 if (instantly) {
@@ -1323,7 +1311,7 @@ class PostsPage :
                     while (!reader.endStruct()) {
                         when (reader.nextName()) {
                             "filters" -> {
-                                hidePerformer!!.decodeLocalFilters(reader)
+                                hidePerformer.decodeLocalFilters(reader)
                                 localFiltersDecoded = true
                             }
 
@@ -1342,7 +1330,7 @@ class PostsPage :
         }
         if (!localFiltersDecoded) {
             try {
-                hidePerformer!!.decodeLocalFilters(null)
+                hidePerformer.decodeLocalFilters(null)
             } catch (e: ParseException) {
                 e.printStackTrace()
             } catch (e: IOException) {
@@ -1353,12 +1341,12 @@ class PostsPage :
 
     private fun encodeAndStoreThreadExtra() {
         var extra: ByteArray? = null
-        if (hidePerformer!!.hasLocalFilters()) {
+        if (hidePerformer.hasLocalFilters()) {
             try {
                 writer().use { writer ->
                     writer.startObject()
                     writer.name("filters")
-                    hidePerformer!!.encodeLocalFilters(writer)
+                    hidePerformer.encodeLocalFilters(writer)
                     writer.endObject()
                     extra = writer.build()
                 }
@@ -1443,7 +1431,7 @@ class PostsPage :
                         writer.startObject()
                         writer.name("number")
                         writer.value(
-                            this.adapter!!
+                            this.adapter
                                 .getItem(listPosition.position)
                                 .getPostNumber()
                                 .toString(),
@@ -1486,7 +1474,7 @@ class PostsPage :
     private fun transformListPositionToPair(listPosition: ListPosition?): Pair<PostNumber?, Int?>? {
         val postNumber =
             if (listPosition != null) {
-                this.adapter!!.getItem(listPosition.position).getPostNumber()
+                this.adapter.getItem(listPosition.position).getPostNumber()
             } else {
                 null
             }
@@ -1502,7 +1490,7 @@ class PostsPage :
 
     private fun transformPairToListPosition(positionPair: Pair<PostNumber?, Int?>?): ListPosition? {
         if (positionPair != null) {
-            val position = this.adapter!!.positionOfPostNumber(positionPair.first!!)
+            val position = this.adapter.positionOfPostNumber(positionPair.first!!)
             return if (position >= 0) ListPosition(position, positionPair.second!!) else null
         } else {
             return null
@@ -1602,7 +1590,7 @@ class PostsPage :
     private fun startProgressIfNecessary() {
         if (!hasExtractTask() && !hasReadTask()) {
             val recyclerView = getRecyclerView()
-            if (this.adapter!!.getItemCount() == 0) {
+            if (this.adapter.getItemCount() == 0) {
                 recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
                 switchProgress()
             } else {
@@ -1644,7 +1632,7 @@ class PostsPage :
     }
 
     private fun showOrSwitchError(errorItem: ErrorItem?) {
-        if (this.adapter!!.getItemCount() == 0) {
+        if (this.adapter.getItemCount() == 0) {
             switchError(errorItem)
         } else {
             show(errorItem)
@@ -1712,7 +1700,7 @@ class PostsPage :
         retainableExtra.initialExtract = false
         val erase = retainableExtra.eraseExtract
         retainableExtra.eraseExtract = false
-        val wasEmpty = adapter!!.getItemCount() == 0
+        val wasEmpty = adapter.getItemCount() == 0
 
         if (result != null) {
             if (erase && result.cache.isEmpty) {
@@ -1876,7 +1864,7 @@ class PostsPage :
         }
 
         if (updateAdapters) {
-            uiManager!!.dialog().updateAdapters(this.adapter!!.configurationSet.stackInstance!!)
+            uiManager!!.dialog().updateAdapters(this.adapter.configurationSet.stackInstance!!)
             notifyAllAdaptersChanged()
             val listPosition = transformPairToListPosition(keepPositionPair)
             if (listPosition != null) {
@@ -1937,7 +1925,7 @@ class PostsPage :
                 parcelableExtra.threadTitle,
             )
         }
-        val iterator = this.adapter!!.iterator()
+        val iterator = this.adapter.iterator()
         if (iterator.hasNext()) {
             var title: String? = iterator.next().getSubjectOrComment()
             if (StringUtils.isEmptyOrWhitespace(title)) {
@@ -1964,7 +1952,7 @@ class PostsPage :
             val selected = parcelableExtra.selectedPosts
             parcelableExtra.selectedPosts = null
             for (postNumber in selected!!) {
-                val postItem = adapter!!.findPostItem(postNumber)
+                val postItem = adapter.findPostItem(postNumber)
                 if (postItem != null) {
                     adapter.toggleItemSelected(postItem)
                 }
@@ -1983,18 +1971,16 @@ class PostsPage :
         val showImportantPostsOnFastScrollBar =
             isShowImportantPostsOnFastScrollBar && isActiveScrollbar
         if (showImportantPostsOnFastScrollBar) {
-            importantPostsMarksFastScrollBarDecoration =
-                ImportantPostsMarksFastScrollBarDecoration(context)
-            recyclerView.setImportantPostsMarksFastScrollBarDecoration(
-                importantPostsMarksFastScrollBarDecoration,
-            )
+            val decoration = ImportantPostsMarksFastScrollBarDecoration(context)
+            importantPostsMarksFastScrollBarDecoration = decoration
+            recyclerView.setImportantPostsMarksFastScrollBarDecoration(decoration)
             val fastScrollBarDecorationData =
                 retainableExtra.importantPostsMarksFastScrollBarDecorationData
 
             if (fastScrollBarDecorationData == null) {
                 updateImportantPostsFastScrollBarDecorationData()
             } else {
-                importantPostsMarksFastScrollBarDecoration!!.setData(fastScrollBarDecorationData)
+                decoration.setData(fastScrollBarDecorationData)
             }
         } else {
             retainableExtra.importantPostsMarksFastScrollBarDecorationData = null
@@ -2002,9 +1988,7 @@ class PostsPage :
     }
 
     private fun updateImportantPostsFastScrollBarDecorationData() {
-        if (importantPostsMarksFastScrollBarDecoration == null) {
-            return
-        }
+        val decoration = importantPostsMarksFastScrollBarDecoration ?: return
 
         var importantPostsMarksFastScrollBarDecorationData: ImportantPostsMarksFastScrollBarDecoration.Data? =
             null
@@ -2017,7 +2001,7 @@ class PostsPage :
             val repliesPositions: MutableSet<Int> = HashSet()
 
             for (userPostNumber in userPosts) {
-                val userPostPosition = adapter!!.positionOfPostNumber(userPostNumber)
+                val userPostPosition = adapter.positionOfPostNumber(userPostNumber)
                 if (userPostPosition < 0) {
                     continue
                 }
@@ -2045,13 +2029,13 @@ class PostsPage :
                 ImportantPostsMarksFastScrollBarDecoration.Data(
                     userPostsPositions,
                     repliesPositions,
-                    adapter!!.getItemCount(),
+                    adapter.getItemCount(),
                 )
         }
 
         retainableExtra.importantPostsMarksFastScrollBarDecorationData =
             importantPostsMarksFastScrollBarDecorationData
-        importantPostsMarksFastScrollBarDecoration!!.setData(
+        decoration.setData(
             importantPostsMarksFastScrollBarDecorationData,
         )
         getRecyclerView().invalidateItemDecorations()
@@ -2097,7 +2081,7 @@ class PostsPage :
         postItem: PostItem,
         message: UiManager.Message,
     ) {
-        val position = this.adapter!!.positionOfPostNumber(postItem.getPostNumber())
+        val position = this.adapter.positionOfPostNumber(postItem.getPostNumber())
         if (position < 0) {
             return
         }
@@ -2107,7 +2091,7 @@ class PostsPage :
                 if (postNotifyDataSetChanged == null) {
                     postNotifyDataSetChanged =
                         Runnable {
-                            this.adapter!!.notifyDataSetChanged()
+                            this.adapter.notifyDataSetChanged()
                             if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
                                 updateImportantPostsFastScrollBarDecorationData()
                                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews =
@@ -2120,7 +2104,7 @@ class PostsPage :
             }
 
             UiManager.Message.INVALIDATE_COMMENT_VIEW -> {
-                this.adapter!!.invalidateComment(position)
+                this.adapter.invalidateComment(position)
             }
 
             UiManager.Message.PERFORM_SWITCH_USER_MARK -> {
@@ -2142,7 +2126,7 @@ class PostsPage :
                     },
                 )
                 if (postItem.getHideState() == HideState.HIDDEN) {
-                    if (!isDisplayHiddenPostsEnabled) this.adapter!!.removeHiddenPost(postItem)
+                    if (!isDisplayHiddenPostsEnabled) this.adapter.removeHiddenPost(postItem)
                 }
                 notifyTitleChanged()
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
@@ -2154,19 +2138,19 @@ class PostsPage :
 
             UiManager.Message.PERFORM_HIDE_REPLIES, UiManager.Message.PERFORM_HIDE_NAME, UiManager.Message.PERFORM_HIDE_SIMILAR -> {
                 val adapter = this.adapter
-                adapter!!.cancelPreloading()
+                adapter.cancelPreloading()
                 val result: AddResult?
                 when (message) {
                     UiManager.Message.PERFORM_HIDE_REPLIES -> {
-                        result = hidePerformer!!.addHideByReplies(postItem)
+                        result = hidePerformer.addHideByReplies(postItem)
                     }
 
                     UiManager.Message.PERFORM_HIDE_NAME -> {
-                        result = hidePerformer!!.addHideByName(chan, postItem)
+                        result = hidePerformer.addHideByName(chan, postItem)
                     }
 
                     UiManager.Message.PERFORM_HIDE_SIMILAR -> {
-                        result = hidePerformer!!.addHideSimilar(chan, postItem)
+                        result = hidePerformer.addHideSimilar(chan, postItem)
                     }
 
                     else -> {
@@ -2182,7 +2166,7 @@ class PostsPage :
                     setPostHideState(postItem, HideState.UNDEFINED)
                     if (message == UiManager.Message.PERFORM_HIDE_REPLIES) {
                         for (postNumber in postItem.getReferencesFrom()) {
-                            val post = this.adapter!!.findPostItem(postNumber)
+                            val post = this.adapter.findPostItem(postNumber)
                             if (post != null) setPostHideState(post, HideState.UNDEFINED)
                         }
                     }
@@ -2200,7 +2184,7 @@ class PostsPage :
                     Runnable {
                         uiManager!!
                             .dialog()
-                            .closeDialogs(this.adapter!!.configurationSet.stackInstance!!)
+                            .closeDialogs(this.adapter.configurationSet.stackInstance!!)
                     },
                 )
                 smoothScrollToPosition(recyclerView, position)
@@ -2210,7 +2194,7 @@ class PostsPage :
 
     override fun onReloadAttachmentItem(attachmentItem: AttachmentItem) {
         val adapter = this.adapter
-        val position = adapter!!.positionOfPostNumber(attachmentItem.getPostNumber())
+        val position = adapter.positionOfPostNumber(attachmentItem.getPostNumber())
         if (position >= 0) {
             adapter.reloadAttachment(position, attachmentItem)
         }
@@ -2398,9 +2382,9 @@ class PostsPage :
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     AlertDialog
-                        .Builder(provider!!.context)
+                        .Builder(provider.context)
                         .setTitle(R.string.erase)
                         .setMessage(R.string.thread_will_be_deleted_from_cache__sentence)
                         .setPositiveButton(
@@ -2419,9 +2403,9 @@ class PostsPage :
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     AlertDialog
-                        .Builder(provider!!.context)
+                        .Builder(provider.context)
                         .setTitle(R.string.clear_deleted)
                         .setMessage(R.string.deleted_posts_will_be_deleted__sentence)
                         .setPositiveButton(
@@ -2440,8 +2424,8 @@ class PostsPage :
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val context = provider.context
                     val postsPage = extract<PostsPage>(provider)!!
                     val page = postsPage.getPage()
                     val retainableExtra =
@@ -2449,7 +2433,7 @@ class PostsPage :
                     var files = 0
                     var postsWithFiles = 0
                     var links = 0
-                    for (postItem in postsPage.adapter!!) {
+                    for (postItem in postsPage.adapter) {
                         val attachmentItems: List<AttachmentItem>? =
                             postItem.getAttachmentItems()
                         if (attachmentItems != null) {
@@ -2513,9 +2497,9 @@ class PostsPage :
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
                     AlertDialog
-                        .Builder(provider!!.context)
+                        .Builder(provider.context)
                         .setTitle(R.string.remove_rules)
                         .setMultiChoiceItems(
                             localFilters.toTypedArray(),
@@ -2532,7 +2516,7 @@ class PostsPage :
                                 var j = 0
                                 while (i < checked.size) {
                                     if (checked[i]) {
-                                        postsPage.hidePerformer!!.removeLocalFilter(j--)
+                                        postsPage.hidePerformer.removeLocalFilter(j--)
                                         hasDeleted = true
                                     }
                                     i++
@@ -2540,7 +2524,7 @@ class PostsPage :
                                 }
                                 if (hasDeleted) {
                                     val adapter = postsPage.adapter
-                                    adapter!!.invalidateHidden()
+                                    adapter.invalidateHidden()
                                     postsPage.notifyAllAdaptersChanged()
                                     postsPage.encodeAndStoreThreadExtra()
                                     adapter.preloadPosts(

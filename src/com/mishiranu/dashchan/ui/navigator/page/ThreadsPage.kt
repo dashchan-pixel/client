@@ -337,8 +337,9 @@ class ThreadsPage :
     }
 
     override fun onDestroy() {
-        uiManager!!.dialog().closeDialogs(getAdapter().configurationSet.stackInstance!!)
-        uiManager!!.observable().unregister(this)
+        val uiManager = uiManager!!
+        uiManager.dialog().closeDialogs(getAdapter().configurationSet.stackInstance!!)
+        uiManager.observable().unregister(this)
         FavoritesStorage.getInstance().getObservable().unregister(this)
     }
 
