@@ -201,8 +201,9 @@ class PhotoViewPager(
                 startY = event.getY()
                 startScrollX = getScrollX()
                 longTapConfirmed = false
-                velocityTracker = VelocityTracker.obtain()
-                velocityTracker!!.addMovement(event)
+                val velocityTracker = VelocityTracker.obtain()
+                this.velocityTracker = velocityTracker
+                velocityTracker.addMovement(event)
                 postDelayed(longTapRunnable, ViewConfiguration.getDoubleTapTimeout().toLong())
                 return true
             }

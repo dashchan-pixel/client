@@ -36,8 +36,8 @@ open class PaddedRecyclerView :
     private var shift: Shift? = null
     private var pullableWrapper: PullableWrapper? = null
 
-    private val thumbDrawable: Drawable?
-    private val trackDrawable: Drawable?
+    private val thumbDrawable: Drawable
+    private val trackDrawable: Drawable
     private val touchSlop: Int
     private val minTrackSize: Int
 
@@ -55,7 +55,7 @@ open class PaddedRecyclerView :
     private var showFastScrolling = false
 
     private var minRealThumbSize = 0
-    private var realThumbDrawable: Drawable? = null
+    private lateinit var realThumbDrawable: Drawable
     private var importantPostsMarksFastScrollBarDecoration: ImportantPostsMarksFastScrollBarDecoration? =
         null
 
@@ -78,7 +78,7 @@ open class PaddedRecyclerView :
         edgeEffectHandlerField.setColor(theme.accent)
 
         val density = obtainDensity(this)
-        val thumbDrawable = getDrawable(getContext(), android.R.attr.fastScrollThumbDrawable, 0)
+        val thumbDrawable = getDrawable(getContext(), android.R.attr.fastScrollThumbDrawable, 0)!!
         this.thumbDrawable = thumbDrawable
         val states =
             arrayOf<IntArray?>(
@@ -86,9 +86,9 @@ open class PaddedRecyclerView :
                 intArrayOf(android.R.attr.state_enabled),
             )
         val colors = intArrayOf(theme.accent, theme.controlNormal21)
-        thumbDrawable!!.setTintList(ColorStateList(states, colors))
+        thumbDrawable.setTintList(ColorStateList(states, colors))
 
-        trackDrawable = getDrawable(getContext(), android.R.attr.fastScrollTrackDrawable, 0)
+        trackDrawable = getDrawable(getContext(), android.R.attr.fastScrollTrackDrawable, 0)!!
         touchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop()
         minTrackSize = (16f * density).toInt()
 
@@ -211,7 +211,7 @@ open class PaddedRecyclerView :
 
     override fun getEdgeEffectHandler(): EdgeEffectHandler = edgeEffectHandlerField
 
-    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int = if (shift != null) shift!!.getEdgeEffectShift(side) else obtainEdgeEffectShift(side)
+    override fun getEdgeEffectShift(side: EdgeEffectHandler.Side): Int = shift?.getEdgeEffectShift(side) ?: obtainEdgeEffectShift(side)
 
     fun obtainEdgeEffectShift(side: EdgeEffectHandler.Side?): Int =
         if (getClipToPadding()) {
@@ -340,11 +340,12 @@ open class PaddedRecyclerView :
         val height =
             getHeight() - getEdgeEffectShift(EdgeEffectHandler.Side.TOP) -
                 getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
+        val fastScrollingStartOffset = this.fastScrollingStartOffset
         if (fastScrollingStartOffset != null) {
-            result = fastScrollingStartOffset!! + (fastScrollingCurrentY - fastScrollingStartY) /
-                (height - thumbDrawable!!.getIntrinsicHeight())
+            result = fastScrollingStartOffset + (fastScrollingCurrentY - fastScrollingStartY) /
+                (height - thumbDrawable.getIntrinsicHeight())
         } else {
-            result = (fastScrollingCurrentY - thumbDrawable!!.getIntrinsicHeight() / 2f) /
+            result = (fastScrollingCurrentY - thumbDrawable.getIntrinsicHeight() / 2f) /
                 (height - thumbDrawable.getIntrinsicHeight())
         }
         return max(0f, min(result, 1f))
@@ -396,8 +397,8 @@ open class PaddedRecyclerView :
                 max(
                     minTrackSize,
                     max(
-                        thumbDrawable!!.getIntrinsicWidth(),
-                        trackDrawable!!.getIntrinsicWidth(),
+                        thumbDrawable.getIntrinsicWidth(),
+                        trackDrawable.getIntrinsicWidth(),
                     ),
                 )
             val atThumbVertical =
@@ -446,9 +447,7 @@ open class PaddedRecyclerView :
                         regularScrolling,
                         true,
                     )
-                    if (pullableWrapper != null) {
-                        pullableWrapper!!.onTouchEventOrNull(null)
-                    }
+                    pullableWrapper?.onTouchEventOrNull(null)
                 }
             }
             if (fastScrolling) {
@@ -492,7 +491,7 @@ open class PaddedRecyclerView :
         if (stateValue > 0f) {
             val rtl = this.getLayoutDirection() == LAYOUT_DIRECTION_RTL
             val maxWidth =
-                max(thumbDrawable!!.getIntrinsicWidth(), trackDrawable!!.getIntrinsicHeight())
+                max(thumbDrawable.getIntrinsicWidth(), trackDrawable.getIntrinsicHeight())
             val translateX = (maxWidth * (1f - stateValue) + 0.5f).toInt()
             val top = getEdgeEffectShift(EdgeEffectHandler.Side.TOP)
             val height = getHeight() - top - getEdgeEffectShift(EdgeEffectHandler.Side.BOTTOM)
@@ -564,10 +563,9 @@ open class PaddedRecyclerView :
             }
             thumbDrawable.draw(canvas)
 
-            val drawImportantPostsMarks =
-                importantPostsMarksFastScrollBarDecoration != null && importantPostsMarksFastScrollBarDecoration!!.hasMarks()
-            if (drawImportantPostsMarks) {
-                importantPostsMarksFastScrollBarDecoration!!.draw(
+            val importantPostsMarksFastScrollBarDecoration = this.importantPostsMarksFastScrollBarDecoration
+            if (importantPostsMarksFastScrollBarDecoration != null && importantPostsMarksFastScrollBarDecoration.hasMarks()) {
+                importantPostsMarksFastScrollBarDecoration.draw(
                     trackLeft,
                     trackTop,
                     trackRight,
@@ -585,13 +583,13 @@ open class PaddedRecyclerView :
                             (thumbY + thumbDrawable.getIntrinsicHeight() / 2) - realThumbHeight / 2
                     }
                     val realThumbBottom = realThumbTop + realThumbHeight
-                    realThumbDrawable!!.setBounds(
+                    realThumbDrawable.setBounds(
                         trackLeft,
                         realThumbTop,
                         trackRight,
                         realThumbBottom,
                     )
-                    realThumbDrawable!!.draw(canvas)
+                    realThumbDrawable.draw(canvas)
                 }
             }
         }
@@ -655,12 +653,13 @@ open class PaddedRecyclerView :
         }
 
     override fun draw(canvas: Canvas) {
+        val pullableWrapper = this.pullableWrapper
         if (pullableWrapper != null) {
-            pullableWrapper!!.drawBefore(canvas)
+            pullableWrapper.drawBefore(canvas)
             try {
                 super.draw(canvas)
             } finally {
-                pullableWrapper!!.drawAfter(canvas)
+                pullableWrapper.drawAfter(canvas)
             }
         } else {
             super.draw(canvas)

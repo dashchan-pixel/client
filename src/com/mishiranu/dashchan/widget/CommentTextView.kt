@@ -201,7 +201,7 @@ class CommentTextView
             this.extraButtons = extraButtons
         }
 
-        private fun getLinkListener(): LinkListener = (if (linkListener != null) linkListener else CommentTextView.Companion.DEFAULT_LINK_LISTENER)!!
+        private fun getLinkListener(): LinkListener = linkListener ?: CommentTextView.Companion.DEFAULT_LINK_LISTENER
 
         fun setSubjectAndComment(
             subject: CharSequence?,
@@ -283,9 +283,7 @@ class CommentTextView
                     }
                 }
             }
-            if (limitListener != null) {
-                limitListener!!.onApplyLimit(limited)
-            }
+            limitListener?.onApplyLimit(limited)
         }
 
         override fun onLayout(
@@ -350,7 +348,8 @@ class CommentTextView
 
         private val resetSelectionRunnable =
             Runnable {
-                if (isSelectionMode() && !selectionMode!!.isActive) {
+                val selectionMode = this.selectionMode
+                if (selectionMode != null && !selectionMode.isActive) {
                     restoreSelectionRunnable = null
                     removeSelection()
                     setSelectionMode(null)
@@ -480,9 +479,10 @@ class CommentTextView
             text: Spannable,
             start: Int,
             end: Int,
-        ): String? =
-            if (prepareToCopyListener != null) {
-                prepareToCopyListener!!
+        ): String? {
+            val prepareToCopyListener = this.prepareToCopyListener
+            return if (prepareToCopyListener != null) {
+                prepareToCopyListener
                     .onPrepareToCopy(this@CommentTextView, text, start, end)
             } else {
                 text
@@ -491,6 +491,7 @@ class CommentTextView
                         end,
                     ).toString()
             }
+        }
 
         private class CustomSelectionCallback(
             textView: CommentTextView?,
@@ -555,12 +556,14 @@ class CommentTextView
             }
         }
 
-        private fun getExtraButton(index: Int): ExtraButton? =
-            if (extraButtons != null && index < extraButtons!!.size && index < EXTRA_BUTTON_IDS.size) {
-                extraButtons!![index]
+        private fun getExtraButton(index: Int): ExtraButton? {
+            val extraButtons = this.extraButtons
+            return if (extraButtons != null && index < extraButtons.size && index < EXTRA_BUTTON_IDS.size) {
+                extraButtons[index]
             } else {
                 null
             }
+        }
 
         private val extraButtonText: ExtraButton.Text
             get() {
@@ -637,12 +640,11 @@ class CommentTextView
             selEnd: Int,
         ) {
             super.onSelectionChanged(selStart, selEnd)
-            if (isSelectionMode()) {
-                if (restoreSelectionRunnable != null) {
-                    // Fix selection during selection mode initialization
-                    restoreSelectionRunnable!!.run()
-                }
-                selectionMode!!.invalidateMenu()
+            val selectionMode = this.selectionMode
+            if (selectionMode != null) {
+                // Fix selection during selection mode initialization
+                restoreSelectionRunnable?.run()
+                selectionMode.invalidateMenu()
             }
         }
 
@@ -660,31 +662,29 @@ class CommentTextView
         override fun setMaxHeight(maxHeight: Int): Unit = throw UnsupportedOperationException()
 
         fun bindSelectionPaddingView(selectionPaddingView: View?) {
-            if (this.selectionPaddingView != null) {
-                this.selectionPaddingView!!.setVisibility(GONE)
-            }
+            this.selectionPaddingView?.setVisibility(GONE)
             val force = this.selectionPaddingView !== selectionPaddingView
             this.selectionPaddingView = selectionPaddingView
             updateUseAdditionalPadding(force)
         }
 
         val selectionPadding: Int
-            get() =
-                if (selectionPaddingView != null) {
+            get() {
+                val selectionPaddingView = this.selectionPaddingView
+                return if (selectionPaddingView != null) {
                     max(
-                        selectionPaddingView!!.getLayoutParams().height,
+                        selectionPaddingView.getLayoutParams().height,
                         0,
                     )
                 } else {
                     0
                 }
+            }
 
         private fun updateUseAdditionalPadding(force: Boolean) {
             val useAdditionalPadding = selectionPaddingView != null && isSelectionMode()
             if (this.useAdditionalPadding != useAdditionalPadding || force) {
-                if (selectionPaddingView != null) {
-                    selectionPaddingView!!.setVisibility(if (useAdditionalPadding) VISIBLE else GONE)
-                }
+                selectionPaddingView?.setVisibility(if (useAdditionalPadding) VISIBLE else GONE)
                 this.useAdditionalPadding = useAdditionalPadding
             }
         }
@@ -774,7 +774,7 @@ class CommentTextView
                     val uri = createUri(linkSpan.uriString)
                     setSpanToClick(null, lastX, lastY)
                     if (uri != null) {
-                        val chanName = if (linkConfiguration != null) linkConfiguration!!.chanName else null
+                        val chanName = linkConfiguration?.chanName
                         val extra = LinkListener.Extra(chanName, linkSpan.inBoardLink())
                         getLinkListener().onLinkLongClick(this@CommentTextView, uri, extra)
                     }
@@ -791,8 +791,8 @@ class CommentTextView
             var add = 1
             for (r in 0..<RINGS) {
                 for (i in BASE_POINTS.indices) {
-                    for (j in BASE_POINTS[i]!!.indices) {
-                        deltaAttempts[i + add][j] = ((r + 1) * delta * BASE_POINTS[i]!![j]).toInt()
+                    for (j in BASE_POINTS[i].indices) {
+                        deltaAttempts[i + add][j] = ((r + 1) * delta * BASE_POINTS[i][j]).toInt()
                     }
                 }
                 add += BASE_POINTS.size
@@ -908,12 +908,12 @@ class CommentTextView
             y: Float,
         ) {
             if (spanToClick != null) {
-                spanToClick!!.setClicked(false)
+                spanToClick?.setClicked(false)
                 invalidateSpanToClick()
             }
             spanToClick = span
             if (spanToClick != null) {
-                spanToClick!!.setClicked(true)
+                spanToClick?.setClicked(true)
                 invalidateSpanToClick()
             }
             spanStartX = x
@@ -1070,22 +1070,22 @@ class CommentTextView
         }
 
         companion object {
-            private val BASE_POINTS: Array<DoubleArray?>
+            private val BASE_POINTS: Array<DoubleArray> =
+                run {
+                    val sqrth2 = sqrt(0.5)
+                    arrayOf(
+                        doubleArrayOf(-1.0, 0.0),
+                        doubleArrayOf(0.0, -1.0),
+                        doubleArrayOf(1.0, 0.0),
+                        doubleArrayOf(0.0, 1.0),
+                        doubleArrayOf(-sqrth2, -sqrth2),
+                        doubleArrayOf(sqrth2, -sqrth2),
+                        doubleArrayOf(-sqrth2, sqrth2),
+                        doubleArrayOf(sqrth2, sqrth2),
+                    )
+                }
             private const val RING_RADIUS = 6
             private const val RINGS = 3
-
-            init {
-                BASE_POINTS = arrayOfNulls<DoubleArray>(8)
-                BASE_POINTS[0] = doubleArrayOf(-1.0, 0.0)
-                BASE_POINTS[1] = doubleArrayOf(0.0, -1.0)
-                BASE_POINTS[2] = doubleArrayOf(1.0, 0.0)
-                BASE_POINTS[3] = doubleArrayOf(0.0, 1.0)
-                val sqrth2 = sqrt(0.5)
-                BASE_POINTS[4] = doubleArrayOf(-sqrth2, -sqrth2)
-                BASE_POINTS[5] = doubleArrayOf(sqrth2, -sqrth2)
-                BASE_POINTS[6] = doubleArrayOf(-sqrth2, sqrth2)
-                BASE_POINTS[7] = doubleArrayOf(sqrth2, sqrth2)
-            }
 
             private val DEFAULT_LINK_LISTENER: LinkListener =
                 object : LinkListener {

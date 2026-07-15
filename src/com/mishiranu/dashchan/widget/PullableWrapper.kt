@@ -59,7 +59,7 @@ class PullableWrapper(
         )
     }
 
-    private var pullCallback: PullCallback? = null
+    private lateinit var pullCallback: PullCallback
     private var pullStateListener: PullStateListener? = null
 
     fun setOnPullListener(callback: PullCallback) {
@@ -129,7 +129,7 @@ class PullableWrapper(
             )
         }
         if (useCallback) {
-            pullCallback!!.onListPulled(this, side)
+            pullCallback.onListPulled(this, side)
         }
         notifyPullStateChanged(true)
         return true
@@ -152,9 +152,7 @@ class PullableWrapper(
     }
 
     private fun notifyPullStateChanged(busy: Boolean) {
-        if (pullStateListener != null) {
-            pullStateListener!!.onPullStateChanged(this, busy)
-        }
+        pullStateListener?.onPullStateChanged(this, busy)
     }
 
     private var updateStartY = true

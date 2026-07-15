@@ -151,7 +151,7 @@ class PhotoView(
 
     fun recycle() {
         if (drawable != null) {
-            drawable!!.setCallback(null)
+            drawable?.setCallback(null)
             unscheduleDrawable(drawable)
             drawable = null
             invalidate()
@@ -214,7 +214,7 @@ class PhotoView(
     fun clearInitialScaleAnimationData() {
         initialScalingData = null
         if (initialScalingAnimator != null) {
-            initialScalingAnimator!!.cancel()
+            initialScalingAnimator?.cancel()
             initialScalingAnimator = null
             initialScaleClipRect = null
             this.scale = initialScale
@@ -234,8 +234,9 @@ class PhotoView(
             val centerX = x + viewWidth / 2f
             val centerY = y + viewHeight / 2f
             val cropEnabled = initialScalingData[4] != 0
-            initialScalingAnimator = ValueAnimator.ofFloat(0f, 1f)
-            initialScalingAnimator!!.addUpdateListener(
+            val initialScalingAnimator = ValueAnimator.ofFloat(0f, 1f)
+            this.initialScalingAnimator = initialScalingAnimator
+            initialScalingAnimator.addUpdateListener(
                 InitialScaleListener(
                     centerX,
                     centerY,
@@ -244,8 +245,8 @@ class PhotoView(
                     cropEnabled,
                 ),
             )
-            initialScalingAnimator!!.setDuration(INITIAL_SCALE_TRANSITION_TIME.toLong())
-            initialScalingAnimator!!.start()
+            initialScalingAnimator.setDuration(INITIAL_SCALE_TRANSITION_TIME.toLong())
+            initialScalingAnimator.start()
         }
     }
 
@@ -258,10 +259,11 @@ class PhotoView(
         }
         handleInitialScale()
         var restoreClip = false
+        val initialScaleClipRect = this.initialScaleClipRect
         if (initialScaleClipRect != null) {
             restoreClip = true
             canvas.save()
-            canvas.clipRect(initialScaleClipRect!!)
+            canvas.clipRect(initialScaleClipRect)
         }
         var rect = initDisplayMatrixAndRect()
         var workAlpha = 0xff
@@ -279,6 +281,7 @@ class PhotoView(
 
             restoreAlpha = true
         }
+        val drawable = this.drawable
         if (drawable != null) {
             if (hasAlpha) {
                 tile.setBounds(
@@ -292,13 +295,13 @@ class PhotoView(
             canvas.save()
             canvas.clipRect(0, 0, getWidth(), getHeight())
             canvas.concat(displayMatrix)
-            drawable!!.setBounds(
+            drawable.setBounds(
                 0,
                 0,
-                drawable!!.getIntrinsicWidth(),
-                drawable!!.getIntrinsicHeight(),
+                drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight(),
             )
-            drawable!!.draw(canvas)
+            drawable.draw(canvas)
             canvas.restore()
         }
         if (drawDim) {
@@ -355,10 +358,8 @@ class PhotoView(
 
     private val dimensions: Point?
         get() {
-            if (drawable == null) {
-                return null
-            }
-            point.set(drawable!!.getIntrinsicWidth(), drawable!!.getIntrinsicHeight())
+            val drawable = this.drawable ?: return null
+            point.set(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight())
             return point
         }
 
@@ -416,23 +417,22 @@ class PhotoView(
     }
 
     private fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        val listener = this.listener
         if (listener != null) {
             val x = e.getX()
             val y = e.getY()
             val rect = checkMatrixBounds()
             if (rect != null && rect.contains(x, y)) {
-                listener!!.onClick(this, true, x, y)
+                listener.onClick(this, true, x, y)
                 return true
             }
-            listener!!.onClick(this, false, x, y)
+            listener.onClick(this, false, x, y)
         }
         return false
     }
 
     private fun onLongPress(e: MotionEvent) {
-        if (listener != null) {
-            listener!!.onLongClick(this, e.getX(), e.getY())
-        }
+        listener?.onLongClick(this, e.getX(), e.getY())
     }
 
     private fun onScale(
@@ -469,11 +469,12 @@ class PhotoView(
         x: Float,
         y: Float,
     ) {
+        val listener = this.listener
         if (listener != null && !hasImage() && this.isAttachedToWindow()) {
             if (longClick) {
-                listener!!.onLongClick(this, x, y)
+                listener.onLongClick(this, x, y)
             } else {
-                listener!!.onClick(this, true, x, y)
+                listener.onClick(this, true, x, y)
             }
         }
     }
@@ -580,7 +581,7 @@ class PhotoView(
 
     private fun cancelFling() {
         if (flingRunnable != null) {
-            flingRunnable!!.cancelFling()
+            flingRunnable?.cancelFling()
             flingRunnable = null
         }
     }
@@ -740,9 +741,7 @@ class PhotoView(
                 value = 0f
             }
             lastVerticalSwipeDeltaY = deltaY
-            if (listener != null) {
-                listener!!.onVerticalSwipe(this, deltaY >= 0 != restore, value)
-            }
+            listener?.onVerticalSwipe(this, deltaY >= 0 != restore, value)
         }
     }
 
@@ -1022,9 +1021,9 @@ class PhotoView(
                 transformMatrix.postTranslate(dx, dy)
                 transformMatrix.postScale(targetScale, targetScale, targetX, targetY)
                 if (cropEnabled) {
-                    if (initialScaleClipRect == null) {
-                        initialScaleClipRect = Rect()
-                    }
+                    val initialScaleClipRect =
+                        this@PhotoView.initialScaleClipRect
+                            ?: Rect().also { this@PhotoView.initialScaleClipRect = it }
                     val sizeXY =
                         lerp(
                             min(dimensions.x, dimensions.y).toFloat(),
@@ -1032,7 +1031,7 @@ class PhotoView(
                             t,
                         ).toInt()
                     val scaledHalfSize = targetScale * baseScale * sizeXY / 2f
-                    initialScaleClipRect!!.set(
+                    initialScaleClipRect.set(
                         (targetX - scaledHalfSize - 0.5f).toInt(),
                         (
                             (
@@ -1101,9 +1100,7 @@ class PhotoView(
         when (event.getAction()) {
             MotionEvent.ACTION_DOWN -> {
                 velocityTracker = VelocityTracker.obtain()
-                if (velocityTracker != null) {
-                    velocityTracker!!.addMovement(event)
-                }
+                velocityTracker?.addMovement(event)
                 lastTouchX = getActiveX(event)
                 lastTouchY = getActiveY(event)
                 isDragging = false
@@ -1164,17 +1161,13 @@ class PhotoView(
                     }
                     lastTouchX = x
                     lastTouchY = y
-                    if (velocityTracker != null) {
-                        velocityTracker!!.addMovement(event)
-                    }
+                    velocityTracker?.addMovement(event)
                 }
             }
 
             MotionEvent.ACTION_CANCEL -> {
-                if (velocityTracker != null) {
-                    velocityTracker!!.recycle()
-                    velocityTracker = null
-                }
+                velocityTracker?.recycle()
+                velocityTracker = null
             }
 
             MotionEvent.ACTION_UP -> {
@@ -1186,10 +1179,11 @@ class PhotoView(
                             var threshold: Float = viewHeight * CLOSE_SWIPE_FACTOR / 2f
                             val shift = getClosingTouchModeShift(rect)
                             var velocity = 0f
+                            val velocityTracker = this.velocityTracker
                             if (velocityTracker != null) {
-                                velocityTracker!!.addMovement(event)
-                                velocityTracker!!.computeCurrentVelocity(1000)
-                                velocity = velocityTracker!!.getYVelocity() * CLOSE_SWIPE_FACTOR
+                                velocityTracker.addMovement(event)
+                                velocityTracker.computeCurrentVelocity(1000)
+                                velocity = velocityTracker.getYVelocity() * CLOSE_SWIPE_FACTOR
                                 val increase = shift > 0 == velocity > 0
                                 velocity = abs(velocity)
                                 if (increase) {
@@ -1199,29 +1193,32 @@ class PhotoView(
                                 }
                             }
                             var close = abs(shift) >= threshold
+                            val listener = this.listener
                             if (listener != null && close) {
-                                close = listener!!.onClose(this, shift >= 0)
+                                close = listener.onClose(this, shift >= 0)
                             }
                             startRestoreVerticalSwipe(rect, close, velocity)
                         }
-                    } else if (velocityTracker != null) {
-                        lastTouchX = getActiveX(event)
-                        lastTouchY = getActiveY(event)
-                        velocityTracker!!.addMovement(event)
-                        velocityTracker!!.computeCurrentVelocity(1000)
-                        val vX = velocityTracker!!.getXVelocity()
-                        val vY = velocityTracker!!.getYVelocity()
-                        if (max(abs(vX), abs(vY)) >= minimumVelocity) {
-                            flingRunnable = FlingRunnable(getContext())
-                            flingRunnable!!.fling(getWidth(), getHeight(), -vX.toInt(), -vY.toInt())
-                            post(flingRunnable)
+                    } else {
+                        val velocityTracker = this.velocityTracker
+                        if (velocityTracker != null) {
+                            lastTouchX = getActiveX(event)
+                            lastTouchY = getActiveY(event)
+                            velocityTracker.addMovement(event)
+                            velocityTracker.computeCurrentVelocity(1000)
+                            val vX = velocityTracker.getXVelocity()
+                            val vY = velocityTracker.getYVelocity()
+                            if (max(abs(vX), abs(vY)) >= minimumVelocity) {
+                                val flingRunnable = FlingRunnable(getContext())
+                                this.flingRunnable = flingRunnable
+                                flingRunnable.fling(getWidth(), getHeight(), -vX.toInt(), -vY.toInt())
+                                post(flingRunnable)
+                            }
                         }
                     }
                 }
-                if (velocityTracker != null) {
-                    velocityTracker!!.recycle()
-                    velocityTracker = null
-                }
+                velocityTracker?.recycle()
+                velocityTracker = null
             }
         }
         return true

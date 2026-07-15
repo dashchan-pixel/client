@@ -91,7 +91,8 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
 
     private val overlayFocusListener =
         OnOverlayFocusListener { stack: Iterable<MutableItem>? ->
-            val decorView = if (dialog != null) dialog!!.getWindow()!!.getDecorView() else null
+            val dialog = this.dialog
+            val decorView = if (dialog != null) dialog.getWindow()!!.getDecorView() else null
             var background = false
             if (decorView != null) {
                 var foundSelf = false
@@ -217,7 +218,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
 
                     override fun onActionModeFinished(mode: ActionMode?) {
                         if (currentActionMode != null) {
-                            if (currentActionMode!!.get() === mode) {
+                            if (currentActionMode?.get() === mode) {
                                 currentActionMode = null
                             }
                         }
@@ -274,9 +275,10 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             dialog.show()
             this.dialog = dialog
         }
+        val currentActionMode = this.currentActionMode
         if (currentActionMode != null) {
-            val mode = currentActionMode!!.get()
-            currentActionMode = null
+            val mode = currentActionMode.get()
+            this.currentActionMode = null
             if (mode != null) {
                 mode.finish()
             }

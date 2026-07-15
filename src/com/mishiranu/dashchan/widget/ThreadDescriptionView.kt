@@ -121,10 +121,11 @@ class ThreadDescriptionView(
         paint.getFontMetrics(fontMetrics)
         val maxWidth = width - paddingLeft - paddingRight
         var totalWidth = 0f
-        if (measurements == null || measurements!!.size != description.size) {
+        var measurements = this.measurements
+        if (measurements == null || measurements.size != description.size) {
             measurements = FloatArray(description.size)
+            this.measurements = measurements
         }
-        val measurements = this.measurements!!
         for (i in measurements.indices) {
             val width = paint.measureText(description[i])
             measurements[i] = width

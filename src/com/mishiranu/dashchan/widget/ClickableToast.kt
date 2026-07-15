@@ -97,7 +97,7 @@ class ClickableToast private constructor(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        if (currentActivity != null && currentActivity!!.get() === owner) {
+        if (currentActivity?.get() === owner) {
             currentActivity = null
         }
         cancelInternal()
@@ -169,16 +169,17 @@ class ClickableToast private constructor(
     private fun addContainerToWindowManager(type: Int): Boolean {
         var success = false
         try {
-            currentContainer = FrameLayout(activity)
+            val currentContainer = FrameLayout(activity)
+            this.currentContainer = currentContainer
             val paddingForElevation = 2 * Math.round(ViewCompat.getElevation(container))
-            currentContainer!!.setPadding(
+            currentContainer.setPadding(
                 toastHorizontalPadding,
                 0,
                 toastHorizontalPadding,
                 paddingForElevation,
             )
-            currentContainer!!.setClipToPadding(false)
-            currentContainer!!.addView(
+            currentContainer.setClipToPadding(false)
+            currentContainer.addView(
                 container,
                 FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -258,10 +259,11 @@ class ClickableToast private constructor(
     }
 
     private fun applyLayout() {
+        val currentContainer = this.currentContainer
         if (currentContainer != null) {
             windowManager.updateViewLayout(
                 currentContainer,
-                updateLayoutParams((currentContainer!!.getLayoutParams() as WindowManager.LayoutParams?)!!),
+                updateLayoutParams((currentContainer.getLayoutParams() as WindowManager.LayoutParams?)!!),
             )
         }
     }
@@ -279,12 +281,13 @@ class ClickableToast private constructor(
     }
 
     private fun removeCurrentContainer() {
+        val currentContainer = this.currentContainer
         if (currentContainer != null) {
-            if (currentContainer!!.getParent() != null) {
+            if (currentContainer.getParent() != null) {
                 windowManager.removeViewImmediate(currentContainer)
             }
-            currentContainer!!.removeView(container)
-            currentContainer = null
+            currentContainer.removeView(container)
+            this.currentContainer = null
         }
     }
 
@@ -508,9 +511,7 @@ class ClickableToast private constructor(
                             if (x >= button.getLeft() && x <= view.getWidth() && y >= 0 && y <= view.getHeight()) {
                                 ConcurrentUtils.HANDLER.removeCallbacks(cancelRunnable)
                                 ConcurrentUtils.HANDLER.post(cancelRunnable)
-                                if (onClickListener != null) {
-                                    onClickListener!!.run()
-                                }
+                                onClickListener?.run()
                             }
                         }
                     }
@@ -628,25 +629,19 @@ class ClickableToast private constructor(
 
         private val currentToast: ClickableToast?
             get() {
-                if (currentActivity != null) {
-                    val activity: ComponentActivity? =
-                        currentActivity!!.get()
-                    return if (activity != null) getToast(activity) else null
-                }
-                return null
+                val activity = currentActivity?.get() ?: return null
+                return getToast(activity)
             }
 
         @JvmStatic
         fun register(activity: ComponentActivity) {
             Objects.requireNonNull<ComponentActivity?>(activity)
-            if (currentActivity != null) {
-                val oldActivity: ComponentActivity? = currentActivity!!.get()
-                if (oldActivity === activity) {
-                    return
-                }
-                if (oldActivity != null) {
-                    getToast(oldActivity)!!.cancelInternal()
-                }
+            val oldActivity: ComponentActivity? = currentActivity?.get()
+            if (oldActivity === activity) {
+                return
+            }
+            if (oldActivity != null) {
+                getToast(oldActivity)!!.cancelInternal()
             }
             currentActivity = null
             val state: Lifecycle.State = activity.lifecycle.currentState

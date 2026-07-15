@@ -45,7 +45,8 @@ class CustomSearchView(
         searchView.setOnQueryTextListener(
             object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String): Boolean {
-                    if (onSubmitListener == null || onSubmitListener!!.onSubmit(query)) {
+                    val onSubmitListener = this@CustomSearchView.onSubmitListener
+                    if (onSubmitListener == null || onSubmitListener.onSubmit(query)) {
                         searchView.clearFocus()
                         requestFocus()
                     }
@@ -53,8 +54,9 @@ class CustomSearchView(
                 }
 
                 override fun onQueryTextChange(newText: String): Boolean {
+                    val onChangeListener = this@CustomSearchView.onChangeListener
                     if (onChangeListener != null && !suppressChange) {
-                        onChangeListener!!.onChange(newText)
+                        onChangeListener.onChange(newText)
                     }
                     return true
                 }

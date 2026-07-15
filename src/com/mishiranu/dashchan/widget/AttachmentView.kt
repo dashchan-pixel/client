@@ -177,15 +177,17 @@ class AttachmentView(
     }
 
     fun applyRoundedCorners(backgroundColor: Int) {
+        var cornersDrawable = this.cornersDrawable
         if (cornersDrawable == null) {
             val density = ResourceUtils.obtainDensity(this)
             val radius = (2f * density + 0.5f).toInt()
             cornersDrawable = RoundedCornersDrawable(radius)
+            this.cornersDrawable = cornersDrawable
             if (width > 0) {
                 updateCornersBounds(width, height)
             }
         }
-        cornersDrawable!!.setColor(backgroundColor)
+        cornersDrawable.setColor(backgroundColor)
     }
 
     override fun onMeasure(
@@ -252,11 +254,11 @@ class AttachmentView(
                 val top = Math.max((destination.top + 0.5f).toInt(), 0)
                 val right = Math.min((destination.right + 0.5f).toInt(), vw)
                 val bottom = Math.min((destination.bottom + 0.5f).toInt(), vh)
-                if (tileDrawable == null) {
-                    tileDrawable = TransparentTileDrawable(context, false)
-                }
-                tileDrawable!!.setBounds(left, top, right, bottom)
-                tileDrawable!!.draw(canvas)
+                val tileDrawable =
+                    this.tileDrawable
+                        ?: TransparentTileDrawable(context, false).also { this.tileDrawable = it }
+                tileDrawable.setBounds(left, top, right, bottom)
+                tileDrawable.draw(canvas)
             }
             bitmapPaint.alpha = (0xff * alpha).toInt()
             val contrast = interpolator.getInterpolation(Math.min(dt / 300f, 1f))
