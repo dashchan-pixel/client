@@ -96,14 +96,14 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
-    private val thumbnailsCache = LinkedHashMap<String?, CacheItem?>()
-    private val mediaCache = LinkedHashMap<String?, CacheItem?>()
+    private val thumbnailsCache = LinkedHashMap<String?, CacheItem>()
+    private val mediaCache = LinkedHashMap<String?, CacheItem>()
 
     private var thumbnailsCacheSize: Long = 0
     private var mediaCacheSize: Long = 0
 
     private fun fillCache(
-        cacheItems: LinkedHashMap<String?, CacheItem?>,
+        cacheItems: LinkedHashMap<String?, CacheItem>,
         directory: File?,
         type: CacheItem.Type,
     ): Long {
@@ -118,7 +118,7 @@ class CacheManager private constructor() : Runnable {
                 cacheItemsList.add(CacheItem(file, type))
             }
         }
-        Collections.sort<CacheItem?>(cacheItemsList, SORT_BY_DATE_COMPARATOR)
+        Collections.sort(cacheItemsList, SORT_BY_DATE_COMPARATOR)
         var size = 0L
         for (cacheItem in cacheItemsList) {
             cacheItems[cacheItem.nameLc] = cacheItem
@@ -163,14 +163,11 @@ class CacheManager private constructor() : Runnable {
     ) {
         val maxCache: Int = MAX_THUMBNAILS_PART + MAX_MEDIA_PART
         val maxCacheSize = Preferences.cacheSize * 1000L * 1000L
-        var cleanupCacheItems: ArrayList<CacheItem?>? = null
+        val cleanupCacheItems = ArrayList<CacheItem>()
         if (thumbnails) {
             synchronized(thumbnailsCache) {
                 val maxSize: Long = MAX_THUMBNAILS_PART * maxCacheSize / maxCache
                 if (thumbnailsCacheSize > maxSize) {
-                    if (cleanupCacheItems == null) {
-                        cleanupCacheItems = ArrayList<CacheItem?>()
-                    }
                     thumbnailsCacheSize =
                         obtainCacheItemsToCleanup(
                             cleanupCacheItems,
@@ -186,9 +183,6 @@ class CacheManager private constructor() : Runnable {
             synchronized(mediaCache) {
                 val maxSize: Long = MAX_MEDIA_PART * maxCacheSize / maxCache
                 if (mediaCacheSize > maxSize) {
-                    if (cleanupCacheItems == null) {
-                        cleanupCacheItems = ArrayList<CacheItem?>()
-                    }
                     mediaCacheSize =
                         obtainCacheItemsToCleanup(
                             cleanupCacheItems,
@@ -200,15 +194,15 @@ class CacheManager private constructor() : Runnable {
                 }
             }
         }
-        if (cleanupCacheItems != null && cleanupCacheItems.size > 0) {
+        if (cleanupCacheItems.isNotEmpty()) {
             // Start handling
             cacheItemsToDelete.addAll(cleanupCacheItems)
         }
     }
 
     private fun obtainCacheItemsToCleanup(
-        cleanupCacheItems: ArrayList<CacheItem?>,
-        cacheItems: LinkedHashMap<String?, CacheItem?>,
+        cleanupCacheItems: ArrayList<CacheItem>,
+        cacheItems: LinkedHashMap<String?, CacheItem>,
         size: Long,
         maxSize: Long,
         deleteCondition: DeleteCondition?,
@@ -216,9 +210,9 @@ class CacheManager private constructor() : Runnable {
         var remainingSize = size
         val trimAmount = (TRIM_FACTOR * maxSize).toLong()
         var deleteAmount = size - maxSize + trimAmount
-        val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
+        val iterator: MutableIterator<CacheItem> = cacheItems.values.iterator()
         while (iterator.hasNext() && deleteAmount > 0) {
-            val cacheItem = iterator.next()!!
+            val cacheItem = iterator.next()
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
                 deleteAmount -= cacheItem.length
                 remainingSize -= cacheItem.length
@@ -246,7 +240,7 @@ class CacheManager private constructor() : Runnable {
         return false
     }
 
-    private fun getCacheItems(type: CacheItem.Type): LinkedHashMap<String?, CacheItem?> {
+    private fun getCacheItems(type: CacheItem.Type): LinkedHashMap<String?, CacheItem> {
         when (type) {
             CacheItem.Type.THUMBNAILS -> {
                 return thumbnailsCache
@@ -400,7 +394,7 @@ class CacheManager private constructor() : Runnable {
 
     @Throws(InterruptedException::class)
     private fun eraseCache(
-        cacheItems: LinkedHashMap<String?, CacheItem?>,
+        cacheItems: LinkedHashMap<String?, CacheItem>,
         directory: File?,
         deleteCondition: DeleteCondition?,
     ): Long {
@@ -408,12 +402,12 @@ class CacheManager private constructor() : Runnable {
             return 0L
         }
         var deleted = 0L
-        val iterator: MutableIterator<CacheItem?> = cacheItems.values.iterator()
+        val iterator: MutableIterator<CacheItem> = cacheItems.values.iterator()
         while (iterator.hasNext()) {
             if (Thread.interrupted()) {
                 throw InterruptedException()
             }
-            val cacheItem = iterator.next()!!
+            val cacheItem = iterator.next()
             if (deleteCondition == null || deleteCondition.allowDeleteCacheItem(cacheItem)) {
                 deleted += cacheItem.length
                 File(directory, cacheItem.name).delete()
@@ -795,7 +789,7 @@ class CacheManager private constructor() : Runnable {
         fun getInstance(): CacheManager = INSTANCE
 
         private val SORT_BY_DATE_COMPARATOR =
-            Comparator { lhs: CacheItem?, rhs: CacheItem? -> lhs!!.lastModified.compareTo(rhs!!.lastModified) }
+            Comparator { lhs: CacheItem, rhs: CacheItem -> lhs.lastModified.compareTo(rhs.lastModified) }
 
         private const val GALLERY_SHARE_FILE_NAME_START = "gallery-share-"
         private const val CLIPBOARD_FILE_NAME_START = "clipboard-"

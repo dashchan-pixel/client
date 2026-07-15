@@ -157,14 +157,14 @@ class HistoryDatabase internal constructor(
         Objects.requireNonNull<String?>(threadNumber)
         if (isRememberHistory) {
             database.enqueue(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val values = ContentValues()
                     values.put(Schema.History.Columns.Companion.CHAN_NAME, chanName)
                     values.put(Schema.History.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
                     values.put(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
                     values.put(Schema.History.Columns.Companion.TIME, System.currentTimeMillis())
                     values.put(Schema.History.Columns.Companion.TITLE, title)
-                    database!!.replace(Schema.History.Companion.TABLE_NAME, null, values)
+                    database.replace(Schema.History.Companion.TABLE_NAME, null, values)
                     ConcurrentUtils.HANDLER.post(onChanged)
                     null
                 },
@@ -182,7 +182,7 @@ class HistoryDatabase internal constructor(
         Objects.requireNonNull<String?>(threadNumber)
         if (!isEmpty(title)) {
             database.enqueue(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val filter =
                         Expression
                             .filter()
@@ -192,7 +192,7 @@ class HistoryDatabase internal constructor(
                             .build()
                     val values = ContentValues()
                     values.put(Schema.History.Columns.Companion.TITLE, title)
-                    database!!.update(
+                    database.update(
                         Schema.History.Companion.TABLE_NAME,
                         values,
                         filter.value,
@@ -213,14 +213,14 @@ class HistoryDatabase internal constructor(
     ): HistoryCursor {
         val count =
             database.execute<Int?>(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val projection = arrayOf<String?>("COUNT(*)")
                     val filterBuilder = Expression.filter()
                     if (chanName != null) {
                         filterBuilder.equals(Schema.History.Columns.Companion.CHAN_NAME, chanName)
                     }
                     val filter = filterBuilder.build()
-                    database!!
+                    database
                         .query(
                             false,
                             Schema.History.Companion.TABLE_NAME,
@@ -253,8 +253,8 @@ class HistoryDatabase internal constructor(
         val filter = filterBuilder.build()
         val cursor =
             database.query(
-                QueryCallback { database: SQLiteDatabase? ->
-                    database!!.query(
+                QueryCallback { database: SQLiteDatabase ->
+                    database.query(
                         false,
                         Schema.History.Companion.TABLE_NAME,
                         projection,
@@ -286,8 +286,8 @@ class HistoryDatabase internal constructor(
                 .equals(Schema.History.Columns.Companion.THREAD_NUMBER, threadNumber)
                 .build()
         database.execute<Int?>(
-            ExecuteCallback { database: SQLiteDatabase? ->
-                database!!.delete(
+            ExecuteCallback { database: SQLiteDatabase ->
+                database.delete(
                     Schema.History.Companion.TABLE_NAME,
                     filter.value,
                     filter.args,
@@ -304,8 +304,8 @@ class HistoryDatabase internal constructor(
         }
         val filter = filterBuilder.build()
         database.execute<Int?>(
-            ExecuteCallback { database: SQLiteDatabase? ->
-                database!!.delete(
+            ExecuteCallback { database: SQLiteDatabase ->
+                database.delete(
                     Schema.History.Companion.TABLE_NAME,
                     filter.value,
                     filter.args,

@@ -177,7 +177,7 @@ class ThreadsDatabase internal constructor(
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(threadNumber)
         database.enqueue(
-            ExecuteCallback { database: SQLiteDatabase? ->
+            ExecuteCallback { database: SQLiteDatabase ->
                 var flags = 0
                 if (hideState == HideState.HIDDEN) {
                     flags = flags or Schema.Threads.Flags.Companion.HIDDEN
@@ -187,7 +187,7 @@ class ThreadsDatabase internal constructor(
                 val values = ContentValues()
                 values.put(Schema.Threads.Columns.Companion.TIME, System.currentTimeMillis())
                 values.put(Schema.Threads.Columns.Companion.FLAGS, flags)
-                upsert(database!!, chanName, boardName, threadNumber, values)
+                upsert(database, chanName, boardName, threadNumber, values)
                 null
             },
         )
@@ -216,8 +216,8 @@ class ThreadsDatabase internal constructor(
                 .build()
         database
             .query(
-                QueryCallback { database: SQLiteDatabase? ->
-                    database!!
+                QueryCallback { database: SQLiteDatabase ->
+                    database
                         .query(
                             Schema.Threads.Companion.TABLE_NAME,
                             projection,
@@ -243,10 +243,10 @@ class ThreadsDatabase internal constructor(
             }
         if (update) {
             database.execute<Any?>(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val values = ContentValues()
                     values.put(Schema.Threads.Columns.Companion.TIME, System.currentTimeMillis())
-                    database!!.update(
+                    database.update(
                         Schema.Threads.Companion.TABLE_NAME,
                         values,
                         filter.value,
@@ -264,8 +264,8 @@ class ThreadsDatabase internal constructor(
         threadNumbers: List<String>,
     ): HideState.Map<String>? {
         return database.execute<HideState.Map<String>?>(
-            ExecuteCallback { database: SQLiteDatabase? ->
-                database!!.beginTransaction()
+            ExecuteCallback { database: SQLiteDatabase ->
+                database.beginTransaction()
                 try {
                     val hiddenThreads = HideState.Map<String>()
                     val maxCount = 50
@@ -297,7 +297,7 @@ class ThreadsDatabase internal constructor(
         Objects.requireNonNull<String?>(chanName)
         Objects.requireNonNull<String?>(threadNumber)
         val callback: ExecuteCallback<Unit?> =
-            ExecuteCallback { database: SQLiteDatabase? ->
+            ExecuteCallback { database: SQLiteDatabase ->
                 val values = ContentValues()
                 values.put(Schema.Threads.Columns.Companion.TIME, System.currentTimeMillis())
                 if (hasState) {
@@ -306,7 +306,7 @@ class ThreadsDatabase internal constructor(
                 if (hasExtra) {
                     values.put(Schema.Threads.Columns.Companion.EXTRA, extra)
                 }
-                upsert(database!!, chanName, boardName, threadNumber, values)
+                upsert(database, chanName, boardName, threadNumber, values)
                 null
             }
         if (async) {
@@ -338,8 +338,8 @@ class ThreadsDatabase internal constructor(
         var stateExtra: StateExtra? = null
         database
             .query(
-                QueryCallback { database: SQLiteDatabase? ->
-                    database!!
+                QueryCallback { database: SQLiteDatabase ->
+                    database
                         .query(
                             Schema.Threads.Companion.TABLE_NAME,
                             projection,
@@ -357,10 +357,10 @@ class ThreadsDatabase internal constructor(
             }
         if (stateExtra != null) {
             database.execute<Any?>(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val values = ContentValues()
                     values.put(Schema.Threads.Columns.Companion.TIME, System.currentTimeMillis())
-                    database!!.update(
+                    database.update(
                         Schema.Threads.Companion.TABLE_NAME,
                         values,
                         filter.value,

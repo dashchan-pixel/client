@@ -171,7 +171,7 @@ class UpdaterActivity : StateActivity() {
             if (this === activeConnection) {
                 activeConnection = null
                 if (binder != null) {
-                    binder!!.unregister(this)
+                    binder?.unregister(this)
                     binder = null
                 }
             }
@@ -181,7 +181,7 @@ class UpdaterActivity : StateActivity() {
             if (this === activeConnection) {
                 activeConnection = null
                 if (binder != null) {
-                    binder!!.unregister(this)
+                    binder?.unregister(this)
                     binder = null
                     context.unbindService(this)
                     return true
@@ -239,7 +239,7 @@ class UpdaterActivity : StateActivity() {
 
         fun cancel() {
             if (binder != null) {
-                binder!!.unregister(this)
+                binder?.unregister(this)
                 binder = null
                 context.unbindService(this)
             }
@@ -285,9 +285,7 @@ class UpdaterActivity : StateActivity() {
             if (clientDownloadItem != null) {
                 downloadItems.add(clientDownloadItem)
             }
-            if (activeConnection != null) {
-                activeConnection!!.cancel()
-            }
+            activeConnection?.cancel()
             activeConnection = Connection(MainApplication.getInstance(), downloadItems)
         }
     }

@@ -32,11 +32,11 @@ class CommonDatabase private constructor() {
     }
 
     fun interface QueryCallback {
-        fun query(db: SQLiteDatabase?): Cursor?
+        fun query(db: SQLiteDatabase): Cursor?
     }
 
     fun interface ExecuteCallback<T> {
-        fun run(database: SQLiteDatabase?): T?
+        fun run(database: SQLiteDatabase): T?
     }
 
     private val executor: Executor = newSingleThreadPool(10000, "CommonDatabase", null)
@@ -165,9 +165,9 @@ class CommonDatabase private constructor() {
             }
         }
 
-        override fun onCreate(db: SQLiteDatabase?) {
+        override fun onCreate(db: SQLiteDatabase) {
             for (instance in instances) {
-                instance.create(db!!)
+                instance.create(db)
             }
         }
 
@@ -190,9 +190,9 @@ class CommonDatabase private constructor() {
             }
         }
 
-        override fun onOpen(db: SQLiteDatabase?) {
+        override fun onOpen(db: SQLiteDatabase) {
             for (instance in instances) {
-                instance.open(db!!)
+                instance.open(db)
             }
         }
 

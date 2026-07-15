@@ -133,8 +133,8 @@ class PostsDatabase internal constructor(
         Objects.requireNonNull<String?>(threadNumber)
         Objects.requireNonNull<MutableMap<PostNumber?, Pair<HideState?, Boolean?>?>?>(flagsMap)
         database.execute<Any?>(
-            ExecuteCallback { database: SQLiteDatabase? ->
-                database!!.beginTransaction()
+            ExecuteCallback { database: SQLiteDatabase ->
+                database.beginTransaction()
                 try {
                     val statement =
                         database.compileStatement(
@@ -195,7 +195,7 @@ class PostsDatabase internal constructor(
         Objects.requireNonNull<String?>(threadNumber)
         Objects.requireNonNull<PostNumber?>(postNumber)
         val callback: ExecuteCallback<Unit?> =
-            ExecuteCallback { database: SQLiteDatabase? ->
+            ExecuteCallback { database: SQLiteDatabase ->
                 var flags = 0
                 if (hideState == HideState.HIDDEN) {
                     flags = flags or Schema.Posts.Flags.Companion.HIDDEN
@@ -214,7 +214,7 @@ class PostsDatabase internal constructor(
                     values.put(Schema.Posts.Columns.Companion.POST_NUMBER_MINOR, postNumber.minor)
                     values.put(Schema.Posts.Columns.Companion.TIME, System.currentTimeMillis())
                     values.put(Schema.Posts.Columns.Companion.FLAGS, flags)
-                    database!!.replace(Schema.Posts.Companion.TABLE_NAME, null, values)
+                    database.replace(Schema.Posts.Companion.TABLE_NAME, null, values)
                 } else {
                     val filter =
                         Expression
@@ -225,7 +225,7 @@ class PostsDatabase internal constructor(
                             .raw(Schema.Posts.Columns.Companion.POST_NUMBER_MAJOR + " = " + postNumber.major)
                             .raw(Schema.Posts.Columns.Companion.POST_NUMBER_MINOR + " = " + postNumber.minor)
                             .build()
-                    database!!.delete(Schema.Posts.Companion.TABLE_NAME, filter.value, filter.args)
+                    database.delete(Schema.Posts.Companion.TABLE_NAME, filter.value, filter.args)
                 }
                 null
             }
@@ -261,8 +261,8 @@ class PostsDatabase internal constructor(
         val userPosts = HashSet<PostNumber>()
         database
             .query(
-                QueryCallback { database: SQLiteDatabase? ->
-                    database!!
+                QueryCallback { database: SQLiteDatabase ->
+                    database
                         .query(
                             Schema.Posts.Companion.TABLE_NAME,
                             projection,
@@ -289,10 +289,10 @@ class PostsDatabase internal constructor(
             }
         if (hiddenPosts.size() > 0 || !userPosts.isEmpty()) {
             database.execute<Any?>(
-                ExecuteCallback { database: SQLiteDatabase? ->
+                ExecuteCallback { database: SQLiteDatabase ->
                     val values = ContentValues()
                     values.put(Schema.Posts.Columns.Companion.TIME, System.currentTimeMillis())
-                    database!!.update(
+                    database.update(
                         Schema.Posts.Companion.TABLE_NAME,
                         values,
                         filter.value,

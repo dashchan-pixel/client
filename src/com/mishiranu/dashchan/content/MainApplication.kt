@@ -110,9 +110,9 @@ class MainApplication : Application() {
     companion object {
         private const val PROCESS_WEB_VIEW = "webview"
 
-        private var instance: MainApplication? = null
+        private lateinit var instance: MainApplication
 
         @JvmStatic
-        fun getInstance(): MainApplication = instance!!
+        fun getInstance(): MainApplication = instance
     }
 }

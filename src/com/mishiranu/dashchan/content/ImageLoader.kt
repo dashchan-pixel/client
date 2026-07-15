@@ -61,7 +61,7 @@ class ImageLoader private constructor() {
     private inner class LoaderTask(
         val uri: Uri,
         val chan: Chan,
-        val key: String?,
+        val key: String,
         val fromCacheOnly: Boolean,
     ) : HttpHolderTask<Unit, Bitmap?>(
             chan,
@@ -94,7 +94,7 @@ class ImageLoader private constructor() {
                     if (storeExternal) {
                         CacheManager.Companion
                             .getInstance()
-                            .loadThumbnailExternal(key!!)
+                            .loadThumbnailExternal(key)
                     } else {
                         null
                     }
@@ -160,7 +160,7 @@ class ImageLoader private constructor() {
                             bitmap!!,
                         )
                     if (storeExternal) {
-                        CacheManager.Companion.getInstance().storeThumbnailExternal(key!!, bitmap)
+                        CacheManager.Companion.getInstance().storeThumbnailExternal(key, bitmap)
                     }
                 }
             } catch (e: HttpException) {
