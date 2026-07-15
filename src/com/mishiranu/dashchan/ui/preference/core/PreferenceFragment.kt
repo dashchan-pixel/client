@@ -90,16 +90,17 @@ abstract class PreferenceFragment : ContentFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        recyclerView = PaddedRecyclerView(container!!.getContext())
-        recyclerView!!.setId(android.R.id.list)
-        recyclerView!!.setMotionEventSplittingEnabled(false)
-        recyclerView!!.setVerticalScrollBarEnabled(true)
-        recyclerView!!.setClipToPadding(false)
-        recyclerView!!.setLayoutManager(LinearLayoutManager(container.getContext()))
-        recyclerView!!.setAdapter(Adapter())
-        recyclerView!!.addItemDecoration(
+        val recyclerView = PaddedRecyclerView(container!!.getContext())
+        this.recyclerView = recyclerView
+        recyclerView.setId(android.R.id.list)
+        recyclerView.setMotionEventSplittingEnabled(false)
+        recyclerView.setVerticalScrollBarEnabled(true)
+        recyclerView.setClipToPadding(false)
+        recyclerView.setLayoutManager(LinearLayoutManager(container.getContext()))
+        recyclerView.setAdapter(Adapter())
+        recyclerView.addItemDecoration(
             DividerItemDecoration(
-                recyclerView!!.getContext(),
+                recyclerView.getContext(),
                 DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
                     val current = preferences[position]
                     val next =

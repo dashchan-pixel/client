@@ -115,11 +115,12 @@ class TextFragment : BaseListFragment {
                         null
                     }
                 val errorItem = this.errorItem
+                val changelogEntries = this.changelogEntries
                 if (errorItem != null) {
                     recyclerView.visibility = View.GONE
                     setErrorText(errorItem.toString())
                 } else if (changelogEntries != null) {
-                    adapter.setItems(context, formatChangelogEntries(context, changelogEntries!!))
+                    adapter.setItems(context, formatChangelogEntries(context, changelogEntries))
                 } else {
                     recyclerView.visibility = View.GONE
                     progressView!!.visibility = View.VISIBLE
@@ -134,7 +135,7 @@ class TextFragment : BaseListFragment {
                         viewModel.attach(task)
                     }
                     viewModel.observe(viewLifecycleOwner) { entries, newErrorItem ->
-                        changelogEntries = entries
+                        this.changelogEntries = entries
                         this.errorItem = newErrorItem
                         progressView!!.visibility = View.GONE
                         if (entries != null) {

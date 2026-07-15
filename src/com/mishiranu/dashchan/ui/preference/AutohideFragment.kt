@@ -161,12 +161,13 @@ class AutohideFragment : BaseListFragment() {
             }
 
             R.id.menu_search -> {
+                val searchMenuItem = this.searchMenuItem
                 return if (item === searchMenuItem) {
                     searchFocused = true
                     false
                 } else if (searchMenuItem != null) {
                     searchFocused = true
-                    searchMenuItem!!.expandActionView()
+                    searchMenuItem.expandActionView()
                     true
                 } else {
                     true
@@ -428,9 +429,7 @@ class AutohideFragment : BaseListFragment() {
                 autohideItem = BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, AutohideStorage.AutohideItem::class.java)
             }
             if (autohideItem != null) {
-                if (autohideItem.chanNames != null) {
-                    selectedChanNames.addAll(autohideItem.chanNames!!)
-                }
+                autohideItem.chanNames?.let { selectedChanNames.addAll(it) }
                 updateSelectedText()
                 boardNameEdit.setText(autohideItem.boardName)
                 threadNumberEdit.setText(autohideItem.threadNumber)

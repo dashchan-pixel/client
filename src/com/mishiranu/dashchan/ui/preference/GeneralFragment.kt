@@ -161,7 +161,7 @@ class GeneralFragment :
             viewModel.extraMap = result.second
             captchaSolvingPreference!!.invalidate()
             if (captchaSolvingCheckDialog != null) {
-                captchaSolvingCheckDialog!!.dismiss()
+                captchaSolvingCheckDialog?.dismiss()
                 captchaSolvingCheckDialog = null
                 if (result.second != null) {
                     ClickableToast.show(R.string.validation_completed)

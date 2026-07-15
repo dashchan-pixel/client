@@ -65,16 +65,12 @@ abstract class Preference<T>(
 
     var value: T? = null
         set(value) {
+            val onBeforeChangeListener = this.onBeforeChangeListener
             if (onBeforeChangeListener == null ||
-                onBeforeChangeListener!!.onBeforeChange(
-                    this,
-                    value,
-                )
+                onBeforeChangeListener.onBeforeChange(this, value)
             ) {
                 field = value
-                if (onChangeListener != null) {
-                    onChangeListener!!.onChange(true)
-                }
+                onChangeListener?.onChange(true)
             }
         }
     private var enabled = true
@@ -107,9 +103,7 @@ abstract class Preference<T>(
     }
 
     fun performClick() {
-        if (onClickListener != null) {
-            onClickListener!!.onClick(this)
-        }
+        onClickListener?.onClick(this)
     }
 
     internal abstract fun extract(preferences: SharedPreferences)
@@ -117,15 +111,11 @@ abstract class Preference<T>(
     internal abstract fun persist(preferences: SharedPreferences)
 
     fun invalidate() {
-        if (onChangeListener != null) {
-            onChangeListener!!.onChange(false)
-        }
+        onChangeListener?.onChange(false)
     }
 
     fun notifyAfterChange() {
-        if (onAfterChangeListener != null) {
-            onAfterChangeListener!!.onAfterChange(this)
-        }
+        onAfterChangeListener?.onAfterChange(this)
     }
 
     fun setOnClickListener(listener: OnClickListener<T>?) {

@@ -208,8 +208,9 @@ class UpdateFragment : BaseListFragment {
         }
         val adapter = Adapter(getRecyclerView()!!.context, this::onItemClick)
         getRecyclerView()!!.adapter = adapter
+        val updateDataMap = this.updateDataMap
         if (updateDataMap != null) {
-            adapter.listItems = buildData(requireContext(), updateDataMap!!, savedInstanceState)
+            adapter.listItems = buildData(requireContext(), updateDataMap, savedInstanceState)
         }
         updateTitle()
     }
@@ -285,12 +286,13 @@ class UpdateFragment : BaseListFragment {
     ) {
         var length = 0L
         val recyclerView = getRecyclerView()
+        val updateDataMap = this.updateDataMap
         if (updateDataMap != null && recyclerView != null) {
             val adapter = recyclerView.adapter as Adapter
             for (listItem in adapter.listItems) {
                 if (listItem.willBeInstalled()) {
                     length +=
-                        updateDataMap!!
+                        updateDataMap
                             .get(listItem.extensionName, listItem.installed)!!
                             .packageItems[listItem.targetIndex]
                             .length
@@ -314,12 +316,13 @@ class UpdateFragment : BaseListFragment {
         val itemId = item.itemId
         if (itemId == R.id.menu_download) {
             val requests = ArrayList<UpdaterActivity.Request>()
+            val updateDataMap = this.updateDataMap
             if (updateDataMap != null) {
                 val adapter = getRecyclerView()!!.adapter as Adapter
                 for (listItem in adapter.listItems) {
                     if (listItem.willBeInstalled()) {
                         val packageItem =
-                            updateDataMap!!
+                            updateDataMap
                                 .get(listItem.extensionName, listItem.installed)!!
                                 .packageItems[listItem.targetIndex]
                         if (packageItem.source != null) {
