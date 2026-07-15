@@ -178,23 +178,23 @@ class MainActivity :
     private var currentPageItem: PageItem? = null
 
     override var uiManager: UiManager? = null
-    private var instanceViewModel: InstanceViewModel? = null
-    private var watcherServiceClient: WatcherService.Client? = null
+    private lateinit var instanceViewModel: InstanceViewModel
+    private lateinit var watcherServiceClient: WatcherService.Client
     private val extensionsTrustLoopState = ExtensionsTrustLoop.State()
-    private var downloadDialog: DownloadDialog? = null
+    private lateinit var downloadDialog: DownloadDialog
 
-    private var drawerForm: DrawerForm? = null
-    private var drawerParent: FrameLayout? = null
-    private var drawerLayout: CustomDrawerLayout? = null
-    private var drawerToggle: DrawerToggle? = null
+    private lateinit var drawerForm: DrawerForm
+    private lateinit var drawerParent: FrameLayout
+    private lateinit var drawerLayout: CustomDrawerLayout
+    private lateinit var drawerToggle: DrawerToggle
     private val navigationAreaLockers = HashSet<String?>()
 
-    private var expandedScreen: ExpandedScreen? = null
+    private lateinit var expandedScreen: ExpandedScreen
     private var toolbarHolder: ToolbarHolder? = null
-    private var toolbarExtra: FrameLayout? = null
+    private lateinit var toolbarExtra: FrameLayout
 
-    private var drawerCommon: ViewGroup? = null
-    private var drawerWide: ViewGroup? = null
+    private lateinit var drawerCommon: ViewGroup
+    private lateinit var drawerWide: ViewGroup
     private var wideMode = false
 
     private var navigateIntentOnResume: Intent? = null
@@ -223,7 +223,7 @@ class MainActivity :
         Preferences.PREFERENCES!!.register(preferencesListener)
         ChanManager.getInstance().observable.register(chanManagerCallback)
         watcherServiceClient = getClient(this)
-        watcherServiceClient!!.callback = this
+        watcherServiceClient.callback = this
         drawerCommon = findViewById(R.id.drawer_common)
         drawerWide = findViewById(R.id.drawer_wide)
         val theme = getTheme(this)
@@ -232,15 +232,15 @@ class MainActivity :
         drawerContext = this
         drawerBackground = theme.card
 
-        drawerCommon!!.setBackgroundColor(drawerBackground)
-        drawerWide!!.setBackgroundColor(drawerBackground)
+        drawerCommon.setBackgroundColor(drawerBackground)
+        drawerWide.setBackgroundColor(drawerBackground)
         drawerForm =
-            DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient!!)
+            DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient)
         drawerParent = FrameLayout(this)
-        drawerParent!!.addView(drawerForm!!.contentView)
-        drawerCommon!!.addView(drawerParent)
+        drawerParent.addView(drawerForm.contentView)
+        drawerCommon.addView(drawerParent)
         drawerLayout = findViewById(R.id.drawer_layout)
-        drawerLayout!!.setSaveEnabled(false)
+        drawerLayout.setSaveEnabled(false)
         val drawerInterlayer = findViewById<FrameLayout>(R.id.drawer_interlayer)
         getLayoutInflater().inflate(R.layout.widget_toolbar, drawerInterlayer)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -254,7 +254,7 @@ class MainActivity :
         layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0)
         layoutTransition.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0)
         layoutTransition.setDuration(100)
-        toolbarExtra!!.setLayoutTransition(layoutTransition)
+        toolbarExtra.setLayoutTransition(layoutTransition)
 
         val toolbarLayout = findViewById<View>(R.id.toolbar_layout)
 
@@ -266,18 +266,18 @@ class MainActivity :
                 } else {
                     null
                 },
-                drawerLayout!!,
+                drawerLayout,
             )
-        drawerCommon!!.setElevation(4f * density)
-        drawerWide!!.setElevation(4f * density)
+        drawerCommon.setElevation(4f * density)
+        drawerWide.setElevation(4f * density)
 
-        drawerLayout!!.addDrawerListener(drawerToggle!!)
-        drawerLayout!!.addDrawerListener(drawerForm!!)
+        drawerLayout.addDrawerListener(drawerToggle)
+        drawerLayout.addDrawerListener(drawerForm)
         if (toolbarHolder == null) {
-            drawerLayout!!.addDrawerListener(ExpandedScreenDrawerLocker())
+            drawerLayout.addDrawerListener(ExpandedScreenDrawerLocker())
         }
         onBackPressedDispatcher.addCallback(this, backPressedCallback)
-        drawerLayout!!.addDrawerListener(
+        drawerLayout.addDrawerListener(
             object : SimpleDrawerListener() {
                 override fun onDrawerOpened(drawerView: View) {
                     updateBackHandling()
@@ -298,7 +298,7 @@ class MainActivity :
                         directRequest: DirectRequest?,
                     ) {
                         if (downloadBinderField != null) {
-                            downloadBinderField!!.resolve(choiceRequest, directRequest)
+                            downloadBinderField?.resolve(choiceRequest, directRequest)
                         }
                     }
 
@@ -307,13 +307,13 @@ class MainActivity :
                         action: ReplaceRequest.Action?,
                     ) {
                         if (downloadBinderField != null) {
-                            downloadBinderField!!.resolve(replaceRequest, action)
+                            downloadBinderField?.resolve(replaceRequest, action)
                         }
                     }
 
                     override fun cancel(prepareRequest: PrepareRequest) {
                         if (downloadBinderField != null) {
-                            downloadBinderField!!.cancel(prepareRequest)
+                            downloadBinderField?.cancel(prepareRequest)
                         }
                     }
                 },
@@ -327,10 +327,10 @@ class MainActivity :
                 toolbarLayout,
                 drawerInterlayer,
                 drawerParent,
-                drawerForm!!.contentView,
-                drawerForm!!.headerView,
+                drawerForm.contentView,
+                drawerForm.headerView,
             )
-        expandedScreen!!.setDrawerOverToolbarEnabled(!wideMode)
+        expandedScreen.setDrawerOverToolbarEnabled(!wideMode)
         uiManager = UiManager(this, this, this)
         uiManager!!.attach(this)
         ContentFragment.Companion.prepare(this)
@@ -341,14 +341,14 @@ class MainActivity :
                     parent: View?,
                     child: View?,
                 ) {
-                    expandedScreen!!.addContentView(child)
+                    expandedScreen.addContentView(child)
                 }
 
                 override fun onChildViewRemoved(
                     parent: View?,
                     child: View?,
                 ) {
-                    expandedScreen!!.removeContentView(child)
+                    expandedScreen.removeContentView(child)
                 }
             },
         )
@@ -360,17 +360,17 @@ class MainActivity :
             val drawerInitialPosition = drawerInitialPosition
             if (drawerInitialPosition != DrawerInitialPosition.CLOSED) {
                 if (!wideMode) {
-                    drawerLayout!!.post(Runnable { drawerLayout!!.openDrawer(GravityCompat.START) })
+                    drawerLayout.post(Runnable { drawerLayout.openDrawer(GravityCompat.START) })
                 }
                 if (drawerInitialPosition == DrawerInitialPosition.FORUMS) {
-                    drawerForm!!.setChanSelectMode(allowSelectChan)
+                    drawerForm.setChanSelectMode(allowSelectChan)
                 }
             }
         } else {
             if (!wideMode && savedState.getBoolean(EXTRA_DRAWER_EXPANDED)) {
-                drawerLayout!!.openDrawer(GravityCompat.START)
+                drawerLayout.openDrawer(GravityCompat.START)
             }
-            drawerForm!!.setChanSelectMode(
+            drawerForm.setChanSelectMode(
                 allowSelectChan &&
                     savedState.getBoolean(EXTRA_DRAWER_CHAN_SELECT_MODE),
             )
@@ -536,8 +536,8 @@ class MainActivity :
         super.onSaveInstanceState(outState)
 
         writePagesState(outState)
-        outState.putBoolean(EXTRA_DRAWER_EXPANDED, drawerLayout!!.isDrawerOpen(GravityCompat.START))
-        outState.putBoolean(EXTRA_DRAWER_CHAN_SELECT_MODE, drawerForm!!.isChanSelectMode())
+        outState.putBoolean(EXTRA_DRAWER_EXPANDED, drawerLayout.isDrawerOpen(GravityCompat.START))
+        outState.putBoolean(EXTRA_DRAWER_CHAN_SELECT_MODE, drawerForm.isChanSelectMode())
         outState.putString(EXTRA_STORAGE_REQUEST_STATE, storageRequestState.name)
     }
 
@@ -588,10 +588,7 @@ class MainActivity :
         return toolbarHolder!!.toolbar
     }
 
-    override fun getToolbarExtra(): FrameLayout {
-        checkNotNull(toolbarExtra)
-        return toolbarExtra!!
-    }
+    override fun getToolbarExtra(): FrameLayout = toolbarExtra
 
     override fun getToolbarContext(): Context = if (toolbarHolder != null) toolbarHolder!!.toolbar.getContext() else this
 
@@ -1390,7 +1387,7 @@ class MainActivity :
                 retainIds.add(retainId)
             }
             val iterator =
-                instanceViewModel!!.extras.entries.iterator()
+                instanceViewModel.extras.entries.iterator()
             while (iterator.hasNext()) {
                 val entry = iterator.next()
                 if (!retainIds.contains(entry.key)) {
@@ -1404,7 +1401,7 @@ class MainActivity :
     private fun closeOverlaysForNavigation() {
         navigateOrCloseGallery(null)
         if (!wideMode) {
-            drawerLayout!!.closeDrawers()
+            drawerLayout.closeDrawers()
         }
     }
 
@@ -1420,43 +1417,43 @@ class MainActivity :
             chanName = if (chan != null) chan.name else null
         }
         if (currentFragment is PageFragment) {
-            expandedScreen!!.removeLocker(LOCKER_NON_PAGE)
+            expandedScreen.removeLocker(LOCKER_NON_PAGE)
         } else {
-            expandedScreen!!.addLocker(LOCKER_NON_PAGE)
+            expandedScreen.addLocker(LOCKER_NON_PAGE)
         }
-        watcherServiceClient!!.updateConfiguration(chanName)
-        drawerForm!!.updateConfiguration(chanName)
+        watcherServiceClient.updateConfiguration(chanName)
+        drawerForm.updateConfiguration(chanName)
         invalidateHomeUpState()
     }
 
     override fun onDialogStackOpen() {
         if (!wideMode) {
-            drawerLayout!!.closeDrawers()
+            drawerLayout.closeDrawers()
         }
     }
 
     override fun getDownloadBinder(): DownloadService.Binder? = downloadBinderField
 
     override val watcherClient: WatcherService.Client
-        get() = watcherServiceClient!!
+        get() = watcherServiceClient
 
-    override fun getRetainableExtra(retainId: String?): Retainable? = instanceViewModel!!.extras[retainId]
+    override fun getRetainableExtra(retainId: String?): Retainable? = instanceViewModel.extras[retainId]
 
     override fun storeRetainableExtra(
         retainId: String?,
         extra: Retainable?,
     ) {
         if (extra != null) {
-            instanceViewModel!!.extras[retainId] = extra
+            instanceViewModel.extras[retainId] = extra
         } else {
-            instanceViewModel!!.extras.remove(retainId)
+            instanceViewModel.extras.remove(retainId)
         }
     }
 
     override fun invalidateHomeUpState() {
         val currentFragment = this.currentFragment
         if (currentFragment != null && currentFragment.isSearchMode) {
-            drawerToggle!!.setDrawerIndicatorMode(DrawerToggle.Mode.UP)
+            drawerToggle.setDrawerIndicatorMode(DrawerToggle.Mode.UP)
         } else {
             val displayUp: Boolean
             if (currentFragment is PageFragment) {
@@ -1478,7 +1475,7 @@ class MainActivity :
             } else {
                 displayUp = !stackPageItems.isEmpty() || !fragments.isEmpty()
             }
-            drawerToggle!!.setDrawerIndicatorMode(
+            drawerToggle.setDrawerIndicatorMode(
                 if (displayUp) {
                     DrawerToggle.Mode.UP
                 } else if (wideMode) {
@@ -1496,18 +1493,18 @@ class MainActivity :
         if (wideMode != newWideMode || forced) {
             wideMode = newWideMode
             if (!forced) {
-                expandedScreen!!.setDrawerOverToolbarEnabled(!wideMode)
+                expandedScreen.setDrawerOverToolbarEnabled(!wideMode)
             }
-            drawerLayout!!.setDrawerLockMode(
+            drawerLayout.setDrawerLockMode(
                 if (wideMode) {
                     androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_CLOSED
                 } else {
                     androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_UNLOCKED
                 },
             )
-            drawerWide!!.setVisibility(if (wideMode) View.VISIBLE else View.GONE)
-            ViewUtils.removeFromParent(drawerParent!!)
-            (if (wideMode) drawerWide else drawerCommon)!!.addView(drawerParent)
+            drawerWide.setVisibility(if (wideMode) View.VISIBLE else View.GONE)
+            ViewUtils.removeFromParent(drawerParent)
+            (if (wideMode) drawerWide else drawerCommon).addView(drawerParent)
             invalidateHomeUpState()
             updateBackHandling()
         }
@@ -1525,8 +1522,8 @@ class MainActivity :
                 (configuration.screenWidthDp * density + 0.5f).toInt() - actionBarSize,
                 (320 * density + 0.5f).toInt(),
             )
-        drawerWide!!.getLayoutParams().width = drawerWidth
-        drawerCommon!!.getLayoutParams().width = drawerWide!!.getLayoutParams().width
+        drawerWide.getLayoutParams().width = drawerWidth
+        drawerCommon.getLayoutParams().width = drawerWide.getLayoutParams().width
     }
 
     override fun requestStorage(): Boolean {
@@ -1542,14 +1539,14 @@ class MainActivity :
         super.onStart()
 
         handleChansChangedDelayed()
-        watcherServiceClient!!.notifyForeground()
+        watcherServiceClient.notifyForeground()
     }
 
     override fun onResume() {
         super.onResume()
 
-        drawerForm!!.updateRestartViewVisibility()
-        drawerForm!!.updateItems(true, true)
+        drawerForm.updateRestartViewVisibility()
+        drawerForm.updateItems(true, true)
         updateWideConfiguration(false)
         handleChansChangedDelayed()
         register(this)
@@ -1565,9 +1562,7 @@ class MainActivity :
         // pending hand-back directly as well (no-op when there is none, or if the intent won).
         reopenInApp(this)
 
-        if (downloadBinderField != null) {
-            downloadBinderField!!.notifyReadyToHandleRequests()
-        }
+        downloadBinderField?.notifyReadyToHandleRequests()
     }
 
     protected override fun onStop() {
@@ -1580,17 +1575,13 @@ class MainActivity :
     override fun onFinish() {
         super.onFinish()
 
-        if (postingBinder != null) {
-            postingBinder!!.unregister(postingGlobalCallback)
-            postingBinder = null
-        }
-        if (downloadBinderField != null) {
-            downloadBinderField!!.unregister(downloadCallback)
-            downloadBinderField = null
-        }
+        postingBinder?.unregister(postingGlobalCallback)
+        postingBinder = null
+        downloadBinderField?.unregister(downloadCallback)
+        downloadBinderField = null
         unbindService(postingConnection)
         unbindService(downloadConnection)
-        watcherServiceClient!!.callback = null
+        watcherServiceClient.callback = null
         FavoritesStorage.getInstance().getObservable().unregister(this)
         Preferences.PREFERENCES!!.unregister(preferencesListener)
         ChanManager.getInstance().observable.unregister(chanManagerCallback)
@@ -1604,7 +1595,7 @@ class MainActivity :
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
-        drawerToggle!!.syncState()
+        drawerToggle.syncState()
     }
 
     override fun onSearchRequested(): Boolean {
@@ -1634,7 +1625,7 @@ class MainActivity :
 
     private val isBackHandled: Boolean
         get() {
-            if (!wideMode && drawerLayout!!.isDrawerOpen(GravityCompat.START)) {
+            if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 return true
             }
             val currentFragment = this.currentFragment
@@ -1673,8 +1664,8 @@ class MainActivity :
         homeHandled: Boolean,
         close: Runnable,
     ) {
-        if (!wideMode && drawerLayout!!.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout!!.closeDrawers()
+        if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawers()
         } else {
             val currentFragment = this.currentFragment
             if (!homeHandled && currentFragment!!.onBackPressed()) {
@@ -1718,7 +1709,7 @@ class MainActivity :
 
     override fun onActionModeStarted(mode: ActionMode?) {
         super.onActionModeStarted(mode)
-        expandedScreen!!.setActionModeState(true)
+        expandedScreen.setActionModeState(true)
         if (currentActionMode == null) {
             setNavigationAreaLocked(LOCKER_ACTION_MODE, true)
         }
@@ -1727,13 +1718,13 @@ class MainActivity :
 
     override fun onActionModeFinished(mode: ActionMode?) {
         if (currentActionMode != null) {
-            if (currentActionMode!!.get() === mode) {
+            if (currentActionMode?.get() === mode) {
                 currentActionMode = null
                 setNavigationAreaLocked(LOCKER_ACTION_MODE, false)
             }
         }
         super.onActionModeFinished(mode)
-        expandedScreen!!.setActionModeState(false)
+        expandedScreen.setActionModeState(false)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
@@ -1805,7 +1796,7 @@ class MainActivity :
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (drawerToggle!!.onOptionsItemSelected(item)) {
+        if (drawerToggle.onOptionsItemSelected(item)) {
             return true
         }
         val currentFragment = this.currentFragment
@@ -1814,7 +1805,7 @@ class MainActivity :
             if (currentFragment!!.onHomePressed()) {
                 return true
             }
-            drawerLayout!!.closeDrawers()
+            drawerLayout.closeDrawers()
             if (currentFragment is PageFragment) {
                 val page = currentFragment.page
                 var newChanName = page!!.chanName
@@ -1916,7 +1907,7 @@ class MainActivity :
     }
 
     private val preferencesListener =
-        SharedPreferences.Listener { key: String? -> drawerForm!!.updatePreferences() }
+        SharedPreferences.Listener { key: String? -> drawerForm.updatePreferences() }
 
     override fun onSelectChan(chanName: String?) {
         val currentFragment = this.currentFragment
@@ -1969,7 +1960,7 @@ class MainActivity :
                 }
                 navigateBoardsOrThreads(chanName, boardName, fromCache, false)
             }
-            drawerForm!!.updateConfiguration(chanName)
+            drawerForm.updateConfiguration(chanName)
         } else {
             closeOverlaysForNavigation()
         }
@@ -2101,7 +2092,7 @@ class MainActivity :
                     break
                 }
             }
-            drawerForm!!.updateItems(true, false)
+            drawerForm.updateItems(true, false)
             invalidateHomeUpState()
         }
     }
@@ -2200,7 +2191,7 @@ class MainActivity :
             }
             preservedPageItems.addAll(addPreserved)
         }
-        drawerForm!!.updateItems(true, false)
+        drawerForm.updateItems(true, false)
         invalidateHomeUpState()
     }
 
@@ -2211,7 +2202,7 @@ class MainActivity :
             result = currentFragment.onDrawerNumberEntered(number)
         }
         if (!wideMode && get(result, DrawerForm.Companion.RESULT_SUCCESS)) {
-            drawerLayout!!.closeDrawers()
+            drawerLayout.closeDrawers()
         }
         return result
     }
@@ -2275,7 +2266,7 @@ class MainActivity :
 
     override fun onDraggingStateChanged(dragging: Boolean) {
         if (!wideMode) {
-            drawerLayout!!.setDrawerLockMode(
+            drawerLayout.setDrawerLockMode(
                 if (dragging) {
                     androidx.drawerlayout.widget.DrawerLayout.LOCK_MODE_LOCKED_OPEN
                 } else {
@@ -2374,7 +2365,7 @@ class MainActivity :
         if (!changedChanNames.isEmpty() || !removedChanNames.isEmpty()) {
             changedChanNames.clear()
             removedChanNames.clear()
-            drawerForm!!.updateChans()
+            drawerForm.updateChans()
             updatePostFragmentConfiguration()
         }
     }
@@ -2382,7 +2373,7 @@ class MainActivity :
     private val chanManagerCallback: ChanManager.Callback =
         object : ChanManager.Callback {
             override fun onRestartRequiredChanged() {
-                drawerForm!!.updateRestartViewVisibility()
+                drawerForm.updateRestartViewVisibility()
             }
 
             override fun onUntrustedExtensionInstalled() {
@@ -2453,16 +2444,14 @@ class MainActivity :
             }
 
             override fun onServiceDisconnected(componentName: ComponentName?) {
-                if (postingBinder != null) {
-                    postingBinder!!.unregister(postingGlobalCallback)
-                    postingBinder = null
-                }
+                postingBinder?.unregister(postingGlobalCallback)
+                postingBinder = null
             }
         }
 
     private fun updateHandleDownloadRequests() {
         val binder = downloadBinderField
-        downloadDialog!!.handleRequest(if (binder != null) binder.getPrimaryRequest() else null)
+        downloadDialog.handleRequest(if (binder != null) binder.getPrimaryRequest() else null)
     }
 
     private val downloadCallback: DownloadService.Callback =
@@ -2502,10 +2491,8 @@ class MainActivity :
             }
 
             override fun onServiceDisconnected(componentName: ComponentName?) {
-                if (downloadBinderField != null) {
-                    downloadBinderField!!.unregister(downloadCallback)
-                    downloadBinderField = null
-                }
+                downloadBinderField?.unregister(downloadCallback)
+                downloadBinderField = null
                 updateHandleDownloadRequests()
             }
         }
@@ -2562,7 +2549,7 @@ class MainActivity :
     private fun notifyDownloadServiceStorageRequestResult(cancel: Boolean) {
         if (downloadBinderField != null) {
             val uri = getDownloadUriTree(this)
-            downloadBinderField!!.onPermissionResult(
+            downloadBinderField?.onPermissionResult(
                 if (uri != null) {
                     DownloadService.PermissionResult.SUCCESS
                 } else {
@@ -2656,7 +2643,7 @@ class MainActivity :
     ) {
         when (action) {
             FavoritesStorage.Action.ADD, FavoritesStorage.Action.REMOVE, FavoritesStorage.Action.MODIFY_TITLE -> {
-                drawerForm!!.updateItems(false, true)
+                drawerForm.updateItems(false, true)
             }
 
             else -> {}
@@ -2672,7 +2659,7 @@ class MainActivity :
         threadNumber: String?,
         counter: WatcherService.Counter,
     ) {
-        drawerForm!!.onWatcherUpdate(chanName!!, boardName, threadNumber, counter)
+        drawerForm.onWatcherUpdate(chanName!!, boardName, threadNumber, counter)
     }
 
     override fun setPageTitle(
@@ -2683,7 +2670,7 @@ class MainActivity :
         if ((this.currentFragment as PageFragment).page!!.content == Page.Content.POSTS) {
             currentPageItem!!.threadTitle = title
         }
-        drawerForm!!.updateItems(true, false)
+        drawerForm.updateItems(true, false)
     }
 
     override fun handleRedirect(
@@ -2744,9 +2731,9 @@ class MainActivity :
         locked: Boolean,
     ) {
         if (locked) {
-            expandedScreen!!.addLocker(locker)
+            expandedScreen.addLocker(locker)
         } else {
-            expandedScreen!!.removeLocker(locker)
+            expandedScreen.removeLocker(locker)
         }
     }
 
@@ -2759,7 +2746,7 @@ class MainActivity :
         } else {
             navigationAreaLockers.remove(locker)
         }
-        drawerLayout!!.setExpandableFromAnyPoint(navigationAreaLockers.isEmpty())
+        drawerLayout.setExpandableFromAnyPoint(navigationAreaLockers.isEmpty())
     }
 
     private inner class ExpandedScreenDrawerLocker : DrawerListener {
