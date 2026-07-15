@@ -65,11 +65,11 @@ class PostingService :
     private val callbackKeys = HashMap<Callback?, Key?>()
     private var taskState: TaskState? = null
 
-    private var notificationManager: NotificationManager? = null
+    private lateinit var notificationManager: NotificationManager
     private var notificationColor = 0
-    private var wakeLock: WakeLock? = null
+    private lateinit var wakeLock: WakeLock
 
-    private var notificationsWorker: Thread? = null
+    private lateinit var notificationsWorker: Thread
     private val notificationsQueue = LinkedBlockingQueue<NotificationData?>()
 
     class Key internal constructor(
@@ -144,14 +144,14 @@ class PostingService :
         notificationColor = theme.accent
 
         this.notificationColor = notificationColor
-        notificationManager!!.createNotificationChannel(
+        notificationManager.createNotificationChannel(
             NotificationChannel(
                 C.NOTIFICATION_CHANNEL_POSTING,
                 getString(R.string.posting),
                 NotificationManager.IMPORTANCE_LOW,
             ),
         )
-        notificationManager!!.createNotificationChannel(
+        notificationManager.createNotificationChannel(
             createHeadsUpNotificationChannel(
                 C.NOTIFICATION_CHANNEL_POSTING_COMPLETE,
                 getString(R.string.sent_posts),
@@ -164,22 +164,22 @@ class PostingService :
                 PowerManager.PARTIAL_WAKE_LOCK,
                 getPackageName() + ":PostingWakeLock",
             )
-        wakeLock!!.setReferenceCounted(false)
+        wakeLock.setReferenceCounted(false)
         addOnDestroyListener(ChanDatabase.getInstance().requireCookies())
         notificationsWorker = Thread(notificationsRunnable, "PostingServiceNotificationThread")
-        notificationsWorker!!.start()
+        notificationsWorker.start()
     }
 
     public override fun onDestroy() {
         super.onDestroy()
 
         performFinish(null, true)
-        wakeLock!!.release()
+        wakeLock.release()
         // Ensure queue is empty
         refreshNotification(NotificationData.Type.CANCEL, null)
-        notificationsWorker!!.interrupt()
+        notificationsWorker.interrupt()
         try {
-            notificationsWorker!!.join()
+            notificationsWorker.join()
         } catch (e: InterruptedException) {
             throw RuntimeException(e)
         }
@@ -333,7 +333,7 @@ class PostingService :
                         PostingService::class.java,
                     ),
                 )
-                wakeLock!!.acquire()
+                wakeLock.acquire()
                 val chan = get(chanName)
                 val task = SendPostTask(key, this@PostingService, chan, data)
                 task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
@@ -377,8 +377,9 @@ class PostingService :
                 this@PostingService.callbacks[key] = callbacks
             }
             callbacks.add(callback)
-            if (taskState != null && taskState!!.key == key) {
-                notifyInit(callback, taskState!!)
+            val taskState = this@PostingService.taskState
+            if (taskState != null && taskState.key == key) {
+                notifyInit(callback, taskState)
             }
         }
 
@@ -447,7 +448,7 @@ class PostingService :
                 taskState.task.cancel()
             }
             refreshNotification(NotificationData.Type.CANCEL, taskState)
-            wakeLock!!.release()
+            wakeLock.release()
             if (cancel) {
                 val callbacks = this.callbacks[key]
                 if (callbacks != null) {
@@ -629,7 +630,7 @@ class PostingService :
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                     ),
                 )
-                notificationManager!!.notify(tag, 0, builder.build())
+                notificationManager.notify(tag, 0, builder.build())
             }
 
             if (targetThreadNumber != null && favoriteOnReply!!.isEnabled(data.optionSage)) {

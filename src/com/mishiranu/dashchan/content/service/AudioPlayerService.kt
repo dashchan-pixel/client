@@ -40,10 +40,10 @@ class AudioPlayerService :
     MediaPlayer.OnErrorListener,
     FileCallback {
     private val callbacks = WeakObservable<Callback>()
-    private var audioFocus: AudioFocus? = null
-    private var notificationManager: NotificationManager? = null
+    private lateinit var audioFocus: AudioFocus
+    private lateinit var notificationManager: NotificationManager
     private var notificationColor = 0
-    private var wakeLock: WakeLock? = null
+    private lateinit var wakeLock: WakeLock
 
     private var builder: NotificationCompat.Builder? = null
     private var readFileTask: ReadFileTask? = null
@@ -95,7 +95,7 @@ class AudioPlayerService :
         notificationColor = theme.accent
 
         this.notificationColor = notificationColor
-        notificationManager!!.createNotificationChannel(
+        notificationManager.createNotificationChannel(
             NotificationChannel(
                 C.NOTIFICATION_CHANNEL_AUDIO_PLAYER,
                 getString(R.string.audio_player),
@@ -109,7 +109,7 @@ class AudioPlayerService :
                 PowerManager.PARTIAL_WAKE_LOCK,
                 getPackageName() + ":AudioPlayerWakeLock",
             )
-        wakeLock!!.setReferenceCounted(false)
+        wakeLock.setReferenceCounted(false)
         addOnDestroyListener(ChanDatabase.getInstance().requireCookies())
     }
 
@@ -147,7 +147,7 @@ class AudioPlayerService :
                         ClickableToast.show(R.string.cache_is_unavailable)
                         cleanup(true, true)
                     } else {
-                        wakeLock!!.acquire()
+                        wakeLock.acquire()
                         if (cachedFile.exists()) {
                             initAndPlayAudio(cachedFile)
                         } else {
@@ -181,16 +181,16 @@ class AudioPlayerService :
         notify: Boolean,
     ) {
         if (readFileTask != null) {
-            readFileTask!!.cancel()
+            readFileTask?.cancel()
             readFileTask = null
         }
-        audioFocus!!.release()
+        audioFocus.release()
         if (mediaPlayer != null) {
-            mediaPlayer!!.stop()
-            mediaPlayer!!.release()
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
             mediaPlayer = null
         }
-        wakeLock!!.release()
+        wakeLock.release()
         if (stopSelf) {
             // Ensure service was started foreground at least once
             startForeground(getPlaybackNotification(false))
@@ -248,20 +248,18 @@ class AudioPlayerService :
             get() = mediaPlayer != null
 
         val isPlaying: Boolean
-            get() = mediaPlayer != null && mediaPlayer!!.isPlaying()
+            get() = mediaPlayer?.isPlaying() == true
 
         fun getFileName(): String? = fileName
 
         val position: Int
-            get() = if (mediaPlayer != null) mediaPlayer!!.getCurrentPosition() else -1
+            get() = mediaPlayer?.getCurrentPosition() ?: -1
 
         val duration: Int
-            get() = if (mediaPlayer != null) mediaPlayer!!.getDuration() else -1
+            get() = mediaPlayer?.getDuration() ?: -1
 
         fun seekTo(msec: Int) {
-            if (mediaPlayer != null) {
-                mediaPlayer!!.seekTo(msec)
-            }
+            mediaPlayer?.seekTo(msec)
         }
     }
 
@@ -281,7 +279,7 @@ class AudioPlayerService :
     ): Boolean {
         ClickableToast.show(R.string.playback_error)
         if (audioFile != null) {
-            audioFile!!.delete()
+            audioFile?.delete()
         }
         cleanup(true, true)
         return true
@@ -289,19 +287,19 @@ class AudioPlayerService :
 
     private fun pause(resetFocus: Boolean): Boolean {
         if (resetFocus) {
-            audioFocus!!.release()
+            audioFocus.release()
         }
         mediaPlayer!!.pause()
-        wakeLock!!.acquire(15000)
+        wakeLock.acquire(15000)
         return true
     }
 
     private fun play(resetFocus: Boolean): Boolean {
-        if (resetFocus && !audioFocus!!.acquire()) {
+        if (resetFocus && !audioFocus.acquire()) {
             return false
         }
         mediaPlayer!!.start()
-        wakeLock!!.acquire()
+        wakeLock.acquire()
         return true
     }
 
@@ -316,8 +314,8 @@ class AudioPlayerService :
             mediaPlayer!!.setDataSource(file.getPath())
             mediaPlayer!!.prepare()
         } catch (e: Exception) {
-            audioFile!!.delete()
-            CacheManager.getInstance().handleDownloadedFile(audioFile!!, false)
+            file.delete()
+            CacheManager.getInstance().handleDownloadedFile(file, false)
             ClickableToast.show(R.string.playback_error)
             cleanup(true, true)
             return
@@ -351,7 +349,7 @@ class AudioPlayerService :
                     obtainIntent(this, ACTION_TOGGLE),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
-            val playing = mediaPlayer != null && mediaPlayer!!.isPlaying()
+            val playing = mediaPlayer?.isPlaying() == true
             builder.addAction(
                 0,
                 getString(if (playing) R.string.pause else R.string.play),
@@ -465,13 +463,13 @@ class AudioPlayerService :
         file: File,
         errorItem: ErrorItem?,
     ) {
-        wakeLock!!.acquire(15000)
+        wakeLock.acquire(15000)
         readFileTask = null
         if (success) {
             initAndPlayAudio(file)
         } else {
             cleanup(true, true)
-            notificationManager!!.notify(
+            notificationManager.notify(
                 C.NOTIFICATION_ID_AUDIO_PLAYER,
                 getDownloadingNotification(true, true, uri).build(),
             )

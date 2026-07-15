@@ -53,7 +53,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     ) : FirewallResolver.Exclusive.Key {
         class Generator {
             private var output: ByteArrayOutputStream? = null
-            private var writer: OutputStreamWriter? = null
+            private lateinit var writer: OutputStreamWriter
 
             fun append(
                 key: String?,
@@ -64,23 +64,22 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                         output = ByteArrayOutputStream()
                         writer = OutputStreamWriter(output, "UTF-8")
                     }
-                    writer!!.write(key)
-                    writer!!.write('='.code)
+                    writer.write(key)
+                    writer.write('='.code)
                     if (value != null) {
-                        writer!!.write(value)
+                        writer.write(value)
                     }
-                    writer!!.flush()
+                    writer.flush()
                 } catch (e: IOException) {
                     throw RuntimeException(e)
                 }
             }
 
             fun generate(): String? {
-                if (output != null) {
-                    val bytes = output!!.toByteArray()
-                    if (bytes.size > 0) {
-                        return formatHex(getInstanceSha256().calculate(bytes))
-                    }
+                val output = output ?: return null
+                val bytes = output.toByteArray()
+                if (bytes.size > 0) {
+                    return formatHex(getInstanceSha256().calculate(bytes))
                 }
                 return null
             }
@@ -268,7 +267,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
             synchronized(this) {
                 interrupted = true
                 if (requireThread != null) {
-                    requireThread!!.interrupt()
+                    requireThread?.interrupt()
                 }
             }
         }

@@ -63,9 +63,7 @@ class WebViewService : Service() {
         Handler(
             Looper.getMainLooper(),
             Handler.Callback { message: Message? ->
-                if (webView == null) {
-                    return@Callback false
-                }
+                val webView = this.webView ?: return@Callback false
                 when (message!!.what) {
                     MESSAGE_HANDLE_NEXT -> {
                         handleNextCookieRequest()
@@ -101,7 +99,7 @@ class WebViewService : Service() {
                         if (cookieRequest === this.cookieRequest) {
                             message.getTarget().removeMessages(MESSAGE_HANDLE_FINISH)
                             if (cookieRequest.recaptchaV2Result != null) {
-                                webView!!.loadUrl("javascript:handleResult('" + cookieRequest.recaptchaV2Result + "')")
+                                webView.loadUrl("javascript:handleResult('" + cookieRequest.recaptchaV2Result + "')")
                                 message
                                     .getTarget()
                                     .sendEmptyMessageDelayed(MESSAGE_HANDLE_FINISH, cookieRequest.timeout)
@@ -113,14 +111,14 @@ class WebViewService : Service() {
                     }
 
                     MESSAGE_DRAW_TO_FILE -> {
-                        if (captureImageFile != null && webView != null) {
+                        if (captureImageFile != null) {
                             val bitmap =
                                 Bitmap.createBitmap(
-                                    webView!!.getLayoutParams().width,
-                                    webView!!.getLayoutParams().height,
+                                    webView.getLayoutParams().width,
+                                    webView.getLayoutParams().height,
                                     Bitmap.Config.ARGB_8888,
                                 )
-                            webView!!.draw(Canvas(bitmap))
+                            webView.draw(Canvas(bitmap))
                             try {
                                 FileOutputStream(captureImageFile).use { output ->
                                     bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
@@ -283,7 +281,7 @@ class WebViewService : Service() {
     private fun startCaptchaThread(cookieRequest: CookieRequest) {
         synchronized(this) {
             if (captchaThread != null) {
-                captchaThread!!.interrupt()
+                captchaThread?.interrupt()
             }
             captchaThread =
                 Thread(
@@ -336,7 +334,7 @@ class WebViewService : Service() {
                     cookieRequest.proxyData,
                     Runnable {
                         if (this.cookieRequest === cookieRequest && webView != null) {
-                            webView!!.loadUrl(cookieRequest.uriString)
+                            webView?.loadUrl(cookieRequest.uriString)
                         }
                     },
                 )
@@ -449,12 +447,13 @@ class WebViewService : Service() {
             }
         }
 
-        webView = WebView(this)
-        webView!!.getSettings().setJavaScriptEnabled(true)
-        webView!!.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE)
-        webView!!.addJavascriptInterface(javascriptInterface, "jsi")
-        webView!!.setWebViewClient(ServiceClient())
-        webView!!.setWebChromeClient(
+        val webView = WebView(this)
+        this.webView = webView
+        webView.getSettings().setJavaScriptEnabled(true)
+        webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE)
+        webView.addJavascriptInterface(javascriptInterface, "jsi")
+        webView.setWebViewClient(ServiceClient())
+        webView.setWebChromeClient(
             object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
                     val text = consoleMessage.message()
@@ -467,23 +466,23 @@ class WebViewService : Service() {
                 }
             },
         )
-        webView!!.setLayoutParams(ViewGroup.LayoutParams(480, 270))
+        webView.setLayoutParams(ViewGroup.LayoutParams(480, 270))
         var initialScale = 25
         if (captureImageFile != null) {
             val factor = 4
-            webView!!.getLayoutParams().width *= factor
-            webView!!.getLayoutParams().height *= factor
+            webView.getLayoutParams().width *= factor
+            webView.getLayoutParams().height *= factor
             initialScale *= factor
         }
         val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        webView!!.measure(measureSpec, measureSpec)
-        webView!!.layout(
+        webView.measure(measureSpec, measureSpec)
+        webView.layout(
             0,
             0,
-            webView!!.getLayoutParams().width,
-            webView!!.getLayoutParams().height,
+            webView.getLayoutParams().width,
+            webView.getLayoutParams().height,
         )
-        webView!!.setInitialScale(initialScale)
+        webView.setInitialScale(initialScale)
     }
 
     override fun onDestroy() {

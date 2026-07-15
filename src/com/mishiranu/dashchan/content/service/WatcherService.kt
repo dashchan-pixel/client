@@ -567,7 +567,7 @@ class WatcherService : BaseService() {
 
         fun cancel() {
             if (task != null) {
-                task!!.cancel()
+                task?.cancel()
                 task = null
             }
         }
@@ -769,7 +769,7 @@ class WatcherService : BaseService() {
             }
         }
         if (resolveItemsTask != null) {
-            resolveItemsTask!!.cancel()
+            resolveItemsTask?.cancel()
             resolveItemsTask = null
         }
         Preferences.PREFERENCES!!.unregister(preferencesListener)
