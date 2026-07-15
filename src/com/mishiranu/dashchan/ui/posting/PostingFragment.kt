@@ -232,10 +232,8 @@ class PostingFragment :
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
-                if (postingBinder != null) {
-                    postingBinder!!.unregister(postingCallback)
-                    postingBinder = null
-                }
+                postingBinder?.unregister(postingCallback)
+                postingBinder = null
             }
         }
 
@@ -315,12 +313,11 @@ class PostingFragment :
                 oldRight: Int,
                 oldBottom: Int,
                 ->
-                if (scrollView != null) {
-                    val scrollViewHeight = scrollView!!.getHeight()
-                    if (scrollViewHeight != oldScrollViewHeight[0]) {
-                        oldScrollViewHeight[0] = scrollViewHeight
-                        resizeComment(false)
-                    }
+                val scrollView = scrollView ?: return@OnLayoutChangeListener
+                val scrollViewHeight = scrollView.getHeight()
+                if (scrollViewHeight != oldScrollViewHeight[0]) {
+                    oldScrollViewHeight[0] = scrollViewHeight
+                    resizeComment(false)
                 }
             },
         )
@@ -807,10 +804,8 @@ class PostingFragment :
         super.onDestroyView()
         captchaForm!!.onDestroyView()
 
-        if (postingBinder != null) {
-            postingBinder!!.unregister(postingCallback)
-            postingBinder = null
-        }
+        postingBinder?.unregister(postingCallback)
+        postingBinder = null
         requireActivity().unbindService(postingConnection)
 
         dismissSendPost()
@@ -1160,11 +1155,10 @@ class PostingFragment :
 
     private val userIcon: String?
         get() {
-            if (userIconItems != null) {
-                val position = iconView!!.getSelectedItemPosition() - 1
-                if (position >= 0 && position < userIconItems!!.size) {
-                    return userIconItems!!.get(position).first
-                }
+            val userIconItems = userIconItems ?: return null
+            val position = iconView!!.getSelectedItemPosition() - 1
+            if (position >= 0 && position < userIconItems.size) {
+                return userIconItems[position].first
             }
             return null
         }
@@ -1383,10 +1377,8 @@ class PostingFragment :
         if (postingBinder!!.executeSendPost(this.chanName, data)) {
             sendButtonEnabled = false
             updateSendButtonState()
-            if (progressDialog != null) {
-                progressDialog!!.dismiss()
-                progressDialog = null
-            }
+            progressDialog?.dismiss()
+            progressDialog = null
             onSendPostMinimize()
         } else {
             allowDialog = true
@@ -1406,9 +1398,7 @@ class PostingFragment :
     }
 
     private fun dismissSendPost() {
-        if (progressDialog != null) {
-            progressDialog!!.dismiss()
-        }
+        progressDialog?.dismiss()
         progressDialog = null
         sendButtonEnabled = true
         if (sendButton != null) {
@@ -1425,35 +1415,34 @@ class PostingFragment :
                 attachmentsCount: Int,
             ) {
                 if (allowDialog && progressDialog == null) {
-                    progressDialog =
+                    val progressDialog =
                         ProgressDialog(requireContext(), if (progressMode) "%1\$d / %2\$d kB" else null)
-                    progressDialog!!.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? -> onSendPostCancel() })
-                    progressDialog!!.setButton(
+                    this@PostingFragment.progressDialog = progressDialog
+                    progressDialog.setOnCancelListener(DialogInterface.OnCancelListener { d: DialogInterface? -> onSendPostCancel() })
+                    progressDialog.setButton(
                         DialogInterface.BUTTON_POSITIVE,
                         getString(R.string.minimize),
                         DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostMinimize() },
                     )
-                    progressDialog!!.setButton(
+                    progressDialog.setButton(
                         DialogInterface.BUTTON_NEGATIVE,
                         getString(android.R.string.cancel),
                         DialogInterface.OnClickListener { d: DialogInterface?, w: Int -> onSendPostCancel() },
                     )
-                    progressDialog!!.show()
+                    progressDialog.show()
                 }
-                if (progressDialog == null) {
-                    return
-                }
+                val progressDialog = progressDialog ?: return
                 when (progressState) {
                     ProgressState.CONNECTING -> {
-                        progressDialog!!.setMax(1)
-                        progressDialog!!.setIndeterminate(true)
-                        progressDialog!!.setMessage(getString(R.string.sending__ellipsis))
+                        progressDialog.setMax(1)
+                        progressDialog.setIndeterminate(true)
+                        progressDialog.setMessage(getString(R.string.sending__ellipsis))
                     }
 
                     ProgressState.SENDING -> {
-                        progressDialog!!.setIndeterminate(false)
+                        progressDialog.setIndeterminate(false)
                         if (progressMode) {
-                            progressDialog!!.setMessage(
+                            progressDialog.setMessage(
                                 getString(
                                     R.string.sending_number_of_number__ellipsis_format,
                                     attachmentIndex + 1,
@@ -1461,13 +1450,13 @@ class PostingFragment :
                                 ),
                             )
                         } else {
-                            progressDialog!!.setMessage(getString(R.string.sending__ellipsis))
+                            progressDialog.setMessage(getString(R.string.sending__ellipsis))
                         }
                     }
 
                     ProgressState.PROCESSING -> {
-                        progressDialog!!.setIndeterminate(false)
-                        progressDialog!!.setMessage(getString(R.string.processing_data__ellipsis))
+                        progressDialog.setIndeterminate(false)
+                        progressDialog.setMessage(getString(R.string.processing_data__ellipsis))
                     }
                 }
             }
@@ -1476,10 +1465,9 @@ class PostingFragment :
                 progress: Long,
                 progressMax: Long,
             ) {
-                if (progressDialog != null) {
-                    progressDialog!!.setMax((progressMax / 1000).toInt())
-                    progressDialog!!.setValue((progress / 1000).toInt())
-                }
+                val progressDialog = progressDialog ?: return
+                progressDialog.setMax((progressMax / 1000).toInt())
+                progressDialog.setValue((progress / 1000).toInt())
             }
 
             override fun onStop(success: Boolean) {
@@ -1620,14 +1608,13 @@ class PostingFragment :
         ) {
             scrollView!!.post(
                 Runnable {
-                    if (scrollView != null) {
-                        scrollView!!.setScrollY(
-                            max(
-                                scrollView!!.getChildAt(0).getHeight() - scrollView!!.getHeight(),
-                                0,
-                            ),
-                        )
-                    }
+                    val scrollView = scrollView ?: return@Runnable
+                    scrollView.setScrollY(
+                        max(
+                            scrollView.getChildAt(0).getHeight() - scrollView.getHeight(),
+                            0,
+                        ),
+                    )
                 },
             )
         }
@@ -2006,9 +1993,10 @@ class PostingFragment :
     }
 
     private fun updateAttachmentConfiguration(holder: AttachmentHolder) {
+        val attachmentRatingItems = attachmentRatingItems
         if (attachmentRatingItems != null) {
             if (holder.rating == null) {
-                holder.rating = attachmentRatingItems!!.get(0).first
+                holder.rating = attachmentRatingItems[0].first
             }
             holder.ratingButton.setVisibility(View.VISIBLE)
         } else {
@@ -2055,18 +2043,17 @@ class PostingFragment :
 
     private val resizeComment =
         Runnable {
-            if (scrollView != null) {
-                val postMain = scrollView!!.getChildAt(0)
-                commentView!!.setMinLines(4)
-                val widthMeasureSpec =
-                    View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
-                val heightMeasureSpec =
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                postMain.measure(widthMeasureSpec, heightMeasureSpec)
-                val delta = scrollView!!.getHeight() - postMain.getMeasuredHeight()
-                if (delta > 0) {
-                    commentView!!.setMinHeight(commentView!!.getMeasuredHeight() + delta)
-                }
+            val scrollView = scrollView ?: return@Runnable
+            val postMain = scrollView.getChildAt(0)
+            commentView!!.setMinLines(4)
+            val widthMeasureSpec =
+                View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
+            val heightMeasureSpec =
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            postMain.measure(widthMeasureSpec, heightMeasureSpec)
+            val delta = scrollView.getHeight() - postMain.getMeasuredHeight()
+            if (delta > 0) {
+                commentView!!.setMinHeight(commentView!!.getMeasuredHeight() + delta)
             }
         }
 
@@ -2088,13 +2075,12 @@ class PostingFragment :
             oldRight: Int,
             oldBottom: Int,
         ) {
-            if (textFormatView != null) {
-                val width = textFormatView!!.getWidth()
-                if (lastWidth != width) {
-                    lastWidth = width
-                    textFormatView!!.removeCallbacks(this)
-                    textFormatView!!.post(this)
-                }
+            val textFormatView = textFormatView ?: return
+            val width = textFormatView.getWidth()
+            if (lastWidth != width) {
+                lastWidth = width
+                textFormatView.removeCallbacks(this)
+                textFormatView.post(this)
             }
         }
 
@@ -2114,9 +2100,10 @@ class PostingFragment :
         }
 
         fun fillContainer() {
+            val textFormatView = textFormatView ?: return
             val density = obtainDensity(getResources())
             val maxButtonsWidth =
-                lastWidth - textFormatView!!.getPaddingLeft() - textFormatView!!.getPaddingRight()
+                lastWidth - textFormatView.getPaddingLeft() - textFormatView.getPaddingRight()
             val buttonMarginLeft = ((-4f) * density).toInt()
             val supportedAndDisplayedTags: Pair<Int, Int> =
                 obtainSupportedAndDisplayedTags(
@@ -2137,12 +2124,12 @@ class PostingFragment :
             if (commentEditor != null) {
                 commentEditor!!.handleSimilar(supportedTags)
             }
-            textFormatView!!.removeAllViews()
+            textFormatView.removeAllViews()
             var firstMarkupButton = true
             for (provider in iterable(displayedTags)) {
                 val button =
                     provider.createButton(
-                        textFormatView!!.getContext(),
+                        textFormatView.getContext(),
                         android.R.attr.borderlessButtonStyle,
                     )
                 setTextSizeScaled(button, 14)
@@ -2160,18 +2147,18 @@ class PostingFragment :
                 button.setAllCaps(false)
 
                 provider.applyTextAndStyle(button)
-                textFormatView!!.addView(button, layoutParams)
+                textFormatView.addView(button, layoutParams)
                 firstMarkupButton = false
             }
-            textFormatView!!.setVisibility(if (textFormatView!!.getChildCount() > 0) View.VISIBLE else View.GONE)
+            textFormatView.setVisibility(if (textFormatView.getChildCount() > 0) View.VISIBLE else View.GONE)
 
             if (addPaddingToRoot) {
                 val padding: Int
-                if (textFormatView!!.getVisibility() != View.GONE) {
+                if (textFormatView.getVisibility() != View.GONE) {
                     val measureSpec =
                         View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                    textFormatView!!.measure(measureSpec, measureSpec)
-                    padding = textFormatView!!.getMeasuredHeight()
+                    textFormatView.measure(measureSpec, measureSpec)
+                    padding = textFormatView.getMeasuredHeight()
                 } else {
                     padding = 0
                 }

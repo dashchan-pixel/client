@@ -1052,8 +1052,8 @@ class DrawerForm(
                                         }
                                         setFavoritesHideDeleted(!isFavoritesHidedDeleted)
                                         if (isFavoritesHidedDeleted) {
-                                            favorites.removeIf { fav: ListItem? ->
-                                                fav!!.isThreadItem &&
+                                            favorites.removeIf { fav: ListItem ->
+                                                fav.isThreadItem &&
                                                     getCounter(
                                                         fav,
                                                     )!!.deleted
@@ -1074,8 +1074,8 @@ class DrawerForm(
                                         }
                                         setFavoritesHideAll(!isFavoritesHidedAll)
                                         if (isFavoritesHidedAll) {
-                                            favorites.removeIf { fav: ListItem? ->
-                                                fav!!.type == ListItem.Type.FAVORITE &&
+                                            favorites.removeIf { fav: ListItem ->
+                                                fav.type == ListItem.Type.FAVORITE &&
                                                     fav.isThreadItem
                                             }
                                         } else {
@@ -1662,7 +1662,7 @@ class DrawerForm(
     private val favoriteDragState = DragState()
 
     init {
-        val enabledColor = getTheme(context)!!.accent
+        val enabledColor = getTheme(context).accent
         val disabledColor = -0x99999a
         val unavailableColor = mixColors(disabledColor, enabledColor and 0x7fffffff)
         watcherViewColorSet = ColorSet(enabledColor, unavailableColor, disabledColor)

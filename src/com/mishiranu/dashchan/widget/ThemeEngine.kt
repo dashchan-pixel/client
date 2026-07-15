@@ -247,8 +247,9 @@ class ThemeEngine {
         var checkBoxColors: ColorStateList? = null
             get() {
                 if (field == null) {
+                    val engineTheme = engineTheme!!
                     val colorControlDisabled =
-                        applyAlpha(engineTheme!!.controlNormal21, engineTheme!!.disabledAlpha21)
+                        applyAlpha(engineTheme.controlNormal21, engineTheme.disabledAlpha21)
                     val states =
                         arrayOf<IntArray?>(
                             intArrayOf(-android.R.attr.state_enabled),
@@ -256,7 +257,7 @@ class ThemeEngine {
                             intArrayOf(),
                         )
                     val colors =
-                        intArrayOf(colorControlDisabled, engineTheme!!.accent, engineTheme!!.controlNormal21)
+                        intArrayOf(colorControlDisabled, engineTheme.accent, engineTheme.controlNormal21)
                     field = ColorStateList(states, colors)
                 }
                 return field
@@ -265,6 +266,7 @@ class ThemeEngine {
         var switchThumbColors: ColorStateList? = null
             get() {
                 if (field == null) {
+                    val engineTheme = engineTheme!!
                     val thumbColorNormal: Int
                     val thumbColorNormalDisabled: Int
                     val thumbNormalColorsAttr =
@@ -285,8 +287,8 @@ class ThemeEngine {
                         thumbColorNormalDisabled =
                             thumbColors.getColorForState(disabledState, thumbColorNormal)
                     } else {
-                        thumbColorNormal = engineTheme!!.controlNormal21
-                        thumbColorNormalDisabled = engineTheme!!.controlNormal21
+                        thumbColorNormal = engineTheme.controlNormal21
+                        thumbColorNormalDisabled = engineTheme.controlNormal21
                     }
                     val states =
                         arrayOf<IntArray?>(
@@ -295,7 +297,7 @@ class ThemeEngine {
                             intArrayOf(),
                         )
                     val colors =
-                        intArrayOf(thumbColorNormalDisabled, engineTheme!!.accent, thumbColorNormal)
+                        intArrayOf(thumbColorNormalDisabled, engineTheme.accent, thumbColorNormal)
                     field = ColorStateList(states, colors)
                 }
                 return field
@@ -304,6 +306,7 @@ class ThemeEngine {
         var editTextColors: ColorStateList? = null
             get() {
                 if (field == null) {
+                    val engineTheme = engineTheme!!
                     val states =
                         arrayOf<IntArray?>(
                             intArrayOf(-android.R.attr.state_enabled),
@@ -313,10 +316,10 @@ class ThemeEngine {
                         )
                     val colors =
                         intArrayOf(
-                            engineTheme!!.controlNormal21,
-                            engineTheme!!.accent,
-                            engineTheme!!.accent,
-                            engineTheme!!.controlNormal21,
+                            engineTheme.controlNormal21,
+                            engineTheme.accent,
+                            engineTheme.accent,
+                            engineTheme.controlNormal21,
                         )
                     field = ColorStateList(states, colors)
                 }
@@ -326,15 +329,16 @@ class ThemeEngine {
         var buttonColors: ColorStateList? = null
             get() {
                 if (field == null) {
+                    val engineTheme = engineTheme!!
                     val colorAccentDisabled =
-                        applyAlpha(engineTheme!!.accent, engineTheme!!.disabledAlpha21)
+                        applyAlpha(engineTheme.accent, engineTheme.disabledAlpha21)
                     val states =
                         arrayOf<IntArray?>(
                             intArrayOf(-android.R.attr.state_enabled),
                             intArrayOf(),
                         )
                     val colors =
-                        intArrayOf(colorAccentDisabled, engineTheme!!.accent)
+                        intArrayOf(colorAccentDisabled, engineTheme.accent)
                     field = ColorStateList(states, colors)
                 }
                 return field
@@ -520,17 +524,17 @@ class ThemeEngine {
     private class ThemeBuilder {
         fun interface Setter {
             fun setColor(
-                builder: ThemeBuilder?,
+                builder: ThemeBuilder,
                 color: Int,
             )
         }
 
         fun interface Getter {
-            fun getColor(builder: ThemeBuilder?): Int?
+            fun getColor(builder: ThemeBuilder): Int?
         }
 
         fun interface Transform {
-            fun getTransformed(builder: ThemeBuilder?): Int?
+            fun getTransformed(builder: ThemeBuilder): Int?
         }
 
         class Value(
@@ -647,99 +651,99 @@ class ThemeEngine {
                 val map = HashMap<String?, Value>()
                 map["window"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.window = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.window },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.window = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.window },
                         null,
                         R.attr.colorWindowBackground,
                     )
                 map["primary"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.primary = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.primary },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.primary = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.primary },
                         null,
                         R.attr.colorPrimarySupport,
                     )
                 map["accent"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.accent = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.accent },
-                        ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.primary },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.accent = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.accent },
+                        ThemeBuilder.Transform { b: ThemeBuilder -> b.primary },
                         R.attr.colorAccentSupport,
                     )
                 map["card"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.card = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.card },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.card = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.card },
                         null,
                         R.attr.colorCardBackground,
                     )
                 map["post"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.post = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.post },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.post = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.post },
                         null,
                         R.attr.colorTextPost,
                     )
                 map["meta"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.meta = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.meta },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.meta = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.meta },
                         null,
                         R.attr.colorTextMeta,
                     )
                 map["spoiler"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.spoiler = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.spoiler },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.spoiler = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.spoiler },
                         null,
                         R.attr.colorSpoilerBackground,
                     )
                 map["link"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.link = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.link },
-                        ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.accent },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.link = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.link },
+                        ThemeBuilder.Transform { b: ThemeBuilder -> b.accent },
                         android.R.attr.textColorLink,
                     )
                 map["quote"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.quote = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.quote },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.quote = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.quote },
                         null,
                         R.attr.colorTextQuote,
                     )
                 map["tripcode"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.tripcode = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.tripcode },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.tripcode = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.tripcode },
                         null,
                         R.attr.colorTextTripcode,
                     )
                 map["capcode"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.capcode = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.capcode },
-                        ThemeBuilder.Transform { b: ThemeBuilder? -> b!!.tripcode },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.capcode = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.capcode },
+                        ThemeBuilder.Transform { b: ThemeBuilder -> b.tripcode },
                         R.attr.colorTextCapcode,
                     )
                 map["highlight"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.highlight = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.highlight },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.highlight = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.highlight },
                         null,
                         R.attr.colorPostHighlight,
                     )
                 map["neuroslop"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.neuroslop = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.neuroslop },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.neuroslop = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.neuroslop },
                         null,
                         R.attr.colorPostNeuroslop,
                     )
                 map["neuroslopQuote"] =
                     Value(
-                        ThemeBuilder.Setter { b: ThemeBuilder?, c: Int -> b!!.neuroslopQuote = c },
-                        ThemeBuilder.Getter { b: ThemeBuilder? -> b!!.neuroslopQuote },
+                        ThemeBuilder.Setter { b: ThemeBuilder, c: Int -> b.neuroslopQuote = c },
+                        ThemeBuilder.Getter { b: ThemeBuilder -> b.neuroslopQuote },
                         null,
                         R.attr.colorPostQuoteNeuroslop,
                     )
@@ -812,11 +816,12 @@ class ThemeEngine {
         fun applyTheme(context: Context) {
             val themeContext: ThemeContext = requireThemeContext(context)
             INSTANCE.prepareThemes(context)
+            val themes = INSTANCE.themes!!
             val themeString = theme
-            var theme: Theme? = INSTANCE.themes!![themeString]
+            var theme: Theme? = themes[themeString]
             if (theme == null) {
                 theme =
-                    INSTANCE.themes!!
+                    themes
                         .values
                         .iterator()
                         .next()
@@ -1000,37 +1005,39 @@ class ThemeEngine {
 
         @JvmStatic
         fun addTheme(theme: Theme): Boolean {
-            val existingTheme: Theme? = INSTANCE.themes!![theme.name]
+            val themes = INSTANCE.themes!!
+            val existingTheme: Theme? = themes[theme.name]
             if (existingTheme != null && existingTheme.builtIn) {
                 return false
             }
             getInstance().getItems()[theme.name] = theme.toJsonObject()
             getInstance().serialize()
-            val installedThemesMap = HashMap(INSTANCE.themes!!)
+            val installedThemesMap = HashMap(themes)
             val iterator = installedThemesMap.values.iterator()
             while (iterator.hasNext()) {
                 if (iterator.next().builtIn) {
                     iterator.remove()
                 }
             }
-            INSTANCE.themes!!.keys.removeAll(installedThemesMap.keys)
+            themes.keys.removeAll(installedThemesMap.keys)
             installedThemesMap[theme.name] = theme
             val installedThemes = ArrayList(installedThemesMap.values)
             installedThemes.sort()
             for (installedTheme in installedThemes) {
-                INSTANCE.themes!![installedTheme.name] = installedTheme
+                themes[installedTheme.name] = installedTheme
             }
             return true
         }
 
         fun deleteTheme(name: String?): Boolean {
-            val theme: Theme? = INSTANCE.themes!![name]
+            val themes = INSTANCE.themes!!
+            val theme: Theme? = themes[name]
             if (theme == null || theme.builtIn) {
                 return false
             }
             getInstance().getItems().remove(name)
             getInstance().serialize()
-            INSTANCE.themes!!.remove(name)
+            themes.remove(name)
             return true
         }
 
