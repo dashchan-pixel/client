@@ -51,7 +51,7 @@ class HistoryPage :
         CommonDatabase.getInstance().history.unregisterObserver(updateHistoryRunnable)
         getAdapter().setCursor(null)
         if (task != null) {
-            task!!.cancel()
+            task?.cancel()
             task = null
         }
     }
@@ -142,7 +142,7 @@ class HistoryPage :
 
     private fun updateHistory() {
         if (task != null) {
-            task!!.cancel()
+            task?.cancel()
         }
         task = GetHistoryTask(this, chanName, searchQuery)
         task!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)

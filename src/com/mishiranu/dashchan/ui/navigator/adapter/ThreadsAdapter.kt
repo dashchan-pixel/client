@@ -156,14 +156,7 @@ class ThreadsAdapter(
         ).ordinal
     }
 
-    private fun getPostItems(): MutableList<PostItem> =
-        if (filteredPostItems != null) {
-            filteredPostItems!!
-        } else if (catalogSortedPostItems != null) {
-            catalogSortedPostItems!!
-        } else {
-            postItems
-        }
+    private fun getPostItems(): MutableList<PostItem> = filteredPostItems ?: catalogSortedPostItems ?: postItems
 
     private fun getItem(position: Int): PostItem = getPostItems()[position]
 
@@ -181,7 +174,7 @@ class ThreadsAdapter(
         if (!cardsMode) {
             rect.set(0, 0, 0, 0)
         } else {
-            val columns = if (gridMode != null) gridMode!!.columns else 1
+            val columns = gridMode?.columns ?: 1
             val left: Int
             val right: Int
             if (columns >= 2) {
@@ -299,8 +292,7 @@ class ThreadsAdapter(
         filter: Boolean,
     ) {
         if (sorting) {
-            val comparator =
-                if (catalogSort != null) catalogSort!!.comparator else null
+            val comparator = catalogSort?.comparator
             if (catalog && comparator != null) {
                 val sortedPostItems =
                     catalogSortedPostItems
@@ -323,7 +315,7 @@ class ThreadsAdapter(
                 text = text!!.lowercase(Locale.getDefault())
                 val chan = get(configurationSet.chanName)
                 val locale = Locale.getDefault()
-                for (postItem in ((if (catalogSortedPostItems != null) catalogSortedPostItems else postItems)!!)) {
+                for (postItem in (catalogSortedPostItems ?: postItems)) {
                     val add =
                         postItem.getSubject().lowercase(locale).contains(text) ||
                             postItem

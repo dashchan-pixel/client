@@ -82,11 +82,11 @@ abstract class ListPage :
         }
     }
 
-    private var page: Page? = null
-    private var callback: Callback? = null
-    private var fragment: Fragment? = null
+    private lateinit var page: Page
+    private lateinit var callback: Callback
+    private lateinit var fragment: Fragment
     private var lifecycleRegistry: LifecycleRegistry? = null
-    private var recyclerView: PaddedRecyclerView? = null
+    private lateinit var recyclerView: PaddedRecyclerView
     private var listPosition: ListPosition? = null
     protected var uiManager: UiManager? = null
         private set
@@ -129,13 +129,13 @@ abstract class ListPage :
     }
 
     private val state: Lifecycle.State?
-        get() = if (lifecycleRegistry != null) lifecycleRegistry!!.currentState else null
+        get() = lifecycleRegistry?.currentState
 
     protected val context: Context
-        get() = recyclerView!!.getContext()
+        get() = recyclerView.getContext()
 
     protected val toolbarContext: Context?
-        get() = callback!!.toolbarContext
+        get() = callback.toolbarContext
 
     protected val resources: Resources
         get() = this.context.resources
@@ -147,17 +147,17 @@ abstract class ListPage :
         vararg formatArgs: Any?,
     ): String = this.context.getString(resId, *formatArgs)
 
-    internal fun getPage(): Page = page!!
+    internal fun getPage(): Page = page
 
     protected val fragmentManager: FragmentManager
-        get() = fragment!!.getChildFragmentManager()
+        get() = fragment.getChildFragmentManager()
 
-    protected fun <T : ViewModel> getViewModel(modelClass: Class<T>): T = ViewModelProvider(fragment!!).get(modelClass)
+    protected fun <T : ViewModel> getViewModel(modelClass: Class<T>): T = ViewModelProvider(fragment).get(modelClass)
 
     protected val chan: Chan
-        get() = get(page!!.chanName)
+        get() = get(page.chanName)
 
-    protected fun getRecyclerView(): PaddedRecyclerView = recyclerView!!
+    protected fun getRecyclerView(): PaddedRecyclerView = recyclerView
 
     protected fun takeListPosition(): ListPosition? {
         val listPosition = this.listPosition
@@ -165,59 +165,59 @@ abstract class ListPage :
         return listPosition
     }
 
-    protected fun getInitRequest(): InitRequest = (if (initRequest != null) initRequest else InitRequest.Companion.EMPTY_REQUEST)!!
+    protected fun getInitRequest(): InitRequest = initRequest ?: InitRequest.Companion.EMPTY_REQUEST
 
-    protected fun getInitSearch(): InitSearch = (if (initSearch != null) initSearch else InitSearch.Companion.EMPTY_SEARCH)!!
+    protected fun getInitSearch(): InitSearch = initSearch ?: InitSearch.Companion.EMPTY_SEARCH
 
     protected fun notifyAllAdaptersChanged() {
-        recyclerView!!.getAdapter()!!.notifyDataSetChanged()
+        recyclerView.getAdapter()!!.notifyDataSetChanged()
         onNotifyAllAdaptersChanged()
     }
 
     protected fun getActionBarIcon(attr: Int): Drawable = getActionBarIcon(this.toolbarContext!!, attr)
 
     protected fun notifyTitleChanged() {
-        callback!!.notifyTitleChanged()
+        callback.notifyTitleChanged()
     }
 
     protected fun updateOptionsMenu() {
         if (this.isRunning) {
-            callback!!.invalidateOptionsMenu()
+            callback.invalidateOptionsMenu()
         }
     }
 
     protected fun setCustomSearchView(view: View?) {
-        callback!!.setCustomSearchView(view)
+        callback.setCustomSearchView(view)
     }
 
     protected fun clearSearchFocus() {
-        callback!!.clearSearchFocus()
+        callback.clearSearchFocus()
     }
 
-    protected fun startActionMode(callback: ActionMode.Callback?): ActionMode? = this.callback!!.startActionMode(callback)
+    protected fun startActionMode(callback: ActionMode.Callback?): ActionMode? = this.callback.startActionMode(callback)
 
     protected fun switchList() {
-        callback!!.switchList()
+        callback.switchList()
     }
 
     protected fun switchProgress() {
-        callback!!.switchProgress()
+        callback.switchProgress()
     }
 
     protected fun switchError(errorItem: ErrorItem?) {
-        callback!!.switchError(if (errorItem != null) errorItem else ErrorItem(ErrorItem.Type.UNKNOWN))
+        callback.switchError(if (errorItem != null) errorItem else ErrorItem(ErrorItem.Type.UNKNOWN))
     }
 
     protected fun switchError(message: String?) {
-        callback!!.switchError(if (message != null) ErrorItem(message) else ErrorItem(ErrorItem.Type.UNKNOWN))
+        callback.switchError(if (message != null) ErrorItem(message) else ErrorItem(ErrorItem.Type.UNKNOWN))
     }
 
     protected fun switchError(message: Int) {
-        callback!!.switchError(if (message != 0) ErrorItem(message) else ErrorItem(ErrorItem.Type.UNKNOWN))
+        callback.switchError(if (message != 0) ErrorItem(message) else ErrorItem(ErrorItem.Type.UNKNOWN))
     }
 
     protected fun showScaleAnimation() {
-        callback!!.showScaleAnimation()
+        callback.showScaleAnimation()
     }
 
     internal fun handleRedirect(
@@ -226,11 +226,11 @@ abstract class ListPage :
         threadNumber: String?,
         postNumber: PostNumber?,
     ) {
-        callback!!.handleRedirect(chanName, boardName, threadNumber, postNumber)
+        callback.handleRedirect(chanName, boardName, threadNumber, postNumber)
     }
 
     protected fun closePage() {
-        callback!!.closePage()
+        callback.closePage()
     }
 
     protected fun <T : Retainable> getRetainableExtra(factory: ExtraFactory<T>): T {
@@ -340,7 +340,7 @@ abstract class ListPage :
         }
     }
 
-    fun getListPosition(): ListPosition? = if (listPosition != null) listPosition else ListPosition.obtain(recyclerView!!, null)
+    fun getListPosition(): ListPosition? = listPosition ?: ListPosition.obtain(recyclerView, null)
 
     fun getExtraToStore(saveToStack: Boolean): Pair<Retainable?, Parcelable?> {
         onRequestStoreExtra(saveToStack)
@@ -396,7 +396,7 @@ abstract class ListPage :
         @Suppress("UNCHECKED_CAST")
         protected fun <T : ListPage?> extract(provider: InstanceDialog.Provider): T? {
             val viewModel: PageViewModel = Companion.getViewModel(provider.parentFragment!!)
-            val listPage = if (viewModel.listPage != null) viewModel.listPage!!.get() else null
+            val listPage = viewModel.listPage?.get()
             return listPage as T?
         }
     }

@@ -103,7 +103,7 @@ class UserBoardsPage :
     override fun onDestroy() {
         getAdapter().setCursor(null)
         if (getTask != null) {
-            getTask!!.cancel()
+            getTask?.cancel()
             getTask = null
         }
     }
@@ -153,7 +153,7 @@ class UserBoardsPage :
 
     private fun updateBoards() {
         if (getTask != null) {
-            getTask!!.cancel()
+            getTask?.cancel()
             getTask = null
         }
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)

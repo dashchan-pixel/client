@@ -40,7 +40,7 @@ class SearchAdapter(
     private val gallerySet = GalleryItem.Set(false)
 
     private val postItems = ArrayList<PostItem>()
-    private val groupItems = ArrayList<ListItem?>()
+    private val groupItems = ArrayList<ListItem>()
 
     private var groupMode = false
 
@@ -70,7 +70,7 @@ class SearchAdapter(
 
     override fun getItemViewType(position: Int): Int = ViewUnit.ViewType.POST.ordinal
 
-    private fun getItem(position: Int): PostItem = if (groupMode) groupItems[position]!!.postItem else postItems[position]
+    private fun getItem(position: Int): PostItem = if (groupMode) groupItems[position].postItem else postItems[position]
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -124,12 +124,12 @@ class SearchAdapter(
         gallerySet.clear()
         if (postItems.size > 0) {
             if (groupMode) {
-                val map = LinkedHashMap<String?, ArrayList<PostItem?>?>()
+                val map = LinkedHashMap<String?, ArrayList<PostItem>>()
                 for (postItem in postItems) {
                     val threadNumber = postItem.getThreadNumber()
                     var postItems = map[threadNumber]
                     if (postItems == null) {
-                        postItems = ArrayList<PostItem?>()
+                        postItems = ArrayList<PostItem>()
                         map[threadNumber] = postItems
                     }
                     postItems.add(postItem)
@@ -149,8 +149,8 @@ class SearchAdapter(
                             if (number) "#" + threadNumber else threadNumber,
                         )
                     var ordinalIndex = 0
-                    for (postItem in entry.value!!) {
-                        groupItems.add(SearchAdapter.ListItem(postItem!!, group))
+                    for (postItem in entry.value) {
+                        groupItems.add(SearchAdapter.ListItem(postItem, group))
                         postItem.setOrdinalIndex(ordinalIndex++)
                     }
                 }
@@ -196,10 +196,10 @@ class SearchAdapter(
     fun getItemHeader(position: Int): String? {
         if (groupMode) {
             if (position == 0) {
-                return groupItems[0]!!.group
+                return groupItems[0].group
             } else {
-                val previous = groupItems[position - 1]!!.group
-                val current = groupItems[position]!!.group
+                val previous = groupItems[position - 1].group
+                val current = groupItems[position].group
                 return if (equals(previous, current)) null else current
             }
         } else {

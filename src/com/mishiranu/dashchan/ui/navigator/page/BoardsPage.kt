@@ -71,7 +71,7 @@ class BoardsPage :
     override fun onDestroy() {
         getAdapter().setCursor(null)
         if (getTask != null) {
-            getTask!!.cancel()
+            getTask?.cancel()
             getTask = null
         }
     }
@@ -137,7 +137,7 @@ class BoardsPage :
 
     private fun updateBoards() {
         if (getTask != null) {
-            getTask!!.cancel()
+            getTask?.cancel()
         }
         getTask = GetBoardsTask(this, chan, null, searchQuery)
         getTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
