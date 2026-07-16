@@ -1,6 +1,5 @@
 package com.mishiranu.dashchan.ui.posting.dialog
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
@@ -107,7 +106,7 @@ class AttachmentOptionsDialog :
                 .getAttachmentHolder(requireArguments().getInt(EXTRA_ATTACHMENT_INDEX))
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val activity: Activity? = getActivity()
+        val activity = requireActivity()
         val holder = this.attachmentHolder
         val fileHolder =
             if (holder != null) {
@@ -118,7 +117,7 @@ class AttachmentOptionsDialog :
             }
         if (holder == null || fileHolder == null) {
             dismiss()
-            return Dialog(activity!!)
+            return Dialog(activity)
         }
         val postingConfiguration =
             (getParentFragment() as PostingDialogCallback)
@@ -188,7 +187,7 @@ class AttachmentOptionsDialog :
         val linearLayout = LinearLayout(activity)
         linearLayout.setOrientation(LinearLayout.VERTICAL)
         val imageView = ImageView(activity)
-        imageView.setBackground(TransparentTileDrawable(activity!!, true))
+        imageView.setBackground(TransparentTileDrawable(activity, true))
         imageView.setImageDrawable(holder.imageView.getDrawable())
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP)
         linearLayout.addView(

@@ -276,17 +276,16 @@ class MediaFragment :
         private var checkedItems: BooleanArray? = null
 
         override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
-            checkedItems = savedInstanceState?.getBooleanArray(EXTRA_CHECKED_ITEMS)
-            if (checkedItems == null) {
-                checkedItems = booleanArrayOf(true, true)
-            }
+            val checkedItems =
+                savedInstanceState?.getBooleanArray(EXTRA_CHECKED_ITEMS) ?: booleanArrayOf(true, true)
+            this.checkedItems = checkedItems
             val items = arrayOf(getString(R.string.thumbnails), getString(R.string.cached_files))
             return AlertDialog
                 .Builder(requireContext())
                 .setTitle(getString(R.string.clear_cache))
-                .setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems!![which] = isChecked }
+                .setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems[which] = isChecked }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    val clearingDialog = ClearingDialog(checkedItems!![0], checkedItems!![1])
+                    val clearingDialog = ClearingDialog(checkedItems[0], checkedItems[1])
                     clearingDialog.show(parentFragment!!.parentFragmentManager, ClearingDialog::class.java.name)
                 }.setNegativeButton(android.R.string.cancel, null)
                 .create()

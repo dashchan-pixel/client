@@ -219,12 +219,13 @@ class AutohideFragment : BaseListFragment() {
         fun setSearchQuery(searchQuery: String?) {
             filteredItems.clear()
             this.searchQuery = searchQuery
-            if (!StringUtils.isEmpty(searchQuery)) {
+            if (!searchQuery.isNullOrEmpty()) {
                 val locale = Locale.getDefault()
                 for (item in items) {
-                    if (!StringUtils.isEmpty(item.value) &&
-                        item.value!!.lowercase(locale).contains(searchQuery!!.lowercase(locale)) ||
-                        item.find(searchQuery!!) != null
+                    val value = item.value
+                    if (!value.isNullOrEmpty() &&
+                        value.lowercase(locale).contains(searchQuery.lowercase(locale)) ||
+                        item.find(searchQuery) != null
                     ) {
                         filteredItems.add(item)
                     }
@@ -553,10 +554,9 @@ class AutohideFragment : BaseListFragment() {
             } else if (errorSpan != null) {
                 value.removeSpan(errorSpan)
             }
-            if (errorValueSetter == null) {
-                errorValueSetter = ErrorEditTextSetter(valueEdit)
-            }
-            errorValueSetter!!.setError(error)
+            val errorValueSetter =
+                this.errorValueSetter ?: ErrorEditTextSetter(valueEdit).also { this.errorValueSetter = it }
+            errorValueSetter.setError(error)
 
             if (StringUtils.isEmpty(text)) {
                 errorText.visibility = View.GONE

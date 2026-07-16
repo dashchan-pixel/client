@@ -51,12 +51,15 @@ class SendPostFailDetailsDialog() : DialogFragment() {
                 layout.add(getString(R.string.reason), message)
             }
         } else if (extra is ApiException.WordsExtra) {
-            var message = ""
+            // `words` is a LinkedHashSet<String?> filled by extensions via the @Public
+            // `addWord(String?)`, so a null word is reachable. The Java assigned it straight
+            // through and let `getColonString` (which takes Any?) render it.
+            var message: String? = ""
             var first = true
             for (word in extra.words) {
                 if (first) {
                     first = false
-                    message = word!!
+                    message = word
                 } else {
                     message = getString(R.string.__enumeration_format, message, word)
                 }

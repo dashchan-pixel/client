@@ -452,8 +452,9 @@ class UpdateFragment : BaseListFragment {
                     checkPreference.setEnabled(listItem.enabled)
                     checkPreference.bindViewHolder(viewHolder)
                     viewHolder.title!!.text = listItem.title
-                    if (listItem.warning != null) {
-                        val spannable = SpannableString(listItem.target + "\n" + listItem.warning)
+                    val warning = listItem.warning
+                    if (warning != null) {
+                        val spannable = SpannableString(listItem.target + "\n" + warning)
                         val length = spannable.length
                         spannable.setSpan(
                             ForegroundColorSpan(
@@ -462,7 +463,7 @@ class UpdateFragment : BaseListFragment {
                                     R.attr.colorTextError,
                                 ),
                             ),
-                            length - listItem.warning!!.length,
+                            length - warning.length,
                             length,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                         )
