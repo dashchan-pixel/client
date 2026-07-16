@@ -72,7 +72,7 @@ class ChanFragment :
                 { p ->
                     var text = p.value
                     if (!StringUtils.isEmpty(text)) {
-                        val boardName = StringUtils.validateBoardName(text!!)
+                        val boardName = StringUtils.validateBoardName(text)
                         text =
                             if (boardName != null) {
                                 StringUtils.formatBoardTitle(
