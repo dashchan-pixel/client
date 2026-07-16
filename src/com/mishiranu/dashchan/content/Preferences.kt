@@ -952,7 +952,7 @@ object Preferences {
             )
 
     const val KEY_EPHEMERAL_BROWSING: String = "ephemeral_browsing"
-    const val DEFAULT_EPHEMERAL_BROWSING: Boolean = false
+    const val DEFAULT_EPHEMERAL_BROWSING: Boolean = true
 
     @JvmStatic
     val isEphemeralBrowsing: Boolean

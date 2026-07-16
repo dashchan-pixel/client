@@ -90,6 +90,8 @@
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
 	<string name="empty_response">Resposta vazia</string>
 	<string name="enter_valid_data">Entre dados válidos</string>
+	<string name="ephemeral_browsing">Modo anônimo</string>
+	<string name="ephemeral_browsing__summary">Não compartilhar histórico e cookies com o navegador</string>
 	<string name="every_number_sec__format">A cada %d seg.</string>
 	<string name="expand">Expandir</string>
 	<string name="expanded_screen">Área expandida</string>
@@ -140,7 +142,7 @@
 	<string name="incorrect_password">Senha incorreta</string>
 	<string name="insufficient_device_space">Sem espaço no dispositivo</string>
 	<string name="internal_browser">Navegador interno</string>
-	<string name="internal_browser__sumamry">Abra link no navegador interno</string>
+	<string name="internal_browser__sumamry">Abrir links externos dentro do aplicativo</string>
 	<string name="invalid_authorization_data">Dados de autorização inválidos</string>
 	<string name="invalid_certificate">Certificado inválido</string>
 	<string name="invalid_data_format">Formato de dados inválidos</string>

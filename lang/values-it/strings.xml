@@ -121,6 +121,8 @@
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
     <string name="enter_valid_data">Inserisci un dato valido</string>
+    <string name="ephemeral_browsing">Modalità in incognito</string>
+    <string name="ephemeral_browsing__summary">Non condividere cronologia e cookie con il browser</string>
     <string name="every_number_sec__format">Ogni %d sec.</string>
     <string name="exif_metadata">Metadati exif</string>
     <string name="expand">Espandi</string>
@@ -189,7 +191,7 @@
     <string name="installed__plural">Installati</string>
     <string name="insufficient_device_space">Memoria dispositivo insufficiente</string>
     <string name="internal_browser">Browser interno</string>
-    <string name="internal_browser__sumamry">Apri link esterni nel browser interno</string>
+    <string name="internal_browser__sumamry">Apri i link esterni all\'interno dell\'app</string>
     <string name="invalid_authorization_data">Dati autorizzazione non validi</string>
     <string name="invalid_certificate">Certificato non valido</string>
     <string name="invalid_data_format">Formato dati non valido</string>

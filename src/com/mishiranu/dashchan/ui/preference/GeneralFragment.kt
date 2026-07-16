@@ -96,6 +96,7 @@ class GeneralFragment :
             R.string.ephemeral_browsing,
             R.string.ephemeral_browsing__summary,
         )
+        addDependency(Preferences.KEY_EPHEMERAL_BROWSING, Preferences.KEY_INTERNAL_BROWSER, true)
 
         addHeader(R.string.services)
         addCheck(

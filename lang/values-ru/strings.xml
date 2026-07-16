@@ -144,6 +144,8 @@
 	<string name="empty_response">Пустой ответ сервера</string>
 	<string name="enabled">Включено</string>
 	<string name="enter_valid_data">Введите корректные данные</string>
+	<string name="ephemeral_browsing">Режим инкогнито</string>
+	<string name="ephemeral_browsing__summary">Не передавать историю и куки браузеру</string>
 	<string name="erase">Стереть</string>
 	<string name="every_number_sec__format">Каждые %d сек.</string>
 	<string name="exif_metadata">Метаданные Exif</string>
@@ -217,7 +219,7 @@
 	<string name="installed__plural">Установленные</string>
 	<string name="insufficient_device_space">Недостаточно места на утройстве</string>
 	<string name="internal_browser">Встроенный браузер</string>
-	<string name="internal_browser__sumamry">Открывать внешние ссылки во встроенном браузере</string>
+	<string name="internal_browser__sumamry">Открывать внешние ссылки внутри приложения</string>
 	<string name="invalid_authorization_data">Некорректные данные авторизации</string>
 	<string name="invalid_certificate">Недостоверный сертификат</string>
 	<string name="invalid_data_format">Некорректный формат данных</string>
