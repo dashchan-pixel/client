@@ -34,7 +34,7 @@ class ThreadsAdapter(
     callback: Callback?,
     chanName: String?,
     private val uiManager: UiManager,
-    postStateProvider: PostStateProvider?,
+    postStateProvider: PostStateProvider,
     fragmentManager: FragmentManager?,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder?>(),
     GalleryItem.Provider {
@@ -147,7 +147,7 @@ class ThreadsAdapter(
             if (gridMode != null) {
                 ViewUnit.ViewType.THREAD_CARD_CELL
             } else {
-                if (configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                if (configurationSet.postStateProvider.isHiddenResolve(postItem)) {
                     (if (cardsMode) ViewUnit.ViewType.THREAD_CARD_HIDDEN else ViewUnit.ViewType.THREAD_HIDDEN)
                 } else {
                     (if (cardsMode) ViewUnit.ViewType.THREAD_CARD else ViewUnit.ViewType.THREAD)
@@ -219,11 +219,11 @@ class ThreadsAdapter(
             val imagePadding = ((10 + 64 * scale + 10) * density).toInt()
             val currentImage =
                 current.hasAttachments() &&
-                    !configurationSet.postStateProvider!!.isHiddenResolve(current)
+                    !configurationSet.postStateProvider.isHiddenResolve(current)
             val nextImage =
                 next != null &&
                     next.hasAttachments() &&
-                    !configurationSet.postStateProvider!!.isHiddenResolve(
+                    !configurationSet.postStateProvider.isHiddenResolve(
                         next,
                     )
             return configuration
@@ -262,7 +262,7 @@ class ThreadsAdapter(
         val displayHidden = isDisplayHiddenThreads
         if (postItems != null) {
             for (postItem in postItems) {
-                if (displayHidden || !configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                if (displayHidden || !configurationSet.postStateProvider.isHiddenResolve(postItem)) {
                     this.postItems.add(postItem)
                 }
             }

@@ -68,7 +68,7 @@ class ThreadshotPerformer(
                 val demandSet = UiManager.DemandSet()
                 demandSet.selection = UiManager.Selection.THREADSHOT
                 val dividerHeight = divider?.intrinsicHeight ?: 0
-                val dividerPadding = (12f * ResourceUtils.obtainDensity(uiManager.context!!)).toInt()
+                val dividerPadding = (12f * ResourceUtils.obtainDensity(uiManager.context)).toInt()
                 var height = 0
                 var first = true
                 val widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)

@@ -170,8 +170,8 @@ class CommentTextView
 
             fun interface Callback {
                 fun handle(
-                    view: CommentTextView?,
-                    text: Text?,
+                    view: CommentTextView,
+                    text: Text,
                     click: Boolean,
                 ): Boolean
             }

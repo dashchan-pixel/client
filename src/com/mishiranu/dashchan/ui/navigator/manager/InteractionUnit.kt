@@ -110,7 +110,7 @@ class InteractionUnit internal constructor(
             }
         }
         if (!handled) {
-            handleUriInternal(uiManager.context!!, extra.chanName, uri)
+            handleUriInternal(uiManager.context, extra.chanName, uri)
         }
     }
 
@@ -142,13 +142,13 @@ class InteractionUnit internal constructor(
             val holder =
                 ListViewUtils.getViewHolder(v, UiManager.Holder::class.java)
             val postItem = holder!!.postItem
-            val attachmentItems = postItem!!.getAttachmentItems()
+            val attachmentItems = postItem.getAttachmentItems()
             if (attachmentItems != null && !attachmentItems.isEmpty()) {
                 val gallerySet = holder.gallerySet
                 val startImageIndex = gallerySet.findIndex(postItem)
                 if (mayShowDialog) {
                     uiManager.dialog().openAttachmentOrDialog(
-                        holder.configurationSet!!,
+                        holder.configurationSet,
                         v,
                         attachmentItems,
                         startImageIndex,
@@ -165,7 +165,7 @@ class InteractionUnit internal constructor(
                     }
                     uiManager.dialog().openAttachment(
                         v,
-                        holder.configurationSet!!.chanName,
+                        holder.configurationSet.chanName,
                         attachmentItems,
                         index,
                         imageIndex,
@@ -178,7 +178,8 @@ class InteractionUnit internal constructor(
     }
 
     private class ThumbnailLongClickListenerImpl : ThumbnailLongClickListener {
-        private var attachmentItem: AttachmentItem? = null
+        // update() is always dispatched before the view can be long-clicked.
+        private lateinit var attachmentItem: AttachmentItem
 
         override fun update(attachmentItem: AttachmentItem) {
             this.attachmentItem = attachmentItem
@@ -188,8 +189,8 @@ class InteractionUnit internal constructor(
             val holder =
                 ListViewUtils.getViewHolder(v, UiManager.Holder::class.java)
             Companion.showThumbnailLongClickDialogStatic(
-                holder!!.configurationSet!!,
-                attachmentItem!!,
+                holder!!.configurationSet,
+                attachmentItem,
                 v as AttachmentView,
                 holder.gallerySet.getThreadTitle(),
             )
@@ -216,7 +217,7 @@ class InteractionUnit internal constructor(
     }
 
     fun handlePostClick(
-        view: View?,
+        view: View,
         postStateProvider: PostStateProvider,
         postItem: PostItem,
         localPostItems: Iterable<PostItem>,
@@ -239,7 +240,7 @@ class InteractionUnit internal constructor(
                     }
                 }
             }
-            return uiManager.view().handlePostForDoubleClick(view!!)
+            return uiManager.view().handlePostForDoubleClick(view)
         }
     }
 
@@ -253,8 +254,8 @@ class InteractionUnit internal constructor(
         val postEmpty: Boolean = StringUtils.isEmpty(postItem.getComment(chan).toString())
         val copyText = !postEmpty
         val shareText = !postEmpty
-        val userPost = configurationSet.postStateProvider!!.isUserPost(postItem.getPostNumber())
-        val dialogMenu = DialogMenu(context!!)
+        val userPost = configurationSet.postStateProvider.isUserPost(postItem.getPostNumber())
+        val dialogMenu = DialogMenu(context)
         if (configurationSet.replyable != null && configurationSet.replyable.onRequestReply(false)) {
             dialogMenu.add(
                 R.string.reply,
@@ -800,7 +801,7 @@ class InteractionUnit internal constructor(
 
         private fun showPostHideDialog(
             fragmentManager: FragmentManager,
-            postItem: PostItem?,
+            postItem: PostItem,
         ) {
             InstanceDialog(
                 fragmentManager,

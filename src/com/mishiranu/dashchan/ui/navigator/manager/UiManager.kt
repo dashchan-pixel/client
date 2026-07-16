@@ -28,7 +28,7 @@ import com.mishiranu.dashchan.widget.ThemeEngine
 import java.lang.ref.WeakReference
 
 class UiManager(
-    val context: Context?,
+    val context: Context,
     callback: Callback?,
     localNavigator: LocalNavigator?,
 ) {
@@ -80,29 +80,29 @@ class UiManager(
 
     fun sendPostItemMessage(
         view: View,
-        message: Message?,
+        message: Message,
     ) {
         val holder = ListViewUtils.getViewHolder(view, Holder::class.java)
         sendPostItemMessage(holder!!.postItem, message)
     }
 
     fun sendPostItemMessage(
-        postItem: PostItem?,
-        message: Message?,
+        postItem: PostItem,
+        message: Message,
     ) {
         for (observer in observable) {
-            observer.onPostItemMessage(postItem!!, message!!)
+            observer.onPostItemMessage(postItem, message)
         }
     }
 
-    fun reloadAttachmentItem(attachmentItem: AttachmentItem?) {
+    fun reloadAttachmentItem(attachmentItem: AttachmentItem) {
         val iterator = observable.iterator()
         var observer: Observer? = null
         while (iterator.hasNext()) {
             observer = iterator.next()
         }
         if (observer != null) {
-            observer.onReloadAttachmentItem(attachmentItem!!)
+            observer.onReloadAttachmentItem(attachmentItem)
         }
     }
 
@@ -211,7 +211,7 @@ class UiManager(
         @JvmField val chanName: String?,
         val replyable: Replyable?,
         val postsProvider: PostsProvider?,
-        @JvmField val postStateProvider: PostStateProvider?,
+        @JvmField val postStateProvider: PostStateProvider,
         val galleryProvider: GalleryItem.Provider?,
         val fragmentManager: FragmentManager?,
         @JvmField val stackInstance: StackInstance?,
@@ -262,11 +262,11 @@ class UiManager(
     }
 
     interface Holder {
-        val postItem: PostItem?
-        val configurationSet: ConfigurationSet?
+        val postItem: PostItem
+        val configurationSet: ConfigurationSet
 
         val gallerySet: GalleryItem.Set
-            get() = this.configurationSet!!.galleryProvider!!.getGallerySet(this.postItem!!)
+            get() = this.configurationSet.galleryProvider!!.getGallerySet(this.postItem)
     }
 
     class UiManagerViewModel : ViewModel() {
@@ -284,7 +284,7 @@ class UiManager(
             val activity = provider.activity
             val viewModel =
                 ViewModelProvider(activity).get<UiManagerViewModel>(UiManagerViewModel::class.java)
-            val uiManager = if (viewModel.uiManager != null) viewModel.uiManager!!.get() else null
+            val uiManager = viewModel.uiManager?.get()
             return if (uiManager != null && uiManager.context === activity) uiManager else null
         }
     }

@@ -151,12 +151,12 @@ class DialogUnit internal constructor(
         }
     }
 
-    fun createStackInstance(): StackInstance = StackInstance(DialogStack<DialogFactory?>(uiManager.context!!))
+    fun createStackInstance(): StackInstance = StackInstance(DialogStack<DialogFactory?>(uiManager.context))
 
     internal class DialogFactory(
         factory: DialogProvider.Factory<*>,
         uiManager: UiManager,
-        configurationSet: ConfigurationSet?,
+        configurationSet: ConfigurationSet,
     ) : DialogStack.ViewFactory<DialogFactory?> {
         val delegate: TypedDialogFactory<*>
 
@@ -182,19 +182,19 @@ class DialogUnit internal constructor(
     internal class TypedDialogFactory<T>(
         factory: DialogProvider.Factory<T>,
         uiManager: UiManager,
-        configurationSet: ConfigurationSet?,
+        configurationSet: ConfigurationSet,
     ) {
         internal val provider: DialogProvider<T>
         internal val factory: DialogProvider.Factory<T>
 
         init {
             factory.use()
-            this.provider = factory.create(uiManager, configurationSet!!)
+            this.provider = factory.create(uiManager, configurationSet)
             this.factory = factory
         }
 
         fun createView(dialogStack: DialogStack<DialogFactory?>): View {
-            val context = provider.uiManager.context!!
+            val context = provider.uiManager.context
             val density = obtainDensity(context)
             val content = FrameLayout(context)
             content.setLayoutParams(
@@ -522,7 +522,7 @@ class DialogUnit internal constructor(
             } else {
                 uiManager.interaction().handlePostClick(
                     holder.itemView,
-                    configurationSet.postStateProvider!!,
+                    configurationSet.postStateProvider,
                     item!!,
                     this,
                 )
@@ -1160,7 +1160,7 @@ class DialogUnit internal constructor(
         override fun getItemViewType(position: Int): Int {
             val postItem = getItem(position)
             return (
-                if (dialogProvider.configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+                if (dialogProvider.configurationSet.postStateProvider.isHiddenResolve(postItem)) {
                     ViewUnit.ViewType.POST_HIDDEN
                 } else {
                     ViewUnit.ViewType.POST
@@ -1248,7 +1248,7 @@ class DialogUnit internal constructor(
         gallerySet: GalleryItem.Set,
     ) {
         val context = uiManager.context
-        val dialog = Dialog(context!!, R.style.Theme_Gallery)
+        val dialog = Dialog(context, R.style.Theme_Gallery)
         val styledContext = dialog.getContext()
         val attachmentDialog =
             Pair<AttachmentDialog?, Dialog?>(
@@ -1431,11 +1431,9 @@ class DialogUnit internal constructor(
                     }
                 }
             }
-        if (configurationSet.stackInstance!!.attachmentDialog != null) {
-            configurationSet.stackInstance
-                .attachmentDialog!!
-                .second!!
-                .dismiss()
+        val previousAttachmentDialog = configurationSet.stackInstance!!.attachmentDialog
+        if (previousAttachmentDialog != null) {
+            previousAttachmentDialog.second!!.dismiss()
             configurationSet.stackInstance.attachmentDialog = null
         }
         configurationSet.stackInstance.attachmentDialog = attachmentDialog
@@ -1496,7 +1494,7 @@ class DialogUnit internal constructor(
         val uri = attachmentItem.getFileUri(chan)
         val type = attachmentItem.getType()
         if (canDownload && type == AttachmentItem.Type.AUDIO) {
-            start(context!!, chanName, uri, attachmentItem.getFileName(chan))
+            start(context, chanName, uri, attachmentItem.getFileName(chan))
         } else if (canDownload &&
             (
                 type == AttachmentItem.Type.IMAGE ||
@@ -1514,7 +1512,7 @@ class DialogUnit internal constructor(
             )
         } else {
             NavigationUtils.handleUri(
-                context!!,
+                context,
                 chanName,
                 uri!!,
                 NavigationUtils.BrowserType.EXTERNAL,
@@ -1528,20 +1526,17 @@ class DialogUnit internal constructor(
         show: Boolean,
         dialog: AlertDialog?,
     ) {
+        val stackInstance = configurationSet.stackInstance!!
         if (show) {
-            if (configurationSet.stackInstance!!.postContextMenu != null) {
-                configurationSet.stackInstance
-                    .postContextMenu!!
-                    .second!!
-                    .dismiss()
+            val postContextMenu = stackInstance.postContextMenu
+            if (postContextMenu != null) {
+                postContextMenu.second!!.dismiss()
             }
-            configurationSet.stackInstance.postContextMenu =
-                Pair<PostNumber?, Dialog?>(postNumber, dialog)
+            stackInstance.postContextMenu = Pair<PostNumber?, Dialog?>(postNumber, dialog)
         } else {
-            if (configurationSet.stackInstance!!.postContextMenu != null &&
-                configurationSet.stackInstance.postContextMenu!!.second === dialog
-            ) {
-                configurationSet.stackInstance.postContextMenu = null
+            val postContextMenu = stackInstance.postContextMenu
+            if (postContextMenu != null && postContextMenu.second === dialog) {
+                stackInstance.postContextMenu = null
             }
         }
     }
@@ -1592,7 +1587,7 @@ class DialogUnit internal constructor(
             options.add(
                 Pair(
                     SendMultifunctionalTask.OPTION_FILES_ONLY,
-                    context!!.getString(R.string.files_only),
+                    context.getString(R.string.files_only),
                 ),
             )
         }
@@ -1655,7 +1650,7 @@ class DialogUnit internal constructor(
         posts: Collection<Post>?,
     ) {
         performSendArchiveThread(
-            uiManager.context!!,
+            uiManager.context,
             fragmentManager,
             chanName,
             boardName,
@@ -1944,11 +1939,12 @@ class DialogUnit internal constructor(
         ): Dialog? {
             val context = provider.context
             val radioGroup: RadioGroup?
-            if (state.types != null && state.types!!.size > 0) {
+            val types = state.types
+            if (types != null && types.size > 0) {
                 radioGroup = RadioGroup(context)
                 radioGroup.setOrientation(RadioGroup.VERTICAL)
                 var check = 0
-                for (pair in state.types) {
+                for (pair in types) {
                     val button = RadioButton(context)
                     applyStyle(button)
                     button.setText(pair.second)
@@ -1983,10 +1979,11 @@ class DialogUnit internal constructor(
             }
 
             val checkBoxGroup: LinearLayout?
-            if (state.options != null && state.options!!.size > 0) {
+            val stateOptions = state.options
+            if (stateOptions != null && stateOptions.size > 0) {
                 checkBoxGroup = LinearLayout(context)
                 checkBoxGroup.setOrientation(RadioGroup.VERTICAL)
-                for (option in state.options) {
+                for (option in stateOptions) {
                     val checkBox = CheckBox(context)
                     applyStyle(checkBox)
                     checkBox.setText(option.second)

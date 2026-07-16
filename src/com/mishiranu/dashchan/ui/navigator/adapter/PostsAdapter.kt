@@ -46,7 +46,7 @@ class PostsAdapter(
     chanName: String?,
     private val uiManager: UiManager,
     replyable: Replyable?,
-    postStateProvider: PostStateProvider?,
+    postStateProvider: PostStateProvider,
     fragmentManager: FragmentManager?,
     recyclerView: RecyclerView,
     postItemsMap: MutableMap<PostNumber?, PostItem>,
@@ -116,7 +116,7 @@ class PostsAdapter(
     override fun getItemViewType(position: Int): Int {
         val postItem = getItem(position)
         return (
-            if (configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+            if (configurationSet.postStateProvider.isHiddenResolve(postItem)) {
                 ViewUnit.ViewType.POST_HIDDEN
             } else {
                 ViewUnit.ViewType.POST
@@ -408,7 +408,7 @@ class PostsAdapter(
         if (selected.contains(postNumber)) {
             selected.remove(postNumber)
         } else {
-            if (!configurationSet.postStateProvider!!.isHiddenResolve(postItem)) {
+            if (!configurationSet.postStateProvider.isHiddenResolve(postItem)) {
                 selected.add(postNumber)
             }
         }
@@ -522,7 +522,7 @@ class PostsAdapter(
             val time = SystemClock.elapsedRealtime()
             while (SystemClock.elapsedRealtime() - time < ConcurrentUtils.HALF_FRAME_TIME_MS && iterator.hasNext()) {
                 val postItem = iterator.next()
-                configurationSet.postStateProvider!!.isHiddenResolve(postItem)
+                configurationSet.postStateProvider.isHiddenResolve(postItem)
                 postItem.getComment(chan)
             }
             if (iterator.hasNext()) {

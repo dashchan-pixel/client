@@ -125,7 +125,7 @@ class ViewUnit
                         ListViewUtils.getViewHolder(view, UiManager.Holder::class.java)
                     uiManager
                         .interaction()
-                        .handleLinkClick(holder!!.configurationSet!!, uri, extra, confirmed)
+                        .handleLinkClick(holder!!.configurationSet, uri, extra, confirmed)
                 }
 
                 override fun onLinkLongClick(
@@ -135,7 +135,7 @@ class ViewUnit
                 ) {
                     val holder =
                         ListViewUtils.getViewHolder(view, UiManager.Holder::class.java)
-                    uiManager.interaction().handleLinkLongClick(holder!!.configurationSet!!, uri)
+                    uiManager.interaction().handleLinkLongClick(holder!!.configurationSet, uri)
                 }
             }
 
@@ -219,7 +219,7 @@ class ViewUnit
             configurationSet: ConfigurationSet,
         ) {
             val context = uiManager.context
-            val colorScheme = getColorScheme(context!!)
+            val colorScheme = getColorScheme(context)
             val holder: ThreadViewHolder = viewHolder as ThreadViewHolder
             val chan = get(configurationSet.chanName)
             holder.configure(postItem, configurationSet)
@@ -290,7 +290,7 @@ class ViewUnit
             contentHeight: Int,
         ) {
             val context = uiManager.context
-            val colorScheme = getColorScheme(context!!)
+            val colorScheme = getColorScheme(context)
             val holder: ThreadViewHolder = viewHolder as ThreadViewHolder
             val chan = get(configurationSet.chanName)
             holder.configure(postItem, configurationSet)
@@ -385,10 +385,10 @@ class ViewUnit
         fun bindThreadHiddenView(
             viewHolder: RecyclerView.ViewHolder?,
             postItem: PostItem,
-            configurationSet: ConfigurationSet?,
+            configurationSet: ConfigurationSet,
         ) {
             val holder: HiddenViewHolder = viewHolder as HiddenViewHolder
-            holder.configure(postItem, configurationSet!!)
+            holder.configure(postItem, configurationSet)
             var description = postItem.getHideReason()
             if (description == null) {
                 description = postItem.getSubjectOrComment()
@@ -402,7 +402,7 @@ class ViewUnit
             configurationSet: ConfigurationSet,
             demandSet: DemandSet,
         ) {
-            val colorScheme = getColorScheme(uiManager.context!!)
+            val colorScheme = getColorScheme(uiManager.context)
             val holder: PostViewHolder = viewHolder as PostViewHolder
             val chan = get(configurationSet.chanName)
             holder.resetAnimations()
@@ -443,18 +443,18 @@ class ViewUnit
             holder.date.setText(postItem.getDateTime(postDateFormatter))
 
             if (postItem.isShowVotes()) {
-                holder.votingState.likeText!!.setText(postItem.getLikes().toString())
-                holder.votingState.likeText!!.setVisibility(View.VISIBLE)
-                holder.votingState.likeImage!!.setVisibility(View.VISIBLE)
-                holder.votingState.dislikeText!!.setText(postItem.getDislikes().toString())
-                holder.votingState.dislikeText!!.setVisibility(View.VISIBLE)
-                holder.votingState.dislikeImage!!.setVisibility(View.VISIBLE)
+                holder.votingState.likeText.setText(postItem.getLikes().toString())
+                holder.votingState.likeText.setVisibility(View.VISIBLE)
+                holder.votingState.likeImage.setVisibility(View.VISIBLE)
+                holder.votingState.dislikeText.setText(postItem.getDislikes().toString())
+                holder.votingState.dislikeText.setVisibility(View.VISIBLE)
+                holder.votingState.dislikeImage.setVisibility(View.VISIBLE)
                 holder.voting.setVisibility(View.VISIBLE)
             } else {
-                holder.votingState.likeText!!.setVisibility(View.GONE)
-                holder.votingState.likeImage!!.setVisibility(View.GONE)
-                holder.votingState.dislikeText!!.setVisibility(View.GONE)
-                holder.votingState.dislikeImage!!.setVisibility(View.GONE)
+                holder.votingState.likeText.setVisibility(View.GONE)
+                holder.votingState.likeImage.setVisibility(View.GONE)
+                holder.votingState.dislikeText.setVisibility(View.GONE)
+                holder.votingState.dislikeImage.setVisibility(View.GONE)
                 holder.voting.setVisibility(View.GONE)
             }
 
@@ -473,7 +473,7 @@ class ViewUnit
             val showPostsBorders = !configurationSet.isDialog && isShowPostsBorders
 
             val setBorderStyleUserPost =
-                showPostsBorders && configurationSet.postStateProvider!!.isUserPost(postNumber)
+                showPostsBorders && configurationSet.postStateProvider.isUserPost(postNumber)
             if (setBorderStyleUserPost) {
                 borderStyle = PostBorderView.BorderStyle.USER_POST
             }
@@ -481,7 +481,7 @@ class ViewUnit
             if (linkSuffixSpans != null) {
                 val showMyPosts = isShowMyPosts
                 for (span in linkSuffixSpans) {
-                    val isReply = configurationSet.postStateProvider!!.isUserPost(span.postNumber)
+                    val isReply = configurationSet.postStateProvider.isUserPost(span.postNumber)
                     val showReply = showMyPosts && isReply
                     span.setSuffix(LinkSuffixSpan.SUFFIX_USER_POST, showReply)
 
@@ -505,7 +505,7 @@ class ViewUnit
                                 configurationSet.postsProvider.findPostItem(linkSpan.postNumber)
                             if (linkPostItem != null) {
                                 hidden =
-                                    configurationSet.postStateProvider!!.isHiddenResolve(linkPostItem)
+                                    configurationSet.postStateProvider.isHiddenResolve(linkPostItem)
                             }
                         }
                         linkSpan.setHidden(hidden)
@@ -552,7 +552,7 @@ class ViewUnit
             }
             var resetLimit = true
             if (configurationSet.mayCollapse &&
-                !configurationSet.postStateProvider!!.isExpanded(
+                !configurationSet.postStateProvider.isExpanded(
                     postNumber,
                 )
             ) {
@@ -627,7 +627,7 @@ class ViewUnit
                 description = postItem.getSubjectOrComment()
             }
             holder.comment.setText(description)
-            configurationSet.postStateProvider!!.setRead(postItem.getPostNumber())
+            configurationSet.postStateProvider.setRead(postItem.getPostNumber())
         }
 
         @SuppressLint("InflateParams")
@@ -651,7 +651,7 @@ class ViewUnit
                     val holders = attachmentHolders.size
                     if (holders < size) {
                         val postBackgroundColor: Int =
-                            getPostBackgroundColor(uiManager.context!!, configurationSet)
+                            getPostBackgroundColor(uiManager.context, configurationSet)
                         val thumbnailsScale = thumbnailsScale
                         val textScale = textScale
                         for (i in holders..<size) {
@@ -741,7 +741,7 @@ class ViewUnit
                     holder.thumbnail.setVisibility(View.VISIBLE)
                     holder.attachmentInfo.setText(
                         postItem.getAttachmentsDescription(
-                            context!!.getResources(),
+                            context.getResources(),
                             AttachmentItem.FormatMode.LONG,
                         ),
                     )
@@ -776,7 +776,7 @@ class ViewUnit
                     val anchorView =
                         if (count > 0) badgeImages[count - 1] else holder.index
                     val anchorIndex = holder.head.indexOfChild(anchorView) + 1
-                    val density = obtainDensity(context!!)
+                    val density = obtainDensity(context)
                     val size = (12f * density).toInt()
                     val textScale = textScale
                     for (i in 0..<add) {
@@ -827,7 +827,7 @@ class ViewUnit
                 val locale = Locale.getDefault()
                 val spannable = SpannableString(currentText)
                 val searchable = currentText.toString().lowercase(locale)
-                val colorScheme = getColorScheme(uiManager.context!!)
+                val colorScheme = getColorScheme(uiManager.context)
                 for (highlight in highlightText) {
                     val lowercaseHighlight = highlight.lowercase(locale)
                     var textIndex = -1
@@ -1010,7 +1010,7 @@ class ViewUnit
                                     )
                                 val postItem = holder!!.postItem
                                 val configurationSet = holder.configurationSet
-                                val touchSlop = ViewConfiguration.get(context!!).getScaledTouchSlop()
+                                val touchSlop = ViewConfiguration.get(context).getScaledTouchSlop()
                                 if (abs(event.getX() - startX) <= touchSlop &&
                                     abs(event.getY() - startY) <= touchSlop
                                 ) {
@@ -1062,7 +1062,7 @@ class ViewUnit
         init {
             val context = uiManager.context
             this.uiManager = uiManager
-            postDateFormatter = PostDateFormatter(context!!)
+            postDateFormatter = PostDateFormatter(context)
 
             extraButtons =
                 Arrays
@@ -1070,10 +1070,10 @@ class ViewUnit
                         ExtraButton(
                             context.getString(R.string.quote__verb),
                             R.attr.iconActionPaste,
-                            ExtraButton.Callback { view: CommentTextView?, text: ExtraButton.Text?, click: Boolean ->
+                            ExtraButton.Callback { view: CommentTextView, text: ExtraButton.Text, click: Boolean ->
                                 val holder: PostViewHolder? =
                                     ListViewUtils.getViewHolder(
-                                        view!!,
+                                        view,
                                         PostViewHolder::class.java,
                                     )
                                 val configurationSet = holder!!.configurationSet
@@ -1087,7 +1087,7 @@ class ViewUnit
                                             true,
                                             ReplyData(
                                                 holder.postItem.getPostNumber(),
-                                                text!!.toPreparedString(view),
+                                                text.toPreparedString(view),
                                             ),
                                         )
                                     }
@@ -1099,13 +1099,13 @@ class ViewUnit
                         ExtraButton(
                             context.getString(R.string.web_browser),
                             R.attr.iconActionForward,
-                            ExtraButton.Callback { view: CommentTextView?, text: ExtraButton.Text?, click: Boolean ->
+                            ExtraButton.Callback { view: CommentTextView, text: ExtraButton.Text, click: Boolean ->
                                 val uri: Uri? = extractUri(text.toString())
                                 if (uri != null) {
                                     if (click) {
                                         val holder: PostViewHolder? =
                                             ListViewUtils.getViewHolder(
-                                                view!!,
+                                                view,
                                                 PostViewHolder::class.java,
                                             )
                                         val configurationSet = holder!!.configurationSet
@@ -1125,7 +1125,7 @@ class ViewUnit
                         ExtraButton(
                             context.getString(R.string.add_theme),
                             R.attr.iconActionAddRule,
-                            ExtraButton.Callback { view: CommentTextView?, text: ExtraButton.Text?, click: Boolean ->
+                            ExtraButton.Callback { view: CommentTextView, text: ExtraButton.Text, click: Boolean ->
                                 val theme = fastParseThemeFromText(context, text.toString())
                                 if (theme != null) {
                                     if (click) {
@@ -1147,62 +1147,62 @@ class ViewUnit
             USER_POST(
                 R.attr.iconPostUserPost,
                 R.string.my_post,
-                PostState.Predicate { data: Predicate.Data? ->
-                    isShowMyPosts && data!!.configurationSet.postStateProvider!!.isUserPost(data.postItem.getPostNumber())
+                PostState.Predicate { data: Predicate.Data ->
+                    isShowMyPosts && data.configurationSet.postStateProvider.isUserPost(data.postItem.getPostNumber())
                 },
             ),
             ORIGINAL_POSTER(
                 R.attr.iconPostOriginalPoster,
                 R.string.original_poster,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isOriginalPoster() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isOriginalPoster() },
             ),
             SAGE(
                 R.attr.iconPostSage,
                 R.string.doesnt_bring_up_thread,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isSage() || data.bumpLimitReached },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isSage() || data.bumpLimitReached },
             ),
             EMAIL(
                 R.attr.iconPostEmail,
-                TitleProvider { context: Context?, postItem: PostItem? ->
-                    var email = postItem!!.getEmail()
+                TitleProvider { _: Context, postItem: PostItem ->
+                    var email = postItem.getEmail()
                     if (email.startsWith("mailto:")) {
                         email = email.substring(7)
                     }
                     email
                 },
-                PostState.Predicate { data: Predicate.Data? -> !isEmpty(data!!.postItem.getEmail()) },
+                PostState.Predicate { data: Predicate.Data -> !isEmpty(data.postItem.getEmail()) },
             ),
             STICKY(
                 R.attr.iconPostSticky,
                 R.string.sticky_thread,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isSticky() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isSticky() },
             ),
             CLOSED(
                 R.attr.iconPostClosed,
                 R.string.thread_is_closed,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isClosed() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isClosed() },
             ),
             CYCLICAL(
                 R.attr.iconPostCyclical,
                 R.string.cyclical_thread,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isCyclical() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isCyclical() },
             ),
             WARNED(
                 R.attr.iconPostWarned,
                 R.string.user_is_warned,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isPosterWarned() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isPosterWarned() },
             ),
             BANNED(
                 R.attr.iconPostBanned,
                 R.string.user_is_banned,
-                PostState.Predicate { data: Predicate.Data? -> data!!.postItem.isPosterBanned() },
+                PostState.Predicate { data: Predicate.Data -> data.postItem.isPosterBanned() },
             ),
             ;
 
             fun interface TitleProvider {
                 fun get(
-                    context: Context?,
-                    postItem: PostItem?,
+                    context: Context,
+                    postItem: PostItem,
                 ): String?
             }
 
@@ -1213,12 +1213,12 @@ class ViewUnit
                     val bumpLimitReached: Boolean,
                 )
 
-                fun apply(data: Data?): Boolean
+                fun apply(data: Data): Boolean
             }
 
             constructor(iconAttrResId: Int, titleResId: Int, predicate: Predicate) : this(
                 iconAttrResId,
-                TitleProvider { c: Context?, p: PostItem? -> c!!.getString(titleResId) },
+                TitleProvider { c: Context, _: PostItem -> c.getString(titleResId) },
                 predicate,
             )
 
@@ -1260,19 +1260,14 @@ class ViewUnit
             }
         }
 
-        private class Lazy<T> {
+        private class Lazy<T : Any> {
             interface Provider<T> {
-                fun createLazy(): T?
+                fun createLazy(): T
             }
 
             private var data: T? = null
 
-            fun get(provider: Provider<T?>): T? {
-                if (data == null) {
-                    data = provider.createLazy()
-                }
-                return data
-            }
+            fun get(provider: Provider<T>): T = data ?: provider.createLazy().also { data = it }
         }
 
         private open class BasePostViewHolder(
@@ -1280,8 +1275,8 @@ class ViewUnit
         ) : RecyclerView.ViewHolder(itemView),
             UiManager.Holder,
             ClickCallback<Unit?, BasePostViewHolder> {
-            private var postItemRef: WeakReference<PostItem>? = null
-            private var configurationSetRef: WeakReference<ConfigurationSet>? = null
+            private lateinit var postItemRef: WeakReference<PostItem>
+            private lateinit var configurationSetRef: WeakReference<ConfigurationSet>
 
             protected open fun onConfigure(
                 postItem: PostItem,
@@ -1298,10 +1293,10 @@ class ViewUnit
             }
 
             override val postItem: PostItem
-                get() = postItemRef!!.get()!!
+                get() = postItemRef.get()!!
 
             override val configurationSet: ConfigurationSet
-                get() = configurationSetRef!!.get()!!
+                get() = configurationSetRef.get()!!
 
             override fun onItemClick(
                 holder: BasePostViewHolder,
@@ -1493,16 +1488,18 @@ class ViewUnit
         private class VoteState {
             val votingImages: Array<ImageView?> = arrayOfNulls(2)
             val votingText: Array<TextView?> = arrayOfNulls(2)
-            var likeImage: ImageView? = null
-            var dislikeImage: ImageView? = null
-            var likeText: TextView? = null
-            var dislikeText: TextView? = null
+            lateinit var likeImage: ImageView
+            lateinit var dislikeImage: ImageView
+            lateinit var likeText: TextView
+            lateinit var dislikeText: TextView
 
+            // fillVoting() populates the arrays; this hands the four slots to the bind
+            // path as non-null, keeping the assertions at the real nullable boundary.
             fun bindArrayToView() {
-                likeImage = votingImages[0]
-                dislikeImage = votingImages[1]
-                likeText = votingText[0]
-                dislikeText = votingText[1]
+                likeImage = votingImages[0]!!
+                dislikeImage = votingImages[1]!!
+                likeText = votingText[0]!!
+                dislikeText = votingText[1]!!
             }
         }
 
@@ -1513,7 +1510,7 @@ class ViewUnit
         ) : BasePostViewHolder(
                 LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_post, parent, false),
             ),
-            Lazy.Provider<PostViewHolder.Dimensions?>,
+            Lazy.Provider<PostViewHolder.Dimensions>,
             RecyclerKeeper.Holder,
             OnAttachStateChangeListener,
             LimitListener,
@@ -1556,7 +1553,7 @@ class ViewUnit
 
             val thumbnailClickListener: ThumbnailClickListener
             val thumbnailLongClickListener: ThumbnailLongClickListener
-            val defaultLinkListener: LinkListener?
+            val defaultLinkListener: LinkListener
 
             var selection: UiManager.Selection? = null
             var expandAnimator: Animator? = null
@@ -1640,7 +1637,7 @@ class ViewUnit
                     head.horizontalSpacing = (head.horizontalSpacing * textScale).toInt()
                 }
 
-                this.dimensions = dimensions.get(this)!!
+                this.dimensions = dimensions.get(this)
                 thumbnail.setDrawTouching(true)
                 val thumbnailLayoutParams = thumbnail.getLayoutParams()
                 val thumbnailsScale = thumbnailsScale
@@ -1689,17 +1686,15 @@ class ViewUnit
             }
 
             fun installBackgroundUnchecked() {
-                if (newPostAnimation != null) {
-                    newPostAnimation!!.cancel()
-                    newPostAnimation = null
-                }
+                newPostAnimation?.cancel()
+                newPostAnimation = null
                 val postItem = postItem
                 val configurationSet = configurationSet
                 val highlightUserPost =
                     isHighlightUserPosts &&
-                        configurationSet.postStateProvider!!.isUserPost(postItem.getPostNumber())
+                        configurationSet.postStateProvider.isUserPost(postItem.getPostNumber())
                 if (selection == UiManager.Selection.DISABLED &&
-                    !configurationSet.postStateProvider!!.isRead(postItem.getPostNumber())
+                    !configurationSet.postStateProvider.isRead(postItem.getPostNumber())
                 ) {
                     when (highlightUnreadMode) {
                         HighlightUnreadMode.AUTOMATICALLY -> {
@@ -1744,14 +1739,12 @@ class ViewUnit
 
             fun resetAnimations() {
                 if (expandAnimator != null) {
-                    expandAnimator!!.cancel()
+                    expandAnimator?.cancel()
                     expandAnimator = null
                     commentTextView.getLayoutParams().height = ViewGroup.LayoutParams.WRAP_CONTENT
                 }
-                if (newPostAnimation != null) {
-                    newPostAnimation!!.cancel()
-                    newPostAnimation = null
-                }
+                newPostAnimation?.cancel()
+                newPostAnimation = null
             }
 
             fun invalidateBottomBar() {
@@ -1802,11 +1795,10 @@ class ViewUnit
                 }
             }
 
-            val linkListener: LinkListener?
-                get() {
-                    val configurationSet = configurationSet
-                    return if (configurationSet.linkListener != null) configurationSet.linkListener else defaultLinkListener
-                }
+            // Never null: falls back to the unit's own listener, so the assertions the
+            // J2K conversion put on every dispatch below were unreachable.
+            val linkListener: LinkListener
+                get() = configurationSet.linkListener ?: defaultLinkListener
 
             override fun onLinkClick(
                 view: CommentTextView,
@@ -1814,7 +1806,7 @@ class ViewUnit
                 extra: LinkListener.Extra,
                 confirmed: Boolean,
             ) {
-                this.linkListener!!.onLinkClick(view, uri, extra, confirmed)
+                this.linkListener.onLinkClick(view, uri, extra, confirmed)
             }
 
             override fun onLinkLongClick(
@@ -1822,7 +1814,7 @@ class ViewUnit
                 uri: Uri,
                 extra: LinkListener.Extra,
             ) {
-                this.linkListener!!.onLinkLongClick(view, uri, extra)
+                this.linkListener.onLinkLongClick(view, uri, extra)
             }
 
             override val chanName: String?
@@ -1838,15 +1830,13 @@ class ViewUnit
                 val postItem = postItem
                 val postNumber = postItem.getPostNumber()
                 val configurationSet = configurationSet
-                if (v === bottomBarExpand && !configurationSet.postStateProvider!!.isExpanded(postNumber)) {
+                if (v === bottomBarExpand && !configurationSet.postStateProvider.isExpanded(postNumber)) {
                     configurationSet.postStateProvider.setExpanded(postNumber)
                     commentTextView.setLinesLimit(0, 0)
                     bottomBarExpand.setVisibility(View.GONE)
                     val bottomBarHeight = bottomBar.getHeight()
                     invalidateBottomBar()
-                    if (expandAnimator != null) {
-                        expandAnimator!!.cancel()
-                    }
+                    expandAnimator?.cancel()
                     var fromHeight = commentTextView.getHeight()
                     measureDynamicHeight(this.commentTextView)
                     val toHeight = commentTextView.getMeasuredHeight()
@@ -1898,7 +1888,7 @@ class ViewUnit
             card: Boolean,
             thread: Boolean,
         ) : BasePostViewHolder(
-                createBaseView(parent, card)!!,
+                createBaseView(parent, card),
             ) {
             val index: TextView
             val number: TextView
@@ -1932,7 +1922,7 @@ class ViewUnit
                 private fun createBaseView(
                     parent: ViewGroup,
                     card: Boolean,
-                ): View? {
+                ): View {
                     if (card) {
                         val cardView: CardView = createCardLayout(parent)
                         val cardContent = cardView.getChildAt(0) as ViewGroup

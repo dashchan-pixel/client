@@ -447,7 +447,7 @@ class PostsPage :
             divider.setSkipCallback(
                 SkipCallback { position: Int ->
                     if (position >= 0) {
-                        if (adapter.configurationSet.postStateProvider!!.isUserPost(
+                        if (adapter.configurationSet.postStateProvider.isUserPost(
                                 adapter
                                     .getItem(
                                         position,
@@ -458,7 +458,7 @@ class PostsPage :
                         }
                     }
                     if ((position + 1) < adapter.getItemCount()) {
-                        return@SkipCallback adapter.configurationSet.postStateProvider!!.isUserPost(
+                        return@SkipCallback adapter.configurationSet.postStateProvider.isUserPost(
                             adapter.getItem(position + 1).getPostNumber(),
                         )
                     }
