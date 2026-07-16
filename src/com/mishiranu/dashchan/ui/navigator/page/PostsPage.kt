@@ -245,7 +245,7 @@ class PostsPage :
     class ReadViewModel : ViewModel() {
         private var session: WatcherService.Session? = null
         private val result =
-            MutableLiveData<Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>?>()
+            MutableLiveData<Pair<CallbackProxy<WatcherService.Session.Callback>, Boolean>?>()
 
         private var visibleRefresh = false
         var visibleReadResult: Boolean = false
@@ -265,7 +265,7 @@ class PostsPage :
                             val visible = visibleRefresh
                             visibleRefresh = false
                             this.result.setValue(
-                                Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>(
+                                Pair<CallbackProxy<WatcherService.Session.Callback>, Boolean>(
                                     result,
                                     visible,
                                 ),
@@ -293,7 +293,7 @@ class PostsPage :
                 return true
             }
             val result = this.result.getValue()
-            return result != null && result.second == true
+            return result != null && result.second
         }
 
         fun notifyExtracted() {
@@ -306,15 +306,15 @@ class PostsPage :
 
         fun observe(
             owner: LifecycleOwner,
-            callback: WatcherService.Session.Callback?,
+            callback: WatcherService.Session.Callback,
         ) {
             result.observe(
                 owner,
-                Observer { result: Pair<CallbackProxy<WatcherService.Session.Callback>?, Boolean?>? ->
+                Observer { result: Pair<CallbackProxy<WatcherService.Session.Callback>, Boolean>? ->
                     if (result != null) {
                         this.result.setValue(null)
-                        visibleReadResult = result.second!!
-                        result.first!!.invoke(callback!!)
+                        visibleReadResult = result.second
+                        result.first.invoke(callback)
                     }
                 },
             )

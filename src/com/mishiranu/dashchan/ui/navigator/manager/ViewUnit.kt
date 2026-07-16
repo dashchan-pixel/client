@@ -1360,7 +1360,7 @@ class ViewUnit
                 threadContent = itemView.findViewById<View>(R.id.thread_content)
                 val showOriginalPost = itemView.findViewById<ViewGroup?>(R.id.show_original_post)
                 this.showOriginalPost = showOriginalPost
-                (if (threadViewType == ThreadViewType.CELL) description else showOriginalPost)!!
+                (if (threadViewType == ThreadViewType.CELL) description else showOriginalPost)
                     .setOnClickListener(uiManager.view().threadShowOriginalPostClickListener)
 
                 thumbnailClickListener = uiManager.interaction().createThumbnailClickListener()
