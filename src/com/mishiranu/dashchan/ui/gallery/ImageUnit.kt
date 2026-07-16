@@ -94,7 +94,7 @@ class ImageUnit(
         holder.decodeBitmapTask = decodeBitmapTask
         val nextHolder = if (instance.scrollingLeft) instance.leftHolder else instance.rightHolder
         if (nextHolder != null &&
-            loadNearestImage!!
+            loadNearestImage
                 .isNetworkAvailable(getInstance())
         ) {
             val nextGalleryItem = nextHolder.galleryItem!!
@@ -385,8 +385,8 @@ class ImageUnit(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = GalleryInstance.getCallback(provider!!).getWindow()!!.getContext()
+                InstanceDialog.Factory { provider ->
+                    val context = GalleryInstance.getCallback(provider).getWindow()!!.getContext()
                     val dialogBuilder =
                         AlertDialog
                             .Builder(context)

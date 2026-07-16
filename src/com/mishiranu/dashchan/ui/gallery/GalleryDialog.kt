@@ -45,6 +45,11 @@ class GalleryDialog(
 
     private var actionBarAnimationsFixed = false
 
+    // Dialog.getWindow() is only null once the dialog has been dismissed; every use below runs while
+    // it is alive, exactly as the pre-J2K Java dereferenced getWindow() unconditionally.
+    private val dialogWindow: Window
+        get() = getWindow()!!
+
     fun setTitleSubtitle(
         title: CharSequence?,
         subtitle: CharSequence?,
@@ -64,18 +69,18 @@ class GalleryDialog(
         if (toolbarHolder == null) {
             val toolbar = this.actionBarView as Toolbar
             toolbarHolder = addToolbarTitle(toolbar)
-            val layoutParams = getWindow()!!.getAttributes()
+            val layoutParams = dialogWindow.getAttributes()
             val title = layoutParams.getTitle()
             setTitle(null)
             layoutParams.setTitle(title)
-            getWindow()!!.setAttributes(layoutParams)
+            dialogWindow.setAttributes(layoutParams)
         }
         return actionBar
     }
 
     private fun getPhoneWindowView(resourceName: String?): View? {
         val id = fragment.getResources().getIdentifier(resourceName, "id", "android")
-        return if (id != 0) getWindow()!!.getDecorView().findViewById<View?>(id) else null
+        return if (id != 0) dialogWindow.getDecorView().findViewById<View?>(id) else null
     }
 
     val actionBarView: View?
@@ -102,15 +107,15 @@ class GalleryDialog(
     private val backInvokedCallback = OnBackInvokedCallback { this.handleBackInvoked() }
 
     init {
-        getWindow()!!.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-        val layoutParams = getWindow()!!.getAttributes()
+        dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
+        val layoutParams = dialogWindow.getAttributes()
         layoutParams.setTitle(getContext().getPackageName() + "/" + javaClass.getName())
-        getWindow()!!.setAttributes(layoutParams)
+        dialogWindow.setAttributes(layoutParams)
         setVolumeControlStream(AudioManager.STREAM_MUSIC)
 
         // ActionBarOverlayLayout relies on SYSTEM_UI_FLAG_LAYOUT_STABLE and uses deprecated
         // getSystemWindowInsetsAsRect instead of getInsetsIgnoringVisibility
-        val decorView = getWindow()!!.getDecorView()
+        val decorView = dialogWindow.getDecorView()
         val overlay =
             decorView.findViewById<View?>(
                 fragment
@@ -125,9 +130,9 @@ class GalleryDialog(
             )
         if (overlay != null && container != null) {
             overlay.setOnApplyWindowInsetsListener(
-                View.OnApplyWindowInsetsListener { v: View?, insets: WindowInsets? ->
+                View.OnApplyWindowInsetsListener { _: View, insets: WindowInsets ->
                     val systemInsets =
-                        insets!!.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+                        insets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
                     setNewMargin(
                         container,
                         systemInsets.left,

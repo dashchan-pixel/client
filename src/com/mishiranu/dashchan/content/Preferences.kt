@@ -204,16 +204,18 @@ object Preferences {
         return defaultValue
     }
 
+    // getEnumValue falls back to defaultValue, so with a non-null default this can never be null;
+    // the `?: defaultValue` only re-states that for the compiler (same idiom as downloadSubdirMode).
     private fun getNetworkModeGeneric(
         key: String,
-        defaultValue: NetworkMode?,
-    ): NetworkMode? =
+        defaultValue: NetworkMode,
+    ): NetworkMode =
         getEnumValue(
             key,
             NetworkMode.entries.toTypedArray(),
             defaultValue,
             NetworkMode.Companion.VALUE_PROVIDER,
-        )
+        ) ?: defaultValue
 
     val KEY_HIDE_AI_POSTS: ChanKey = ChanKey("hide_ai_posts")
     const val DEFAULT_HIDE_AI_POSTS: Boolean = false
@@ -992,7 +994,7 @@ object Preferences {
     val DEFAULT_LOAD_NEAREST_IMAGE: NetworkMode = NetworkMode.NEVER
 
     @JvmStatic
-    val loadNearestImage: NetworkMode?
+    val loadNearestImage: NetworkMode
         get() =
             getNetworkModeGeneric(
                 KEY_LOAD_NEAREST_IMAGE,
@@ -1003,7 +1005,7 @@ object Preferences {
     val DEFAULT_LOAD_THUMBNAILS: NetworkMode = NetworkMode.ALWAYS
 
     @JvmStatic
-    val loadThumbnails: NetworkMode?
+    val loadThumbnails: NetworkMode
         get() =
             getNetworkModeGeneric(
                 KEY_LOAD_THUMBNAILS,

@@ -444,7 +444,7 @@ class PagerUnit(
             try {
                 val allowLoad =
                     galleryInstance.callback.isGalleryWindow() ||
-                        loadThumbnails!!.isNetworkAvailable(getInstance())
+                        loadThumbnails.isNetworkAvailable(getInstance())
                 return ImageLoader.getInstance().loadImage(chan, uri, null, !allowLoad, target)
             } finally {
                 target.awaitImmediate = false
@@ -823,9 +823,9 @@ class PagerUnit(
                     chan,
                     R.string.copy_image,
                     (
-                        Consumer { file: File? ->
+                        Consumer { file: File ->
                             FileUriClipboard.copyFileUriToClipboard(
-                                file!!,
+                                file,
                                 galleryItem.getFileName(chan)!!,
                             )
                         }
@@ -864,10 +864,10 @@ class PagerUnit(
                     chan,
                     R.string.share_file,
                     (
-                        Consumer { file: File? ->
+                        Consumer { file: File ->
                             NavigationUtils.shareFile(
                                 context,
-                                file!!,
+                                file,
                                 galleryItem.getFileName(chan),
                             )
                         }
@@ -907,7 +907,7 @@ class PagerUnit(
             galleryItem: GalleryItem,
             chan: Chan,
             @StringRes titleResId: Int,
-            onClick: Consumer<File?>,
+            onClick: Consumer<File>,
         ) {
             dialogMenu.add(
                 titleResId,
@@ -927,9 +927,9 @@ class PagerUnit(
             InstanceDialog(
                 fragmentManager,
                 TAG_POPUP_MENU,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider ->
                     val viewModel =
-                        ViewModelProvider(provider!!.parentFragment!!)
+                        ViewModelProvider(provider.parentFragment!!)
                             .get<PagerUnitViewModel>(PagerUnitViewModel::class.java)
                     val pagerUnit: PagerUnit = viewModel.pagerUnit!!.get()!!
                     val dialogMenu = pagerUnit.buildPopupMenu()

@@ -600,9 +600,9 @@ class ListUnit(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider ->
                     Companion.createItemMenu(
-                        provider!!,
+                        provider,
                         chanName,
                         galleryItem,
                         allowNavigatePostManually,

@@ -59,12 +59,14 @@ class VideoUnit(
     private var layoutConfiguration = -1
 
     // Created together in recreateVideoControls, which always runs its creation branch on the
-    // first call (layoutConfiguration starts at -1). timeTextView and seekBar are additionally
-    // read before that first creation, so they stay nullable.
+    // first call (layoutConfiguration starts at -1). The two reads that happen before that first
+    // creation -- carrying the old time text and secondary progress over to the new views -- are
+    // gated on the same `firstTimeLayout` flag, which is by construction equivalent to "not yet
+    // assigned": layoutConfiguration leaves -1 in the very block that assigns these.
     private lateinit var configurationView: LinearLayout
-    private var timeTextView: TextView? = null
+    private lateinit var timeTextView: TextView
     private lateinit var totalTimeTextView: TextView
-    private var seekBar: SeekBar? = null
+    private lateinit var seekBar: SeekBar
     private lateinit var playPauseButton: ImageButton
 
     private var player: VideoPlayer? = null
@@ -298,7 +300,7 @@ class VideoUnit(
         this.videoCover = videoCover
         recreateVideoControls()
         playPauseButton.setEnabled(true)
-        seekBar!!.setEnabled(true)
+        seekBar.setEnabled(true)
         this@VideoUnit.isInitialized = true
         pausedByTransientLossOfFocus = false
         if (initialSeekPosition > 0) {
@@ -333,7 +335,9 @@ class VideoUnit(
             val longLayout = targetLayoutCounfiguration == 1
 
             controlsView.removeAllViews()
-            seekBar?.removeCallbacks(progressRunnable)
+            if (!firstTimeLayout) {
+                seekBar.removeCallbacks(progressRunnable)
+            }
             trackingNow = false
 
             val configurationView = LinearLayout(context)
@@ -363,7 +367,7 @@ class VideoUnit(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             )
 
-            val oldTimeText = timeTextView?.getText()
+            val oldTimeText = if (firstTimeLayout) null else timeTextView.getText()
             val timeTextView = TextView(context, null, android.R.attr.textAppearanceListItem)
             this.timeTextView = timeTextView
             ViewUtils.setTextSizeScaled(timeTextView, 14)
@@ -380,7 +384,7 @@ class VideoUnit(
             totalTimeTextView.setGravity(Gravity.CENTER_HORIZONTAL)
             totalTimeTextView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM)
 
-            val oldSecondaryProgress = seekBar?.getSecondaryProgress() ?: -1
+            val oldSecondaryProgress = if (firstTimeLayout) -1 else seekBar.getSecondaryProgress()
             val seekBar = SeekBar(context)
             this.seekBar = seekBar
             seekBar.setOnSeekBarChangeListener(seekBarListener)
@@ -486,10 +490,10 @@ class VideoUnit(
             }
             val duration = player.getDuration()
             totalTimeTextView.setText(formatVideoTime(duration))
-            seekBar!!.setMax(duration.toInt())
+            seekBar.setMax(duration.toInt())
         }
-        seekBar!!.removeCallbacks(progressRunnable)
-        seekBar!!.post(progressRunnable)
+        seekBar.removeCallbacks(progressRunnable)
+        seekBar.post(progressRunnable)
         updatePlayState()
     }
 
@@ -512,7 +516,7 @@ class VideoUnit(
     private val progressRunnable: Runnable =
         object : Runnable {
             override fun run() {
-                val seekBar = this@VideoUnit.seekBar!!
+                val seekBar = this@VideoUnit.seekBar
                 if (this@VideoUnit.isInitialized) {
                     val position: Int
                     if (trackingNow) {
@@ -521,7 +525,7 @@ class VideoUnit(
                         position = player!!.getPosition().toInt()
                         seekBar.setProgress(position)
                     }
-                    timeTextView!!.setText(formatVideoTime(position.toLong()))
+                    timeTextView.setText(formatVideoTime(position.toLong()))
                 }
                 seekBar.postDelayed(this, 200)
             }
@@ -644,7 +648,7 @@ class VideoUnit(
                     }
                 }
                 if (readVideoCallback == null || readVideoCallback.isDownloadFinished) {
-                    val seekBar = this@VideoUnit.seekBar!!
+                    val seekBar = this@VideoUnit.seekBar
                     seekBar.setSecondaryProgress(seekBar.getMax())
                     holder.loadState = PagerInstance.LoadState.COMPLETE
                 }
@@ -803,7 +807,7 @@ class VideoUnit(
     ) {
         if (this@VideoUnit.isInitialized) {
             playPauseButton.setEnabled(!swiping)
-            seekBar!!.setEnabled(!swiping)
+            seekBar.setEnabled(!swiping)
             if (swiping) {
                 wasPlaying = player!!.isPlaying()
                 setPlaying(false, true)
@@ -893,7 +897,7 @@ class VideoUnit(
                     instance.galleryInstance.callback.updateTitle()
                 }
                 if (this@VideoUnit.isInitialized) {
-                    val seekBar = this@VideoUnit.seekBar!!
+                    val seekBar = this@VideoUnit.seekBar
                     val max = seekBar.getMax()
                     if (max > 0 && progressMax > 0) {
                         val newProgress = (max * progress / progressMax).toInt()
@@ -927,7 +931,7 @@ class VideoUnit(
                         instance.galleryInstance.callback.updateTitle()
                     }
                     if (this@VideoUnit.isInitialized) {
-                        val seekBar = this@VideoUnit.seekBar!!
+                        val seekBar = this@VideoUnit.seekBar
                         seekBar.setSecondaryProgress(seekBar.getMax())
                         holder.loadState = PagerInstance.LoadState.COMPLETE
                         instance.galleryInstance.callback.invalidateOptionsMenu()
@@ -1031,8 +1035,8 @@ class VideoUnit(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = GalleryInstance.getCallback(provider!!).getWindow()!!.getContext()
+                InstanceDialog.Factory { provider ->
+                    val context = GalleryInstance.getCallback(provider).getWindow()!!.getContext()
                     val dialog =
                         AlertDialog
                             .Builder(context)

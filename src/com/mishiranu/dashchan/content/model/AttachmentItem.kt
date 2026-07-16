@@ -322,7 +322,7 @@ abstract class AttachmentItem protected constructor(
         if (key != null) {
             val uri = getThumbnailUri(chan)
             val loadThumbnails =
-                Preferences.loadThumbnails!!
+                Preferences.loadThumbnails
                     .isNetworkAvailable(NetworkObserver.getInstance())
             val allowDownload = loadThumbnails || force
             ImageLoader.getInstance().loadImage(chan, uri!!, key, !allowDownload, view)

@@ -307,8 +307,8 @@ class GalleryOverlay :
                 },
             )
             rootView.setOnApplyInsetsListener(
-                OnApplyInsetsListener { apply: Apply? ->
-                    val insets = apply!!.get()
+                OnApplyInsetsListener { apply: Apply ->
+                    val insets = apply.get()
                     val current = retained.current
                     if (current == null) {
                         return@OnApplyInsetsListener
