@@ -2025,8 +2025,8 @@ class DrawerForm(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider ->
+                    val context = provider.context
                     val dialogMenu = DialogMenu(provider.context)
                     dialogMenu.add(
                         R.string.copy_link,
@@ -2146,8 +2146,8 @@ class DrawerForm(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider ->
+                    val context = provider.context
                     val editText: EditText = SafePasteEditText(context)
                     editText.setId(android.R.id.edit)
                     editText.setSingleLine(true)
@@ -2200,8 +2200,8 @@ class DrawerForm(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
-                    val context = provider!!.context
+                InstanceDialog.Factory { provider ->
+                    val context = provider.context
                     val html =
                         readRawResourceString(context.getResources(), R.raw.markup_drawer_search)
                             .replace("__REPLACE_BOARD_NAME__", searchHelpFormat.boardName)
@@ -2241,9 +2241,9 @@ class DrawerForm(
             InstanceDialog(
                 fragmentManager,
                 null,
-                InstanceDialog.Factory { provider: InstanceDialog.Provider? ->
+                InstanceDialog.Factory { provider ->
                     AlertDialog
-                        .Builder(provider!!.context)
+                        .Builder(provider.context)
                         .setMessage(message)
                         .setNegativeButton(android.R.string.cancel, null)
                         .setPositiveButton(

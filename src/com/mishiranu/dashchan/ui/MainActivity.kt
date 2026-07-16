@@ -220,7 +220,7 @@ class MainActivity :
         register(this)
         ForegroundManager.Companion.getInstance().register(this)
         FavoritesStorage.getInstance().getObservable().register(this)
-        Preferences.PREFERENCES!!.register(preferencesListener)
+        Preferences.prefs.register(preferencesListener)
         ChanManager.getInstance().observable.register(chanManagerCallback)
         watcherServiceClient = getClient(this)
         watcherServiceClient.callback = this
@@ -456,16 +456,16 @@ class MainActivity :
                     PageItem::class.java,
                 )
         }
-        val iterator: MutableIterator<SavedPageItem?> =
-            ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+        val iterator: MutableIterator<SavedPageItem> =
+            ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
         while (iterator.hasNext()) {
-            if (get(getSavedPage(iterator.next()!!).chanName).name == null) {
+            if (get(getSavedPage(iterator.next()).chanName).name == null) {
                 iterator.remove()
             }
         }
         if (currentFragmentFromSaved != null) {
             if (currentFragmentFromSaved is PageFragment &&
-                get(currentFragmentFromSaved.page!!.chanName).name == null
+                get(currentFragmentFromSaved.page.chanName).name == null
             ) {
                 currentFragmentFromSaved = null
                 currentPageItem = null
@@ -486,7 +486,7 @@ class MainActivity :
         } else {
             var currentFragment = this.currentFragment
             if (currentFragment is PageFragment &&
-                get(currentFragment.page!!.chanName).name == null
+                get(currentFragment.page.chanName).name == null
             ) {
                 currentFragment = null
                 currentPageItem = null
@@ -583,14 +583,11 @@ class MainActivity :
         toolbarHolder!!.update(title, subtitle)
     }
 
-    override fun getToolbarView(): ViewGroup {
-        checkNotNull(toolbarHolder)
-        return toolbarHolder!!.toolbar
-    }
+    override fun getToolbarView(): ViewGroup = checkNotNull(toolbarHolder).toolbar
 
     override fun getToolbarExtra(): FrameLayout = toolbarExtra
 
-    override fun getToolbarContext(): Context = if (toolbarHolder != null) toolbarHolder!!.toolbar.getContext() else this
+    override fun getToolbarContext(): Context = toolbarHolder?.toolbar?.getContext() ?: this
 
     override fun navigateBoardsOrThreads(
         chanName: String?,
@@ -801,7 +798,7 @@ class MainActivity :
         val fragment = this.currentFragment
         if (fragment is PageFragment) {
             val page = fragment.page
-            if (page!!.content == Page.Content.POSTS &&
+            if (page.content == Page.Content.POSTS &&
                 page.chanName == chanName &&
                 equals(page.boardName, boardName) &&
                 page.threadNumber == threadNumber
@@ -971,7 +968,7 @@ class MainActivity :
 
     private fun getSavedPage(savedPageItem: SavedPageItem): Page {
         REFERENCE_FRAGMENT.setArguments(savedPageItem.stackItem!!.arguments)
-        return REFERENCE_FRAGMENT.page!!
+        return REFERENCE_FRAGMENT.page
     }
 
     private fun getPagesStackSize(chanName: String?): Int {
@@ -980,7 +977,7 @@ class MainActivity :
         val currentFragment = this.currentFragment
         if (currentFragment is PageFragment &&
             currentPageItem != null &&
-            (mergeChans || (currentFragment.page!!.chanName == chanName))
+            (mergeChans || (currentFragment.page.chanName == chanName))
         ) {
             size++
         }
@@ -997,7 +994,7 @@ class MainActivity :
             return stackPageItems.removeAt(stackPageItems.size - 1)
         }
         val currentFragment = this.currentFragment
-        val chanName = (currentFragment as PageFragment).page!!.chanName
+        val chanName = (currentFragment as PageFragment).page.chanName
         val mergeChans = isMergeChans
         for (i in stackPageItems.indices.reversed()) {
             val savedPageItem = stackPageItems[i]
@@ -1013,7 +1010,7 @@ class MainActivity :
         val currentFragment = this.currentFragment
         val mergeChans = isMergeChans
         val closeOnBack = isCloseOnBack
-        val chanName = (currentFragment as PageFragment).page!!.chanName
+        val chanName = (currentFragment as PageFragment).page.chanName
         val iterator = stackPageItems.iterator()
         while (iterator.hasNext()) {
             val savedPageItem = iterator.next()
@@ -1026,8 +1023,8 @@ class MainActivity :
             }
         }
         val page = currentFragment.page
-        if (mergeChans || page!!.chanName == chanName) {
-            if (!(page!!.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts)) {
+        if (mergeChans || page.chanName == chanName) {
+            if (!(page.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts)) {
                 preservedPageItems.add(
                     currentPageItem!!.toSaved(
                         getSupportFragmentManager(),
@@ -1122,7 +1119,7 @@ class MainActivity :
             var currentChanName: String? = null
             val currentFragment = this.currentFragment
             if (currentFragment is PageFragment) {
-                currentChanName = currentFragment.page!!.chanName
+                currentChanName = currentFragment.page.chanName
             }
             if (getPagesStackSize(chan.name) == 0 || chan.name != currentChanName) {
                 navigatePage(
@@ -1148,10 +1145,10 @@ class MainActivity :
         initRequest: InitRequest?,
     ): Pair<PageFragment, PageItem> {
         var targetSavedPageItem: SavedPageItem? = null
-        val iterator: MutableIterator<SavedPageItem?> =
-            ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+        val iterator: MutableIterator<SavedPageItem> =
+            ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
         while (iterator.hasNext()) {
-            val savedPageItem: SavedPageItem = iterator.next()!!
+            val savedPageItem = iterator.next()
             if (getSavedPage(savedPageItem).`is`(content, chanName, boardName, threadNumber)) {
                 targetSavedPageItem = savedPageItem
                 iterator.remove()
@@ -1223,23 +1220,25 @@ class MainActivity :
         ) {
             if (currentPageItem == null && (content == Page.Content.BOARDS || content == Page.Content.THREADS)) {
                 // Was removed from stack during clearStackAndCurrent
-                val iterator: MutableIterator<SavedPageItem?> =
-                    ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+                val iterator: MutableIterator<SavedPageItem> =
+                    ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
                 while (iterator.hasNext()) {
-                    if (getSavedPage(iterator.next()!!).`is`(content, chanName, boardName, null)) {
+                    if (getSavedPage(iterator.next()).`is`(content, chanName, boardName, null)) {
                         iterator.remove()
                         break
                     }
                 }
-                currentPageItem = PageItem()
-                currentPageItem!!.createdRealtime = SystemClock.elapsedRealtime()
+                val pageItem = PageItem()
+                pageItem.createdRealtime = SystemClock.elapsedRealtime()
+                currentPageItem = pageItem
             }
+            val currentPageItem = this.currentPageItem
             if (currentPageItem != null) {
                 if (get(pageFlags, FLAG_PAGE_CLOSE_OVERLAYS)) {
                     closeOverlaysForNavigation()
                 }
-                currentPageItem!!.allowReturn =
-                    currentPageItem!!.allowReturn and get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
+                currentPageItem.allowReturn =
+                    currentPageItem.allowReturn and get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
                 (currentFragment as PageFragment).updatePageConfiguration(postNumber)
                 invalidateHomeUpState()
                 return
@@ -1321,9 +1320,10 @@ class MainActivity :
         val currentFragment = this.currentFragment
         if (currentFragment is PageFragment) {
             // currentPageItem == null means page was deleted
+            val currentPageItem = this.currentPageItem
             if (currentPageItem != null) {
                 stackPageItems.add(
-                    currentPageItem!!.toSaved(
+                    currentPageItem.toSaved(
                         fragmentManager,
                         currentFragment,
                     ),
@@ -1371,11 +1371,11 @@ class MainActivity :
             if (fragment is PageFragment) {
                 retainIds.add(fragment.retainId)
             }
-            for (savedPageItem in ConcatIterable<SavedPageItem?>(
+            for (savedPageItem in ConcatIterable<SavedPageItem>(
                 preservedPageItems,
                 stackPageItems,
             )) {
-                REFERENCE_FRAGMENT.setArguments(savedPageItem!!.stackItem!!.arguments)
+                REFERENCE_FRAGMENT.setArguments(savedPageItem.stackItem!!.arguments)
                 val retainId: String? = REFERENCE_FRAGMENT.retainId
                 retainIds.add(retainId)
             }
@@ -1402,7 +1402,7 @@ class MainActivity :
         val currentFragment = this.currentFragment
         val chanName: String?
         if (currentFragment is PageFragment) {
-            chanName = currentFragment.page!!.chanName
+            chanName = currentFragment.page.chanName
         } else if (!stackPageItems.isEmpty()) {
             chanName = getSavedPage(stackPageItems[stackPageItems.size - 1]).chanName
         } else {
@@ -1452,7 +1452,7 @@ class MainActivity :
             if (currentFragment is PageFragment) {
                 val page = currentFragment.page
                 displayUp =
-                    when (page!!.content) {
+                    when (page.content) {
                         Page.Content.THREADS -> {
                             getPagesStackSize(page.chanName) > 1
                         }
@@ -1576,7 +1576,7 @@ class MainActivity :
         unbindService(downloadConnection)
         watcherServiceClient.callback = null
         FavoritesStorage.getInstance().getObservable().unregister(this)
-        Preferences.PREFERENCES!!.unregister(preferencesListener)
+        Preferences.prefs.unregister(preferencesListener)
         ChanManager.getInstance().observable.unregister(chanManagerCallback)
         for (chan in ChanManager.getInstance().availableChans) {
             chan.configuration.commit()
@@ -1636,14 +1636,15 @@ class MainActivity :
 
     // Side-effect-free version of prepareTargetPreviousPage(true).
     private fun hasTargetPreviousPage(): Boolean {
-        if (currentPageItem != null && currentPageItem!!.allowReturn && !stackPageItems.isEmpty()) {
+        val currentPageItem = this.currentPageItem
+        if (currentPageItem != null && currentPageItem.allowReturn && !stackPageItems.isEmpty()) {
             return true
         }
         val currentFragment = this.currentFragment
         if (currentFragment !is PageFragment) {
             return false
         }
-        val chanName = currentFragment.page!!.chanName
+        val chanName = currentFragment.page.chanName
         val mergeChans = isMergeChans
         for (i in stackPageItems.indices.reversed()) {
             if (mergeChans || getSavedPage(stackPageItems[i]).chanName == chanName) {
@@ -1670,7 +1671,7 @@ class MainActivity :
                 val savedPageItem = prepareTargetPreviousPage(true)
                 if (savedPageItem != null) {
                     val page = currentFragment.page
-                    if (!(page!!.isThreadsOrPosts && isCloseOnBack)) {
+                    if (!(page.isThreadsOrPosts && isCloseOnBack)) {
                         preservedPageItems.add(
                             currentPageItem!!.toSaved(
                                 getSupportFragmentManager(),
@@ -1801,7 +1802,7 @@ class MainActivity :
             drawerLayout.closeDrawers()
             if (currentFragment is PageFragment) {
                 val page = currentFragment.page
-                var newChanName = page!!.chanName
+                var newChanName = page.chanName
                 var newBoardName = page.boardName
                 if (page.content == Page.Content.THREADS) {
                     // Up button must navigate to main page in threads list
@@ -1814,11 +1815,11 @@ class MainActivity :
                 }
                 clearStackAndCurrent()
                 var fromCache = false
-                for (savedPageItem in ConcatIterable<SavedPageItem?>(
+                for (savedPageItem in ConcatIterable<SavedPageItem>(
                     preservedPageItems,
                     stackPageItems,
                 )) {
-                    if (getSavedPage(savedPageItem!!).`is`(
+                    if (getSavedPage(savedPageItem).`is`(
                             Page.Content.THREADS,
                             newChanName,
                             newBoardName,
@@ -1936,11 +1937,11 @@ class MainActivity :
                 // Open root page. If page is already opened, load it from cache.
                 var fromCache = false
                 val boardName = getDefaultBoardName(chan)
-                for (savedPageItem in ConcatIterable<SavedPageItem?>(
+                for (savedPageItem in ConcatIterable<SavedPageItem>(
                     preservedPageItems,
                     stackPageItems,
                 )) {
-                    if (getSavedPage(savedPageItem!!).`is`(
+                    if (getSavedPage(savedPageItem).`is`(
                             Page.Content.THREADS,
                             chanName,
                             boardName,
@@ -2129,10 +2130,10 @@ class MainActivity :
                     )
             val mergeChans = isMergeChans
             val addPreserved = ArrayList<SavedPageItem>()
-            val iterator: MutableIterator<SavedPageItem?> =
-                ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+            val iterator: MutableIterator<SavedPageItem> =
+                ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
             while (iterator.hasNext()) {
-                val savedPageItem: SavedPageItem = iterator.next()!!
+                val savedPageItem = iterator.next()
                 val savedPage = getSavedPage(savedPageItem)
                 if (mergeChans || savedPage.chanName == chanName) {
                     cached = cached or
@@ -2172,10 +2173,10 @@ class MainActivity :
             }
         } else {
             val addPreserved = ArrayList<SavedPageItem>()
-            val iterator: MutableIterator<SavedPageItem?> =
-                ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+            val iterator: MutableIterator<SavedPageItem> =
+                ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
             while (iterator.hasNext()) {
-                val savedPageItem: SavedPageItem = iterator.next()!!
+                val savedPageItem = iterator.next()
                 val savedPage = getSavedPage(savedPageItem)
                 iterator.remove()
                 if (!(savedPage.isThreadsOrPosts || savedPage.canDestroyIfNotInStack())) {
@@ -2275,8 +2276,8 @@ class MainActivity :
                 1 +
                     stackPageItems.size + preservedPageItems.size,
             )
-        for (savedPageItem in ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems)) {
-            val page = getSavedPage(savedPageItem!!)
+        for (savedPageItem in ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems)) {
+            val page = getSavedPage(savedPageItem)
             if (page.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
@@ -2292,7 +2293,7 @@ class MainActivity :
         val currentFragment = this.currentFragment
         if (currentFragment is PageFragment) {
             val page = currentFragment.page
-            if (page!!.isThreadsOrPosts) {
+            if (page.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
                         page.chanName!!,
@@ -2323,16 +2324,16 @@ class MainActivity :
                 }
             }
         } else {
-            val iterator: MutableIterator<SavedPageItem?> =
-                ConcatIterable<SavedPageItem?>(preservedPageItems, stackPageItems).iterator()
+            val iterator: MutableIterator<SavedPageItem> =
+                ConcatIterable<SavedPageItem>(preservedPageItems, stackPageItems).iterator()
             while (iterator.hasNext()) {
-                if (removedChanNames.contains(getSavedPage(iterator.next()!!).chanName)) {
+                if (removedChanNames.contains(getSavedPage(iterator.next()).chanName)) {
                     iterator.remove()
                 }
             }
             val currentFragment = this.currentFragment
             if (currentFragment is PageFragment &&
-                removedChanNames.contains(currentFragment.page!!.chanName)
+                removedChanNames.contains(currentFragment.page.chanName)
             ) {
                 if (!stackPageItems.isEmpty()) {
                     currentPageItem = null
@@ -2432,8 +2433,9 @@ class MainActivity :
                 componentName: ComponentName?,
                 binder: IBinder?,
             ) {
-                postingBinder = binder as PostingService.Binder?
-                postingBinder!!.register(postingGlobalCallback)
+                val postingBinder = binder as PostingService.Binder
+                this@MainActivity.postingBinder = postingBinder
+                postingBinder.register(postingGlobalCallback)
             }
 
             override fun onServiceDisconnected(componentName: ComponentName?) {
@@ -2473,14 +2475,15 @@ class MainActivity :
                 componentName: ComponentName?,
                 binder: IBinder?,
             ) {
-                downloadBinderField = binder as DownloadService.Binder?
-                downloadBinderField!!.register(downloadCallback)
-                if (lastStorageRequestResult != null) {
-                    val cancel = lastStorageRequestResult!!
+                val downloadBinder = binder as DownloadService.Binder
+                downloadBinderField = downloadBinder
+                downloadBinder.register(downloadCallback)
+                val cancel = lastStorageRequestResult
+                if (cancel != null) {
                     lastStorageRequestResult = null
                     notifyDownloadServiceStorageRequestResult(cancel)
                 }
-                downloadBinderField!!.notifyReadyToHandleRequests()
+                downloadBinder.notifyReadyToHandleRequests()
             }
 
             override fun onServiceDisconnected(componentName: ComponentName?) {
@@ -2660,7 +2663,7 @@ class MainActivity :
         subtitle: String?,
     ) {
         setTitleSubtitle(title, subtitle)
-        if ((this.currentFragment as PageFragment).page!!.content == Page.Content.POSTS) {
+        if ((this.currentFragment as PageFragment).page.content == Page.Content.POSTS) {
             currentPageItem!!.threadTitle = title
         }
         drawerForm.updateItems(true, false)
@@ -2672,9 +2675,8 @@ class MainActivity :
         threadNumber: String?,
         postNumber: PostNumber?,
     ) {
-        val currentFragment = this.currentFragment as PageFragment?
-        val page = currentFragment!!.page
-        if (page!!.isThreadsOrPosts) {
+        val page = (this.currentFragment as PageFragment).page
+        if (page.isThreadsOrPosts) {
             currentPageItem = null
             if (threadNumber == null) {
                 navigateBoardsOrThreads(chanName, boardName, false, false)
@@ -2685,14 +2687,13 @@ class MainActivity :
     }
 
     override fun closeCurrentPage() {
-        val currentFragment = this.currentFragment as PageFragment?
-        val page = currentFragment!!.page
+        val page = (this.currentFragment as PageFragment).page
         val savedPageItem = prepareTargetPreviousPage(true)
         currentPageItem = null
         if (savedPageItem != null) {
             navigateSavedPage(savedPageItem, false)
         } else {
-            val chan = get(page!!.chanName)
+            val chan = get(page.chanName)
             if (isSingleBoardMode(chan)) {
                 navigatePage(
                     Page.Content.THREADS,

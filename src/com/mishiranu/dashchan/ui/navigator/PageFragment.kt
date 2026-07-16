@@ -67,20 +67,22 @@ class PageFragment :
 
     constructor()
 
-    constructor(page: Page?, retainId: String?) {
+    constructor(page: Page, retainId: String?) {
         val args = Bundle()
         args.putParcelable(EXTRA_PAGE, page)
         args.putString(EXTRA_RETAIN_ID, retainId)
         setArguments(args)
     }
 
-    val page: Page?
+    val page: Page
         get() =
-            BundleCompat.getParcelable<Page?>(
-                requireArguments(),
-                EXTRA_PAGE,
-                Page::class.java,
-            )
+            checkNotNull(
+                BundleCompat.getParcelable<Page?>(
+                    requireArguments(),
+                    EXTRA_PAGE,
+                    Page::class.java,
+                ),
+            ) { "PageFragment has no page: arguments were not set by its constructor" }
 
     val retainId: String?
         get() = requireArguments().getString(EXTRA_RETAIN_ID)
@@ -96,8 +98,8 @@ class PageFragment :
     private var searchView: CustomSearchView? = null
     private var searchMenuItem: MenuItem? = null
 
-    private var actionBarLockerPull: String? = null
-    private var actionBarLockerSearch: String? = null
+    private lateinit var actionBarLockerPull: String
+    private lateinit var actionBarLockerSearch: String
 
     private var listPosition: ListPosition? = null
     private var parcelableExtra: Parcelable? = null
@@ -199,13 +201,13 @@ class PageFragment :
         layout.addView(errorHolder.layout)
 
         allowShowScale = true
-        val listPage = this.page!!.content.newPage()
+        val listPage = this.page.content.newPage()
         this.listPage = listPage
         recyclerView.pullable.setOnPullListener(listPage)
         recyclerView.pullable.setPullStateListener(
             PullStateListener { wrapper: PullableWrapper?, busy: Boolean ->
                 (requireActivity() as FragmentHandler)
-                    .setActionBarLocked(actionBarLockerPull!!, busy)
+                    .setActionBarLocked(actionBarLockerPull, busy)
             },
         )
         return layout
@@ -215,8 +217,8 @@ class PageFragment :
         super.onDestroyView()
 
         val fragmentHandler = requireActivity() as FragmentHandler
-        fragmentHandler.setActionBarLocked(actionBarLockerPull!!, false)
-        fragmentHandler.setActionBarLocked(actionBarLockerSearch!!, false)
+        fragmentHandler.setActionBarLocked(actionBarLockerPull, false)
+        fragmentHandler.setActionBarLocked(actionBarLockerSearch, false)
 
         listPage?.destroy()
         listPage = null
@@ -241,7 +243,7 @@ class PageFragment :
             initRequest = InitRequest(initErrorItem)
         }
         listPage!!.init(
-            this.page!!,
+            this.page,
             this,
             this,
             recyclerView!!,
@@ -311,8 +313,7 @@ class PageFragment :
         changed: Collection<String>,
         removed: Collection<String>,
     ) {
-        val page = this.page
-        if (changed.contains(page!!.chanName)) {
+        if (changed.contains(this.page.chanName)) {
             invalidateOptionsMenu()
         }
     }
@@ -362,7 +363,7 @@ class PageFragment :
             }
             invalidateOptionsMenu()
             (requireActivity() as FragmentHandler).setActionBarLocked(
-                actionBarLockerSearch!!,
+                actionBarLockerSearch,
                 search,
             )
             this.callback.invalidateHomeUpState()
