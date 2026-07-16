@@ -712,12 +712,14 @@ class CommentTextView
 
         private fun createUri(uriString: String?): Uri? {
             val configuration = linkConfiguration
-            val chanName = if (configuration != null) configuration.chanName else null
-            if (chanName != null) {
+            val chanName = configuration?.chanName
+            // configuration != null is implied by chanName != null; it is spelled out so the
+            // compiler can smart-cast it below.
+            if (configuration != null && chanName != null) {
                 val chan = get(chanName)
                 return chan.locator.validateClickedUriString(
                     uriString,
-                    configuration!!.boardName,
+                    configuration.boardName,
                     configuration.threadNumber,
                 )
             } else {
@@ -807,7 +809,7 @@ class CommentTextView
                 val linkSpan = spanToClick as LinkSpan
                 val uri = createUri(linkSpan.uriString)
                 if (uri != null) {
-                    val chanName = if (linkConfiguration != null) linkConfiguration!!.chanName else null
+                    val chanName = linkConfiguration?.chanName
                     val extra = LinkListener.Extra(chanName, linkSpan.inBoardLink())
                     getLinkListener().onLinkClick(this, uri, extra, false)
                 }

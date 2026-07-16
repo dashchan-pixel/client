@@ -314,19 +314,23 @@ class PhotoViewPager(
                     photoView.dispatchSpecialTouchEvent(fakeEvent)
                     fakeEvent.recycle()
                 }
+                // The Java dereferenced velocityTracker unguarded on every path through this
+                // branch (recycle() below is unconditional), so hoisting it changes nothing but
+                // the line the NPE would name.
+                val velocityTracker = this.velocityTracker!!
                 var index = currentIndex
                 var velocity = 0
                 if (action == MotionEvent.ACTION_UP) {
                     val deltaX = (startX - event.getX()).toInt()
-                    velocityTracker!!.computeCurrentVelocity(1000, maximumVelocity.toFloat())
-                    velocity = velocityTracker!!.getXVelocity(0).toInt()
+                    velocityTracker.computeCurrentVelocity(1000, maximumVelocity.toFloat())
+                    velocity = velocityTracker.getXVelocity(0).toInt()
                     index = determineTargetIndex(velocity, deltaX)
                     if (!allowMove && !longTapConfirmed) {
                         photoView.dispatchSimpleClick(false, event.getX(), event.getY())
                     }
                 }
-                velocityTracker!!.recycle()
-                velocityTracker = null
+                velocityTracker.recycle()
+                this.velocityTracker = null
                 removeCallbacks(longTapRunnable)
                 smoothScrollTo(index, velocity)
                 currentIndex = index

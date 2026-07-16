@@ -451,11 +451,9 @@ class CaptchaForm(
         setTextSizeScaled(skipTextView, 12)
 
         updateCaptchaHeight(false)
-        captchaInput = captcha.input
-        if (captchaInput == null) {
-            captchaInput = ChanConfiguration.Captcha.Input.ALL
-        }
-        updateCaptchaInput(captchaInput!!)
+        val captchaInput = captcha.input ?: ChanConfiguration.Captcha.Input.ALL
+        this.captchaInput = captchaInput
+        updateCaptchaInput(captchaInput)
         inputView.setFilters(arrayOf<InputFilter>(LengthFilter(50)))
         inputView.setOnEditorActionListener(this)
         cancelView.setOnClickListener(this)

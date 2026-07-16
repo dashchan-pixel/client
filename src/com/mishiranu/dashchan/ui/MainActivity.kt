@@ -938,11 +938,13 @@ class MainActivity :
             } else if (chan.locator.isImageUri(uri)) {
                 navigateGalleryUri(uri)
                 return true
-            } else if (chan.locator.isAudioUri(uri)) {
-                start(this, chan.name, uri, chan.locator.createAttachmentFileName(uri!!))
+            } else if (uri != null && chan.locator.isAudioUri(uri)) {
+                // isAudioUri/isVideoUri already imply uri != null; the check is spelled out so
+                // the compiler can smart-cast it for createAttachmentFileName.
+                start(this, chan.name, uri, chan.locator.createAttachmentFileName(uri))
                 return true
-            } else if (chan.locator.isVideoUri(uri)) {
-                val fileName = chan.locator.createAttachmentFileName(uri!!)
+            } else if (uri != null && chan.locator.isVideoUri(uri)) {
+                val fileName = chan.locator.createAttachmentFileName(uri)
                 if (isOpenableVideoPath(fileName)) {
                     navigateGalleryUri(chan.locator.convert(uri))
                 } else {

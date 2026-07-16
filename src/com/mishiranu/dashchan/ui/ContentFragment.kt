@@ -29,7 +29,7 @@ abstract class ContentFragment :
         var created: Boolean = false
     }
 
-    private val menuStates: WeakHashMap<Menu?, MenuState?> = WeakHashMap<Menu?, MenuState?>()
+    private val menuStates: WeakHashMap<Menu, MenuState> = WeakHashMap<Menu, MenuState>()
 
     val isSearchMode: Boolean
         get() = false
@@ -58,8 +58,8 @@ abstract class ContentFragment :
 
     private fun clearOptionMenus() {
         for (entry in menuStates.entries) {
-            if (entry.value!!.created) {
-                val menu: Menu = entry.key!!
+            if (entry.value.created) {
+                val menu: Menu = entry.key
                 val size = menu.size()
                 for (i in 0..<size) {
                     val menuItem = menu.getItem(i)
@@ -95,7 +95,7 @@ abstract class ContentFragment :
             // and ensures empty hardware menu will never appear.
             var hasMenuItems = false
             for (entry in menuStates.entries) {
-                hasMenuItems = entry.value!!.created && entry.key!!.hasVisibleItems()
+                hasMenuItems = entry.value.created && entry.key.hasVisibleItems()
             }
             if (!hasMenuItems) {
                 return true
@@ -155,7 +155,7 @@ abstract class ContentFragment :
         notifyBackHandledChanged()
     }
 
-    private fun obtainMenuState(menu: Menu?): MenuState {
+    private fun obtainMenuState(menu: Menu): MenuState {
         var menuState = menuStates.get(menu)
         if (menuState == null) {
             menuState = MenuState()
@@ -212,13 +212,13 @@ abstract class ContentFragment :
 
     private fun invalidateMenuInternal(prepareOnly: Boolean) {
         for (entry in menuStates.entries) {
-            if (!prepareOnly || !entry.value!!.created) {
-                onPrepareMenu(entry.key!!)
+            if (!prepareOnly || !entry.value.created) {
+                onPrepareMenu(entry.key)
             }
         }
     }
 
-    private fun isPrimaryMenu(menu: Menu?): Boolean {
+    private fun isPrimaryMenu(menu: Menu): Boolean {
         val toolbar = (requireActivity() as FragmentHandler).getToolbarView() as Toolbar
         return toolbar.getMenu() === menu
     }
