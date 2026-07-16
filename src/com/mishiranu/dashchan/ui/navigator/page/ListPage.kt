@@ -108,7 +108,8 @@ abstract class ListPage :
         initSearch: InitSearch?,
     ) {
         if (lifecycleRegistry == null) {
-            lifecycleRegistry = LifecycleRegistry(this)
+            val lifecycleRegistry = LifecycleRegistry(this)
+            this.lifecycleRegistry = lifecycleRegistry
             this.callback = callback
             this.fragment = fragment
             this.page = page
@@ -120,9 +121,9 @@ abstract class ListPage :
             this.initRequest = initRequest
             this.initSearch = initSearch
             getViewModel(fragment).update(this)
-            lifecycleRegistry!!.currentState = Lifecycle.State.INITIALIZED
+            lifecycleRegistry.currentState = Lifecycle.State.INITIALIZED
             onCreate()
-            lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
+            lifecycleRegistry.currentState = Lifecycle.State.STARTED
             this.initRequest = null
             this.initSearch = null
         }
@@ -134,7 +135,7 @@ abstract class ListPage :
     protected val context: Context
         get() = recyclerView.getContext()
 
-    protected val toolbarContext: Context?
+    protected val toolbarContext: Context
         get() = callback.toolbarContext
 
     protected val resources: Resources
@@ -174,7 +175,7 @@ abstract class ListPage :
         onNotifyAllAdaptersChanged()
     }
 
-    protected fun getActionBarIcon(attr: Int): Drawable = getActionBarIcon(this.toolbarContext!!, attr)
+    protected fun getActionBarIcon(attr: Int): Drawable = getActionBarIcon(this.toolbarContext, attr)
 
     protected fun notifyTitleChanged() {
         callback.notifyTitleChanged()
@@ -304,26 +305,29 @@ abstract class ListPage :
     }
 
     fun resume() {
+        val lifecycleRegistry = this.lifecycleRegistry ?: return
         if (this.state == Lifecycle.State.STARTED) {
-            lifecycleRegistry!!.currentState = Lifecycle.State.RESUMED
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
             performResume()
         }
     }
 
     fun pause() {
+        val lifecycleRegistry = this.lifecycleRegistry ?: return
         if (this.state == Lifecycle.State.RESUMED) {
-            lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
+            lifecycleRegistry.currentState = Lifecycle.State.STARTED
             onPause()
         }
     }
 
     fun destroy() {
+        val lifecycleRegistry = this.lifecycleRegistry ?: return
         if (this.isRunning) {
             if (this.state == Lifecycle.State.RESUMED) {
-                lifecycleRegistry!!.currentState = Lifecycle.State.STARTED
+                lifecycleRegistry.currentState = Lifecycle.State.STARTED
                 onPause()
             }
-            lifecycleRegistry!!.currentState = Lifecycle.State.DESTROYED
+            lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
             onDestroy()
         }
     }
@@ -367,7 +371,7 @@ abstract class ListPage :
 
         fun clearSearchFocus()
 
-        val toolbarContext: Context?
+        val toolbarContext: Context
 
         fun startActionMode(callback: ActionMode.Callback?): ActionMode?
 

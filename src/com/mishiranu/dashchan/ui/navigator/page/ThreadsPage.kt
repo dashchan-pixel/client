@@ -355,7 +355,7 @@ class ThreadsPage :
             )
         if (newPostData != null) {
             uiManager.navigator()!!.navigatePosts(
-                newPostData.key!!.chanName,
+                newPostData.key.chanName,
                 newPostData.key.boardName,
                 newPostData.key.threadNumber,
                 null,
@@ -613,7 +613,7 @@ class ThreadsPage :
     }
 
     override fun onSearchQueryChange(query: String?) {
-        getAdapter().applyFilter(query!!)
+        getAdapter().applyFilter(query)
     }
 
     override fun onListPulled(
@@ -925,8 +925,8 @@ class ThreadsPage :
                     title = StringUtils.formatBoardTitle(chanName!!, boardName, title)
                     layout.add(context.getString(R.string.board), title)
                     val description = chan.configuration.getBoardDescription(boardName)
-                    if (!StringUtils.isEmpty(description)) {
-                        layout.add(context.getString(R.string.description), description!!)
+                    if (!description.isNullOrEmpty()) {
+                        layout.add(context.getString(R.string.description), description)
                     }
                 }
                 val pagesCount = maxOf(chan.configuration.getPagesCount(boardName), 1)

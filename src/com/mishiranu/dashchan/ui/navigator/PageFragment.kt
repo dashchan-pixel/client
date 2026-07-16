@@ -520,7 +520,7 @@ class PageFragment :
         }
     }
 
-    override val toolbarContext: Context?
+    override val toolbarContext: Context
         get() = (requireActivity() as FragmentHandler).getToolbarContext()
 
     override fun startActionMode(callback: ActionMode.Callback?): ActionMode? = requireActivity().startActionMode(callback)

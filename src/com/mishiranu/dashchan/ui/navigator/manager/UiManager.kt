@@ -136,7 +136,7 @@ class UiManager(
 
         fun getDownloadBinder(): DownloadService.Binder?
 
-        val watcherClient: WatcherService.Client?
+        val watcherClient: WatcherService.Client
     }
 
     interface LocalNavigator {

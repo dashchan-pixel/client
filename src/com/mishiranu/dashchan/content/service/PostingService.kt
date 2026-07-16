@@ -764,7 +764,7 @@ class PostingService :
         comment: String?,
         newThread: Boolean,
     ) {
-        val key: Key?
+        val key: Key
         internal val tag: String
 
         init {

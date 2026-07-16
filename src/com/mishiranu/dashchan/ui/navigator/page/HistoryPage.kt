@@ -144,8 +144,9 @@ class HistoryPage :
         if (task != null) {
             task?.cancel()
         }
-        task = GetHistoryTask(this, chanName, searchQuery)
-        task!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        val task = GetHistoryTask(this, chanName, searchQuery)
+        this.task = task
+        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
     }
 
     override fun onGetHistoryResult(cursor: HistoryDatabase.HistoryCursor?) {

@@ -143,7 +143,10 @@ class PostsPage :
 
         var dialogsState: DialogUnit.StackInstance.State? = null
 
-        fun shouldExtract(): Boolean = cache == null || !cache!!.state.equals(cacheState)
+        fun shouldExtract(): Boolean {
+            val cache = this.cache ?: return true
+            return cache.state != cacheState
+        }
 
         override fun clear() {
             dialogsState?.dropState()
@@ -179,11 +182,11 @@ class PostsPage :
             }
             dest.writeByte((if (isAddedToHistory) 1 else 0).toByte())
             dest.writeString(threadTitle)
+            val scrollToPostNumber = this.scrollToPostNumber
             dest.writeByte((if (scrollToPostNumber != null) 1 else 0).toByte())
-            if (scrollToPostNumber != null) {
-                scrollToPostNumber!!.writeToParcel(dest, flags)
-            }
-            dest.writeInt(if (selectedPosts != null) selectedPosts!!.size else -1)
+            scrollToPostNumber?.writeToParcel(dest, flags)
+            val selectedPosts = this.selectedPosts
+            dest.writeInt(selectedPosts?.size ?: -1)
             if (selectedPosts != null) {
                 for (number in selectedPosts) {
                     number.writeToParcel(dest, flags)
@@ -237,7 +240,7 @@ class PostsPage :
         }
     }
 
-    class ExtractViewModel : TaskViewModel.Proxy<ExtractPostsTask, ExtractPostsTask.Callback?>()
+    class ExtractViewModel : TaskViewModel.Proxy<ExtractPostsTask, ExtractPostsTask.Callback>()
 
     class ReadViewModel : ViewModel() {
         private var session: WatcherService.Session? = null
@@ -278,13 +281,15 @@ class PostsPage :
             visible: Boolean,
             checkInterval: Int,
         ) {
-            if (session != null && session!!.refresh(reload, checkInterval)) {
+            val session = this.session
+            if (session != null && session.refresh(reload, checkInterval)) {
                 visibleRefresh = visible
             }
         }
 
         fun hasTaskOrValue(): Boolean {
-            if (session != null && session!!.hasTask() && visibleRefresh) {
+            val session = this.session
+            if (session != null && session.hasTask() && visibleRefresh) {
                 return true
             }
             val result = this.result.getValue()
@@ -292,15 +297,11 @@ class PostsPage :
         }
 
         fun notifyExtracted() {
-            if (session != null) {
-                session!!.notifyExtracted()
-            }
+            session?.notifyExtracted()
         }
 
         fun notifyEraseStarted() {
-            if (session != null) {
-                session!!.notifyEraseStarted()
-            }
+            session?.notifyEraseStarted()
         }
 
         fun observe(
@@ -476,7 +477,7 @@ class PostsPage :
         FavoritesStorage.getInstance().getObservable().register(this)
         hidePerformer.setPostsProvider(adapter)
 
-        val toolbarContext: Context = toolbarContext!!
+        val toolbarContext: Context = this.toolbarContext
         val searchControlLayout = LinearLayout(toolbarContext)
         this.searchControlView = searchControlLayout
         searchControlLayout.setOrientation(LinearLayout.HORIZONTAL)
@@ -548,7 +549,7 @@ class PostsPage :
         val extractViewModel = getViewModel(ExtractViewModel::class.java)
         val readViewModel = getViewModel(ReadViewModel::class.java)
         readViewModel.init(
-            uiManager.callback()!!.watcherClient!!,
+            uiManager.callback()!!.watcherClient,
             page.chanName,
             page.boardName,
             page.threadNumber,
@@ -673,9 +674,10 @@ class PostsPage :
         parcelableExtra.selectedPosts = null
         if (selectionMode != null && !saveToStack) {
             val selected = adapter.selectedItems
-            parcelableExtra.selectedPosts = HashSet<PostNumber>(selected.size)
+            val selectedPosts = HashSet<PostNumber>(selected.size)
+            parcelableExtra.selectedPosts = selectedPosts
             for (postItem in selected) {
-                parcelableExtra.selectedPosts!!.add(postItem.getPostNumber())
+                selectedPosts.add(postItem.getPostNumber())
             }
         }
     }
@@ -1212,7 +1214,7 @@ class PostsPage :
                 (retainableExtra.searchLastIndex + addIndex + count) % count
             val position =
                 this.adapter.positionOfPostNumber(
-                    retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex]!!,
+                    retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex],
                 )
             if (position >= 0) {
                 smoothScrollToPosition(getRecyclerView(), position)
@@ -1283,8 +1285,9 @@ class PostsPage :
 
     private fun scrollToPostFromExtra(instantly: Boolean): Boolean {
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-        if (parcelableExtra.scrollToPostNumber != null) {
-            val position = this.adapter.positionOfPostNumber(parcelableExtra.scrollToPostNumber!!)
+        val scrollToPostNumber = parcelableExtra.scrollToPostNumber
+        if (scrollToPostNumber != null) {
+            val position = this.adapter.positionOfPostNumber(scrollToPostNumber)
             if (position >= 0) {
                 val recyclerView = getRecyclerView()
                 if (instantly) {
@@ -1303,9 +1306,10 @@ class PostsPage :
     private fun decodeThreadExtra() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         var localFiltersDecoded = false
-        if (retainableExtra.threadExtra != null) {
+        val threadExtra = retainableExtra.threadExtra
+        if (threadExtra != null) {
             try {
-                JsonSerial.reader(retainableExtra.threadExtra!!).use { reader ->
+                JsonSerial.reader(threadExtra).use { reader ->
                     reader.startObject()
                     while (!reader.endStruct()) {
                         when (reader.nextName()) {
@@ -1471,20 +1475,9 @@ class PostsPage :
         }
 
     private fun transformListPositionToPair(listPosition: ListPosition?): Pair<PostNumber?, Int?>? {
-        val postNumber =
-            if (listPosition != null) {
-                this.adapter.getItem(listPosition.position).getPostNumber()
-            } else {
-                null
-            }
-        return if (postNumber != null) {
-            Pair<PostNumber?, Int?>(
-                postNumber,
-                listPosition!!.offset,
-            )
-        } else {
-            null
-        }
+        listPosition ?: return null
+        val postNumber = this.adapter.getItem(listPosition.position).getPostNumber() ?: return null
+        return Pair<PostNumber?, Int?>(postNumber, listPosition.offset)
     }
 
     private fun transformPairToListPosition(positionPair: Pair<PostNumber?, Int?>?): ListPosition? {
@@ -1522,7 +1515,7 @@ class PostsPage :
         val extractViewModel = getViewModel(ExtractViewModel::class.java)
         val task =
             ExtractPostsTask(
-                extractViewModel.callback!!,
+                extractViewModel.callback,
                 retainableExtra.cache,
                 chan,
                 page.boardName,
@@ -1804,9 +1797,10 @@ class PostsPage :
                 }
 
                 if (lastToast.newCount > 0) {
-                    val showPostNumber: PostNumber?
-                    if (toastVisible && lastToast.postNumber != null) {
-                        showPostNumber = lastToast.postNumber
+                    val showPostNumber: PostNumber
+                    val lastToastPostNumber = lastToast.postNumber
+                    if (toastVisible && lastToastPostNumber != null) {
+                        showPostNumber = lastToastPostNumber
                     } else {
                         showPostNumber = Collections.min<PostNumber>(result.newPosts)
                         adapter.preloadPosts(showPostNumber)
@@ -1821,7 +1815,7 @@ class PostsPage :
                                 true,
                                 Runnable {
                                     if (isRunning) {
-                                        val newPostIndex = adapter.positionOfPostNumber(showPostNumber!!)
+                                        val newPostIndex = adapter.positionOfPostNumber(showPostNumber)
                                         if (newPostIndex >= 0) {
                                             smoothScrollToPosition(getRecyclerView(), newPostIndex)
                                         }
@@ -1947,10 +1941,10 @@ class PostsPage :
             }
         }
 
-        if (parcelableExtra.selectedPosts != null) {
-            val selected = parcelableExtra.selectedPosts
+        val selected = parcelableExtra.selectedPosts
+        if (selected != null) {
             parcelableExtra.selectedPosts = null
-            for (postNumber in selected!!) {
+            for (postNumber in selected) {
                 val postItem = adapter.findPostItem(postNumber)
                 if (postItem != null) {
                     adapter.toggleItemSelected(postItem)
@@ -2332,11 +2326,11 @@ class PostsPage :
                     if (attachmentItems != null) {
                         for (attachmentItem in attachmentItems) {
                             val fileName = attachmentItem.getFileName(chan)
-                            if (!StringUtils.isEmpty(fileName)) {
-                                fileNames.add(fileName!!.lowercase(locale))
+                            if (!fileName.isNullOrEmpty()) {
+                                fileNames.add(fileName.lowercase(locale))
                                 val originalName = attachmentItem.getOriginalName()
-                                if (!StringUtils.isEmpty(originalName)) {
-                                    fileNames.add(originalName!!.lowercase(locale))
+                                if (!originalName.isNullOrEmpty()) {
+                                    fileNames.add(originalName.lowercase(locale))
                                 }
                             }
                         }
