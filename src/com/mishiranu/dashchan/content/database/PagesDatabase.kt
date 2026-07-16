@@ -1030,7 +1030,7 @@ class PagesDatabase private constructor() {
                 KeyLock.Callback { collectDiffPostsLocked(threadKey, cache, cleanup, signal) },
             )
         if (cache == null &&
-            diff!!.cache.isEmpty &&
+            diff.cache.isEmpty &&
             migratePosts(
                 threadKey,
                 MigrationRequest.COLLECT_DIFF_POSTS,
@@ -1573,7 +1573,7 @@ class PagesDatabase private constructor() {
                 }
                 success
             },
-        )!!
+        )
     }
 
     private fun getPostsFile(

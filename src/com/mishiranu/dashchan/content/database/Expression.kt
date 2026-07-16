@@ -225,8 +225,11 @@ object Expression {
     }
 
     class KeyLock<T> {
+        // R already carries its own nullability at each call site (lock<Diff, _> vs
+        // lock<InsertResult?, _>), so run()/lock() must return R, not R?. J2K widened both
+        // to R?, which forced every caller to '!!' even when it asked for a non-null R.
         fun interface Callback<R, E : Throwable?> {
-            fun run(): R?
+            fun run(): R
         }
 
         private class ReferenceCount {
@@ -238,8 +241,8 @@ object Expression {
 
         fun <R, E : Throwable?> lock(
             key: T?,
-            callback: Callback<R?, E?>,
-        ): R? {
+            callback: Callback<R, E?>,
+        ): R {
             var lock: ReferenceCount?
             synchronized(locks) {
                 lock = locks[key]

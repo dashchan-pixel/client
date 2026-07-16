@@ -202,7 +202,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
 
     private class WebViewRequestCallback(
         val client: FirewallResolver.WebViewClient<*>,
-        val initialUri: Uri?,
+        val initialUri: Uri,
         val chanTitle: String?,
         val cancel: Runnable,
     ) : IRequestCallback.Stub() {
@@ -240,7 +240,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 uri = null
             }
             try {
-                return client.onLoad(initialUri!!, uri ?: return false)
+                return client.onLoad(initialUri, uri ?: return false)
             } catch (e: LinkageError) {
                 e.printStackTrace()
                 return false

@@ -65,11 +65,10 @@ abstract class FirewallResolutionDialog<T> : WebViewDialog {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        val checkFirewallResolutionResultAfterDismiss =
-            request != null && !requireActivity().isChangingConfigurations
-        if (checkFirewallResolutionResultAfterDismiss) {
+        val request = this.request
+        if (request != null && !requireActivity().isChangingConfigurations) {
             WebViewUtils.setProxy(requireContext(), null, null)
-            val client = request!!.client
+            val client = request.client
             var firewallResolutionResult = client.getResult()
             if (firewallResolutionResult == null || !firewallResolutionFinished) {
                 checkFirewallResolutionFinished(webView!!.url, webView!!.title)
