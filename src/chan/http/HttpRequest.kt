@@ -112,11 +112,7 @@ class HttpRequest {
     var headers: ArrayList<Pair<String?, String?>?>? = null
     var cookieBuilder: CookieBuilder? = null
 
-    // TODO CHAN
-    // Remove this constructor after updating (also used by the client itself)
-    // alphachan alterchan brchan chaosach exach fiftyfive fourplebs haibane kropyvach lainchan nulltirech onechanca
-    // synch twentyseven uboachan wizardchan
-    // Added: 18.10.20 18:58
+    // Retained: used throughout the client for requests bound to an HttpHolder.
     @Public
     constructor(uri: Uri?, holder: HttpHolder) {
         Objects.requireNonNull<HttpHolder?>(holder)

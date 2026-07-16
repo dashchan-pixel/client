@@ -3,10 +3,7 @@ package chan.content
 import chan.annotation.Public
 import com.mishiranu.dashchan.content.model.PostNumber
 
-// TODO CHAN
-// Remove this class after updating
-// alphachan anonfm chuckdfwk diochan exach ponychan
-// Added: 13.10.16 14:55
+// Retained: caught by ReadPostsTask and declared by ChanPerformer for thread-redirect handling.
 @Public
 class ThreadRedirectException
     @Public
