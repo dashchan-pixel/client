@@ -1586,23 +1586,6 @@ object Preferences {
                 DEFAULT_USE_VIDEO_PLAYER,
             )
 
-    const val KEY_USER_AGENT_REFERENCE: String = "user_agent_reference"
-
-    var userAgentReference: String?
-        get() =
-            prefs.getString(
-                KEY_USER_AGENT_REFERENCE,
-                null,
-            )
-        set(userAgentReference) {
-            prefs
-                .edit()
-                .put(
-                    KEY_USER_AGENT_REFERENCE,
-                    userAgentReference,
-                ).close()
-        }
-
     val KEY_USER_AUTHORIZATION: ChanKey = ChanKey("user_authorization")
 
     @JvmStatic
