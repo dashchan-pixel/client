@@ -305,14 +305,12 @@ class ThreadsAdapter(
             }
         }
         if (sorting || filter) {
-            var text = filterText
-            if (!isEmpty(text)) {
-                if (filteredPostItems == null) {
-                    filteredPostItems = ArrayList()
-                } else {
-                    filteredPostItems!!.clear()
-                }
-                text = text!!.lowercase(Locale.getDefault())
+            val filterText = this.filterText
+            if (!filterText.isNullOrEmpty()) {
+                val filteredPostItems =
+                    this.filteredPostItems?.also { it.clear() }
+                        ?: ArrayList<PostItem>().also { this.filteredPostItems = it }
+                val text = filterText.lowercase(Locale.getDefault())
                 val chan = get(configurationSet.chanName)
                 val locale = Locale.getDefault()
                 for (postItem in (catalogSortedPostItems ?: postItems)) {
@@ -324,11 +322,11 @@ class ThreadsAdapter(
                                 .lowercase(locale)
                                 .contains(text)
                     if (add) {
-                        filteredPostItems!!.add(postItem)
+                        filteredPostItems.add(postItem)
                     }
                 }
             } else {
-                filteredPostItems = null
+                this.filteredPostItems = null
             }
         }
     }

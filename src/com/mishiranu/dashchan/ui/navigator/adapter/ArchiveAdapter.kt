@@ -30,10 +30,10 @@ class ArchiveAdapter(
     }
 
     private fun applyCurrentFilter() {
-        var text = filterText
+        val filterText = this.filterText
         filteredArchiveItems.clear()
-        if (!StringUtils.isEmpty(text)) {
-            text = text!!.lowercase(Locale.getDefault())
+        if (!filterText.isNullOrEmpty()) {
+            val text = filterText.lowercase(Locale.getDefault())
             for (threadSummary in archiveItems) {
                 val title = threadSummary.getDescription()
                 if (title != null && title.lowercase(Locale.getDefault()).contains(text)) {

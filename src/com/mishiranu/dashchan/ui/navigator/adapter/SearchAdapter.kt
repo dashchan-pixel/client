@@ -135,14 +135,11 @@ class SearchAdapter(
                     postItems.add(postItem)
                 }
                 for (entry in map.entries) {
-                    val threadNumber: String = entry.key!!
-                    var number: Boolean
-                    try {
-                        threadNumber.toInt()
-                        number = true
-                    } catch (e: NumberFormatException) {
-                        number = false
-                    }
+                    val threadNumber: String? = entry.key
+                    // The Java called Integer.parseInt(threadNumber), which throws
+                    // NumberFormatException for a null thread number: it degrades to
+                    // number = false rather than crashing.
+                    val number = threadNumber?.toIntOrNull() != null
                     val group =
                         context.getString(
                             R.string.in_thread_number__format,
