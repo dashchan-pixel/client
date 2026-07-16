@@ -16,6 +16,7 @@ The **main app** of the Dashchan rework — an Android imageboard browser that d
 - `src/com/mishiranu/dashchan/**` — the app itself (`ui`, `content`, `widget`, `media`, `graphics`, `util`).
 - `media/VideoPlayer.kt` — Media3 (ExoPlayer) facade; keeps the old partial-file streaming model via a custom `DataSource`. Replaced the retired ffmpeg JNI player + Webm `.so` extension.
 - `chan/http/**` — networking on **OkHttp 5**, keeping the old chan HTTP API shape. Kept: manual redirect policy, single-connection throttling, `FirewallResolver` (Cloudflare/anti-DDoS). Removed: custom sockets, WebSocket, GMS hacks.
+- `res/**` — **density-qualified folders are intentionally gone**: every bitmap has been redrawn as a `<vector>` in plain `res/drawable/`, so there is nothing to bucket. Add new icons as vectors; don't reintroduce `drawable-*dpi/` PNGs. The launcher lives in `res/mipmap-anydpi/` (no `-v26` — adaptive icons are unconditional at minSdk 36).
 
 ## Git / workflow
 
@@ -36,7 +37,7 @@ The J2K converter systematically inserted `!!` / non-null casts where Java handl
 ## Lint & inspections
 
 - Use **`./gradlew lintRelease`** (report: `build/reports/lint-results-release.{html,xml,txt}`). `assembleRelease` only gates FATAL, so a green build can still hide non-fatal errors.
-- Still open at minSdk 36: `ObsoleteSdkInt` dead checks, leftover `@TargetApi`, a `res/mipmap-anydpi-v26/` folder.
+- Still open at minSdk 36: `ObsoleteSdkInt` dead checks, leftover `@TargetApi`.
 
 ## Deliberate design — do NOT fix
 
