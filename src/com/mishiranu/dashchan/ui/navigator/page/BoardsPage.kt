@@ -56,12 +56,12 @@ class BoardsPage :
         recyclerView.itemAnimator = null
 
         val initRequest = getInitRequest()
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.TOP)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.TOP)
         val readViewModel = getViewModel(ReadViewModel::class.java)
         if (initRequest.errorItem != null) {
             switchError(initRequest.errorItem)
         } else {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
             switchProgress()
             updateBoards()
         }
@@ -82,7 +82,7 @@ class BoardsPage :
     }
 
     override fun onItemClick(item: ChanDatabase.BoardItem?) {
-        uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
+        uiManager.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
     }
 
     override fun onItemLongClick(item: ChanDatabase.BoardItem?): Boolean {
@@ -150,10 +150,10 @@ class BoardsPage :
         readViewModel.attach(task)
         val recyclerView = getRecyclerView()
         if (showPull) {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
             switchList()
         } else {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
             switchProgress()
         }
     }
@@ -181,20 +181,20 @@ class BoardsPage :
             val recyclerView = getRecyclerView()
             listPosition?.apply(recyclerView)
             if (readViewModel.hasTaskOrValue()) {
-                recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
             }
         }
     }
 
     override fun onReadBoardsSuccess() {
         val recyclerView = getRecyclerView()
-        recyclerView.pullable!!.cancelBusyState()
+        recyclerView.pullable.cancelBusyState()
         updateBoards()
         recyclerView.scrollToPosition(0)
     }
 
     override fun onReadBoardsFail(errorItem: ErrorItem) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         if (getAdapter().isRealEmpty()) {
             switchError(errorItem)
         } else {

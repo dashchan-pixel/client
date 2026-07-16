@@ -59,7 +59,7 @@ class HistoryPage :
     override fun obtainTitle(): String = getString(R.string.history)
 
     override fun onItemClick(item: HistoryDatabase.HistoryItem?) {
-        uiManager!!.navigator()!!.navigatePosts(
+        uiManager.navigator()!!.navigatePosts(
             item!!.chanName,
             item.boardName,
             item.threadNumber,

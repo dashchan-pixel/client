@@ -39,7 +39,7 @@ class PageFragment :
     FragmentHandler.Callback,
     ListPage.Callback {
     interface Callback {
-        val uiManager: UiManager?
+        val uiManager: UiManager
 
         fun getRetainableExtra(retainId: String?): Retainable?
 
@@ -201,8 +201,8 @@ class PageFragment :
         allowShowScale = true
         val listPage = this.page!!.content.newPage()
         this.listPage = listPage
-        recyclerView.pullable!!.setOnPullListener(listPage!!)
-        recyclerView.pullable!!.setPullStateListener(
+        recyclerView.pullable.setOnPullListener(listPage)
+        recyclerView.pullable.setPullStateListener(
             PullStateListener { wrapper: PullableWrapper?, busy: Boolean ->
                 (requireActivity() as FragmentHandler)
                     .setActionBarLocked(actionBarLockerPull!!, busy)

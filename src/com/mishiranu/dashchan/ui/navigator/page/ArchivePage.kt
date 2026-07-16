@@ -45,7 +45,7 @@ class ArchivePage :
         val adapter = ArchiveAdapter(this)
         recyclerView.adapter = adapter
         recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, adapter::configureDivider))
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
         adapter.applyFilter(getInitSearch().currentQuery)
 
         val initRequest = getInitRequest()
@@ -63,12 +63,12 @@ class ArchivePage :
             }
             if (readViewModel.hasTaskOrValue()) {
                 if (adapter.isRealEmpty()) {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                     switchProgress()
                 } else {
                     val task = readViewModel.task
                     val bottom = task != null && task.pageNumber > 0
-                    recyclerView.pullable!!.startBusyState(
+                    recyclerView.pullable.startBusyState(
                         if (bottom) {
                             PullableWrapper.Side.BOTTOM
                         } else {
@@ -92,7 +92,7 @@ class ArchivePage :
     override fun onItemClick(item: String?) {
         if (item != null) {
             val page = getPage()
-            uiManager!!.navigator()!!.navigatePosts(page.chanName, page.boardName, item, null, null)
+            uiManager.navigator()!!.navigatePosts(page.chanName, page.boardName, item, null, null)
         }
     }
 
@@ -157,10 +157,10 @@ class ArchivePage :
         readViewModel.attach(task)
         val recyclerView = getRecyclerView()
         if (showPull) {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
             switchList()
         } else {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
             switchProgress()
         }
     }
@@ -170,7 +170,7 @@ class ArchivePage :
         pageNumber: Int,
     ) {
         val recyclerView = getRecyclerView()
-        recyclerView.pullable!!.cancelBusyState()
+        recyclerView.pullable.cancelBusyState()
         val adapter = getAdapter()
         if (pageNumber == 0 && threadSummaries.isEmpty()) {
             if (adapter.isRealEmpty()) {
@@ -216,7 +216,7 @@ class ArchivePage :
     }
 
     override fun onReadThreadSummariesFail(errorItem: ErrorItem) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         if (getAdapter().isRealEmpty()) {
             switchError(errorItem)
         } else {

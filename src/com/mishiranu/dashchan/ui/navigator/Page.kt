@@ -35,10 +35,10 @@ class Page(
         ;
 
         private fun interface PageFactory {
-            fun newPage(): ListPage?
+            fun newPage(): ListPage
         }
 
-        fun newPage(): ListPage? = pageFactory.newPage()
+        fun newPage(): ListPage = pageFactory.newPage()
     }
 
     val isThreadsOrPosts: Boolean

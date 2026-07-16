@@ -111,8 +111,7 @@ class ThreadsPage :
         val chan = chan
         hidePerformer = HidePerformer(context)
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
-        val uiManager = uiManager
-        uiManager!!.view().bindThreadsPostRecyclerView(recyclerView)
+        uiManager.view().bindThreadsPostRecyclerView(recyclerView)
         val adapter =
             ThreadsAdapter(
                 context,
@@ -137,7 +136,7 @@ class ThreadsPage :
             },
         )
         recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, adapter::configureDivider))
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
         uiManager.observable().register(this)
         layoutManager.spanCount = adapter.setThreadsView(Preferences.threadsView)
         adapter.setCatalogSort(Preferences.catalogSort)
@@ -167,12 +166,12 @@ class ThreadsPage :
             }
             if (readViewModel.hasTaskOrValue()) {
                 if (getAdapter().isRealEmpty) {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                     switchProgress()
                 } else {
                     val task = readViewModel.task
                     val bottom = task != null && task.pageNumber > retainableExtra.startPageNumber
-                    recyclerView.pullable!!.startBusyState(
+                    recyclerView.pullable.startBusyState(
                         if (bottom) {
                             PullableWrapper.Side.BOTTOM
                         } else {
@@ -337,14 +336,13 @@ class ThreadsPage :
     }
 
     override fun onDestroy() {
-        val uiManager = uiManager!!
         uiManager.dialog().closeDialogs(getAdapter().configurationSet.stackInstance!!)
         uiManager.observable().unregister(this)
         FavoritesStorage.getInstance().getObservable().unregister(this)
     }
 
     override fun onNotifyAllAdaptersChanged() {
-        uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
+        uiManager.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
     }
 
     override fun onHandleNewPostDataList() {
@@ -356,7 +354,7 @@ class ThreadsPage :
                 page.boardName,
             )
         if (newPostData != null) {
-            uiManager!!.navigator()!!.navigatePosts(
+            uiManager.navigator()!!.navigatePosts(
                 newPostData.key!!.chanName,
                 newPostData.key.boardName,
                 newPostData.key.threadNumber,
@@ -401,7 +399,7 @@ class ThreadsPage :
                 setThreadHideState(item, PostItem.HideState.SHOWN)
                 getAdapter().notifyThreadShown(item)
             } else {
-                uiManager!!.navigator()!!.navigatePosts(
+                uiManager.navigator()!!.navigatePosts(
                     page.chanName,
                     page.boardName,
                     item.getThreadNumber(),
@@ -519,12 +517,12 @@ class ThreadsPage :
             }
 
             R.id.menu_archive -> {
-                uiManager!!.navigator()!!.navigateArchive(page.chanName, page.boardName)
+                uiManager.navigator()!!.navigateArchive(page.chanName, page.boardName)
                 return true
             }
 
             R.id.menu_new_thread -> {
-                uiManager!!.navigator()!!.navigatePosting(page.chanName, page.boardName, null)
+                uiManager.navigator()!!.navigatePosting(page.chanName, page.boardName, null)
                 return true
             }
 
@@ -595,7 +593,7 @@ class ThreadsPage :
             // Collapse search view
             getRecyclerView().post {
                 val page = getPage()
-                uiManager!!.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
+                uiManager.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
             }
             return true
         }
@@ -705,7 +703,7 @@ class ThreadsPage :
             pageNumber >=
             maxOf(chan.configuration.getPagesCount(page.boardName), 1)
         ) {
-            recyclerView.pullable!!.cancelBusyState()
+            recyclerView.pullable.cancelBusyState()
             ClickableToast.show(getString(R.string.number_page_doesnt_exist__format, pageNumber))
             readViewModel.attach(null)
             return false
@@ -732,10 +730,10 @@ class ThreadsPage :
             task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
             readViewModel.attach(task)
             if (showPull) {
-                recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
                 switchList()
             } else {
-                recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                 switchProgress()
             }
             return true
@@ -752,7 +750,7 @@ class ThreadsPage :
         hiddenThreads: PostItem.HideState.Map<String>?,
     ) {
         val recyclerView = getRecyclerView()
-        recyclerView.pullable!!.cancelBusyState()
+        recyclerView.pullable.cancelBusyState()
         switchList()
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         var items = postItems
@@ -833,7 +831,7 @@ class ThreadsPage :
     }
 
     override fun onReadThreadsRedirect(target: RedirectException.Target) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         if (!CommonUtils.equals(target.chanName, getPage().chanName)) {
             if (getAdapter().isRealEmpty) {
                 switchError(R.string.board_doesnt_exist)
@@ -848,7 +846,7 @@ class ThreadsPage :
         errorItem: ErrorItem?,
         pageNumber: Int,
     ) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         val message =
             if (errorItem!!.type == ErrorItem.Type.BOARD_NOT_EXISTS && pageNumber >= 1) {
                 getString(R.string.number_page_doesnt_exist__format, pageNumber)

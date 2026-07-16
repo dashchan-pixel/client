@@ -73,7 +73,7 @@ class UserBoardsPage :
         recyclerView.adapter = adapter
         recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context) { c, _ -> c.need(true) })
         recyclerView.itemAnimator = null
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.TOP)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.TOP)
 
         val initRequest = getInitRequest()
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
@@ -88,10 +88,10 @@ class UserBoardsPage :
             }
             if (readViewModel.hasTaskOrValue()) {
                 if (parcelableExtra.boardNames.isEmpty()) {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                     switchProgress()
                 } else {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
                 }
             } else if (load) {
                 refreshBoards(false)
@@ -111,7 +111,7 @@ class UserBoardsPage :
     override fun obtainTitle(): String = getString(R.string.user_boards)
 
     override fun onItemClick(item: ChanDatabase.BoardItem?) {
-        uiManager!!.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
+        uiManager.navigator()!!.navigateBoardsOrThreads(getPage().chanName, item!!.boardName)
     }
 
     override fun onItemLongClick(item: ChanDatabase.BoardItem?): Boolean {
@@ -172,10 +172,10 @@ class UserBoardsPage :
         readViewModel.attach(task)
         val recyclerView = getRecyclerView()
         if (showPull) {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
             switchList()
         } else {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
             switchProgress()
         }
     }
@@ -189,7 +189,7 @@ class UserBoardsPage :
 
     override fun onReadUserBoardsSuccess(boardNames: List<String>) {
         val recyclerView = getRecyclerView()
-        recyclerView.pullable!!.cancelBusyState()
+        recyclerView.pullable.cancelBusyState()
         switchList()
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         parcelableExtra.boardNames = boardNames
@@ -198,7 +198,7 @@ class UserBoardsPage :
     }
 
     override fun onReadUserBoardsFail(errorItem: ErrorItem) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         if (parcelableExtra.boardNames.isEmpty()) {
             switchError(errorItem)

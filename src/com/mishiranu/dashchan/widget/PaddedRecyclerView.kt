@@ -599,57 +599,56 @@ open class PaddedRecyclerView :
         }
     }
 
-    val pullable: PullableWrapper?
+    val pullable: PullableWrapper
         get() {
-            if (pullableWrapper == null) {
-                val wrapper = PullableWrapper(this)
-                this.pullableWrapper = wrapper
-                addOnItemTouchListener(
-                    object : OnItemTouchListener {
-                        private var intercepted = false
-                        private var downY = 0f
+            pullableWrapper?.let { return it }
+            val wrapper = PullableWrapper(this)
+            this.pullableWrapper = wrapper
+            addOnItemTouchListener(
+                object : OnItemTouchListener {
+                    private var intercepted = false
+                    private var downY = 0f
 
-                        override fun onInterceptTouchEvent(
-                            rv: RecyclerView,
-                            e: MotionEvent,
-                        ): Boolean {
-                            val y = e.getY()
-                            if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
-                                intercepted = false
-                                downY = y
-                            }
-                            if (wrapper.onTouchEventOrNull(e)) {
-                                if (!intercepted && abs(downY - y) > touchSlop) {
-                                    intercepted = true
-                                }
-                                return intercepted
-                            }
-                            return false
+                    override fun onInterceptTouchEvent(
+                        rv: RecyclerView,
+                        e: MotionEvent,
+                    ): Boolean {
+                        val y = e.getY()
+                        if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                            intercepted = false
+                            downY = y
                         }
+                        if (wrapper.onTouchEventOrNull(e)) {
+                            if (!intercepted && abs(downY - y) > touchSlop) {
+                                intercepted = true
+                            }
+                            return intercepted
+                        }
+                        return false
+                    }
 
-                        override fun onTouchEvent(
-                            rv: RecyclerView,
-                            e: MotionEvent,
-                        ) {
-                            val result = wrapper.onTouchEventOrNull(e)
-                            if (intercepted && !result) {
-                                intercepted = false
-                                // Reset intercepted state
-                                removeOnItemTouchListener(this)
-                                addOnItemTouchListener(this)
-                            }
+                    override fun onTouchEvent(
+                        rv: RecyclerView,
+                        e: MotionEvent,
+                    ) {
+                        val result = wrapper.onTouchEventOrNull(e)
+                        if (intercepted && !result) {
+                            intercepted = false
+                            // Reset intercepted state
+                            removeOnItemTouchListener(this)
+                            addOnItemTouchListener(this)
                         }
+                    }
 
-                        override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                            if (disallowIntercept && intercepted) {
-                                intercepted = false
-                                wrapper.onTouchEventOrNull(null)
-                            }
+                    override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                        if (disallowIntercept && intercepted) {
+                            intercepted = false
+                            wrapper.onTouchEventOrNull(null)
                         }
-                    },
-                )
-            }
-            return pullableWrapper
+                    }
+                },
+            )
+            return wrapper
         }
 
     override fun draw(canvas: Canvas) {

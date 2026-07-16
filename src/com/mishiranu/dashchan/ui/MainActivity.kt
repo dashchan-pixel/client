@@ -177,7 +177,7 @@ class MainActivity :
     private val preservedPageItems = ArrayList<SavedPageItem>()
     private var currentPageItem: PageItem? = null
 
-    override var uiManager: UiManager? = null
+    override lateinit var uiManager: UiManager
     private lateinit var instanceViewModel: InstanceViewModel
     private lateinit var watcherServiceClient: WatcherService.Client
     private val extensionsTrustLoopState = ExtensionsTrustLoop.State()
@@ -332,7 +332,7 @@ class MainActivity :
             )
         expandedScreen.setDrawerOverToolbarEnabled(!wideMode)
         uiManager = UiManager(this, this, this)
-        uiManager!!.attach(this)
+        uiManager.attach(this)
         ContentFragment.Companion.prepare(this)
         val contentFragment = findViewById<ViewGroup>(R.id.content_fragment)
         contentFragment.setOnHierarchyChangeListener(

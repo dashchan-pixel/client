@@ -400,8 +400,7 @@ class PostsPage :
         val recyclerView = getRecyclerView()
         recyclerView.setLayoutManager(PostsLayoutManager(recyclerView.getContext()))
         val page = getPage()
-        val uiManager = uiManager
-        uiManager!!.view().bindThreadsPostRecyclerView(recyclerView)
+        uiManager.view().bindThreadsPostRecyclerView(recyclerView)
         val density = obtainDensity(context)
         val dividerPadding = (12f * density).toInt()
         hidePerformer = HidePerformer(context)
@@ -469,7 +468,7 @@ class PostsPage :
         }
         recyclerView.addItemDecoration(divider)
         recyclerView.addItemDecoration(adapter.createPostItemDecoration(context, dividerPadding))
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
         recyclerView.addOnScrollListener(scrollListener)
         initializeImportantPostsMarksFastScrollBarDecoration(recyclerView, retainableExtra)
 
@@ -607,10 +606,10 @@ class PostsPage :
             }
             if (progress) {
                 if (adapter.getItemCount() == 0) {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                     switchProgress()
                 } else {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTTOM)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTTOM)
                 }
             }
         }
@@ -632,8 +631,8 @@ class PostsPage :
         selectionMode?.finish()
         selectionMode = null
         this.adapter.cancelPreloading()
-        uiManager!!.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
-        uiManager!!.observable().unregister(this)
+        uiManager.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
+        uiManager.observable().unregister(this)
         searchWorker?.cancel()
         searchWorker = null
         getRecyclerView().removeOnScrollListener(scrollListener)
@@ -646,7 +645,7 @@ class PostsPage :
     }
 
     override fun onNotifyAllAdaptersChanged() {
-        uiManager!!
+        uiManager
             .dialog()
             .notifyDataSetChangedToAll(this.adapter.configurationSet.stackInstance!!)
     }
@@ -660,7 +659,7 @@ class PostsPage :
     override fun onScrollToPost(postNumber: PostNumber) {
         val position = this.adapter.positionOfPostNumber(postNumber)
         if (position >= 0) {
-            uiManager!!.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
+            uiManager.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
             smoothScrollToPosition(getRecyclerView(), position)
         }
     }
@@ -720,14 +719,14 @@ class PostsPage :
             )
             return
         }
-        uiManager!!.interaction().handlePostClick(view!!, postStateProvider, postItem!!, this.adapter)
+        uiManager.interaction().handlePostClick(view!!, postStateProvider, postItem!!, this.adapter)
     }
 
     override fun onItemLongClick(postItem: PostItem?): Boolean {
         if (selectionMode != null) {
             return false
         }
-        uiManager!!.interaction().handlePostContextMenu(this.adapter.configurationSet, postItem!!)
+        uiManager.interaction().handlePostContextMenu(this.adapter.configurationSet, postItem!!)
         return true
     }
 
@@ -844,7 +843,7 @@ class PostsPage :
         val adapter = this.adapter
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_add_post) {
-            uiManager!!.navigator()!!.navigatePosting(
+            uiManager.navigator()!!.navigatePosting(
                 page.chanName,
                 page.boardName,
                 page.threadNumber,
@@ -866,7 +865,7 @@ class PostsPage :
                     }
                 }
             }
-            uiManager!!.navigator()!!.navigateGallery(
+            uiManager.navigator()!!.navigateGallery(
                 page.chanName,
                 gallerySet,
                 imageIndex,
@@ -935,7 +934,7 @@ class PostsPage :
                 val threadNumber = chan.locator.safe(true).getThreadNumber(uri)
                 if (threadNumber != null) {
                     val threadTitle = adapter.getItem(0).getSubjectOrComment()
-                    uiManager!!
+                    uiManager
                         .navigator()!!
                         .navigatePosts(chan.name, boardName, threadNumber, null, threadTitle)
                 }
@@ -951,7 +950,7 @@ class PostsPage :
                 }
                 posts.add(postItem.getPost())
             }
-            uiManager!!.dialog().performSendArchiveThread(
+            uiManager.dialog().performSendArchiveThread(
                 fragmentManager,
                 page.chanName,
                 page.boardName,
@@ -1079,7 +1078,7 @@ class PostsPage :
             }
             if (postNumbers.size > 0) {
                 val page = getPage()
-                uiManager!!.dialog().performSendDeletePosts(
+                uiManager.dialog().performSendDeletePosts(
                     fragmentManager,
                     page.chanName,
                     page.boardName,
@@ -1099,7 +1098,7 @@ class PostsPage :
             }
             if (postNumbers.size > 0) {
                 val page = getPage()
-                uiManager!!.dialog().performSendReportPosts(
+                uiManager.dialog().performSendReportPosts(
                     fragmentManager,
                     page.chanName,
                     page.boardName,
@@ -1199,7 +1198,7 @@ class PostsPage :
     private fun showSearchDialog() {
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (!retainableExtra.searchPostNumbers.isEmpty()) {
-            uiManager!!
+            uiManager
                 .dialog()
                 .displayList(this.adapter.configurationSet, retainableExtra.searchPostNumbers)
         }
@@ -1591,10 +1590,10 @@ class PostsPage :
         if (!hasExtractTask() && !hasReadTask()) {
             val recyclerView = getRecyclerView()
             if (this.adapter.getItemCount() == 0) {
-                recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                 switchProgress()
             } else {
-                recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTTOM)
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTTOM)
                 switchList()
             }
         }
@@ -1603,7 +1602,7 @@ class PostsPage :
     private fun cancelProgressIfNecessary() {
         if (!hasExtractTask() && !hasReadTask()) {
             val recyclerView = getRecyclerView()
-            recyclerView.pullable!!.cancelBusyState()
+            recyclerView.pullable.cancelBusyState()
             switchList()
             val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
             val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
@@ -1864,7 +1863,7 @@ class PostsPage :
         }
 
         if (updateAdapters) {
-            uiManager!!.dialog().updateAdapters(this.adapter.configurationSet.stackInstance!!)
+            uiManager.dialog().updateAdapters(this.adapter.configurationSet.stackInstance!!)
             notifyAllAdaptersChanged()
             val listPosition = transformPairToListPosition(keepPositionPair)
             if (listPosition != null) {
@@ -1878,9 +1877,9 @@ class PostsPage :
                 }
             } else {
                 if (wasEmpty && !result.postItems.isEmpty()) {
-                    recyclerView.pullable!!.cancelBusyState()
+                    recyclerView.pullable.cancelBusyState()
                     switchList()
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTTOM)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTTOM)
                     showScaleAnimation()
                 }
                 if (retainableExtra.shouldExtract()) {
@@ -2110,7 +2109,7 @@ class PostsPage :
             UiManager.Message.PERFORM_SWITCH_USER_MARK -> {
                 setPostUserPost(postItem, !postStateProvider.isUserPost(postItem.getPostNumber()))
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
-                uiManager!!.sendPostItemMessage(
+                uiManager.sendPostItemMessage(
                     postItem,
                     UiManager.Message.POST_INVALIDATE_ALL_VIEWS,
                 )
@@ -2130,7 +2129,7 @@ class PostsPage :
                 }
                 notifyTitleChanged()
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
-                uiManager!!.sendPostItemMessage(
+                uiManager.sendPostItemMessage(
                     postItem,
                     UiManager.Message.POST_INVALIDATE_ALL_VIEWS,
                 )
@@ -2182,7 +2181,7 @@ class PostsPage :
                 // Avoid concurrent modification
                 recyclerView.post(
                     Runnable {
-                        uiManager!!
+                        uiManager
                             .dialog()
                             .closeDialogs(this.adapter.configurationSet.stackInstance!!)
                     },

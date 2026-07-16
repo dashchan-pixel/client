@@ -81,8 +81,7 @@ class SearchPage :
         val recyclerView = getRecyclerView()
         recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)
         val page = getPage()
-        val uiManager = uiManager
-        uiManager!!.view().bindThreadsPostRecyclerView(recyclerView)
+        uiManager.view().bindThreadsPostRecyclerView(recyclerView)
         val density = ResourceUtils.obtainDensity(resources)
         val dividerPadding = (12f * density).toInt()
         val adapter =
@@ -103,7 +102,7 @@ class SearchPage :
         recyclerView.addItemDecoration(
             HeaderItemDecoration(adapter::configureItemHeader) { _, position -> adapter.getItemHeader(position) },
         )
-        recyclerView.pullable!!.setPullSides(PullableWrapper.Side.BOTH)
+        recyclerView.pullable.setPullSides(PullableWrapper.Side.BOTH)
         uiManager.observable().register(this)
 
         val initRequest = getInitRequest()
@@ -132,12 +131,12 @@ class SearchPage :
             }
             if (readViewModel.hasTaskOrValue()) {
                 if (adapter.itemCount == 0) {
-                    recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+                    recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
                     switchProgress()
                 } else {
                     val task = readViewModel.task
                     val bottom = task != null && task.pageNumber > 0
-                    recyclerView.pullable!!.startBusyState(
+                    recyclerView.pullable.startBusyState(
                         if (bottom) {
                             PullableWrapper.Side.BOTTOM
                         } else {
@@ -161,11 +160,11 @@ class SearchPage :
     }
 
     override fun onDestroy() {
-        uiManager!!.observable().unregister(this)
+        uiManager.observable().unregister(this)
     }
 
     override fun onNotifyAllAdaptersChanged() {
-        uiManager!!.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
+        uiManager.dialog().notifyDataSetChangedToAll(getAdapter().configurationSet.stackInstance!!)
     }
 
     override fun onRequestStoreExtra(saveToStack: Boolean) {
@@ -179,7 +178,7 @@ class SearchPage :
 
     override fun onItemClick(item: PostItem?) {
         val page = getPage()
-        uiManager!!.navigator()!!.navigatePosts(
+        uiManager.navigator()!!.navigatePosts(
             page.chanName,
             page.boardName,
             item!!.threadNumber,
@@ -189,7 +188,7 @@ class SearchPage :
     }
 
     override fun onItemLongClick(item: PostItem?): Boolean {
-        uiManager!!.interaction().handlePostContextMenu(getAdapter().configurationSet, item!!)
+        uiManager.interaction().handlePostContextMenu(getAdapter().configurationSet, item!!)
         return true
     }
 
@@ -242,7 +241,7 @@ class SearchPage :
             // Collapse search view
             getRecyclerView().post {
                 val page = getPage()
-                uiManager!!.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
+                uiManager.navigator()!!.navigateSearch(page.chanName, page.boardName, query)
             }
             return true
         }
@@ -281,10 +280,10 @@ class SearchPage :
         readViewModel.attach(task)
         val recyclerView = getRecyclerView()
         if (showPull) {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.TOP)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
             switchList()
         } else {
-            recyclerView.pullable!!.startBusyState(PullableWrapper.Side.BOTH)
+            recyclerView.pullable.startBusyState(PullableWrapper.Side.BOTH)
             switchProgress()
         }
     }
@@ -294,7 +293,7 @@ class SearchPage :
         pageNumber: Int,
     ) {
         val recyclerView = getRecyclerView()
-        recyclerView.pullable!!.cancelBusyState()
+        recyclerView.pullable.cancelBusyState()
         val adapter = getAdapter()
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (pageNumber == 0 && postItems.isNullOrEmpty()) {
@@ -349,7 +348,7 @@ class SearchPage :
     }
 
     override fun onReadSearchFail(errorItem: ErrorItem) {
-        getRecyclerView().pullable!!.cancelBusyState()
+        getRecyclerView().pullable.cancelBusyState()
         if (getAdapter().itemCount == 0) {
             switchError(errorItem)
         } else {

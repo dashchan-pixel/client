@@ -88,7 +88,7 @@ abstract class ListPage :
     private var lifecycleRegistry: LifecycleRegistry? = null
     private lateinit var recyclerView: PaddedRecyclerView
     private var listPosition: ListPosition? = null
-    protected var uiManager: UiManager? = null
+    protected lateinit var uiManager: UiManager
         private set
     private var retainableExtra: Retainable? = null
     private var parcelableExtra: Parcelable? = null
@@ -101,7 +101,7 @@ abstract class ListPage :
         fragment: Fragment,
         recyclerView: PaddedRecyclerView,
         listPosition: ListPosition?,
-        uiManager: UiManager?,
+        uiManager: UiManager,
         retainableExtra: Retainable?,
         parcelableExtra: Parcelable?,
         initRequest: InitRequest?,
