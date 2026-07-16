@@ -126,8 +126,8 @@ class DialogUnit internal constructor(
             }
         }
 
-        internal var attachmentDialog: Pair<AttachmentDialog?, Dialog?>? = null
-        internal var postContextMenu: Pair<PostNumber?, Dialog?>? = null
+        internal var attachmentDialog: Pair<AttachmentDialog, Dialog>? = null
+        internal var postContextMenu: Pair<PostNumber, Dialog>? = null
 
         fun collectState(): State {
             val factories = ArrayList<DialogProvider.Factory<*>>()
@@ -1014,12 +1014,12 @@ class DialogUnit internal constructor(
     fun closeDialogs(stackInstance: StackInstance) {
         val postContextMenu = stackInstance.postContextMenu
         if (postContextMenu != null) {
-            postContextMenu.second!!.dismiss()
+            postContextMenu.second.dismiss()
             stackInstance.postContextMenu = null
         }
         val attachmentDialog = stackInstance.attachmentDialog
         if (attachmentDialog != null) {
-            attachmentDialog.second!!.dismiss()
+            attachmentDialog.second.dismiss()
             stackInstance.attachmentDialog = null
         }
         stackInstance.dialogStack.clear()
@@ -1248,7 +1248,7 @@ class DialogUnit internal constructor(
         val dialog = Dialog(context, R.style.Theme_Gallery)
         val styledContext = dialog.getContext()
         val attachmentDialog =
-            Pair<AttachmentDialog?, Dialog?>(
+            Pair<AttachmentDialog, Dialog>(
                 AttachmentDialog(
                     attachmentItems,
                     startImageIndex,
@@ -1430,7 +1430,7 @@ class DialogUnit internal constructor(
             }
         val previousAttachmentDialog = configurationSet.stackInstance!!.attachmentDialog
         if (previousAttachmentDialog != null) {
-            previousAttachmentDialog.second!!.dismiss()
+            previousAttachmentDialog.second.dismiss()
             configurationSet.stackInstance.attachmentDialog = null
         }
         configurationSet.stackInstance.attachmentDialog = attachmentDialog
@@ -1519,17 +1519,17 @@ class DialogUnit internal constructor(
 
     fun handlePostContextMenu(
         configurationSet: ConfigurationSet,
-        postNumber: PostNumber?,
+        postNumber: PostNumber,
         show: Boolean,
-        dialog: AlertDialog?,
+        dialog: AlertDialog,
     ) {
         val stackInstance = configurationSet.stackInstance!!
         if (show) {
             val postContextMenu = stackInstance.postContextMenu
             if (postContextMenu != null) {
-                postContextMenu.second!!.dismiss()
+                postContextMenu.second.dismiss()
             }
-            stackInstance.postContextMenu = Pair<PostNumber?, Dialog?>(postNumber, dialog)
+            stackInstance.postContextMenu = Pair<PostNumber, Dialog>(postNumber, dialog)
         } else {
             val postContextMenu = stackInstance.postContextMenu
             if (postContextMenu != null && postContextMenu.second === dialog) {
