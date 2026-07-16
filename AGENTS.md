@@ -31,8 +31,15 @@ The J2K converter systematically inserted `!!` / non-null casts where Java handl
 
 - **Never delete a "dead" null check or silence a warning with `!!`** without recovering the original Java and matching its semantics. `!!` *is* correct where the Java dereferenced unconditionally.
 - **The `!!` de-noising campaign is ongoing** (~3,079 left by J2K, clustering on a few hundred nullable field *declarations* — fix the declaration and use sites collapse, compiler-proven). `scripts/hot-nullables.sh` ranks declarations by `!!` pressure.
+- **The cheap wins are gone** (slices A–R, ~3,079 → ~1,380). The early slices retired dozens of `!!` per declaration; the ranking now tops out around 60 and falls into single digits, spread across ~170 files. What remains is per-site work, and a growing share of it is *correct* — expect later slices to land 20–40, not 200. **Raw `!!` count is no longer a good proxy for remaining work.**
 - **Decision rule:** a field null-checked *anywhere* (`if`, `?.`, `?:`) is an optional — keep it nullable, hoist `val x = this.x ?: return`. Only a field used *exclusively* through `!!` is a `lateinit` candidate. **Never turn an unguarded `x!!.foo()` into `x?.foo()`** — that hides a crash as a silent no-op.
+- **Useful tell:** when one call site of a method `!!`s an argument and a sibling site doesn't, the outlier is usually the J2K artifact. That's how `ThreadsPage`'s `applyFilter(query!!)` was caught — `ArchivePage` called the same nullable-accepting method clean.
 - Gotchas: `CommonUtils.toArray` returns **null for an empty collection**; `ChanConfiguration.getTitle()` is nullable by design.
+
+**Out of scope — do not "fix":**
+
+- `chan/content/model/Post.kt` (56 `!!`, the hottest file in `chan/`) is **done**. It is a two-state class — `builder` XOR `postNumberCompat`, one per constructor — and the Java dereferenced `builder` unguarded in every accessor; only `getPostNumber()` branches. Every `!!` is faithful. It will keep topping the count; leave it. Rewriting those into `?.` would silently change `@Public` ABI behaviour.
+- More generally, `chan/` was swept in slice K and its residue is largely load-bearing. New effort belongs in `com/mishiranu/dashchan/`.
 
 ## Lint & inspections
 
