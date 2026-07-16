@@ -1466,6 +1466,41 @@ object Preferences {
                 .close()
         }
 
+    const val KEY_THEME_NIGHT: String = "theme_night"
+
+    // The theme used while the OS reports night mode, but only when [isThemeFollowSystem].
+    // Null until the user picks one; ThemeEngine then falls back to [theme].
+    @JvmStatic
+    var themeNight: String?
+        get() =
+            prefs.getString(
+                KEY_THEME_NIGHT,
+                null,
+            )
+        set(value) {
+            prefs
+                .edit()
+                .put(KEY_THEME_NIGHT, value)
+                .close()
+        }
+
+    const val KEY_THEME_FOLLOW_SYSTEM: String = "theme_follow_system"
+    const val DEFAULT_THEME_FOLLOW_SYSTEM: Boolean = false
+
+    @JvmStatic
+    var isThemeFollowSystem: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_THEME_FOLLOW_SYSTEM,
+                DEFAULT_THEME_FOLLOW_SYSTEM,
+            )
+        set(value) {
+            prefs
+                .edit()
+                .put(KEY_THEME_FOLLOW_SYSTEM, value)
+                .close()
+        }
+
     const val KEY_THREADS_VIEW: String = "threads_view"
     val DEFAULT_THREADS_VIEW: ThreadsView = ThreadsView.CARDS
 

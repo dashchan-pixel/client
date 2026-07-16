@@ -5,6 +5,7 @@ import android.app.ActivityManager.TaskDescription
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.ContextThemeWrapper
@@ -809,6 +810,27 @@ class ThemeEngine {
         @JvmStatic
         fun attach(baseContext: Context?): Context = ThemeContext(baseContext)
 
+        /**
+         * Assigns [name] to whichever of the day/night slots is currently in effect, so that
+         * picking a theme always changes the one the user is looking at.
+         */
+        @JvmStatic
+        fun setCurrentTheme(
+            context: Context,
+            name: String,
+        ) {
+            if (Preferences.isThemeFollowSystem && isNightMode(context)) {
+                Preferences.themeNight = name
+            } else {
+                Preferences.theme = name
+            }
+        }
+
+        @JvmStatic
+        fun isNightMode(context: Context): Boolean =
+            context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                Configuration.UI_MODE_NIGHT_YES
+
         @JvmStatic
         fun applyTheme(context: Context) {
             val themeContext: ThemeContext = requireThemeContext(context)
@@ -823,6 +845,11 @@ class ThemeEngine {
                         .iterator()
                         .next()
                 Preferences.theme = theme.name
+            }
+            if (Preferences.isThemeFollowSystem && isNightMode(context)) {
+                // The night theme is optional and may name a since-deleted theme:
+                // fall back to the day theme rather than resetting the preference.
+                theme = themes[Preferences.themeNight] ?: theme
             }
             themeContext.engineTheme = theme
             context.setTheme(theme.base!!.resId)

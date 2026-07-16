@@ -111,6 +111,8 @@
 	<string name="cyclical_threads_refresh_mode">Cyclical threads refresh mode</string>
 	<string name="database">Database</string>
 	<string name="date_created">Date created</string>
+	<string name="day_and_night_theme">Day and night theme</string>
+	<string name="day_theme">Day theme</string>
 	<string name="ddos_protection_bypass_failed">DDoS-protection bypass failed</string>
 	<string name="default_name_cant_be_hidden">Default name can\'t be hidden</string>
 	<string name="default_starting_board">Default starting board</string>
@@ -173,6 +175,8 @@
 	<string name="find_in_file_names">Find in file names</string>
 	<string name="find_in_names">Find in names</string>
 	<string name="find_in_subjects">Find in subjects</string>
+	<string name="follow_system_day_night">Follow system day/night</string>
+	<string name="follow_system_day_night__summary">Use separate day and night themes, switching with the system setting</string>
 	<string name="firewall_block__format_sentence">%s has blocked your IP address. Enter the captcha to pass
 		the verification.</string>
 	<string name="flags_are_enabled">Flags are enabled</string>
@@ -269,6 +273,7 @@
 	<string name="new_post">New post</string>
 	<string name="new_rule">New rule</string>
 	<string name="new_thread">New thread</string>
+	<string name="night_theme">Night theme</string>
 	<string name="no_access">No access</string>
 	<string name="no_access_to_memory">No access to memory</string>
 	<string name="no_available_updates">No available updates</string>

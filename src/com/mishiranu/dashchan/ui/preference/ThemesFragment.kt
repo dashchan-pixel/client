@@ -32,6 +32,7 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.FragmentHandler
+import com.mishiranu.dashchan.ui.preference.core.CheckPreference
 import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.IOUtils
@@ -61,21 +62,28 @@ class ThemesFragment : BaseListFragment() {
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.themes), null)
         val recyclerView = getRecyclerView()!!
         recyclerView.adapter =
-            Adapter(recyclerView.context) { theme, installed, longClick ->
-                if (longClick) {
-                    val json: String
-                    try {
-                        json = theme.toJsonObject().toString(4)
-                    } catch (e: JSONException) {
-                        throw RuntimeException(e)
+            Adapter(
+                recyclerView.context,
+                object : Adapter.Callback {
+                    override fun onThemeClick(
+                        theme: ThemeEngine.Theme,
+                        installed: Boolean,
+                        longClick: Boolean,
+                    ): Boolean {
+                        if (longClick) {
+                            showContextMenu(theme, installed)
+                        } else {
+                            installTheme(theme, installed)
+                        }
+                        return true
                     }
-                    ContextMenuDialog(theme.name, json, installed && !theme.builtIn)
-                        .show(childFragmentManager, ContextMenuDialog::class.java.name)
-                } else {
-                    installTheme(theme, installed)
-                }
-                true
-            }
+
+                    override fun onFollowSystemClick(): Boolean {
+                        toggleFollowSystem()
+                        return true
+                    }
+                },
+            )
         updateThemes()
 
         val viewModel = ViewModelProvider(this).get(ThemesViewModel::class.java)
@@ -205,6 +213,7 @@ class ThemesFragment : BaseListFragment() {
 
     private fun updateThemes() {
         val listItems = ArrayList<ListItem>()
+        listItems.add(ListItem(null, false, null, true))
         var installedAdded = false
         for (theme in ThemeEngine.getThemes()) {
             if (!theme.builtIn && !installedAdded) {
@@ -232,7 +241,24 @@ class ThemesFragment : BaseListFragment() {
         }
         val adapter = getRecyclerView()!!.adapter as Adapter
         adapter.listItems = listItems
+        adapter.followSystem = Preferences.isThemeFollowSystem
+        adapter.dayThemeName = Preferences.theme
+        adapter.nightThemeName = Preferences.themeNight
         adapter.notifyDataSetChanged()
+    }
+
+    private fun showContextMenu(
+        theme: ThemeEngine.Theme,
+        installed: Boolean,
+    ) {
+        val json: String
+        try {
+            json = theme.toJsonObject().toString(4)
+        } catch (e: JSONException) {
+            throw RuntimeException(e)
+        }
+        ContextMenuDialog(theme.name, json, installed && !theme.builtIn)
+            .show(childFragmentManager, ContextMenuDialog::class.java.name)
     }
 
     private fun installTheme(
@@ -247,16 +273,65 @@ class ThemesFragment : BaseListFragment() {
                 return
             }
         }
-        if (!installed || theme.name != Preferences.theme) {
-            Preferences.theme = theme.name
+        if (Preferences.isThemeFollowSystem) {
+            // Two slots to fill, so the tap alone is ambiguous: let the user say which.
+            SelectSlotDialog(theme.name, !installed)
+                .show(childFragmentManager, SelectSlotDialog::class.java.name)
+        } else {
+            selectTheme(theme.name, false, !installed)
+        }
+    }
+
+    internal fun selectTheme(
+        name: String,
+        night: Boolean,
+        force: Boolean,
+    ) {
+        val current = if (night) Preferences.themeNight else Preferences.theme
+        if (force || name != current) {
+            if (night) {
+                Preferences.themeNight = name
+            } else {
+                Preferences.theme = name
+            }
+            // Recreate only when the slot just changed is the one currently in effect;
+            // otherwise a list refresh is enough to move the Day/Night label.
+            val inEffect =
+                !Preferences.isThemeFollowSystem || night == ThemeEngine.isNightMode(requireContext())
+            if (inEffect) {
+                requireActivity().recreate()
+            } else {
+                updateThemes()
+            }
+        }
+    }
+
+    private fun toggleFollowSystem() {
+        val enabled = !Preferences.isThemeFollowSystem
+        Preferences.isThemeFollowSystem = enabled
+        if (enabled && Preferences.themeNight == null) {
+            // Without a night theme the switch would be a no-op, which reads as broken.
+            // Seed it with the first dark theme so enabling it does something visible.
+            val darkTheme = ThemeEngine.getThemes().firstOrNull { it.base == ThemeEngine.Theme.Base.DARK }
+            if (darkTheme != null) {
+                Preferences.themeNight = darkTheme.name
+            }
+        }
+        if (ThemeEngine.isNightMode(requireContext())) {
             requireActivity().recreate()
+        } else {
+            updateThemes()
         }
     }
 
     internal fun deleteTheme(name: String) {
         if (ThemeEngine.deleteTheme(name)) {
+            val wasNight = name == Preferences.themeNight
+            if (wasNight) {
+                Preferences.themeNight = null
+            }
             updateThemes()
-            if (name == Preferences.theme) {
+            if (name == Preferences.theme || wasNight) {
                 requireActivity().recreate()
             }
         }
@@ -266,21 +341,24 @@ class ThemesFragment : BaseListFragment() {
         val theme: ThemeEngine.Theme?,
         val installed: Boolean,
         val title: String?,
+        val followSystemCheck: Boolean = false,
     )
 
     private class Adapter(
-        context: Context,
+        private val context: Context,
         private val callback: Callback,
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>(),
         ListViewUtils.ClickCallback<Unit, RecyclerView.ViewHolder> {
-        private enum class ViewType { ITEM, HEADER }
+        private enum class ViewType { ITEM, HEADER, CHECK }
 
-        fun interface Callback {
+        interface Callback {
             fun onThemeClick(
                 theme: ThemeEngine.Theme,
                 installed: Boolean,
                 longClick: Boolean,
             ): Boolean
+
+            fun onFollowSystemClick(): Boolean
         }
 
         private class ItemViewHolder(
@@ -288,35 +366,56 @@ class ThemesFragment : BaseListFragment() {
         ) : RecyclerView.ViewHolder(holder.view) {
             init {
                 ViewUtils.setSelectableItemBackground(itemView)
-                holder.summary!!.visibility = View.GONE
+            }
+        }
+
+        private class CheckViewHolder(
+            val holder: CheckPreference.CheckViewHolder,
+        ) : RecyclerView.ViewHolder(holder.view) {
+            init {
+                ViewUtils.setSelectableItemBackground(itemView)
             }
         }
 
         private val iconPreference: Preference.Runtime<Any?> =
             Preference.Runtime(context, "", null, "title") { null }
 
+        private val followSystemPreference =
+            CheckPreference(
+                context,
+                Preferences.KEY_THEME_FOLLOW_SYSTEM,
+                Preferences.DEFAULT_THEME_FOLLOW_SYSTEM,
+                context.getString(R.string.follow_system_day_night),
+                context.getString(R.string.follow_system_day_night__summary),
+            )
+
         internal var listItems: List<ListItem> = emptyList()
+        internal var followSystem: Boolean = false
+        internal var dayThemeName: String? = null
+        internal var nightThemeName: String? = null
 
         fun configureDivider(
             configuration: DividerItemDecoration.Configuration,
             position: Int,
         ): DividerItemDecoration.Configuration {
             val next = if (listItems.size > position + 1) listItems[position + 1] else null
-            return configuration.need(next != null && next.title != null)
+            return configuration.need(
+                listItems[position].followSystemCheck || (next != null && next.title != null),
+            )
         }
 
         override fun getItemCount(): Int = listItems.size
 
-        override fun getItemViewType(position: Int): Int =
-            (
-                if (listItems[position].title !=
-                    null
-                ) {
-                    ViewType.HEADER
-                } else {
-                    ViewType.ITEM
+        override fun getItemViewType(position: Int): Int {
+            val listItem = listItems[position]
+            return (
+                when {
+                    listItem.followSystemCheck -> ViewType.CHECK
+                    listItem.title != null -> ViewType.HEADER
+                    else -> ViewType.ITEM
                 }
             ).ordinal
+        }
 
         override fun onItemClick(
             holder: RecyclerView.ViewHolder,
@@ -325,6 +424,9 @@ class ThemesFragment : BaseListFragment() {
             longClick: Boolean,
         ): Boolean {
             val listItem = listItems[position]
+            if (listItem.followSystemCheck) {
+                return !longClick && callback.onFollowSystemClick()
+            }
             return callback.onThemeClick(listItem.theme!!, listItem.installed, longClick)
         }
 
@@ -345,6 +447,15 @@ class ThemesFragment : BaseListFragment() {
                 ViewType.HEADER -> {
                     SimpleViewHolder(ViewFactory.makeListTextHeader(parent))
                 }
+
+                ViewType.CHECK -> {
+                    ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
+                        CheckViewHolder(followSystemPreference.createViewHolder(parent)),
+                        true,
+                        null,
+                        this,
+                    )
+                }
             }
 
         override fun onBindViewHolder(
@@ -355,14 +466,71 @@ class ThemesFragment : BaseListFragment() {
             when (ViewType.values()[holder.itemViewType]) {
                 ViewType.ITEM -> {
                     val viewHolder = (holder as ItemViewHolder).holder
-                    viewHolder.icon!!.setImageDrawable(listItem.theme!!.createThemeChoiceDrawable())
-                    viewHolder.title!!.text = listItem.theme.name
+                    val theme = listItem.theme!!
+                    viewHolder.icon!!.setImageDrawable(theme.createThemeChoiceDrawable())
+                    viewHolder.title!!.text = theme.name
+                    val summary = getSlotSummary(theme, listItem.installed)
+                    viewHolder.summary!!.text = summary
+                    viewHolder.summary.visibility = if (summary != null) View.VISIBLE else View.GONE
                 }
 
                 ViewType.HEADER -> {
                     (holder.itemView as TextView).text = listItem.title
                 }
+
+                ViewType.CHECK -> {
+                    followSystemPreference.value = followSystem
+                    followSystemPreference.bindViewHolder((holder as CheckViewHolder).holder)
+                }
             }
+        }
+
+        // Which day/night slot a theme occupies -- only meaningful while the switch is on.
+        private fun getSlotSummary(
+            theme: ThemeEngine.Theme,
+            installed: Boolean,
+        ): CharSequence? {
+            if (!followSystem || !installed) {
+                return null
+            }
+            val day = theme.name == dayThemeName
+            val night = theme.name == nightThemeName
+            return when {
+                day && night -> context.getString(R.string.day_and_night_theme)
+                day -> context.getString(R.string.day_theme)
+                night -> context.getString(R.string.night_theme)
+                else -> null
+            }
+        }
+    }
+
+    class SelectSlotDialog : DialogFragment {
+        constructor()
+
+        constructor(name: String, force: Boolean) {
+            val args = Bundle()
+            args.putString(EXTRA_NAME, name)
+            args.putBoolean(EXTRA_FORCE, force)
+            arguments = args
+        }
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
+            val dialogMenu = DialogMenu(requireContext())
+            dialogMenu.add(R.string.day_theme) { select(false) }
+            dialogMenu.add(R.string.night_theme) { select(true) }
+            return dialogMenu.create()
+        }
+
+        private fun select(night: Boolean) {
+            val name = requireArguments().getString(EXTRA_NAME)!!
+            val force = requireArguments().getBoolean(EXTRA_FORCE)
+            val themesFragment = parentFragment as ThemesFragment
+            themesFragment.requireView().post { themesFragment.selectTheme(name, night, force) }
+        }
+
+        companion object {
+            private const val EXTRA_NAME = "name"
+            private const val EXTRA_FORCE = "force"
         }
     }
 

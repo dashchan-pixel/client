@@ -782,7 +782,7 @@ class MainActivity :
         ConcurrentUtils.HANDLER.post(
             Runnable {
                 if (addTheme(theme)) {
-                    Preferences.theme = theme.name
+                    ThemeEngine.setCurrentTheme(this, theme.name)
                     recreate()
                 }
             },
@@ -1936,7 +1936,7 @@ class MainActivity :
 
     override fun onThemeSelected(theme: ThemeEngine.Theme?) {
         if (theme != null) {
-            Preferences.theme = theme.name
+            ThemeEngine.setCurrentTheme(this, theme.name)
             recreate()
         } else {
             fragments.clear()
