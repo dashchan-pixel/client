@@ -231,7 +231,7 @@ class ViewUnit
                     PostState.THREAD_ITEM_STATES[i]
                         .predicate
                         .apply(stateData)
-                holder.stateImages!![i]!!.setVisibility(if (visible) View.VISIBLE else View.GONE)
+                holder.stateImages!![i].setVisibility(if (visible) View.VISIBLE else View.GONE)
             }
 
             val subject = postItem.getSubject()
@@ -433,7 +433,7 @@ class ViewUnit
                     PostState.POST_ITEM_STATES[i]
                         .predicate
                         .apply(stateData)
-                holder.stateImages[i]!!.setVisibility(if (visible) View.VISIBLE else View.GONE)
+                holder.stateImages[i].setVisibility(if (visible) View.VISIBLE else View.GONE)
             }
             viewHolder.itemView.setAlpha(if (postItem.isDeleted()) ALPHA_DELETED_POST else 1f)
 
@@ -984,7 +984,7 @@ class ViewUnit
                                         }
                                         // noinspection SuspiciousMethodCalls
                                         if (Arrays
-                                                .asList<ImageView?>(*holder.stateImages)
+                                                .asList<ImageView>(*holder.stateImages)
                                                 .contains(child)
                                         ) {
                                             type = TYPE_STATES
@@ -1029,7 +1029,7 @@ class ViewUnit
                                         TYPE_STATES -> {
                                             var i = 0
                                             while (i < PostState.POST_ITEM_STATES.size) {
-                                                if (holder.stateImages[i]!!.getVisibility() == View.VISIBLE) {
+                                                if (holder.stateImages[i].getVisibility() == View.VISIBLE) {
                                                     val postState = PostState.POST_ITEM_STATES[i]
                                                     val title =
                                                         postState.titleProvider
@@ -1326,7 +1326,7 @@ class ViewUnit
             val subject: TextView
             val comment: TextView
             val description: ThreadDescriptionView
-            val stateImages: Array<ImageView?>?
+            val stateImages: Array<ImageView>?
             val threadContent: View?
             val showOriginalPost: View?
 
@@ -1379,16 +1379,15 @@ class ViewUnit
                     stateImages = null
                     description.setToEnd(true)
                 } else {
-                    stateImages = arrayOfNulls(PostState.THREAD_ITEM_STATES.size)
-                    Companion.fillStateImages(
-                        showOriginalPost!!,
-                        if (threadViewType == ThreadViewType.CARD) 1 else 0,
-                        stateImages,
-                        PostState.THREAD_ITEM_STATES,
-                        0.5f,
-                        (if (threadViewType == ThreadViewType.CARD) descriptionSpacingDp else 0).toFloat(),
-                        (if (threadViewType == ThreadViewType.CARD) 0 else descriptionSpacingDp).toFloat(),
-                    )
+                    stateImages =
+                        Companion.createStateImages(
+                            showOriginalPost!!,
+                            if (threadViewType == ThreadViewType.CARD) 1 else 0,
+                            PostState.THREAD_ITEM_STATES,
+                            0.5f,
+                            (if (threadViewType == ThreadViewType.CARD) descriptionSpacingDp else 0).toFloat(),
+                            (if (threadViewType == ThreadViewType.CARD) 0 else descriptionSpacingDp).toFloat(),
+                        )
                     val thumbnailLayoutParams =
                         thumbnail.getLayoutParams() as MarginLayoutParams
                     applyScaleSize(textScale, comment, subject)
@@ -1543,7 +1542,7 @@ class ViewUnit
             var attachmentHolders: ArrayList<AttachmentHolder>? = null
             var attachmentViewCount: Int = 1
             var badgeImages: ArrayList<ImageView>? = null
-            val stateImages: Array<ImageView?> = arrayOfNulls(PostState.POST_ITEM_STATES.size)
+            val stateImages: Array<ImageView>
             val highlightBackgroundColor: Int
             val highlightUserPostBackgroundColor: Int
 
@@ -1567,15 +1566,15 @@ class ViewUnit
                 name = itemView.findViewById<TextView>(R.id.name)
                 index = itemView.findViewById<TextView>(R.id.index)
                 date = itemView.findViewById<TextView>(R.id.date)
-                fillStateImages(
-                    head,
-                    head.indexOfChild(number) + 1,
-                    stateImages,
-                    PostState.POST_ITEM_STATES,
-                    0f,
-                    0f,
-                    0f,
-                )
+                stateImages =
+                    createStateImages(
+                        head,
+                        head.indexOfChild(number) + 1,
+                        PostState.POST_ITEM_STATES,
+                        0f,
+                        0f,
+                        0f,
+                    )
                 fillVoting(voting, votingState, 0f, 0f, 0f)
                 votingState.bindArrayToView()
                 attachments = itemView.findViewById<ViewGroup>(R.id.attachments)
@@ -1993,15 +1992,14 @@ class ViewUnit
                 return cardView
             }
 
-            private fun fillStateImages(
+            private fun createStateImages(
                 parent: ViewGroup,
                 anchorIndex: Int,
-                images: Array<ImageView?>,
                 states: List<PostState>,
                 topDp: Float,
                 startDp: Float,
                 endDp: Float,
-            ) {
+            ): Array<ImageView> {
                 val density = obtainDensity(parent)
                 val size = (12f * density + 0.5f).toInt()
                 val top = (topDp * density + 0.5f).toInt()
@@ -2015,26 +2013,27 @@ class ViewUnit
                     attrs[i] = states[i].iconAttrResId
                 }
                 val typedArray = parent.getContext().obtainStyledAttributes(attrs)
-                for (i in images.indices) {
-                    val imageView = ImageView(parent.getContext())
-                    imageView.setImageDrawable(typedArray.getDrawable(i))
-                    parent.addView(imageView, anchorIndex + i, ViewGroup.LayoutParams(size, size))
-                    val layoutParams = imageView.getLayoutParams()
-                    if (layoutParams is MarginLayoutParams) {
-                        val marginLayoutParams = layoutParams
-                        marginLayoutParams.topMargin = top
-                        marginLayoutParams.leftMargin = left
-                        marginLayoutParams.rightMargin = right
+                val images =
+                    Array(states.size) { i ->
+                        val imageView = ImageView(parent.getContext())
+                        imageView.setImageDrawable(typedArray.getDrawable(i))
+                        parent.addView(imageView, anchorIndex + i, ViewGroup.LayoutParams(size, size))
+                        val layoutParams = imageView.getLayoutParams()
+                        if (layoutParams is MarginLayoutParams) {
+                            layoutParams.topMargin = top
+                            layoutParams.leftMargin = left
+                            layoutParams.rightMargin = right
+                        }
+                        imageView
                     }
-                    images[i] = imageView
-                }
                 typedArray.recycle()
-                if (images.size > 0) {
-                    val tint = ColorStateList.valueOf(getTheme(images[0]!!.getContext()).meta)
+                if (images.isNotEmpty()) {
+                    val tint = ColorStateList.valueOf(getTheme(images[0].getContext()).meta)
                     for (image in images) {
-                        image!!.setImageTintList(tint)
+                        image.setImageTintList(tint)
                     }
                 }
+                return images
             }
 
             private fun fillVoting(
