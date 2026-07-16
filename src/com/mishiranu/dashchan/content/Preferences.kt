@@ -2293,24 +2293,28 @@ object Preferences {
         }
     }
 
-    // The post context menu entry a right-to-left swipe on a post triggers. Entries the menu
-    // doesn't offer for a given post (voting on a board without votes, deleting a deleted post)
-    // simply don't fire -- InteractionUnit builds the same list the menu itself shows.
+    // The post context menu entry a right-to-left swipe on a post triggers. Only a subset of the
+    // menu is offered here; the rest stays long-press only. COPY and SHARE open their submenu
+    // just as the menu does, while COPY_TEXT..SHARE_LINK skip it and run the leaf directly.
+    // Entries the menu doesn't offer for a given post (reporting on a board that disallows it,
+    // copying the text of an empty post) simply don't fire -- InteractionUnit builds the same
+    // list the menu itself shows.
     enum class PostSwipeAction(
         value: String,
         titleResId: Int,
     ) {
         DISABLED("disabled", R.string.do_nothing),
         REPLY("reply", R.string.reply),
-        QUOTE("quote", R.string.quote__verb),
         COPY("copy", R.string.copy),
+        COPY_TEXT("copy_text", R.string.copy_text),
+        COPY_MARKUP("copy_markup", R.string.copy_markup),
+        COPY_LINK("copy_link", R.string.copy_link),
         SHARE("share", R.string.share),
+        SHARE_TEXT("share_text", R.string.share_text),
+        SHARE_LINK("share_link", R.string.share_link),
         HIDE("hide", R.string.hide),
         MY_POST("my_post", R.string.my_post),
         REPORT("report", R.string.report),
-        DELETE("delete", R.string.delete),
-        VOTE_LIKE("vote_like", R.string.vote_like),
-        VOTE_DISLIKE("vote_dislike", R.string.vote_dislike),
         ;
 
         val value: String

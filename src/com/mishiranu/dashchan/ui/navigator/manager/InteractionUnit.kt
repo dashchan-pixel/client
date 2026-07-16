@@ -254,6 +254,9 @@ class InteractionUnit internal constructor(
         val titleResId: Int,
         val checked: Boolean,
         val runnable: Runnable,
+        // Copy/share submenu leaves live in this list so a swipe can run one directly, but the
+        // top-level dialog must not show them -- it offers the submenu entry instead.
+        val inDialog: Boolean = true,
     )
 
     // Single source of truth for the post context menu: the dialog renders these entries and a
@@ -293,7 +296,7 @@ class InteractionUnit internal constructor(
         if (!c.postEmpty) {
             entries.add(
                 MenuEntry(
-                    PostSwipeAction.QUOTE,
+                    null,
                     MenuEntryKind.ITEM,
                     R.string.quote__verb,
                     false,
@@ -309,6 +312,34 @@ class InteractionUnit internal constructor(
                 ),
             )
         }
+    }
+
+    // Swipe-only mirror of one showPostCopyDialog/showPostShareDialog item, so a swipe can skip
+    // the submenu. Kept out of the dialog, which shows the submenu entry instead.
+    private fun addCopyShareLeaf(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+        action: PostSwipeAction,
+        titleResId: Int,
+        copyShareAction: PostCopyShareAction,
+    ) {
+        entries.add(
+            MenuEntry(
+                action,
+                MenuEntryKind.ITEM,
+                titleResId,
+                false,
+                Runnable {
+                    handlePostContextMenuCopy(
+                        c.context,
+                        c.configurationSet.chanName,
+                        c.postItem,
+                        copyShareAction,
+                    )
+                },
+                inDialog = false,
+            ),
+        )
     }
 
     // A post with no text has nothing to copy or share but its link.
@@ -348,6 +379,30 @@ class InteractionUnit internal constructor(
                 )
             },
         )
+        if (!c.postEmpty) {
+            // Matches showPostCopyDialog, which only exists for a post that has text.
+            addCopyShareLeaf(
+                entries,
+                c,
+                PostSwipeAction.COPY_TEXT,
+                R.string.copy_text,
+                PostCopyShareAction.COPY_TEXT,
+            )
+            addCopyShareLeaf(
+                entries,
+                c,
+                PostSwipeAction.COPY_MARKUP,
+                R.string.copy_markup,
+                PostCopyShareAction.COPY_MARKUP,
+            )
+        }
+        addCopyShareLeaf(
+            entries,
+            c,
+            PostSwipeAction.COPY_LINK,
+            R.string.copy_link,
+            PostCopyShareAction.COPY_LINK,
+        )
     }
 
     private fun addShareEntry(
@@ -386,6 +441,23 @@ class InteractionUnit internal constructor(
                 )
             },
         )
+        if (!c.postEmpty) {
+            // Matches showPostShareDialog, which only exists for a post that has text.
+            addCopyShareLeaf(
+                entries,
+                c,
+                PostSwipeAction.SHARE_TEXT,
+                R.string.share_text,
+                PostCopyShareAction.SHARE_TEXT,
+            )
+        }
+        addCopyShareLeaf(
+            entries,
+            c,
+            PostSwipeAction.SHARE_LINK,
+            R.string.share_link,
+            PostCopyShareAction.SHARE_LINK,
+        )
     }
 
     private fun addModerationEntries(
@@ -417,7 +489,7 @@ class InteractionUnit internal constructor(
         if (c.board.allowDeleting) {
             entries.add(
                 MenuEntry(
-                    PostSwipeAction.DELETE,
+                    null,
                     MenuEntryKind.ITEM,
                     R.string.delete,
                     false,
@@ -493,7 +565,7 @@ class InteractionUnit internal constructor(
         for (like in booleanArrayOf(true, false)) {
             entries.add(
                 MenuEntry(
-                    if (like) PostSwipeAction.VOTE_LIKE else PostSwipeAction.VOTE_DISLIKE,
+                    null,
                     MenuEntryKind.ITEM,
                     if (like) R.string.vote_like else R.string.vote_dislike,
                     false,
@@ -539,8 +611,8 @@ class InteractionUnit internal constructor(
 
     /**
      * Runs the post context menu entry bound to [action]. Returns whether an entry existed:
-     * a post the action doesn't apply to (voting where the board has no votes, deleting an
-     * already deleted post) simply does nothing.
+     * a post the action doesn't apply to (reporting where the board disallows it, hiding an
+     * already hidden post) simply does nothing.
      */
     fun performPostSwipeAction(
         configurationSet: ConfigurationSet,
@@ -563,6 +635,9 @@ class InteractionUnit internal constructor(
         val context = uiManager.context
         val dialogMenu = DialogMenu(context)
         for (entry in buildPostMenuEntries(configurationSet, postItem)) {
+            if (!entry.inDialog) {
+                continue
+            }
             when (entry.kind) {
                 MenuEntryKind.ITEM -> dialogMenu.add(entry.titleResId, entry.runnable)
                 MenuEntryKind.MORE -> dialogMenu.addMore(entry.titleResId, entry.runnable)
