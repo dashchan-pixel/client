@@ -161,6 +161,13 @@ class InterfaceFragment : PreferenceFragment() {
             R.string.display_post_icons,
             R.string.display_post_icons__summary,
         )
+        addList(
+            Preferences.KEY_POST_SWIPE_ACTION,
+            enumList(Preferences.PostSwipeAction.values()) { o -> o.value },
+            Preferences.DEFAULT_POST_SWIPE_ACTION.value,
+            R.string.post_swipe_action,
+            enumResList(Preferences.PostSwipeAction.values()) { o -> o.titleResId },
+        )
         addCheck(
             true,
             Preferences.KEY_SHOW_IMPORTANT_POSTS_ON_FASTSCROLL_BAR,

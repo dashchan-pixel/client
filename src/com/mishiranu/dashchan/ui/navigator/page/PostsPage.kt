@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.DialogInterface.OnMultiChoiceClickListener
 import android.content.res.ColorStateList
+import android.graphics.Canvas
 import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
@@ -25,6 +26,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
@@ -112,6 +114,7 @@ import java.io.IOException
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.Locale
+import kotlin.math.abs
 
 class PostsPage :
     ListPage(),
@@ -400,6 +403,7 @@ class PostsPage :
         val context: Context = context
         val recyclerView = getRecyclerView()
         recyclerView.setLayoutManager(PostsLayoutManager(recyclerView.getContext()))
+        setupSwipeAction(recyclerView)
         val page = getPage()
         uiManager.view().bindThreadsPostRecyclerView(recyclerView)
         val density = obtainDensity(context)
@@ -730,6 +734,81 @@ class PostsPage :
         }
         uiManager.interaction().handlePostContextMenu(this.adapter.configurationSet, postItem!!)
         return true
+    }
+
+    /**
+     * Right-to-left swipe on a post runs the context menu entry chosen in the preferences.
+     * The preference is read per gesture rather than at setup, so changing it takes effect
+     * without reopening the thread.
+     */
+    private fun setupSwipeAction(recyclerView: RecyclerView) {
+        val callback =
+            object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+                override fun getSwipeDirs(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                ): Int {
+                    val position = viewHolder.bindingAdapterPosition
+                    return if (Preferences.postSwipeAction == Preferences.PostSwipeAction.DISABLED ||
+                        selectionMode != null ||
+                        position == RecyclerView.NO_POSITION
+                    ) {
+                        0
+                    } else {
+                        super.getSwipeDirs(recyclerView, viewHolder)
+                    }
+                }
+
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder,
+                ): Boolean = false
+
+                override fun onSwiped(
+                    viewHolder: RecyclerView.ViewHolder,
+                    direction: Int,
+                ) {
+                    val adapter = this@PostsPage.adapter
+                    val position = viewHolder.bindingAdapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        uiManager.interaction().performPostSwipeAction(
+                            adapter.configurationSet,
+                            adapter.getItem(position),
+                            Preferences.postSwipeAction,
+                        )
+                        // Nothing is being removed, so rebind to undo the swipe-away: without
+                        // this the row stays translated off-screen.
+                        adapter.notifyItemChanged(position)
+                    }
+                }
+
+                override fun onChildDraw(
+                    c: Canvas,
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    dX: Float,
+                    dY: Float,
+                    actionState: Int,
+                    isCurrentlyActive: Boolean,
+                ) {
+                    if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                        val itemView = viewHolder.itemView
+                        itemView.alpha = (1 - 1.5 * (abs(dX) / itemView.width)).toFloat()
+                    }
+                    super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                }
+
+                override fun clearView(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                ) {
+                    // Reset opacity or the view will still be transparent when reused.
+                    viewHolder.itemView.alpha = 1f
+                    super.clearView(recyclerView, viewHolder)
+                }
+            }
+        ItemTouchHelper(callback).attachToRecyclerView(recyclerView)
     }
 
     private fun setPostUserPost(

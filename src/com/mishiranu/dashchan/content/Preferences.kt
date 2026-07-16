@@ -2293,6 +2293,52 @@ object Preferences {
         }
     }
 
+    // The post context menu entry a right-to-left swipe on a post triggers. Entries the menu
+    // doesn't offer for a given post (voting on a board without votes, deleting a deleted post)
+    // simply don't fire -- InteractionUnit builds the same list the menu itself shows.
+    enum class PostSwipeAction(
+        value: String,
+        titleResId: Int,
+    ) {
+        DISABLED("disabled", R.string.do_nothing),
+        REPLY("reply", R.string.reply),
+        QUOTE("quote", R.string.quote__verb),
+        COPY("copy", R.string.copy),
+        SHARE("share", R.string.share),
+        HIDE("hide", R.string.hide),
+        MY_POST("my_post", R.string.my_post),
+        REPORT("report", R.string.report),
+        DELETE("delete", R.string.delete),
+        VOTE_LIKE("vote_like", R.string.vote_like),
+        VOTE_DISLIKE("vote_dislike", R.string.vote_dislike),
+        ;
+
+        val value: String
+        val titleResId: Int
+
+        init {
+            this.value = value
+            this.titleResId = titleResId
+        }
+
+        companion object {
+            internal val VALUE_PROVIDER = EnumValueProvider<PostSwipeAction> { o -> o?.value }
+        }
+    }
+
+    const val KEY_POST_SWIPE_ACTION: String = "post_swipe_action"
+    val DEFAULT_POST_SWIPE_ACTION: PostSwipeAction = PostSwipeAction.REPLY
+
+    @JvmStatic
+    val postSwipeAction: PostSwipeAction
+        get() =
+            getEnumValue(
+                KEY_POST_SWIPE_ACTION,
+                PostSwipeAction.entries.toTypedArray(),
+                DEFAULT_POST_SWIPE_ACTION,
+                PostSwipeAction.VALUE_PROVIDER,
+            )!!
+
     enum class VideoCompletionMode(
         value: String,
         titleResId: Int,

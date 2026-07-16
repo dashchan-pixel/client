@@ -9,6 +9,7 @@ import android.text.Spanned
 import android.view.ContextThemeWrapper
 import android.view.View
 import androidx.fragment.app.FragmentManager
+import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getPreferred
 import chan.content.ChanConfiguration
@@ -17,6 +18,7 @@ import chan.util.StringUtils
 import chan.util.StringUtils.copyToClipboard
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences.HighlightUnreadMode
+import com.mishiranu.dashchan.content.Preferences.PostSwipeAction
 import com.mishiranu.dashchan.content.Preferences.highlightUnreadMode
 import com.mishiranu.dashchan.content.Preferences.isUseInternalBrowser
 import com.mishiranu.dashchan.content.model.AttachmentItem
@@ -244,176 +246,329 @@ class InteractionUnit internal constructor(
         }
     }
 
+    private enum class MenuEntryKind { ITEM, MORE, CHECK }
+
+    private class MenuEntry(
+        val action: PostSwipeAction?,
+        val kind: MenuEntryKind,
+        val titleResId: Int,
+        val checked: Boolean,
+        val runnable: Runnable,
+    )
+
+    // Single source of truth for the post context menu: the dialog renders these entries and a
+    // swipe looks one up by action, so the gesture can never fire something the menu itself
+    // wouldn't offer for this post. Entries with a null action are dialog-only.
+    // The context every post menu entry is derived from, so the per-group builders below can
+    // stay short enough to read.
+    private class PostMenuContext(
+        val configurationSet: ConfigurationSet,
+        val postItem: PostItem,
+        val chan: Chan,
+        val board: ChanConfiguration.Board,
+        val context: Context,
+        val postEmpty: Boolean,
+        val userPost: Boolean,
+    )
+
+    private fun addReplyEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        val replyable = c.configurationSet.replyable
+        if (replyable == null || !replyable.onRequestReply(false)) {
+            return
+        }
+        entries.add(
+            MenuEntry(
+                PostSwipeAction.REPLY,
+                MenuEntryKind.ITEM,
+                R.string.reply,
+                false,
+                Runnable {
+                    replyable.onRequestReply(true, ReplyData(c.postItem.getPostNumber(), null))
+                },
+            ),
+        )
+        if (!c.postEmpty) {
+            entries.add(
+                MenuEntry(
+                    PostSwipeAction.QUOTE,
+                    MenuEntryKind.ITEM,
+                    R.string.quote__verb,
+                    false,
+                    Runnable {
+                        replyable.onRequestReply(
+                            true,
+                            ReplyData(
+                                c.postItem.getPostNumber(),
+                                getCopyReadyComment(c.postItem.getComment(c.chan)),
+                            ),
+                        )
+                    },
+                ),
+            )
+        }
+    }
+
+    // A post with no text has nothing to copy or share but its link.
+    private fun addCopyEntry(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        entries.add(
+            if (!c.postEmpty) {
+                MenuEntry(
+                    PostSwipeAction.COPY,
+                    MenuEntryKind.MORE,
+                    R.string.copy,
+                    false,
+                    Runnable {
+                        showPostCopyDialog(
+                            c.configurationSet.fragmentManager!!,
+                            c.configurationSet.chanName,
+                            c.postItem,
+                        )
+                    },
+                )
+            } else {
+                MenuEntry(
+                    PostSwipeAction.COPY,
+                    MenuEntryKind.ITEM,
+                    R.string.copy_link,
+                    false,
+                    Runnable {
+                        handlePostContextMenuCopy(
+                            c.context,
+                            c.configurationSet.chanName,
+                            c.postItem,
+                            PostCopyShareAction.COPY_LINK,
+                        )
+                    },
+                )
+            },
+        )
+    }
+
+    private fun addShareEntry(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        entries.add(
+            if (!c.postEmpty) {
+                MenuEntry(
+                    PostSwipeAction.SHARE,
+                    MenuEntryKind.MORE,
+                    R.string.share,
+                    false,
+                    Runnable {
+                        showPostShareDialog(
+                            c.configurationSet.fragmentManager!!,
+                            c.configurationSet.chanName,
+                            c.postItem,
+                        )
+                    },
+                )
+            } else {
+                MenuEntry(
+                    PostSwipeAction.SHARE,
+                    MenuEntryKind.ITEM,
+                    R.string.share_link,
+                    false,
+                    Runnable {
+                        handlePostContextMenuCopy(
+                            c.context,
+                            c.configurationSet.chanName,
+                            c.postItem,
+                            PostCopyShareAction.SHARE_LINK,
+                        )
+                    },
+                )
+            },
+        )
+    }
+
+    private fun addModerationEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        if (c.postItem.isDeleted()) {
+            return
+        }
+        if (c.board.allowReporting) {
+            entries.add(
+                MenuEntry(
+                    PostSwipeAction.REPORT,
+                    MenuEntryKind.ITEM,
+                    R.string.report,
+                    false,
+                    Runnable {
+                        uiManager.dialog().performSendReportPosts(
+                            c.configurationSet.fragmentManager!!,
+                            c.chan.name,
+                            c.postItem.getBoardName(),
+                            c.postItem.getThreadNumber(),
+                            listOf(c.postItem.getPostNumber()),
+                        )
+                    },
+                ),
+            )
+        }
+        if (c.board.allowDeleting) {
+            entries.add(
+                MenuEntry(
+                    PostSwipeAction.DELETE,
+                    MenuEntryKind.ITEM,
+                    R.string.delete,
+                    false,
+                    Runnable {
+                        uiManager.dialog().performSendDeletePosts(
+                            c.configurationSet.fragmentManager!!,
+                            c.chan.name,
+                            c.postItem.getBoardName(),
+                            c.postItem.getThreadNumber(),
+                            listOf(c.postItem.getPostNumber()),
+                        )
+                    },
+                ),
+            )
+        }
+    }
+
+    private fun addPostStateEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        if (c.configurationSet.allowMyMarkEdit) {
+            entries.add(
+                MenuEntry(
+                    PostSwipeAction.MY_POST,
+                    MenuEntryKind.CHECK,
+                    R.string.my_post,
+                    c.userPost,
+                    Runnable {
+                        uiManager.sendPostItemMessage(
+                            c.postItem,
+                            UiManager.Message.PERFORM_SWITCH_USER_MARK,
+                        )
+                    },
+                ),
+            )
+        }
+        if (c.configurationSet.isDialog && c.configurationSet.allowGoToPost) {
+            entries.add(
+                MenuEntry(
+                    null,
+                    MenuEntryKind.ITEM,
+                    R.string.go_to_post,
+                    false,
+                    Runnable {
+                        uiManager.sendPostItemMessage(c.postItem, UiManager.Message.PERFORM_GO_TO_POST)
+                    },
+                ),
+            )
+        }
+        if (c.configurationSet.allowHiding && !c.postItem.getHideState().hidden) {
+            entries.add(
+                MenuEntry(
+                    PostSwipeAction.HIDE,
+                    MenuEntryKind.MORE,
+                    R.string.hide,
+                    false,
+                    Runnable {
+                        showPostHideDialog(c.configurationSet.fragmentManager!!, c.postItem)
+                    },
+                ),
+            )
+        }
+    }
+
+    private fun addVoteEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        if (!c.board.allowVotes) {
+            return
+        }
+        for (like in booleanArrayOf(true, false)) {
+            entries.add(
+                MenuEntry(
+                    if (like) PostSwipeAction.VOTE_LIKE else PostSwipeAction.VOTE_DISLIKE,
+                    MenuEntryKind.ITEM,
+                    if (like) R.string.vote_like else R.string.vote_dislike,
+                    false,
+                    Runnable {
+                        uiManager.dialog().performSendVotePost(
+                            c.configurationSet.fragmentManager!!,
+                            c.chan.name,
+                            c.postItem.getBoardName(),
+                            c.postItem.getThreadNumber(),
+                            c.postItem.getPostNumber(),
+                            like,
+                        )
+                    },
+                ),
+            )
+        }
+    }
+
+    private fun buildPostMenuEntries(
+        configurationSet: ConfigurationSet,
+        postItem: PostItem,
+    ): List<MenuEntry> {
+        val chan = get(configurationSet.chanName)
+        val menuContext =
+            PostMenuContext(
+                configurationSet,
+                postItem,
+                chan,
+                chan.configuration.safe().obtainBoard(postItem.getBoardName()),
+                uiManager.context,
+                StringUtils.isEmpty(postItem.getComment(chan).toString()),
+                configurationSet.postStateProvider.isUserPost(postItem.getPostNumber()),
+            )
+        val entries = ArrayList<MenuEntry>()
+        addReplyEntries(entries, menuContext)
+        addCopyEntry(entries, menuContext)
+        addShareEntry(entries, menuContext)
+        addModerationEntries(entries, menuContext)
+        addPostStateEntries(entries, menuContext)
+        addVoteEntries(entries, menuContext)
+        return entries
+    }
+
+    /**
+     * Runs the post context menu entry bound to [action]. Returns whether an entry existed:
+     * a post the action doesn't apply to (voting where the board has no votes, deleting an
+     * already deleted post) simply does nothing.
+     */
+    fun performPostSwipeAction(
+        configurationSet: ConfigurationSet,
+        postItem: PostItem,
+        action: PostSwipeAction,
+    ): Boolean {
+        if (action == PostSwipeAction.DISABLED) {
+            return false
+        }
+        val entry =
+            buildPostMenuEntries(configurationSet, postItem).firstOrNull { it.action == action }
+        entry?.runnable?.run()
+        return entry != null
+    }
+
     fun handlePostContextMenu(
         configurationSet: ConfigurationSet,
         postItem: PostItem,
     ) {
-        val chan = get(configurationSet.chanName)
         val context = uiManager.context
-        val board = chan.configuration.safe().obtainBoard(postItem.getBoardName())
-        val postEmpty: Boolean = StringUtils.isEmpty(postItem.getComment(chan).toString())
-        val copyText = !postEmpty
-        val shareText = !postEmpty
-        val userPost = configurationSet.postStateProvider.isUserPost(postItem.getPostNumber())
         val dialogMenu = DialogMenu(context)
-        if (configurationSet.replyable != null && configurationSet.replyable.onRequestReply(false)) {
-            dialogMenu.add(
-                R.string.reply,
-                Runnable {
-                    configurationSet.replyable
-                        .onRequestReply(true, ReplyData(postItem.getPostNumber(), null))
-                },
-            )
-            if (!postEmpty) {
-                dialogMenu.add(
-                    R.string.quote__verb,
-                    Runnable {
-                        configurationSet.replyable
-                            .onRequestReply(
-                                true,
-                                ReplyData(
-                                    postItem.getPostNumber(),
-                                    getCopyReadyComment(postItem.getComment(chan)),
-                                ),
-                            )
-                    },
-                )
+        for (entry in buildPostMenuEntries(configurationSet, postItem)) {
+            when (entry.kind) {
+                MenuEntryKind.ITEM -> dialogMenu.add(entry.titleResId, entry.runnable)
+                MenuEntryKind.MORE -> dialogMenu.addMore(entry.titleResId, entry.runnable)
+                MenuEntryKind.CHECK ->
+                    dialogMenu.addCheck(entry.titleResId, entry.checked, entry.runnable)
             }
-        }
-        if (copyText) {
-            dialogMenu.addMore(
-                R.string.copy,
-                Runnable {
-                    showPostCopyDialog(
-                        configurationSet.fragmentManager!!,
-                        configurationSet.chanName,
-                        postItem,
-                    )
-                },
-            )
-        } else {
-            dialogMenu.add(
-                R.string.copy_link,
-                Runnable {
-                    handlePostContextMenuCopy(
-                        context,
-                        configurationSet.chanName,
-                        postItem,
-                        PostCopyShareAction.COPY_LINK,
-                    )
-                },
-            )
-        }
-        if (shareText) {
-            dialogMenu.addMore(
-                R.string.share,
-                Runnable {
-                    showPostShareDialog(
-                        configurationSet.fragmentManager!!,
-                        configurationSet.chanName,
-                        postItem,
-                    )
-                },
-            )
-        } else {
-            dialogMenu.add(
-                R.string.share_link,
-                Runnable {
-                    handlePostContextMenuCopy(
-                        context,
-                        configurationSet.chanName,
-                        postItem,
-                        PostCopyShareAction.SHARE_LINK,
-                    )
-                },
-            )
-        }
-        if (!postItem.isDeleted()) {
-            if (board.allowReporting) {
-                dialogMenu.add(
-                    R.string.report,
-                    Runnable {
-                        uiManager
-                            .dialog()
-                            .performSendReportPosts(
-                                configurationSet.fragmentManager!!,
-                                chan.name,
-                                postItem.getBoardName(),
-                                postItem.getThreadNumber(),
-                                listOf(postItem.getPostNumber()),
-                            )
-                    },
-                )
-            }
-            if (board.allowDeleting) {
-                dialogMenu.add(
-                    R.string.delete,
-                    Runnable {
-                        uiManager
-                            .dialog()
-                            .performSendDeletePosts(
-                                configurationSet.fragmentManager!!,
-                                chan.name,
-                                postItem.getBoardName(),
-                                postItem.getThreadNumber(),
-                                listOf(postItem.getPostNumber()),
-                            )
-                    },
-                )
-            }
-        }
-        if (configurationSet.allowMyMarkEdit) {
-            dialogMenu.addCheck(
-                R.string.my_post,
-                userPost,
-                Runnable {
-                    uiManager
-                        .sendPostItemMessage(postItem, UiManager.Message.PERFORM_SWITCH_USER_MARK)
-                },
-            )
-        }
-        if (configurationSet.isDialog && configurationSet.allowGoToPost) {
-            dialogMenu.add(
-                R.string.go_to_post,
-                Runnable {
-                    uiManager
-                        .sendPostItemMessage(postItem, UiManager.Message.PERFORM_GO_TO_POST)
-                },
-            )
-        }
-        if (configurationSet.allowHiding && !postItem.getHideState().hidden) {
-            dialogMenu.addMore(
-                R.string.hide,
-                Runnable { showPostHideDialog(configurationSet.fragmentManager!!, postItem) },
-            )
-        }
-        if (board.allowVotes) {
-            dialogMenu.add(
-                R.string.vote_like,
-                Runnable {
-                    uiManager.dialog().performSendVotePost(
-                        configurationSet.fragmentManager!!,
-                        chan.name,
-                        postItem.getBoardName(),
-                        postItem.getThreadNumber(),
-                        postItem.getPostNumber(),
-                        true,
-                    )
-                },
-            )
-            dialogMenu.add(
-                R.string.vote_dislike,
-                Runnable {
-                    uiManager.dialog().performSendVotePost(
-                        configurationSet.fragmentManager!!,
-                        chan.name,
-                        postItem.getBoardName(),
-                        postItem.getThreadNumber(),
-                        postItem.getPostNumber(),
-                        false,
-                    )
-                },
-            )
         }
         val dialog = dialogMenu.create()
         uiManager
