@@ -48,7 +48,7 @@ class ChanManager private constructor() {
     // `extensions!![k] = v` would have compiled cleanly and thrown UnsupportedOperationException
     // at runtime. Every read of this field is read-only; the one call site that mutates
     // works on a LinkedHashMap copy.
-    private var extensions: Map<String?, Extension>? = null
+    private lateinit var extensions: Map<String?, Extension>
     private var sortedExtensionNames: MutableList<String?>? = null
     private var archiveMap: Map<String?, MutableList<String?>> = mutableMapOf()
 
@@ -273,7 +273,7 @@ class ChanManager private constructor() {
                         val chanExtension = isExtension(packageInfo, FEATURE_CHAN_EXTENSION)
                         val libExtension = isExtension(packageInfo, FEATURE_LIB_EXTENSION)
                         if (chanExtension) {
-                            val extensions = this.extensions!!
+                            val extensions = this.extensions
                             val newExtension: Extension? =
                                 loadExtension(
                                     packageInfo,
@@ -317,7 +317,7 @@ class ChanManager private constructor() {
                             }
                         }
                     } else if (Intent.ACTION_PACKAGE_REMOVED == intent.getAction()) {
-                        for (extension in extensions!!.values) {
+                        for (extension in extensions.values) {
                             if (packageName == extension.item.packageName) {
                                 if (extension.item.type == ExtensionItem.Type.CHAN) {
                                     if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
@@ -357,7 +357,7 @@ class ChanManager private constructor() {
         if (orderedChanNames == null) {
             orderedChanNames = mutableListOf<String?>()
         }
-        val extensions = LinkedHashMap(this.extensions!!)
+        val extensions = LinkedHashMap(this.extensions)
         if (newExtension != null) {
             extensions[newExtension.item.name] = newExtension
         }
@@ -426,7 +426,7 @@ class ChanManager private constructor() {
         extensionName: String?,
         trusted: Boolean,
     ) {
-        val extension = extensions!![extensionName]
+        val extension = extensions[extensionName]
         if (extension == null || extension.item.trustState != TrustState.UNTRUSTED) {
             return
         }
@@ -487,13 +487,9 @@ class ChanManager private constructor() {
         }
 
         fun consume(): Holder {
-            if (holder != null) {
-                val holder = this.holder
-                this.holder = null
-                return holder!!
-            } else {
-                error("You can't initiate instance of this object by yourself.")
-            }
+            val holder = this.holder ?: error("You can't initiate instance of this object by yourself.")
+            this.holder = null
+            return holder
         }
     }
 
@@ -538,13 +534,13 @@ class ChanManager private constructor() {
     val extensionItems: Iterable<ExtensionItem>
         get() =
             ExtensionsIterable(
-                extensions!!.values,
+                extensions.values,
                 FILTER_MAP_EXTENSION_ITEMS,
             )
 
     val firstUntrustedExtension: ExtensionItem?
         get() {
-            for (extension in extensions!!.values) {
+            for (extension in extensions.values) {
                 if (extension.item.trustState == TrustState.UNTRUSTED) {
                     return extension.item
                 }
@@ -553,7 +549,7 @@ class ChanManager private constructor() {
         }
 
     fun getLibraryExtension(libraryName: String?): ExtensionItem? {
-        val extension = extensions!![libraryName]
+        val extension = extensions[libraryName]
         return if (extension != null && extension.item.type == ExtensionItem.Type.LIBRARY) extension.item else null
     }
 
@@ -563,20 +559,20 @@ class ChanManager private constructor() {
     }
 
     fun isExistingChanName(chanName: String?): Boolean {
-        val extension = extensions!![chanName]
+        val extension = extensions[chanName]
         return extension != null && extension.item.type == ExtensionItem.Type.CHAN
     }
 
     val availableChans: Iterable<Chan>
         get() =
             ExtensionsIterable(
-                extensions!!.values,
+                extensions.values,
                 FILTER_MAP_AVAILABLE_CHAN_NAMES,
             )
 
     fun hasMultipleAvailableChans(): Boolean {
         var count = 0
-        for (extension in extensions!!.values) {
+        for (extension in extensions.values) {
             if (extension.chan != null && ++count >= 2) {
                 return true
             }
@@ -588,16 +584,16 @@ class ChanManager private constructor() {
         lhs: String?,
         rhs: String?,
     ): Int {
-        if (sortedExtensionNames == null) {
-            sortedExtensionNames =
-                Collections.unmodifiableList<String?>(ArrayList<String?>(extensions!!.keys))
-        }
-        return sortedExtensionNames!!.indexOf(lhs) - sortedExtensionNames!!.indexOf(rhs)
+        val names =
+            sortedExtensionNames ?: Collections
+                .unmodifiableList<String?>(ArrayList<String?>(extensions.keys))
+                .also { sortedExtensionNames = it }
+        return names.indexOf(lhs) - names.indexOf(rhs)
     }
 
     val defaultChan: Chan?
         get() {
-            for (extension in extensions!!.values) {
+            for (extension in extensions.values) {
                 if (extension.chan != null) {
                     return extension.chan
                 }
@@ -607,7 +603,7 @@ class ChanManager private constructor() {
 
     fun getChanNameByHost(host: String?): String? {
         if (host != null) {
-            for (extension in extensions!!.values) {
+            for (extension in extensions.values) {
                 if (extension.chan != null && extension.chan.locator.isChanHost(host)) {
                     return extension.item.name
                 }
@@ -634,7 +630,7 @@ class ChanManager private constructor() {
         newConfig: Configuration?,
         metrics: DisplayMetrics?,
     ) {
-        for (extension in extensions!!.values) {
+        for (extension in extensions.values) {
             if (extension.chan != null) {
                 extension.chan.configuration
                     .getResources()!!
@@ -644,7 +640,7 @@ class ChanManager private constructor() {
     }
 
     fun isExtensionPackage(packageName: String): Boolean {
-        for (extension in extensions!!.values) {
+        for (extension in extensions.values) {
             if (packageName == extension.item.packageName) {
                 return true
             }
@@ -673,7 +669,7 @@ class ChanManager private constructor() {
     }
 
     fun getChan(chanName: String?): Chan {
-        val extension = extensions!![chanName]
+        val extension = extensions[chanName]
         val chan = if (extension != null) extension.chan else null
         return if (chan != null) chan else fallbackChan
     }
@@ -1062,12 +1058,7 @@ class ChanManager private constructor() {
         private fun extractFingerprints(packageInfo: PackageInfo): Fingerprints {
             val fingerprints = HashSet<String>()
             val signatures: MutableList<Signature?>?
-            val signaturesArray =
-                if (packageInfo.signingInfo != null) {
-                    packageInfo.signingInfo!!.getApkContentsSigners()
-                } else {
-                    null
-                }
+            val signaturesArray = packageInfo.signingInfo?.getApkContentsSigners()
             signatures =
                 if (signaturesArray != null) Arrays.asList<Signature?>(*signaturesArray) else mutableListOf<Signature?>()
 

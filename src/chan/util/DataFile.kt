@@ -308,8 +308,9 @@ abstract class DataFile protected constructor(
                 resolution = resolveChild(resolution.documentUri, resolution.unresolvedPath!!)
                 this.resolution = resolution
             }
-            if (resolution.cursorExtra != null) {
-                throw IOException("Tree is not ready: " + resolution.cursorExtra!!.name)
+            val cursorExtra = resolution.cursorExtra
+            if (cursorExtra != null) {
+                throw IOException("Tree is not ready: " + cursorExtra.name)
             }
             val segments = resolution.unresolvedPath!!.split("/")
             var childDocumentUri = resolution.documentUri

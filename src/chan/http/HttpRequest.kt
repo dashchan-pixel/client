@@ -224,10 +224,9 @@ class HttpRequest {
 
     private fun addHeader(header: Pair<String?, String?>?): HttpRequest {
         if (header != null && header.first != null && header.second != null) {
-            if (headers == null) {
-                headers = ArrayList<Pair<String?, String?>?>()
-            }
-            headers!!.add(header)
+            val headers =
+                this.headers ?: ArrayList<Pair<String?, String?>?>().also { this.headers = it }
+            headers.add(header)
         }
         return this
     }
@@ -250,10 +249,8 @@ class HttpRequest {
         value: String?,
     ): HttpRequest {
         if (name != null && value != null) {
-            if (cookieBuilder == null) {
-                cookieBuilder = CookieBuilder()
-            }
-            cookieBuilder!!.append(name, value)
+            val cookieBuilder = this.cookieBuilder ?: CookieBuilder().also { this.cookieBuilder = it }
+            cookieBuilder.append(name, value)
         }
         return this
     }
@@ -261,10 +258,8 @@ class HttpRequest {
     @Public
     fun addCookie(cookie: String?): HttpRequest {
         if (cookie != null) {
-            if (cookieBuilder == null) {
-                cookieBuilder = CookieBuilder()
-            }
-            cookieBuilder!!.append(cookie)
+            val cookieBuilder = this.cookieBuilder ?: CookieBuilder().also { this.cookieBuilder = it }
+            cookieBuilder.append(cookie)
         }
         return this
     }
@@ -272,10 +267,8 @@ class HttpRequest {
     @Public
     fun addCookie(builder: CookieBuilder?): HttpRequest {
         if (builder != null) {
-            if (cookieBuilder == null) {
-                cookieBuilder = CookieBuilder()
-            }
-            cookieBuilder!!.append(builder)
+            val cookieBuilder = this.cookieBuilder ?: CookieBuilder().also { this.cookieBuilder = it }
+            cookieBuilder.append(builder)
         }
         return this
     }

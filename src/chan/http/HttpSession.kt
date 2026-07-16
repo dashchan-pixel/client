@@ -102,10 +102,8 @@ class HttpSession internal constructor(
         this.okResponse = null
         val callback = this.currentCallback
         this.currentCallback = null
-        if (response != null) {
-            // HttpResponse will call disconnectAndClear if the response is still active
-            response!!.cleanupAndDisconnect()
-        }
+        // HttpResponse will call disconnectAndClear if the response is still active
+        response?.cleanupAndDisconnect()
         if (okResponse != null) {
             okResponse.close()
             deadResponse = okResponse

@@ -736,7 +736,8 @@ open class ChanPerformer internal constructor(
 
             private var openable: ChanFileOpenable? = null
 
-            private fun ensureOpenable() {
+            private fun ensureOpenable(): ChanFileOpenable {
+                var openable = this.openable
                 if (openable == null) {
                     openable =
                         ChanFileOpenable(
@@ -747,7 +748,9 @@ open class ChanPerformer internal constructor(
                             optionRemoveFileName,
                             reencoding,
                         )
+                    this.openable = openable
                 }
+                return openable
             }
 
             @Public
@@ -755,28 +758,18 @@ open class ChanPerformer internal constructor(
                 entity: MultipartEntity,
                 name: String?,
             ) {
-                ensureOpenable()
-                entity.add(name, openable, listener)
+                entity.add(name, ensureOpenable(), listener)
             }
 
             @Public
-            fun getFileName(): String? {
-                ensureOpenable()
-                return openable!!.fileName
-            }
+            fun getFileName(): String? = ensureOpenable().fileName
 
             @Public
-            fun getMimeType(): String? {
-                ensureOpenable()
-                return openable!!.mimeType
-            }
+            fun getMimeType(): String? = ensureOpenable().mimeType
 
             @Public
             @Throws(IOException::class)
-            fun openInputSteam(): InputStream {
-                ensureOpenable()
-                return openable!!.openInputStream()
-            }
+            fun openInputSteam(): InputStream = ensureOpenable().openInputStream()
 
             @Public
             @Throws(IOException::class)
@@ -790,16 +783,13 @@ open class ChanPerformer internal constructor(
             }
 
             @Public
-            fun getSize(): Long {
-                ensureOpenable()
-                return openable!!.size
-            }
+            fun getSize(): Long = ensureOpenable().size
 
             @Public
             fun getImageSize(): Pair<Int?, Int?>? {
-                ensureOpenable()
-                val width = openable!!.imageWidth
-                val height = openable!!.imageHeight
+                val openable = ensureOpenable()
+                val width = openable.imageWidth
+                val height = openable.imageHeight
                 if (width > 0 && height > 0) {
                     return Pair<Int?, Int?>(width, height)
                 } else {

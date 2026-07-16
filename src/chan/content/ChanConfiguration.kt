@@ -488,10 +488,9 @@ open class ChanConfiguration internal constructor(
         title: String?,
     ) {
         checkInit()
-        if (boardTitlesMap == null) {
-            boardTitlesMap = HashMap<String?, String?>()
-        }
-        boardTitlesMap!![boardName] = title
+        val boardTitlesMap =
+            this.boardTitlesMap ?: HashMap<String?, String?>().also { this.boardTitlesMap = it }
+        boardTitlesMap[boardName] = title
     }
 
     @Public
@@ -508,10 +507,9 @@ open class ChanConfiguration internal constructor(
         description: String?,
     ) {
         checkInit()
-        if (boardDescriptionsMap == null) {
-            boardDescriptionsMap = HashMap<String?, String?>()
-        }
-        boardDescriptionsMap!![boardName] = description
+        val boardDescriptionsMap =
+            this.boardDescriptionsMap ?: HashMap<String?, String?>().also { this.boardDescriptionsMap = it }
+        boardDescriptionsMap[boardName] = description
     }
 
     @Public
@@ -524,11 +522,11 @@ open class ChanConfiguration internal constructor(
 
     private val titleFallbackProvider: BoardExtraFallbackProvider =
         BoardExtraFallbackProvider { boardName: String? ->
-            if (boardTitlesMap != null) boardTitlesMap!![boardName] else null
+            boardTitlesMap?.get(boardName)
         }
     private val descriptionFallbackProvider: BoardExtraFallbackProvider =
         BoardExtraFallbackProvider { boardName: String? ->
-            if (boardDescriptionsMap != null) boardDescriptionsMap!![boardName] else null
+            boardDescriptionsMap?.get(boardName)
         }
 
     fun getBoardTitle(boardName: String?): String? {
@@ -580,10 +578,9 @@ open class ChanConfiguration internal constructor(
         defaultName: String?,
     ) {
         checkInit()
-        if (defaultNameMap == null) {
-            defaultNameMap = HashMap<String?, String?>()
-        }
-        defaultNameMap!![boardName] = defaultName
+        val defaultNameMap =
+            this.defaultNameMap ?: HashMap<String?, String?>().also { this.defaultNameMap = it }
+        defaultNameMap[boardName] = defaultName
     }
 
     @Public
@@ -595,8 +592,9 @@ open class ChanConfiguration internal constructor(
     }
 
     fun getDefaultName(boardName: String?): String? {
+        val defaultNameMap = this.defaultNameMap
         if (defaultNameMap != null) {
-            val defaultName = defaultNameMap!![boardName]
+            val defaultName = defaultNameMap[boardName]
             if (defaultName != null) {
                 return defaultName
             }
@@ -626,10 +624,9 @@ open class ChanConfiguration internal constructor(
         bumpLimit: Int,
     ) {
         checkInit()
-        if (bumpLimitMap == null) {
-            bumpLimitMap = HashMap<String?, Int?>()
-        }
-        bumpLimitMap!![boardName] = bumpLimit
+        val bumpLimitMap =
+            this.bumpLimitMap ?: HashMap<String?, Int?>().also { this.bumpLimitMap = it }
+        bumpLimitMap[boardName] = bumpLimit
     }
 
     @Public
@@ -642,8 +639,9 @@ open class ChanConfiguration internal constructor(
 
     fun getBumpLimit(boardName: String?): Int {
         var bumpLimit: Int = BUMP_LIMIT_INVALID
+        val bumpLimitMap = this.bumpLimitMap
         if (bumpLimitMap != null) {
-            val bumpLimitValue = bumpLimitMap!![boardName]
+            val bumpLimitValue = bumpLimitMap[boardName]
             if (bumpLimitValue != null) {
                 bumpLimit = bumpLimitValue
             }
@@ -691,10 +689,9 @@ open class ChanConfiguration internal constructor(
         pagesCount: Int,
     ) {
         checkInit()
-        if (pagesCountMap == null) {
-            pagesCountMap = HashMap<String?, Int?>()
-        }
-        pagesCountMap!![boardName] = pagesCount
+        val pagesCountMap =
+            this.pagesCountMap ?: HashMap<String?, Int?>().also { this.pagesCountMap = it }
+        pagesCountMap[boardName] = pagesCount
     }
 
     @Public
@@ -706,8 +703,9 @@ open class ChanConfiguration internal constructor(
     }
 
     fun getPagesCount(boardName: String?): Int {
+        val pagesCountMap = this.pagesCountMap
         if (pagesCountMap != null) {
-            val pagesCount = pagesCountMap!![boardName]
+            val pagesCount = pagesCountMap[boardName]
             if (pagesCount != null) {
                 return pagesCount
             }
@@ -720,10 +718,9 @@ open class ChanConfiguration internal constructor(
     @Public
     fun addCaptchaType(captchaType: String) {
         checkInit()
-        if (supportedCaptchaTypes == null) {
-            supportedCaptchaTypes = LinkedHashSet<String?>()
-        }
-        supportedCaptchaTypes!!.add(captchaType)
+        val supportedCaptchaTypes =
+            this.supportedCaptchaTypes ?: LinkedHashSet<String?>().also { this.supportedCaptchaTypes = it }
+        supportedCaptchaTypes.add(captchaType)
     }
 
     fun getSupportedCaptchaTypes(): MutableCollection<String?>? = supportedCaptchaTypes
@@ -739,10 +736,9 @@ open class ChanConfiguration internal constructor(
         key: String?,
         defaultValue: Boolean,
     ) {
-        if (customPreferences == null) {
-            customPreferences = LinkedHashMap<String?, Boolean?>()
-        }
-        customPreferences!![key] = defaultValue
+        val customPreferences =
+            this.customPreferences ?: LinkedHashMap<String?, Boolean?>().also { this.customPreferences = it }
+        customPreferences[key] = defaultValue
     }
 
     @Extendable

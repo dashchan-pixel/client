@@ -223,6 +223,7 @@ class HttpClient private constructor() {
         connectTimeout: Int,
         readTimeout: Int,
     ): OkHttpClient {
+        var baseClient = this.baseClient
         if (baseClient == null) {
             baseClient =
                 OkHttpClient
@@ -231,12 +232,13 @@ class HttpClient private constructor() {
                     .followSslRedirects(false)
                     .retryOnConnectionFailure(false)
                     .build()
+            this.baseClient = baseClient
         }
         val key = ClientKey(proxy, verifyCertificate, connectTimeout, readTimeout)
         var client = clients[key]
         if (client == null) {
             val builder =
-                baseClient!!
+                baseClient
                     .newBuilder()
                     .proxy(if (proxy != null) proxy else Proxy.NO_PROXY)
                     .connectTimeout(connectTimeout.toLong(), TimeUnit.MILLISECONDS)
@@ -335,8 +337,9 @@ class HttpClient private constructor() {
             var userAgent: String? = null
             var userAgentSet = false
             var acceptEncodingSet = false
-            if (request.headers != null) {
-                for (header in request.headers!!) {
+            val requestHeaders = request.headers
+            if (requestHeaders != null) {
+                for (header in requestHeaders) {
                     if ("Connection".equals(header!!.first, ignoreCase = true)) {
                         continue
                     }
@@ -655,27 +658,24 @@ class HttpClient private constructor() {
         private var workInput: InputStream? = null
 
         @Throws(IOException::class)
-        fun ensureWorkInput() {
+        fun ensureWorkInput(): InputStream {
+            var workInput = this.workInput
             if (workInput == null) {
                 workInput = createWorkInput(input)
+                this.workInput = workInput
             }
+            return workInput
         }
 
         @Throws(IOException::class)
-        override fun read(): Int {
-            ensureWorkInput()
-            return workInput!!.read()
-        }
+        override fun read(): Int = ensureWorkInput().read()
 
         @Throws(IOException::class)
         override fun read(
             b: ByteArray?,
             off: Int,
             len: Int,
-        ): Int {
-            ensureWorkInput()
-            return workInput!!.read(b, off, len)
-        }
+        ): Int = ensureWorkInput().read(b, off, len)
 
         @Throws(IOException::class)
         override fun close() {
@@ -900,15 +900,11 @@ class HttpClient private constructor() {
         }
         if (delay > 0) {
             val key = call.request().url.host + ":" + call.request().url.port
-            var delayLock: AtomicBoolean?
-            synchronized(delayLocks) {
-                delayLock = delayLocks[key]
-                if (delayLock == null) {
-                    delayLock = AtomicBoolean(false)
-                    delayLocks[key] = delayLock
+            val delayLock: AtomicBoolean =
+                synchronized(delayLocks) {
+                    delayLocks[key] ?: AtomicBoolean(false).also { delayLocks[key] = it }
                 }
-            }
-            synchronized(delayLock!!) {
+            synchronized(delayLock) {
                 try {
                     while (delayLock.get()) {
                         (delayLock as Object).wait()

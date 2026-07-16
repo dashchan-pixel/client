@@ -32,17 +32,14 @@ class HttpHolder(
         synchronized(this) {
             if (thread != null) {
                 checkThread()
-                if (sessions == null) {
-                    sessions = ArrayList<HttpSession?>()
-                }
-                sessions!!.add(session)
-                if (session != null) {
-                    session!!.disconnectAndClear()
-                }
+                val currentSessions =
+                    this.sessions ?: ArrayList<HttpSession?>().also { this.sessions = it }
+                currentSessions.add(session)
+                session?.disconnectAndClear()
                 session = null
                 return Use {
                     releaseSession()
-                    session = sessions!!.removeAt(sessions!!.size - 1)
+                    session = currentSessions.removeAt(currentSessions.size - 1)
                 }
             } else {
                 thread = Thread.currentThread()
@@ -60,11 +57,9 @@ class HttpHolder(
         maxAttempts: Int,
     ): HttpSession {
         checkThread()
-        if (session != null) {
-            session!!.disconnectAndClear()
-        }
-        val mayCheckFirewallBlock = sessions == null || sessions!!.isEmpty()
-        session =
+        session?.disconnectAndClear()
+        val mayCheckFirewallBlock = sessions.isNullOrEmpty()
+        val session =
             HttpSession(
                 this,
                 client!!,
@@ -75,14 +70,13 @@ class HttpHolder(
                 delay,
                 maxAttempts,
             )
-        return session!!
+        this.session = session
+        return session
     }
 
     private fun releaseSession() {
         checkThread()
-        if (session != null) {
-            session!!.disconnectAndClear()
-        }
+        session?.disconnectAndClear()
     }
 
     @Volatile

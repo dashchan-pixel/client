@@ -236,9 +236,10 @@ class HttpResponse internal constructor(
     @Throws(HttpException::class)
     fun readString(): String? {
         readBytes()
+        val bytes = this.bytes
         if (string == null && bytes != null) {
             try {
-                string = kotlin.text.String(bytes!!, charset(getEncoding()!!))
+                string = kotlin.text.String(bytes, charset(getEncoding()!!))
             } catch (e: UnsupportedEncodingException) {
                 throw HttpException(ErrorItem.Type.DOWNLOAD, false, false, e)
             }
@@ -250,7 +251,8 @@ class HttpResponse internal constructor(
     @Throws(HttpException::class)
     fun readBitmap(): Bitmap? {
         readBytes()
-        return if (bytes != null) BitmapFactory.decodeByteArray(bytes, 0, bytes!!.size) else null
+        val bytes = this.bytes
+        return if (bytes != null) BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
     }
 
     fun cleanupAndDisconnect() {

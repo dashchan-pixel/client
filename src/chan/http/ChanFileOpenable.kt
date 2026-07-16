@@ -148,18 +148,21 @@ class ChanFileOpenable(
             randomBytesLeft = randomBytes
         }
 
-        fun ensureTempBuffer() {
+        fun ensureTempBuffer(): ByteArray {
+            var tempBuffer = this.tempBuffer
             if (tempBuffer == null) {
                 tempBuffer = ByteArray(4096)
+                this.tempBuffer = tempBuffer
             }
+            return tempBuffer
         }
 
         @Throws(IOException::class)
         override fun read(): Int {
-            ensureTempBuffer()
-            val result = read(tempBuffer!!, 0, 1)
+            val tempBuffer = ensureTempBuffer()
+            val result = read(tempBuffer, 0, 1)
             if (result == 1) {
-                return tempBuffer!![0].toInt()
+                return tempBuffer[0].toInt()
             }
             return -1
         }

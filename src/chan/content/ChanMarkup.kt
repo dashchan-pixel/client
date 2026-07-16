@@ -98,9 +98,7 @@ open class ChanMarkup internal constructor(
         }
 
         fun applyTagData(tagData: HtmlParser.TagData) {
-            if (parentTagItem != null) {
-                parentTagItem!!.applyTagData(tagData)
-            }
+            parentTagItem?.applyTagData(tagData)
             if (blockDefined) {
                 tagData.block = block
                 tagData.spaced = spaced
@@ -116,7 +114,10 @@ open class ChanMarkup internal constructor(
         }
 
         val isMorePreferredThanParent: Boolean
-            get() = parentTagItem == null || tag != 0 || parentTagItem!!.tag == 0
+            get() {
+                val parentTagItem = this.parentTagItem
+                return parentTagItem == null || tag != 0 || parentTagItem.tag == 0
+            }
     }
 
     private val markupItems: HashMap<String?, MarkupItem?> = HashMap<String?, MarkupItem?>()
@@ -128,7 +129,7 @@ open class ChanMarkup internal constructor(
         withAttribute: Boolean,
         attribute: String?,
         value: String?,
-    ): TagItem? {
+    ): TagItem {
         var lowerTagName = tagName
         if (withCssClass && cssClass == null) {
             throw NullPointerException("cssClass must not be null")
@@ -143,22 +144,22 @@ open class ChanMarkup internal constructor(
             markupItems[lowerTagName] = markupItem
         }
         if (withCssClass) {
-            if (markupItem.cssClassTagItems == null) {
-                markupItem.cssClassTagItems = HashMap<String?, TagItem>()
-            }
-            var tagItem = markupItem.cssClassTagItems!![cssClass]
+            val cssClassTagItems =
+                markupItem.cssClassTagItems
+                    ?: HashMap<String?, TagItem>().also { markupItem.cssClassTagItems = it }
+            var tagItem = cssClassTagItems[cssClass]
             if (tagItem == null) {
                 tagItem = TagItem()
-                markupItem.cssClassTagItems!![cssClass] = tagItem
+                cssClassTagItems[cssClass] = tagItem
                 tagItem.parentTagItem = markupItem.tagItem
             }
             return tagItem
         } else if (withAttribute) {
-            if (markupItem.attrubuteItems == null) {
-                markupItem.attrubuteItems = ArrayList<AttributeItem>()
-            }
+            val attrubuteItems =
+                markupItem.attrubuteItems
+                    ?: ArrayList<AttributeItem>().also { markupItem.attrubuteItems = it }
             var tagItem: TagItem? = null
-            for (attributeItem in markupItem.attrubuteItems!!) {
+            for (attributeItem in attrubuteItems) {
                 if (attribute == attributeItem.attribute && value == attributeItem.value) {
                     tagItem = attributeItem.tagItem
                     break
@@ -166,26 +167,20 @@ open class ChanMarkup internal constructor(
             }
             if (tagItem == null) {
                 val attributeItem = AttributeItem(attribute, value)
-                markupItem.attrubuteItems!!.add(attributeItem)
+                attrubuteItems.add(attributeItem)
                 attributeItem.tagItem.parentTagItem = markupItem.tagItem
                 tagItem = attributeItem.tagItem
             }
             return tagItem
         } else {
-            if (markupItem.tagItem == null) {
-                markupItem.tagItem = TagItem()
-                if (markupItem.cssClassTagItems != null) {
-                    for (cssClassTagItem in markupItem.cssClassTagItems!!.values) {
-                        cssClassTagItem.parentTagItem = markupItem.tagItem
-                    }
-                }
-                if (markupItem.attrubuteItems != null) {
-                    for (attributeItem in markupItem.attrubuteItems) {
-                        attributeItem.tagItem.parentTagItem = markupItem.tagItem
-                    }
-                }
+            var tagItem = markupItem.tagItem
+            if (tagItem == null) {
+                tagItem = TagItem()
+                markupItem.tagItem = tagItem
+                markupItem.cssClassTagItems?.values?.forEach { it.parentTagItem = tagItem }
+                markupItem.attrubuteItems?.forEach { it.tagItem.parentTagItem = tagItem }
             }
-            return markupItem.tagItem
+            return tagItem
         }
     }
 
@@ -194,7 +189,7 @@ open class ChanMarkup internal constructor(
         tagName: String,
         tag: Int,
     ) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.tag = tag
+        obtainTagItem(tagName, false, null, false, null, null).tag = tag
     }
 
     @Public
@@ -203,7 +198,7 @@ open class ChanMarkup internal constructor(
         cssClass: String,
         tag: Int,
     ) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.tag = tag
+        obtainTagItem(tagName, true, cssClass, false, null, null).tag = tag
     }
 
     @Public
@@ -213,12 +208,12 @@ open class ChanMarkup internal constructor(
         value: String,
         tag: Int,
     ) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.tag = tag
+        obtainTagItem(tagName, false, null, true, attribute, value).tag = tag
     }
 
     @Public
     fun addColorable(tagName: String) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.colorable = true
+        obtainTagItem(tagName, false, null, false, null, null).colorable = true
     }
 
     @Public
@@ -226,7 +221,7 @@ open class ChanMarkup internal constructor(
         tagName: String,
         cssClass: String,
     ) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.colorable = true
+        obtainTagItem(tagName, true, cssClass, false, null, null).colorable = true
     }
 
     @Public
@@ -235,7 +230,7 @@ open class ChanMarkup internal constructor(
         attribute: String,
         value: String,
     ) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.colorable = true
+        obtainTagItem(tagName, false, null, true, attribute, value).colorable = true
     }
 
     @Public
@@ -244,7 +239,7 @@ open class ChanMarkup internal constructor(
         block: Boolean,
         spaced: Boolean,
     ) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.setBlock(block, spaced)
+        obtainTagItem(tagName, false, null, false, null, null).setBlock(block, spaced)
     }
 
     @Public
@@ -254,7 +249,7 @@ open class ChanMarkup internal constructor(
         block: Boolean,
         spaced: Boolean,
     ) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.setBlock(block, spaced)
+        obtainTagItem(tagName, true, cssClass, false, null, null).setBlock(block, spaced)
     }
 
     @Public
@@ -265,7 +260,7 @@ open class ChanMarkup internal constructor(
         block: Boolean,
         spaced: Boolean,
     ) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.setBlock(block, spaced)
+        obtainTagItem(tagName, false, null, true, attribute, value).setBlock(block, spaced)
     }
 
     @Public
@@ -273,7 +268,7 @@ open class ChanMarkup internal constructor(
         tagName: String,
         preformatted: Boolean,
     ) {
-        obtainTagItem(tagName, false, null, false, null, null)!!.definePreformatted(preformatted)
+        obtainTagItem(tagName, false, null, false, null, null).definePreformatted(preformatted)
     }
 
     @Public
@@ -282,7 +277,7 @@ open class ChanMarkup internal constructor(
         cssClass: String,
         preformatted: Boolean,
     ) {
-        obtainTagItem(tagName, true, cssClass, false, null, null)!!.definePreformatted(preformatted)
+        obtainTagItem(tagName, true, cssClass, false, null, null).definePreformatted(preformatted)
     }
 
     @Public
@@ -292,7 +287,7 @@ open class ChanMarkup internal constructor(
         value: String,
         preformatted: Boolean,
     ) {
-        obtainTagItem(tagName, false, null, true, attribute, value)!!.definePreformatted(preformatted)
+        obtainTagItem(tagName, false, null, true, attribute, value).definePreformatted(preformatted)
     }
 
     val markup: HtmlParser.Markup<MarkupExtra?, *, ChanSpanProvider> =
@@ -309,7 +304,8 @@ open class ChanMarkup internal constructor(
                     if (markupItem != null) {
                         var tagItem = markupItem.tagItem
                         var preferredTagItemFound = false
-                        if (markupItem.cssClassTagItems != null) {
+                        val cssClassTagItems = markupItem.cssClassTagItems
+                        if (cssClassTagItems != null) {
                             val fullCssClass = attributes.getValue("", "class")
                             val cssClasses: Array<String?>? =
                                 if (fullCssClass != null) {
@@ -323,7 +319,7 @@ open class ChanMarkup internal constructor(
                             if (cssClasses != null) {
                                 for (cssClass in cssClasses) {
                                     val preferredTagItem =
-                                        markupItem.cssClassTagItems!![cssClass]
+                                        cssClassTagItems[cssClass]
                                     if (preferredTagItem != null &&
                                         preferredTagItem.isMorePreferredThanParent
                                     ) {
