@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import chan.content.ApiException
-import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -30,8 +29,9 @@ class SendPostFailDetailsDialog() : DialogFragment() {
         if (extra is ApiException.BanExtra) {
             val layout = SummaryLayout(dialog)
             val formatter = PostDateFormatter(requireContext())
-            if (!StringUtils.isEmpty(extra.id)) {
-                layout.add(getString(R.string.ban_id), extra.id!!)
+            val id = extra.id
+            if (!id.isNullOrEmpty()) {
+                layout.add(getString(R.string.ban_id), id)
             }
             if (extra.startDate > 0L) {
                 layout.add(getString(R.string.filed_on), formatter.formatDateTime(extra.startDate))
@@ -46,8 +46,9 @@ class SendPostFailDetailsDialog() : DialogFragment() {
                     },
                 )
             }
-            if (!StringUtils.isEmpty(extra.message)) {
-                layout.add(getString(R.string.reason), extra.message!!)
+            val message = extra.message
+            if (!message.isNullOrEmpty()) {
+                layout.add(getString(R.string.reason), message)
             }
         } else if (extra is ApiException.WordsExtra) {
             var message = ""

@@ -8,5 +8,5 @@ interface PostingDialogCallback {
 
     fun getAttachmentRatingItems(): List<Pair<String, String>>?
 
-    fun getPostingConfiguration(): ChanConfiguration.Posting?
+    fun getPostingConfiguration(): ChanConfiguration.Posting
 }

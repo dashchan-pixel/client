@@ -162,7 +162,7 @@ class AttachmentOptionsDialog :
             ),
         )
         optionIndices[Type.REMOVE_FILE_NAME] = index++
-        if (postingConfiguration!!.attachmentSpoiler) {
+        if (postingConfiguration.attachmentSpoiler) {
             optionItems.add(
                 OptionItem(
                     getString(R.string.spoiler),
@@ -227,9 +227,9 @@ class AttachmentOptionsDialog :
         filenameEditText = nameExtensionLayout.findViewById<EditText>(R.id.filename)
         filenameEditText.setText(removeFileExtension(holder.newname))
         val filter =
-            InputFilter { source: CharSequence?, start: Int, end: Int, dest: Spanned?, dstart: Int, dend: Int ->
+            InputFilter { source: CharSequence, start: Int, end: Int, dest: Spanned?, dstart: Int, dend: Int ->
                 for (i in start..<end) {
-                    if (!isValidCharacter(source!![i])) {
+                    if (!isValidCharacter(source[i])) {
                         return@InputFilter ""
                     }
                 }
@@ -300,8 +300,9 @@ class AttachmentOptionsDialog :
             adapter.notifyDataSetChanged()
         }
         var extensionFormat = "."
-        if (holder.reencoding != null) {
-            extensionFormat += holder.reencoding!!.format
+        val reencoding = holder.reencoding
+        if (reencoding != null) {
+            extensionFormat += reencoding.format
         } else {
             extensionFormat += getFileExtension(holder.name)
         }

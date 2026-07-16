@@ -174,7 +174,7 @@ class PostingFragment :
 
     private var commentEditor: CommentEditor? = null
 
-    private var postingConfiguration: Posting? = null
+    private lateinit var postingConfiguration: Posting
     private var userIconItems: MutableList<Pair<String, String>>? = null
     private var attachmentRatingItems: MutableList<Pair<String, String>>? = null
 
@@ -757,7 +757,7 @@ class PostingFragment :
                         }
                     }
                 }
-                if (!StringUtils.isEmpty(comment)) {
+                if (!comment.isNullOrEmpty()) {
                     if (commentCarriage > 0 &&
                         commentCarriage <= builder.length &&
                         builder.get(
@@ -767,7 +767,7 @@ class PostingFragment :
                         builder.insert(commentCarriage++, '\n')
                     }
                     // Remove links in the beginning of the post
-                    comment = comment!!.replace("(^|\n)(>>\\d+(\n|\\s)?)+".toRegex(), "$1")
+                    comment = comment.replace("(^|\n)(>>\\d+(\n|\\s)?)+".toRegex(), "$1")
                     if (isAddSpaceAfterQuote) {
                         comment = comment.replace("(\n+)".toRegex(), "$1> ")
                         builder.insert(commentCarriage, "> ")
@@ -1036,7 +1036,7 @@ class PostingFragment :
         attachmentOptions: Boolean,
         attachmentCount: Boolean,
     ) {
-        val posting = postingConfiguration!!
+        val posting = postingConfiguration
         if (views) {
             val iconView = iconView!!
             val userIconItems = if (posting.userIcons.size > 0) posting.userIcons else null
@@ -1129,7 +1129,7 @@ class PostingFragment :
 
     private fun updatePostingConfigurationIfNeeded() {
         val chan = get(this.chanName)
-        val oldPosting = postingConfiguration!!
+        val oldPosting = postingConfiguration
         var newPosting =
             chan.configuration
                 .safe()
@@ -1195,7 +1195,7 @@ class PostingFragment :
     ) {
         menu
             .findItem(R.id.menu_attach)
-            .setVisible(attachments.size < postingConfiguration!!.attachmentCount)
+            .setVisible(attachments.size < postingConfiguration.attachmentCount)
     }
 
     private fun handleMimeTypeGroup(
@@ -1236,7 +1236,7 @@ class PostingFragment :
                 Intent(Intent.ACTION_GET_CONTENT)
                     .addCategory(Intent.CATEGORY_OPENABLE)
                     .putExtra("android.content.extra.SHOW_ADVANCED", true)
-            val mimeTypes = buildMimeTypeList(postingConfiguration!!.attachmentMimeTypes)
+            val mimeTypes = buildMimeTypeList(postingConfiguration.attachmentMimeTypes)
             if (mimeTypes.size >= 2) {
                 intent.setType("*/*")
                 intent.putExtra(
@@ -1348,7 +1348,7 @@ class PostingFragment :
                         data.optionUniqueHash,
                         data.optionRemoveMetadata,
                         data.optionRemoveFileName,
-                        postingConfiguration!!.attachmentSpoiler && data.optionSpoiler,
+                        postingConfiguration.attachmentSpoiler && data.optionSpoiler,
                         data.reencoding,
                     ),
                 )
@@ -1543,7 +1543,7 @@ class PostingFragment :
             val captchaPass = if (forceCaptcha) null else getCaptchaPass(chan)
             val task =
                 ReadCaptchaTask(
-                    viewModel.callback!!,
+                    viewModel.callback,
                     null,
                     captchaType,
                     null,
@@ -1559,7 +1559,7 @@ class PostingFragment :
         }
     }
 
-    class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback?>()
+    class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
 
     override fun onReadCaptchaSuccess(result: ReadCaptchaTask.Result) {
         showCaptcha(
@@ -1681,7 +1681,7 @@ class PostingFragment :
     ) {
         val oldCount = attachments.size
         for (attachmentToAdd in attachmentsToAdd) {
-            if (attachments.size < postingConfiguration!!.attachmentCount) {
+            if (attachments.size < postingConfiguration.attachmentCount) {
                 addAttachment(attachmentToAdd.first, attachmentToAdd.second)
             }
         }
@@ -1706,11 +1706,11 @@ class PostingFragment :
 
     override fun getAttachmentRatingItems(): List<Pair<String, String>>? = attachmentRatingItems
 
-    override fun getPostingConfiguration(): Posting? = postingConfiguration
+    override fun getPostingConfiguration(): Posting = postingConfiguration
 
     private val attachmentOptionsListener =
-        View.OnClickListener { v: View? ->
-            val holder = v!!.getTag() as AttachmentHolder?
+        View.OnClickListener { v: View ->
+            val holder = v.getTag() as AttachmentHolder?
             val attachmentIndex = attachments.indexOf(holder)
             AttachmentOptionsDialog(attachmentIndex).show(
                 getChildFragmentManager(),
@@ -1719,8 +1719,8 @@ class PostingFragment :
         }
 
     private val attachmentWarningListener =
-        View.OnClickListener { v: View? ->
-            val holder = v!!.getTag() as AttachmentHolder?
+        View.OnClickListener { v: View ->
+            val holder = v.getTag() as AttachmentHolder?
             val attachmentIndex = attachments.indexOf(holder)
             AttachmentWarningDialog(attachmentIndex).show(
                 getChildFragmentManager(),
@@ -1729,8 +1729,8 @@ class PostingFragment :
         }
 
     private val attachmentRatingListener =
-        View.OnClickListener { v: View? ->
-            val holder = v!!.getTag() as AttachmentHolder?
+        View.OnClickListener { v: View ->
+            val holder = v.getTag() as AttachmentHolder?
             val attachmentIndex = attachments.indexOf(holder)
             AttachmentRatingDialog(attachmentIndex).show(
                 getChildFragmentManager(),
@@ -2134,8 +2134,8 @@ class PostingFragment :
                     maxButtonsWidth,
                     buttonMarginLeft,
                 )
-            val supportedTags: Int = supportedAndDisplayedTags.first!!
-            val displayedTags: Int = supportedAndDisplayedTags.second!!
+            val supportedTags: Int = supportedAndDisplayedTags.first
+            val displayedTags: Int = supportedAndDisplayedTags.second
             if (lastSupportedTags == supportedTags && lastDisplayedTags == displayedTags) {
                 return
             }
