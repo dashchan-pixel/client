@@ -29,6 +29,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.Toolbar
+import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationCompat
@@ -137,6 +138,7 @@ import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.CustomDrawerLayout
 import com.mishiranu.dashchan.widget.ExpandedScreen
 import com.mishiranu.dashchan.widget.ExpandedScreen.PreThemeInit
+import com.mishiranu.dashchan.widget.PredictiveBackTransform
 import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.addTheme
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.applyTheme
@@ -192,6 +194,8 @@ class MainActivity :
     private lateinit var expandedScreen: ExpandedScreen
     private var toolbarHolder: ToolbarHolder? = null
     private lateinit var toolbarExtra: FrameLayout
+
+    private lateinit var backTransform: PredictiveBackTransform
 
     private lateinit var drawerCommon: ViewGroup
     private lateinit var drawerWide: ViewGroup
@@ -331,6 +335,7 @@ class MainActivity :
         uiManager.attach(this)
         ContentFragment.Companion.prepare(this)
         val contentFragment = findViewById<ViewGroup>(R.id.content_fragment)
+        backTransform = PredictiveBackTransform(contentFragment)
         contentFragment.setOnHierarchyChangeListener(
             object : OnHierarchyChangeListener {
                 override fun onChildViewAdded(
@@ -1596,39 +1601,80 @@ class MainActivity :
         handleBackPress(true, Runnable { navigateInitial(true) })
     }
 
+    /** What a back press would do right now, in the priority order [handleBackPress] applies. */
+    private enum class BackKind {
+        /** Nothing in the app claims the gesture, so the system plays back-to-home. */
+        NONE,
+
+        /** Closes the open navigation drawer. */
+        DRAWER,
+
+        /** Handled inside the current fragment, e.g. closing an open search field. */
+        INTERNAL,
+
+        /** Pops a page or a fragment off the stack, replacing the content. */
+        NAVIGATE,
+    }
+
+    private val backKind: BackKind
+        get() {
+            if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                return BackKind.DRAWER
+            }
+            val currentFragment = this.currentFragment
+            if (currentFragment == null) {
+                return BackKind.NONE
+            }
+            if (currentFragment.isBackHandled) {
+                return BackKind.INTERNAL
+            }
+            if (currentFragment is PageFragment) {
+                return if (hasTargetPreviousPage()) BackKind.NAVIGATE else BackKind.NONE
+            }
+            return if (!fragments.isEmpty() || !stackPageItems.isEmpty()) {
+                BackKind.NAVIGATE
+            } else {
+                BackKind.NONE
+            }
+        }
+
     // Predictive back: the callback is enabled only while something in the app claims the back
     // gesture (open drawer, fragment-internal state, page/fragment back stack), so the system
     // back-to-home animation plays whenever a back gesture would leave the app.
+    //
+    // Only NAVIGATE is animated. A drawer close plays DrawerLayout's own animation on commit, and
+    // an INTERNAL back only closes a search field or the like: shrinking the whole content away for
+    // either would promise a page change that isn't coming.
     private val backPressedCallback: OnBackPressedCallback =
         object : OnBackPressedCallback(false) {
+            override fun handleOnBackStarted(backEvent: BackEventCompat) {
+                if (backKind == BackKind.NAVIGATE) {
+                    backTransform.start(backEvent)
+                }
+            }
+
+            override fun handleOnBackProgressed(backEvent: BackEventCompat) {
+                backTransform.progress(backEvent)
+            }
+
+            override fun handleOnBackCancelled() {
+                backTransform.settle()
+            }
+
             override fun handleOnBackPressed() {
                 // The enabled state was stale if nothing handles the press: swallow this
                 // press and let the system take the next one.
                 handleBackPress(false, Runnable { isEnabled = false })
+                // The container keeps the gesture's transform across the fragment swap and springs
+                // back from under it, so the destination grows into place instead of the shrunken
+                // content snapping back to full size.
+                backTransform.settle()
             }
         }
 
     override fun updateBackHandling() {
-        backPressedCallback.isEnabled = this.isBackHandled
+        backPressedCallback.isEnabled = backKind != BackKind.NONE
     }
-
-    private val isBackHandled: Boolean
-        get() {
-            if (!wideMode && drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                return true
-            }
-            val currentFragment = this.currentFragment
-            if (currentFragment == null) {
-                return false
-            }
-            if (currentFragment.isBackHandled) {
-                return true
-            }
-            if (currentFragment is PageFragment) {
-                return hasTargetPreviousPage()
-            }
-            return !fragments.isEmpty() || !stackPageItems.isEmpty()
-        }
 
     // Side-effect-free version of prepareTargetPreviousPage(true).
     private fun hasTargetPreviousPage(): Boolean {

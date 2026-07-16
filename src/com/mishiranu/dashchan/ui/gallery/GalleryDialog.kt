@@ -11,12 +11,15 @@ import android.view.Window
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.Toolbar
-import android.window.OnBackInvokedCallback
+import android.window.BackEvent
+import android.window.OnBackAnimationCallback
 import android.window.OnBackInvokedDispatcher
+import androidx.activity.BackEventCompat
 import androidx.fragment.app.Fragment
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.ViewUtils.setNewMargin
 import com.mishiranu.dashchan.util.ViewUtils.setNewPadding
+import com.mishiranu.dashchan.widget.PredictiveBackTransform
 import com.mishiranu.dashchan.widget.ViewFactory.ToolbarHolder
 import com.mishiranu.dashchan.widget.ViewFactory.addToolbarTitle
 import kotlin.math.max
@@ -29,6 +32,13 @@ class GalleryDialog(
     ) {
     interface Callback {
         fun onBackPressed(): Boolean
+
+        /**
+         * Whether [onBackPressed] would currently consume a back press instead of letting the
+         * dialog close. Must stay free of side effects: it is polled when a back gesture starts,
+         * to decide whether to animate the dialog away. Override together with [onBackPressed].
+         */
+        val isBackHandled: Boolean
 
         fun onCreateActionContextBarView()
 
@@ -103,8 +113,36 @@ class GalleryDialog(
         }
 
     // With predictive back enabled the framework no longer calls Dialog.onBackPressed();
-    // an explicit OnBackInvokedCallback replicates the old behavior (fragment first, then cancel).
-    private val backInvokedCallback = OnBackInvokedCallback { this.handleBackInvoked() }
+    // an explicit callback replicates the old behavior (fragment first, then cancel).
+    //
+    // The gesture animates the whole dialog window away, but only when the back would actually
+    // close it. While the fragment still claims back -- an open showcase, a pager that can return
+    // to the grid -- the dialog is staying put, so nothing moves.
+    private val backTransform = PredictiveBackTransform(dialogWindow.getDecorView())
+
+    private val backInvokedCallback =
+        object : OnBackAnimationCallback {
+            override fun onBackStarted(backEvent: BackEvent) {
+                if (!isBackHandledByFragment) {
+                    backTransform.start(BackEventCompat(backEvent))
+                }
+            }
+
+            override fun onBackProgressed(backEvent: BackEvent) {
+                backTransform.progress(BackEventCompat(backEvent))
+            }
+
+            override fun onBackCancelled() {
+                backTransform.settle()
+            }
+
+            override fun onBackInvoked() {
+                handleBackInvoked()
+            }
+        }
+
+    private val isBackHandledByFragment: Boolean
+        get() = fragment is Callback && (fragment as Callback).isBackHandled
 
     init {
         dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
@@ -160,7 +198,12 @@ class GalleryDialog(
 
     private fun handleBackInvoked() {
         if (fragment !is Callback || !(fragment as Callback).onBackPressed()) {
+            // The window is going away, so any transform the gesture applied goes with it.
             cancel()
+        } else {
+            // Only reachable if the fragment took back between the gesture starting and landing,
+            // which is also the only way the dialog can be left holding a transform it must undo.
+            backTransform.settle()
         }
     }
 
@@ -174,6 +217,8 @@ class GalleryDialog(
 
     override fun onStop() {
         getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback)
+        // No cancel arrives for a gesture interrupted by the dialog stopping.
+        backTransform.reset()
         super.onStop()
     }
 

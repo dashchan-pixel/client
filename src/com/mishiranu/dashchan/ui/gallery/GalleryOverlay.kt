@@ -547,6 +547,11 @@ class GalleryOverlay :
         return returnToGallery()
     }
 
+    // Side-effect-free mirror of onBackPressed: the showcase branch consumes back whenever there is
+    // a showcase to tear down, and returnToGallery whenever the pager can fall back to the grid.
+    override val isBackHandled: Boolean
+        get() = showcaseDestroy != null || (galleryWindow && !galleryMode)
+
     override fun onCreateDialogMenu(menu: Menu) {
         val instance = this.instance ?: return
         menu

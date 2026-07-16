@@ -18,8 +18,10 @@ import android.view.View
 import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.window.OnBackInvokedCallback
+import android.window.BackEvent
+import android.window.OnBackAnimationCallback
 import android.window.OnBackInvokedDispatcher
+import androidx.activity.BackEventCompat
 import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import com.mishiranu.dashchan.R
@@ -238,10 +240,40 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                     // With predictive back enabled, back gestures arrive here instead of
                     // dispatchKeyEvent. Pops a single dialog like the KeyEvent handler
                     // (the long-press-back "clear all" shortcut has no gesture equivalent).
+                    //
+                    // The gesture animates the top dialog view rather than the window: a pop only
+                    // dismisses the window when it takes the last view with it, and until then the
+                    // views underneath have to stay where they are.
+                    private var backTransform: PredictiveBackTransform? = null
+
                     private val backInvokedCallback =
-                        OnBackInvokedCallback {
-                            if (!visibleViews.isEmpty()) {
-                                popInternal()
+                        object : OnBackAnimationCallback {
+                            override fun onBackStarted(backEvent: BackEvent) {
+                                val container =
+                                    visibleViews.lastOrNull()?.second?.container ?: return
+                                backTransform =
+                                    PredictiveBackTransform(container).apply {
+                                        start(BackEventCompat(backEvent))
+                                    }
+                            }
+
+                            override fun onBackProgressed(backEvent: BackEvent) {
+                                backTransform?.progress(BackEventCompat(backEvent))
+                            }
+
+                            override fun onBackCancelled() {
+                                backTransform?.settle()
+                                backTransform = null
+                            }
+
+                            override fun onBackInvoked() {
+                                // The pop tears the view out in this same frame, so resetting it
+                                // first is bookkeeping, not a visible snap back to full size.
+                                backTransform?.reset()
+                                backTransform = null
+                                if (!visibleViews.isEmpty()) {
+                                    popInternal()
+                                }
                             }
                         }
 
@@ -257,6 +289,9 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                         getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
                             backInvokedCallback,
                         )
+                        // No cancel arrives for a gesture interrupted by the dialog stopping.
+                        backTransform?.reset()
+                        backTransform = null
                         super.onStop()
                     }
                 }
