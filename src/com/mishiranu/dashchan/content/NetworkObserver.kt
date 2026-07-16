@@ -4,9 +4,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.os.Build
-import android.util.Pair
-import androidx.annotation.RequiresApi
 import com.mishiranu.dashchan.util.ConcurrentUtils
 
 class NetworkObserver private constructor() {
@@ -42,35 +39,19 @@ class NetworkObserver private constructor() {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun getNetwork28(): Pair<Network, NetworkCapabilities>? {
-        val network = connectivityManager.activeNetwork
-        if (network != null) {
-            val capabilities = connectivityManager.getNetworkCapabilities(network)
-            return if (capabilities != null) Pair(network, capabilities) else null
-        }
-        return null
-    }
-
     fun isWifiConnected(): Boolean = networkState == NetworkState.WIFI
 
     private fun onActiveNetworkChange() {
-        updateNetworkState28()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.P)
-    private fun updateNetworkState28() {
-        var networkState = NetworkState.UNDEFINED
-        val pair = getNetwork28()
-        if (pair != null) {
-            networkState =
-                if (pair.second.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-                    NetworkState.MOBILE
-                } else {
-                    NetworkState.WIFI
-                }
-        }
-        this.networkState = networkState
+        val capabilities =
+            connectivityManager.activeNetwork?.let {
+                connectivityManager.getNetworkCapabilities(it)
+            }
+        networkState =
+            when {
+                capabilities == null -> NetworkState.UNDEFINED
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkState.MOBILE
+                else -> NetworkState.WIFI
+            }
     }
 
     companion object {

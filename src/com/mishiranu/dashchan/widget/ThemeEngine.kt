@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.os.Build
 import android.util.AttributeSet
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -24,7 +23,6 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toolbar
-import androidx.annotation.RequiresApi
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
 import com.mishiranu.dashchan.R
@@ -755,7 +753,6 @@ class ThemeEngine {
     companion object {
         private val INSTANCE = ThemeEngine()
 
-        @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
         private val POPUP_ATTACH_LISTENER: AttachListener =
             object : AttachListener {
                 override val isProcessed: Boolean

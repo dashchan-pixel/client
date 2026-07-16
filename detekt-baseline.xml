@@ -297,7 +297,7 @@
     <ID>LongMethod:DataFile.kt$DataFile.SafFile$@Throws(IOException::class) override fun openOutputStream(): OutputStream</ID>
     <ID>LongMethod:DecoderDrawable.kt$DecoderDrawable$override fun draw(canvas: Canvas)</ID>
     <ID>LongMethod:DialogStack.kt$DialogStack.DialogView$override fun draw(canvas: Canvas)</ID>
-    <ID>LongMethod:DialogUnit.kt$DialogUnit$@TargetApi(Build.VERSION_CODES.LOLLIPOP) private fun showAttachmentsGrid( configurationSet: ConfigurationSet, attachmentItems: List&lt;AttachmentItem&gt;, startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set, )</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit$private fun showAttachmentsGrid( configurationSet: ConfigurationSet, attachmentItems: List&lt;AttachmentItem&gt;, startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set, )</ID>
     <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPerformSendDialog( provider: InstanceDialog.Provider, state: SendMultifunctionalTask.State, defaultType: String?, defaultText: String?, defaultOptions: List&lt;String&gt;?, posts: Collection&lt;Post&gt;?, firstTime: Boolean, ): Dialog?</ID>
     <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPostDescriptionDialog( context: Context, icons: MutableCollection&lt;IconData&gt;, chanName: String?, emailToCopy: String?, ): AlertDialog?</ID>
     <ID>LongMethod:DialogUnit.kt$DialogUnit.TypedDialogFactory$fun createView(dialogStack: DialogStack&lt;DialogFactory?&gt;): View</ID>

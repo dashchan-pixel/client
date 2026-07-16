@@ -7,7 +7,6 @@ import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.graphics.Rect
 import android.net.Uri
-import android.os.Build
 import android.os.SystemClock
 import android.text.InputType
 import android.text.TextUtils
@@ -29,7 +28,6 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
-import androidx.annotation.RequiresApi
 import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -1482,7 +1480,6 @@ class DrawerForm(
         private var originalTextColors: ColorStateList? = null
         private var originalTintColors: ColorStateList? = null
 
-        @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
         fun setDragging(
             dragging: Boolean,
             activeColor: Int,
@@ -1619,7 +1616,6 @@ class DrawerForm(
             }
         }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     fun onWatcherUpdate(
         chanName: String,
         boardName: String?,
@@ -1893,7 +1889,6 @@ class DrawerForm(
         updateChansWithoutConfiguration()
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     override fun onDragStart(holder: ViewHolder) {
         chanDragState.reset()
         favoriteDragState.reset()
@@ -1901,7 +1896,6 @@ class DrawerForm(
         callback.onDraggingStateChanged(true)
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     override fun onDragFinish(
         holder: ViewHolder?,
         cancelled: Boolean,

@@ -2,11 +2,9 @@ package com.mishiranu.dashchan.widget
 
 import android.content.Context
 import android.graphics.Rect
-import android.os.Build
 import android.view.View
 import android.view.WindowInsets
 import android.widget.FrameLayout
-import androidx.annotation.RequiresApi
 import com.mishiranu.dashchan.R
 
 class InsetsLayout(
@@ -18,7 +16,6 @@ class InsetsLayout(
         @JvmField val right: Int,
         @JvmField val bottom: Int,
     ) {
-        @RequiresApi(api = Build.VERSION_CODES.Q)
         constructor(insets: android.graphics.Insets) : this(insets.left, insets.top, insets.right, insets.bottom)
 
         override fun equals(other: Any?): Boolean {

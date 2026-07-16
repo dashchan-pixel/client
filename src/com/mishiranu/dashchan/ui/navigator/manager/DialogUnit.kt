@@ -2,14 +2,12 @@ package com.mishiranu.dashchan.ui.navigator.manager
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Canvas
 import android.net.Uri
-import android.os.Build
 import android.text.InputType
 import android.util.Pair
 import android.view.Gravity
@@ -1239,7 +1237,6 @@ class DialogUnit internal constructor(
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private fun showAttachmentsGrid(
         configurationSet: ConfigurationSet,
         attachmentItems: List<AttachmentItem>,

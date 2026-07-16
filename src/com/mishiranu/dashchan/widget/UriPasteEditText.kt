@@ -1,9 +1,7 @@
 package com.mishiranu.dashchan.widget
 
-import android.annotation.TargetApi
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.util.AttributeSet
 import android.view.ContentInfo
 import androidx.core.content.MimeTypeFilter
@@ -21,7 +19,6 @@ class UriPasteEditText : SafePasteEditText {
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
         super(context, attrs, defStyleAttr, defStyleRes)
 

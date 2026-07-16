@@ -2269,10 +2269,11 @@ class PostsPage :
 
         override fun run() {
             val time = SystemClock.elapsedRealtime()
+            val budget = ConcurrentUtils.HALF_FRAME_TIME_MS
             val locale = Locale.getDefault()
             val fileNames = this.fileNames
             OUTER@ while (true) {
-                if (SystemClock.elapsedRealtime() - time >= ConcurrentUtils.HALF_FRAME_TIME_MS) {
+                if (SystemClock.elapsedRealtime() - time >= budget) {
                     ConcurrentUtils.HANDLER.post(this)
                     break
                 }

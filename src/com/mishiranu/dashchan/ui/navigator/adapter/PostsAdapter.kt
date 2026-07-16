@@ -509,11 +509,12 @@ class PostsAdapter(
 
     private inner class PreloadCallback : Handler.Callback {
         override fun handleMessage(msg: Message): Boolean {
-            // Take only 8ms per frame for preloading in main thread
+            // Take only half a frame per message for preloading in main thread
             val iterator: PreloadIterator = msg.obj as PreloadIterator
             val chan = get(configurationSet.chanName)
             val time = SystemClock.elapsedRealtime()
-            while (SystemClock.elapsedRealtime() - time < ConcurrentUtils.HALF_FRAME_TIME_MS && iterator.hasNext()) {
+            val budget = ConcurrentUtils.HALF_FRAME_TIME_MS
+            while (SystemClock.elapsedRealtime() - time < budget && iterator.hasNext()) {
                 val postItem = iterator.next()
                 configurationSet.postStateProvider.isHiddenResolve(postItem)
                 postItem.getComment(chan)

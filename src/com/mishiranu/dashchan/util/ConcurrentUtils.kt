@@ -1,8 +1,12 @@
 package com.mishiranu.dashchan.util
 
+import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
+import android.view.Display
+import com.mishiranu.dashchan.content.MainApplication
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -21,8 +25,28 @@ object ConcurrentUtils {
 
     @JvmField val PARALLEL_EXECUTOR: Executor = newThreadPool(1, 20, 3000, "ParallelExecutor", null)
 
-    // 60 frames per second -> frame time is 1000 / 60 -> divide by 2
-    const val HALF_FRAME_TIME_MS = 1000 / 60 / 2
+    /**
+     * Budget for a chunk of main-thread work: half a frame. Derived from the fastest mode the
+     * display supports, not the mode it is in — Pixels switch modes dynamically, and budgeting
+     * for the fastest one is safe at every rate. Callers chunk against this and re-post to
+     * continue, so a smaller budget spreads the same work over more frames rather than dropping
+     * any of it. A fixed 60 Hz value would hand out 8 ms, an entire frame at 120 Hz.
+     */
+    @JvmStatic
+    val HALF_FRAME_TIME_MS: Long by lazy {
+        val display =
+            (
+                MainApplication.getInstance().getSystemService(Context.DISPLAY_SERVICE)
+                    as DisplayManager?
+            )?.getDisplay(Display.DEFAULT_DISPLAY)
+        val refreshRate =
+            display
+                ?.supportedModes
+                ?.maxOfOrNull { it.refreshRate }
+                ?.takeIf { it >= 1f }
+                ?: 60f
+        (1000f / refreshRate / 2f).toLong().coerceAtLeast(1L)
+    }
 
     @JvmStatic
     fun newSingleThreadPool(

@@ -3,10 +3,8 @@ package com.mishiranu.dashchan.content
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
-import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import chan.content.Chan
 import chan.content.ChanConfiguration
@@ -713,7 +711,6 @@ object Preferences {
         }
 
     @JvmStatic
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     fun getDownloadUriTree(context: Context): Uri? {
         val contentResolver = context.getContentResolver()
         // getPersistedUriPermissions() is declared @NonNull by the framework.
@@ -741,7 +738,6 @@ object Preferences {
     }
 
     @JvmStatic
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
     fun setDownloadUriTree(
         context: Context,
         uri: Uri?,

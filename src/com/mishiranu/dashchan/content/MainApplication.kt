@@ -1,11 +1,9 @@
 package com.mishiranu.dashchan.content
 
-import android.annotation.TargetApi
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.os.Build
 import android.os.Process
 import chan.content.ChanManager
 import chan.http.HttpClient
@@ -64,7 +62,6 @@ class MainApplication : Application() {
         get() = LocaleManager.getInstance().applyApplication(this)
 
     val isLowRam: Boolean
-        @TargetApi(Build.VERSION_CODES.KITKAT)
         get() {
             val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
             return activityManager != null && activityManager.isLowRamDevice

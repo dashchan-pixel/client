@@ -1,6 +1,5 @@
 package com.mishiranu.dashchan.widget
 
-import android.annotation.TargetApi
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -9,7 +8,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
-import android.os.Build
 import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.animation.Interpolator
@@ -347,7 +345,6 @@ class PullableWrapper(
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private class LollipopView(
         wrapped: Wrapped,
         private val top: Boolean,
