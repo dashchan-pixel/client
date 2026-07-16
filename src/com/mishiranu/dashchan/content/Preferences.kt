@@ -810,15 +810,17 @@ object Preferences {
     const val KEY_FAVORITE_ON_REPLY: String = "favorite_on_reply"
     val DEFAULT_FAVORITE_ON_REPLY: FavoriteOnReplyMode = FavoriteOnReplyMode.DISABLED
 
+    // getEnumValue falls back to defaultValue, so with a non-null default this can never be null;
+    // the `?: DEFAULT_FAVORITE_ON_REPLY` only re-states that for the compiler.
     @JvmStatic
-    val favoriteOnReply: FavoriteOnReplyMode?
+    val favoriteOnReply: FavoriteOnReplyMode
         get() =
             getEnumValue(
                 KEY_FAVORITE_ON_REPLY,
                 FavoriteOnReplyMode.entries.toTypedArray(),
                 DEFAULT_FAVORITE_ON_REPLY,
                 FavoriteOnReplyMode.Companion.VALUE_PROVIDER,
-            )
+            ) ?: DEFAULT_FAVORITE_ON_REPLY
 
     init {
         if (PREFERENCES != null) {

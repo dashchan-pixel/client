@@ -633,7 +633,7 @@ class PostingService :
                 notificationManager.notify(tag, 0, builder.build())
             }
 
-            if (targetThreadNumber != null && favoriteOnReply!!.isEnabled(data.optionSage)) {
+            if (targetThreadNumber != null && favoriteOnReply.isEnabled(data.optionSage)) {
                 // Add to favorites after processing the response to ensure watcher is not triggered too early
                 FavoritesStorage
                     .getInstance()

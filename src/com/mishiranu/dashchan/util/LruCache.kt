@@ -48,12 +48,15 @@ class LruCache<K, V>
         }
 
         override fun clear() {
+            val callback = this.callback
             var copied: ArrayList<MutableMap.MutableEntry<K, V>>? = null
             if (callback != null && isNotEmpty()) {
                 copied = ArrayList(entries)
             }
             super.clear()
-            copied?.forEach { callback!!.onRemoveEntry(it.key, it.value) }
+            if (callback != null) {
+                copied?.forEach { callback.onRemoveEntry(it.key, it.value) }
+            }
         }
 
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean {

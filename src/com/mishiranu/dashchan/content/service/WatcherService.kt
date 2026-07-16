@@ -201,10 +201,11 @@ class WatcherService : BaseService() {
             for (session in sessions) {
                 session.handleRegister(binder.service, false)
             }
+            val callback = this.callback
             if (callback != null && !binder.service.watcherItems.isEmpty()) {
                 for (threadKey in binder.service.workWatcherKeys) {
                     val counter = binder.service.getCounter(threadKey)
-                    callback!!.onWatcherUpdate(
+                    callback.onWatcherUpdate(
                         threadKey.chanName,
                         threadKey.boardName,
                         threadKey.threadNumber,
@@ -634,14 +635,9 @@ class WatcherService : BaseService() {
             error = false
             onTaskFinished()
             val notify = if (replies!!.isEmpty()) null else booleanArrayOf(true)
-            var consumeReplies: ConsumeReplies? = null
-            if (notify == null) {
-                consumeReplies = CONSUME_REPLIES_EMPTY
-            }
+            val consumeReplies: ConsumeReplies =
+                if (notify == null) CONSUME_REPLIES_EMPTY else ConsumeReplies { notify[0] = false }
             for (session in getSessionConcurrentIterable(threadKey)) {
-                if (consumeReplies == null) {
-                    consumeReplies = ConsumeReplies { notify!![0] = false }
-                }
                 session.onReadPostsSuccess(cacheState, consumeReplies)
             }
             if (notify != null && notify[0] && !replies.isEmpty()) {

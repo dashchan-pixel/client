@@ -173,11 +173,12 @@ class PostItem private constructor(
         val identifier = post.identifier
         val tripcode = post.tripcode
         val capcode = post.capcode
-        var defaultName = configuration.getDefaultName(boardName)
-        if (StringUtils.isEmptyOrWhitespace(defaultName)) {
-            defaultName = "Anonymous"
-        }
-        name = if (StringUtils.isEmptyOrWhitespace(name)) defaultName!! else name.trim()
+        val defaultName =
+            configuration
+                .getDefaultName(boardName)
+                ?.takeIf { !StringUtils.isEmptyOrWhitespace(it) }
+                ?: "Anonymous"
+        name = if (StringUtils.isEmptyOrWhitespace(name)) defaultName else name.trim()
         var useDefaultName = post.isDefaultName || name == defaultName
         val hasIdentifier = !StringUtils.isEmptyOrWhitespace(identifier)
         val hasTripcode = !StringUtils.isEmptyOrWhitespace(tripcode)

@@ -323,7 +323,7 @@ class RecaptchaReader private constructor() {
             blackAndWhite = isBlackAndWhiteCaptchaImage(image)
         }
         return if (blackAndWhite) {
-            handleBlackAndWhiteCaptchaImage(image!!)
+            handleBlackAndWhiteCaptchaImage(image)
         } else {
             Pair(
                 image,
