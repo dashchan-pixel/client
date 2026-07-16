@@ -72,8 +72,11 @@ object Preferences {
      * manifest), which never touches preferences. The four `PREFERENCES != null` guards on the
      * migration `init` blocks are the only code in this object that runs in *both* processes, and
      * they are the reason the field itself has to stay nullable.
+     *
+     * Also the accessor for the `PreferenceFragment.getPreferences` implementors, which all run in
+     * the main process: it gives them this reason instead of a bare non-null assertion.
      */
-    private val prefs: SharedPreferences
+    val prefs: SharedPreferences
         get() =
             checkNotNull(PREFERENCES) {
                 "Preferences are unavailable outside the main process"

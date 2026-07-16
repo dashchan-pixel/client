@@ -23,7 +23,7 @@ class AboutFragment :
     FragmentHandler.Callback {
     private var inStorageRequest = false
 
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

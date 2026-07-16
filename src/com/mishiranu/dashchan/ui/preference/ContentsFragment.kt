@@ -31,7 +31,7 @@ class ContentsFragment : PreferenceFragment() {
         private const val REQUEST_UPDATE_CACHE_SIZE = "contentsUpdateCacheSize"
     }
 
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,7 +110,7 @@ class ContentsFragment : PreferenceFragment() {
             )
         replyNotifications.setOnClickListener { p ->
             Preferences.setWatcherNotifications(
-                if (p!!.value!!) {
+                if (p.value!!) {
                     emptySet()
                 } else {
                     setOf(Preferences.NotificationFeature.ENABLED)
@@ -121,15 +121,16 @@ class ContentsFragment : PreferenceFragment() {
         invalidateReplyNotifications()
 
         addHeader(R.string.additional)
-        clearCachePreference =
+        val clearCachePreference =
             addButton(getString(R.string.clear_cache)) {
                 StringUtils.formatFileSizeMegabytes(PagesDatabase.getInstance().size)
             }
-        clearCachePreference!!.setOnClickListener {
+        this.clearCachePreference = clearCachePreference
+        clearCachePreference.setOnClickListener {
             val dialog = ClearCacheDialog()
             dialog.show(childFragmentManager, ClearCacheDialog::class.java.name)
         }
-        clearCachePreference!!.invalidate()
+        clearCachePreference.invalidate()
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.contents), null)
     }
@@ -146,7 +147,7 @@ class ContentsFragment : PreferenceFragment() {
     }
 
     class WatcherNotificationsDialog : DialogFragment() {
-        private var checkedItems: BooleanArray? = null
+        private lateinit var checkedItems: BooleanArray
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val items = arrayOfNulls<String>(Preferences.NotificationFeature.values().size)
@@ -154,22 +155,24 @@ class ContentsFragment : PreferenceFragment() {
                 items[i] = getString(Preferences.NotificationFeature.values()[i].titleResId)
             }
             if (savedInstanceState != null) {
-                checkedItems = savedInstanceState.getBooleanArray(EXTRA_CHECKED_ITEMS)
+                // onSaveInstanceState always writes the key, so the array is there.
+                checkedItems = savedInstanceState.getBooleanArray(EXTRA_CHECKED_ITEMS)!!
             } else {
-                checkedItems = BooleanArray(Preferences.NotificationFeature.values().size)
+                val checkedItems = BooleanArray(Preferences.NotificationFeature.values().size)
+                this.checkedItems = checkedItems
                 val notificationFeatures = Preferences.watcherNotifications
-                for (i in checkedItems!!.indices) {
-                    checkedItems!![i] = notificationFeatures.contains(Preferences.NotificationFeature.values()[i])
+                for (i in checkedItems.indices) {
+                    checkedItems[i] = notificationFeatures.contains(Preferences.NotificationFeature.values()[i])
                 }
             }
             return AlertDialog
                 .Builder(requireContext())
                 .setTitle(R.string.reply_notifications)
-                .setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems!![which] = isChecked }
+                .setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems[which] = isChecked }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     val notificationFeatures = HashSet<Preferences.NotificationFeature>()
-                    for (i in checkedItems!!.indices) {
-                        if (checkedItems!![i]) {
+                    for (i in checkedItems.indices) {
+                        if (checkedItems[i]) {
                             notificationFeatures.add(Preferences.NotificationFeature.values()[i])
                         }
                     }

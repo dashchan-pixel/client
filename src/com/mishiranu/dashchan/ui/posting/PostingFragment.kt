@@ -222,8 +222,9 @@ class PostingFragment :
                 name: ComponentName?,
                 service: IBinder?,
             ) {
-                postingBinder = service as PostingService.Binder?
-                postingBinder!!.register(
+                val postingBinder = service as PostingService.Binder
+                this@PostingFragment.postingBinder = postingBinder
+                postingBinder.register(
                     postingCallback,
                     this@PostingFragment.chanName,
                     this@PostingFragment.boardName,
@@ -260,18 +261,15 @@ class PostingFragment :
         super.onViewCreated(view, savedInstanceState)
 
         val chan = get(this.chanName)
-        postingConfiguration =
+        val obtainedPosting =
             chan.configuration.safe().obtainPosting(this.boardName, this.threadNumber == null)
-        if (postingConfiguration != null) {
-            allowPosting =
-                chan.configuration
-                    .safe()
-                    .obtainBoard(this.boardName)
-                    .allowPosting
-        } else {
-            postingConfiguration = Posting()
-            allowPosting = false
-        }
+        allowPosting = obtainedPosting != null &&
+            chan.configuration
+                .safe()
+                .obtainBoard(this.boardName)
+                .allowPosting
+        val postingConfiguration = obtainedPosting ?: Posting()
+        this.postingConfiguration = postingConfiguration
 
         val draftsStorage = getInstance()
         captchaType = chan.configuration.captchaType
@@ -283,25 +281,37 @@ class PostingFragment :
         val hugeCaptcha = isHugeCaptcha
         val longLayout = screenWidthDp >= 480
 
-        scrollView = view.findViewById<ScrollView?>(R.id.scroll_view)
+        val scrollView = view.findViewById<ScrollView>(R.id.scroll_view)
+        this.scrollView = scrollView
         val postingLayout = view.findViewById<ViewGroup>(R.id.posting_layout)
         val commentParent = view.findViewById<LinearLayout>(R.id.comment_parent)
         val commentFormat = view.findViewById<LinearLayout?>(R.id.comment_format)
-        commentView = view.findViewById<UriPasteEditText?>(R.id.comment)
-        sageCheckBox = view.findViewById<CheckBox?>(R.id.sage_checkbox)
-        spoilerCheckBox = view.findViewById<CheckBox?>(R.id.spoiler_checkbox)
-        originalPosterCheckBox = view.findViewById<CheckBox?>(R.id.original_poster_checkbox)
-        checkBoxParent = view.findViewById<View?>(R.id.checkbox_parent)
-        nameView = view.findViewById<EditText?>(R.id.name)
-        emailView = view.findViewById<EditText?>(R.id.email)
-        passwordView = view.findViewById<EditText?>(R.id.password)
-        subjectView = view.findViewById<EditText?>(R.id.subject)
-        iconView = view.findViewById<DropdownView?>(R.id.icon)
-        personalDataBlock = view.findViewById<ViewGroup?>(R.id.personal_data_block)
-        attachmentContainer = view.findViewById<LinearLayout?>(R.id.attachment_container)
+        val commentView = view.findViewById<UriPasteEditText>(R.id.comment)
+        this.commentView = commentView
+        val sageCheckBox = view.findViewById<CheckBox>(R.id.sage_checkbox)
+        this.sageCheckBox = sageCheckBox
+        val spoilerCheckBox = view.findViewById<CheckBox>(R.id.spoiler_checkbox)
+        this.spoilerCheckBox = spoilerCheckBox
+        val originalPosterCheckBox = view.findViewById<CheckBox>(R.id.original_poster_checkbox)
+        this.originalPosterCheckBox = originalPosterCheckBox
+        val checkBoxParent = view.findViewById<View>(R.id.checkbox_parent)
+        this.checkBoxParent = checkBoxParent
+        val nameView = view.findViewById<EditText>(R.id.name)
+        this.nameView = nameView
+        val emailView = view.findViewById<EditText>(R.id.email)
+        this.emailView = emailView
+        val passwordView = view.findViewById<EditText>(R.id.password)
+        this.passwordView = passwordView
+        val subjectView = view.findViewById<EditText>(R.id.subject)
+        this.subjectView = subjectView
+        val iconView = view.findViewById<DropdownView>(R.id.icon)
+        this.iconView = iconView
+        val personalDataBlock = view.findViewById<ViewGroup>(R.id.personal_data_block)
+        this.personalDataBlock = personalDataBlock
+        this.attachmentContainer = view.findViewById<LinearLayout>(R.id.attachment_container)
         val footerContainer = view.findViewById<FrameLayout>(R.id.footer_container)
         val oldScrollViewHeight = intArrayOf(-1)
-        scrollView!!.addOnLayoutChangeListener(
+        scrollView.addOnLayoutChangeListener(
             OnLayoutChangeListener {
                 v: View?,
                 left: Int,
@@ -313,8 +323,8 @@ class PostingFragment :
                 oldRight: Int,
                 oldBottom: Int,
                 ->
-                val scrollView = scrollView ?: return@OnLayoutChangeListener
-                val scrollViewHeight = scrollView.getHeight()
+                val currentScrollView = this.scrollView ?: return@OnLayoutChangeListener
+                val scrollViewHeight = currentScrollView.getHeight()
                 if (scrollViewHeight != oldScrollViewHeight[0]) {
                     oldScrollViewHeight[0] = scrollViewHeight
                     resizeComment(false)
@@ -323,7 +333,7 @@ class PostingFragment :
         )
         postingLayout.setPadding((8f * density).toInt(), 0, (8f * density).toInt(), 0)
 
-        Companion.addHeader(personalDataBlock!!, 0, R.string.personal_data)
+        Companion.addHeader(personalDataBlock, 0, R.string.personal_data)
         addHeader(postingLayout, postingLayout.indexOfChild(subjectView), R.string.message_data)
         addHeader(postingLayout, postingLayout.indexOfChild(footerContainer), R.string.confirmation)
         val tripcodeWarning = view.findViewById<TextView>(R.id.personal_tripcode_warning)
@@ -338,36 +348,36 @@ class PostingFragment :
         setTextSizeScaled(remainingCharacters, 12)
         setNewMargin(remainingCharacters, 0, (-2f * density).toInt(), 0, 0)
 
-        nameView!!.addTextChangedListener(
+        nameView.addTextChangedListener(
             NameEditWatcher(
-                postingConfiguration!!.allowName &&
-                    !postingConfiguration!!.allowTripcode,
-                nameView!!,
+                postingConfiguration.allowName &&
+                    !postingConfiguration.allowTripcode,
+                nameView,
                 tripcodeWarning,
                 Runnable { resizeComment(true) },
             ),
         )
-        ViewUtils.applyMonospaceTypeface(passwordView!!)
+        ViewUtils.applyMonospaceTypeface(passwordView)
         commentEditWatcher =
             CommentEditWatcher(
                 postingConfiguration,
-                commentView!!,
+                commentView,
                 remainingCharacters,
                 Runnable { resizeComment(true) },
                 Runnable { getInstance().store(obtainPostDraft()) },
             )
-        commentView!!.setOnFocusChangeListener(
+        commentView.setOnFocusChangeListener(
             OnFocusChangeListener { v: View?, hasFocus: Boolean ->
                 updateFocusButtons(
                     hasFocus,
                 )
             },
         )
-        commentView!!.addTextChangedListener(commentEditWatcher)
-        commentView!!.addTextChangedListener(QuoteEditWatcher(requireContext()))
-        commentView!!.setCallback(
+        commentView.addTextChangedListener(commentEditWatcher)
+        commentView.addTextChangedListener(QuoteEditWatcher(requireContext()))
+        commentView.setCallback(
             this,
-            buildMimeTypeList(postingConfiguration!!.attachmentMimeTypes),
+            buildMimeTypeList(postingConfiguration.attachmentMimeTypes),
         )
         var addPaddingToRoot = false
         val landscape =
@@ -406,7 +416,7 @@ class PostingFragment :
         commentParent.removeView(commentView)
         postingLayout.addView(commentView, postingLayout.indexOfChild(commentParent))
         postingLayout.removeView(commentParent)
-        ViewUtils.setNewMargin(checkBoxParent!!, 0, (4f * density).toInt(), 0, 0)
+        ViewUtils.setNewMargin(checkBoxParent, 0, (4f * density).toInt(), 0, 0)
 
         updatePostingConfiguration(true, false, false)
         MarkupButtonsBuilder(
@@ -435,7 +445,7 @@ class PostingFragment :
         setNewMarginRelative(captchaInputView, null, null, (4f * density).toInt(), null)
 
         val captchaConfiguration = chan.configuration.safe().obtainCaptcha(captchaType)
-        captchaForm =
+        val captchaForm =
             CaptchaForm(
                 this,
                 true,
@@ -445,10 +455,11 @@ class PostingFragment :
                 captchaInputView,
                 captchaConfiguration,
             )
+        this.captchaForm = captchaForm
         captchaLifetimeSeconds = captchaConfiguration.ttl
         refreshCaptchaWhenLifetimeEnd = isCaptchaAutoReload
         val maxTranslationZ = (2f * density).toInt().toFloat()
-        sendButton =
+        val sendButton =
             object : Button(
                 captchaInputParentView.getContext(),
                 null,
@@ -459,9 +470,10 @@ class PostingFragment :
                     super.setTranslationZ(min(translationZ, maxTranslationZ))
                 }
             }
+        this.sendButton = sendButton
         val rect = Rect()
         // Limit elevation height since the shadow looks ugly when the view is at the bottom
-        sendButton!!.setOutlineProvider(
+        sendButton.setOutlineProvider(
             object : ViewOutlineProvider() {
                 override fun getOutline(
                     view: View,
@@ -477,21 +489,21 @@ class PostingFragment :
             },
         )
 
-        val theme = getTheme(sendButton!!.getContext())
-        val colorControlDisabled = applyAlpha(theme!!.controlNormal21, theme.disabledAlpha21)
+        val theme = getTheme(sendButton.getContext())
+        val colorControlDisabled = applyAlpha(theme.controlNormal21, theme.disabledAlpha21)
         val states = arrayOf<IntArray?>(intArrayOf(-android.R.attr.state_enabled), intArrayOf())
         val colors = intArrayOf(colorControlDisabled, theme.accent)
-        sendButton!!.setBackgroundTintList(ColorStateList(states, colors))
+        sendButton.setBackgroundTintList(ColorStateList(states, colors))
 
-        sendButton!!.setSingleLine(true)
+        sendButton.setSingleLine(true)
         // setSingleLine breaks capitalization
-        sendButton!!.setAllCaps(true)
+        sendButton.setAllCaps(true)
 
         captchaInputParentView.addView(sendButton, 0, LinearLayout.LayoutParams.WRAP_CONTENT)
-        sendButton!!.setText(R.string.send)
-        sendButton!!.setOnClickListener(View.OnClickListener { v: View? -> executeSendPost() })
+        sendButton.setText(R.string.send)
+        sendButton.setOnClickListener(View.OnClickListener { v: View? -> executeSendPost() })
         if (longFooter) {
-            (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight = 2f
+            (sendButton.getLayoutParams() as LinearLayout.LayoutParams).weight = 2f
             val lastAddWeight = booleanArrayOf(true)
             captchaInputParentView.addOnLayoutChangeListener(
                 OnLayoutChangeListener {
@@ -505,17 +517,18 @@ class PostingFragment :
                     oldRight: Int,
                     oldBottom: Int,
                     ->
+                    val currentSendButton = this.sendButton ?: return@OnLayoutChangeListener
                     val addWeight = captchaInputView.getVisibility() == View.GONE
                     if (addWeight != lastAddWeight[0]) {
                         lastAddWeight[0] = addWeight
-                        (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight =
+                        (currentSendButton.getLayoutParams() as LinearLayout.LayoutParams).weight =
                             if (addWeight) 2f else 1f
-                        sendButton!!.requestLayout()
+                        currentSendButton.requestLayout()
                     }
                 },
             )
         } else {
-            (sendButton!!.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
+            (sendButton.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
         }
         attachmentColumnCount =
             if (screenWidthDp >= 960) {
@@ -555,24 +568,25 @@ class PostingFragment :
                     )
                 }
             }
-            nameView!!.setText(postDraft.name)
-            emailView!!.setText(postDraft.email)
-            passwordView!!.setText(postDraft.password)
-            subjectView!!.setText(postDraft.subject)
-            sageCheckBox!!.setChecked(postDraft.optionSage)
-            spoilerCheckBox!!.setChecked(postDraft.optionSpoiler)
-            originalPosterCheckBox!!.setChecked(postDraft.optionOriginalPoster)
+            nameView.setText(postDraft.name)
+            emailView.setText(postDraft.email)
+            passwordView.setText(postDraft.password)
+            subjectView.setText(postDraft.subject)
+            sageCheckBox.setChecked(postDraft.optionSage)
+            spoilerCheckBox.setChecked(postDraft.optionSpoiler)
+            originalPosterCheckBox.setChecked(postDraft.optionOriginalPoster)
+            val userIconItems = this.userIconItems
             if (userIconItems != null) {
                 var index = 0
                 if (postDraft.userIcon != null) {
-                    for (i in userIconItems!!.indices) {
-                        if (postDraft.userIcon == userIconItems!!.get(i).first) {
+                    for (i in userIconItems.indices) {
+                        if (postDraft.userIcon == userIconItems[i].first) {
                             index = i + 1
                             break
                         }
                     }
                 }
-                iconView!!.setSelection(index)
+                iconView.setSelection(index)
             }
         }
 
@@ -595,7 +609,7 @@ class PostingFragment :
                     captchaDraft.large,
                     captchaDraft.blackAndWhite,
                 )
-                captchaForm!!.setText(captchaDraft.text)
+                captchaForm.setText(captchaDraft.text)
                 captchaRestoreSuccess = true
             }
         } else {
@@ -660,7 +674,7 @@ class PostingFragment :
                             captchaDraft.large,
                             captchaDraft.blackAndWhite,
                         )
-                        captchaForm!!.setText(captchaDraft.text)
+                        captchaForm.setText(captchaDraft.text)
                         captchaRestoreSuccess = true
                     } else if (captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.SKIP ||
                         captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.PASS
@@ -770,9 +784,9 @@ class PostingFragment :
             }
         }
 
-        commentView!!.setText(builder)
-        commentView!!.setSelection(commentCarriage)
-        commentView!!.requestFocus()
+        commentView.setText(builder)
+        commentView.setSelection(commentCarriage)
+        commentView.requestFocus()
         if (!captchaRestoreSuccess) {
             refreshCaptcha(false, true, false)
         }
@@ -1022,26 +1036,28 @@ class PostingFragment :
         attachmentOptions: Boolean,
         attachmentCount: Boolean,
     ) {
-        val posting = postingConfiguration
+        val posting = postingConfiguration!!
         if (views) {
-            userIconItems = if (posting!!.userIcons.size > 0) posting.userIcons else null
+            val iconView = iconView!!
+            val userIconItems = if (posting.userIcons.size > 0) posting.userIcons else null
+            this.userIconItems = userIconItems
             if (userIconItems != null) {
                 val lastUserIcon = this.userIcon
                 var lastUserIconIndex = -1
                 val items = ArrayList<String>()
                 items.add(getString(R.string.no_icon))
-                for (i in userIconItems!!.indices) {
-                    val iconItem = userIconItems!!.get(i)
+                for (i in userIconItems.indices) {
+                    val iconItem = userIconItems[i]
                     items.add(iconItem.second)
                     if (equals(lastUserIcon, iconItem.first)) {
                         lastUserIconIndex = i
                     }
                 }
-                iconView!!.setItems(items)
-                iconView!!.setVisibility(View.VISIBLE)
-                iconView!!.setSelection(lastUserIconIndex + 1)
+                iconView.setItems(items)
+                iconView.setVisibility(View.VISIBLE)
+                iconView.setSelection(lastUserIconIndex + 1)
             } else {
-                iconView!!.setVisibility(View.GONE)
+                iconView.setVisibility(View.GONE)
             }
             var needPassword = false
             val chan = get(this.chanName)
@@ -1080,10 +1096,10 @@ class PostingFragment :
         if (attachmentOptions || attachmentCount) {
             if (attachmentOptions) {
                 attachmentRatingItems =
-                    if (posting!!.attachmentRatings.size > 0) posting.attachmentRatings else null
+                    if (posting.attachmentRatings.size > 0) posting.attachmentRatings else null
             }
             if (attachmentCount) {
-                if (attachments.size > posting!!.attachmentCount) {
+                if (attachments.size > posting.attachmentCount) {
                     attachments.subList(posting.attachmentCount, attachments.size).clear()
                 }
             }
@@ -1102,8 +1118,8 @@ class PostingFragment :
             return false
         }
         for (i in first.indices) {
-            if (!equals(first.get(i)!!.first, first.get(i)!!.second) ||
-                !equals(first.get(i)!!.second, first.get(i)!!.second)
+            if (!equals(first.get(i).first, first.get(i).second) ||
+                !equals(first.get(i).second, first.get(i).second)
             ) {
                 return false
             }
@@ -1113,7 +1129,7 @@ class PostingFragment :
 
     private fun updatePostingConfigurationIfNeeded() {
         val chan = get(this.chanName)
-        val oldPosting = postingConfiguration
+        val oldPosting = postingConfiguration!!
         var newPosting =
             chan.configuration
                 .safe()
@@ -1129,7 +1145,7 @@ class PostingFragment :
                     .allowPosting
         }
         val views =
-            oldPosting!!.allowName != newPosting.allowName ||
+            oldPosting.allowName != newPosting.allowName ||
                 oldPosting.allowEmail != newPosting.allowEmail ||
                 oldPosting.allowTripcode != newPosting.allowTripcode ||
                 oldPosting.allowSubject != newPosting.allowSubject ||
@@ -1233,7 +1249,7 @@ class PostingFragment :
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
 
             try {
-                attachLauncher!!.launch(intent)
+                attachLauncher.launch(intent)
             } catch (e: ActivityNotFoundException) {
                 show(R.string.unknown_address)
             }
@@ -1242,8 +1258,9 @@ class PostingFragment :
     }
 
     private fun updateFocusButtons(commentFocused: Boolean) {
-        for (i in 0..<textFormatView!!.getChildCount()) {
-            textFormatView!!.getChildAt(i).setClickable(commentFocused)
+        val textFormatView = textFormatView!!
+        for (i in 0..<textFormatView.getChildCount()) {
+            textFormatView.getChildAt(i).setClickable(commentFocused)
         }
     }
 
@@ -1285,9 +1302,7 @@ class PostingFragment :
     private fun isCheckedIfVisible(checkBox: CheckBox): Boolean = checkBox.getVisibility() == View.VISIBLE && checkBox.isChecked()
 
     private fun executeSendPost() {
-        if (postingBinder == null) {
-            return
-        }
+        val postingBinder = this.postingBinder ?: return
         val subject = getTextIfVisible(subjectView!!)
         val comment = getTextIfVisible(commentView!!)
         val name = getTextIfVisible(nameView!!)
@@ -1302,6 +1317,7 @@ class PostingFragment :
         val userIcon = if (iconView!!.getVisibility() == View.VISIBLE) this.userIcon else null
         val array = ArrayList<SendPostData.Attachment>()
         val draftsStorage = getInstance()
+        val attachmentRatingItems = this.attachmentRatingItems
         for (i in attachments.indices) {
             val data = attachments.get(i)
             var rating = data.rating
@@ -1320,7 +1336,7 @@ class PostingFragment :
                 rating = null
             }
             if (attachmentRatingItems != null && rating == null) {
-                rating = attachmentRatingItems!!.get(0).first
+                rating = attachmentRatingItems[0].first
             }
             val fileHolder = draftsStorage.getAttachmentDraftFileHolder(data.hash)
             if (fileHolder != null) {
@@ -1374,7 +1390,7 @@ class PostingFragment :
             )
         getInstance().store(obtainPostDraft())
         allowDialog = false
-        if (postingBinder!!.executeSendPost(this.chanName, data)) {
+        if (postingBinder.executeSendPost(this.chanName, data)) {
             sendButtonEnabled = false
             updateSendButtonState()
             progressDialog?.dismiss()
@@ -1601,17 +1617,18 @@ class PostingFragment :
         val invertColors =
             blackAndWhite && !isLight(getColor(requireContext(), android.R.attr.colorBackground))
         captchaForm!!.showCaptcha(captchaState, input, captcha, large, invertColors)
-        if (scrollView!!.getScrollY() + scrollView!!.getHeight() >=
-            scrollView!!
+        val scrollView = scrollView!!
+        if (scrollView.getScrollY() + scrollView.getHeight() >=
+            scrollView
                 .getChildAt(0)
                 .getHeight()
         ) {
-            scrollView!!.post(
+            scrollView.post(
                 Runnable {
-                    val scrollView = scrollView ?: return@Runnable
-                    scrollView.setScrollY(
+                    val currentScrollView = this.scrollView ?: return@Runnable
+                    currentScrollView.setScrollY(
                         max(
-                            scrollView.getChildAt(0).getHeight() - scrollView.getHeight(),
+                            currentScrollView.getChildAt(0).getHeight() - currentScrollView.getHeight(),
                             0,
                         ),
                     )
@@ -1756,12 +1773,13 @@ class PostingFragment :
         attachmentView: View,
         position: Int,
     ) {
+        val attachmentContainer = attachmentContainer!!
         var layoutParams = attachmentView.getLayoutParams() as LinearLayout.LayoutParams
         if (attachmentColumnCount == 1) {
             layoutParams.width = LinearLayout.LayoutParams.MATCH_PARENT
             layoutParams.weight = 0f
             layoutParams.leftMargin = 0
-            attachmentContainer!!.addView(attachmentView)
+            attachmentContainer.addView(attachmentView)
         } else {
             val density = obtainDensity(this)
             val paddingDp = 4f
@@ -1774,7 +1792,7 @@ class PostingFragment :
             val placeholder: View
             if (column == 0) {
                 subcontainer = LinearLayout(requireContext())
-                attachmentContainer!!.addView(
+                attachmentContainer.addView(
                     subcontainer,
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -1785,7 +1803,7 @@ class PostingFragment :
                 subcontainer.setPadding(0, 0, (paddingDp * density).toInt(), 0)
                 subcontainer.setGravity(Gravity.BOTTOM)
             } else {
-                subcontainer = attachmentContainer!!.getChildAt(row) as LinearLayout
+                subcontainer = attachmentContainer.getChildAt(row) as LinearLayout
                 placeholder = subcontainer.getChildAt(subcontainer.getChildCount() - 1)
             }
             subcontainer.addView(attachmentView, column)
@@ -1811,7 +1829,7 @@ class PostingFragment :
         view.setForeground(
             RoundedCornersDrawable(
                 (2f * density).toInt(),
-                getTheme(view.getContext())!!.window,
+                getTheme(view.getContext()).window,
             ),
         )
 
@@ -2005,10 +2023,11 @@ class PostingFragment :
     }
 
     private fun formatQuote() {
-        val editable = commentView!!.getText()
+        val commentView = commentView!!
+        val editable = commentView.getText()
         val text = editable.toString()
-        val selectionStart = commentView!!.getSelectionStart()
-        val selectionEnd = commentView!!.getSelectionEnd()
+        val selectionStart = commentView.getSelectionStart()
+        val selectionEnd = commentView.getSelectionEnd()
         val selectedText = text.substring(selectionStart, selectionEnd)
         val oneSymbolBefore = text.substring(max(selectionStart - 1, 0), selectionStart)
         if (selectedText.startsWith(">")) {
@@ -2016,7 +2035,7 @@ class PostingFragment :
                 selectedText.replaceFirst("> ?".toRegex(), "").replace("(\n+)> ?".toRegex(), "$1")
             val diff = selectedText.length - unQuotedText.length
             editable.replace(selectionStart, selectionEnd, unQuotedText)
-            commentView!!.setSelection(selectionStart, selectionEnd - diff)
+            commentView.setSelection(selectionStart, selectionEnd - diff)
         } else {
             val firstSymbol =
                 if (oneSymbolBefore.length == 0 || oneSymbolBefore == "\n") "" else "\n"
@@ -2028,14 +2047,15 @@ class PostingFragment :
             if (newEnd - newStart <= 2) {
                 newStart = newEnd
             }
-            commentView!!.setSelection(newStart, newEnd)
+            commentView.setSelection(newStart, newEnd)
         }
     }
 
     private fun resizeComment(post: Boolean) {
-        scrollView!!.removeCallbacks(resizeComment)
+        val scrollView = scrollView!!
+        scrollView.removeCallbacks(resizeComment)
         if (post) {
-            scrollView!!.post(resizeComment)
+            scrollView.post(resizeComment)
         } else {
             resizeComment.run()
         }
@@ -2044,8 +2064,9 @@ class PostingFragment :
     private val resizeComment =
         Runnable {
             val scrollView = scrollView ?: return@Runnable
+            val commentView = commentView ?: return@Runnable
             val postMain = scrollView.getChildAt(0)
-            commentView!!.setMinLines(4)
+            commentView.setMinLines(4)
             val widthMeasureSpec =
                 View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
             val heightMeasureSpec =
@@ -2053,7 +2074,7 @@ class PostingFragment :
             postMain.measure(widthMeasureSpec, heightMeasureSpec)
             val delta = scrollView.getHeight() - postMain.getMeasuredHeight()
             if (delta > 0) {
-                commentView!!.setMinHeight(commentView!!.getMeasuredHeight() + delta)
+                commentView.setMinHeight(commentView.getMeasuredHeight() + delta)
             }
         }
 
@@ -2121,9 +2142,7 @@ class PostingFragment :
 
             lastSupportedTags = supportedTags
             lastDisplayedTags = displayedTags
-            if (commentEditor != null) {
-                commentEditor!!.handleSimilar(supportedTags)
-            }
+            commentEditor?.handleSimilar(supportedTags)
             textFormatView.removeAllViews()
             var firstMarkupButton = true
             for (provider in iterable(displayedTags)) {

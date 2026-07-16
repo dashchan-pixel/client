@@ -25,10 +25,10 @@ class SeekPreference(
         defaultValue,
         title,
         SummaryProvider { p ->
-            if (specialValue != null && specialValue.first == p!!.value) {
+            if (specialValue != null && specialValue.first == p.value) {
                 specialValue.second
             } else if (valueFormat != null) {
-                String.format(valueFormat, p!!.value)
+                String.format(valueFormat, p.value)
             } else {
                 null
             }

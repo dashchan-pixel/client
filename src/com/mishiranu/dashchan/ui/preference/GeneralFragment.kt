@@ -40,7 +40,7 @@ class GeneralFragment :
     /** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
     private val anotherUriKeys = HashSet<String>()
 
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onViewCreated(
         view: View,
@@ -107,7 +107,7 @@ class GeneralFragment :
             R.string.use_javascript_for_recaptcha__summary,
         )
 
-        captchaSolvingPreference =
+        val captchaSolvingPreference =
             addMultipleEdit(
                 Preferences.KEY_CAPTCHA_SOLVING,
                 R.string.captcha_solving,
@@ -120,8 +120,9 @@ class GeneralFragment :
                 ),
                 MultipleEditPreference.MapValueCodec(Preferences.KEYS_CAPTCHA_SOLVING),
             )
-        captchaSolvingPreference!!.setOnAfterChangeListener { configureCaptchaSolvingSummary(true) }
-        captchaSolvingPreference!!.setDescription(getString(R.string.captcha_solving_info__sentence))
+        this.captchaSolvingPreference = captchaSolvingPreference
+        captchaSolvingPreference.setOnAfterChangeListener { configureCaptchaSolvingSummary(true) }
+        captchaSolvingPreference.setDescription(getString(R.string.captcha_solving_info__sentence))
         configureCaptchaSolvingNeutralButton()
         addList(
             Preferences.KEY_FIREWALL_RESOLUTION_METHOD,
@@ -167,7 +168,7 @@ class GeneralFragment :
             viewModel.showDialog = false
             viewModel.errorItem = result.first
             viewModel.extraMap = result.second
-            captchaSolvingPreference!!.invalidate()
+            captchaSolvingPreference.invalidate()
             if (captchaSolvingCheckDialog != null) {
                 captchaSolvingCheckDialog?.dismiss()
                 captchaSolvingCheckDialog = null
@@ -175,7 +176,7 @@ class GeneralFragment :
                     ClickableToast.show(R.string.validation_completed)
                 } else {
                     ClickableToast.show(result.first)
-                    captchaSolvingPreference!!.performClick()
+                    captchaSolvingPreference.performClick()
                 }
             }
         }
@@ -192,7 +193,7 @@ class GeneralFragment :
         titleResId: Int,
         default: String,
     ) {
-        val stored = Preferences.PREFERENCES!!.getString(key, "")
+        val stored = Preferences.prefs.getString(key, "")
         if (anotherUriKeys.contains(key) || !stored.isNullOrEmpty()) {
             anotherUriKeys.add(key)
             addAnotherUri(key, titleResId, default)
@@ -255,17 +256,18 @@ class GeneralFragment :
     }
 
     private fun configureCaptchaSolvingNeutralButton() {
+        val captchaSolvingPreference = captchaSolvingPreference!!
         if (ChanManager
                 .getInstance()
                 .availableChans
                 .iterator()
                 .hasNext()
         ) {
-            captchaSolvingPreference!!.setNeutralButton(getString(R.string.forums)) {
+            captchaSolvingPreference.setNeutralButton(getString(R.string.forums)) {
                 ChanMultiChoiceDialog(Preferences.captchaSolvingChans).show(this)
             }
         } else {
-            captchaSolvingPreference!!.setNeutralButton(null, null)
+            captchaSolvingPreference.setNeutralButton(null, null)
         }
     }
 

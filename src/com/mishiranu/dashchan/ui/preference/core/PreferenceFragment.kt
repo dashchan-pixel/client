@@ -83,7 +83,14 @@ abstract class PreferenceFragment : ContentFragment() {
         }
     }
 
-    protected abstract fun getPreferences(): SharedPreferences?
+    protected abstract fun getPreferences(): SharedPreferences
+
+    /**
+     * The list adapter, which [onCreateView] sets and [onDestroyView] drops together with
+     * [recyclerView]. Every caller runs between the two, so both fields are non-null there.
+     */
+    private val listAdapter: RecyclerView.Adapter<*>
+        get() = recyclerView!!.getAdapter()!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -139,14 +146,14 @@ abstract class PreferenceFragment : ContentFragment() {
     ) {
         if (newValue) {
             if (persistent.contains(preference)) {
-                preference.persist(getPreferences()!!)
+                preference.persist(getPreferences())
             }
             onPreferenceAfterChange(preference)
             preference.notifyAfterChange()
         }
         val index = preferences.indexOf(preference)
         if (index >= 0) {
-            recyclerView!!.getAdapter()!!.notifyItemChanged(index, SimpleViewHolder.EMPTY_PAYLOAD)
+            listAdapter.notifyItemChanged(index, SimpleViewHolder.EMPTY_PAYLOAD)
         }
     }
 
@@ -156,7 +163,7 @@ abstract class PreferenceFragment : ContentFragment() {
     ) {
         preferences.add(preference)
         if (preference.key != null && persistent) {
-            preference.extract(getPreferences()!!)
+            preference.extract(getPreferences())
             this.persistent.add(preference)
         }
         preference.setOnChangeListener { newValue -> onChange(preference, newValue) }
@@ -169,16 +176,16 @@ abstract class PreferenceFragment : ContentFragment() {
         val removeIndex = preferences.indexOf(which)
         check(removeIndex >= 0)
         preferences.removeAt(removeIndex)
-        recyclerView!!.getAdapter()!!.notifyItemRemoved(removeIndex)
+        listAdapter.notifyItemRemoved(removeIndex)
         val index = preferences.indexOf(after) + 1
         preferences.add(index, which!!)
-        recyclerView!!.getAdapter()!!.notifyItemInserted(index)
+        listAdapter.notifyItemInserted(index)
     }
 
     fun <T> addDialogPreference(preference: Preference<T>) {
         addPreference(preference, true)
         preference.setOnClickListener { p ->
-            PreferenceDialog(p!!.key).show(
+            PreferenceDialog(p.key).show(
                 getChildFragmentManager(),
                 PreferenceDialog::class.java.getName(),
             )
@@ -188,7 +195,7 @@ abstract class PreferenceFragment : ContentFragment() {
     fun removeAllPreferences() {
         preferences.clear()
         persistent.clear()
-        recyclerView!!.getAdapter()!!.notifyDataSetChanged()
+        listAdapter.notifyDataSetChanged()
     }
 
     fun removePreference(preference: Preference<*>?): Int {
@@ -196,7 +203,7 @@ abstract class PreferenceFragment : ContentFragment() {
         if (index >= 0) {
             preferences.removeAt(index)
             persistent.remove(preference)
-            recyclerView!!.getAdapter()!!.notifyItemRemoved(index)
+            listAdapter.notifyItemRemoved(index)
         }
         return preferences.size
     }
@@ -220,7 +227,7 @@ abstract class PreferenceFragment : ContentFragment() {
     fun addButton(
         title: CharSequence?,
         summary: CharSequence?,
-    ): Preference<Void?> = addButton(title, SummaryProvider { p: Preference<Void?>? -> summary })
+    ): Preference<Void?> = addButton(title, SummaryProvider { p: Preference<Void?> -> summary })
 
     fun addButton(
         title: CharSequence?,
@@ -285,7 +292,7 @@ abstract class PreferenceFragment : ContentFragment() {
         val preference = CheckPreference(requireContext(), key, defaultValue, title, summary)
         addPreference(preference, persistent)
         preference.setOnClickListener { p ->
-            p!!.value = !p.value!!
+            p.value = !p.value!!
         }
         return preference
     }
@@ -301,8 +308,8 @@ abstract class PreferenceFragment : ContentFragment() {
             key,
             defaultValue,
             titleResId,
-            SummaryProvider { p: Preference<String>? ->
-                var summary: CharSequence? = p!!.value
+            SummaryProvider { p: Preference<String> ->
+                var summary: CharSequence? = p.value
                 if (summary == null || summary.length == 0) {
                     summary = (p as EditPreference).hint
                 }
@@ -324,7 +331,7 @@ abstract class PreferenceFragment : ContentFragment() {
             key,
             defaultValue,
             titleResId,
-            SummaryProvider { p: Preference<String>? ->
+            SummaryProvider { p: Preference<String> ->
                 if (summaryResId != 0) {
                     getString(
                         summaryResId,
@@ -381,7 +388,7 @@ abstract class PreferenceFragment : ContentFragment() {
         addMultipleEdit(
             key,
             titleResId,
-            SummaryProvider { p: Preference<T>? -> if (summaryResId != 0) getString(summaryResId) else null },
+            SummaryProvider { p: Preference<T> -> if (summaryResId != 0) getString(summaryResId) else null },
             hints,
             inputTypes,
             valueCodec,
@@ -398,11 +405,11 @@ abstract class PreferenceFragment : ContentFragment() {
         addMultipleEdit(
             key,
             titleResId,
-            SummaryProvider { p: Preference<T>? ->
+            SummaryProvider { p: Preference<T> ->
                 MultipleEditPreference.formatValues(
                     valueCodec,
                     summaryPattern,
-                    p!!.value,
+                    p.value,
                 )
             },
             hints,

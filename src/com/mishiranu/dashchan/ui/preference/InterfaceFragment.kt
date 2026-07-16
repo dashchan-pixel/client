@@ -20,7 +20,7 @@ import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 
 class InterfaceFragment : PreferenceFragment() {
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onViewCreated(
         view: View,
@@ -150,7 +150,7 @@ class InterfaceFragment : PreferenceFragment() {
             R.string.advanced_search,
             R.string.advanced_search__summary,
         ).setOnAfterChangeListener { p ->
-            if (p!!.value!!) {
+            if (p.value!!) {
                 displayAdvancedSearchDialog(childFragmentManager)
             }
         }

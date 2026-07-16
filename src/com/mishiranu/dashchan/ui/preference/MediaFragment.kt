@@ -36,7 +36,7 @@ class MediaFragment :
 
     private var inStorageRequest = false
 
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,11 +129,12 @@ class MediaFragment :
             R.string.original_file_name,
             R.string.original_file_name__summary,
         )
-        downloadUriTreePreference =
+        val downloadUriTreePreference =
             addButton(getString(R.string.download_directory)) {
                 DataFile.obtain(DataFile.Target.DOWNLOADS, null).getName()
             }
-        downloadUriTreePreference!!.setOnClickListener {
+        this.downloadUriTreePreference = downloadUriTreePreference
+        downloadUriTreePreference.setOnClickListener {
             if ((requireActivity() as FragmentHandler).requestStorage()) {
                 inStorageRequest = true
             }
@@ -219,15 +220,16 @@ class MediaFragment :
             Preferences.MAX_CACHE_SIZE,
             Preferences.STEP_CACHE_SIZE,
         )
-        clearCachePreference =
+        val clearCachePreference =
             addButton(getString(R.string.clear_cache)) {
                 StringUtils.formatFileSizeMegabytes(CacheManager.getInstance().cacheSize)
             }
-        clearCachePreference!!.setOnClickListener {
+        this.clearCachePreference = clearCachePreference
+        clearCachePreference.setOnClickListener {
             val dialog = ClearCacheDialog()
             dialog.show(childFragmentManager, ClearCacheDialog::class.java.name)
         }
-        clearCachePreference!!.invalidate()
+        clearCachePreference.invalidate()
 
         addDependency(
             Preferences.KEY_SUBDIR_PATTERN,
@@ -245,7 +247,7 @@ class MediaFragment :
             )
         useInternalStorageForCachePreference.setOnAfterChangeListener {
             CacheManager.getInstance().rebuildCache()
-            clearCachePreference!!.invalidate()
+            clearCachePreference.invalidate()
         }
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.media), null)

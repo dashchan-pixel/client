@@ -26,12 +26,15 @@ abstract class Preference<T>(
         CHECK,
     }
 
+    // The preference passed to each of these is always the one dispatching the callback, i.e.
+    // `this` -- never null. J2K widened the parameters, forcing a non-null assertion on the
+    // parameter at every lambda.
     fun interface SummaryProvider<T> {
-        fun getSummary(value: Preference<T>?): CharSequence?
+        fun getSummary(value: Preference<T>): CharSequence?
     }
 
     fun interface OnClickListener<T> {
-        fun onClick(preference: Preference<T>?)
+        fun onClick(preference: Preference<T>)
     }
 
     internal fun interface OnChangeListener {
@@ -40,13 +43,13 @@ abstract class Preference<T>(
 
     fun interface OnBeforeChangeListener<T> {
         fun onBeforeChange(
-            preference: Preference<T>?,
+            preference: Preference<T>,
             value: T?,
         ): Boolean
     }
 
     fun interface OnAfterChangeListener<T> {
-        fun onAfterChange(preference: Preference<T>?)
+        fun onAfterChange(preference: Preference<T>)
     }
 
     open class ViewHolder(

@@ -51,7 +51,7 @@ class ChanFragment :
 
     private fun getChanName(): String = requireArguments().getString(EXTRA_CHAN_NAME)!!
 
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onViewCreated(
         view: View,
@@ -70,7 +70,7 @@ class ChanFragment :
                 null,
                 R.string.default_starting_board,
                 { p ->
-                    var text = p!!.value
+                    var text = p.value
                     if (!StringUtils.isEmpty(text)) {
                         val boardName = StringUtils.validateBoardName(text!!)
                         text =
@@ -110,9 +110,9 @@ class ChanFragment :
                 InputType.TYPE_CLASS_TEXT or
                     InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
             ).setOnAfterChangeListener { p ->
-                val value = p!!.value
+                val value = p.value
                 if (StringUtils.isEmpty(value)) {
-                    p!!.value = Preferences.getPassword(Chan.get(chanName))
+                    p.value = Preferences.getPassword(Chan.get(chanName))
                     ClickableToast.show(R.string.new_password_was_generated)
                 }
             }
@@ -130,7 +130,7 @@ class ChanFragment :
         if (chan.configuration.getOption(ChanConfiguration.OPTION_ALLOW_CAPTCHA_PASS)) {
             val authorization = chan.configuration.safe().obtainCaptchaPass()
             if (authorization.fieldsCount > 0) {
-                captchaPassPreference =
+                val captchaPassPreference =
                     addMultipleEdit(
                         Preferences.KEY_CAPTCHA_PASS.bind(chanName),
                         R.string.captcha_pass,
@@ -142,8 +142,9 @@ class ChanFragment :
                         ),
                         MultipleEditPreference.ListValueCodec(authorization.fieldsCount),
                     )
-                captchaPassPreference!!.setOnAfterChangeListener { p ->
-                    val values = p!!.value
+                this.captchaPassPreference = captchaPassPreference
+                captchaPassPreference.setOnAfterChangeListener { p ->
+                    val values = p.value
                     if (Preferences.checkHasMultipleValues(values)) {
                         val dialog = AuthorizationDialog(getChanName(), AuthorizationType.CAPTCHA_PASS, values)
                         dialog.show(childFragmentManager, AuthorizationDialog::class.java.name)
@@ -154,7 +155,7 @@ class ChanFragment :
         if (chan.configuration.getOption(ChanConfiguration.OPTION_ALLOW_USER_AUTHORIZATION)) {
             val authorization = chan.configuration.safe().obtainUserAuthorization()
             if (authorization.fieldsCount > 0) {
-                userAuthorizationPreference =
+                val userAuthorizationPreference =
                     addMultipleEdit(
                         Preferences.KEY_USER_AUTHORIZATION.bind(chanName),
                         R.string.user_authorization,
@@ -166,8 +167,9 @@ class ChanFragment :
                         ),
                         MultipleEditPreference.ListValueCodec(authorization.fieldsCount),
                     )
-                userAuthorizationPreference!!.setOnAfterChangeListener { p ->
-                    val values = p!!.value
+                this.userAuthorizationPreference = userAuthorizationPreference
+                userAuthorizationPreference.setOnAfterChangeListener { p ->
+                    val values = p.value
                     if (Preferences.checkHasMultipleValues(values)) {
                         val dialog = AuthorizationDialog(getChanName(), AuthorizationType.USER, values)
                         dialog.show(childFragmentManager, AuthorizationDialog::class.java.name)
@@ -193,14 +195,15 @@ class ChanFragment :
                     preference.value = chan.configuration.get(null, key, defaultValue)
                     preference.setOnAfterChangeListener { p ->
                         val callbackChan = Chan.get(chanName)
-                        callbackChan.configuration.set(null, preference.key!!, p!!.value!!)
+                        callbackChan.configuration.set(null, preference.key!!, p.value!!)
                         callbackChan.configuration.commit()
                     }
                 }
             }
         }
-        cookiePreference = addButton(R.string.manage_cookies, 0)
-        cookiePreference!!.setOnClickListener {
+        val cookiePreference = addButton(R.string.manage_cookies, 0)
+        this.cookiePreference = cookiePreference
+        cookiePreference.setOnClickListener {
             (requireActivity() as FragmentHandler).pushFragment(CookiesFragment(chanName))
         }
 
@@ -276,7 +279,7 @@ class ChanFragment :
                 Preferences.VALUES_PROXY_TYPE,
             )
             proxyPreference.setOnAfterChangeListener { p ->
-                val success = HttpClient.getInstance().checkProxyValid(p!!.value)
+                val success = HttpClient.getInstance().checkProxyValid(p.value)
                 if (!success) {
                     ClickableToast.show(R.string.enter_valid_data)
                     proxyPreference.performClick()
@@ -373,7 +376,7 @@ class ChanFragment :
             )
         preference.setOnBeforeChangeListener { p, value ->
             if (primaryDomain == value) {
-                p!!.value = ""
+                p.value = ""
                 false
             } else {
                 true

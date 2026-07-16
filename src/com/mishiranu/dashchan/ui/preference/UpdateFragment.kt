@@ -206,8 +206,9 @@ class UpdateFragment : BaseListFragment {
                 }
             }
         }
-        val adapter = Adapter(getRecyclerView()!!.context, this::onItemClick)
-        getRecyclerView()!!.adapter = adapter
+        val recyclerView = getRecyclerView()!!
+        val adapter = Adapter(recyclerView.context, this::onItemClick)
+        recyclerView.adapter = adapter
         val updateDataMap = this.updateDataMap
         if (updateDataMap != null) {
             adapter.listItems = buildData(requireContext(), updateDataMap, savedInstanceState)
@@ -357,17 +358,18 @@ class UpdateFragment : BaseListFragment {
         selectedIndex: Int,
     ) {
         var targetIndex = selectedIndex
+        val updateDataMap = this.updateDataMap!!
         val adapter = getRecyclerView()!!.adapter as Adapter
         for (i in adapter.listItems.indices) {
             val listItem = adapter.listItems[i]
             if (extensionName == listItem.extensionName) {
-                val applicationItem = updateDataMap!!.get(extensionName, listItem.installed)!!
+                val applicationItem = updateDataMap.get(extensionName, listItem.installed)!!
                 if (!listItem.installed) {
                     targetIndex--
                 }
                 if (listItem.targetIndex != targetIndex) {
                     listItem.setTarget(requireContext(), applicationItem, targetIndex)
-                    onTargetChanged(requireContext(), adapter, updateDataMap!!, listItem)
+                    onTargetChanged(requireContext(), adapter, updateDataMap, listItem)
                     adapter.notifyDataSetChanged()
                     invalidateOptionsMenu()
                     updateTitle()

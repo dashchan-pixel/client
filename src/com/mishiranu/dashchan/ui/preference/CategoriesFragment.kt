@@ -10,7 +10,7 @@ import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.SharedPreferences
 
 class CategoriesFragment : PreferenceFragment() {
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onViewCreated(
         view: View,

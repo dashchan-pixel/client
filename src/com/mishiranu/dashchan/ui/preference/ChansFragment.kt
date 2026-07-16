@@ -12,7 +12,7 @@ import com.mishiranu.dashchan.util.SharedPreferences
 class ChansFragment :
     PreferenceFragment(),
     FragmentHandler.Callback {
-    override fun getPreferences(): SharedPreferences = Preferences.PREFERENCES!!
+    override fun getPreferences(): SharedPreferences = Preferences.prefs
 
     override fun onViewCreated(
         view: View,
