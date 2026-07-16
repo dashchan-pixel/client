@@ -469,7 +469,7 @@ class InteractionUnit internal constructor(
                     } else {
                         messageId = R.string.follow_the_link__sentence
                     }
-                    val navigationDataFinal: NavigationData? = navigationData
+                    val navigationDataFinal: NavigationData = navigationData
                     AlertDialog
                         .Builder(provider.context)
                         .setMessage(messageId)
@@ -482,7 +482,7 @@ class InteractionUnit internal constructor(
                                         provider,
                                     )!!
                                     .navigator()!!
-                                    .navigateTargetAllowReturn(chanName, navigationDataFinal!!)
+                                    .navigateTargetAllowReturn(chanName, navigationDataFinal)
                             },
                         ).create()
                 },

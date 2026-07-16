@@ -298,8 +298,8 @@
     <ID>LongMethod:DecoderDrawable.kt$DecoderDrawable$override fun draw(canvas: Canvas)</ID>
     <ID>LongMethod:DialogStack.kt$DialogStack.DialogView$override fun draw(canvas: Canvas)</ID>
     <ID>LongMethod:DialogUnit.kt$DialogUnit$private fun showAttachmentsGrid( configurationSet: ConfigurationSet, attachmentItems: List&lt;AttachmentItem&gt;, startImageIndex: Int, navigatePostMode: NavigatePostMode?, gallerySet: GalleryItem.Set, )</ID>
-    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPerformSendDialog( provider: InstanceDialog.Provider, state: SendMultifunctionalTask.State, defaultType: String?, defaultText: String?, defaultOptions: List&lt;String&gt;?, posts: Collection&lt;Post&gt;?, firstTime: Boolean, ): Dialog?</ID>
-    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPostDescriptionDialog( context: Context, icons: MutableCollection&lt;IconData&gt;, chanName: String?, emailToCopy: String?, ): AlertDialog?</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPerformSendDialog( provider: InstanceDialog.Provider, state: SendMultifunctionalTask.State, defaultType: String?, defaultText: String?, defaultOptions: List&lt;String&gt;?, posts: Collection&lt;Post&gt;?, firstTime: Boolean, ): Dialog</ID>
+    <ID>LongMethod:DialogUnit.kt$DialogUnit.Companion$private fun createPostDescriptionDialog( context: Context, icons: MutableCollection&lt;IconData&gt;, chanName: String?, emailToCopy: String?, ): AlertDialog</ID>
     <ID>LongMethod:DialogUnit.kt$DialogUnit.TypedDialogFactory$fun createView(dialogStack: DialogStack&lt;DialogFactory?&gt;): View</ID>
     <ID>LongMethod:DownloadDialog.kt$DownloadDialog$fun handleRequest(request: DownloadService.Request?)</ID>
     <ID>LongMethod:DownloadDialog.kt$DownloadDialog$private fun createChoice( choiceRequest: ChoiceRequest, onDismissListener: DialogInterface.OnDismissListener, ): AlertDialog</ID>

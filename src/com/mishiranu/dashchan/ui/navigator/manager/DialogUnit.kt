@@ -220,8 +220,8 @@ class DialogUnit internal constructor(
             recyclerView.addItemDecoration(
                 DividerItemDecoration(
                     recyclerView.getContext(),
-                    DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
-                        c!!
+                    DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration, position: Int ->
+                        c
                             .need(
                                 true,
                             ).horizontal(dividerPadding, dividerPadding)
@@ -1259,8 +1259,8 @@ class DialogUnit internal constructor(
             )
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setOnKeyListener(
-            DialogInterface.OnKeyListener { d: DialogInterface?, keyCode: Int, event: KeyEvent? ->
-                if (keyCode == KeyEvent.KEYCODE_BACK && event!!.getAction() == KeyEvent.ACTION_DOWN && event.isLongPress()) {
+            DialogInterface.OnKeyListener { d: DialogInterface?, keyCode: Int, event: KeyEvent ->
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN && event.isLongPress()) {
                     closeDialogs(configurationSet.stackInstance!!)
                     return@OnKeyListener true
                 }
@@ -1301,8 +1301,8 @@ class DialogUnit internal constructor(
             ViewGroup.LayoutParams.WRAP_CONTENT,
         )
         val clickListener =
-            View.OnClickListener { v: View? ->
-                val index = v!!.getTag() as Int
+            View.OnClickListener { v: View ->
+                val index = v.getTag() as Int
                 var imageIndex = startImageIndex
                 for (i in 0..<index) {
                     if (attachmentItems[i].isShowInGallery()) {
@@ -1692,7 +1692,7 @@ class DialogUnit internal constructor(
     class LocalArchiveViewModel :
         TaskViewModel<SendLocalArchiveTask, DownloadResult?>(),
         SendLocalArchiveTask.Callback {
-        val progress: MutableLiveData<Int?> = MutableLiveData<Int?>()
+        val progress: MutableLiveData<Int> = MutableLiveData<Int>()
 
         override fun onLocalArchivationProgressUpdate(handledPostsCount: Int) {
             progress.setValue(handledPostsCount)
@@ -1719,7 +1719,7 @@ class DialogUnit internal constructor(
                         icons,
                         chanName,
                         emailToCopy,
-                    )!!
+                    )
                 },
             )
         }
@@ -1729,7 +1729,7 @@ class DialogUnit internal constructor(
             icons: MutableCollection<IconData>,
             chanName: String?,
             emailToCopy: String?,
-        ): AlertDialog? {
+        ): AlertDialog {
             val density = obtainDensity(context)
             val imageLoader: ImageLoader = ImageLoader.getInstance()
             val chan = get(chanName)
@@ -1920,7 +1920,7 @@ class DialogUnit internal constructor(
                         defaultOptions,
                         posts,
                         firstTime,
-                    )!!
+                    )
                 },
             )
         }
@@ -1933,7 +1933,7 @@ class DialogUnit internal constructor(
             defaultOptions: List<String>?,
             posts: Collection<Post>?,
             firstTime: Boolean,
-        ): Dialog? {
+        ): Dialog {
             val context = provider.context
             val radioGroup: RadioGroup?
             val types = state.types
@@ -2283,7 +2283,7 @@ class DialogUnit internal constructor(
                     )
                     viewModel.progress.observe(
                         provider.lifecycleOwner,
-                        Observer { value: Int? -> dialog.setValue(value!!) },
+                        Observer { value: Int -> dialog.setValue(value) },
                     )
                     dialog
                 },

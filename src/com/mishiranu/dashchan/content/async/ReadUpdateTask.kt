@@ -288,7 +288,7 @@ class ReadUpdateTask(
         val extensionNames: HashSet<String>,
     ) {
         fun getRepositoryName(): String {
-            var repository: String? =
+            val repository: String? =
                 when (dataVersion) {
                     DataVersion.LEGACY -> {
                         jsonObject
@@ -300,10 +300,7 @@ class ReadUpdateTask(
                         jsonObject.optString("title")
                     }
                 }
-            if (StringUtils.isEmpty(repository)) {
-                repository = "Unknown repository"
-            }
-            return repository!!
+            return if (repository.isNullOrEmpty()) "Unknown repository" else repository
         }
     }
 
@@ -630,8 +627,8 @@ class ReadUpdateTask(
                 for (j in 0 until fingerprintsArray.length()) {
                     rawFingerprints.add(fingerprintsArray.optString(j))
                 }
-            } else if (!StringUtils.isEmpty(fingerprint)) {
-                rawFingerprints.add(fingerprint!!)
+            } else if (!fingerprint.isNullOrEmpty()) {
+                rawFingerprints.add(fingerprint)
             }
             val fingerprintsSet = HashSet<String>()
             for (rawFingerprint in rawFingerprints) {
@@ -803,8 +800,8 @@ class ReadUpdateTask(
                 extensionNames.add(ChanManager.EXTENSION_NAME_CLIENT)
                 targets[targetUri] = extensionNames
                 val scheme = uri.scheme
-                if (!StringUtils.isEmpty(scheme)) {
-                    requestedScheme[targetUri] = scheme!!
+                if (!scheme.isNullOrEmpty()) {
+                    requestedScheme[targetUri] = scheme
                 }
             }
             // Separate sources merged with the client one: each covers every installed
@@ -822,8 +819,8 @@ class ReadUpdateTask(
                     extensionNames.add(extensionItem.name!!)
                 }
                 val scheme = uri.scheme
-                if (!StringUtils.isEmpty(scheme)) {
-                    requestedScheme[targetUri] = scheme!!
+                if (!scheme.isNullOrEmpty()) {
+                    requestedScheme[targetUri] = scheme
                 }
             }
             for (extensionItem in extensionItems) {
@@ -836,8 +833,8 @@ class ReadUpdateTask(
                     }
                     extensionNames.add(extensionItem.name!!)
                     val scheme = extensionItem.updateUri.scheme
-                    if (!StringUtils.isEmpty(scheme)) {
-                        requestedScheme[targetUri] = scheme!!
+                    if (!scheme.isNullOrEmpty()) {
+                        requestedScheme[targetUri] = scheme
                     }
                 }
             }

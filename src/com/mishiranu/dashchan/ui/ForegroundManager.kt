@@ -179,9 +179,9 @@ class ForegroundManager private constructor() : Handler.Callback {
         }
     }
 
-    private interface PendingDataDialog<T : PendingData?> : LifecycleObserver {
+    private interface PendingDataDialog<T : PendingData> : LifecycleObserver {
         fun interface StoreResultCallback<T> {
-            fun onStoreResult(pendingData: T?)
+            fun onStoreResult(pendingData: T)
         }
 
         fun show(
@@ -226,7 +226,7 @@ class ForegroundManager private constructor() : Handler.Callback {
             show(activity.getSupportFragmentManager(), this.pendingDataId)
         }
 
-        fun notifyResult(callback: StoreResultCallback<T?>?) {
+        fun notifyResult(callback: StoreResultCallback<T>?) {
             val pendingData = this.pendingData
             if (pendingData != null) {
                 synchronized(pendingData) {
@@ -246,7 +246,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class CaptchaDialog :
         DialogFragment,
-        PendingDataDialog<CaptchaPendingData?>,
+        PendingDataDialog<CaptchaPendingData>,
         CaptchaForm.Callback,
         ReadCaptchaTask.Callback,
         CaptchaOptionsDialog.Callback {
@@ -589,9 +589,10 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         private fun confirmCaptchaInternal() {
             notifyResult(
-                StoreResultCallback { pendingData: CaptchaPendingData? ->
-                    if (pendingData!!.captchaData != null) {
-                        pendingData.captchaData!!.put(CaptchaData.INPUT, captchaForm!!.input)
+                StoreResultCallback { pendingData: CaptchaPendingData ->
+                    val captchaData = pendingData.captchaData
+                    if (captchaData != null) {
+                        captchaData.put(CaptchaData.INPUT, captchaForm!!.input)
                     }
                 },
             )
@@ -599,8 +600,8 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         private fun cancelInternal() {
             notifyResult(
-                StoreResultCallback { pendingData: CaptchaPendingData? ->
-                    pendingData!!.captchaData = null
+                StoreResultCallback { pendingData: CaptchaPendingData ->
+                    pendingData.captchaData = null
                     pendingData.loadedCaptchaType = null
                 },
             )
@@ -653,7 +654,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class ItemChoiceDialog :
         DialogFragment,
-        PendingDataDialog<ChoicePendingData?>,
+        PendingDataDialog<ChoicePendingData>,
         DialogInterface.OnClickListener,
         OnItemClickListener {
         private lateinit var selected: BooleanArray
@@ -810,8 +811,8 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         private fun publishResult(success: Boolean) {
             notifyResult(
-                StoreResultCallback { pendingData: ChoicePendingData? ->
-                    pendingData!!.result = if (success) selected else null
+                StoreResultCallback { pendingData: ChoicePendingData ->
+                    pendingData.result = if (success) selected else null
                 },
             )
         }
@@ -827,7 +828,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class ImageChoiceDialog :
         DialogFragment,
-        PendingDataDialog<ChoicePendingData?>,
+        PendingDataDialog<ChoicePendingData>,
         View.OnClickListener,
         DialogInterface.OnClickListener {
         private var selectionViews: Array<FrameLayout?>? = null
@@ -1112,8 +1113,8 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         private fun publishResult(success: Boolean) {
             notifyResult(
-                StoreResultCallback { pendingData: ChoicePendingData? ->
-                    pendingData!!.result = if (success) selected else null
+                StoreResultCallback { pendingData: ChoicePendingData ->
+                    pendingData.result = if (success) selected else null
                 },
             )
         }
@@ -1130,7 +1131,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class RecaptchaV2Dialog :
         V2Dialog,
-        PendingDataDialog<RecaptchaV2PendingData?> {
+        PendingDataDialog<RecaptchaV2PendingData> {
         constructor()
 
         constructor(
@@ -1149,8 +1150,8 @@ class ForegroundManager private constructor() : Handler.Callback {
             exception: HttpException?,
         ) {
             notifyResult(
-                StoreResultCallback { pendingData: RecaptchaV2PendingData? ->
-                    pendingData!!.response = response
+                StoreResultCallback { pendingData: RecaptchaV2PendingData ->
+                    pendingData.response = response
                     pendingData.exception = exception
                 },
             )
@@ -1159,7 +1160,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     class FirewallResolutionDialogImpl<T> :
         FirewallResolutionDialog<T?>,
-        PendingDataDialog<FirewallResolutionPendingData<T?>?> {
+        PendingDataDialog<FirewallResolutionPendingData<T?>> {
         constructor()
 
         constructor(pendingDataId: String?, request: FirewallResolutionDialogRequest<T?>) : super(
@@ -1170,8 +1171,8 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         override fun onFirewallResolutionFinished(firewallResolutionResult: T?) {
             notifyResult(
-                StoreResultCallback { pendingData: FirewallResolutionPendingData<T?>? ->
-                    pendingData!!.result = firewallResolutionResult
+                StoreResultCallback { pendingData: FirewallResolutionPendingData<T?> ->
+                    pendingData.result = firewallResolutionResult
                 },
             )
         }
@@ -1637,8 +1638,9 @@ class ForegroundManager private constructor() : Handler.Callback {
             if (!pendingData.await(handler, handlerData)) {
                 return null
             }
-            if (pendingData.exception != null) {
-                throw pendingData.exception!!
+            val exception = pendingData.exception
+            if (exception != null) {
+                throw exception
             }
             return pendingData.response
         } finally {

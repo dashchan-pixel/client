@@ -85,19 +85,19 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
     }
 
     private val hiddenViews = LinkedList<T?>()
-    private val visibleViews: LinkedList<Pair<T?, DialogView?>> =
-        LinkedList<Pair<T?, DialogView?>>()
+    private val visibleViews: LinkedList<Pair<T?, DialogView>> =
+        LinkedList<Pair<T?, DialogView>>()
     private var dialog: Dialog? = null
 
     private val overlayFocusListener =
-        OnOverlayFocusListener { stack: Iterable<MutableItem>? ->
+        OnOverlayFocusListener { stack: Iterable<MutableItem> ->
             val dialog = this.dialog
             val decorView = if (dialog != null) dialog.getWindow()!!.getDecorView() else null
             var background = false
             if (decorView != null) {
                 var foundSelf = false
                 var isDimmedByOtherWindow = false
-                for (mutableItem in stack!!) {
+                for (mutableItem in stack) {
                     if (!foundSelf) {
                         if (mutableItem.decorView === decorView) {
                             foundSelf = true
@@ -192,16 +192,16 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
         rootView.addOnLayoutChangeListener(
             OnLayoutChangeListener { v: View?, l: Int, t: Int, r: Int, b: Int, ol: Int, ot: Int, or: Int, ob: Int ->
                 var maxHeight = 0
-                val iterator: MutableListIterator<Pair<T?, DialogView?>> =
+                val iterator: MutableListIterator<Pair<T?, DialogView>> =
                     visibleViews.listIterator(visibleViews.size)
                 while (iterator.hasPrevious()) {
                     val pair = iterator.previous()
-                    val height = pair.second!!.getHeight()
+                    val height = pair.second.getHeight()
                     val taller = height > maxHeight
                     if (taller) {
                         maxHeight = height
                     }
-                    pair.second!!.setElevated(taller)
+                    pair.second.setElevated(taller)
                 }
             },
         )
@@ -284,12 +284,12 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             }
         }
         if (!visibleViews.isEmpty()) {
-            visibleViews.last().second!!.setActive(false)
+            visibleViews.last().second.setActive(false)
             if (visibleViews.size == VISIBLE_COUNT) {
-                val first: Pair<T?, DialogView?> = visibleViews.removeFirst()
-                first.first!!.destroyView(first.second!!.content, false)
+                val first: Pair<T?, DialogView> = visibleViews.removeFirst()
+                first.first!!.destroyView(first.second.content, false)
                 hiddenViews.add(first.first)
-                rootView.removeView(first.second!!.container)
+                rootView.removeView(first.second.container)
             }
         }
         val dialogView = addDialogView(viewFactory, rootView.getChildCount())
@@ -299,7 +299,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             .alpha(1f)
             .setDuration(100)
             .start()
-        visibleViews.add(Pair<T?, DialogView?>(viewFactory, dialogView))
+        visibleViews.add(Pair<T?, DialogView>(viewFactory, dialogView))
         switchBackground(false)
     }
 
@@ -308,9 +308,9 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             val hiddenTo: Int = viewFactories.size - VISIBLE_COUNT
             if (hiddenTo > 0) {
                 for (pair in visibleViews) {
-                    pair.first!!.destroyView(pair.second!!.content, false)
+                    pair.first!!.destroyView(pair.second.content, false)
                     hiddenViews.add(pair.first)
-                    rootView.removeView(pair.second!!.container)
+                    rootView.removeView(pair.second.container)
                 }
                 hiddenViews.addAll(viewFactories.subList(0, hiddenTo))
             }
@@ -330,29 +330,29 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
 
     private fun switchBackground(background: Boolean) {
         for (pair in visibleViews) {
-            pair.second!!.setBackground(background)
+            pair.second.setBackground(background)
         }
     }
 
     private fun popInternal(): T? {
         if (hiddenViews.size > 0) {
-            val index = rootView.indexOfChild(visibleViews.first().second!!.container)
+            val index = rootView.indexOfChild(visibleViews.first().second.container)
             val last = hiddenViews.removeLast()
             val dialogView = addDialogView(last, index)
             dialogView.setActive(false)
-            visibleViews.addFirst(Pair<T?, DialogView?>(last, dialogView))
+            visibleViews.addFirst(Pair<T?, DialogView>(last, dialogView))
         }
-        val last: Pair<T?, DialogView?> = visibleViews.removeLast()
-        rootView.removeView(last.second!!.container)
+        val last: Pair<T?, DialogView> = visibleViews.removeLast()
+        rootView.removeView(last.second.container)
         if (visibleViews.isEmpty()) {
             dialog!!.dismiss()
             dialog = null
             currentActionMode = null
             removeFromParent(contentView)
         } else {
-            visibleViews.last().second!!.setActive(true)
+            visibleViews.last().second.setActive(true)
         }
-        last.first!!.destroyView(last.second!!.content, true)
+        last.first!!.destroyView(last.second.content, true)
         return last.first
     }
 
@@ -762,13 +762,13 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             val paint: Paint,
             val size: Float,
             topText: String,
-            bottomText: String?,
+            bottomText: String,
         ) {
             val path: Path = Path()
 
             val bottomTextShift: Float
             val topText: String
-            val bottomText: String?
+            val bottomText: String
             val topTextWidth: Float
             val bottomTextWidth: Float
 
@@ -891,7 +891,8 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             if (shift == 0f && arrowData == null) {
                 return
             }
-            val arrow: ArrowData?
+            val arrow: ArrowData
+            val arrowData = this.arrowData
             if (arrowData == null) {
                 val density = obtainDensity(this)
                 val arrowSize = (40f * density + 0.5f).toInt()
@@ -907,10 +908,10 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                 val bottomText =
                     getContext().getString(R.string.close).uppercase(Locale.getDefault())
                 arrow = ArrowData(paint, arrowSize.toFloat(), topText, bottomText)
-                arrowData = arrow
+                this.arrowData = arrow
             } else {
                 arrow = arrowData
-                if (arrow!!.shift == shift) {
+                if (arrow.shift == shift) {
                     return
                 }
                 arrow.path.rewind()
@@ -973,7 +974,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                 val absVertical = abs(arrow.vertical)
                 if (absVertical > 0) {
                     arrow.paint.setStyle(Paint.Style.FILL)
-                    val text = (if (arrow.shift >= 0) arrow.topText else arrow.bottomText)!!
+                    val text = if (arrow.shift >= 0) arrow.topText else arrow.bottomText
                     val textWidth =
                         if (arrow.shift >= 0) arrow.topTextWidth else arrow.bottomTextWidth
                     val arrowDy = -arrow.vertical * arrow.size / 4f
@@ -1006,13 +1007,13 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
 
     fun getVisibleViews(): Iterable<View?> {
         return Iterable {
-            val iterator: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
+            val iterator: MutableIterator<Pair<T?, DialogView>> = visibleViews.iterator()
             object : Iterator<View?> {
                 override fun hasNext(): Boolean = iterator.hasNext()
 
                 override fun next(): View {
                     val pair = iterator.next()
-                    return pair.second!!.content
+                    return pair.second.content
                 }
             }
         }
@@ -1020,7 +1021,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
 
     override fun iterator(): Iterator<Pair<T?, View?>?> {
         val hidden = hiddenViews.iterator()
-        val visible: MutableIterator<Pair<T?, DialogView?>> = visibleViews.iterator()
+        val visible: MutableIterator<Pair<T?, DialogView>> = visibleViews.iterator()
         return object : Iterator<Pair<T?, View?>?> {
             override fun hasNext(): Boolean = hidden.hasNext() || visible.hasNext()
 
@@ -1031,7 +1032,7 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                     val pair = visible.next()
                     return Pair<T?, View?>(
                         pair.first,
-                        pair.second!!.content,
+                        pair.second.content,
                     )
                 } else {
                     return null

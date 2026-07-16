@@ -152,9 +152,10 @@ class AudioPlayerService :
                             initAndPlayAudio(cachedFile)
                         } else {
                             val chan = getPreferred(chanName, uri)
-                            readFileTask =
+                            val readFileTask =
                                 ReadFileTask.createCachedMediaFile(this, chan, uri!!, cachedFile)
-                            readFileTask!!.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+                            this.readFileTask = readFileTask
+                            readFileTask.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                         }
                     }
                 }
@@ -306,13 +307,14 @@ class AudioPlayerService :
     private fun initAndPlayAudio(file: File) {
         audioFile = file
         pausedByTransientLossOfFocus = false
-        mediaPlayer = MediaPlayer()
-        mediaPlayer!!.setLooping(false)
-        mediaPlayer!!.setOnCompletionListener(this)
-        mediaPlayer!!.setOnErrorListener(this)
+        val mediaPlayer = MediaPlayer()
+        this.mediaPlayer = mediaPlayer
+        mediaPlayer.setLooping(false)
+        mediaPlayer.setOnCompletionListener(this)
+        mediaPlayer.setOnErrorListener(this)
         try {
-            mediaPlayer!!.setDataSource(file.getPath())
-            mediaPlayer!!.prepare()
+            mediaPlayer.setDataSource(file.getPath())
+            mediaPlayer.prepare()
         } catch (e: Exception) {
             file.delete()
             CacheManager.getInstance().handleDownloadedFile(file, false)

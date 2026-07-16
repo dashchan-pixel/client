@@ -694,7 +694,7 @@ class PostingService :
             if (cancel) {
                 // Broadcast receivers can't bind to services
                 val connection = arrayOf<ServiceConnection?>(null)
-                connection[0] =
+                val serviceConnection =
                     object : ServiceConnection {
                         override fun onServiceConnected(
                             componentName: ComponentName?,
@@ -709,9 +709,10 @@ class PostingService :
 
                         override fun onServiceDisconnected(componentName: ComponentName?) {}
                     }
+                connection[0] = serviceConnection
                 bindContext.bindService(
                     Intent(context, PostingService::class.java),
-                    connection[0]!!,
+                    serviceConnection,
                     BIND_AUTO_CREATE,
                 )
             }

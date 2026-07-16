@@ -978,11 +978,7 @@ class ViewUnit
                                         startX = x
                                         startY = y
                                         // noinspection SuspiciousMethodCalls
-                                        if (holder.badgeImages != null &&
-                                            holder.badgeImages!!.contains(
-                                                child,
-                                            )
-                                        ) {
+                                        if (holder.badgeImages?.contains(child) == true) {
                                             type = TYPE_BADGES
                                             return true
                                         }

@@ -303,7 +303,7 @@ class DrawerForm(
                 DrawerForm.ListItem(
                     ListItem.Type.CHAN,
                     0,
-                    chan.name!!,
+                    chan.name,
                     null,
                     null,
                     chan.configuration.getTitle(),
@@ -770,8 +770,7 @@ class DrawerForm(
                                         favoriteItem.chanName,
                                         favoriteItem.boardName,
                                         favoriteItem.threadNumber!!,
-                                    )!!
-                                    .deleted
+                                    ).deleted
                         )
                     ) {
                         val listItem =
@@ -779,7 +778,7 @@ class DrawerForm(
                                 ListItem.Type.FAVORITE,
                                 0,
                                 favoriteItem.chanName,
-                                favoriteItem.boardName!!,
+                                favoriteItem.boardName,
                                 favoriteItem.threadNumber,
                                 favoriteItem.title,
                             )
@@ -813,7 +812,7 @@ class DrawerForm(
                         ListItem.Type.FAVORITE,
                         0,
                         favoriteItem.chanName,
-                        favoriteItem.boardName!!,
+                        favoriteItem.boardName,
                         null,
                         chan.configuration.getBoardTitle(favoriteItem.boardName),
                     ),
@@ -956,7 +955,7 @@ class DrawerForm(
                                     )
                                 if (favoriteItem != null) {
                                     hasEnabled = hasEnabled or favoriteItem.watcherEnabled
-                                    if (getCounter(itListItem)!!.deleted) {
+                                    if (getCounter(itListItem).deleted) {
                                         deleteFavoriteItems.add(favoriteItem)
                                     }
                                 }
@@ -1006,8 +1005,8 @@ class DrawerForm(
                                 if (isFavoritesHidedAll) R.string.favorites_show_all else R.string.favorites_hide_all,
                             ).setEnabled(true)
                         popupMenu.setOnMenuItemClickListener(
-                            PopupMenu.OnMenuItemClickListener { item: MenuItem? ->
-                                when (item!!.getItemId()) {
+                            PopupMenu.OnMenuItemClickListener { item: MenuItem ->
+                                when (item.getItemId()) {
                                     FAVORITES_MENU_REFRESH -> {
                                         if (mergeChans) {
                                             watcherServiceClient.refreshAll(null)
@@ -1054,7 +1053,7 @@ class DrawerForm(
                                                 fav.isThreadItem &&
                                                     getCounter(
                                                         fav,
-                                                    )!!.deleted
+                                                    ).deleted
                                             }
                                         } else {
                                             updateListFavorites()
@@ -1446,7 +1445,7 @@ class DrawerForm(
                     listItem.isThreadItem &&
                     watcherSupportSet.contains(listItem.chanName)
                 ) {
-                    holder.watcher!!.update(getCounter(listItem)!!)
+                    holder.watcher!!.update(getCounter(listItem))
                 }
             }
 
@@ -1596,7 +1595,7 @@ class DrawerForm(
         }
     }
 
-    private fun getCounter(listItem: ListItem): WatcherService.Counter? =
+    private fun getCounter(listItem: ListItem): WatcherService.Counter =
         watcherServiceClient.getCounter(
             listItem.chanName!!,
             listItem.boardName,
@@ -1715,9 +1714,9 @@ class DrawerForm(
         val dividerItemDecoration =
             DividerItemDecoration(
                 recyclerView.getContext(),
-                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
+                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration, position: Int ->
                     configureDivider(
-                        c!!,
+                        c,
                         position,
                     ).translate(false)
                 },
@@ -1753,9 +1752,9 @@ class DrawerForm(
 
         searchEdit = SafePasteEditText(context)
         searchEdit.setOnKeyListener(
-            View.OnKeyListener { v: View?, keyCode: Int, event: KeyEvent? ->
-                if (event!!.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
-                    v!!.clearFocus()
+            View.OnKeyListener { v: View, keyCode: Int, event: KeyEvent ->
+                if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_BACK) {
+                    v.clearFocus()
                 }
                 false
             },

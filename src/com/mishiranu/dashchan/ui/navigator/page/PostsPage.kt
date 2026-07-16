@@ -436,10 +436,10 @@ class PostsPage :
         val divider =
             DividerItemDecoration(
                 recyclerView.getContext(),
-                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration?, position: Int ->
+                DividerItemDecoration.Callback { c: DividerItemDecoration.Configuration, position: Int ->
                     adapter
                         .configureDivider(
-                            c!!,
+                            c,
                             position,
                         ).horizontal(dividerPadding, dividerPadding)
                 },
@@ -1372,7 +1372,7 @@ class PostsPage :
         )
     }
 
-    private fun decodeThreadState(state: ByteArray?): Pair<PostNumber?, Int?>? {
+    private fun decodeThreadState(state: ByteArray?): Pair<PostNumber, Int>? {
         var positionPostNumber: PostNumber? = null
         var positionOffset = 0
         if (state != null) {
@@ -1412,14 +1412,8 @@ class PostsPage :
                 throw RuntimeException(e)
             }
         }
-        return if (positionPostNumber != null) {
-            Pair<PostNumber?, Int?>(
-                positionPostNumber,
-                positionOffset,
-            )
-        } else {
-            null
-        }
+        val postNumber = positionPostNumber ?: return null
+        return Pair<PostNumber, Int>(postNumber, positionOffset)
     }
 
     private val storePositionRunnable =
@@ -1474,16 +1468,16 @@ class PostsPage :
             }
         }
 
-    private fun transformListPositionToPair(listPosition: ListPosition?): Pair<PostNumber?, Int?>? {
+    private fun transformListPositionToPair(listPosition: ListPosition?): Pair<PostNumber, Int>? {
         listPosition ?: return null
         val postNumber = this.adapter.getItem(listPosition.position).getPostNumber() ?: return null
-        return Pair<PostNumber?, Int?>(postNumber, listPosition.offset)
+        return Pair<PostNumber, Int>(postNumber, listPosition.offset)
     }
 
-    private fun transformPairToListPosition(positionPair: Pair<PostNumber?, Int?>?): ListPosition? {
+    private fun transformPairToListPosition(positionPair: Pair<PostNumber, Int>?): ListPosition? {
         if (positionPair != null) {
-            val position = this.adapter.positionOfPostNumber(positionPair.first!!)
-            return if (position >= 0) ListPosition(position, positionPair.second!!) else null
+            val position = this.adapter.positionOfPostNumber(positionPair.first)
+            return if (position >= 0) ListPosition(position, positionPair.second) else null
         } else {
             return null
         }
@@ -1687,7 +1681,7 @@ class PostsPage :
         val adapter = this.adapter
         var updateAdapters = false
         var listPositionFromState: ListPosition? = null
-        var keepPositionPair: Pair<PostNumber?, Int?>? = null
+        var keepPositionPair: Pair<PostNumber, Int>? = null
         val initial = retainableExtra.initialExtract
         retainableExtra.initialExtract = false
         val erase = retainableExtra.eraseExtract
@@ -1712,7 +1706,7 @@ class PostsPage :
             }
             retainableExtra.cache = result.cache
             if (retainableExtra.cacheState == null) {
-                retainableExtra.cacheState = retainableExtra.cache!!.state
+                retainableExtra.cacheState = result.cache.state
             }
             if (result.cacheChanged) {
                 retainableExtra.archivedThreadUri = result.archivedThreadUri

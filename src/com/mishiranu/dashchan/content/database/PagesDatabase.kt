@@ -801,18 +801,18 @@ class PagesDatabase private constructor() {
         newThread: Boolean,
         partial: Boolean,
     ): InsertResult? {
-        val dataArray: Array<ByteArray?> = arrayOfNulls(posts.size)
-        for (i in posts.indices) {
-            writer().use { writer ->
-                posts[i].serialize(writer)
-                dataArray[i] = writer.build()
+        val dataArray: Array<ByteArray> =
+            Array(posts.size) { i ->
+                writer().use { writer ->
+                    posts[i].serialize(writer)
+                    writer.build()
+                }
             }
-        }
         val serializedMap = HashMap<PostNumber?, Serialized>(dataArray.size)
         val hasher = getInstanceSha256()
         for (i in dataArray.indices) {
             val post = posts[i]
-            val data = dataArray[i]!!
+            val data = dataArray[i]
             val hash = hasher.calculate(data)
             serializedMap[post.number] = Serialized(post, data, hash, newThread)
         }
@@ -1210,15 +1210,15 @@ class PagesDatabase private constructor() {
             val unsafeChanged = extractedList as MutableList<*> as MutableList<Post>
             for (i in extractedList.indices) {
                 val extracted = extractedList[i]
-                val post: Post?
-                try {
-                    reader(extracted.data).use { reader ->
-                        post = deserialize(extracted.postNumber, extracted.deleted, reader)
+                val post =
+                    try {
+                        reader(extracted.data).use { reader ->
+                            deserialize(extracted.postNumber, extracted.deleted, reader)
+                        }
+                    } catch (e: IOException) {
+                        throw RuntimeException(e)
                     }
-                } catch (e: IOException) {
-                    throw RuntimeException(e)
-                }
-                unsafeChanged[i] = post!!
+                unsafeChanged[i] = post
             }
             changed = unsafeChanged
         }
@@ -1797,18 +1797,18 @@ class PagesDatabase private constructor() {
             posts.add(builder.build(deleted))
         }
 
-        val data = arrayOfNulls<ByteArray>(posts.size)
-        for (i in posts.indices) {
+        val data: Array<ByteArray> =
             try {
-                writer().use { writer ->
-                    posts[i].serialize(writer)
-                    data[i] = writer.build()
+                Array(posts.size) { i ->
+                    writer().use { writer ->
+                        posts[i].serialize(writer)
+                        writer.build()
+                    }
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
                 return false
             }
-        }
         if (legacyPosts.mLocalAutohide != null) {
             val hidePerformer = HidePerformer(null)
             hidePerformer.decodeLocalFiltersLegacy(legacyPosts.mLocalAutohide)
@@ -1890,7 +1890,7 @@ class PagesDatabase private constructor() {
                         (if (post.deleted) Schema.Posts.Flags.Companion.DELETED else 0).toLong(),
                     )
                     statement.bindBlob(start + 7, data[i])
-                    statement.bindBlob(start + 8, hasher.calculate(data[i]!!))
+                    statement.bindBlob(start + 8, hasher.calculate(data[i]))
                     index[0]++
                 },
             )

@@ -768,10 +768,10 @@ class ThreadsPage :
             retainableExtra.hiddenThreads.addAll(hiddenThreads)
         }
         if (items != null && appendItems) {
-            val threadNumbers = HashSet<String>()
+            val threadNumbers = HashSet<String?>()
             for (pagePostItems in retainableExtra.cachedPostItems) {
                 for (postItem in pagePostItems) {
-                    threadNumbers.add(postItem.getThreadNumber()!!)
+                    threadNumbers.add(postItem.getThreadNumber())
                 }
             }
             var list: List<PostItem> = items

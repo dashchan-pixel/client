@@ -764,8 +764,9 @@ class DownloadService :
                         }
                     }
                 val fileOrUri = file.getFileOrUri()
-                if (fileOrUri.first != null) {
-                    scanFileLegacy(fileOrUri.first!!, Pair<String?, ScanCallback?>(type, callback))
+                val legacyFile = fileOrUri.first
+                if (legacyFile != null) {
+                    scanFileLegacy(legacyFile, Pair<String?, ScanCallback?>(type, callback))
                 } else if (fileOrUri.second != null) {
                     callback.onComplete(fileOrUri.second)
                 }
@@ -1889,7 +1890,7 @@ class DownloadService :
                     }
                 // Broadcast receivers can't bind to services
                 val connection = arrayOf<ServiceConnection?>(null)
-                connection[0] =
+                val serviceConnection =
                     object : ServiceConnection {
                         override fun onServiceConnected(
                             componentName: ComponentName?,
@@ -1908,9 +1909,10 @@ class DownloadService :
 
                         override fun onServiceDisconnected(componentName: ComponentName?) {}
                     }
+                connection[0] = serviceConnection
                 bindContext.bindService(
                     Intent(context, DownloadService::class.java),
-                    connection[0]!!,
+                    serviceConnection,
                     BIND_AUTO_CREATE,
                 )
             }

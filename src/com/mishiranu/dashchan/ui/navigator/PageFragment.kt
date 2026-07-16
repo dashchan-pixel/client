@@ -323,8 +323,8 @@ class PageFragment :
             val searchView = obtainSearchView()!!
             this.searchView = searchView
             searchView.setOnSubmitListener(
-                OnSubmitListener { query: String? ->
-                    if (listPage!!.onSearchSubmit(query!!)) {
+                OnSubmitListener { query ->
+                    if (listPage!!.onSearchSubmit(query)) {
                         searchSubmitQuery = null
                         setSearchMode(false)
                         return@OnSubmitListener true
@@ -480,12 +480,13 @@ class PageFragment :
 
     public override fun onMenuItemSelected(item: MenuItem): Boolean {
         if (item.getItemId() == R.id.menu_search) {
+            val searchMenuItem = this.searchMenuItem
             if (item === searchMenuItem) {
                 searchFocused = true
                 return false
             } else if (searchMenuItem != null) {
                 searchFocused = true
-                searchMenuItem!!.expandActionView()
+                searchMenuItem.expandActionView()
                 return true
             } else {
                 return true

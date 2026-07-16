@@ -1088,8 +1088,8 @@ class VideoUnit(
                     if (encoder != null) {
                         layout.add("Encoder", encoder)
                     }
-                    if (!isEmptyOrWhitespace(title)) {
-                        layout.add("Title", title!!)
+                    if (title != null && !isEmptyOrWhitespace(title)) {
+                        layout.add("Title", title)
                     }
                     dialog
                 },

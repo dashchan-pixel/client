@@ -139,7 +139,7 @@ class ThemeEngine {
             var indirect: Boolean = false
         }
 
-        fun onOverlayFocusChanged(stack: Iterable<MutableItem>?)
+        fun onOverlayFocusChanged(stack: Iterable<MutableItem>)
     }
 
     private class OverlayStack :
@@ -850,27 +850,31 @@ class ThemeEngine {
             return getTheme(themeContext)
         }
 
-        private fun ensureTheme(themeContext: ThemeContext) {
-            if (themeContext.engineTheme == null) {
-                themeContext.engineTheme = ThemeBuilder().create(null, "", true, null, themeContext)
+        private fun ensureTheme(themeContext: ThemeContext): Theme {
+            var engineTheme = themeContext.engineTheme
+            if (engineTheme == null) {
+                engineTheme = ThemeBuilder().create(null, "", true, null, themeContext)
+                themeContext.engineTheme = engineTheme
             }
+            return engineTheme
         }
 
         @JvmStatic
         fun getTheme(context: Context?): Theme {
             val themeContext: ThemeContext = requireThemeContext(context)
-            ensureTheme(themeContext)
-            return themeContext.engineTheme!!
+            return ensureTheme(themeContext)
         }
 
         @JvmStatic
         fun getColorScheme(context: Context): ColorScheme {
             val themeContext: ThemeContext = requireThemeContext(context)
-            ensureTheme(themeContext)
-            if (themeContext.colorScheme == null) {
-                themeContext.colorScheme = ColorScheme(context, themeContext.engineTheme!!)
+            val engineTheme = ensureTheme(themeContext)
+            var colorScheme = themeContext.colorScheme
+            if (colorScheme == null) {
+                colorScheme = ColorScheme(context, engineTheme)
+                themeContext.colorScheme = colorScheme
             }
-            return themeContext.colorScheme!!
+            return colorScheme
         }
 
         private fun shouldApplyStyle(context: Context?): Boolean {
@@ -884,8 +888,7 @@ class ThemeEngine {
             val context = view.getContext()
             val themeContext: ThemeContext? = obtainThemeContext(context)
             if (themeContext != null) {
-                ensureTheme(themeContext)
-                val theme = themeContext.engineTheme
+                val theme = ensureTheme(themeContext)
                 if (shouldApplyStyle(context)) {
                     if (view is CompoundButton) {
                         view.setButtonTintList(themeContext.checkBoxColors)
@@ -897,7 +900,7 @@ class ThemeEngine {
                         }
                     } else if (view is TextView) {
                         val textView = view
-                        textView.setLinkTextColor(theme!!.link)
+                        textView.setLinkTextColor(theme.link)
                         if (view is EditText) {
                             view.setBackgroundTintList(themeContext.editTextColors)
                         } else if (view is CheckedTextView) {
@@ -914,7 +917,7 @@ class ThemeEngine {
                             }
                         }
                     } else if (view is ProgressBar) {
-                        val tint = ColorStateList.valueOf(theme!!.accent)
+                        val tint = ColorStateList.valueOf(theme.accent)
                         val progressBar = view
                         progressBar.setIndeterminateTintList(tint)
                         progressBar.setProgressTintList(tint)
@@ -924,10 +927,10 @@ class ThemeEngine {
                             seekBar.setTickMarkTintList(tint)
                         }
                     } else if (view is ScrollView) {
-                        setEdgeEffectColor(view, theme!!.accent)
+                        setEdgeEffectColor(view, theme.accent)
                     }
                 }
-                Companion.handleTag(theme!!, view)
+                Companion.handleTag(theme, view)
             }
         }
 

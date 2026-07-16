@@ -261,11 +261,7 @@ class MainActivity :
         drawerToggle =
             DrawerToggle(
                 this,
-                if (toolbarHolder != null) {
-                    toolbarHolder!!.toolbar.getContext()
-                } else {
-                    null
-                },
+                toolbarHolder?.toolbar?.getContext(),
                 drawerLayout,
             )
         drawerCommon.setElevation(4f * density)
@@ -943,7 +939,7 @@ class MainActivity :
             } else if (chan.locator.isVideoUri(uri)) {
                 val fileName = chan.locator.createAttachmentFileName(uri!!)
                 if (isOpenableVideoPath(fileName)) {
-                    navigateGalleryUri(chan.locator.convert(uri)!!)
+                    navigateGalleryUri(chan.locator.convert(uri))
                 } else {
                     handleUri(
                         this,
@@ -957,7 +953,7 @@ class MainActivity :
                 handleUri(
                     this,
                     chan.name,
-                    chan.locator.convert(uri!!)!!,
+                    chan.locator.convert(uri)!!,
                     NavigationUtils.BrowserType.INTERNAL,
                 )
                 return true
@@ -1171,7 +1167,7 @@ class MainActivity :
             pair = Pair(pageFragment, pageItem)
         }
         if (initRequest != null) {
-            pair.first!!.setInitRequest(initRequest)
+            pair.first.setInitRequest(initRequest)
         }
 
         val mergeChans = isMergeChans
@@ -1284,11 +1280,11 @@ class MainActivity :
                     prepareAddPage(content, chanName, boardName, null, null, null)
                 }
             }
-        pair.second!!.allowReturn = get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
+        pair.second.allowReturn = get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
         if (get(pageFlags, FLAG_PAGE_RESET_SCROLL)) {
-            pair.first!!.requestResetScroll()
+            pair.first.requestResetScroll()
         }
-        navigateFragment(pair.first!!, pair.second, get(pageFlags, FLAG_PAGE_CLOSE_OVERLAYS))
+        navigateFragment(pair.first, pair.second, get(pageFlags, FLAG_PAGE_CLOSE_OVERLAYS))
     }
 
     private fun navigateSavedPage(
@@ -1725,8 +1721,8 @@ class MainActivity :
         val result = super.onPrepareOptionsMenu(menu)
         val appearanceOptionsItem = menu.findItem(R.id.menu_appearance)
         if (appearanceOptionsItem != null) {
-            val appearanceOptionsMenu: Menu? = appearanceOptionsItem.getSubMenu()
-            if (appearanceOptionsMenu!!.size() == 0) {
+            val appearanceOptionsMenu = appearanceOptionsItem.getSubMenu()!!
+            if (appearanceOptionsMenu.size() == 0) {
                 appearanceOptionsMenu.add(
                     0,
                     R.id.menu_change_theme,
@@ -2513,7 +2509,7 @@ class MainActivity :
                             .buildRootUri("com.android.externalstorage.documents", "primary"),
                     )
                     try {
-                        openUriTreeLauncher!!.launch(intent)
+                        openUriTreeLauncher.launch(intent)
                     } catch (e: ActivityNotFoundException) {
                         show(R.string.unknown_address)
                         storageRequestState = StorageRequestState.NONE

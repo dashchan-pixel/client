@@ -949,8 +949,8 @@ class GalleryOverlay :
     private fun invalidateSystemUiFlags() {
         val visible = isSystemUiVisible()
         val window = getWindow()!!
-        val controller = window.getInsetsController()
-        controller!!.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
+        val controller = window.getInsetsController()!!
+        controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
         if (visible) {
             controller.show(WindowInsets.Type.systemBars())
         } else {
