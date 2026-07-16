@@ -7,6 +7,8 @@
 !/detekt.yml
 !/detekt-doublebang.yml
 !/detekt-baseline.xml
+!/AGENTS.md
+!/CLAUDE.md
 !/AndroidManifest.xml
 !/build.gradle.kts
 !/settings.gradle.kts
