@@ -230,8 +230,8 @@ abstract class ContentFragment :
         }
 
     internal fun obtainSearchView(): CustomSearchView? {
-        val viewHolder = this.viewHolder
-        return viewHolder!!.obtainSearchView(this)
+        val viewHolder = this.viewHolder ?: return null
+        return viewHolder.obtainSearchView(this)
     }
 
     class ViewHolderFragment : Fragment() {
@@ -242,20 +242,21 @@ abstract class ContentFragment :
             if (searchView != null) {
                 val reset: Boolean
                 if (fragment != null && searchViewOwner != null) {
-                    val ownerFragment = searchViewOwner!!.get()
+                    val ownerFragment = searchViewOwner?.get()
                     reset = ownerFragment == null || ownerFragment === fragment
                 } else {
                     reset = true
                 }
                 if (reset) {
-                    searchView!!.setOnSubmitListener(null)
-                    searchView!!.setOnChangeListener(null)
+                    searchView?.setOnSubmitListener(null)
+                    searchView?.setOnChangeListener(null)
                 }
             }
         }
 
         internal fun obtainSearchView(fragment: ContentFragment?): CustomSearchView? {
             resetSearchView(null)
+            var searchView = this.searchView
             if (searchView == null) {
                 searchView =
                     CustomSearchView(
@@ -264,10 +265,11 @@ abstract class ContentFragment :
                             R.style.Theme_Special_White,
                         ),
                     )
+                this.searchView = searchView
             }
             searchViewOwner = WeakReference<ContentFragment?>(fragment)
-            ViewUtils.removeFromParent(searchView!!)
-            searchView!!.setQuery("")
+            ViewUtils.removeFromParent(searchView)
+            searchView.setQuery("")
             return searchView
         }
 

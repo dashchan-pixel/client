@@ -122,7 +122,7 @@ class WebViewDecoder private constructor(
         width: Int,
         height: Int,
     ) {
-        val webView = this.webView!!
+        val webView = this.webView ?: return
         if (width > 0 && height > 0) {
             if (webView.width <= 0 || webView.height <= 0) {
                 measured = false

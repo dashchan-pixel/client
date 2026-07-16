@@ -102,7 +102,7 @@ class DownloadDialog(
         fun dismissIfNotEqual(request: Request?) {
             if (dialog != null && (request == null || this.request !== request)) {
                 this.request = null
-                dialog!!.dismiss()
+                dialog?.dismiss()
                 dialog = null
             }
         }
@@ -705,7 +705,7 @@ class DownloadDialog(
                             lastDirectoryItems = mutableListOf<DialogDirectory>()
 
                             if (lastDirectoryTask != null) {
-                                lastDirectoryTask!!.cancel()
+                                lastDirectoryTask?.cancel()
                                 lastDirectoryTask = null
                             }
 
@@ -825,7 +825,7 @@ class DownloadDialog(
             synchronized(lastDirectoryLock) {
                 lastDirectoryCancel = true
                 if (lastDirectoryTask != null) {
-                    lastDirectoryTask!!.cancel()
+                    lastDirectoryTask?.cancel()
                     lastDirectoryTask = null
                 }
             }

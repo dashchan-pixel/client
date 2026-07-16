@@ -51,9 +51,11 @@ class AudioPlayerDialog : DialogFragment() {
                 this@AudioPlayerDialog.audioPlayerBinder = audioPlayerBinder
                 audioPlayerBinder.registerCallback(callback)
                 if (audioPlayerBinder.isRunning) {
-                    seekBar!!.removeCallbacks(seekBarUpdate)
-                    textView!!.text = audioPlayerBinder.getFileName()
-                    seekBar!!.max = audioPlayerBinder.duration
+                    val seekBar = this@AudioPlayerDialog.seekBar ?: return
+                    val textView = this@AudioPlayerDialog.textView ?: return
+                    seekBar.removeCallbacks(seekBarUpdate)
+                    textView.text = audioPlayerBinder.getFileName()
+                    seekBar.max = audioPlayerBinder.duration
                     updatePlayState()
                     seekBarUpdate.run()
                 } else {
@@ -72,13 +74,12 @@ class AudioPlayerDialog : DialogFragment() {
     private val seekBarUpdate =
         object : Runnable {
             override fun run() {
-                val audioPlayerBinder = audioPlayerBinder
-                if (audioPlayerBinder != null) {
-                    if (!tracking) {
-                        seekBar!!.progress = audioPlayerBinder.position
-                    }
-                    seekBar!!.postDelayed(this, 500)
+                val audioPlayerBinder = audioPlayerBinder ?: return
+                val seekBar = this@AudioPlayerDialog.seekBar ?: return
+                if (!tracking) {
+                    seekBar.progress = audioPlayerBinder.position
                 }
+                seekBar.postDelayed(this, 500)
             }
         }
 
@@ -118,7 +119,7 @@ class AudioPlayerDialog : DialogFragment() {
                     fromUser: Boolean,
                 ) {
                     if (audioPlayerBinder != null && fromUser) {
-                        audioPlayerBinder!!.seekTo(progress)
+                        audioPlayerBinder?.seekTo(progress)
                     }
                 }
 
@@ -169,7 +170,7 @@ class AudioPlayerDialog : DialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         if (audioPlayerBinder != null) {
-            audioPlayerBinder!!.unregisterCallback(callback)
+            audioPlayerBinder?.unregisterCallback(callback)
             audioPlayerBinder = null
             requireContext().unbindService(audioPlayerConnection)
         }
@@ -196,8 +197,9 @@ class AudioPlayerDialog : DialogFragment() {
     }
 
     private fun updatePlayState() {
-        val playing = audioPlayerBinder != null && audioPlayerBinder!!.isPlaying
-        button!!.setImageResource(
+        val button = this.button ?: return
+        val playing = audioPlayerBinder?.isPlaying == true
+        button.setImageResource(
             ResourceUtils.getResourceId(
                 requireContext(),
                 if (playing) R.attr.iconButtonPause else R.attr.iconButtonPlay,

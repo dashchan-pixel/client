@@ -65,7 +65,7 @@ class BrowserFragment :
     private var webView: WebView? = null
     private var progressView: ProgressView? = null
 
-    private var navigationDrawerLocker: String? = null
+    private lateinit var navigationDrawerLocker: String
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -98,23 +98,24 @@ class BrowserFragment :
 
         navigationDrawerLocker = "browser-" + UUID.randomUUID()
         (requireActivity() as FragmentHandler).setNavigationAreaLocked(
-            navigationDrawerLocker!!,
+            navigationDrawerLocker,
             true,
         )
 
-        val settings = webView!!.getSettings()
+        val webView = this.webView ?: return
+        val settings = webView.getSettings()
         settings.setBuiltInZoomControls(true)
         settings.setDisplayZoomControls(false)
         settings.setUseWideViewPort(true)
         settings.setLoadWithOverviewMode(true)
         settings.setJavaScriptEnabled(true)
         settings.setDomStorageEnabled(true)
-        webView!!.setWebViewClient(CustomWebViewClient())
-        webView!!.setWebChromeClient(CustomWebChromeClient())
-        webView!!.setDownloadListener(this)
-        webView!!.setOnLongClickListener(
+        webView.setWebViewClient(CustomWebViewClient())
+        webView.setWebChromeClient(CustomWebChromeClient())
+        webView.setDownloadListener(this)
+        webView.setOnLongClickListener(
             OnLongClickListener { v: View? ->
-                val hitTestResult = webView!!.getHitTestResult()
+                val hitTestResult = webView.getHitTestResult()
                 when (hitTestResult.getType()) {
                     HitTestResult.IMAGE_TYPE, HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
                         val chan = getFallback()
@@ -130,7 +131,7 @@ class BrowserFragment :
         )
 
         if (savedInstanceState != null) {
-            webView!!.restoreState(savedInstanceState)
+            webView.restoreState(savedInstanceState)
         }
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(
@@ -139,7 +140,7 @@ class BrowserFragment :
         )
         if (savedInstanceState == null) {
             clearAll(webView)
-            webView!!.loadUrl(
+            webView.loadUrl(
                 BundleCompat
                     .getParcelable<Uri?>(
                         requireArguments(),
@@ -154,34 +155,35 @@ class BrowserFragment :
         super.onDestroyView()
 
         (requireActivity() as FragmentHandler).setNavigationAreaLocked(
-            navigationDrawerLocker!!,
+            navigationDrawerLocker,
             false,
         )
-        webView!!.stopLoading()
-        webView!!.destroy()
+        val webView = this.webView ?: return
+        webView.stopLoading()
+        webView.destroy()
         // Remove references to fragment and parent view since WebView bugs may cause memory leaks
-        webView!!.setOnLongClickListener(null)
-        ViewUtils.removeFromParent(webView!!)
-        webView = null
+        webView.setOnLongClickListener(null)
+        ViewUtils.removeFromParent(webView)
+        this.webView = null
         progressView = null
     }
 
     override fun onPause() {
         super.onPause()
-        webView!!.onPause()
+        val webView = this.webView ?: return
+        webView.onPause()
     }
 
     public override fun onResume() {
         super.onResume()
-        webView!!.onResume()
+        val webView = this.webView ?: return
+        webView.onResume()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        if (webView != null) {
-            webView!!.saveState(outState)
-        }
+        webView?.saveState(outState)
     }
 
     override fun onCreateOptionsMenu(
@@ -198,12 +200,13 @@ class BrowserFragment :
 
     public override fun onMenuItemSelected(item: MenuItem): Boolean {
         val switchItemId0 = item.getItemId()
+        val webView = this.webView ?: return true
         if (switchItemId0 == R.id.menu_reload) {
-            webView!!.reload()
+            webView.reload()
         } else if (switchItemId0 == R.id.menu_copy_link) {
-            copyToClipboard(requireContext(), webView!!.getUrl())
+            copyToClipboard(requireContext(), webView.getUrl())
         } else if (switchItemId0 == R.id.menu_share_link) {
-            val uriString = webView!!.getUrl()
+            val uriString = webView.getUrl()
             if (!isEmpty(uriString)) {
                 shareLink(requireContext(), null, Uri.parse(uriString))
             }
@@ -214,15 +217,16 @@ class BrowserFragment :
     override fun onHomePressed(): Boolean = false
 
     override fun onBackPressed(): Boolean {
-        if (webView!!.canGoBack()) {
-            webView!!.goBack()
+        val webView = this.webView ?: return false
+        if (webView.canGoBack()) {
+            webView.goBack()
             return true
         }
         return false
     }
 
     override val isBackHandled: Boolean
-        get() = webView != null && webView!!.canGoBack()
+        get() = webView?.canGoBack() == true
 
     override fun onDownloadStart(
         url: String?,
@@ -380,7 +384,8 @@ class BrowserFragment :
             view: WebView?,
             newProgress: Int,
         ) {
-            progressView!!.setProgress(newProgress)
+            val progressView = this@BrowserFragment.progressView ?: return
+            progressView.setProgress(newProgress)
         }
     }
 

@@ -81,14 +81,14 @@ class ListUnit(
 
     fun getRecyclerView(): RecyclerView = recyclerView
 
-    private val adapter: GridAdapter?
-        get() = recyclerView.getAdapter() as GridAdapter?
+    private val adapter: GridAdapter
+        get() = recyclerView.getAdapter() as GridAdapter
 
     val selectedPositions: IntArray?
         get() {
             if (selectionMode != null) {
                 val array = SparseIntArray()
-                val count = this.adapter!!.getItemCount()
+                val count = this.adapter.getItemCount()
                 for (i in 0..<count) {
                     if (callback.isItemChecked(i)) {
                         array.put(i, i)
@@ -107,25 +107,25 @@ class ListUnit(
         position: Int,
         checkVisibility: Boolean,
     ) {
-        val layoutManager = recyclerView.getLayoutManager() as GridLayoutManager?
+        val layoutManager = recyclerView.getLayoutManager() as GridLayoutManager
         if (checkVisibility) {
-            if (position >= layoutManager!!.findFirstCompletelyVisibleItemPosition() &&
+            if (position >= layoutManager.findFirstCompletelyVisibleItemPosition() &&
                 position <= layoutManager.findLastCompletelyVisibleItemPosition()
             ) {
                 return
             }
         }
-        layoutManager!!.scrollToPositionWithOffset(position, 0)
+        layoutManager.scrollToPositionWithOffset(position, 0)
     }
 
-    fun areItemsSelectable(): Boolean = this.adapter!!.getItemCount() > 0
+    fun areItemsSelectable(): Boolean = this.adapter.getItemCount() > 0
 
     fun startSelectionMode(selected: IntArray?) {
         this.selected.clear()
         selectionMode = recyclerView.startActionMode(this)
         if (selectionMode != null && selected != null) {
             var selectedCount = 0
-            val count = this.adapter!!.getItemCount()
+            val count = this.adapter.getItemCount()
             for (position in selected) {
                 if (position >= 0 && position < count) {
                     this.selected.append(position, position)
@@ -133,7 +133,7 @@ class ListUnit(
                 }
             }
             updateAllGalleryItemsChecked()
-            selectionMode!!.setTitle(
+            selectionMode?.setTitle(
                 getColonString(
                     instance.context.getResources(),
                     R.string.selected,
@@ -170,7 +170,7 @@ class ListUnit(
     ) {
         if (galleryMode) {
             recyclerView.setVisibility(View.VISIBLE)
-            this.adapter!!.activate()
+            this.adapter.activate()
             if (duration > 0) {
                 recyclerView.setAlpha(0f)
                 recyclerView.setScaleX(GRID_SCALE)
@@ -215,7 +215,7 @@ class ListUnit(
                 selected.put(position, position)
             }
             updateGalleryItemChecked(view, position)
-            selectionMode!!.setTitle(
+            selectionMode?.setTitle(
                 getColonString(
                     instance.context.getResources(),
                     R.string.selected,
@@ -234,7 +234,7 @@ class ListUnit(
         showItemMenu(
             instance.callback.getChildFragmentManager(),
             instance.chanName,
-            this.adapter!!.getItem(position),
+            this.adapter.getItem(position),
             instance.callback.isAllowNavigatePostManually(false),
         )
         return true
@@ -292,7 +292,7 @@ class ListUnit(
     ): Boolean {
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_select_all) {
-            val count = this.adapter!!.getItemCount()
+            val count = this.adapter.getItemCount()
             for (i in 0..<count) {
                 selected.put(i, i)
             }
@@ -308,7 +308,7 @@ class ListUnit(
         } else if (switchItemId0 == R.id.menu_download) {
             val galleryItems = ArrayList<GalleryItem>()
             val adapter = this.adapter
-            for (i in 0..<adapter!!.getItemCount()) {
+            for (i in 0..<adapter.getItemCount()) {
                 if (callback.isItemChecked(i)) {
                     galleryItems.add(adapter.getItem(i))
                 }

@@ -56,7 +56,9 @@ class AttachmentRatingDialog() :
         which: Int,
     ) {
         val holder = getAttachmentHolder()
-        holder!!.rating = ratings[which]
+        if (holder != null) {
+            holder.rating = ratings[which]
+        }
         dismiss()
     }
 

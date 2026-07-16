@@ -27,11 +27,9 @@ abstract class WebViewDialog : DialogFragment() {
     @JvmField
     protected var webView: WebView? = null
 
-    @JvmField
-    protected var titleTextView: TextView? = null
+    protected lateinit var titleTextView: TextView
 
-    @JvmField
-    protected var pageLoadingProgressBar: ProgressBar? = null
+    protected lateinit var pageLoadingProgressBar: ProgressBar
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
@@ -49,13 +47,14 @@ abstract class WebViewDialog : DialogFragment() {
         titleTextView = rootView.findViewById(R.id.dialog_webview_title)
         pageLoadingProgressBar = rootView.findViewById(R.id.dialog_webview_progressbar)
 
-        webView!!.webChromeClient = WebChromeClientWrapper()
+        val webView = this.webView ?: return rootView
+        webView.webChromeClient = WebChromeClientWrapper()
 
         val closeIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_close)
         closeIcon.setOnClickListener { dismiss() }
 
         val refreshIcon = rootView.findViewById<View>(R.id.dialog_webview_icon_refresh)
-        refreshIcon.setOnClickListener { webView!!.reload() }
+        refreshIcon.setOnClickListener { webView.reload() }
 
         return rootView
     }
@@ -67,14 +66,16 @@ abstract class WebViewDialog : DialogFragment() {
     }
 
     protected fun setWebChromeClient(webChromeClient: WebChromeClient) {
-        webView!!.webChromeClient = WebChromeClientWrapper(webChromeClient)
+        val webView = this.webView ?: return
+        webView.webChromeClient = WebChromeClientWrapper(webChromeClient)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        webView!!.stopLoading()
-        webView!!.webChromeClient = null
-        webView!!.destroy()
+        val webView = this.webView ?: return
+        webView.stopLoading()
+        webView.webChromeClient = null
+        webView.destroy()
     }
 
     private inner class WebChromeClientWrapper : WebChromeClient {
@@ -97,7 +98,7 @@ abstract class WebViewDialog : DialogFragment() {
         ) {
             delegate.onProgressChanged(view, newProgress)
             animateProgressBarVisibility(newProgress)
-            pageLoadingProgressBar!!.setProgress(newProgress, true)
+            pageLoadingProgressBar.setProgress(newProgress, true)
 
             lastProgress = newProgress
         }
@@ -130,7 +131,7 @@ abstract class WebViewDialog : DialogFragment() {
             title: String,
         ) {
             delegate.onReceivedTitle(view, title)
-            titleTextView!!.text = title
+            titleTextView.text = title
         }
 
         override fun onReceivedIcon(

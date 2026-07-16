@@ -61,10 +61,10 @@ class AttachmentOptionsDialog :
     private val optionItems: ArrayList<OptionItem> = ArrayList<OptionItem>()
     private val optionIndices = HashMap<Type?, Int?>()
 
-    private var listView: ListView? = null
-    private var filenameEditText: EditText? = null
-    private var extensionTextView: TextView? = null
-    private var restoreButton: Button? = null
+    private lateinit var listView: ListView
+    private lateinit var filenameEditText: EditText
+    private lateinit var extensionTextView: TextView
+    private lateinit var restoreButton: Button
 
     constructor()
 
@@ -201,13 +201,13 @@ class AttachmentOptionsDialog :
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT,
         )
-        listView!!.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE)
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE)
         val resId =
             ResourceUtils.obtainAlertDialogLayoutResId(
                 activity,
                 ResourceUtils.DialogLayout.MULTI_CHOICE,
             )
-        listView!!.setDividerHeight(0)
+        listView.setDividerHeight(0)
 
         val adapter = AttachmentOptionsDialog.ItemsAdapter(activity, resId, items)
 
@@ -216,16 +216,16 @@ class AttachmentOptionsDialog :
                 .from(activity)
                 .inflate(R.layout.dialog_filename, listView, false) as ViewGroup
         nameExtensionLayout.setOnClickListener(null)
-        listView!!.addFooterView(nameExtensionLayout)
-        listView!!.setAdapter(adapter)
+        listView.addFooterView(nameExtensionLayout)
+        listView.setAdapter(adapter)
 
         for (i in optionItems.indices) {
-            listView!!.setItemChecked(i, optionItems[i].checked)
+            listView.setItemChecked(i, optionItems[i].checked)
         }
-        listView!!.setOnItemClickListener(this)
+        listView.setOnItemClickListener(this)
 
         filenameEditText = nameExtensionLayout.findViewById<EditText>(R.id.filename)
-        filenameEditText!!.setText(removeFileExtension(holder.newname))
+        filenameEditText.setText(removeFileExtension(holder.newname))
         val filter =
             InputFilter { source: CharSequence?, start: Int, end: Int, dest: Spanned?, dstart: Int, dend: Int ->
                 for (i in start..<end) {
@@ -235,13 +235,13 @@ class AttachmentOptionsDialog :
                 }
                 null
             }
-        filenameEditText!!.setFilters(
+        filenameEditText.setFilters(
             arrayOf<InputFilter>(
                 filter,
                 LengthFilter(getFilenameMaxCharacterCount()),
             ),
         )
-        filenameEditText!!.addTextChangedListener(
+        filenameEditText.addTextChangedListener(
             object : TextWatcher {
                 override fun beforeTextChanged(
                     s: CharSequence?,
@@ -266,13 +266,13 @@ class AttachmentOptionsDialog :
         )
         extensionTextView = nameExtensionLayout.findViewById<TextView>(R.id.extension)
         val ext: CharSequence = "." + getFileExtension(holder.name)
-        extensionTextView!!.setText(ext)
+        extensionTextView.setText(ext)
         restoreButton = MaterialButton(activity)
-        restoreButton!!.setText(R.string.restore_filename)
-        restoreButton!!.setOnClickListener(
+        restoreButton.setText(R.string.restore_filename)
+        restoreButton.setOnClickListener(
             View.OnClickListener { v: View? ->
                 holder.newname = holder.name
-                filenameEditText!!.setText(removeFileExtension(holder.newname))
+                filenameEditText.setText(removeFileExtension(holder.newname))
             },
         )
         nameExtensionLayout.addView(restoreButton)
@@ -305,7 +305,7 @@ class AttachmentOptionsDialog :
         } else {
             extensionFormat += getFileExtension(holder.name)
         }
-        extensionTextView!!.setText(extensionFormat)
+        extensionTextView.setText(extensionFormat)
         val removeIndex = optionIndices[Type.REMOVE_FILE_NAME]
         val renameIndex = optionIndices[Type.RENAME]
         if (removeIndex != null && renameIndex != null) {
@@ -316,9 +316,9 @@ class AttachmentOptionsDialog :
     }
 
     private fun updateFilenameElementsEnabled(holder: AttachmentHolder) {
-        filenameEditText!!.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
-        extensionTextView!!.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
-        restoreButton!!.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
+        filenameEditText.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
+        extensionTextView.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
+        restoreButton.setEnabled(holder.optionCustomName && !holder.optionRemoveFileName)
     }
 
     override fun onItemClick(
@@ -327,53 +327,53 @@ class AttachmentOptionsDialog :
         position: Int,
         id: Long,
     ) {
-        val holder = this.attachmentHolder
+        val holder = this.attachmentHolder ?: return
         val type = optionItems[position].type
-        val checked = listView!!.isItemChecked(position)
+        val checked = listView.isItemChecked(position)
         when (type) {
             Type.UNIQUE_HASH -> {
-                holder!!.optionUniqueHash = checked
+                holder.optionUniqueHash = checked
             }
 
             Type.REMOVE_METADATA -> {
-                holder!!.optionRemoveMetadata = checked
+                holder.optionRemoveMetadata = checked
             }
 
             Type.REENCODE_IMAGE -> {
                 if (checked) {
-                    listView!!.setItemChecked(position, false)
+                    listView.setItemChecked(position, false)
                     ReencodingDialog().show(getChildFragmentManager(), ReencodingDialog.TAG)
                 } else {
-                    holder!!.reencoding = null
+                    holder.reencoding = null
                 }
             }
 
             Type.REMOVE_FILE_NAME -> {
-                holder!!.optionRemoveFileName = checked
+                holder.optionRemoveFileName = checked
             }
 
             Type.SPOILER -> {
-                holder!!.optionSpoiler = checked
+                holder.optionSpoiler = checked
             }
 
             Type.RENAME -> {
-                holder!!.optionCustomName = checked
+                holder.optionCustomName = checked
             }
         }
         updateItemsEnabled(
-            ((listView!!.getAdapter() as HeaderViewListAdapter).getWrappedAdapter() as com.mishiranu.dashchan.ui.posting.dialog.AttachmentOptionsDialog.ItemsAdapter?)!!,
-            holder!!,
+            (listView.getAdapter() as HeaderViewListAdapter).getWrappedAdapter() as com.mishiranu.dashchan.ui.posting.dialog.AttachmentOptionsDialog.ItemsAdapter,
+            holder,
         )
     }
 
     fun setReencoding(reencoding: Reencoding?) {
-        val holder = this.attachmentHolder
+        val holder = this.attachmentHolder ?: return
         val reencodeIndex = optionIndices[Type.REENCODE_IMAGE]
         if (reencodeIndex != null) {
-            holder!!.reencoding = reencoding
-            listView!!.setItemChecked(reencodeIndex, reencoding != null)
+            holder.reencoding = reencoding
+            listView.setItemChecked(reencodeIndex, reencoding != null)
             updateItemsEnabled(
-                ((listView!!.getAdapter() as HeaderViewListAdapter).getWrappedAdapter() as com.mishiranu.dashchan.ui.posting.dialog.AttachmentOptionsDialog.ItemsAdapter?)!!,
+                (listView.getAdapter() as HeaderViewListAdapter).getWrappedAdapter() as com.mishiranu.dashchan.ui.posting.dialog.AttachmentOptionsDialog.ItemsAdapter,
                 holder,
             )
         }

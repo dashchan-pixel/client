@@ -90,7 +90,7 @@ class ForegroundManager private constructor() : Handler.Callback {
     private var viewModel: WeakReference<InstanceViewModel?>? = null
 
     private fun getActivity(): FragmentActivity? {
-        val activity = if (this.activity != null) this.activity!!.get() else null
+        val activity = this.activity?.get()
         return if (activity == null ||
             (
                 activity.lifecycle.currentState
@@ -160,7 +160,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private fun handleCleared(viewModel: InstanceViewModel?) {
         Objects.requireNonNull<InstanceViewModel?>(viewModel)
-        if (this.viewModel != null && this.viewModel!!.get() === viewModel) {
+        if (this.viewModel?.get() === viewModel) {
             this.viewModel = null
             if (!delayedMessages.isEmpty()) {
                 val delayedMessages: ArrayList<DelayedMessage> =
@@ -356,11 +356,11 @@ class ForegroundManager private constructor() : Handler.Callback {
             super.onSaveInstanceState(outState)
             outState.putString(
                 EXTRA_CAPTCHA_STATE,
-                if (captchaState != null) captchaState!!.name else null,
+                captchaState?.name,
             )
             outState.putString(
                 EXTRA_LOADED_INPUT,
-                if (loadedInput != null) loadedInput!!.name else null,
+                loadedInput?.name,
             )
             outState.putParcelable(EXTRA_CAPTCHA, captcha)
             outState.putBoolean(EXTRA_LARGE, large)
@@ -435,7 +435,8 @@ class ForegroundManager private constructor() : Handler.Callback {
         override fun onReadCaptchaError(errorItem: ErrorItem) {
             if (this.pendingDataOrDismiss != null) {
                 show(errorItem)
-                captchaForm!!.showError()
+                val captchaForm = this.captchaForm ?: return
+                captchaForm.showError()
             }
         }
 
@@ -468,7 +469,7 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         private fun updatePositiveButtonState() {
             if (positiveButton != null) {
-                positiveButton!!.setEnabled(
+                positiveButton?.setEnabled(
                     captchaState != null &&
                         captchaState != ReadCaptchaTask.CaptchaState.NEED_LOAD &&
                         captchaState != ReadCaptchaTask.CaptchaState.MAY_LOAD &&
@@ -530,8 +531,9 @@ class ForegroundManager private constructor() : Handler.Callback {
 
         override fun onDestroyView() {
             super.onDestroyView()
-            captchaForm!!.onDestroyView()
-            captchaForm = null
+            val captchaForm = this.captchaForm ?: return
+            captchaForm.onDestroyView()
+            this.captchaForm = null
         }
 
         override fun onRefreshCaptcha(forceRefresh: Boolean) {
@@ -1660,7 +1662,7 @@ class ForegroundManager private constructor() : Handler.Callback {
     fun register(activity: FragmentActivity) {
         Objects.requireNonNull<FragmentActivity?>(activity)
         if (this.activity != null) {
-            val oldActivity = this.activity!!.get()
+            val oldActivity = this.activity?.get()
             if (oldActivity === activity) {
                 return
             }

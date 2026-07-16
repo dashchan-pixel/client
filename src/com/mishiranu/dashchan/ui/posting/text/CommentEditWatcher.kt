@@ -101,10 +101,12 @@ class CommentEditWatcher(
                     },
                 )
             remainingCharacters.setTextColor(color)
+            var errorSetter = this.errorSetter
             if (errorSetter == null) {
                 errorSetter = ErrorEditTextSetter(commentView)
+                this.errorSetter = errorSetter
             }
-            errorSetter!!.setError(error)
+            errorSetter.setError(error)
             this.error = error
         }
         if (show) {
