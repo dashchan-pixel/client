@@ -85,7 +85,6 @@
 	<string name="download_completed">Download completo</string>
 	<string name="download_file">Baixar arquivo</string>
 	<string name="download_files">Baixar arquivos</string>
-	<string name="download_path">Local de download</string>
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
 	<string name="empty_response">Resposta vazia</string>

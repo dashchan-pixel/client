@@ -136,7 +136,6 @@
 	<string name="download_directory">Download directory</string>
 	<string name="download_file">Download file</string>
 	<string name="download_files">Download files</string>
-	<string name="download_path">Download path</string>
 	<string name="downloading">Downloading</string>
 	<string name="downloading_audio">Downloading audio</string>
 	<string name="downloading_number_of_number__format">Downloading %1$d of %2$d</string>
@@ -435,8 +434,6 @@
 	<string name="secure_connection__summary">Use HTTPS protocol</string>
 	<string name="seek_any_frame">Seek any frame</string>
 	<string name="seek_any_frame__summary">Increases accuracy but lowers performance</string>
-	<string name="video_multithreaded_decoding">Multithreaded video decoding</string>
-	<string name="video_multithreaded_decoding__summary">May improve performance</string>
 	<string name="select">Select</string>
 	<string name="select_all">Select all</string>
 	<string name="select_where_to_save">Select where to save</string>
@@ -524,9 +521,6 @@
 	<string name="use_built_in_video_player">Use built-in video player</string>
 	<string name="use_built_in_video_player__summary">Play WebM video attachments</string>
 	<string name="use_forum_settings">Use forum settings</string>
-	<string name="use_gms_security_provider">Use GMS security provider</string>
-	<string name="use_gms_security_provider__summary">Google Play Services security provider adds support for newer
-		SSL/TLS implementation, which may be important for old Android devices</string>
 	<string name="use_javascript_for_recaptcha">Use JavaScript for reCAPTCHA</string>
 	<string name="use_javascript_for_recaptcha__summary">May simplify Google reCAPTCHA</string>
 	<string name="user_authorization">User authorization</string>

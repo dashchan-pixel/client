@@ -112,7 +112,6 @@
     <string name="download_directory">Cartella download</string>
     <string name="download_file">Scarica file</string>
     <string name="download_files">Scarica file</string>
-    <string name="download_path">Percorso download</string>
     <string name="downloading">Download</string>
     <string name="downloading_audio">Download audio</string>
     <string name="downloading_number_of_number__format">Download in corso: %1$d di %2$d</string>
@@ -462,10 +461,6 @@
     <string name="updates_available__genitive">Aggiornamenti disponibili</string>
     <string name="use_built_in_video_player">Usa il player video interno</string>
     <string name="use_built_in_video_player__summary">Riproduci allegati video WebM</string>
-    <string name="use_gms_security_provider">Usa provider sicurezza GMS</string>
-    <string name="use_gms_security_provider__summary">Il provider di sicurezza di Google Play Services aggiunge il
-        supporto alla nuova
-        implementazione di SSL/TLS, che potrebbe essere importante per i vecchi dispositivi Android</string>
     <string name="use_javascript_for_recaptcha">Usa JavaScript per i reCAPTCHA</string>
     <string name="use_javascript_for_recaptcha__summary">Potrebbe semplificare i reCAPTCHA di Google</string>
     <string name="user_authorization">Autorizzazione utente</string>
