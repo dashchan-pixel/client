@@ -72,18 +72,22 @@ class ImageLoader private constructor() {
         private var notFound = false
         internal var finished = false
 
-        override fun run(holder: HttpHolder): Bitmap? {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
-            // Debounce image requests, taking into account that
-            // a task can be executed much later than created.
+        // Debounce remote image requests, taking into account that
+        // a task can be executed much later than created. Returns true if interrupted.
+        private fun debounce(): Boolean {
             val sleep = 500 + created - SystemClock.elapsedRealtime()
             if (sleep > 0) {
                 try {
                     Thread.sleep(sleep)
                 } catch (e: InterruptedException) {
-                    return null
+                    return true
                 }
             }
+            return false
+        }
+
+        override fun run(holder: HttpHolder): Bitmap? {
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
             val scheme = uri.getScheme()
             val chanScheme = ChanConfiguration.SCHEME_CHAN == scheme
             val dataScheme = "data" == scheme
@@ -120,6 +124,9 @@ class ImageLoader private constructor() {
                             }
                         }
                     } else {
+                        if (debounce() || isCancelled()) {
+                            return null
+                        }
                         val response: HttpResponse?
                         try {
                             val result =

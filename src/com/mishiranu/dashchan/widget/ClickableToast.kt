@@ -459,6 +459,7 @@ class ClickableToast private constructor(
         OnTouchListener,
         Drawable.Callback {
         private val clickedButtonBackgroundPaint = Paint()
+        private val buttonBounds = Rect()
         internal var clicked = false
 
         init {
@@ -537,25 +538,22 @@ class ClickableToast private constructor(
             drawable.draw(canvas)
             if (clicked) {
                 val toastBounds = getBounds()
-                val buttonBounds: Rect?
                 if (button.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {
                     val shift = button.getRight()
-                    buttonBounds =
-                        Rect(
-                            toastBounds.left + shift,
-                            toastBounds.top,
-                            toastBounds.left + shift,
-                            toastBounds.bottom,
-                        )
+                    buttonBounds.set(
+                        toastBounds.left + shift,
+                        toastBounds.top,
+                        toastBounds.left + shift,
+                        toastBounds.bottom,
+                    )
                 } else {
                     val shift = button.getLeft()
-                    buttonBounds =
-                        Rect(
-                            toastBounds.left + shift,
-                            toastBounds.top,
-                            toastBounds.right,
-                            toastBounds.bottom,
-                        )
+                    buttonBounds.set(
+                        toastBounds.left + shift,
+                        toastBounds.top,
+                        toastBounds.right,
+                        toastBounds.bottom,
+                    )
                 }
                 canvas.drawRect(buttonBounds, clickedButtonBackgroundPaint)
             }

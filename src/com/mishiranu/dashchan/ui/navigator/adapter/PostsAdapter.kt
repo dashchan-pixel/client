@@ -325,17 +325,10 @@ class PostsAdapter(
 
     fun removeHiddenPost(post: PostItem) {
         val position = positionOfPostNumber(post.getPostNumber())
-        val iterator = postItemsMap.values.iterator()
-        var wasHidden = false
-        while (iterator.hasNext()) {
-            val postItem = iterator.next()
-            if (post.getPostNumber().equals(postItem.getPostNumber()) && position != 0) {
-                wasHidden = true
-                cancelPreloading()
-                break
-            }
-        }
+        // Never remove the original post, it keeps the thread's subject and gallery title.
+        val wasHidden = position != 0 && postItemsMap.containsKey(post.getPostNumber())
         if (wasHidden) {
+            cancelPreloading()
             recyclerView.post(
                 Runnable {
                     for (referenceTo in post.getReferencesTo()) {
