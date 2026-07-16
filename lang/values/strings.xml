@@ -145,6 +145,8 @@
 	<string name="empty_response">Empty response</string>
 	<string name="enabled">Enabled</string>
 	<string name="enter_valid_data">Enter a valid data</string>
+	<string name="ephemeral_browsing">Ephemeral browsing</string>
+	<string name="ephemeral_browsing__summary">Open links in an incognito custom tab that keeps no history or cookies</string>
 	<string name="erase">Erase</string>
 	<string name="every_number_sec__format">Every %d sec.</string>
 	<string name="exif_metadata">Exif metadata</string>
@@ -217,8 +219,8 @@
 	<string name="install">Install</string>
 	<string name="installed__plural">Installed</string>
 	<string name="insufficient_device_space">Insufficient device space</string>
-	<string name="internal_browser">Internal browser</string>
-	<string name="internal_browser__sumamry">Open external links in internal browser</string>
+	<string name="internal_browser">Custom tab</string>
+	<string name="internal_browser__sumamry">Open external links in an in-app custom tab</string>
 	<string name="invalid_authorization_data">Invalid authorization data</string>
 	<string name="invalid_certificate">Invalid certificate</string>
 	<string name="invalid_data_format">Invalid data format</string>

@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.util
 
+import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ActivityNotFoundException
@@ -7,9 +8,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.SystemClock
 import android.provider.Browser
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import chan.content.Chan
 import chan.content.ChanManager
 import chan.http.FirewallResolver
@@ -23,6 +27,7 @@ import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.service.AudioPlayerService
 import com.mishiranu.dashchan.ui.MainActivity
 import com.mishiranu.dashchan.widget.ClickableToast
+import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -77,41 +82,76 @@ object NavigationUtils {
             internalBrowser = names.isEmpty()
         }
         if (internalBrowser) {
-            intent = Intent(context, MainActivity::class.java).setAction(C.ACTION_BROWSER).setData(targetUri)
-        } else {
-            intent = Intent(Intent.ACTION_VIEW, targetUri)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.packageName)
-            intent.putExtra(C.EXTRA_FROM_CLIENT, true)
-            if (chanName != null) {
-                val chan = Chan.get(chanName)
-                if (chan.locator.safe(false).isAttachmentUri(targetUri)) {
-                    val userAgent = AdvancedPreferences.getUserAgent(chanName)
-                    val resolverIdentifier = FirewallResolver.Identifier(userAgent, true, targetUri.host)
-                    val cookieBuilder =
-                        FirewallResolver.Implementation
-                            .getInstance()
-                            .collectCookies(chan, targetUri, resolverIdentifier, true)
-                    if (!cookieBuilder.isEmpty) {
-                        // For MX Player, see https://sites.google.com/site/mxvpen/api
-                        intent.putExtra(
-                            "headers",
-                            arrayOf(
-                                "User-Agent",
-                                userAgent,
-                                "Cookie",
-                                cookieBuilder.build(),
-                            ),
-                        )
-                    }
+            openCustomTab(context, targetUri)
+            return
+        }
+        intent = Intent(Intent.ACTION_VIEW, targetUri)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.packageName)
+        intent.putExtra(C.EXTRA_FROM_CLIENT, true)
+        if (chanName != null) {
+            val chan = Chan.get(chanName)
+            if (chan.locator.safe(false).isAttachmentUri(targetUri)) {
+                val userAgent = AdvancedPreferences.getUserAgent(chanName)
+                val resolverIdentifier = FirewallResolver.Identifier(userAgent, true, targetUri.host)
+                val cookieBuilder =
+                    FirewallResolver.Implementation
+                        .getInstance()
+                        .collectCookies(chan, targetUri, resolverIdentifier, true)
+                if (!cookieBuilder.isEmpty) {
+                    // For MX Player, see https://sites.google.com/site/mxvpen/api
+                    intent.putExtra(
+                        "headers",
+                        arrayOf(
+                            "User-Agent",
+                            userAgent,
+                            "Cookie",
+                            cookieBuilder.build(),
+                        ),
+                    )
                 }
             }
-            if (!isWeb) {
-                intent = Intent.createChooser(intent, null)
-            }
+        }
+        if (!isWeb) {
+            intent = Intent.createChooser(intent, null)
         }
         try {
             context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            ClickableToast.show(R.string.unknown_address)
+        } catch (e: Exception) {
+            ClickableToast.show(e.message)
+        }
+    }
+
+    /**
+     * Open a web link in a Chrome Custom Tab (the replacement for the old in-app WebView browser).
+     * The tab is launched in ephemeral (incognito) mode when the user enabled it in Settings.
+     */
+    @JvmStatic
+    fun openCustomTab(
+        context: Context,
+        uri: Uri,
+    ) {
+        val colorSchemeParams =
+            CustomTabColorSchemeParams
+                .Builder()
+                .setToolbarColor(Color.BLACK or getTheme(context).primary)
+                .build()
+        val customTabsIntent =
+            CustomTabsIntent
+                .Builder()
+                .setDefaultColorSchemeParams(colorSchemeParams)
+                .setShowTitle(true)
+                .setEphemeralBrowsingEnabled(Preferences.isEphemeralBrowsing)
+                .build()
+        // Custom Tabs launch from a non-Activity context (e.g. application context) needs its own task.
+        if (context !is Activity) {
+            customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        customTabsIntent.intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.packageName)
+        try {
+            customTabsIntent.launchUrl(context, uri)
         } catch (e: ActivityNotFoundException) {
             ClickableToast.show(R.string.unknown_address)
         } catch (e: Exception) {

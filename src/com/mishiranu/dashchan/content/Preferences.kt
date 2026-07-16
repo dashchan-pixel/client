@@ -951,6 +951,17 @@ object Preferences {
                 DEFAULT_INTERNAL_BROWSER,
             )
 
+    const val KEY_EPHEMERAL_BROWSING: String = "ephemeral_browsing"
+    const val DEFAULT_EPHEMERAL_BROWSING: Boolean = false
+
+    @JvmStatic
+    val isEphemeralBrowsing: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_EPHEMERAL_BROWSING,
+                DEFAULT_EPHEMERAL_BROWSING,
+            )
+
     const val KEY_LAST_UPDATE_CHECK: String = "last_update_check"
 
     @JvmStatic

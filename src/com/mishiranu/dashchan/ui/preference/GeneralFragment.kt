@@ -89,6 +89,13 @@ class GeneralFragment :
             R.string.internal_browser,
             R.string.internal_browser__sumamry,
         )
+        addCheck(
+            true,
+            Preferences.KEY_EPHEMERAL_BROWSING,
+            Preferences.DEFAULT_EPHEMERAL_BROWSING,
+            R.string.ephemeral_browsing,
+            R.string.ephemeral_browsing__summary,
+        )
 
         addHeader(R.string.services)
         addCheck(

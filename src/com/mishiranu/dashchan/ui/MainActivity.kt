@@ -881,13 +881,6 @@ class MainActivity :
         } else if (C.ACTION_VIDEO_PIP == intent.getAction()) {
             // An expanded picture-in-picture window handing playback back to its origin
             reopenInApp(this)
-        } else if (C.ACTION_BROWSER == intent.getAction()) {
-            val browserFragment = BrowserFragment(intent.getData())
-            if (this.currentFragment is BrowserFragment) {
-                navigateFragment(browserFragment, null, true)
-            } else {
-                pushFragment(browserFragment)
-            }
         } else {
             val uri = intent.getData()
             if (uri != null) {

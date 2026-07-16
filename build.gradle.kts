@@ -251,6 +251,7 @@ dependencies {
     implementation("androidx.fragment:fragment:1.8.9")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
+    implementation("androidx.browser:browser:1.9.0")
     implementation("androidx.media3:media3-exoplayer:1.10.1")
     implementation("androidx.webkit:webkit:1.16.0")
     implementation("com.squareup.okhttp3:okhttp:5.4.0")
