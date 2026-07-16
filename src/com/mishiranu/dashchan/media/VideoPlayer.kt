@@ -126,7 +126,7 @@ class VideoPlayer(
         }
         val player = obtainPooledPlayer()
         exoPlayer = player
-        player.setSeekParameters(if (seekAnyFrame) SeekParameters.CLOSEST_SYNC else SeekParameters.DEFAULT)
+        player.setSeekParameters(if (seekAnyFrame) SeekParameters.EXACT else SeekParameters.CLOSEST_SYNC)
         player.addListener(playerListener)
         if (rangeCallback == null) {
             player.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
