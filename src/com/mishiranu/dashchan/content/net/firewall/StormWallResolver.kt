@@ -150,7 +150,7 @@ class StormWallResolver : FirewallResolver() {
     ) {
         val chan = session.chan
         val key = toKey(session)
-        val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_STORMWALL)!!)
+        val cookie = chan!!.configuration.getCookie(key.formatKey(COOKIE_STORMWALL))
         if (!StringUtils.isEmpty(cookie)) {
             cookieBuilder.append(COOKIE_STORMWALL, cookie)
         }

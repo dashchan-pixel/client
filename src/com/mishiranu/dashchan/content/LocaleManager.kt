@@ -83,38 +83,44 @@ class LocaleManager private constructor() {
 
         init {
             val total = BuildConfig.LOCALES.size + 2
-            val codes = arrayOfNulls<String>(total)
-            val names = arrayOfNulls<CharSequence>(total)
-            val locales = arrayOfNulls<Locale>(total)
-            codes[0] = DEFAULT_LOCALE
-            codes[1] = "en"
-            for (i in 2 until total) {
-                val locale = BuildConfig.LOCALES[i - 2]
-                val index = locale.indexOf("-r")
-                codes[i] =
-                    if (index >= 0) {
-                        locale.substring(0, index) + "_" + locale.substring(index + 2)
-                    } else {
-                        locale
+            // Every slot of codes and names is assigned below, so both are built as non-null
+            // lists directly. Only locales stays a nullable array: index 0 ("System") is
+            // deliberately left null and the map loop below skips it.
+            val codes =
+                buildList(total) {
+                    add(DEFAULT_LOCALE)
+                    add("en")
+                    for (i in 2 until total) {
+                        val locale = BuildConfig.LOCALES[i - 2]
+                        val index = locale.indexOf("-r")
+                        add(
+                            if (index >= 0) {
+                                locale.substring(0, index) + "_" + locale.substring(index + 2)
+                            } else {
+                                locale
+                            },
+                        )
                     }
-            }
-            names[0] = "System"
-            for (i in 1 until names.size) {
-                val splitted = codes[i]!!.split("_")
+                }
+            val locales = arrayOfNulls<Locale>(total)
+            val names = ArrayList<CharSequence>(total)
+            names.add("System")
+            for (i in 1 until total) {
+                val splitted = codes[i].split("_")
                 val language = splitted[0]
                 val country = if (splitted.size > 1) splitted[1] else null
                 val locale = if (country != null) Locale.of(language, country) else Locale.of(language)
                 val displayName = locale.getDisplayName(locale)
-                names[i] = displayName.substring(0, 1).uppercase(locale) + displayName.substring(1)
+                names.add(displayName.substring(0, 1).uppercase(locale) + displayName.substring(1))
                 locales[i] = locale
             }
-            ENTRIES_LOCALE = names.map { it!! }
-            VALUES_LOCALE = codes.map { it!! }
+            ENTRIES_LOCALE = names
+            VALUES_LOCALE = codes
             val valueLocaleObjects = HashMap<String, Locale>()
             for (i in codes.indices) {
                 val locale = locales[i]
                 if (locale != null) {
-                    valueLocaleObjects[codes[i]!!] = locale
+                    valueLocaleObjects[codes[i]] = locale
                 }
             }
             VALUES_LOCALE_OBJECTS = Collections.unmodifiableMap(valueLocaleObjects)

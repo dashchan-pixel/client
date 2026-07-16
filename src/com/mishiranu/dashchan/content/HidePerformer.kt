@@ -142,7 +142,12 @@ class HidePerformer(
             val autohideItem = autohideItems[i]
             // AND selection (only if chan, board, thread, op, and sage match the rule)
             val autohideChanNames = autohideItem.chanNames
-            if (autohideChanNames == null || autohideChanNames.contains(chan.name!!)) {
+            // chan.name is null for the fallback Chan (an extension that is not loaded).
+            // HashSet.contains(null) returned false in the Java, so the rule simply did not
+            // match; '!!' here would crash instead.
+            if (autohideChanNames == null ||
+                chan.name?.let { autohideChanNames.contains(it) } == true
+            ) {
                 if (StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
                     if (StringUtils.isEmpty(autohideItem.threadNumber) ||
                         autohideItem.boardName != null &&
