@@ -52,7 +52,6 @@ and [metadata/en/changelogs](metadata/en/changelogs).
 <img src="metadata/en/images/phoneScreenshots/10.png" width="20%" />
 <img src="metadata/en/images/phoneScreenshots/11.png" width="20%" />
 <img src="metadata/en/images/phoneScreenshots/12.png" width="20%" />
-<img src="metadata/en/images/phoneScreenshots/13.png" width="20%" />
 </p>
 
 ## Building Guide
