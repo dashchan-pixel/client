@@ -1,4 +1,13 @@
-* The changelog groups all pixel releases under one "26.7-pixel" entry instead of splitting them into "1.6 - 26.7-pixel" and a "26.7" that never existed
-* Dropped the obsolete 3.1.4-experimental releases from the changelog
-* The retired Webm library extension is no longer loaded or offered: the video player is built in now
+* Customizable swipe action on posts in a thread: swipe right-to-left to reply, copy or share, chosen in Interface → Posts list → Swipe action on post
+* Optional day/night theme switch following the OS setting, with a separate theme for each (off by default)
+* In-app transitions now animate with the back gesture
+* Links open in a Custom Tab instead of the internal WebView browser, with an optional ephemeral (incognito) mode that keeps no history or cookies
+* Sharing text from another app now saves it as a draft instead of failing with "unknown address"
+* Smoother scrolling on 90-120 Hz displays: the main-thread work budget follows the actual refresh rate instead of assuming 60 Hz
+* Thumbnails already in the disk cache appear immediately instead of after a 500 ms delay
+* Fixed "Seek any frame", which had its meaning inverted and degraded seek accuracy when enabled
+* Fixed several crashes left by the Java→Kotlin conversion, including search grouping on posts without a thread number
+* The changelog groups all pixel releases under one "26.7-pixel" entry instead of splitting them into "1.6 — 26.7-pixel" and a "26.7" that never existed
+* The retired Webm library extension is no longer loaded or offered: the video player is built in
 * Extension updates are read from the dashchan-pixel/extensions repository
+* New settings translated to Russian, Italian and Brazilian Portuguese
