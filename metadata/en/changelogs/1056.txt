@@ -1,2 +1,0 @@
-* Potential fix for media attachments on some devices
-* Fixed crash when user selected multiple posts to reply to

@@ -78,8 +78,8 @@ Without it, release builds are signed with the debug keystore.
 ### Building Extensions
 
 The source code of extensions is available in the
-[TrixiEther/Dashchan-Extensions](https://github.com/TrixiEther/Dashchan-Extensions) repository
-(the fork with new modules and included updates); the original is
+[dashchan-pixel/extensions](https://github.com/dashchan-pixel/extensions) repository
+(trimmed to dvach, fourchan, arhivach and local); the original is
 [Mishiranu/Dashchan-Extensions](https://github.com/Mishiranu/Dashchan-Extensions).
 
 ## License

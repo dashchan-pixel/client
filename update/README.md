@@ -5,7 +5,7 @@
   repository (tag = version name).
 - `themes.json` — theme repository.
 - Extension updates come from separate, combinable sources (default:
-  [TrixiEther/Dashchan-Meta](https://github.com/TrixiEther/Dashchan-Meta)),
+  [dashchan-pixel/extensions](https://github.com/dashchan-pixel/extensions)),
   configurable in Settings → General → Updates (extensions).
 - Changelogs are read from `metadata/` of this repository via the GitHub API.
 

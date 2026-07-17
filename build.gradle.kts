@@ -67,7 +67,7 @@ android {
             "String",
             "URI_UPDATES_EXTENSIONS",
             "\"//raw.githubusercontent.com/" +
-                "TrixiEther/Dashchan-Meta/master/update/data.json\"",
+                "dashchan-pixel/extensions/rework/update/data-v1.json\"",
         )
         buildConfigField(
             "String",
