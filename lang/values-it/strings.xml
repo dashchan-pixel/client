@@ -90,6 +90,8 @@
     <string name="crop_thumbnails">Taglia anteprime</string>
     <string name="crop_thumbnails__summary">Le anteprime riempiranno il riquadro</string>
     <string name="cyclical_thread">Thread ciclico</string>
+    <string name="day_and_night_theme">Tema diurno e notturno</string>
+    <string name="day_theme">Tema diurno</string>
     <string name="ddos_protection_bypass_failed">Elusione protezione DDoS fallita</string>
     <string name="default_name_cant_be_hidden">Il nome di default non può essere nascosto</string>
     <string name="default_starting_board">Board iniziale</string>
@@ -149,6 +151,8 @@
     <string name="firewall_block__format_sentence">%s ha bloccato il tuo indirizzo IP. Inserisci il captcha per passare
         la verifica.</string>
     <string name="flags_are_enabled">I flag sono abilitati</string>
+    <string name="follow_system_day_night">Segui giorno/notte di sistema</string>
+    <string name="follow_system_day_night__summary">Usa temi diurno e notturno separati, alternandoli con l\'impostazione di sistema</string>
     <string name="follow_the_link__sentence">Seguire il link?</string>
     <string name="forum">Imageboard</string>
     <string name="forum_only__format">Solamente %s</string>
@@ -233,6 +237,7 @@
     <string name="new_post">Nuovo post</string>
     <string name="new_rule">Nuova regola</string>
     <string name="new_thread">Nuovo thread</string>
+    <string name="night_theme">Tema notturno</string>
     <string name="no_access">Accesso negato</string>
     <string name="no_access_to_memory">Accesso alla memoria negato</string>
     <string name="no_available_updates">Nessun aggiornamento disponibile</string>
@@ -320,6 +325,7 @@
     <string name="post_is_not_found">Post non trovato</string>
     <string name="post_rejected">Post respinto</string>
     <string name="post_sent">Post inviato</string>
+    <string name="post_swipe_action">Azione swipe sul post</string>
     <string name="posting">Invio</string>
     <string name="posts">Post</string>
     <string name="posts_list">Lista post</string>

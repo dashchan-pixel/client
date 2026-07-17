@@ -69,6 +69,8 @@
 	<string name="crop_thumbnails">Cortar miniaturas</string>
 	<string name="crop_thumbnails__summary">Faça miniaturas preencher o quadrado</string>
 	<string name="cyclical_thread">Fio cíclico</string>
+	<string name="day_and_night_theme">Tema diurno e noturno</string>
+	<string name="day_theme">Tema diurno</string>
 	<string name="default_name_cant_be_hidden">Não pode dar hide no nome padrão</string>
 	<string name="default_starting_board">Board inicial</string>
 	<string name="delete">Deletar</string>
@@ -113,6 +115,8 @@
 	<string name="find_in_subjects">Encontre nos assuntos</string>
 	<string name="firewall_block__format_sentence">Parece que %s bloqueou seu IP. Confirme.</string>
 	<string name="flags_are_enabled">Flags estão habilitados</string>
+	<string name="follow_system_day_night">Seguir dia/noite do sistema</string>
+	<string name="follow_system_day_night__summary">Usar temas diurno e noturno separados, alternando com a configuração do sistema</string>
 	<string name="follow_the_link__sentence">Abrir o link?</string>
 	<string name="forum_only__format">%s somente</string>
 	<string name="flow">Fluxo</string>
@@ -173,6 +177,7 @@
 	<string name="new_post">Responder</string>
 	<string name="new_rule">Nova regra</string>
 	<string name="new_thread">Criar fio</string>
+	<string name="night_theme">Tema noturno</string>
 	<string name="no_access">Acesso negado</string>
 	<string name="no_access_to_memory">Sem acesso a memória</string>
 	<string name="no_available_updates">Não há atualizações</string>
@@ -251,6 +256,7 @@
 	<string name="port">Porta</string>
 	<string name="post_is_not_found">O post não foi encontrado</string>
 	<string name="post_rejected">Mensagem rejeitada</string>
+	<string name="post_swipe_action">Ação ao deslizar o post</string>
 	<string name="posts_list">Lista de posts</string>
 	<string name="posts_with_files__genitive">Posts com arquivos</string>
 	<string name="posts_with_same_name">Posts com o mesmo nome</string>

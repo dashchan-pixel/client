@@ -111,6 +111,8 @@
 	<string name="cyclical_threads_refresh_mode">Режим обновления цикличных тредов</string>
 	<string name="database">База данных</string>
 	<string name="date_created">Дата создания</string>
+	<string name="day_and_night_theme">Дневная и ночная тема</string>
+	<string name="day_theme">Дневная тема</string>
 	<string name="ddos_protection_bypass_failed">Не удалось обойти DDoS-защиту</string>
 	<string name="default_name_cant_be_hidden">Нельзя скрыть имя по умолчанию</string>
 	<string name="default_starting_board">Раздел по умолчанию</string>
@@ -175,6 +177,8 @@
 	<string name="firewall_block__format_sentence">Ваш IP-адрес заблокирован %s. Введите капчу,
 		чтобы пройти проверку.</string>
 	<string name="flags_are_enabled">Флаги включены</string>
+	<string name="follow_system_day_night">Следовать системному режиму день/ночь</string>
+	<string name="follow_system_day_night__summary">Использовать отдельные дневную и ночную темы, переключая их вместе с системной настройкой</string>
 	<string name="follow_the_link__sentence">Перейти по ссылке?</string>
 	<string name="forum">Форум</string>
 	<string name="forum_only__format">Только %s</string>
@@ -269,6 +273,7 @@
 	<string name="new_post">Новое сообщение</string>
 	<string name="new_rule">Новое правило</string>
 	<string name="new_thread">Новый тред</string>
+	<string name="night_theme">Ночная тема</string>
 	<string name="no_access">Нет доступа</string>
 	<string name="no_access_to_memory">Нет доступа к памяти</string>
 	<string name="no_available_updates">Нет доступных обновлений</string>
@@ -379,6 +384,7 @@
 	<string name="post_is_not_found">Сообщение не найдено</string>
 	<string name="post_rejected">Сообщение отклонено</string>
 	<string name="post_sent">Сообщение отправлено</string>
+	<string name="post_swipe_action">Действие свайпа по сообщению</string>
 	<string name="posting">Отправка сообщений</string>
 	<string name="posts">Сообщения</string>
 	<string name="posts_list">Список сообщений</string>
