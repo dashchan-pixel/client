@@ -8,15 +8,15 @@
 			"packages": [
 				{
 					"title": "Release",
-					"version_name": "26.7.6-pixel",
-					"version_code": 1343,
+					"version_name": "26.7.7-pixel",
+					"version_code": 1344,
 					"min_api_version": 1,
 					"max_api_version": 1,
 					"min_sdk": 36,
-					"length": 4560016,
-					"source": "//github.com/dashchan-pixel/client/releases/download/26.7.6-pixel/dashchan-pixel-1343.apk",
+					"length": 4571504,
+					"source": "//github.com/dashchan-pixel/client/releases/download/26.7.7-pixel/dashchan-pixel-1344.apk",
 					"fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
-					"sha256sum": "AA:23:BE:9F:4C:86:15:40:35:11:CE:E7:B4:D4:8F:C0:4C:77:68:35:59:78:52:0B:51:D9:05:67:DD:2D:C0:6D"
+					"sha256sum": "89:BB:6B:18:4D:1F:7F:52:61:5F:1B:A9:FB:1B:7E:22:84:27:92:A0:BA:3C:4E:67:D1:CF:4A:35:10:CC:D3:89"
 				}
 			]
 		}
