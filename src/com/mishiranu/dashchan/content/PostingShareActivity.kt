@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.core.content.IntentCompat
+import chan.content.Chan
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.model.FileHolder
@@ -19,6 +20,7 @@ class PostingShareActivity : Activity() {
         val draftsStorage = DraftsStorage.getInstance()
         var uris: ArrayList<Uri>? = null
         var contentUri: Uri? = null
+        var sharedText: String? = null
         val intent = intent
 
         if (Intent.ACTION_SEND == intent.action) {
@@ -30,10 +32,17 @@ class PostingShareActivity : Activity() {
                 val text =
                     StringUtils.emptyIfNull(intent.getStringExtra(Intent.EXTRA_SUBJECT)) + '\n' +
                         StringUtils.emptyIfNull(intent.getStringExtra(Intent.EXTRA_TEXT))
+                sharedText = StringUtils.nullIfEmpty(text.trim { it <= ' ' })
                 // linkify() only returns null for a null argument; text is a non-null concatenation.
                 val matcher = PATTERN_HREF.matcher(StringUtils.linkify(text).orEmpty())
-                if (matcher.find()) {
-                    contentUri = Uri.parse(matcher.group(2))
+                while (matcher.find()) {
+                    val uriCandidate = Uri.parse(matcher.group(2))
+                    // Only hand the address over to the navigator when it belongs to a known chan;
+                    // anything else is worth more as draft text than as an "unknown address" toast.
+                    if (Chan.getPreferred(null, uriCandidate).name != null) {
+                        contentUri = uriCandidate
+                        break
+                    }
                 }
             }
         } else if (Intent.ACTION_SEND_MULTIPLE == intent.action) {
@@ -54,6 +63,9 @@ class PostingShareActivity : Activity() {
             Toast.makeText(this, R.string.draft_saved, Toast.LENGTH_SHORT).show()
         } else if (contentUri != null) {
             startActivity(Intent(this, MainActivity::class.java).setData(contentUri))
+        } else if (sharedText != null) {
+            draftsStorage.storeFutureComment(sharedText)
+            Toast.makeText(this, R.string.draft_saved, Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, R.string.unknown_address, Toast.LENGTH_SHORT).show()
         }

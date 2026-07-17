@@ -940,6 +940,12 @@ class PostingFragment :
             getInstance().consumeFutureAttachmentDrafts()
         }
 
+        val futureComment = draftsStorage.getFutureComment()
+        if (!futureComment.isNullOrEmpty()) {
+            insertFutureComment(futureComment)
+            draftsStorage.consumeFutureComment()
+        }
+
         val failResult = this.failResult
         this.failResult = null
         if (failResult != null) {
@@ -2020,6 +2026,21 @@ class PostingFragment :
         } else {
             holder.ratingButton.setVisibility(View.GONE)
         }
+    }
+
+    /**
+     * Inserts text shared from another app at the cursor, the way a future attachment draft is
+     * added to the attachment list.
+     */
+    private fun insertFutureComment(comment: String) {
+        val commentView = commentView ?: return
+        val editable = commentView.getText()
+        val carriage = commentView.getSelectionEnd().coerceIn(0, editable.length)
+        val insert =
+            (if (carriage > 0 && editable[carriage - 1] != '\n') "\n" else "") + comment + "\n"
+        editable.insert(carriage, insert)
+        commentView.setSelection(carriage + insert.length)
+        commentView.requestFocus()
     }
 
     private fun formatQuote() {

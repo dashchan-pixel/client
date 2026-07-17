@@ -3,7 +3,6 @@ package com.mishiranu.dashchan.content.storage
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.SystemClock
-import android.util.Pair
 import androidx.core.os.ParcelCompat
 import chan.content.ChanConfiguration
 import chan.content.ChanPerformer
@@ -25,12 +24,19 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 
-class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<DraftsStorage.PostDraft>, List<DraftsStorage.AttachmentDraft>>>("drafts", 2000, 10000) {
+class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage.Data>("drafts", 2000, 10000) {
     private val postDrafts = LruCache<String, PostDraft>(5) { _, v -> handleRemovePostDraft(v) }
 
     private var captchaChanName: String? = null
     private var captchaDraft: CaptchaDraft? = null
     private val futureAttachmentDrafts = ArrayList<AttachmentDraft>()
+    private var futureComment: String? = null
+
+    class Data(
+        val postDrafts: List<PostDraft>,
+        val attachmentDrafts: List<AttachmentDraft>,
+        val futureComment: String?,
+    )
 
     init {
         startRead()
@@ -48,7 +54,7 @@ class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<Dra
         }
     }
 
-    override fun onClone(): Pair<List<PostDraft>, List<AttachmentDraft>> = Pair(ArrayList(postDrafts.values), ArrayList(futureAttachmentDrafts))
+    override fun onClone(): Data = Data(ArrayList(postDrafts.values), ArrayList(futureAttachmentDrafts), futureComment)
 
     @Throws(IOException::class)
     override fun onRead(input: InputStream) {
@@ -75,6 +81,10 @@ class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<Dra
                         }
                     }
 
+                    KEY_FUTURE_COMMENT -> {
+                        futureComment = StringUtils.nullIfEmpty(reader.nextString())
+                    }
+
                     else -> {
                         reader.skip()
                     }
@@ -87,26 +97,30 @@ class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<Dra
 
     @Throws(IOException::class)
     override fun onWrite(
-        data: Pair<List<PostDraft>, List<AttachmentDraft>>,
+        data: Data,
         output: OutputStream,
     ) {
         val writer = JsonSerial.writer(output)
         writer.startObject()
-        if (data.first.isNotEmpty()) {
+        if (data.postDrafts.isNotEmpty()) {
             writer.name(KEY_POST_DRAFTS)
             writer.startArray()
-            for (postDraft in data.first) {
+            for (postDraft in data.postDrafts) {
                 postDraft.serialize(writer)
             }
             writer.endArray()
         }
-        if (data.second.isNotEmpty()) {
+        if (data.attachmentDrafts.isNotEmpty()) {
             writer.name(KEY_FUTURE_ATTACHMENT_DRAFTS)
             writer.startArray()
-            for (attachmentDraft in data.second) {
+            for (attachmentDraft in data.attachmentDrafts) {
                 attachmentDraft.serialize(writer)
             }
             writer.endArray()
+        }
+        data.futureComment?.let {
+            writer.name(KEY_FUTURE_COMMENT)
+            writer.value(it)
         }
         writer.endObject()
         writer.flush()
@@ -242,6 +256,29 @@ class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<Dra
     }
 
     fun getFutureAttachmentDrafts(): ArrayList<AttachmentDraft> = futureAttachmentDrafts
+
+    /**
+     * Stashes text shared from another app until the next posting form is opened. Repeated shares
+     * accumulate, the way repeated image shares add up as future attachment drafts.
+     */
+    fun storeFutureComment(comment: String) {
+        val text = comment.trim { it <= ' ' }
+        if (text.isEmpty()) {
+            return
+        }
+        val futureComment = this.futureComment
+        this.futureComment = if (futureComment.isNullOrEmpty()) text else futureComment + "\n\n" + text
+        serialize()
+    }
+
+    fun getFutureComment(): String? = futureComment
+
+    fun consumeFutureComment() {
+        if (!futureComment.isNullOrEmpty()) {
+            futureComment = null
+            serialize()
+        }
+    }
 
     fun consumeFutureAttachmentDrafts() {
         if (futureAttachmentDrafts.isNotEmpty()) {
@@ -765,6 +802,7 @@ class DraftsStorage private constructor() : StorageManager.Storage<Pair<List<Dra
     companion object {
         private const val KEY_POST_DRAFTS = "postDrafts"
         private const val KEY_FUTURE_ATTACHMENT_DRAFTS = "futureAttachmentDrafts"
+        private const val KEY_FUTURE_COMMENT = "futureComment"
 
         private val INSTANCE = DraftsStorage()
 
