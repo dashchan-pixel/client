@@ -467,7 +467,9 @@ class ReadUpdateTask(
                         val keys = response.jsonObject.keys()
                         while (keys.hasNext()) {
                             val extensionName = keys.next()
-                            if (ChanManager.EXTENSION_NAME_META == extensionName) {
+                            if (ChanManager.EXTENSION_NAME_META == extensionName ||
+                                isRetiredExtension(extensionName)
+                            ) {
                                 continue
                             }
                             if (!updateDataMap.containsKey(extensionName)) {
@@ -490,7 +492,9 @@ class ReadUpdateTask(
                             for (i in 0 until jsonArray.length()) {
                                 val jsonObject = jsonArray.getJSONObject(i)
                                 val extractedItem = ApplicationItem.fromJsonV1(jsonObject)
-                                if (!updateDataMap.containsKey(extractedItem.name)) {
+                                if (!updateDataMap.containsKey(extractedItem.name) &&
+                                    !isRetiredExtension(extractedItem.name)
+                                ) {
                                     val packagesArray = jsonObject.getJSONArray("packages")
                                     handleInstallItems(
                                         response,
@@ -525,6 +529,13 @@ class ReadUpdateTask(
     }
 
     companion object {
+        /**
+         * The Webm library extension is superseded by the built-in Media3 player and is
+         * refused at load, so an update source still advertising it must not offer it for
+         * install: installing it would only produce an extension the client ignores.
+         */
+        private fun isRetiredExtension(name: String?): Boolean = ChanManager.EXTENSION_NAME_LIB_WEBM == name
+
         @JvmStatic
         fun normalizeRelativeUri(
             base: Uri,

@@ -1,0 +1,4 @@
+* The changelog groups all pixel releases under one "26.7-pixel" entry instead of splitting them into "1.6 - 26.7-pixel" and a "26.7" that never existed
+* Dropped the obsolete 3.1.4-experimental releases from the changelog
+* The retired Webm library extension is no longer loaded or offered: the video player is built in now
+* Extension updates are read from the dashchan-pixel/extensions repository

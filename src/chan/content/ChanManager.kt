@@ -762,22 +762,21 @@ class ChanManager private constructor() {
         const val EXTENSION_NAME_META: String = "meta"
         const val EXTENSION_NAME_LIB_WEBM: String = "webm"
 
+        // "webm" used to name the Webm library extension, so it was reserved for chan
+        // extensions only and the library itself was allowed to claim it. The player is
+        // built in on Media3 now, so the name is reserved for every extension type and the
+        // retired library is refused at load instead of running alongside the built-in one.
         private val RESERVED_EXTENSION_NAMES: Set<String?> =
             run {
                 val reservedExtensionNames = HashSet<String?>()
                 reservedExtensionNames.add(EXTENSION_NAME_CLIENT)
                 reservedExtensionNames.add(EXTENSION_NAME_META)
+                reservedExtensionNames.add(EXTENSION_NAME_LIB_WEBM)
                 Collections.addAll<String?>(
                     reservedExtensionNames,
                     *Preferences.SPECIAL_EXTENSION_NAMES,
                 )
                 Collections.unmodifiableSet<String?>(reservedExtensionNames)
-            }
-        private val RESERVED_CHAN_NAMES: Set<String?> =
-            run {
-                val reservedChanNames = HashSet<String?>(RESERVED_EXTENSION_NAMES)
-                reservedChanNames.add(EXTENSION_NAME_LIB_WEBM)
-                Collections.unmodifiableSet<String?>(reservedChanNames)
             }
 
         private const val FEATURE_CHAN_EXTENSION = "chan.extension"
@@ -863,9 +862,7 @@ class ChanManager private constructor() {
                 )
             if (name == null ||
                 !VALID_EXTENSION_NAME.matcher(name).matches() ||
-                (if (chanExtension) RESERVED_CHAN_NAMES else RESERVED_EXTENSION_NAMES).contains(
-                    name,
-                )
+                RESERVED_EXTENSION_NAMES.contains(name)
             ) {
                 Log.e("ChanManager", "Invalid extension name: " + name)
                 return null
