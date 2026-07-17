@@ -29,7 +29,7 @@
 	<string name="appearance">Appearance</string>
 	<string name="application_name_update__format">%s update</string>
 	<string name="archive">Archive</string>
-	<string name="archive__verb">Archive</string>
+	<string name="archive__verb">Save to archive</string>
 	<string name="attach">Attach</string>
 	<string name="attachments_are_too_large">Attachments are too large</string>
 	<string name="audio_playback">Audio playback</string>

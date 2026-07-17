@@ -17,7 +17,7 @@
 	<string name="appearance">Aparência</string>
 	<string name="application_name_update__format">%s atualizações</string>
 	<string name="archive">Arquivo</string>
-	<string name="archive__verb">Arquivo</string>
+	<string name="archive__verb">Arquivar</string>
 	<string name="attach">Anexar</string>
 	<string name="attachments_are_too_large">O arquivo é muito grande</string>
 	<string name="autohide">Auto-Esconder</string>
