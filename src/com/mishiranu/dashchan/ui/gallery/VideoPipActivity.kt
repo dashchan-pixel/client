@@ -1,7 +1,6 @@
 package com.mishiranu.dashchan.ui.gallery
 
 import android.app.Activity
-import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
@@ -15,11 +14,12 @@ import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.util.Rational
 import android.view.ViewGroup
-import android.view.WindowInsets
+import android.view.Window
 import androidx.fragment.app.FragmentActivity
 import chan.content.Chan
 import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.LocaleManager
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.content.service.DownloadService
@@ -27,15 +27,21 @@ import com.mishiranu.dashchan.ui.MainActivity
 import com.mishiranu.dashchan.util.AudioFocus
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
+import com.mishiranu.dashchan.widget.ThemeEngine.Companion.applyTheme
+import com.mishiranu.dashchan.widget.ThemeEngine.Companion.attach
 import java.lang.ref.WeakReference
 
 /**
- * Floating picture-in-picture video player, reached from the gallery's and the Flow feed's
- * "Picture-in-picture" menu item. Launched directly into PiP mode ([ActivityOptions.makeLaunchIntoPip]);
- * playback is rendered by a chrome-less [FlowVideoView], which downloads the attachment
- * progressively on its own, so the launching gallery/feed dialog is dismissed immediately and
- * the thread stays readable behind the floating window. Expanding the window turns this into a
- * plain fullscreen player (tap toggles the control bar); leaving it re-enters PiP automatically.
+ * Standalone picture-in-picture video player, reached from the gallery's and the Flow feed's
+ * "Picture-in-picture" menu item. Playback is rendered by a [FlowVideoView], which downloads the
+ * attachment progressively on its own, so the launching gallery/feed dialog is dismissed
+ * immediately and the thread stays readable behind the window.
+ *
+ * Launched as an ordinary fullscreen activity that pops itself into the floating window on first
+ * resume (see [onResume]). Because it has a real fullscreen state, the window's two system buttons
+ * behave independently, YouTube-style: the maximize button restores it to fullscreen (with its own
+ * control bar and context menu), and the close button finishes it — the launch-into-PiP model this
+ * replaced made the two indistinguishable, so close used to reopen the gallery like maximize.
  */
 class VideoPipActivity :
     Activity(),
@@ -52,7 +58,7 @@ class VideoPipActivity :
         val dimensions: Point?,
     )
 
-    /** Snapshot handed back to [MainActivity][C.ACTION_VIDEO_PIP] when the window is expanded. */
+    /** Snapshot for the fullscreen player's "Gallery" menu item, handed to [MainActivity][C.ACTION_VIDEO_PIP]. */
     private class Reopen(
         val chan: Chan,
         val item: GalleryItem,
@@ -85,6 +91,7 @@ class VideoPipActivity :
     /** The intended playback state; the player itself lags while buffering. */
     private var playing = true
     private var pausedByTransientLossOfFocus = false
+    private var initialPipRequested = false
 
     private val controlReceiver =
         object : BroadcastReceiver() {
@@ -100,8 +107,17 @@ class VideoPipActivity :
             }
         }
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(attach(LocaleManager.getInstance().apply(newBase)))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Attach to the theme engine so the fullscreen player's themed dialogs (context menu) work.
+        // applyTheme() switches to a base theme that has an action bar, so suppress the title decor
+        // first (like MainActivity) to keep the window full-bleed — no header over the video.
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        applyTheme(this)
         val playback = pendingPlayback
         pendingPlayback = null
         if (playback == null) {
@@ -140,12 +156,6 @@ class VideoPipActivity :
                 ViewGroup.LayoutParams.MATCH_PARENT,
             ),
         )
-        // The window is edge-to-edge: keep the expanded player's control bar clear of the
-        // gesture navigation area (insets are zero in the PiP window itself).
-        videoView.setOnApplyWindowInsetsListener { view, insets ->
-            (view as FlowVideoView).setBottomInset(insets.getInsets(WindowInsets.Type.systemBars()).bottom)
-            insets
-        }
         registerReceiver(controlReceiver, IntentFilter(ACTION_CONTROL), RECEIVER_NOT_EXPORTED)
         beginPlayback(playback)
     }
@@ -162,6 +172,9 @@ class VideoPipActivity :
         pausedByTransientLossOfFocus = false
         playlist = playback.playlist?.toMutableList()
         playlistIndex = (playlist?.indexOfFirst { it === playback.item } ?: 0).coerceAtLeast(0)
+        // Fullscreen context menu: offer "Gallery" only when launched from the Flow feed (not the
+        // gallery itself); hide the thread-host actions ("Save", "Go to post") this window can't run.
+        videoView.setMenuScope(switchToGallery = playback.playlist != null, hostActions = false)
         videoView.bind(playback.chan, playback.item, this)
         // Starts buffering right away; playback begins once the player is ready.
         videoView.prepare()
@@ -204,37 +217,33 @@ class VideoPipActivity :
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        // Leaving PiP without finishing means the user tapped the window's fullscreen button.
-        // Expanding a launch-into-PiP activity does not make it fullscreen: the system stops it
-        // (onStop arrives first) and returns the launching task to the front on its own — so
-        // hand playback back to the surface it came from (Flow feed or gallery) in MainActivity.
-        if (!isInPictureInPictureMode && !isFinishing) {
-            expandToApp()
+        if (isInPictureInPictureMode) {
+            // Floating window: the system window draws the controls, so hide our own chrome.
+            videoView.setControlsEnabled(false)
+            videoView.setContextMenuEnabled(false)
+        } else if (!isFinishing) {
+            // Maximize restores this activity to fullscreen: show its own controls and context menu.
+            // Closing the window goes straight to finish()/onDestroy() and never reaches here.
+            videoView.setControlsEnabled(true)
+            videoView.setContextMenuEnabled(true)
         }
     }
 
-    private fun expandToApp() {
-        val chan = chan ?: return
-        val item = currentItem ?: return
-        pendingReopen =
-            Reopen(
-                chan,
-                item,
-                playlist != null,
-                allItems ?: playlist ?: listOf(item),
-                navigatePostMode,
-                threadTitle,
-                videoView.playbackPosition(),
-            )
-        startActivity(Intent(this, MainActivity::class.java).setAction(C.ACTION_VIDEO_PIP))
-        finish()
+    override fun onResume() {
+        super.onResume()
+        // Launched as a normal fullscreen activity (so maximize has a fullscreen state to restore
+        // to); pop straight into the floating window once, on first resume.
+        if (!initialPipRequested && !isInPictureInPictureMode && !isFinishing) {
+            initialPipRequested = true
+            enterPictureInPictureMode(buildPipParams())
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        // Reached when the PiP window is dismissed or hidden (e.g. screen off): never keep
-        // playing audio without a visible surface. (While in PiP the activity is merely
-        // paused, so playback continues there.)
+        // Reached when the window is dismissed or hidden (e.g. screen off): never keep playing
+        // audio without a visible surface. (While in PiP the activity is merely paused, so
+        // playback continues there.)
         setPlaying(false)
     }
 
@@ -255,6 +264,10 @@ class VideoPipActivity :
         if (!this::videoView.isInitialized || isDestroyed) {
             return
         }
+        setPictureInPictureParams(buildPipParams())
+    }
+
+    private fun buildPipParams(): PictureInPictureParams {
         val builder =
             PictureInPictureParams
                 .Builder()
@@ -273,7 +286,7 @@ class VideoPipActivity :
             actions.add(remoteAction(COMMAND_NEXT, R.attr.iconButtonForward, R.string.skip))
         }
         builder.setActions(actions)
-        setPictureInPictureParams(builder.build())
+        return builder.build()
     }
 
     private fun remoteAction(
@@ -372,18 +385,39 @@ class VideoPipActivity :
 
     override fun getThreadTitle(): String? = threadTitle
 
-    // The remaining actions need the thread UI behind the gallery; the context menu offering
-    // them is disabled in this window.
+    // Context-menu actions from the restored fullscreen player. "Save" and "Go to post" are hidden
+    // here (they need the thread UI); [setMenuScope] gates them.
     override fun onGoToPost(galleryItem: GalleryItem) {}
 
     override fun getDownloadBinder(): DownloadService.Binder? = null
 
-    override fun onSwitchToGallery(galleryItem: GalleryItem) {}
+    /** The menu's "Gallery" item (shown only when this was launched from the Flow feed): open the
+     * regular gallery at this attachment, back inside the app. */
+    override fun onSwitchToGallery(galleryItem: GalleryItem) {
+        val chan = chan ?: return
+        pendingReopen =
+            Reopen(
+                chan,
+                galleryItem,
+                flow = false,
+                allItems ?: playlist ?: listOf(galleryItem),
+                navigatePostMode,
+                threadTitle,
+                videoView.playbackPosition(),
+            )
+        startActivity(Intent(this, MainActivity::class.java).setAction(C.ACTION_VIDEO_PIP))
+        finish()
+    }
 
+    /** The menu's "Picture-in-picture" item: minimize the fullscreen player back into the window. */
     override fun onEnterPip(
         view: FlowVideoView,
         galleryItem: GalleryItem,
-    ) {}
+    ) {
+        if (!isInPictureInPictureMode && !isFinishing) {
+            enterPictureInPictureMode(buildPipParams())
+        }
+    }
 
     companion object {
         private const val ACTION_CONTROL = "com.mishiranu.dashchan.action.VIDEO_PIP_CONTROL"
@@ -398,8 +432,8 @@ class VideoPipActivity :
         private var instance: WeakReference<VideoPipActivity>? = null
 
         /**
-         * Reopen the surface an expanded PiP window came from — the Flow feed or the gallery,
-         * at the same video and position. Called by MainActivity for [C.ACTION_VIDEO_PIP].
+         * Reopen the gallery the fullscreen player's "Gallery" menu item came from, at the same
+         * video and position. Called by MainActivity for [C.ACTION_VIDEO_PIP].
          */
         @JvmStatic
         fun reopenInApp(activity: FragmentActivity) {
@@ -438,9 +472,9 @@ class VideoPipActivity :
          * (already-known [dimensions] shape the window before the first frame). A Flow feed
          * passes its video list as [playlist] so completed videos advance to the next one;
          * the gallery passes null to keep single-video semantics. [allItems] (with
-         * [navigatePostMode] for the gallery) lets an expanded window reopen the originating
-         * surface via [reopenInApp]. The caller is expected to stop its own playback and
-         * dismiss itself afterwards.
+         * [navigatePostMode] for the gallery) lets the fullscreen player's "Gallery" menu item
+         * reopen the gallery via [reopenInApp]. The caller is expected to stop its own playback
+         * and dismiss itself afterwards.
          */
         @JvmStatic
         fun start(
@@ -478,12 +512,9 @@ class VideoPipActivity :
                 existing.finish()
             }
             pendingPlayback = playback
-            val builder = PictureInPictureParams.Builder().setAutoEnterEnabled(true)
-            pipAspectRatio(dimensions)?.let { builder.setAspectRatio(it) }
-            activity.startActivity(
-                Intent(activity, VideoPipActivity::class.java),
-                ActivityOptions.makeLaunchIntoPip(builder.build()).toBundle(),
-            )
+            // Launch as a normal fullscreen activity (not makeLaunchIntoPip), so it has a fullscreen
+            // state to restore to; it pops itself into the floating window from onResume.
+            activity.startActivity(Intent(activity, VideoPipActivity::class.java))
         }
 
         private fun pipAspectRatio(dimensions: Point?): Rational? {

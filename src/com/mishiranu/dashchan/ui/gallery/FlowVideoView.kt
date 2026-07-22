@@ -73,8 +73,16 @@ class FlowVideoView(
     /** Cleared in the PiP window, where the system window provides the playback controls. */
     private var controlsEnabled = true
 
-    /** Cleared in the PiP player, which has no thread UI behind it for the menu's actions. */
+    /** Cleared in the PiP window; set again when the player is maximized to fullscreen. */
     private var contextMenuEnabled = true
+
+    /**
+     * Which of the context menu's host-dependent actions to offer. The standalone fullscreen PiP
+     * player hides the ones it cannot service: "Gallery" is redundant when it was itself launched
+     * from the gallery, and "Save" / "Go to post" need the thread UI it does not host.
+     */
+    private var switchToGalleryMenuEnabled = true
+    private var hostActionsMenuEnabled = true
 
     private var chan: Chan? = null
     private var galleryItem: GalleryItem? = null
@@ -290,6 +298,15 @@ class FlowVideoView(
 
     fun setContextMenuEnabled(enabled: Boolean) {
         contextMenuEnabled = enabled
+    }
+
+    /** Standalone PiP player: hide "Gallery" (when gallery-launched) and the thread-host actions. */
+    fun setMenuScope(
+        switchToGallery: Boolean,
+        hostActions: Boolean,
+    ) {
+        switchToGalleryMenuEnabled = switchToGallery
+        hostActionsMenuEnabled = hostActions
     }
 
     private fun start() {
@@ -621,20 +638,24 @@ class FlowVideoView(
                 galleryItem.getFileName(chan)
             },
         )
-        dialogMenu.add(R.string.gallery) { callback?.onSwitchToGallery(galleryItem) }
+        if (switchToGalleryMenuEnabled) {
+            dialogMenu.add(R.string.gallery) { callback?.onSwitchToGallery(galleryItem) }
+        }
         if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
             dialogMenu.add(R.string.picture_in_picture) { callback?.onEnterPip(this, galleryItem) }
         }
-        dialogMenu.add(R.string.save) {
-            val binder = callback?.getDownloadBinder()
-            if (binder != null) {
-                galleryItem.downloadStorage(binder, chan, callback.getThreadTitle())
+        if (hostActionsMenuEnabled) {
+            dialogMenu.add(R.string.save) {
+                val binder = callback?.getDownloadBinder()
+                if (binder != null) {
+                    galleryItem.downloadStorage(binder, chan, callback.getThreadTitle())
+                }
             }
         }
         if (player != null) {
             dialogMenu.add(R.string.metadata) { showMetadata() }
         }
-        if (galleryItem.postNumber != null) {
+        if (hostActionsMenuEnabled && galleryItem.postNumber != null) {
             dialogMenu.add(R.string.go_to_post) { callback?.onGoToPost(galleryItem) }
         }
         dialogMenu.add(R.string.copy_link) { StringUtils.copyToClipboard(context, uri.toString()) }
