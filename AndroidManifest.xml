@@ -32,7 +32,6 @@
 		android:allowBackup="true"
 		android:fullBackupContent="true"
 		android:usesCleartextTraffic="true"
-		android:networkSecurityConfig="@xml/network_config"
 		tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
 		<activity
