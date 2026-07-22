@@ -261,19 +261,6 @@ class MediaFragment :
             false,
             Preferences.DownloadSubdirMode.DISABLED.value,
         )
-        val useInternalStorageForCachePreference =
-            addCheck(
-                true,
-                Preferences.KEY_USE_INTERNAL_STORAGE_FOR_CACHE,
-                Preferences.DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE,
-                R.string.use_internal_storage_for_cache,
-                R.string.use_internal_storage_for_cache__summary,
-            )
-        useInternalStorageForCachePreference.setOnAfterChangeListener {
-            CacheManager.getInstance().rebuildCache()
-            clearCachePreference.invalidate()
-        }
-
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.media), null)
     }
 

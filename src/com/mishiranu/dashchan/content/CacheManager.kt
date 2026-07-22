@@ -7,7 +7,6 @@ import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Environment
 import android.util.Pair
 import chan.content.Chan.Companion.getPreferred
 import chan.util.StringUtils.formatHex
@@ -341,8 +340,10 @@ class CacheManager private constructor() : Runnable {
         }
     }
 
+    // Cache lives in internal storage (getCacheDir(), @NonNull and always present),
+    // so it is unconditionally available.
     val isCacheAvailable: Boolean
-        get() = Preferences.isUseInternalStorageForCache || Environment.MEDIA_MOUNTED == Environment.getExternalStorageState()
+        get() = true
 
     val cacheSize: Long
         get() {
@@ -579,14 +580,13 @@ class CacheManager private constructor() : Runnable {
         syncCache()
     }
 
-    // May be null: getExternalCacheDir() returns null while external storage is unmounted.
+    // Return type stays nullable for the existing call sites, but getCacheDir() is
+    // @NonNull, so in practice this never returns null.
     fun getCacheDirectory(): File? {
         if (cacheDirectory == null) {
             synchronized(directoryLocker) {
                 if (cacheDirectory == null) {
-                    val application = MainApplication.getInstance()
-                    cacheDirectory =
-                        if (Preferences.isUseInternalStorageForCache) application.getCacheDir() else application.getExternalCacheDir()
+                    cacheDirectory = MainApplication.getInstance().getCacheDir()
                 }
             }
         }
@@ -597,9 +597,7 @@ class CacheManager private constructor() : Runnable {
         if (tempDirectory == null) {
             synchronized(directoryLocker) {
                 if (tempDirectory == null) {
-                    val application = MainApplication.getInstance()
-                    tempDirectory =
-                        if (Preferences.isUseInternalStorageForCache) application.getCacheDir() else application.getExternalCacheDir()
+                    tempDirectory = MainApplication.getInstance().getCacheDir()
                 }
             }
         }

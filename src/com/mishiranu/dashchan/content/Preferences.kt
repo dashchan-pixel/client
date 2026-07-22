@@ -1994,16 +1994,6 @@ object Preferences {
                 DEFAULT_SPACE_AFTER_QUOTE,
             )
 
-    const val KEY_USE_INTERNAL_STORAGE_FOR_CACHE: String = "use_internal_storage_for_cache"
-    const val DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE: Boolean = false
-
-    val isUseInternalStorageForCache: Boolean
-        get() =
-            prefs.getBoolean(
-                KEY_USE_INTERNAL_STORAGE_FOR_CACHE,
-                DEFAULT_USE_INTERNAL_STORAGE_FOR_CACHE,
-            )
-
     const val KEY_MEDIA_LOADING_ACTION: String = "media_loading_action"
     val DEFAULT_MEDIA_LOADING_ACTION: MediaLoadingAction = MediaLoadingAction.MANUALLY
 
