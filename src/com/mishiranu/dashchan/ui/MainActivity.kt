@@ -1566,6 +1566,13 @@ class MainActivity :
 
         // Intent is valid only for onNewIntent -> onResume behavior
         navigateIntentOnResume = null
+        // Persist the open pages (current board/thread plus the back stack) so a cold start
+        // after a swipe-away, low-memory kill or reboot can restore them. The file is read
+        // and deleted on the next launch that has no saved instance state; a configuration
+        // change keeps using the instance-state bundle instead, so skip writing for one.
+        if (!isChangingConfigurations) {
+            writeSavedPagesFile()
+        }
     }
 
     override fun onFinish() {
@@ -2435,29 +2442,42 @@ class MainActivity :
             }
         }
 
-    override fun restartApplication() {
+    /**
+     * Serializes the current page stack (the visible board/thread, the back stack and the
+     * preserved pages) to the [savedPagesFile] so the next cold start can restore it. The
+     * current fragment anchors the restore, so when there is none any stale file is removed
+     * and this returns false. Returns true when the file was written and now exists.
+     */
+    private fun writeSavedPagesFile(): Boolean {
+        val file = this.savedPagesFile ?: return false
+        val currentFragment = this.currentFragment
+        if (currentFragment == null) {
+            file.delete()
+            return false
+        }
         val outState = Bundle()
         writePagesState(outState)
         outState.putParcelable(
             EXTRA_CURRENT_FRAGMENT,
-            StackItem(getSupportFragmentManager(), this.currentFragment!!, null),
+            StackItem(getSupportFragmentManager(), currentFragment, null),
         )
-        val file = this.savedPagesFile
-        if (file != null) {
-            val parcel = Parcel.obtain()
-            try {
-                FileOutputStream(file).use { output ->
-                    outState.writeToParcel(parcel, 0)
-                    val data = parcel.marshall()
-                    copyStream(ByteArrayInputStream(data), output)
-                }
-            } catch (e: IOException) {
-                file.delete()
-            } finally {
-                parcel.recycle()
+        val parcel = Parcel.obtain()
+        try {
+            FileOutputStream(file).use { output ->
+                outState.writeToParcel(parcel, 0)
+                val data = parcel.marshall()
+                copyStream(ByteArrayInputStream(data), output)
             }
+        } catch (e: IOException) {
+            file.delete()
+        } finally {
+            parcel.recycle()
         }
-        if (file != null && file.exists()) {
+        return file.exists()
+    }
+
+    override fun restartApplication() {
+        if (writeSavedPagesFile()) {
             restartApplication(this)
         }
     }
