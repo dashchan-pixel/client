@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.ui.gallery
 
 import android.app.AlertDialog
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -14,7 +15,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
@@ -25,6 +25,7 @@ import chan.util.StringUtils.isEmptyOrWhitespace
 import chan.util.StringUtils.stripTrailingZeros
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.AdvancedPreferences.isSingleConnection
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.VideoCompletionMode
 import com.mishiranu.dashchan.content.Preferences.isVideoSeekAnyFrame
 import com.mishiranu.dashchan.content.Preferences.videoCompletionMode
@@ -39,7 +40,6 @@ import com.mishiranu.dashchan.util.AnimationUtils.measureDynamicHeight
 import com.mishiranu.dashchan.util.AudioFocus
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ResourceUtils
-import com.mishiranu.dashchan.util.ResourceUtils.getDrawable
 import com.mishiranu.dashchan.util.ResourceUtils.getResourceId
 import com.mishiranu.dashchan.util.ResourceUtils.isTabletOrLandscape
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
@@ -49,11 +49,15 @@ import com.mishiranu.dashchan.widget.SummaryLayout
 import java.io.File
 import java.io.IOException
 import java.util.Locale
+import kotlin.math.abs
 
 class VideoUnit(
     private val instance: PagerInstance,
 ) {
     private val controlsView: LinearLayout
+    private val sideControls: VideoSideControls
+    private val seekFeedbackView: TextView
+    private val seekDetector = VideoSeekTapDetector()
     private val audioFocus: AudioFocus
 
     private var layoutConfiguration = -1
@@ -97,6 +101,24 @@ class VideoUnit(
                 Gravity.BOTTOM,
             ),
         )
+        val density = obtainDensity(instance.galleryInstance.context)
+        val sideParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.END or Gravity.BOTTOM,
+            )
+        sideParams.rightMargin = (8f * density).toInt()
+        sideParams.bottomMargin = (SIDE_CONTROLS_BOTTOM_DP * density).toInt()
+        frameLayout.addView(sideControls, sideParams)
+        frameLayout.addView(
+            seekFeedbackView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER,
+            ),
+        )
     }
 
     fun onResume() {
@@ -132,6 +154,12 @@ class VideoUnit(
         bottom: Int,
     ) {
         controlsView.setPadding(left, 0, right, bottom)
+        val density = obtainDensity(instance.galleryInstance.context)
+        (sideControls.layoutParams as? FrameLayout.LayoutParams)?.let { sideParams ->
+            sideParams.rightMargin = (8f * density).toInt() + right
+            sideParams.bottomMargin = (SIDE_CONTROLS_BOTTOM_DP * density).toInt() + bottom
+            sideControls.requestLayout()
+        }
     }
 
     val isCreated: Boolean
@@ -153,6 +181,9 @@ class VideoUnit(
     fun interrupt() {
         readVideoCallback?.cancel()
         readVideoCallback = null
+        instance.currentHolder?.photoView?.videoSeekEnabled = false
+        seekDetector.reset()
+        hideSeekFeedback()
         if (this@VideoUnit.isInitialized) {
             audioFocus.release()
             this@VideoUnit.isInitialized = false
@@ -302,6 +333,7 @@ class VideoUnit(
         playPauseButton.setEnabled(true)
         seekBar.setEnabled(true)
         this@VideoUnit.isInitialized = true
+        applyPlaybackPreferences(player, holder)
         pausedByTransientLossOfFocus = false
         if (initialSeekPosition > 0) {
             player.setPosition(initialSeekPosition)
@@ -475,19 +507,8 @@ class VideoUnit(
         }
         val player = this.player
         if (player != null) {
+            // The no-audio / mute state now lives on the side column's mute button.
             configurationView.removeAllViews()
-            if (!player.isAudioPresent()) {
-                val imageView = ImageView(context)
-                imageView.setImageDrawable(getDrawable(context, R.attr.iconActionVolumeOff, 0))
-                imageView.setScaleType(ImageView.ScaleType.CENTER)
-                imageView.setImageAlpha(0x99)
-
-                configurationView.addView(
-                    imageView,
-                    (48f * density).toInt(),
-                    (48f * density).toInt(),
-                )
-            }
             val duration = player.getDuration()
             totalTimeTextView.setText(formatVideoTime(duration))
             seekBar.setMax(duration.toInt())
@@ -604,12 +625,21 @@ class VideoUnit(
         val visible = this@VideoUnit.isInitialized && instance.galleryInstance.callback.isSystemUiVisible()
         if (layoutConfiguration >= 0 && controlsVisible != visible) {
             controlsView.animate().cancel()
+            sideControls.animate().cancel()
             if (visible) {
                 controlsView.setVisibility(View.VISIBLE)
                 controlsView
                     .animate()
                     .alpha(1f)
                     .translationY(0f)
+                    .setDuration(250)
+                    .setListener(null)
+                    .setInterpolator(AnimationUtils.DECELERATE_INTERPOLATOR)
+                    .start()
+                sideControls.setVisibility(View.VISIBLE)
+                sideControls
+                    .animate()
+                    .alpha(1f)
                     .setDuration(250)
                     .setListener(null)
                     .setInterpolator(AnimationUtils.DECELERATE_INTERPOLATOR)
@@ -627,9 +657,80 @@ class VideoUnit(
                     .setListener(AnimationUtils.VisibilityListener(controlsView, View.GONE))
                     .setInterpolator(AnimationUtils.ACCELERATE_DECELERATE_INTERPOLATOR)
                     .start()
+                sideControls
+                    .animate()
+                    .alpha(0f)
+                    .setDuration(350)
+                    .setListener(AnimationUtils.VisibilityListener(sideControls, View.GONE))
+                    .setInterpolator(AnimationUtils.ACCELERATE_DECELERATE_INTERPOLATOR)
+                    .start()
             }
             controlsVisible = visible
         }
+    }
+
+    private fun applyPlaybackPreferences(
+        player: VideoPlayer,
+        holder: PagerInstance.ViewHolder,
+    ) {
+        // When enabled, route the video surface's double-tap into the seek gesture (off by default,
+        // leaving the double-tap-to-zoom intact).
+        holder.photoView.videoSeekEnabled = Preferences.isVideoMultiTapSeek
+        // Carry the global mute / playback-speed state onto the freshly-ready player.
+        player.setVolume(if (Preferences.isVideoMuted) 0f else 1f)
+        player.setPlaybackSpeed(Preferences.effectiveVideoPlaybackSpeed)
+        updateSideControls()
+    }
+
+    private fun updateSideControls() {
+        val context = instance.galleryInstance.context
+        sideControls.setSpeed(Preferences.effectiveVideoPlaybackSpeed)
+        sideControls.setSpeedButtonVisible(Preferences.enabledVideoSpeeds.size > 1)
+        sideControls.setMuteState(Preferences.isVideoMuted, player?.isAudioPresent() == true)
+        sideControls.setPipButtonVisible(
+            context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE),
+        )
+    }
+
+    private val hideSeekFeedbackRunnable = Runnable { seekFeedbackView.setVisibility(View.GONE) }
+
+    private fun hideSeekFeedback() {
+        seekFeedbackView.removeCallbacks(hideSeekFeedbackRunnable)
+        seekFeedbackView.setVisibility(View.GONE)
+    }
+
+    private fun showSeekFeedback(seek: VideoSeekTapDetector.Seek) {
+        val seconds = abs(seek.burstMs) / 1000
+        seekFeedbackView.setText(if (seek.forward) "»» $seconds s" else "«« $seconds s")
+        seekFeedbackView.setVisibility(View.VISIBLE)
+        seekFeedbackView.removeCallbacks(hideSeekFeedbackRunnable)
+        seekFeedbackView.postDelayed(hideSeekFeedbackRunnable, 700)
+    }
+
+    /** A multi-tap seek from the video surface (see [PhotoView] / [VideoSeekTapDetector]). */
+    fun handleSeekTap(
+        x: Float,
+        width: Int,
+    ): Boolean {
+        if (!this@VideoUnit.isInitialized || !Preferences.isVideoMultiTapSeek) {
+            return false
+        }
+        val player = this.player ?: return false
+        val seek = seekDetector.onTap(x, width) ?: return false
+        val duration = player.getDuration()
+        var target = (player.getPosition() + seek.deltaMs).coerceAtLeast(0)
+        if (duration > 0) {
+            target = target.coerceAtMost(duration)
+        }
+        player.setPosition(target)
+        if (finishedPlayback) {
+            finishedPlayback = false
+        }
+        seekBar.setProgress(target.toInt())
+        timeTextView.setText(formatVideoTime(target))
+        updatePlayState()
+        showSeekFeedback(seek)
+        return true
     }
 
     private val playerListener: VideoPlayer.Listener =
@@ -733,9 +834,57 @@ class VideoUnit(
         }
 
     init {
-        controlsView = LinearLayout(instance.galleryInstance.context)
+        val context = instance.galleryInstance.context
+        controlsView = LinearLayout(context)
         controlsView.setOrientation(LinearLayout.VERTICAL)
         controlsView.setVisibility(View.GONE)
+
+        // Reels-style overlay column at the bottom-right edge: speed, mute, picture-in-picture.
+        sideControls =
+            VideoSideControls(
+                context,
+                object : VideoSideControls.Callback {
+                    override fun onSpeedClick() {
+                        VideoSideControls.showSpeedMenu(
+                            context,
+                            Preferences.effectiveVideoPlaybackSpeed,
+                            Preferences.enabledVideoSpeeds,
+                        ) { speed ->
+                            Preferences.videoPlaybackSpeed = speed
+                            player?.setPlaybackSpeed(speed)
+                            sideControls.setSpeed(speed)
+                        }
+                    }
+
+                    override fun onMuteClick() {
+                        val muted = !Preferences.isVideoMuted
+                        Preferences.isVideoMuted = muted
+                        player?.setVolume(if (muted) 0f else 1f)
+                        sideControls.setMuteState(muted, player?.isAudioPresent() == true)
+                    }
+
+                    override fun onPipClick() {
+                        instance.galleryInstance.callback.switchToPip()
+                    }
+                },
+            )
+        sideControls.setVisibility(View.GONE)
+
+        val density = obtainDensity(context)
+        seekFeedbackView = TextView(context)
+        seekFeedbackView.setTextColor(Color.WHITE)
+        ViewUtils.setTextSizeScaled(seekFeedbackView, 18)
+        seekFeedbackView.setTypeface(ResourceUtils.TYPEFACE_MEDIUM)
+        seekFeedbackView.setGravity(Gravity.CENTER)
+        seekFeedbackView.setPadding(
+            (16f * density).toInt(),
+            (10f * density).toInt(),
+            (16f * density).toInt(),
+            (10f * density).toInt(),
+        )
+        seekFeedbackView.setBackgroundColor(0x99000000.toInt())
+        seekFeedbackView.setVisibility(View.GONE)
+
         audioFocus =
             AudioFocus(
                 instance.galleryInstance.context,
@@ -1019,6 +1168,9 @@ class VideoUnit(
     }
 
     companion object {
+        // Distance of the reels-style side column above the bottom edge (plus any bottom inset).
+        private const val SIDE_CONTROLS_BOTTOM_DP = 96f
+
         private fun aspectRatio(dimensions: Point): Float = if (dimensions.x > 0 && dimensions.y > 0) dimensions.x.toFloat() / dimensions.y else 0f
 
         private fun formatVideoTime(position: Long): String {

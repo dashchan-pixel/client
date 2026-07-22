@@ -103,6 +103,7 @@ class VideoPipActivity :
                     COMMAND_PLAY -> setPlaying(true)
                     COMMAND_PAUSE -> setPlaying(false)
                     COMMAND_NEXT -> advance(1)
+                    COMMAND_MUTE -> toggleMute()
                 }
             }
         }
@@ -149,6 +150,9 @@ class VideoPipActivity :
         videoView = FlowVideoView(this)
         videoView.setControlsEnabled(false)
         videoView.setContextMenuEnabled(false)
+        // The multi-tap seek gesture is a big-player affordance; the floating window keeps its
+        // simple system controls (play/pause, skip, mute) instead.
+        videoView.setSeekGestureEnabled(false)
         setContentView(
             videoView,
             ViewGroup.LayoutParams(
@@ -197,6 +201,13 @@ class VideoPipActivity :
         videoView.bind(chan, playlist[playlistIndex], this)
         videoView.prepare()
         videoView.setActive(true)
+        updatePictureInPictureParams()
+    }
+
+    private fun toggleMute() {
+        val muted = !Preferences.isVideoMuted
+        Preferences.isVideoMuted = muted
+        videoView.setMuted(muted)
         updatePictureInPictureParams()
     }
 
@@ -285,6 +296,16 @@ class VideoPipActivity :
         if ((playlist?.size ?: 0) > 1) {
             actions.add(remoteAction(COMMAND_NEXT, R.attr.iconButtonForward, R.string.skip))
         }
+        if (this::videoView.isInitialized && videoView.isAudioPresent()) {
+            val muted = Preferences.isVideoMuted
+            actions.add(
+                remoteActionRes(
+                    COMMAND_MUTE,
+                    if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume_up,
+                    if (muted) R.string.unmute else R.string.mute,
+                ),
+            )
+        }
         builder.setActions(actions)
         return builder.build()
     }
@@ -292,6 +313,12 @@ class VideoPipActivity :
     private fun remoteAction(
         command: Int,
         iconAttr: Int,
+        titleRes: Int,
+    ): RemoteAction = remoteActionRes(command, ResourceUtils.getResourceId(this, iconAttr, 0), titleRes)
+
+    private fun remoteActionRes(
+        command: Int,
+        iconRes: Int,
         titleRes: Int,
     ): RemoteAction {
         val label = getString(titleRes)
@@ -303,10 +330,7 @@ class VideoPipActivity :
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         return RemoteAction(
-            Icon.createWithResource(
-                this,
-                ResourceUtils.getResourceId(this, iconAttr, 0),
-            ),
+            Icon.createWithResource(this, iconRes),
             label,
             label,
             intent,
@@ -425,6 +449,7 @@ class VideoPipActivity :
         private const val COMMAND_PLAY = 1
         private const val COMMAND_PAUSE = 2
         private const val COMMAND_NEXT = 3
+        private const val COMMAND_MUTE = 4
 
         // In-process handoffs, like FlowDialog's pending state: GalleryItem is not Parcelable.
         private var pendingPlayback: Playback? = null

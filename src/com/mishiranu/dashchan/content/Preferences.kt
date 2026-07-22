@@ -1682,6 +1682,82 @@ object Preferences {
                 DEFAULT_VIDEO_SEEK_ANY_FRAME,
             )
 
+    const val KEY_VIDEO_MUTED: String = "video_muted"
+    const val DEFAULT_VIDEO_MUTED: Boolean = false
+
+    // Global mute state for the video players; a muted video keeps subsequent videos muted.
+    @JvmStatic
+    var isVideoMuted: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_VIDEO_MUTED,
+                DEFAULT_VIDEO_MUTED,
+            )
+        set(value) {
+            prefs.edit().put(KEY_VIDEO_MUTED, value).close()
+        }
+
+    const val KEY_VIDEO_PLAYBACK_SPEED: String = "video_playback_speed"
+    const val DEFAULT_VIDEO_PLAYBACK_SPEED: Float = 1f
+
+    // Global playback-speed multiplier, shared across the video players like the mute state.
+    @JvmStatic
+    var videoPlaybackSpeed: Float
+        get() =
+            prefs.getFloat(
+                KEY_VIDEO_PLAYBACK_SPEED,
+                DEFAULT_VIDEO_PLAYBACK_SPEED,
+            )
+        set(value) {
+            prefs.edit().put(KEY_VIDEO_PLAYBACK_SPEED, value).close()
+        }
+
+    const val KEY_VIDEO_MULTI_TAP_SEEK: String = "video_multi_tap_seek"
+    const val DEFAULT_VIDEO_MULTI_TAP_SEEK: Boolean = false
+
+    // Multi-tap fast-forward/rewind gesture; off by default (the double tap otherwise zooms).
+    @JvmStatic
+    val isVideoMultiTapSeek: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_VIDEO_MULTI_TAP_SEEK,
+                DEFAULT_VIDEO_MULTI_TAP_SEEK,
+            )
+
+    // The playback speeds the user can toggle on/off in settings. 1x is always available and is
+    // never stored as a toggle; the rest default to a compact set that keeps the button useful.
+    val VIDEO_SPEED_OPTIONS: List<Float> = listOf(0.5f, 0.75f, 1.25f, 1.5f, 2f)
+
+    @JvmStatic
+    fun videoSpeedKey(speed: Float): String = "video_speed_" + Math.round(speed * 100)
+
+    @JvmStatic
+    fun videoSpeedDefaultEnabled(speed: Float): Boolean = speed == 0.5f || speed == 1.5f || speed == 2f
+
+    @JvmStatic
+    fun isVideoSpeedEnabled(speed: Float): Boolean =
+        speed == 1f ||
+            (speed in VIDEO_SPEED_OPTIONS && prefs.getBoolean(videoSpeedKey(speed), videoSpeedDefaultEnabled(speed)))
+
+    /** Enabled playback speeds in ascending order, always including 1x. */
+    @JvmStatic
+    val enabledVideoSpeeds: List<Float>
+        get() {
+            val list = mutableListOf(1f)
+            for (speed in VIDEO_SPEED_OPTIONS) {
+                if (isVideoSpeedEnabled(speed)) {
+                    list.add(speed)
+                }
+            }
+            list.sort()
+            return list
+        }
+
+    /** The stored speed, or 1x when it has since been disabled in settings. */
+    @JvmStatic
+    val effectiveVideoPlaybackSpeed: Float
+        get() = videoPlaybackSpeed.takeIf { isVideoSpeedEnabled(it) } ?: 1f
+
     const val KEY_WATCHER_REFRESH_INTERVAL: String = "watcher_refresh_interval"
     const val DISABLED_WATCHER_REFRESH_INTERVAL: Int = 0
     const val MIN_WATCHER_REFRESH_INTERVAL: Int = 15

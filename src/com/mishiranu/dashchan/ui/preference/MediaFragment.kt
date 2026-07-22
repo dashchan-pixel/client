@@ -20,6 +20,7 @@ import com.mishiranu.dashchan.content.async.ExecutorTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.InstanceDialog
+import com.mishiranu.dashchan.ui.gallery.VideoSideControls
 import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -205,9 +206,32 @@ class MediaFragment :
             R.string.seek_any_frame,
             R.string.seek_any_frame__summary,
         )
+        addCheck(
+            true,
+            Preferences.KEY_VIDEO_MULTI_TAP_SEEK,
+            Preferences.DEFAULT_VIDEO_MULTI_TAP_SEEK,
+            R.string.multi_tap_seek,
+            R.string.multi_tap_seek__summary,
+        )
         addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_VIDEO_PLAYER, true)
         addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_VIDEO_PLAYER, true)
         addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_VIDEO_PLAYER, true)
+        addDependency(Preferences.KEY_VIDEO_MULTI_TAP_SEEK, Preferences.KEY_USE_VIDEO_PLAYER, true)
+
+        // Configurable playback speeds for the player's side-column button (1x is always available;
+        // if none of these are enabled the button is hidden).
+        addHeader(R.string.playback_speed_options)
+        for (speed in Preferences.VIDEO_SPEED_OPTIONS) {
+            val key = Preferences.videoSpeedKey(speed)
+            addCheck(
+                true,
+                key,
+                Preferences.videoSpeedDefaultEnabled(speed),
+                VideoSideControls.formatSpeed(speed),
+                null,
+            )
+            addDependency(key, Preferences.KEY_USE_VIDEO_PLAYER, true)
+        }
 
         addHeader(R.string.additional)
         addSeek(

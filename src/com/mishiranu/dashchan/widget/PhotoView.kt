@@ -99,6 +99,18 @@ class PhotoView(
     private var isDoubleTapDown = false
     private var isQuickScale = false
 
+    /**
+     * When set (by the video player for an initialized clip), taps are offered to the listener as
+     * a multi-tap fast-forward/rewind gesture and the double-tap-to-zoom is suppressed. Left off
+     * for images, whose double-tap keeps zooming.
+     */
+    var videoSeekEnabled = false
+    private var seekDownX = 0f
+    private var seekDownY = 0f
+    private var seekTapValid = false
+    private var seekLongPressed = false
+    private var lastSeekTapTime = 0L
+
     private var velocityTracker: VelocityTracker? = null
     private var isDragging = false
     private var isParentDragging = false
@@ -132,6 +144,17 @@ class PhotoView(
             x: Float,
             y: Float,
         )
+
+        /**
+         * A tap on a video surface while the multi-tap seek gesture is active. Return true if it
+         * produced a seek (so the tap's normal click is suppressed), false to treat it as a
+         * regular tap.
+         */
+        fun onVideoSeekTap(
+            photoView: PhotoView?,
+            x: Float,
+            width: Int,
+        ): Boolean = false
 
         fun onVerticalSwipe(
             photoView: PhotoView?,
@@ -407,6 +430,11 @@ class PhotoView(
         if (e.getAction() == MotionEvent.ACTION_DOWN) {
             isDoubleTapDown = true
         } else if (e.getAction() == MotionEvent.ACTION_UP && !scaleGestureDetector.isInProgress()) {
+            // For videos the double tap drives the seek gesture (handled in dispatchSpecialTouchEvent),
+            // so suppress the zoom here instead of toggling the scale.
+            if (videoSeekEnabled) {
+                return true
+            }
             val scale = this.scale
             val x = e.getX()
             val y = e.getY()
@@ -417,6 +445,12 @@ class PhotoView(
     }
 
     private fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        // Swallow the trailing tap of a seek burst so it doesn't also toggle the system UI.
+        if (videoSeekEnabled &&
+            SystemClock.uptimeMillis() - lastSeekTapTime <= SEEK_TAP_SUPPRESS_MS
+        ) {
+            return true
+        }
         val listener = this.listener
         if (listener != null) {
             val x = e.getX()
@@ -432,6 +466,7 @@ class PhotoView(
     }
 
     private fun onLongPress(e: MotionEvent) {
+        seekLongPressed = true
         listener?.onLongClick(this, e.getX(), e.getY())
     }
 
@@ -482,6 +517,7 @@ class PhotoView(
     fun dispatchSpecialTouchEvent(event: MotionEvent) {
         if (hasImage()) {
             val action = event.getActionMasked()
+            trackVideoSeekTap(event, action)
             when (action) {
                 MotionEvent.ACTION_DOWN -> {
                     isParentDragging = false
@@ -514,6 +550,47 @@ class PhotoView(
                 }
             }
             onCommonTouchEvent(event)
+        }
+    }
+
+    // Tracks a candidate tap for the video multi-tap seek gesture and, on release, offers it to the
+    // listener. A move past the touch slop or a second pointer disqualifies the tap.
+    private fun trackVideoSeekTap(
+        event: MotionEvent,
+        action: Int,
+    ) {
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                seekDownX = event.getX()
+                seekDownY = event.getY()
+                seekTapValid = true
+                seekLongPressed = false
+            }
+
+            MotionEvent.ACTION_POINTER_DOWN -> seekTapValid = false
+
+            MotionEvent.ACTION_MOVE -> {
+                if (seekTapValid &&
+                    (
+                        abs(event.getX() - seekDownX) > touchSlop ||
+                            abs(event.getY() - seekDownY) > touchSlop
+                    )
+                ) {
+                    seekTapValid = false
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+                if (videoSeekEnabled &&
+                    seekTapValid &&
+                    !seekLongPressed &&
+                    !scaleGestureDetector.isInProgress()
+                ) {
+                    if (listener?.onVideoSeekTap(this, event.getX(), getWidth()) == true) {
+                        lastSeekTapTime = SystemClock.uptimeMillis()
+                    }
+                }
+            }
         }
     }
 
@@ -1239,5 +1316,8 @@ class PhotoView(
 
         private const val WAIT_TIME = 100
         private const val TRANSFER_TIME_FACTOR = 1.5f
+
+        // A single-tap-confirmed this soon after a seek tap is swallowed (see onSingleTapConfirmed).
+        private const val SEEK_TAP_SUPPRESS_MS = 500L
     }
 }

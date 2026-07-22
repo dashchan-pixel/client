@@ -1,7 +1,6 @@
 package com.mishiranu.dashchan.ui.gallery
 
 import android.app.AlertDialog
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -531,6 +530,12 @@ class PagerUnit(
                 displayPopupMenu(galleryInstance.callback.getChildFragmentManager())
             }
 
+            override fun onVideoSeekTap(
+                photoView: PhotoView?,
+                x: Float,
+                width: Int,
+            ): Boolean = videoUnit.handleSeekTap(x, width)
+
             private var swiping = false
 
             override fun onVerticalSwipe(
@@ -767,16 +772,8 @@ class PagerUnit(
             )
             if (galleryItem.isVideo(chan)) {
                 // Mirrors the flow player's context menu, which offers switching to the gallery.
+                // Picture-in-picture is offered through the side-column button, not this menu.
                 dialogMenu.add(R.string.flow, Runnable { galleryInstance.callback.switchToFlow() })
-                if (context
-                        .getPackageManager()
-                        .hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
-                ) {
-                    dialogMenu.add(
-                        R.string.picture_in_picture,
-                        Runnable { galleryInstance.callback.switchToPip() },
-                    )
-                }
             }
             if (!galleryInstance.callback.isSystemUiVisible()) {
                 if (capabilities.save) {

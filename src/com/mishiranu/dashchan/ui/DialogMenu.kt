@@ -77,6 +77,12 @@ class DialogMenu(
         runnable: Runnable,
     ): DialogMenu = add(ViewType.CHECK, context.getString(titleRes), checked, runnable)
 
+    fun addCheck(
+        title: String,
+        checked: Boolean,
+        runnable: Runnable,
+    ): DialogMenu = add(ViewType.CHECK, title, checked, runnable)
+
     private fun getRecyclerView(dialog: AlertDialog): RecyclerView {
         val custom = dialog.findViewById<FrameLayout>(android.R.id.custom)
         return custom.getChildAt(0) as RecyclerView

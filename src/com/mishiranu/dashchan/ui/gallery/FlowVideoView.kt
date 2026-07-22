@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.ui.gallery
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
@@ -8,7 +9,11 @@ import android.graphics.Point
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
+import android.view.GestureDetector
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -22,6 +27,7 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.AdvancedPreferences
 import com.mishiranu.dashchan.content.CacheManager
 import com.mishiranu.dashchan.content.ImageLoader
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.ReadVideoTask
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.GalleryItem
@@ -37,6 +43,7 @@ import com.mishiranu.dashchan.widget.ClickableToast
 import java.io.File
 import java.io.IOException
 import java.util.Locale
+import kotlin.math.abs
 
 /**
  * A single page of the video Flow feed (reels/TikTok-style). Downloads one video attachment
@@ -63,12 +70,27 @@ class FlowVideoView(
 
     private val controlsView: LinearLayout
     private val configurationView: LinearLayout
+    private val sideControls: VideoSideControls
+    private val seekFeedbackView: TextView
     private val playPauseButton: ImageButton
     private val positionText: TextView
     private val durationText: TextView
     private val seekBar: SeekBar
     private var tracking = false
     private var controlsVisible = false
+
+    private val seekDetector = VideoSeekTapDetector()
+    private val gestureDetector: GestureDetector
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private var downX = 0f
+    private var downY = 0f
+    private var tapValid = false
+    private var longPressed = false
+    private var lastSeekTime = 0L
+    private val seekFeedbackRunnable = Runnable { hideSeekFeedback() }
+
+    /** Cleared in the standalone PiP player, where the multi-tap seek gesture is not offered. */
+    private var seekGestureEnabled = true
 
     /** Cleared in the PiP window, where the system window provides the playback controls. */
     private var controlsEnabled = true
@@ -198,20 +220,177 @@ class FlowVideoView(
 
         addView(controlsView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.BOTTOM))
 
-        setOnClickListener { if (controlsEnabled) setControlsVisible(!controlsVisible, true) }
-        setOnLongClickListener {
-            if (contextMenuEnabled) {
-                displayContextMenu()
-                true
-            } else {
-                false
+        // Reels-style column of overlay controls at the bottom-right edge, above the control bar.
+        sideControls = VideoSideControls(context, makeSideControlsCallback())
+        sideControls.visibility = GONE
+        val sideParams =
+            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.END or Gravity.BOTTOM)
+        sideParams.rightMargin = (8f * density).toInt()
+        sideParams.bottomMargin = (SIDE_CONTROLS_BOTTOM_DP * density).toInt()
+        addView(sideControls, sideParams)
+
+        seekFeedbackView = TextView(context)
+        seekFeedbackView.setTextColor(Color.WHITE)
+        ViewUtils.setTextSizeScaled(seekFeedbackView, 18)
+        seekFeedbackView.typeface = ResourceUtils.TYPEFACE_MEDIUM
+        seekFeedbackView.gravity = Gravity.CENTER
+        seekFeedbackView.setPadding(
+            (16f * density).toInt(),
+            (10f * density).toInt(),
+            (16f * density).toInt(),
+            (10f * density).toInt(),
+        )
+        seekFeedbackView.setBackgroundColor(0x99000000.toInt())
+        seekFeedbackView.visibility = GONE
+        addView(seekFeedbackView, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
+
+        gestureDetector =
+            GestureDetector(
+                context,
+                object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onDown(e: MotionEvent): Boolean = true
+
+                    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                        // Suppressed right after a seek so the burst's trailing tap doesn't also
+                        // toggle the control bar.
+                        if (controlsEnabled && !isSeekingRecently()) {
+                            setControlsVisible(!controlsVisible, true)
+                        }
+                        return true
+                    }
+
+                    override fun onLongPress(e: MotionEvent) {
+                        longPressed = true
+                        if (contextMenuEnabled) {
+                            displayContextMenu()
+                        }
+                    }
+                },
+            )
+        isClickable = true
+        isLongClickable = true
+    }
+
+    private fun makeSideControlsCallback(): VideoSideControls.Callback =
+        object : VideoSideControls.Callback {
+            override fun onSpeedClick() {
+                VideoSideControls.showSpeedMenu(
+                    context,
+                    Preferences.effectiveVideoPlaybackSpeed,
+                    Preferences.enabledVideoSpeeds,
+                ) { speed ->
+                    Preferences.videoPlaybackSpeed = speed
+                    player?.setPlaybackSpeed(speed)
+                    sideControls.setSpeed(speed)
+                }
+            }
+
+            override fun onMuteClick() {
+                val muted = !Preferences.isVideoMuted
+                Preferences.isVideoMuted = muted
+                player?.setVolume(if (muted) 0f else 1f)
+                sideControls.setMuteState(muted, player?.isAudioPresent() == true)
+            }
+
+            override fun onPipClick() {
+                val galleryItem = galleryItem ?: return
+                callback?.onEnterPip(this@FlowVideoView, galleryItem)
             }
         }
-    }
 
     /** Lift the control bar above the system navigation bar / gesture area. */
     fun setBottomInset(bottom: Int) {
         controlsView.setPadding(0, 0, 0, bottom)
+        val density = ResourceUtils.obtainDensity(context)
+        (sideControls.layoutParams as LayoutParams).bottomMargin =
+            (SIDE_CONTROLS_BOTTOM_DP * density).toInt() + bottom
+        sideControls.requestLayout()
+    }
+
+    /** Standalone PiP player: the multi-tap seek gesture is not offered there. */
+    fun setSeekGestureEnabled(enabled: Boolean) {
+        seekGestureEnabled = enabled
+    }
+
+    /** Apply the mute state to the current player (used by the PiP window's remote action). */
+    fun setMuted(muted: Boolean) {
+        player?.setVolume(if (muted) 0f else 1f)
+        updateSideControls()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                downX = event.x
+                downY = event.y
+                tapValid = true
+                longPressed = false
+            }
+
+            MotionEvent.ACTION_POINTER_DOWN -> tapValid = false
+
+            MotionEvent.ACTION_MOVE -> {
+                if (tapValid &&
+                    (abs(event.x - downX) > touchSlop || abs(event.y - downY) > touchSlop)
+                ) {
+                    tapValid = false
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+                if (seekGestureEnabled &&
+                    Preferences.isVideoMultiTapSeek &&
+                    tapValid &&
+                    !longPressed &&
+                    player != null
+                ) {
+                    val seek = seekDetector.onTap(event.x, width)
+                    if (seek != null) {
+                        lastSeekTime = SystemClock.uptimeMillis()
+                        doSeek(seek)
+                    }
+                }
+            }
+        }
+        gestureDetector.onTouchEvent(event)
+        return true
+    }
+
+    private fun isSeekingRecently(): Boolean = SystemClock.uptimeMillis() - lastSeekTime <= SEEK_SUPPRESS_MS
+
+    private fun doSeek(seek: VideoSeekTapDetector.Seek) {
+        val player = player ?: return
+        val duration = player.getDuration()
+        var target = (player.getPosition() + seek.deltaMs).coerceAtLeast(0)
+        if (duration > 0) {
+            target = target.coerceAtMost(duration)
+        }
+        player.setPosition(target)
+        updateControls()
+        showSeekFeedback(seek)
+    }
+
+    private fun showSeekFeedback(seek: VideoSeekTapDetector.Seek) {
+        val seconds = abs(seek.burstMs) / 1000
+        seekFeedbackView.text =
+            if (seek.forward) "»» $seconds s" else "«« $seconds s"
+        seekFeedbackView.visibility = VISIBLE
+        handler.removeCallbacks(seekFeedbackRunnable)
+        handler.postDelayed(seekFeedbackRunnable, 700)
+    }
+
+    private fun hideSeekFeedback() {
+        seekFeedbackView.visibility = GONE
+    }
+
+    private fun updateSideControls() {
+        sideControls.setSpeed(Preferences.effectiveVideoPlaybackSpeed)
+        sideControls.setSpeedButtonVisible(Preferences.enabledVideoSpeeds.size > 1)
+        sideControls.setMuteState(Preferences.isVideoMuted, player?.isAudioPresent() == true)
+        sideControls.setPipButtonVisible(
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE),
+        )
     }
 
     private fun timeLabel(context: Context): TextView {
@@ -383,7 +562,13 @@ class FlowVideoView(
         controlsView.visibility = GONE
         controlsView.alpha = 1f
         controlsView.translationY = 0f
+        sideControls.animate().cancel()
+        sideControls.visibility = GONE
+        sideControls.alpha = 1f
         controlsVisible = false
+        handler.removeCallbacks(seekFeedbackRunnable)
+        hideSeekFeedback()
+        seekDetector.reset()
         coverView.visibility = VISIBLE
     }
 
@@ -396,8 +581,10 @@ class FlowVideoView(
         }
         controlsVisible = visible
         controlsView.animate().cancel()
+        sideControls.animate().cancel()
         if (visible) {
             controlsView.visibility = VISIBLE
+            sideControls.visibility = VISIBLE
             if (animate) {
                 controlsView
                     .animate()
@@ -405,9 +592,15 @@ class FlowVideoView(
                     .translationY(0f)
                     .setDuration(250)
                     .start()
+                sideControls
+                    .animate()
+                    .alpha(1f)
+                    .setDuration(250)
+                    .start()
             } else {
                 controlsView.alpha = 1f
                 controlsView.translationY = 0f
+                sideControls.alpha = 1f
             }
         } else if (animate) {
             controlsView
@@ -417,9 +610,17 @@ class FlowVideoView(
                 .setDuration(250)
                 .withEndAction { controlsView.visibility = GONE }
                 .start()
+            sideControls
+                .animate()
+                .alpha(0f)
+                .setDuration(250)
+                .withEndAction { sideControls.visibility = GONE }
+                .start()
         } else {
             controlsView.alpha = 0f
             controlsView.visibility = GONE
+            sideControls.alpha = 0f
+            sideControls.visibility = GONE
         }
     }
 
@@ -481,21 +682,18 @@ class FlowVideoView(
                 videoWrapper = wrapper
                 // Insert below the cover (index 0) so the thumbnail hides the surface until first frame.
                 addView(wrapper, 0, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
+                // Carry the global mute / playback-speed state onto the freshly-ready player.
+                player.setVolume(if (Preferences.isVideoMuted) 0f else 1f)
+                player.setPlaybackSpeed(Preferences.effectiveVideoPlaybackSpeed)
                 player.setPlaying(active)
-                // Muted indicator, as in the gallery player.
-                configurationView.removeAllViews()
-                if (!player.isAudioPresent()) {
-                    val density = ResourceUtils.obtainDensity(context)
-                    val imageView = ImageView(context)
-                    imageView.setImageResource(ResourceUtils.getResourceId(context, R.attr.iconActionVolumeOff, 0))
-                    imageView.scaleType = ImageView.ScaleType.CENTER
-                    imageView.imageAlpha = 0x99
-                    configurationView.addView(imageView, (48f * density).toInt(), (48f * density).toInt())
-                }
+                // The mute button in the side column now reflects the audio state.
+                updateSideControls()
                 if (controlsEnabled) {
                     controlsView.visibility = VISIBLE
                     controlsView.alpha = 1f
                     controlsView.translationY = 0f
+                    sideControls.visibility = VISIBLE
+                    sideControls.alpha = 1f
                     controlsVisible = true
                 }
                 updateControls()
@@ -641,9 +839,7 @@ class FlowVideoView(
         if (switchToGalleryMenuEnabled) {
             dialogMenu.add(R.string.gallery) { callback?.onSwitchToGallery(galleryItem) }
         }
-        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-            dialogMenu.add(R.string.picture_in_picture) { callback?.onEnterPip(this, galleryItem) }
-        }
+        // Picture-in-picture is offered through the side-column button, not this menu.
         if (hostActionsMenuEnabled) {
             dialogMenu.add(R.string.save) {
                 val binder = callback?.getDownloadBinder()
@@ -728,5 +924,11 @@ class FlowVideoView(
     companion object {
         // Matches GalleryOverlay's action bar chrome colour.
         private const val CONTROLS_BACKGROUND_COLOR = 0xaa202020.toInt()
+
+        // Distance of the reels-style side column above the bottom edge (plus any bottom inset).
+        private const val SIDE_CONTROLS_BOTTOM_DP = 96f
+
+        // A single tap this soon after a seek is swallowed rather than toggling the control bar.
+        private const val SEEK_SUPPRESS_MS = 500L
     }
 }

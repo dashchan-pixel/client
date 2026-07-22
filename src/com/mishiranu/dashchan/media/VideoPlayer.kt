@@ -174,6 +174,16 @@ class VideoPlayer(
         exoPlayer?.playWhenReady = playing
     }
 
+    /** Set the output volume in [0, 1]; 0 mutes. Applied to the current player only. */
+    fun setVolume(volume: Float) {
+        exoPlayer?.volume = volume.coerceIn(0f, 1f)
+    }
+
+    /** Set the playback speed multiplier (1.0 = normal). Applied to the current player only. */
+    fun setPlaybackSpeed(speed: Float) {
+        exoPlayer?.setPlaybackSpeed(speed)
+    }
+
     fun getDimensions(): Point {
         val player = exoPlayer ?: return Point()
         val size = player.videoSize
