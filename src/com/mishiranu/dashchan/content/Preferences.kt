@@ -317,9 +317,9 @@ object Preferences {
 
     const val KEY_CACHE_SIZE: String = "cache_size"
     const val MIN_CACHE_SIZE: Int = 100
-    const val MAX_CACHE_SIZE: Int = 800
+    const val MAX_CACHE_SIZE: Int = 4000
     const val STEP_CACHE_SIZE: Int = 50
-    const val DEFAULT_CACHE_SIZE: Int = 200
+    const val DEFAULT_CACHE_SIZE: Int = 1000
 
     val cacheSize: Int
         get() =
