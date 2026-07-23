@@ -34,7 +34,7 @@ import chan.util.StringUtils.isEmpty
 import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CacheManager
-import com.mishiranu.dashchan.content.FileProvider.Companion.convertDownloadsLegacyFile
+import com.mishiranu.dashchan.content.FileProvider.Companion.convertUpdatesUri
 import com.mishiranu.dashchan.content.LocaleManager
 import com.mishiranu.dashchan.content.LocaleManager.Companion.getInstance
 import com.mishiranu.dashchan.content.NetworkObserver.Companion.getInstance
@@ -766,7 +766,7 @@ class DownloadService :
                 val fileOrUri = file.getFileOrUri()
                 val legacyFile = fileOrUri.first
                 if (legacyFile != null) {
-                    scanFileLegacy(legacyFile, Pair<String?, ScanCallback?>(type, callback))
+                    scanFileLegacy(legacyFile, callback)
                 } else if (fileOrUri.second != null) {
                     callback.onComplete(fileOrUri.second)
                 }
@@ -1579,9 +1579,12 @@ class DownloadService :
         fun onComplete(uri: Uri?)
     }
 
+    // Only reached for non-SAF (RegularFile) targets; in practice UPDATES APKs, since DOWNLOADS is
+    // SAF-only. The MediaScanner callback normally supplies the view URI; the delayed fallback serves
+    // the APK through FileProvider if the scan never reports back.
     private fun scanFileLegacy(
         file: File,
-        callback: Pair<String?, ScanCallback?>?,
+        callback: ScanCallback?,
     ) {
         val fileArray = arrayOf<String?>(file.getAbsolutePath())
         val listener: OnScanCompletedListener?
@@ -1592,7 +1595,7 @@ class DownloadService :
                     synchronized(handled) {
                         if (!handled[0]) {
                             handled[0] = true
-                            callback.second!!.onComplete(uri)
+                            callback.onComplete(uri)
                         }
                     }
                 }
@@ -1601,12 +1604,7 @@ class DownloadService :
                     synchronized(handled) {
                         if (!handled[0]) {
                             handled[0] = true
-                            callback.second!!.onComplete(
-                                convertDownloadsLegacyFile(
-                                    file,
-                                    callback.first,
-                                ),
-                            )
+                            callback.onComplete(convertUpdatesUri(Uri.fromFile(file)))
                         }
                     }
                 },

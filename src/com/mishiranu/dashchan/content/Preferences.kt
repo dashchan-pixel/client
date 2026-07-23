@@ -3,7 +3,6 @@ package com.mishiranu.dashchan.content
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Environment
 import android.provider.DocumentsContract
 import androidx.annotation.StringRes
 import chan.content.Chan
@@ -11,11 +10,9 @@ import chan.content.ChanConfiguration
 import chan.content.ChanManager
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
-import chan.util.StringUtils.isEmptyOrWhitespace
 import chan.util.StringUtils.nullIfEmpty
 import chan.util.StringUtils.validateBoardName
 import com.mishiranu.dashchan.BuildConfig
-import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ClickableToast
@@ -665,50 +662,6 @@ object Preferences {
                 KEY_DOWNLOAD_ORIGINAL_NAME,
                 DEFAULT_DOWNLOAD_ORIGINAL_NAME,
             )
-
-    const val KEY_DOWNLOAD_PATH: String = "download_path"
-
-    // Never null: falls back to the default path, exactly as the Java did.
-    private val downloadPathLegacy: String
-        get() {
-            val path =
-                prefs.getString(
-                    KEY_DOWNLOAD_PATH,
-                    null,
-                )
-            return path?.takeIf { !isEmptyOrWhitespace(it) } ?: C.DEFAULT_DOWNLOAD_PATH
-        }
-
-    private var externalStorageDirectory: File? = null
-
-    @get:Suppress("deprecation")
-    val downloadDirectoryLegacy: File
-        // Environment.getExternalStorageDirectory has no replacement for resolving the legacy
-        get() {
-            val path: String = downloadPathLegacy
-            var dir = File(path)
-            var absolute = false
-            val uri = Uri.fromFile(dir)
-            val pathSegments = uri.getPathSegments()
-            if (pathSegments.size > 0) {
-                val first = File("/" + uri.getPathSegments()[0])
-                if (first.exists() && first.isDirectory()) {
-                    absolute = true
-                }
-            }
-            if (!absolute) {
-                var file =
-                    externalStorageDirectory
-                if (file == null) {
-                    // Cache for faster calls
-                    file = Environment.getExternalStorageDirectory()
-                    externalStorageDirectory = file
-                }
-                dir = File(file, path)
-            }
-            dir.mkdirs()
-            return dir
-        }
 
     @JvmStatic
     fun getDownloadUriTree(context: Context): Uri? {

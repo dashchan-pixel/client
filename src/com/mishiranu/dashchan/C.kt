@@ -25,8 +25,6 @@ object C {
         return Collections.unmodifiableSet(hashSet)
     }
 
-    const val DEFAULT_DOWNLOAD_PATH = "/Download/Dashchan/"
-
     const val ACTION_POSTING = "com.mishiranu.dashchan.action.POSTING"
     const val ACTION_GALLERY = "com.mishiranu.dashchan.action.GALLERY"
     const val ACTION_PLAYER = "com.mishiranu.dashchan.action.PLAYER"

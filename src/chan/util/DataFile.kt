@@ -28,11 +28,12 @@ abstract class DataFile protected constructor(
 ) {
     enum class Target(
         internal val safTarget: SafFile.SafTarget?,
-        internal val legacyDirectory: LegacyDirectory,
+        // Only the non-SAF (RegularFile) targets have a legacy directory; DOWNLOADS is SAF-only.
+        internal val legacyDirectory: LegacyDirectory?,
     ) {
         CACHE(null, LegacyDirectory { CacheManager.getInstance().mediaDirectory!! }),
         UPDATES(null, LegacyDirectory { FileProvider.updatesDirectory!! }),
-        DOWNLOADS(SafFile.SafTarget.DOWNLOADS, LegacyDirectory { Preferences.downloadDirectoryLegacy }),
+        DOWNLOADS(SafFile.SafTarget.DOWNLOADS, null),
         ;
 
         internal fun interface LegacyDirectory {
@@ -81,7 +82,9 @@ abstract class DataFile protected constructor(
     ) : DataFile(target, path) {
         private val file: File =
             run {
-                val directory = target.legacyDirectory.getLegacyDirectory()
+                // RegularFile is only constructed for non-SAF targets (obtain: safTarget == null),
+                // which always carry a legacyDirectory.
+                val directory = target.legacyDirectory!!.getLegacyDirectory()
                 if (path.isEmpty()) directory else File(directory, path)
             }
 

@@ -43,7 +43,6 @@ import chan.util.StringUtils.getFileExtension
 import chan.util.StringUtils.isEmpty
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.FileProvider
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.MediaLoadingAction
 import com.mishiranu.dashchan.content.Preferences.formatSubdir
@@ -580,15 +579,8 @@ class DownloadDialog(
                         View.OnClickListener { v: View? ->
                             val extension = getFileExtension(singleFile!!.getName())
                             val type = forExtension(extension, "image/jpeg")
-                            val fileOrUri = singleFile.getFileOrUri()
-                            val uri: Uri?
-                            if (fileOrUri.first != null) {
-                                uri = FileProvider.convertDownloadsLegacyFile(fileOrUri.first!!, type)
-                            } else if (fileOrUri.second != null) {
-                                uri = fileOrUri.second
-                            } else {
-                                uri = null
-                            }
+                            // Downloads are SAF-only, so getFileOrUri() always yields a content URI.
+                            val uri: Uri? = singleFile.getFileOrUri().second
                             if (uri != null) {
                                 try {
                                     context.startActivity(

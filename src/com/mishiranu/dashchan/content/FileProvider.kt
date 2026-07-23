@@ -123,12 +123,10 @@ class FileProvider : ContentProvider() {
     companion object {
         private const val AUTHORITY = "com.mishiranu.providers.dashchan"
         private const val PATH_UPDATES = "updates"
-        private const val PATH_DOWNLOADS = "downloads"
         private const val PATH_SHARE = "share"
         private const val PATH_CLIPBOARD = "clipboard"
 
         private const val URI_MATCHER_CODE_UPDATES = 1
-        private const val URI_MATCHER_CODE_DOWNLOADS = 2
         private const val URI_MATCHER_CODE_SHARE = 3
         private const val URI_MATCHER_CODE_CLIPBOARD = 4
 
@@ -137,7 +135,6 @@ class FileProvider : ContentProvider() {
         init {
             URI_MATCHER = UriMatcher(UriMatcher.NO_MATCH)
             URI_MATCHER.addURI(AUTHORITY, PATH_UPDATES + "/*", URI_MATCHER_CODE_UPDATES)
-            URI_MATCHER.addURI(AUTHORITY, PATH_DOWNLOADS + "/*", URI_MATCHER_CODE_DOWNLOADS)
             URI_MATCHER.addURI(AUTHORITY, PATH_SHARE + "/*", URI_MATCHER_CODE_SHARE)
             URI_MATCHER.addURI(AUTHORITY, PATH_CLIPBOARD + "/*", URI_MATCHER_CODE_CLIPBOARD)
         }
@@ -185,22 +182,8 @@ class FileProvider : ContentProvider() {
             return uri
         }
 
-        private var downloadsFile: InternalFile? = null
         private var shareFile: InternalFile? = null
         private var clipboardFile: InternalFile? = null
-
-        @JvmStatic
-        fun convertDownloadsLegacyFile(
-            file: File,
-            type: String?,
-        ): Uri? =
-            convertToInternalFile(
-                Preferences.downloadDirectoryLegacy,
-                file,
-                type,
-                PATH_DOWNLOADS,
-                URI_MATCHER_CODE_DOWNLOADS,
-            )
 
         fun convertShareFile(
             directory: File,
@@ -231,10 +214,6 @@ class FileProvider : ContentProvider() {
             val internalFile: InternalFile? = createInternalFile(directory, file, type, path)
             if (internalFile != null) {
                 when (uriMatcherCode) {
-                    URI_MATCHER_CODE_DOWNLOADS -> {
-                        downloadsFile = internalFile
-                    }
-
                     URI_MATCHER_CODE_SHARE -> {
                         shareFile = internalFile
                     }
@@ -282,10 +261,6 @@ class FileProvider : ContentProvider() {
         private fun getInternalFileForUriMatcherCode(uriMatcherCode: Int): InternalFile? {
             val internalFile: InternalFile?
             when (uriMatcherCode) {
-                URI_MATCHER_CODE_DOWNLOADS -> {
-                    internalFile = downloadsFile
-                }
-
                 URI_MATCHER_CODE_SHARE -> {
                     internalFile = shareFile
                 }
