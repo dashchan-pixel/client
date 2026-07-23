@@ -37,7 +37,7 @@
 	<string name="autohide">Autohide</string>
 	<string name="available__plural">Available</string>
 	<string name="backup_data">Backup data</string>
-	<string name="backup_data__summary">Save all your settings, favorites, history, and autohide rules</string>
+	<string name="backup_data__summary">Save all your settings, favorites, history, autohide rules, and commands</string>
 	<string name="backups_not_found">Backups not found</string>
 	<string name="ban_id">Ban ID</string>
 	<string name="block">Block</string>

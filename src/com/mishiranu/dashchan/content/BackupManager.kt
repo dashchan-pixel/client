@@ -8,6 +8,7 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.service.DownloadService
 import com.mishiranu.dashchan.content.storage.AutohideStorage
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.StatisticsStorage
 import com.mishiranu.dashchan.content.storage.ThemesStorage
@@ -301,6 +302,11 @@ object BackupManager {
         AUTOHIDE(
             R.string.autohide,
             AutohideStorage.getInstance().getFilesForBackup(),
+            Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
+        ),
+        COMMANDS(
+            R.string.commands,
+            CommandsStorage.getInstance().getFilesForBackup(),
             Arrays.asList<String?>(BACKUP_VERSION_0, BACKUP_VERSION_1),
         ),
         STATISTICS(
