@@ -1,0 +1,11 @@
+* Commands: user-defined JavaScript that transforms the posting form. Create scripts scoped to all forums or a specific board (like Autohide rules), run them by hand from the ⌘ button in the comment field or automatically before every send. Included in backup and restore.
+* Reels-style video controls: a bottom-right column with mute, playback speed and picture-in-picture buttons. Mute is remembered across videos; the available playback speeds are configurable in Media settings. Tap the left or right side of a video to seek 5 seconds per tap.
+* Attachments can now be reordered by long-pressing and dragging them before sending
+* The open board, thread and back stack are restored after any exit — swipe-away, low-memory kill or reboot — not just an in-app restart
+* 2ch AI-bot (@monkey / neuroslop) answers now render as a quote block with an accent bar instead of a flat highlight
+* Maximizing a picture-in-picture window returns to the real player at the current position; closing or dragging it away simply closes
+* Fixed a brief burst of sound that could leak after a video was closed
+* Long-pressing in the bottom gesture strip (Circle to Search / Lens) no longer also opens the gallery context menu
+* Raised the media cache size defaults for modern devices
+* Removed the legacy non-SAF download path and the internal/external cache-storage toggle, both obsolete on the current target
+* "Archive" as an action is now worded distinctly from a board's archive
