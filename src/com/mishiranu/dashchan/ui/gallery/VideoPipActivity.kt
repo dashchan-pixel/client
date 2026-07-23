@@ -93,6 +93,18 @@ class VideoPipActivity :
     private var pausedByTransientLossOfFocus = false
     private var initialPipRequested = false
 
+    /** Set once the window actually becomes a floating PiP; gates the maximize hand-back in [onResume]. */
+    private var wasInPip = false
+
+    /**
+     * Set when the floating window is dismissed — the close (X) button and the drag-to-close
+     * gesture stop the activity while it is *still* in PiP ([onStop] with `isInPictureInPictureMode`),
+     * before [onPictureInPictureModeChanged]`(false)`, and it never resumes. A maximize, by
+     * contrast, resumes to fullscreen without a prior stop. This flag keeps a dismissal from taking
+     * the maximize hand-back path.
+     */
+    private var dismissedFromPip = false
+
     private val controlReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
@@ -229,16 +241,16 @@ class VideoPipActivity :
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         if (isInPictureInPictureMode) {
+            wasInPip = true
             // Floating window: the system window draws the controls, so hide our own chrome.
             videoView.setControlsEnabled(false)
             videoView.setContextMenuEnabled(false)
-        } else if (!isFinishing) {
-            // Maximize restores this activity to fullscreen. Rather than expand this standalone
-            // player (whose chrome and state differ from the real players), hand playback back to
-            // the gallery or Flow feed it came from. Closing the window goes straight to
-            // finish()/onDestroy() and never reaches here.
-            reopenInAppFullscreen()
         }
+        // Leaving PiP is *not* decided here: this callback fires for the close (X) button and the
+        // drag-to-dismiss gesture too, and it arrives before the system marks the activity
+        // finishing — so an `!isFinishing` check here would mistake a dismissal for a maximize and
+        // wrongly reopen the app. Only a maximize resumes the paused window back to fullscreen, so
+        // the hand-back is triggered from onResume instead; a dismissal goes to onStop/onDestroy.
     }
 
     /**
@@ -270,16 +282,32 @@ class VideoPipActivity :
 
     override fun onResume() {
         super.onResume()
-        // Launched as a normal fullscreen activity (so maximize has a fullscreen state to restore
-        // to); pop straight into the floating window once, on first resume.
-        if (!initialPipRequested && !isInPictureInPictureMode && !isFinishing) {
-            initialPipRequested = true
-            enterPictureInPictureMode(buildPipParams())
+        if (!initialPipRequested) {
+            // Launched as a normal fullscreen activity (so maximize has a fullscreen state to
+            // restore to); pop straight into the floating window once, on first resume.
+            if (!isInPictureInPictureMode && !isFinishing) {
+                initialPipRequested = true
+                enterPictureInPictureMode(buildPipParams())
+            }
+            return
+        }
+        // Reached fullscreen again after the window had been floating: the only way back to the
+        // foreground is the maximize button (the paused PiP window resumes here). The close button
+        // and drag-to-dismiss instead stop the activity while still floating (see [onStop]) and
+        // never resume, so they just close. Hand playback back to the real gallery/Flow player.
+        if (wasInPip && !dismissedFromPip && !isInPictureInPictureMode && !isFinishing) {
+            reopenInAppFullscreen()
         }
     }
 
     override fun onStop() {
         super.onStop()
+        if (isInPictureInPictureMode) {
+            // Dismissing the floating window (X button or drag-to-close) stops the activity while
+            // it is still in PiP, before onPictureInPictureModeChanged(false). Mark it so the
+            // maximize hand-back in onResume cannot fire — a dismissal must just close.
+            dismissedFromPip = true
+        }
         // Reached when the window is dismissed or hidden (e.g. screen off): never keep playing
         // audio without a visible surface. (While in PiP the activity is merely paused, so
         // playback continues there.)
