@@ -36,6 +36,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -58,6 +59,7 @@ import chan.util.StringUtils
 import chan.util.StringUtils.formatFileSize
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences.configuredFileNewname
 import com.mishiranu.dashchan.content.Preferences.getCaptchaPass
 import com.mishiranu.dashchan.content.Preferences.getPassword
@@ -76,6 +78,7 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.DraftsStorage.AttachmentDraft
 import com.mishiranu.dashchan.content.storage.DraftsStorage.CaptchaDraft
 import com.mishiranu.dashchan.content.storage.DraftsStorage.Companion.getInstance
@@ -206,6 +209,8 @@ class PostingFragment :
     private var personalDataBlock: ViewGroup? = null
     private var textFormatView: ViewGroup? = null
     private var commentEditWatcher: CommentEditWatcher? = null
+    private var commandsButton: ImageView? = null
+    private var commentCommands: List<CommandsStorage.CommandItem> = emptyList()
     private var captchaForm: CaptchaForm? = null
     private var sendButton: Button? = null
     private var attachmentColumnCount = 0
@@ -421,9 +426,21 @@ class PostingFragment :
             ViewGroup.LayoutParams.WRAP_CONTENT,
         )
         commentParent.removeView(commentView)
-        postingLayout.addView(commentView, postingLayout.indexOfChild(commentParent))
+        // Wrap the comment field so a ⌘ button can float over its bottom-right corner. The field
+        // keeps growing via setMinHeight (resizeComment) and the wrapper grows with it.
+        val commentWrapper = FrameLayout(commentView.context)
+        commentWrapper.addView(
+            commentView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+        commandsButton = buildCommandsButton(commentWrapper, density)
+        postingLayout.addView(commentWrapper, postingLayout.indexOfChild(commentParent))
         postingLayout.removeView(commentParent)
         ViewUtils.setNewMargin(checkBoxParent, 0, (4f * density).toInt(), 0, 0)
+        updateCommandsButton()
 
         updatePostingConfiguration(true, false, false)
         MarkupButtonsBuilder(
@@ -508,7 +525,7 @@ class PostingFragment :
 
         captchaInputParentView.addView(sendButton, 0, LinearLayout.LayoutParams.WRAP_CONTENT)
         sendButton.setText(R.string.send)
-        sendButton.setOnClickListener(View.OnClickListener { v: View? -> executeSendPost() })
+        sendButton.setOnClickListener(View.OnClickListener { v: View? -> onSendButtonClick() })
         if (longFooter) {
             (sendButton.getLayoutParams() as LinearLayout.LayoutParams).weight = 2f
             val lastAddWeight = booleanArrayOf(true)
@@ -848,6 +865,7 @@ class PostingFragment :
         personalDataBlock = null
         textFormatView = null
         commentEditWatcher = null
+        commandsButton = null
         captchaForm = null
         sendButton = null
         attachments.clear()
@@ -2181,6 +2199,146 @@ class PostingFragment :
                 commentView.setMinHeight(commentView.getMeasuredHeight() + delta)
             }
         }
+
+    private fun buildCommandsButton(
+        parent: FrameLayout,
+        density: Float,
+    ): ImageView {
+        val context = parent.context
+        val button = ImageView(context)
+        button.setImageResource(R.drawable.ic_command)
+        button.imageTintList = ColorStateList.valueOf(getColor(context, android.R.attr.textColorSecondary))
+        button.setBackgroundResource(
+            getResourceId(context, android.R.attr.selectableItemBackgroundBorderless, 0),
+        )
+        button.contentDescription = getString(R.string.commands)
+        val padding = (8f * density).toInt()
+        button.setPadding(padding, padding, padding, padding)
+        val size = (40f * density).toInt()
+        val params =
+            FrameLayout.LayoutParams(size, size, Gravity.BOTTOM or Gravity.END).apply {
+                val margin = (2f * density).toInt()
+                setMargins(0, 0, margin, margin)
+            }
+        button.visibility = View.GONE
+        button.setOnClickListener { showCommandsPopup(button) }
+        parent.addView(button, params)
+        return button
+    }
+
+    /**
+     * Recomputes which manually-triggered commands apply to the current forum/board and shows or
+     * hides the ⌘ button. Commands set to run on send are handled by [onSendButtonClick] instead and
+     * are intentionally left out of the menu.
+     */
+    private fun updateCommandsButton() {
+        commentCommands =
+            CommandsStorage
+                .getInstance()
+                .getAvailable(CommandsStorage.UseIn.COMMENT, chanName, boardName)
+                .filter { !it.runOnSend }
+        commandsButton?.visibility = if (commentCommands.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun showCommandsPopup(anchor: View) {
+        val commands = commentCommands
+        if (commands.isEmpty()) {
+            return
+        }
+        val popup = PopupMenu(anchor.context, anchor)
+        for (i in commands.indices) {
+            val name = commands[i].name
+            val title = if (StringUtils.isEmpty(name)) getString(R.string.command) else name
+            popup.menu.add(0, i, 0, title)
+        }
+        popup.setOnMenuItemClickListener { item ->
+            runCommand(commands[item.itemId])
+            true
+        }
+        popup.show()
+    }
+
+    private fun runCommand(command: CommandsStorage.CommandItem) {
+        val commentView = commentView ?: return
+        CommandRunner.run(
+            command,
+            commentView.getText().toString(),
+            threadNumber,
+            boardName,
+        ) { result ->
+            // Delivered on the main thread; the view may be gone by the time it arrives.
+            val liveCommentView = this.commentView ?: return@run
+            when (result) {
+                is CommandRunner.Result.Success -> {
+                    val comment = result.comment
+                    if (comment != null) {
+                        liveCommentView.setText(comment)
+                        liveCommentView.setSelection(liveCommentView.getText().length)
+                    }
+                }
+
+                is CommandRunner.Result.Failure -> {
+                    show(getString(R.string.command_failed__format, result.message))
+                }
+            }
+        }
+    }
+
+    /**
+     * Send-button handler. Runs any commands marked "run on send" against the comment first — in
+     * order, each seeing the previous one's output — and only sends once they all succeed. A failing
+     * command aborts the send with a toast so nothing is posted half-transformed.
+     */
+    private fun onSendButtonClick() {
+        val commentView = this.commentView
+        val commands =
+            CommandsStorage
+                .getInstance()
+                .getAvailable(CommandsStorage.UseIn.COMMENT, chanName, boardName)
+                .filter { it.runOnSend }
+        if (commentView == null || commands.isEmpty()) {
+            executeSendPost()
+            return
+        }
+        // Disable the button so the send can't be re-triggered while the chain runs.
+        sendButtonEnabled = false
+        updateSendButtonState()
+        runOnSendChain(commands, 0, commentView.getText().toString())
+    }
+
+    private fun runOnSendChain(
+        commands: List<CommandsStorage.CommandItem>,
+        index: Int,
+        comment: String,
+    ) {
+        if (index >= commands.size) {
+            sendButtonEnabled = true
+            updateSendButtonState()
+            executeSendPost()
+            return
+        }
+        CommandRunner.run(commands[index], comment, threadNumber, boardName) { result ->
+            val liveCommentView = this.commentView
+            if (liveCommentView == null) {
+                sendButtonEnabled = true
+                return@run
+            }
+            when (result) {
+                is CommandRunner.Result.Success -> {
+                    val newComment = result.comment ?: comment
+                    liveCommentView.setText(newComment)
+                    liveCommentView.setSelection(liveCommentView.getText().length)
+                    runOnSendChain(commands, index + 1, newComment)
+                }
+
+                is CommandRunner.Result.Failure -> {
+                    show(getString(R.string.command_failed__format, result.message))
+                    sendButtonEnabled = true
+                    updateSendButtonState()
+                }
+            }
+        }
+    }
 
     private inner class MarkupButtonsBuilder(
         private val addPaddingToRoot: Boolean,

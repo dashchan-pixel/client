@@ -392,4 +392,13 @@
 	<string name="you_cant_send_too_often">Espere antes de postar novamente</string>
 	<string name="you_need_to_attach_a_file">Você precisa de uma imagem</string>
 
+	<string name="command">Comando</string>
+	<string name="command_failed__format">Falha no comando: %s</string>
+	<string name="commands">Comandos</string>
+	<string name="code">Código</string>
+	<string name="new_command">Novo comando</string>
+	<string name="no_commands_defined">Nenhum comando definido</string>
+	<string name="use_in">Usar em</string>
+	<string name="run_before_sending">Executar automaticamente antes de enviar</string>
+	<string name="run_on_send">Ao enviar</string>
 </resources>

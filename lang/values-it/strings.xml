@@ -497,4 +497,13 @@
     <string name="you_cant_send_too_often">Non puoi inviare così spesso</string>
     <string name="you_need_to_attach_a_file">Devi allegare un file</string>
 
+    <string name="command">Comando</string>
+    <string name="command_failed__format">Comando non riuscito: %s</string>
+    <string name="commands">Comandi</string>
+    <string name="code">Codice</string>
+    <string name="new_command">Nuovo comando</string>
+    <string name="no_commands_defined">Nessun comando definito</string>
+    <string name="use_in">Usa in</string>
+    <string name="run_before_sending">Esegui automaticamente prima dell\'invio</string>
+    <string name="run_on_send">All\'invio</string>
 </resources>

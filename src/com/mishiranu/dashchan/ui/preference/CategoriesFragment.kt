@@ -41,6 +41,8 @@ class CategoriesFragment : PreferenceFragment() {
             .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(MediaFragment()) }
         addCategory(R.string.autohide, R.drawable.ic_custom_fork)
             .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(AutohideFragment()) }
+        addCategory(R.string.commands, R.drawable.ic_command)
+            .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(CommandsFragment()) }
         addCategory(R.string.about, R.drawable.ic_info)
             .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(AboutFragment()) }
 

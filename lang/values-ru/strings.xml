@@ -596,4 +596,13 @@
 	<string name="rename_to_jpg">Переименовать в .jpg</string>
 	<string name="standard_action_when_loading_media">Стандартное действие при загрузке медиа</string>
 	<string name="manually">Вручную</string>
+	<string name="command">Команда</string>
+	<string name="command_failed__format">Ошибка команды: %s</string>
+	<string name="commands">Команды</string>
+	<string name="code">Код</string>
+	<string name="new_command">Новая команда</string>
+	<string name="no_commands_defined">Команды не заданы</string>
+	<string name="use_in">Применять к</string>
+	<string name="run_before_sending">Выполнять автоматически перед отправкой</string>
+	<string name="run_on_send">При отправке</string>
 </resources>

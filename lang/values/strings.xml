@@ -81,8 +81,12 @@
 	<string name="close_pages">Close pages</string>
 	<string name="close_pages__summary">Close pages by clicking the \"Back\" button</string>
 	<string name="closed">Closed</string>
+	<string name="code">Code</string>
 	<string name="code_number_address">Code, number, address</string>
 	<string name="comment">Comment</string>
+	<string name="command">Command</string>
+	<string name="command_failed__format">Command failed: %s</string>
+	<string name="commands">Commands</string>
 	<string name="comment_is_too_short">Comment is too short</string>
 	<string name="completed">Completed</string>
 	<string name="completed_downloads">Completed downloads</string>
@@ -273,6 +277,7 @@
 	<string name="new_extensions_installed__sentence">New extensions were installed. Restart required.</string>
 	<string name="new_password_was_generated">A new password was generated</string>
 	<string name="new_post">New post</string>
+	<string name="new_command">New command</string>
 	<string name="new_rule">New rule</string>
 	<string name="new_thread">New thread</string>
 	<string name="night_theme">Night theme</string>
@@ -284,6 +289,7 @@
 	<string name="no_icon">No icon</string>
 	<string name="no_information">No information</string>
 	<string name="no_matches_found">No matches found</string>
+	<string name="no_commands_defined">No commands defined</string>
 	<string name="no_rules_defined">No rules defined</string>
 	<string name="no_video_attachments">No video attachments</string>
 	<string name="not_downloaded">Not downloaded</string>
@@ -420,6 +426,8 @@
 	<string name="restart">Restart</string>
 	<string name="restore_data">Restore data</string>
 	<string name="retry">Retry</string>
+	<string name="run_before_sending">Run automatically before sending</string>
+	<string name="run_on_send">On send</string>
 	<string name="saf_instructions__sentence">You will be directed to the system directory picker where you should pick
 		a directory for downloads.\n\n<b>Don\'t select any directories under default \"Downloads\" section!</b>\n
 		\nInstead, open the storage from the navigation panel. You may need to enable \"Show internal storage\"
@@ -533,6 +541,7 @@
 	<string name="use_built_in_video_player">Use built-in video player</string>
 	<string name="use_built_in_video_player__summary">Play WebM video attachments</string>
 	<string name="use_forum_settings">Use forum settings</string>
+	<string name="use_in">Use in</string>
 	<string name="use_javascript_for_recaptcha">Use JavaScript for reCAPTCHA</string>
 	<string name="use_javascript_for_recaptcha__summary">May simplify Google reCAPTCHA</string>
 	<string name="user_authorization">User authorization</string>
