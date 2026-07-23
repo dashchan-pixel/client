@@ -32,6 +32,8 @@ class ColorScheme(
 
     @JvmField val neuroslopColor: Int = theme.neuroslop
 
+    @JvmField val accentColor: Int = theme.accent
+
     @JvmField val highlightTextColor: Int
 
     @JvmField val highlightBackgroundColor: Int
