@@ -2227,16 +2227,16 @@ class PostingFragment :
     }
 
     /**
-     * Recomputes which manually-triggered commands apply to the current forum/board and shows or
-     * hides the ⌘ button. Commands set to run on send are handled by [onSendButtonClick] instead and
-     * are intentionally left out of the menu.
+     * Recomputes which commands apply to the current forum/board and shows or hides the ⌘ button.
+     * Both manually-triggered and run-on-send commands are kept: the menu lists them all, but
+     * run-on-send ones are shown disabled (they fire automatically from [onSendButtonClick]) so the
+     * user can still see that they exist and apply here.
      */
     private fun updateCommandsButton() {
         commentCommands =
             CommandsStorage
                 .getInstance()
                 .getAvailable(CommandsStorage.UseIn.COMMENT, chanName, boardName)
-                .filter { !it.runOnSend }
         commandsButton?.visibility = if (commentCommands.isEmpty()) View.GONE else View.VISIBLE
     }
 
@@ -2247,9 +2247,14 @@ class PostingFragment :
         }
         val popup = PopupMenu(anchor.context, anchor)
         for (i in commands.indices) {
-            val name = commands[i].name
+            val command = commands[i]
+            val name = command.name
             val title = if (StringUtils.isEmpty(name)) getString(R.string.command) else name
-            popup.menu.add(0, i, 0, title)
+            val item = popup.menu.add(0, i, 0, title)
+            if (command.runOnSend) {
+                // Runs automatically on send; greyed out here rather than hidden.
+                item.isEnabled = false
+            }
         }
         popup.setOnMenuItemClickListener { item ->
             runCommand(commands[item.itemId])
