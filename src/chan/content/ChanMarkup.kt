@@ -2,7 +2,6 @@ package chan.content
 
 import android.annotation.SuppressLint
 import android.text.SpannableString
-import android.text.style.LeadingMarginSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.UnderlineSpan
 import android.util.Pair
@@ -343,6 +342,11 @@ open class ChanMarkup internal constructor(
                         }
                         if (tagItem != null) {
                             tagItem.applyTagData(tagData)
+                            if (tagItem.tag == TAG_AI) {
+                                // Set off the AI answer with a blank line above and below.
+                                tagData.block = true
+                                tagData.spaced = true
+                            }
                             return tagItem
                         }
                         return UNUSED_TAG_ITEM
@@ -791,14 +795,6 @@ open class ChanMarkup internal constructor(
                             styledItem.end,
                             SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
                         )
-                        if (styledItem.tag == TAG_AI) {
-                            spannable.setSpan(
-                                LeadingMarginSpan.Standard(30),
-                                styledItem.start,
-                                styledItem.end,
-                                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
-                            )
-                        }
                     }
                 }
             }
