@@ -223,6 +223,8 @@
     <string name="message_data">Dati messaggio</string>
     <string name="minimize">Minimizza</string>
     <string name="more_themes">Altri temi</string>
+    <string name="multi_tap_seek">Ricerca a tocchi multipli</string>
+    <string name="multi_tap_seek__summary">Tocca due volte per saltare 5 s, poi altri 5 s a ogni tocco rapido successivo (sinistra indietro, destra avanti)</string>
     <string name="multiple_forums">Multiple imageboard</string>
     <string name="my_post">Post mio</string>
     <string name="my_posts">Miei post</string>
@@ -320,6 +322,7 @@
     <string name="play_after_scroll">Riproduci allo scorrimento</string>
     <string name="play_after_scroll__summary">Nascondi pulsante play prima di riprodurre il video</string>
     <string name="play_again">Riproduci nuovamente</string>
+    <string name="playback_speed_options">Opzioni velocità di riproduzione</string>
     <string name="playback_error">Errore riproduzione</string>
     <string name="port">Porta</string>
     <string name="post_is_not_found">Post non trovato</string>

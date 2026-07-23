@@ -233,11 +233,39 @@ class VideoPipActivity :
             videoView.setControlsEnabled(false)
             videoView.setContextMenuEnabled(false)
         } else if (!isFinishing) {
-            // Maximize restores this activity to fullscreen: show its own controls and context menu.
-            // Closing the window goes straight to finish()/onDestroy() and never reaches here.
-            videoView.setControlsEnabled(true)
-            videoView.setContextMenuEnabled(true)
+            // Maximize restores this activity to fullscreen. Rather than expand this standalone
+            // player (whose chrome and state differ from the real players), hand playback back to
+            // the gallery or Flow feed it came from. Closing the window goes straight to
+            // finish()/onDestroy() and never reaches here.
+            reopenInAppFullscreen()
         }
+    }
+
+    /**
+     * Maximizing the floating window returns to the real in-app player — the gallery or the Flow
+     * feed it was launched from — at the current attachment and position, then finishes this
+     * activity. This mirrors the "Gallery" hand-off ([onSwitchToGallery]) but keeps the original
+     * mode instead of always switching to the gallery.
+     */
+    private fun reopenInAppFullscreen() {
+        val chan = chan
+        val item = currentItem
+        if (chan == null || item == null) {
+            finish()
+            return
+        }
+        pendingReopen =
+            Reopen(
+                chan,
+                item,
+                flow = playlist != null,
+                allItems ?: playlist ?: listOf(item),
+                navigatePostMode,
+                threadTitle,
+                videoView.playbackPosition(),
+            )
+        startActivity(Intent(this, MainActivity::class.java).setAction(C.ACTION_VIDEO_PIP))
+        finish()
     }
 
     override fun onResume() {

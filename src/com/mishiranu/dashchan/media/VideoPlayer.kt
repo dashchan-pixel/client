@@ -455,6 +455,10 @@ class VideoPlayer(
                 ?: ExoPlayer.Builder(MainApplication.getInstance()).build()
 
         private fun recyclePooledPlayer(player: ExoPlayer) {
+            // Silence before pausing/stopping: stop() flushes the audio track, and any samples
+            // already queued would otherwise leak a brief audible tail after the video is closed.
+            // A reused player has its volume restored in onReady before it starts playing again.
+            player.volume = 0f
             // A player that hit a playback error is not trusted for reuse.
             if (playerPool.size >= POOL_SIZE || player.playerError != null) {
                 player.release()

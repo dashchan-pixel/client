@@ -112,6 +112,9 @@ class FlowVideoView(
     private var callback: Callback? = null
 
     private var player: VideoPlayer? = null
+
+    // Per-clip playback speed: not persisted, reset to 1× for every new video (see [bind]).
+    private var playbackSpeed = 1f
     private var downloadTask: ReadVideoTask? = null
     private var rangeTask: ReadVideoTask? = null
     private var allowRangeRequests = true
@@ -274,12 +277,8 @@ class FlowVideoView(
     private fun makeSideControlsCallback(): VideoSideControls.Callback =
         object : VideoSideControls.Callback {
             override fun onSpeedClick() {
-                VideoSideControls.showSpeedMenu(
-                    context,
-                    Preferences.effectiveVideoPlaybackSpeed,
-                    Preferences.enabledVideoSpeeds,
-                ) { speed ->
-                    Preferences.videoPlaybackSpeed = speed
+                sideControls.showSpeedPopup(playbackSpeed, Preferences.enabledVideoSpeeds) { speed ->
+                    playbackSpeed = speed
                     player?.setPlaybackSpeed(speed)
                     sideControls.setSpeed(speed)
                 }
@@ -385,7 +384,7 @@ class FlowVideoView(
     }
 
     private fun updateSideControls() {
-        sideControls.setSpeed(Preferences.effectiveVideoPlaybackSpeed)
+        sideControls.setSpeed(playbackSpeed)
         sideControls.setSpeedButtonVisible(Preferences.enabledVideoSpeeds.size > 1)
         sideControls.setMuteState(Preferences.isVideoMuted, player?.isAudioPresent() == true)
         sideControls.setPipButtonVisible(
@@ -411,6 +410,8 @@ class FlowVideoView(
         this.chan = chan
         this.galleryItem = galleryItem
         this.callback = callback
+        // Every new video starts at 1×; a speed the user picked on the previous clip does not carry.
+        playbackSpeed = 1f
         reportedFailure = false
         this.uri = galleryItem.getFileUri(chan)
         coverView.visibility = VISIBLE
@@ -684,7 +685,7 @@ class FlowVideoView(
                 addView(wrapper, 0, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER))
                 // Carry the global mute / playback-speed state onto the freshly-ready player.
                 player.setVolume(if (Preferences.isVideoMuted) 0f else 1f)
-                player.setPlaybackSpeed(Preferences.effectiveVideoPlaybackSpeed)
+                player.setPlaybackSpeed(playbackSpeed)
                 player.setPlaying(active)
                 // The mute button in the side column now reflects the audio state.
                 updateSideControls()

@@ -23,6 +23,7 @@ import com.mishiranu.dashchan.ui.InstanceDialog
 import com.mishiranu.dashchan.ui.gallery.VideoSideControls
 import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
+import com.mishiranu.dashchan.ui.preference.core.VideoSpeedsPreference
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.FilenameUtils
 import com.mishiranu.dashchan.util.IOUtils
@@ -213,25 +214,41 @@ class MediaFragment :
             R.string.multi_tap_seek,
             R.string.multi_tap_seek__summary,
         )
+        // Configurable playback speeds for the player's side-column button (1× is always available;
+        // if none of the optional ones are enabled the button is hidden). A single row opens a
+        // chip dialog rather than one checkbox per speed.
+        addDialogPreference(
+            VideoSpeedsPreference(
+                requireContext(),
+                Preferences.KEY_VIDEO_SPEEDS,
+                getString(R.string.playback_speed_options),
+                // All speeds (the optional ones plus the always-on 1×) in numeric order, so 1× sits
+                // in its natural place among the others rather than being pinned first.
+                (Preferences.VIDEO_SPEED_OPTIONS + 1f).sorted().map { speed ->
+                    VideoSpeedsPreference.Entry(
+                        Preferences.videoSpeedToken(speed),
+                        VideoSideControls.formatSpeed(speed),
+                        alwaysOn = speed == 1f,
+                    )
+                },
+                Preferences.defaultVideoSpeedTokens,
+            ) { p ->
+                val tokens = p.value ?: Preferences.defaultVideoSpeedTokens
+                val speeds =
+                    (
+                        listOf(1f) +
+                            Preferences.VIDEO_SPEED_OPTIONS.filter {
+                                Preferences.videoSpeedToken(it) in tokens
+                            }
+                    ).sorted()
+                speeds.joinToString(", ") { VideoSideControls.formatSpeed(it) }
+            },
+        )
         addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_VIDEO_PLAYER, true)
         addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_VIDEO_PLAYER, true)
         addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_VIDEO_PLAYER, true)
         addDependency(Preferences.KEY_VIDEO_MULTI_TAP_SEEK, Preferences.KEY_USE_VIDEO_PLAYER, true)
-
-        // Configurable playback speeds for the player's side-column button (1x is always available;
-        // if none of these are enabled the button is hidden).
-        addHeader(R.string.playback_speed_options)
-        for (speed in Preferences.VIDEO_SPEED_OPTIONS) {
-            val key = Preferences.videoSpeedKey(speed)
-            addCheck(
-                true,
-                key,
-                Preferences.videoSpeedDefaultEnabled(speed),
-                VideoSideControls.formatSpeed(speed),
-                null,
-            )
-            addDependency(key, Preferences.KEY_USE_VIDEO_PLAYER, true)
-        }
+        addDependency(Preferences.KEY_VIDEO_SPEEDS, Preferences.KEY_USE_VIDEO_PLAYER, true)
 
         addHeader(R.string.additional)
         addSeek(

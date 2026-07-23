@@ -6,9 +6,9 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
 import java.util.Locale
@@ -115,21 +115,36 @@ class VideoSideControls(
         pipButton.contentDescription = context.getString(R.string.picture_in_picture)
     }
 
-    companion object {
-        /** Pop up the playback-speed chooser over [speeds], invoking [onSelect] with the picked one. */
-        fun showSpeedMenu(
-            context: Context,
-            current: Float,
-            speeds: List<Float>,
-            onSelect: (Float) -> Unit,
-        ) {
-            val menu = DialogMenu(context)
-            menu.setTitle(context.getString(R.string.playback_speed))
-            for (speed in speeds) {
-                menu.addCheck(formatSpeed(speed), abs(speed - current) < 0.001f) { onSelect(speed) }
-            }
-            menu.create().show()
+    /**
+     * Show the playback-speed chooser as a small single-choice popup anchored to the speed button
+     * (it drops up from the player's bottom edge). [current] is pre-selected; [onSelect] fires with
+     * the picked speed. A [PopupMenu] attaches to the anchor's window, so it works from the gallery's
+     * token-less base context where an [android.app.AlertDialog] would throw a BadTokenException.
+     */
+    fun showSpeedPopup(
+        current: Float,
+        speeds: List<Float>,
+        onSelect: (Float) -> Unit,
+    ) {
+        val popup = PopupMenu(context, speedButton, Gravity.END)
+        speeds.forEachIndexed { index, speed ->
+            popup.menu.add(SPEED_GROUP, index, index, formatSpeed(speed))
         }
+        // Exclusive checkable group = radio behaviour, with the current speed marked.
+        popup.menu.setGroupCheckable(SPEED_GROUP, true, true)
+        val currentIndex = speeds.indexOfFirst { abs(it - current) < 0.001f }
+        if (currentIndex >= 0) {
+            popup.menu.getItem(currentIndex).isChecked = true
+        }
+        popup.setOnMenuItemClickListener { item ->
+            onSelect(speeds[item.itemId])
+            true
+        }
+        popup.show()
+    }
+
+    companion object {
+        private const val SPEED_GROUP = 1
 
         fun formatSpeed(speed: Float): String {
             val text =
@@ -139,7 +154,7 @@ class VideoSideControls(
                     // Trim to one decimal place (0.5, 1.5) without a trailing zero.
                     String.format(Locale.US, "%.2f", speed).trimEnd('0').trimEnd('.')
                 }
-            return "$text×"
+            return text + "x"
         }
     }
 }

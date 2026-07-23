@@ -1697,21 +1697,8 @@ object Preferences {
             prefs.edit().put(KEY_VIDEO_MUTED, value).close()
         }
 
-    const val KEY_VIDEO_PLAYBACK_SPEED: String = "video_playback_speed"
-    const val DEFAULT_VIDEO_PLAYBACK_SPEED: Float = 1f
-
-    // Global playback-speed multiplier, shared across the video players like the mute state.
-    @JvmStatic
-    var videoPlaybackSpeed: Float
-        get() =
-            prefs.getFloat(
-                KEY_VIDEO_PLAYBACK_SPEED,
-                DEFAULT_VIDEO_PLAYBACK_SPEED,
-            )
-        set(value) {
-            prefs.edit().put(KEY_VIDEO_PLAYBACK_SPEED, value).close()
-        }
-
+    // Playback speed is not persisted: every new video starts at 1×, and a speed the user picks
+    // mid-clip lives only on that clip's player. Only the *set of offered* speeds is stored (below).
     const val KEY_VIDEO_MULTI_TAP_SEEK: String = "video_multi_tap_seek"
     const val DEFAULT_VIDEO_MULTI_TAP_SEEK: Boolean = false
 
@@ -1726,18 +1713,33 @@ object Preferences {
 
     // The playback speeds the user can toggle on/off in settings. 1x is always available and is
     // never stored as a toggle; the rest default to a compact set that keeps the button useful.
-    val VIDEO_SPEED_OPTIONS: List<Float> = listOf(0.5f, 0.75f, 1.25f, 1.5f, 2f)
+    // The enabled optional speeds are stored together as a set of stable tokens under
+    // KEY_VIDEO_SPEEDS, edited through the settings ChipGroup dialog (VideoSpeedsPreference).
+    const val KEY_VIDEO_SPEEDS: String = "video_speeds"
+    val VIDEO_SPEED_OPTIONS: List<Float> =
+        listOf(0.25f, 0.5f, 0.75f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f)
 
+    /** Stable, locale-independent token identifying a speed in the stored set (e.g. 1.5 -> "150"). */
     @JvmStatic
-    fun videoSpeedKey(speed: Float): String = "video_speed_" + Math.round(speed * 100)
+    fun videoSpeedToken(speed: Float): String = Math.round(speed * 100).toString()
 
+    /** Optional speeds enabled out of the box; 1x is always on and never part of the set. */
     @JvmStatic
-    fun videoSpeedDefaultEnabled(speed: Float): Boolean = speed == 0.5f || speed == 1.5f || speed == 2f
+    val defaultVideoSpeedTokens: Set<String> =
+        setOf(0.5f, 1.5f, 2f).mapTo(HashSet()) { videoSpeedToken(it) }
+
+    /** Tokens of the currently enabled optional speeds (1x excluded, always implied). */
+    @JvmStatic
+    var enabledVideoSpeedTokens: Set<String>
+        get() = prefs.getStringSet(KEY_VIDEO_SPEEDS, defaultVideoSpeedTokens) ?: defaultVideoSpeedTokens
+        set(value) {
+            prefs.edit().put(KEY_VIDEO_SPEEDS, value).close()
+        }
 
     @JvmStatic
     fun isVideoSpeedEnabled(speed: Float): Boolean =
         speed == 1f ||
-            (speed in VIDEO_SPEED_OPTIONS && prefs.getBoolean(videoSpeedKey(speed), videoSpeedDefaultEnabled(speed)))
+            (speed in VIDEO_SPEED_OPTIONS && videoSpeedToken(speed) in enabledVideoSpeedTokens)
 
     /** Enabled playback speeds in ascending order, always including 1x. */
     @JvmStatic
@@ -1752,11 +1754,6 @@ object Preferences {
             list.sort()
             return list
         }
-
-    /** The stored speed, or 1x when it has since been disabled in settings. */
-    @JvmStatic
-    val effectiveVideoPlaybackSpeed: Float
-        get() = videoPlaybackSpeed.takeIf { isVideoSpeedEnabled(it) } ?: 1f
 
     const val KEY_WATCHER_REFRESH_INTERVAL: String = "watcher_refresh_interval"
     const val DISABLED_WATCHER_REFRESH_INTERVAL: Int = 0

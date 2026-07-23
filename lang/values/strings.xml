@@ -444,7 +444,7 @@
 	<string name="seek_any_frame">Seek any frame</string>
 	<string name="seek_any_frame__summary">Increases accuracy but lowers performance</string>
 	<string name="multi_tap_seek">Multi-tap seek</string>
-	<string name="multi_tap_seek__summary">Double-tap to skip 5 s, then 10 s and 20 s on further quick taps (left rewinds, right fast-forwards)</string>
+	<string name="multi_tap_seek__summary">Double-tap to skip 5 s, then 5 s more on each further quick tap (left rewinds, right fast-forwards)</string>
 	<string name="playback_speed_options">Playback speed options</string>
 	<string name="select">Select</string>
 	<string name="select_all">Select all</string>
