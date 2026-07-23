@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui.posting
 
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.DialogInterface
@@ -18,6 +19,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.text.TextUtils
 import android.util.Pair
+import android.view.DragEvent
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
@@ -210,6 +212,8 @@ class PostingFragment :
 
     private val attachments = ArrayList<AttachmentHolder>()
 
+    private var attachmentReordered = false
+
     private var allowDialog = true
     private var sendButtonEnabled = true
 
@@ -308,7 +312,10 @@ class PostingFragment :
         this.iconView = iconView
         val personalDataBlock = view.findViewById<ViewGroup>(R.id.personal_data_block)
         this.personalDataBlock = personalDataBlock
-        this.attachmentContainer = view.findViewById<LinearLayout>(R.id.attachment_container)
+        this.attachmentContainer =
+            view.findViewById<LinearLayout>(R.id.attachment_container).also {
+                it.setOnDragListener(attachmentDragListener)
+            }
         val footerContainer = view.findViewById<FrameLayout>(R.id.footer_container)
         val oldScrollViewHeight = intArrayOf(-1)
         scrollView.addOnLayoutChangeListener(
@@ -1761,6 +1768,81 @@ class PostingFragment :
             }
         }
 
+    private val attachmentDragStartListener =
+        View.OnLongClickListener { v: View ->
+            val holder = v.getTag() as? AttachmentHolder
+            if (holder == null || attachments.size < 2) {
+                false
+            } else {
+                holder.view.startDragAndDrop(
+                    ClipData.newPlainText("", ""),
+                    View.DragShadowBuilder(holder.view),
+                    holder,
+                    0,
+                )
+                true
+            }
+        }
+
+    private val attachmentDragListener =
+        View.OnDragListener { _: View, event: DragEvent ->
+            when (event.getAction()) {
+                DragEvent.ACTION_DRAG_STARTED -> {
+                    attachmentReordered = false
+                    (event.getLocalState() as? AttachmentHolder)?.view?.setAlpha(0.4f)
+                    true
+                }
+
+                DragEvent.ACTION_DRAG_LOCATION -> {
+                    val holder = event.getLocalState() as? AttachmentHolder
+                    if (holder != null) {
+                        val from = attachments.indexOf(holder)
+                        val to = findAttachmentIndexAt(event.getX(), event.getY())
+                        if (from >= 0 && to >= 0 && to != from) {
+                            attachments.removeAt(from)
+                            attachments.add(to, holder)
+                            invalidateAttachments(true)
+                            attachmentReordered = true
+                        }
+                    }
+                    true
+                }
+
+                DragEvent.ACTION_DRAG_ENDED -> {
+                    for (holder in attachments) {
+                        holder.view.setAlpha(1f)
+                    }
+                    if (attachmentReordered) {
+                        attachmentReordered = false
+                        getInstance().store(obtainPostDraft())
+                    }
+                    true
+                }
+
+                else -> true
+            }
+        }
+
+    private fun findAttachmentIndexAt(
+        x: Float,
+        y: Float,
+    ): Int {
+        val container = attachmentContainer ?: return -1
+        val rect = Rect()
+        for (i in attachments.indices) {
+            val view = attachments[i].view
+            if (view.getParent() == null) {
+                continue
+            }
+            rect.set(0, 0, view.getWidth(), view.getHeight())
+            container.offsetDescendantRectToMyCoords(view, rect)
+            if (x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) {
+                return i
+            }
+        }
+        return -1
+    }
+
     private fun invalidateAttachments(clearContainer: Boolean) {
         if (clearContainer) {
             attachmentContainer!!.removeAllViews()
@@ -1856,6 +1938,7 @@ class PostingFragment :
         val options = View(view.getContext())
         setSelectableItemBackground(options)
         options.setOnClickListener(attachmentOptionsListener)
+        options.setOnLongClickListener(attachmentDragStartListener)
         view.addView(
             options,
             FrameLayout.LayoutParams.MATCH_PARENT,
