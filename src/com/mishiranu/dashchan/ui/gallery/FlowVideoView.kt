@@ -264,7 +264,7 @@ class FlowVideoView(
 
                     override fun onLongPress(e: MotionEvent) {
                         longPressed = true
-                        if (contextMenuEnabled) {
+                        if (contextMenuEnabled && !ViewUtils.isInBottomGestureRegion(this@FlowVideoView, e.getY())) {
                             displayContextMenu()
                         }
                     }

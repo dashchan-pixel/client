@@ -92,6 +92,18 @@ object ViewUtils {
         return false
     }
 
+    // The bottom home-handle strip is where the system's Circle to Search / Lens long-press
+    // gesture lives. Touches there should not also trigger our own long-press actions.
+    @JvmStatic
+    fun isInBottomGestureRegion(
+        view: View,
+        y: Float,
+    ): Boolean {
+        val windowInsets = view.rootWindowInsets ?: return false
+        val bottom = windowInsets.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom
+        return bottom > 0 && y >= view.height - bottom
+    }
+
     @JvmStatic
     fun setTextSizeScaled(
         textView: TextView,

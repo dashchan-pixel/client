@@ -25,6 +25,7 @@ import android.widget.Scroller
 import com.mishiranu.dashchan.graphics.TransparentTileDrawable
 import com.mishiranu.dashchan.util.AnimationUtils
 import com.mishiranu.dashchan.util.AnimationUtils.lerp
+import com.mishiranu.dashchan.util.ViewUtils
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.max
@@ -467,6 +468,9 @@ class PhotoView(
 
     private fun onLongPress(e: MotionEvent) {
         seekLongPressed = true
+        if (ViewUtils.isInBottomGestureRegion(this, e.getY())) {
+            return
+        }
         listener?.onLongClick(this, e.getX(), e.getY())
     }
 
