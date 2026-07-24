@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.ui.gallery
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.view.Gravity
 import android.view.View
 import android.widget.ImageButton
@@ -9,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.graphics.IconShadowDrawable
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
 import java.util.Locale
@@ -32,6 +34,11 @@ class VideoSideControls(
         fun onPipClick()
     }
 
+    private val density = ResourceUtils.obtainDensity(context)
+
+    /** Blur radius of the halo that keeps the white glyphs legible over light video frames. */
+    private val shadowRadius = SHADOW_RADIUS_DP * density
+
     private val speedButton: TextView
     private val muteButton: ImageButton
     private val pipButton: ImageButton
@@ -39,12 +46,12 @@ class VideoSideControls(
     init {
         orientation = VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
-        val density = ResourceUtils.obtainDensity(context)
         val size = (48f * density).toInt()
 
         speedButton = TextView(context, null, android.R.attr.borderlessButtonStyle)
         speedButton.gravity = Gravity.CENTER
         speedButton.setTextColor(0xffffffff.toInt())
+        speedButton.setShadowLayer(shadowRadius, 0f, 0f, SHADOW_COLOR)
         speedButton.typeface = ResourceUtils.TYPEFACE_MEDIUM
         ViewUtils.setTextSizeScaled(speedButton, 14)
         speedButton.setOnClickListener { callback.onSpeedClick() }
@@ -73,6 +80,12 @@ class VideoSideControls(
         return button
     }
 
+    /** Set an icon wrapped in a [IconShadowDrawable] so it stays visible on light backgrounds. */
+    private fun ImageButton.setShadowedIcon(resId: Int) {
+        val icon: Drawable = requireNotNull(context.getDrawable(resId)).mutate()
+        setImageDrawable(IconShadowDrawable(icon, shadowRadius, SHADOW_COLOR))
+    }
+
     fun setSpeed(speed: Float) {
         speedButton.text = formatSpeed(speed)
     }
@@ -91,12 +104,12 @@ class VideoSideControls(
         audioPresent: Boolean,
     ) {
         if (!audioPresent) {
-            muteButton.setImageResource(R.drawable.ic_volume_off)
+            muteButton.setShadowedIcon(R.drawable.ic_volume_off)
             muteButton.imageAlpha = 0x66
             muteButton.isEnabled = false
             muteButton.contentDescription = context.getString(R.string.mute)
         } else {
-            muteButton.setImageResource(
+            muteButton.setShadowedIcon(
                 if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume_up,
             )
             muteButton.imageAlpha = 0xff
@@ -111,7 +124,7 @@ class VideoSideControls(
     }
 
     init {
-        pipButton.setImageResource(R.drawable.ic_picture_in_picture)
+        pipButton.setShadowedIcon(R.drawable.ic_picture_in_picture)
         pipButton.contentDescription = context.getString(R.string.picture_in_picture)
     }
 
@@ -145,6 +158,10 @@ class VideoSideControls(
 
     companion object {
         private const val SPEED_GROUP = 1
+
+        /** Soft dark halo behind the white glyphs, so they read on light video frames. */
+        private const val SHADOW_RADIUS_DP = 3.5f
+        private const val SHADOW_COLOR = 0xcc000000.toInt()
 
         fun formatSpeed(speed: Float): String {
             val text =
