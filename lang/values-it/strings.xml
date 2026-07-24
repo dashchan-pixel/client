@@ -119,6 +119,7 @@
     <string name="downloading_number_of_number__format">Download in corso: %1$d di %2$d</string>
     <string name="downloads">Download</string>
     <string name="draft_saved">Bozza salvata</string>
+    <string name="edit__ellipsis">Modifica…</string>
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
     <string name="enter_valid_data">Inserisci un dato valido</string>
@@ -503,11 +504,13 @@
     <string name="command">Comando</string>
     <string name="command_failed__format">Comando non riuscito: %s</string>
     <string name="commands">Comandi</string>
+    <string name="command_no_changes">Il comando non ha apportato modifiche</string>
     <string name="code">Codice</string>
     <string name="new_command">Nuovo comando</string>
     <string name="add_command">Aggiungi comando</string>
     <string name="no_commands_defined">Nessun comando definito</string>
     <string name="use_in">Usa in</string>
     <string name="run_before_sending">Esegui automaticamente prima dell\'invio</string>
+    <string name="run_when_thread_opens">Esegui automaticamente all\'apertura del thread</string>
     <string name="auto_run">Automatico</string>
 </resources>

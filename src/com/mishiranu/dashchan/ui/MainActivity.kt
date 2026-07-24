@@ -806,6 +806,10 @@ class MainActivity :
         navigateFragment(fragment, null, true)
     }
 
+    override fun navigateCommands() {
+        navigateFragment(CommandsFragment(), null, true)
+    }
+
     override fun scrollToPost(
         chanName: String?,
         boardName: String?,

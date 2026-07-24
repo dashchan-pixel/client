@@ -46,6 +46,7 @@ import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.formatThreadTitle
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.HidePerformer
 import com.mishiranu.dashchan.content.HidePerformer.AddResult
 import com.mishiranu.dashchan.content.Preferences
@@ -72,6 +73,7 @@ import com.mishiranu.dashchan.content.model.PostNumber.Companion.parseNullable
 import com.mishiranu.dashchan.content.service.PostingService.Companion.consumeNewPostData
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.service.WatcherService.Session.Callback.ConsumeReplies
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.Companion.getInstance
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.FavoriteItem
@@ -872,6 +874,7 @@ class PostsPage :
         contentsMenu.add(0, R.id.menu_clear_old, 0, R.string.clear_old)
         contentsMenu.add(0, R.id.menu_clear_deleted, 0, R.string.clear_deleted)
         menu.add(0, R.id.menu_summary, 0, R.string.summary)
+        menu.addSubMenu(0, R.id.menu_commands, 0, R.string.commands)
         menu.add(0, R.id.menu_hidden_posts, 0, R.string.hidden_posts)
         menu.addSubMenu(0, R.id.menu_appearance, 0, R.string.appearance)
         menu.add(0, R.id.menu_star_text, 0, R.string.add_to_favorites)
@@ -899,6 +902,7 @@ class PostsPage :
         menu.findItem(R.id.menu_clear_old).setVisible(adapter.hasOldPosts())
         menu.findItem(R.id.menu_clear_deleted).setVisible(adapter.hasDeletedPosts())
         menu.findItem(R.id.menu_hidden_posts).setVisible(hidePerformer.hasLocalFilters())
+        prepareThreadCommandsMenu(menu.findItem(R.id.menu_commands))
         val isFavorite =
             FavoritesStorage.getInstance().hasFavorite(
                 page.chanName,
@@ -922,6 +926,10 @@ class PostsPage :
     public override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val page = getPage()
         val adapter = this.adapter
+        if (item.getGroupId() == COMMANDS_GROUP) {
+            availableThreadCommands().getOrNull(item.getItemId())?.let { runThreadCommand(it) }
+            return true
+        }
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_add_post) {
             uiManager.navigator()!!.navigatePosting(
@@ -986,6 +994,9 @@ class PostsPage :
             return true
         } else if (switchItemId0 == R.id.menu_summary) {
             showSummaryDialog(fragmentManager)
+            return true
+        } else if (switchItemId0 == R.id.menu_edit_commands) {
+            uiManager.navigator()?.navigateCommands()
             return true
         } else if (switchItemId0 == R.id.menu_hidden_posts) {
             val localFilters = hidePerformer.getReadableLocalFilters(context)
@@ -2028,6 +2039,131 @@ class PostsPage :
 
         updateOptionsMenu()
         cancelProgressIfNecessary()
+        autoRunThreadCommands()
+    }
+
+    /** Thread commands ([CommandsStorage.UseIn.THREAD]) scoped to this thread's forum/board. */
+    private fun availableThreadCommands(): List<CommandsStorage.CommandItem> {
+        val page = getPage()
+        return CommandsStorage
+            .getInstance()
+            .getAvailable(CommandsStorage.UseIn.THREAD, page.chanName, page.boardName)
+    }
+
+    /**
+     * Fills the thread menu's Commands submenu with the commands available here, hiding the whole entry
+     * when there are none. Auto-run commands are listed but disabled — they fire when the thread opens
+     * and can't be triggered by hand. Item ids are indexes into [availableThreadCommands]; a trailing
+     * entry in its own group (hence the divider) opens the Commands screen for editing, which a submenu
+     * item can't offer on a long tap the way the posting screen's dropdown does.
+     */
+    private fun prepareThreadCommandsMenu(item: MenuItem) {
+        val commands = availableThreadCommands()
+        item.setVisible(commands.isNotEmpty())
+        val subMenu = item.getSubMenu() ?: return
+        subMenu.clear()
+        subMenu.setGroupDividerEnabled(true)
+        commands.forEachIndexed { index, command ->
+            val name = command.name
+            val title = if (name.isNullOrEmpty()) getString(R.string.command) else name
+            subMenu.add(COMMANDS_GROUP, index, index, title).setEnabled(!command.autoRun)
+        }
+        subMenu.add(0, R.id.menu_edit_commands, commands.size, R.string.edit__ellipsis)
+    }
+
+    /** The thread a command runs in, as the `thread` object handed to the script. */
+    private fun threadCommandThread(): CommandRunner.ThreadInfo? {
+        val threadNumber = getPage().threadNumber ?: return null
+        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
+        return CommandRunner.ThreadInfo(threadNumber, nullIfEmpty(parcelableExtra.threadTitle))
+    }
+
+    /** The board a command runs in, as the `board` object handed to the script. */
+    private fun threadCommandBoard(): CommandRunner.BoardInfo? {
+        val boardName = getPage().boardName ?: return null
+        return CommandRunner.BoardInfo(boardName, chan.configuration.getBoardTitle(boardName))
+    }
+
+    /**
+     * Snapshots the currently loaded posts as the `posts` array handed to a thread command. Comments go
+     * out as markup (what "Copy markup" yields), not as the rendered text.
+     */
+    private fun collectThreadPosts(): List<CommandRunner.ThreadPost> {
+        val chan = this.chan
+        val posts = ArrayList<CommandRunner.ThreadPost>()
+        for (postItem in adapter) {
+            val post = postItem.getPost()
+            posts.add(
+                CommandRunner.ThreadPost(
+                    postItem.getPostNumber().toString(),
+                    nullIfEmpty(post.name),
+                    nullIfEmpty(post.email),
+                    post.icons.firstOrNull()?.title,
+                    nullIfEmpty(post.subject),
+                    postItem.getCommentMarkup(chan),
+                ),
+            )
+        }
+        return posts
+    }
+
+    /**
+     * Runs the auto-run thread commands against the currently loaded posts. Called after every extract,
+     * so freshly loaded/refreshed posts get transformed too (e.g. re-decrypted). Spawns no JS engine
+     * when the user has no auto-run thread commands, so it costs nothing for everyone else.
+     */
+    private fun autoRunThreadCommands() {
+        for (command in availableThreadCommands().filter { it.autoRun }) {
+            runThreadCommand(command, notifyEmpty = false)
+        }
+    }
+
+    /**
+     * Runs [command] over the thread's posts and applies its inline replacements to the displayed
+     * comments. [notifyEmpty] toasts when a manual run changed nothing, so the user gets feedback that
+     * it ran; auto-runs stay silent.
+     */
+    private fun runThreadCommand(
+        command: CommandsStorage.CommandItem,
+        notifyEmpty: Boolean = true,
+    ) {
+        val posts = collectThreadPosts()
+        CommandRunner.runThread(command, posts, threadCommandThread(), threadCommandBoard()) { result ->
+            // Delivered on the main thread; the page may have been left by the time it arrives.
+            if (!isRunning) {
+                return@runThread
+            }
+            when (result) {
+                is CommandRunner.ThreadResult.Success -> {
+                    val changed = applyThreadReplacements(result.replacements)
+                    if (changed == 0 && notifyEmpty) {
+                        show(R.string.command_no_changes)
+                    }
+                }
+
+                is CommandRunner.ThreadResult.Failure -> {
+                    show(getString(R.string.command_failed__format, result.message))
+                }
+            }
+        }
+    }
+
+    /**
+     * Applies a thread command's [replacements] (post number → text) to the loaded posts, overriding
+     * the displayed comment of matching posts and clearing any override on the rest, then rebinds.
+     * Returns how many posts were overridden.
+     */
+    private fun applyThreadReplacements(replacements: Map<String, String>): Int {
+        var changed = 0
+        for (postItem in adapter) {
+            val replacement = replacements[postItem.getPostNumber().toString()]
+            postItem.setCommentOverride(replacement)
+            if (replacement != null) {
+                changed++
+            }
+        }
+        notifyAllAdaptersChanged()
+        return changed
     }
 
     private fun initializeImportantPostsMarksFastScrollBarDecoration(
@@ -2445,6 +2581,9 @@ class PostsPage :
     }
 
     companion object {
+        /** Group of the Commands submenu's items, which carry indexes rather than `R.id` values. */
+        private const val COMMANDS_GROUP = 1
+
         private fun showEraseDialog(fragmentManager: FragmentManager) {
             InstanceDialog(
                 fragmentManager,

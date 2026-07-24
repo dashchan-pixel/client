@@ -9,11 +9,11 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /**
- * User-defined scripts ("Commands") that transform the content of a posting form before it is sent.
- * A command carries a name, a body of JavaScript [code] and a target ([useIn]) that decides which
- * field it operates on — currently only [UseIn.COMMENT]. Like Autohide rules a command can be scoped
- * to specific forums ([chanNames], `null`/empty means every forum) and optionally to a single board
- * ([boardName]).
+ * User-defined scripts ("Commands"). A command carries a name, a body of JavaScript [code] and a
+ * target ([useIn]) that decides what it operates on: [UseIn.COMMENT] transforms the text of a posting
+ * form before it is sent, while [UseIn.THREAD] reads the posts of a thread being viewed and produces
+ * some text to show back. Like Autohide rules a command can be scoped to specific forums ([chanNames],
+ * `null`/empty means every forum) and optionally to a single board ([boardName]).
  *
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
@@ -198,6 +198,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         val key: String,
     ) {
         COMMENT("comment"),
+        THREAD("thread"),
         ;
 
         companion object {
@@ -219,7 +220,11 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
         @JvmField var useIn: UseIn = UseIn.COMMENT
 
-        /** When true the command runs automatically before sending, instead of from the ⌘ menu. */
+        /**
+         * When true the command runs automatically rather than on demand from a menu: a
+         * [UseIn.COMMENT] command runs before sending, a [UseIn.THREAD] command runs when the thread
+         * is opened.
+         */
         @JvmField var autoRun = false
 
         constructor()

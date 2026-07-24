@@ -142,6 +142,7 @@
 	<string name="downloading_number_of_number__format">Загрузка %1$d из %2$d</string>
 	<string name="downloads">Загрузки</string>
 	<string name="draft_saved">Черновик сохранён</string>
+	<string name="edit__ellipsis">Изменить…</string>
 	<string name="empty_response">Пустой ответ сервера</string>
 	<string name="enabled">Включено</string>
 	<string name="enter_valid_data">Введите корректные данные</string>
@@ -601,11 +602,13 @@
 	<string name="command">Команда</string>
 	<string name="command_failed__format">Ошибка команды: %s</string>
 	<string name="commands">Команды</string>
+	<string name="command_no_changes">Команда ничего не изменила</string>
 	<string name="code">Код</string>
 	<string name="new_command">Новая команда</string>
 	<string name="add_command">Добавить команду</string>
 	<string name="no_commands_defined">Команды не заданы</string>
 	<string name="use_in">Применять к</string>
 	<string name="run_before_sending">Выполнять автоматически перед отправкой</string>
+	<string name="run_when_thread_opens">Выполнять автоматически при открытии треда</string>
 	<string name="auto_run">Автозапуск</string>
 </resources>

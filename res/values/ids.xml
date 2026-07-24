@@ -32,6 +32,8 @@
 	<item type="id" name="menu_make_home_page" />
 	<item type="id" name="menu_make_threadshot" />
 	<item type="id" name="menu_add_command" />
+	<item type="id" name="menu_commands" />
+	<item type="id" name="menu_edit_commands" />
 	<item type="id" name="menu_environment" />
 	<item type="id" name="button1" />
 	<item type="id" name="button2" />

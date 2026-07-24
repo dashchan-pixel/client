@@ -89,6 +89,7 @@
 	<string name="download_files">Baixar arquivos</string>
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
+	<string name="edit__ellipsis">Editar…</string>
 	<string name="empty_response">Resposta vazia</string>
 	<string name="enter_valid_data">Entre dados válidos</string>
 	<string name="ephemeral_browsing">Modo anônimo</string>
@@ -398,11 +399,13 @@
 	<string name="command">Comando</string>
 	<string name="command_failed__format">Falha no comando: %s</string>
 	<string name="commands">Comandos</string>
+	<string name="command_no_changes">O comando não fez alterações</string>
 	<string name="code">Código</string>
 	<string name="new_command">Novo comando</string>
 	<string name="add_command">Adicionar comando</string>
 	<string name="no_commands_defined">Nenhum comando definido</string>
 	<string name="use_in">Usar em</string>
 	<string name="run_before_sending">Executar automaticamente antes de enviar</string>
+	<string name="run_when_thread_opens">Executar automaticamente ao abrir o fio</string>
 	<string name="auto_run">Automático</string>
 </resources>

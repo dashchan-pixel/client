@@ -17,6 +17,7 @@ The **main app** of the Dashchan rework — an Android imageboard browser that d
 - `media/VideoPlayer.kt` — Media3 (ExoPlayer) facade; keeps the old partial-file streaming model via a custom `DataSource`. Replaced the retired ffmpeg JNI player + Webm `.so` extension.
 - `chan/http/**` — networking on **OkHttp 5**, keeping the old chan HTTP API shape. Kept: manual redirect policy, single-connection throttling, `FirewallResolver` (Cloudflare/anti-DDoS). Removed: custom sockets, WebSocket, GMS hacks.
 - `res/**` — **density-qualified folders are intentionally gone**: every bitmap has been redrawn as a `<vector>` in plain `res/drawable/`, so there is nothing to bucket. Add new icons as vectors; don't reintroduce `drawable-*dpi/` PNGs. The launcher lives in `res/mipmap-anydpi/` (no `-v26` — adaptive icons are unconditional at minSdk 36).
+- `lang/values*/strings.xml` — user-facing strings. **Every new string must be translated in the same change**, not left for later: add it to `lang/values/` *and* to `values-ru`, `values-it`, `values-pt-rBR`. Keep the alphabetical order of each file, and reuse the wording an existing string already established for the same concept (e.g. ru "Тред", pt-rBR "Fio" for *thread*).
 
 ## Git / workflow
 

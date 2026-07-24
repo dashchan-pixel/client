@@ -88,6 +88,7 @@ class PostItem private constructor(
 
     private var subject: String? = null
     private var comment: CharSequence? = null
+    private var commentOverride: CharSequence? = null
     private var fullName: CharSequence? = null
     private var commentSpans: Array<ColorScheme.Span>? = null
     private var fullNameSpans: Array<ColorScheme.Span>? = null
@@ -304,26 +305,55 @@ class PostItem private constructor(
     fun getComment(chan: Chan): CharSequence {
         var comment = this.comment
         if (comment == null) {
-            comment =
-                obtainComment(
-                    post.comment,
-                    chan.markup,
-                    getThreadNumber(),
-                    getOriginalPostNumber(),
-                    this,
-                )
-            comment = StringUtils.reduceEmptyLines(comment)
-            commentSpans = ColorScheme.getSpans(comment)
-            linkSpans = (comment as? Spanned)?.getSpans(0, comment.length, LinkSpan::class.java)
-            linkSuffixSpans =
-                (comment as? Spanned)?.getSpans(
-                    0,
-                    comment.length,
-                    LinkSuffixSpan::class.java,
-                )
-            this.comment = comment
+            val override = commentOverride
+            if (override != null) {
+                // Inline override from a thread command: plain text, so it carries no colour/link
+                // spans and the cached span arrays stay null (cleared in setCommentOverride).
+                comment = override
+                this.comment = comment
+            } else {
+                comment =
+                    obtainComment(
+                        post.comment,
+                        chan.markup,
+                        getThreadNumber(),
+                        getOriginalPostNumber(),
+                        this,
+                    )
+                comment = StringUtils.reduceEmptyLines(comment)
+                commentSpans = ColorScheme.getSpans(comment)
+                linkSpans = (comment as? Spanned)?.getSpans(0, comment.length, LinkSpan::class.java)
+                linkSuffixSpans =
+                    (comment as? Spanned)?.getSpans(
+                        0,
+                        comment.length,
+                        LinkSuffixSpan::class.java,
+                    )
+                this.comment = comment
+            }
         }
         return comment
+    }
+
+    /**
+     * Replaces this post's rendered comment with [text] (a [com.mishiranu.dashchan.content.CommandRunner]
+     * thread command's inline result), or clears a previous override when [text] is `null`. The
+     * override is plain text with no colour/link spans; the cached comment products are dropped so the
+     * next [getComment] rebuilds from the override (or, once cleared, from the source post). No-op when
+     * nothing actually changes, so unchanged posts are not needlessly re-parsed.
+     */
+    fun setCommentOverride(text: CharSequence?) {
+        val current = commentOverride
+        val unchanged =
+            if (current == null) text == null else text != null && current.toString() == text.toString()
+        if (unchanged) {
+            return
+        }
+        commentOverride = text
+        comment = null
+        commentSpans = null
+        linkSpans = null
+        linkSuffixSpans = null
     }
 
     fun getComment(

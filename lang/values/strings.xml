@@ -86,6 +86,7 @@
 	<string name="comment">Comment</string>
 	<string name="command">Command</string>
 	<string name="command_failed__format">Command failed: %s</string>
+	<string name="command_no_changes">Command made no changes</string>
 	<string name="commands">Commands</string>
 	<string name="comment_is_too_short">Comment is too short</string>
 	<string name="completed">Completed</string>
@@ -147,6 +148,7 @@
 	<string name="downloading_number_of_number__format">Downloading %1$d of %2$d</string>
 	<string name="downloads">Downloads</string>
 	<string name="draft_saved">Draft saved</string>
+	<string name="edit__ellipsis">Edit…</string>
 	<string name="empty_response">Empty response</string>
 	<string name="enabled">Enabled</string>
 	<string name="enter_valid_data">Enter a valid data</string>
@@ -432,6 +434,7 @@
 	<string name="restore_data">Restore data</string>
 	<string name="retry">Retry</string>
 	<string name="run_before_sending">Run automatically before sending</string>
+	<string name="run_when_thread_opens">Run automatically when the thread opens</string>
 	<string name="auto_run">Auto-run</string>
 	<string name="saf_instructions__sentence">You will be directed to the system directory picker where you should pick
 		a directory for downloads.\n\n<b>Don\'t select any directories under default \"Downloads\" section!</b>\n

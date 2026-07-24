@@ -189,6 +189,9 @@ class UiManager(
         fun navigateSetTheme(theme: ThemeEngine.Theme)
 
         fun navigateAddCommand(commands: List<CommandsStorage.CommandItem>)
+
+        /** Opens the Commands screen, where a command can be edited. */
+        fun navigateCommands()
     }
 
     enum class Selection {

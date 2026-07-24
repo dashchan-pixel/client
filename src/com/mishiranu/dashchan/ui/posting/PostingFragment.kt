@@ -13,7 +13,6 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Outline
 import android.graphics.Rect
-import android.graphics.drawable.InsetDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
@@ -31,7 +30,6 @@ import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.inputmethod.InputMethodManager
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -41,7 +39,6 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
-import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
@@ -61,8 +58,6 @@ import chan.util.StringUtils
 import chan.util.StringUtils.formatFileSize
 import chan.util.StringUtils.nullIfEmpty
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.shape.MaterialShapeDrawable
-import com.google.android.material.shape.ShapeAppearanceModel
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences.configuredFileNewname
@@ -129,6 +124,7 @@ import com.mishiranu.dashchan.util.ViewUtils.setSelectableItemBackground
 import com.mishiranu.dashchan.util.ViewUtils.setTextSizeScaled
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
+import com.mishiranu.dashchan.widget.CommandsPopup
 import com.mishiranu.dashchan.widget.DropdownView
 import com.mishiranu.dashchan.widget.ExpandedLayout
 import com.mishiranu.dashchan.widget.MaterialContext
@@ -2269,96 +2265,27 @@ class PostingFragment :
     }
 
     private fun showCommandsPopup(anchor: View) {
-        val commands = commentCommands
-        if (commands.isEmpty()) {
-            return
-        }
-        // A PopupMenu (framework or Material) won't take the app-wide corner radius — its inner list
-        // draws its own background over any rounded window. Use a ListPopupWindow whose background we
-        // control directly: a MaterialShapeDrawable rounded to Preferences.uiCornerRadius, filled with
-        // the theme card colour.
-        val context = anchor.context
-        val density = ResourceUtils.obtainDensity(context)
-        val titles: List<CharSequence> =
-            commands.map { command ->
-                val name = command.name
-                if (name.isNullOrEmpty()) getString(R.string.command) else name
-            }
-        val itemPaddingHorizontal = (16f * density).toInt()
-        val itemPaddingVertical = (12f * density).toInt()
-        val adapter =
-            object : ArrayAdapter<CharSequence>(
-                context,
-                android.R.layout.simple_list_item_1,
-                android.R.id.text1,
-                titles,
-            ) {
-                override fun getView(
-                    position: Int,
-                    convertView: View?,
-                    parent: ViewGroup,
-                ): View {
-                    val view = super.getView(position, convertView, parent)
-                    view.setPadding(
-                        itemPaddingHorizontal,
-                        itemPaddingVertical,
-                        itemPaddingHorizontal,
-                        itemPaddingVertical,
-                    )
-                    // Run-on-send commands can't be run manually (greyed out) but can still be opened
-                    // for edit via long tap, so the row stays enabled; only the tap action is guarded.
-                    view.alpha = if (commands[position].autoRun) 0.5f else 1f
-                    return view
-                }
-            }
-        val popup = ListPopupWindow(context)
-        popup.anchorView = anchor
-        popup.isModal = true
-        // Don't disturb the soft keyboard's open/closed state when the dropdown shows or dismisses.
-        popup.inputMethodMode = ListPopupWindow.INPUT_METHOD_NOT_NEEDED
-        popup.setAdapter(adapter)
-        // Tap feedback in a ListView comes from the list selector, not item backgrounds. Use the app's
-        // neutral selectable-item ripple instead of the default accent-tinted selector that flashed
-        // orange.
-        popup.setListSelector(context.getDrawable(getResourceId(context, android.R.attr.selectableItemBackground, 0)))
-        popup.width = measureCommandsPopupWidth(adapter, context)
-        val radius = uiCornerRadius * density
-        val shape =
-            MaterialShapeDrawable(ShapeAppearanceModel.builder().setAllCornerSizes(radius).build())
-        shape.fillColor = ColorStateList.valueOf(getTheme(context).card)
-        val verticalInset = (4f * density).toInt()
-        popup.setBackgroundDrawable(InsetDrawable(shape, 0, verticalInset, 0, verticalInset))
-        popup.setOnItemClickListener { _, _, position, _ ->
-            popup.dismiss()
-            if (!commands[position].autoRun) {
-                runCommand(commands[position])
-            }
-        }
-        popup.show()
-        // Long tap opens the command in Commands settings for editing/inspection — allowed even for the
-        // greyed-out run-on-send rows.
-        popup.listView?.setOnItemLongClickListener { _, _, position, _ ->
-            popup.dismiss()
-            (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(commands[position].id))
-            true
-        }
+        CommandsPopup.show(
+            anchor,
+            commentCommands,
+            onRun = { runCommand(it) },
+            onEdit = { (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(it.id)) },
+        )
     }
 
-    private fun measureCommandsPopupWidth(
-        adapter: ArrayAdapter<CharSequence>,
-        context: Context,
-    ): Int {
-        val density = ResourceUtils.obtainDensity(context)
-        val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        val fakeParent = FrameLayout(context)
-        var contentWidth = 0
-        var itemView: View? = null
-        for (i in 0 until adapter.count) {
-            itemView = adapter.getView(i, itemView, fakeParent)
-            itemView.measure(measureSpec, measureSpec)
-            contentWidth = max(contentWidth, itemView.measuredWidth)
-        }
-        return contentWidth.coerceIn((200f * density).toInt(), (280f * density).toInt())
+    /**
+     * The thread being replied to, as the `thread` object handed to a command — `null` when composing a
+     * new thread. The posting screen doesn't carry a thread title, so it goes out as `null`.
+     */
+    private fun commandThread(): CommandRunner.ThreadInfo? {
+        val threadNumber = this.threadNumber ?: return null
+        return CommandRunner.ThreadInfo(threadNumber, null)
+    }
+
+    /** The board being posted to, as the `board` object handed to a command. */
+    private fun commandBoard(): CommandRunner.BoardInfo? {
+        val boardName = this.boardName ?: return null
+        return CommandRunner.BoardInfo(boardName, get(this.chanName).configuration.getBoardTitle(boardName))
     }
 
     private fun runCommand(command: CommandsStorage.CommandItem) {
@@ -2366,8 +2293,8 @@ class PostingFragment :
         CommandRunner.run(
             command,
             commentView.getText().toString(),
-            threadNumber,
-            boardName,
+            commandThread(),
+            commandBoard(),
         ) { result ->
             // Delivered on the main thread; the view may be gone by the time it arrives.
             val liveCommentView = this.commentView ?: return@run
@@ -2420,7 +2347,7 @@ class PostingFragment :
             executeSendPost()
             return
         }
-        CommandRunner.run(commands[index], comment, threadNumber, boardName) { result ->
+        CommandRunner.run(commands[index], comment, commandThread(), commandBoard()) { result ->
             val liveCommentView = this.commentView
             if (liveCommentView == null) {
                 sendButtonEnabled = true

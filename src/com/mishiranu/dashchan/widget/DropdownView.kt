@@ -7,6 +7,7 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -116,4 +117,21 @@ class DropdownView(
     }
 
     fun getSelectedItemPosition(): Int = spinner.selectedItemPosition
+
+    /** Invoked with the item position whenever the current selection changes. */
+    fun setOnItemSelectedListener(listener: (position: Int) -> Unit) {
+        spinner.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    listener(position)
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+    }
 }

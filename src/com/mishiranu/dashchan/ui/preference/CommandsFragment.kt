@@ -359,7 +359,12 @@ class CommandsFragment :
             if (!StringUtils.isEmpty(commandItem.boardName)) {
                 builder.append(" & [").append(commandItem.boardName).append(']')
             }
-            builder.append(" · ").append(getString(R.string.comment))
+            val useInRes =
+                when (commandItem.useIn) {
+                    CommandsStorage.UseIn.COMMENT -> R.string.comment
+                    CommandsStorage.UseIn.THREAD -> R.string.thread
+                }
+            builder.append(" · ").append(getString(useInRes))
             if (commandItem.autoRun) {
                 builder.append(" · ").append(getString(R.string.auto_run))
             }
@@ -489,9 +494,12 @@ class CommandsFragment :
             chanNameSelector.setOnClickListener { ChanMultiChoiceDialog(selectedChanNames).show(this) }
             chanNameSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
 
-            // Only comment is supported for now; the dropdown is a single fixed item.
-            useInView.setItems(listOf(getString(R.string.comment)))
-            useInView.setSelection(0)
+            useInView.setItems(USE_IN_ORDER.map { getString(it.titleRes) })
+            // The auto-run checkbox means different things per target (run before sending vs. run when
+            // the thread opens), so relabel it as the selection changes.
+            useInView.setOnItemSelectedListener { position ->
+                autoRunCheckBox.setText(USE_IN_ORDER[position].autoRunRes)
+            }
 
             if (!ChanManager.getInstance().hasMultipleAvailableChans()) {
                 chanNameSelector.visibility = View.GONE
@@ -508,6 +516,7 @@ class CommandsFragment :
                 commandItem.chanNames?.let { selectedChanNames.addAll(it) }
                 boardNameEdit.setText(commandItem.boardName)
                 nameEdit.setText(commandItem.name)
+                useInView.setSelection(USE_IN_ORDER.indexOf(commandItem.useIn).coerceAtLeast(0))
                 autoRunCheckBox.isChecked = commandItem.autoRun
                 codeEdit.setText(commandItem.code)
             } else {
@@ -565,7 +574,7 @@ class CommandsFragment :
                 boardNameEdit.text.toString(),
                 nameEdit.text.toString(),
                 codeEdit.text.toString(),
-                CommandsStorage.UseIn.COMMENT,
+                USE_IN_ORDER[useInView.getSelectedItemPosition().coerceIn(USE_IN_ORDER.indices)],
                 autoRunCheckBox.isChecked,
             )
 
@@ -578,6 +587,23 @@ class CommandsFragment :
         companion object {
             private const val EXTRA_ITEM = "item"
             private const val EXTRA_INDEX = "index"
+
+            // The dropdown's fixed order; the selected index maps back to a UseIn on save.
+            private val USE_IN_ORDER = listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD)
+
+            private val CommandsStorage.UseIn.titleRes: Int
+                get() =
+                    when (this) {
+                        CommandsStorage.UseIn.COMMENT -> R.string.comment
+                        CommandsStorage.UseIn.THREAD -> R.string.thread
+                    }
+
+            private val CommandsStorage.UseIn.autoRunRes: Int
+                get() =
+                    when (this) {
+                        CommandsStorage.UseIn.COMMENT -> R.string.run_before_sending
+                        CommandsStorage.UseIn.THREAD -> R.string.run_when_thread_opens
+                    }
         }
     }
 

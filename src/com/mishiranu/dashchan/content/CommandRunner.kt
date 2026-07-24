@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.content
 import android.webkit.JavascriptInterface
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -10,16 +11,23 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Runs a user-defined [CommandsStorage.CommandItem] through the [HeadlessJsEngine].
  *
  * The command's [code][CommandsStorage.CommandItem.code] is treated as the body of an **async**
- * JavaScript function that receives three inputs — `comment`, `thread` and `board` — and is expected
- * to `return` the replacement comment. Being async, the body may `await` (e.g.
- * `return await fetch(url).then(r => r.text())`). `thread` and `board` are the current thread/board
- * identifiers (or `null`), `comment` is the current text of the posting field. Whatever the function
- * returns (or the promise it resolves to) is coerced to a string and handed back as the new comment;
- * returning `undefined`/`null` leaves the comment untouched.
+ * JavaScript function whose arguments and expected return value depend on the command's target:
+ *
+ * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `thread`, `board`, `env`. It should
+ *   `return` the replacement comment; returning `undefined`/`null` leaves the field untouched.
+ * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`. `posts` is an
+ *   array of `{number, name, email, icon, subject, comment}`, `comment` being the post's markup — what
+ *   "Copy markup" yields, not the stripped text. It should `return` an object mapping a post's `number`
+ *   to the plain text to display in place of that post's comment (e.g. `{ "123": "decrypted…" }`);
+ *   posts absent from the object are left as-is, and returning `undefined`/`null` changes nothing.
+ *
+ * `thread` is `{id, title}` and `board` is `{code, name}`; either is `null` when there is no such
+ * context. Being async, a body may `await` (e.g. `return await fetch(url).then(r => r.text())`).
  *
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
- * network (CORS is disabled there), so scripts can, for example, build a signature from a remote
- * source. A fresh engine is created per run and destroyed once the result arrives.
+ * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure
+ * context), so scripts can encrypt/decrypt or translate posts. A fresh engine is created per run and
+ * destroyed once the result arrives.
  *
  * The code also receives an `env` object holding the user's shared key→value store
  * ([CommandsStorage.getEnv]), so a script can read a user-provided value with
@@ -27,6 +35,33 @@ import java.util.concurrent.atomic.AtomicBoolean
  * persist; the store is edited from the Commands screen.
  */
 object CommandRunner {
+    /**
+     * One post handed to a [CommandsStorage.UseIn.THREAD] script as an element of `posts`. [comment] is
+     * the post's markup, not the rendered text — see
+     * [PostItem.getCommentMarkup][com.mishiranu.dashchan.content.model.PostItem.getCommentMarkup].
+     */
+    data class ThreadPost(
+        val number: String,
+        val name: String?,
+        val email: String?,
+        val icon: String?,
+        val subject: String?,
+        val comment: String,
+    )
+
+    /** The thread a command runs in, handed to the script as `thread` — [number] is exposed as `id`. */
+    data class ThreadInfo(
+        val number: String,
+        val title: String?,
+    )
+
+    /** The board a command runs in, handed to the script as `board`. */
+    data class BoardInfo(
+        val code: String,
+        val name: String?,
+    )
+
+    /** Outcome of a [CommandsStorage.UseIn.COMMENT] command. */
     sealed interface Result {
         /**
          * The command ran successfully. [comment] is the replacement text, or `null` if the script
@@ -42,25 +77,87 @@ object CommandRunner {
         ) : Result
     }
 
+    /** Outcome of a [CommandsStorage.UseIn.THREAD] command. */
+    sealed interface ThreadResult {
+        /**
+         * The command ran successfully. [replacements] maps a post number to the text to display in
+         * place of that post's comment; it is empty when the script asked for no changes.
+         */
+        data class Success(
+            val replacements: Map<String, String>,
+        ) : ThreadResult
+
+        /** The command threw or could not be evaluated; [message] describes what went wrong. */
+        data class Failure(
+            val message: String,
+        ) : ThreadResult
+    }
+
     /**
-     * Evaluates [item] against the given inputs and delivers the outcome to [callback] on the main
-     * thread. Safe to call from the main thread.
+     * Evaluates a [CommandsStorage.UseIn.COMMENT] [item] against the given inputs and delivers the
+     * outcome to [callback] on the main thread. Safe to call from the main thread.
      */
     fun run(
         item: CommandsStorage.CommandItem,
         comment: String,
-        thread: String?,
-        board: String?,
+        thread: ThreadInfo?,
+        board: BoardInfo?,
         callback: (Result) -> Unit,
     ) {
-        val script = buildScript(item.code.orEmpty(), comment, thread, board, CommandsStorage.getInstance().getEnv())
-        // The script runs the user code as an *async* function, so a returned Promise (e.g. `await
-        // fetch(...)`) is honoured. evaluateJavascript can't await Promises, so the result comes back
-        // through a bridge instead of the evaluation's return value; a timeout guards a script that
-        // never settles.
+        val script =
+            buildScript(
+                args = "\"comment\",\"thread\",\"board\",\"env\"",
+                code = item.code.orEmpty(),
+                thread = thread,
+                board = board,
+                env = CommandsStorage.getInstance().getEnv(),
+                // A comment command replaces the field with a single string.
+                resultExpr = "(__result===undefined||__result===null)?null:String(__result)",
+            ) { append(jsArg(comment)).append(',') }
+        execute(script, ::parseComment, { Result.Failure(it) }, callback)
+    }
+
+    /**
+     * Evaluates a [CommandsStorage.UseIn.THREAD] [item] against the thread's [posts] and delivers the
+     * outcome to [callback] on the main thread. Safe to call from the main thread.
+     */
+    fun runThread(
+        item: CommandsStorage.CommandItem,
+        posts: List<ThreadPost>,
+        thread: ThreadInfo?,
+        board: BoardInfo?,
+        callback: (ThreadResult) -> Unit,
+    ) {
+        val postsJson = postsToJson(posts)
+        val script =
+            buildScript(
+                args = "\"posts\",\"thread\",\"board\",\"env\"",
+                code = item.code.orEmpty(),
+                thread = thread,
+                board = board,
+                env = CommandsStorage.getInstance().getEnv(),
+                // A thread command returns a { postNumber: replacementText } object.
+                resultExpr = "(__result===undefined||__result===null)?{}:__result",
+            ) { append(postsJson).append(',') }
+        execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback)
+    }
+
+    /**
+     * Runs [script] on a fresh [HeadlessJsEngine] and routes the outcome to [callback] on the main
+     * thread. The script runs the user code as an *async* function, so a returned Promise (e.g. `await
+     * fetch(...)`) is honoured. evaluateJavascript can't await Promises, so the result comes back
+     * through a bridge instead of the evaluation's return value; a timeout guards a script that never
+     * settles. [parse] turns the bridged JSON into a result; [failure] wraps a timeout/error message.
+     */
+    private fun <R> execute(
+        script: String,
+        parse: (String?) -> R,
+        failure: (String) -> R,
+        callback: (R) -> Unit,
+    ) {
         val delivered = AtomicBoolean(false)
         val engineHolder = arrayOfNulls<HeadlessJsEngine>(1)
-        val deliver: (Result) -> Unit = { result ->
+        val deliver: (R) -> Unit = { result ->
             if (delivered.compareAndSet(false, true)) {
                 ConcurrentUtils.HANDLER.post {
                     engineHolder[0]?.destroy()
@@ -68,7 +165,7 @@ object CommandRunner {
                 }
             }
         }
-        val timeout = Runnable { deliver(Result.Failure("Command timed out")) }
+        val timeout = Runnable { deliver(failure("Command timed out")) }
         val bridge =
             object {
                 @JavascriptInterface
@@ -83,12 +180,20 @@ object CommandRunner {
         engine.evaluate(script)
     }
 
+    /**
+     * Builds the runnable script. [args] is the quoted, comma-separated argument list of the async
+     * function; [leadingArg] appends the matching first actual argument(s) (already followed by a
+     * comma), after which `thread`, `board` and the frozen `env` object are passed. [resultExpr] is the
+     * JS expression that maps the resolved `__result` to the value delivered back through the bridge.
+     */
     private fun buildScript(
+        args: String,
         code: String,
-        comment: String,
-        thread: String?,
-        board: String?,
+        thread: ThreadInfo?,
+        board: BoardInfo?,
         env: Map<String, String>,
+        resultExpr: String,
+        leadingArg: StringBuilder.() -> Unit,
     ): String =
         buildString {
             append("(function(){")
@@ -100,19 +205,19 @@ object CommandRunner {
             // rather than inlining also means a *syntax* error throws at construction and is caught,
             // surfacing a real message instead of a null result.
             append("var __AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;")
-            append("var __command=new __AsyncFunction(\"comment\",\"thread\",\"board\",\"env\",")
+            append("var __command=new __AsyncFunction(").append(args).append(',')
             append(JSONObject.quote(code))
             append(");")
             append("Promise.resolve(__command(")
-            append(jsArg(comment)).append(',')
-            append(jsArg(thread)).append(',')
-            append(jsArg(board)).append(',')
+            leadingArg()
+            append(jsThread(thread)).append(',')
+            append(jsBoard(board)).append(',')
             // The shared env store, injected as a plain object so scripts read `env.NAME`. Frozen so
             // a stray `env.X = …` is dropped (throwing under "use strict") rather than mutating a
             // value that would never be persisted — this is a per-run snapshot.
             append("Object.freeze(").append(JSONObject(env).toString()).append(')')
             append(")).then(function(__result){")
-            append("__deliver({ok:true,result:(__result===undefined||__result===null)?null:String(__result)});")
+            append("__deliver({ok:true,result:").append(resultExpr).append("});")
             append("}).catch(function(__err){")
             append("__deliver({ok:false,error:(__err&&__err.message)?String(__err.message):String(__err)});")
             append("});")
@@ -120,12 +225,51 @@ object CommandRunner {
             append("})();")
         }
 
+    private fun postsToJson(posts: List<ThreadPost>): String {
+        val array = JSONArray()
+        for (post in posts) {
+            val obj = JSONObject()
+            obj.put("number", post.number)
+            obj.put("name", post.name ?: JSONObject.NULL)
+            obj.put("email", post.email ?: JSONObject.NULL)
+            obj.put("icon", post.icon ?: JSONObject.NULL)
+            obj.put("subject", post.subject ?: JSONObject.NULL)
+            obj.put("comment", post.comment)
+            array.put(obj)
+        }
+        return array.toString()
+    }
+
     private fun jsArg(value: String?): String = if (value == null) "null" else JSONObject.quote(value)
+
+    /** `thread` as `{id, title}`, or `null` outside a thread. */
+    private fun jsThread(thread: ThreadInfo?): String {
+        if (thread == null) {
+            return "null"
+        }
+        val jsonObject = JSONObject()
+        // Thread numbers are strings in the chan API; hand JS a number when one parses, the raw string
+        // otherwise.
+        jsonObject.put("id", thread.number.toLongOrNull() ?: thread.number)
+        jsonObject.put("title", thread.title ?: JSONObject.NULL)
+        return jsonObject.toString()
+    }
+
+    /** `board` as `{code, name}`, or `null` when there is no board context. */
+    private fun jsBoard(board: BoardInfo?): String {
+        if (board == null) {
+            return "null"
+        }
+        val jsonObject = JSONObject()
+        jsonObject.put("code", board.code)
+        jsonObject.put("name", board.name ?: JSONObject.NULL)
+        return jsonObject.toString()
+    }
 
     private const val BRIDGE_NAME = "__commandBridge"
     private const val TIMEOUT_MS = 30000L
 
-    private fun parse(raw: String?): Result {
+    private fun parseComment(raw: String?): Result {
         if (raw == null) {
             return Result.Failure("No result (script did not evaluate)")
         }
@@ -138,6 +282,34 @@ object CommandRunner {
             }
         } catch (e: Exception) {
             Result.Failure(e.message ?: raw)
+        }
+    }
+
+    private fun parseThread(raw: String?): ThreadResult {
+        if (raw == null) {
+            return ThreadResult.Failure("No result (script did not evaluate)")
+        }
+        return try {
+            val json = JSONObject(raw)
+            if (json.optBoolean("ok")) {
+                val replacements = LinkedHashMap<String, String>()
+                // A non-object return (string, array, …) yields no object here and thus no changes.
+                val result = json.optJSONObject("result")
+                if (result != null) {
+                    val keys = result.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        if (!result.isNull(key)) {
+                            replacements[key] = result.optString(key)
+                        }
+                    }
+                }
+                ThreadResult.Success(replacements)
+            } else {
+                ThreadResult.Failure(json.optString("error", "Unknown error"))
+            }
+        } catch (e: Exception) {
+            ThreadResult.Failure(e.message ?: raw)
         }
     }
 }
