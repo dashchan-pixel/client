@@ -255,6 +255,8 @@
 	<string name="make_home_page">Make home page</string>
 	<string name="make_threadshot">Make threadshot</string>
 	<string name="manage_cookies">Manage cookies</string>
+	<string name="markup_buttons_at_bottom">Markup buttons at bottom</string>
+	<string name="markup_buttons_at_bottom__summary">Place the text formatting buttons below the comment field instead of under the toolbar</string>
 	<string name="match_found">Match found</string>
 	<string name="max_lines_count">Max lines count</string>
 	<string name="max_lines_count__summary">Cut long posts if the number of lines exceeds the specified value</string>

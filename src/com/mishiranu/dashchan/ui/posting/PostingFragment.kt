@@ -76,6 +76,7 @@ import com.mishiranu.dashchan.content.Preferences.isAlwaysUniqueHash
 import com.mishiranu.dashchan.content.Preferences.isCaptchaAutoReload
 import com.mishiranu.dashchan.content.Preferences.isHidePersonalData
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
+import com.mishiranu.dashchan.content.Preferences.isMarkupButtonsAtBottom
 import com.mishiranu.dashchan.content.Preferences.uiCornerRadius
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.content.async.SendPostTask.ProgressState
@@ -402,8 +403,13 @@ class PostingFragment :
         var addPaddingToRoot = false
         val landscape =
             getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
+        // When enabled, the markup bar lives inline below the comment field (added further down)
+        // instead of pinned under the toolbar. postingLayout already supplies horizontal padding.
+        val markupAtBottom = isMarkupButtonsAtBottom
         val extra =
-            if (landscape) {
+            if (markupAtBottom) {
+                postingLayout
+            } else if (landscape) {
                 (requireActivity() as FragmentHandler).getToolbarView()
             } else {
                 (requireActivity() as FragmentHandler).getToolbarExtra()
@@ -411,7 +417,9 @@ class PostingFragment :
         val textFormatView = LinearLayout(extra.getContext())
         textFormatView.setOrientation(LinearLayout.HORIZONTAL)
         this.textFormatView = textFormatView
-        if (landscape) {
+        if (markupAtBottom) {
+            textFormatView.setPadding(0, 0, 0, (4f * density).toInt())
+        } else if (landscape) {
             val rtl = textFormatView.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
             textFormatView.setPadding(
                 if (rtl) 0 else (8f * density).toInt(),
@@ -428,11 +436,13 @@ class PostingFragment :
             )
             addPaddingToRoot = true
         }
-        extra.addView(
-            textFormatView,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-        )
+        if (!markupAtBottom) {
+            extra.addView(
+                textFormatView,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+        }
         commentParent.removeView(commentView)
         // Wrap the comment field so a ⌘ button can float over its bottom-right corner. The field
         // keeps growing via setMinHeight (resizeComment) and the wrapper grows with it.
@@ -447,6 +457,16 @@ class PostingFragment :
         commandsButton = buildCommandsButton(commentWrapper, density)
         postingLayout.addView(commentWrapper, postingLayout.indexOfChild(commentParent))
         postingLayout.removeView(commentParent)
+        if (markupAtBottom) {
+            postingLayout.addView(
+                textFormatView,
+                postingLayout.indexOfChild(commentWrapper) + 1,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
+            )
+        }
         ViewUtils.setNewMargin(checkBoxParent, 0, (4f * density).toInt(), 0, 0)
         updateCommandsButton()
 

@@ -228,6 +228,13 @@ class InterfaceFragment : PreferenceFragment() {
         )
         addCheck(
             true,
+            Preferences.KEY_MARKUP_BUTTONS_AT_BOTTOM,
+            Preferences.DEFAULT_MARKUP_BUTTONS_AT_BOTTOM,
+            R.string.markup_buttons_at_bottom,
+            R.string.markup_buttons_at_bottom__summary,
+        )
+        addCheck(
+            true,
             Preferences.KEY_HUGE_CAPTCHA,
             Preferences.DEFAULT_HUGE_CAPTCHA,
             R.string.huge_captcha,

@@ -863,6 +863,17 @@ object Preferences {
                 HighlightUnreadMode.Companion.VALUE_PROVIDER,
             )
 
+    const val KEY_MARKUP_BUTTONS_AT_BOTTOM: String = "markup_buttons_at_bottom"
+    const val DEFAULT_MARKUP_BUTTONS_AT_BOTTOM: Boolean = false
+
+    @JvmStatic
+    val isMarkupButtonsAtBottom: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_MARKUP_BUTTONS_AT_BOTTOM,
+                DEFAULT_MARKUP_BUTTONS_AT_BOTTOM,
+            )
+
     const val KEY_HUGE_CAPTCHA: String = "huge_captcha"
     const val DEFAULT_HUGE_CAPTCHA: Boolean = true
 
