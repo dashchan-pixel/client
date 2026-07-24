@@ -1,20 +1,14 @@
 package com.mishiranu.dashchan.widget
 
 import android.content.Context
-import android.content.res.ColorStateList
-import android.graphics.drawable.InsetDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.ListPopupWindow
-import com.google.android.material.shape.MaterialShapeDrawable
-import com.google.android.material.shape.ShapeAppearanceModel
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.Preferences.uiCornerRadius
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.getResourceId
-import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import kotlin.math.max
 
 /**
@@ -23,9 +17,9 @@ import kotlin.math.max
  * commands are shown greyed-out (they fire automatically and can't be run by hand), a tap runs a manual
  * command, and a long tap opens any command — greyed-out or not — for editing.
  *
- * It is a [ListPopupWindow] with a background we control directly (a [MaterialShapeDrawable] rounded to
- * [Preferences.uiCornerRadius][uiCornerRadius], filled with the theme card colour), because a framework
- * PopupMenu draws its own square background over the rounded window.
+ * It is a [ListPopupWindow] with a background we control directly
+ * ([ThemeEngine.roundedPopupBackground]), because a framework PopupMenu draws its own square
+ * background over the rounded window.
  */
 object CommandsPopup {
     /**
@@ -86,12 +80,7 @@ object CommandsPopup {
         // neutral selectable-item ripple instead of the default accent-tinted selector.
         popup.setListSelector(context.getDrawable(getResourceId(context, android.R.attr.selectableItemBackground, 0)))
         popup.width = measureWidth(adapter, context)
-        val radius = uiCornerRadius * density
-        val shape =
-            MaterialShapeDrawable(ShapeAppearanceModel.builder().setAllCornerSizes(radius).build())
-        shape.fillColor = ColorStateList.valueOf(getTheme(context).card)
-        val verticalInset = (4f * density).toInt()
-        popup.setBackgroundDrawable(InsetDrawable(shape, 0, verticalInset, 0, verticalInset))
+        popup.setBackgroundDrawable(ThemeEngine.roundedPopupBackground(context))
         popup.setOnItemClickListener { _, _, position, _ ->
             popup.dismiss()
             if (!commands[position].autoRun) {

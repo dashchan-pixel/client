@@ -8,6 +8,7 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.util.AttributeSet
 import android.view.ContextThemeWrapper
@@ -817,6 +818,30 @@ class ThemeEngine {
 
         @JvmStatic
         fun attach(baseContext: Context?): Context = ThemeContext(baseContext)
+
+        /**
+         * The background for a hand-built dropdown ([android.widget.ListPopupWindow] and friends): a
+         * [MaterialShapeDrawable] rounded to [Preferences.uiCornerRadius] and filled with the theme
+         * card colour, inset vertically so the list does not touch the rounded ends.
+         *
+         * Dropdowns need this set explicitly. A framework `PopupMenu` draws the square background of
+         * its own popup style over the window, so the [applyRoundedWindowBackground] hook that rounds
+         * dialogs and context menus cannot reach it — the fix is to own the popup and its background.
+         */
+        @JvmStatic
+        fun roundedPopupBackground(context: Context): Drawable {
+            val density = obtainDensity(context)
+            val shape =
+                MaterialShapeDrawable(
+                    ShapeAppearanceModel
+                        .builder()
+                        .setAllCornerSizes(Preferences.uiCornerRadius * density)
+                        .build(),
+                )
+            shape.fillColor = ColorStateList.valueOf(getTheme(context).card)
+            val verticalInset = (4f * density).toInt()
+            return InsetDrawable(shape, 0, verticalInset, 0, verticalInset)
+        }
 
         /**
          * Assigns [name] to whichever of the day/night slots is currently in effect, so that
