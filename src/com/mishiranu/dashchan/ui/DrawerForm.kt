@@ -53,6 +53,7 @@ import com.mishiranu.dashchan.content.Preferences.isMergeChans
 import com.mishiranu.dashchan.content.Preferences.isRememberHistory
 import com.mishiranu.dashchan.content.Preferences.setFavoritesHideAll
 import com.mishiranu.dashchan.content.Preferences.setFavoritesHideDeleted
+import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
@@ -127,6 +128,9 @@ class DrawerForm(
     private val watcherSupportSet = HashSet<String?>()
 
     private val chans = ArrayList<ListItem>()
+
+    // Sits directly under the header, above the pages and favorites sections
+    private val inboxMenu = ArrayList<ListItem>()
     private val pages = ArrayList<ListItem>()
     private val favorites = ArrayList<ListItem>()
     private val menu = ArrayList<ListItem>()
@@ -138,6 +142,13 @@ class DrawerForm(
     private var showRestartButton = false
     private var categoriesOrder: CategoriesOrder? = null
     private var chanName: String? = null
+
+    // The Inbox item carries the unread badge, so it must be rebound whenever the Inbox changes
+    private val updateInboxRunnable =
+        Runnable {
+            @Suppress("NotifyDataSetChanged")
+            notifyDataSetChanged()
+        }
 
     private enum class CategoriesOrder {
         PAGES_FIRST,
@@ -200,6 +211,7 @@ class DrawerForm(
             this.chanName = chanName
             val chan = get(chanName)
             chanNameView.setText(chan.configuration.getTitle())
+            inboxMenu.clear()
             menu.clear()
             val context = this.context
             val typedArray =
@@ -208,9 +220,18 @@ class DrawerForm(
                         R.attr.iconDrawerMenuBoards,
                         R.attr.iconDrawerMenuUserBoards,
                         R.attr.iconDrawerMenuHistory,
+                        R.attr.iconDrawerMenuInbox,
                         R.attr.iconDrawerMenuPreferences,
                     ),
                 )
+            inboxMenu.add(
+                ListItem(
+                    ListItem.Type.MENU,
+                    MENU_ITEM_INBOX,
+                    typedArray.getResourceId(3, 0),
+                    context.getString(R.string.inbox),
+                ),
+            )
             val hasUserBoards =
                 chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
             if (chanName != null && !chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
@@ -247,7 +268,7 @@ class DrawerForm(
                 ListItem(
                     ListItem.Type.MENU,
                     MENU_ITEM_PREFERENCES,
-                    typedArray.getResourceId(3, 0),
+                    typedArray.getResourceId(4, 0),
                     context.getString(R.string.preferences),
                 ),
             )
@@ -1146,7 +1167,8 @@ class DrawerForm(
                 }
 
                 ListItem.Type.MENU -> {
-                    ViewType.ITEM_ICON
+                    // The Inbox carries its unread badge, drawn like a watched thread counter
+                    if (listItem.data == MENU_ITEM_INBOX) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
                 }
 
                 ListItem.Type.CHAN -> {
@@ -1188,6 +1210,7 @@ class DrawerForm(
         if (chanSelectMode) {
             count += chans.size
         } else {
+            count += inboxMenu.size
             val arraySize = prepareCategoriesArray()
             val categoriesArray = this.categoriesArray
             for (i in 0..<arraySize) {
@@ -1216,6 +1239,10 @@ class DrawerForm(
                     return chans.get(position)
                 }
             } else {
+                if (position < inboxMenu.size) {
+                    return inboxMenu[position]
+                }
+                position -= inboxMenu.size
                 val arraySize = prepareCategoriesArray()
                 val categoriesArray = this.categoriesArray
                 for (i in 0..<arraySize) {
@@ -1443,16 +1470,24 @@ class DrawerForm(
                         listItem.title,
                     ),
                 )
-                if (listItem.type == ListItem.Type.FAVORITE &&
+                val watcher = holder.watcher
+                if (watcher != null &&
+                    listItem.type == ListItem.Type.FAVORITE &&
                     listItem.isThreadItem &&
                     watcherSupportSet.contains(listItem.chanName)
                 ) {
-                    holder.watcher!!.update(getCounter(listItem))
+                    // The view is shared with the Inbox badge, which hides it and disables its tap
+                    watcher.visibility = View.VISIBLE
+                    watcher.isClickable = true
+                    watcher.update(getCounter(listItem))
                 }
             }
 
             ListItem.Type.SECTION, ListItem.Type.MENU, ListItem.Type.CHAN -> {
                 holder.text!!.setText(listItem.title)
+                if (listItem.type == ListItem.Type.MENU && listItem.data == MENU_ITEM_INBOX) {
+                    bindInboxCounter(holder)
+                }
             }
         }
         if (holder.icon != null) {
@@ -1469,6 +1504,26 @@ class DrawerForm(
                 throw IllegalStateException()
             }
         }
+    }
+
+    /**
+     * Shows the unread reply count with the watched thread counter. Unlike a thread's counter it
+     * isn't a toggle, so it stays unclickable and the tap opens the Inbox with the rest of the row.
+     */
+    private fun bindInboxCounter(holder: ViewHolder) {
+        val watcher = holder.watcher ?: return
+        val unreadCount = CommonDatabase.getInstance().inbox.unreadCount
+        watcher.visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
+        watcher.isClickable = false
+        watcher.update(
+            WatcherService.Counter(
+                WatcherService.Counter.State.ENABLED,
+                false,
+                unreadCount,
+                false,
+                false,
+            ),
+        )
     }
 
     class ViewHolder(
@@ -1576,7 +1631,10 @@ class DrawerForm(
             current.data == MENU_ITEM_BOARDS &&
             (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS) ||
             current.type == ListItem.Type.MENU &&
-            current.data == MENU_ITEM_USER_BOARDS
+            current.data == MENU_ITEM_USER_BOARDS ||
+            // The Inbox is its own section above the pages and favorites
+            current.type == ListItem.Type.MENU &&
+            current.data == MENU_ITEM_INBOX
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
@@ -1886,6 +1944,7 @@ class DrawerForm(
 
         inputMethodManager =
             context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+        CommonDatabase.getInstance().inbox.registerObserver(updateInboxRunnable)
         updatePreferencesWithoutConfiguration()
         updateChansWithoutConfiguration()
     }
@@ -2006,7 +2065,8 @@ class DrawerForm(
         const val MENU_ITEM_BOARDS: Int = 1
         const val MENU_ITEM_USER_BOARDS: Int = 2
         const val MENU_ITEM_HISTORY: Int = 3
-        const val MENU_ITEM_PREFERENCES: Int = 4
+        const val MENU_ITEM_INBOX: Int = 4
+        const val MENU_ITEM_PREFERENCES: Int = 5
 
         private fun showPageFavoriteMenu(
             fragmentManager: FragmentManager,

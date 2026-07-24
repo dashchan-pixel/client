@@ -138,35 +138,34 @@ object WatcherNotifications {
                 builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
 
                 val tag: String? = makeTag(chanName, boardName, threadNumber, reply.postNumber)
-                val intent =
-                    Intent(context, MainActivity::class.java)
-                        .setAction(tag)
-                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        .putExtra(C.EXTRA_CHAN_NAME, chanName)
-                        .putExtra(C.EXTRA_BOARD_NAME, boardName)
-                        .putExtra(C.EXTRA_THREAD_NUMBER, threadNumber)
-                        .apply {
-                            // reply.postNumber is nullable, and a bare toString() writes the
-                            // literal string "null" into the extra. The reader
-                            // (MainActivity.parseNullable) then gets a non-null "null" and
-                            // tries to parse it as a post number. Omit the extra instead.
-                            reply.postNumber?.let { putExtra(C.EXTRA_POST_NUMBER, it.toString()) }
-                        }
-                builder.setContentIntent(
-                    PendingIntent.getActivity(
-                        context,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                    ),
-                )
+                builder.setContentIntent(createInboxIntent(tag))
                 notificationManager.notify(tag, C.NOTIFICATION_ID_REPLIES, builder.build())
             }
             val builder = NotificationCompat.Builder(context, C.NOTIFICATION_CHANNEL_REPLIES)
             configureNotification(builder, color)
             builder.setGroup(GROUP_REPLIES)
             builder.setGroupSummary(true)
+            builder.setContentIntent(createInboxIntent(GROUP_REPLIES))
             notificationManager.notify(C.NOTIFICATION_ID_REPLIES, builder.build())
+        }
+
+        /**
+         * Replies are collected in the Inbox, so every reply notification opens it. The action
+         * only keeps the pending intents of different notifications from being merged.
+         */
+        fun createInboxIntent(action: String?): PendingIntent {
+            val intent =
+                Intent(context, MainActivity::class.java)
+                    .setAction(action)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    .putExtra(C.EXTRA_CHAN_NAME, chanName)
+                    .putExtra(C.EXTRA_OPEN_INBOX, true)
+            return PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
         }
 
         fun cancelReplies(notificationManager: NotificationManager) {

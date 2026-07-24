@@ -60,6 +60,8 @@
     <string name="clear_deleted">Rimuovi eliminati</string>
     <string name="clear_history">Cancella cronologia</string>
     <string name="clear_history__sentence">Cancellare la cronologia?</string>
+    <string name="clear_inbox">Svuota la posta in arrivo</string>
+    <string name="clear_inbox__sentence">Svuotare la posta in arrivo?</string>
     <string name="clearing__ellipsis">Cancellazione…</string>
     <string name="close_pages">Chiudi pagine</string>
     <string name="close_pages__summary">Chiudi pagine toccando il pulsante "indietro"</string>
@@ -193,6 +195,8 @@
     <string name="images">Immagini</string>
     <string name="images_are_disabled">Immagini disabilitate</string>
     <string name="in_thread_number__format">Nel thread %s</string>
+    <string name="inbox">Posta in arrivo</string>
+    <string name="inbox_is_empty">Posta in arrivo vuota</string>
     <string name="incorrect_password">Password errata</string>
     <string name="initial_position">Posizione iniziale</string>
     <string name="install">Installa</string>
@@ -220,6 +224,7 @@
     <string name="make_home_page">Imposta come pagina iniziale</string>
     <string name="make_threadshot">Cattura thread</string>
     <string name="manage_cookies">Gestisci cookie</string>
+    <string name="mark_all_as_read">Segna tutti come letti</string>
     <string name="match_found">Stringa da cercare</string>
     <string name="max_lines_count">Numero massimo di righe</string>
     <string name="max_lines_count__summary">Taglia post lunghi se il numero di righe supera un certo valore</string>
@@ -361,6 +366,7 @@
     <string name="remove_file_name">Rimuovi nome file</string>
     <string name="remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="remove_from_history">Rimuovi dalla cronologia</string>
+    <string name="remove_from_inbox">Rimuovi dalla posta in arrivo</string>
     <string name="remove_metadata">Rimuovi metadati</string>
     <string name="remove_rules">Rimuovi regole</string>
     <string name="rename">Rinomina</string>

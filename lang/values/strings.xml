@@ -74,6 +74,8 @@
 	<string name="clear_deleted">Clear deleted</string>
 	<string name="clear_history">Clear history</string>
 	<string name="clear_history__sentence">Clear history?</string>
+	<string name="clear_inbox">Clear inbox</string>
+	<string name="clear_inbox__sentence">Clear inbox?</string>
 	<string name="clear_old">Clear old</string>
 	<string name="clearing__ellipsis">Clearing…</string>
 	<string name="close">Close</string>
@@ -228,6 +230,8 @@
 	<string name="add_command">Add command</string>
 	<string name="important__plural">Important</string>
 	<string name="in_thread_number__format">In thread %s</string>
+	<string name="inbox">Inbox</string>
+	<string name="inbox_is_empty">Inbox is empty</string>
 	<string name="incorrect_password">Incorrect password</string>
 	<string name="initial_position">Initial position</string>
 	<string name="install">Install</string>
@@ -259,6 +263,7 @@
 	<string name="make_home_page">Make home page</string>
 	<string name="make_threadshot">Make threadshot</string>
 	<string name="manage_cookies">Manage cookies</string>
+	<string name="mark_all_as_read">Mark all as read</string>
 	<string name="markup_buttons_at_bottom">Markup buttons at bottom</string>
 	<string name="markup_buttons_at_bottom__summary">Place the text formatting buttons below the comment field instead of under the toolbar</string>
 	<string name="match_found">Match found</string>
@@ -415,6 +420,7 @@
 	<string name="remove_file_name">Remove file name</string>
 	<string name="remove_from_favorites">Remove from favorites</string>
 	<string name="remove_from_history">Remove from history</string>
+	<string name="remove_from_inbox">Remove from inbox</string>
 	<string name="remove_metadata">Remove metadata</string>
 	<string name="remove_rules">Remove rules</string>
 	<string name="rename">Rename</string>

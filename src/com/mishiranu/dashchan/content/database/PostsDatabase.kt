@@ -84,6 +84,8 @@ class PostsDatabase internal constructor(
                         "post_number_major, post_number_minor))",
                 )
             }
+
+            Migration.FROM_9_TO_10 -> {}
         }
     }
 

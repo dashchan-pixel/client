@@ -31,6 +31,7 @@
 	<item type="id" name="menu_list" />
 	<item type="id" name="menu_make_home_page" />
 	<item type="id" name="menu_make_threadshot" />
+	<item type="id" name="menu_mark_all_read" />
 	<item type="id" name="menu_add_command" />
 	<item type="id" name="menu_commands" />
 	<item type="id" name="menu_edit_commands" />

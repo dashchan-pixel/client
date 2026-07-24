@@ -90,6 +90,8 @@ class ThreadsDatabase internal constructor(
                 )
                 database.execSQL("DROP TABLE hidden_threads")
             }
+
+            Migration.FROM_9_TO_10 -> {}
         }
     }
 

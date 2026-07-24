@@ -18,6 +18,7 @@ import java.util.concurrent.Executor
 class CommonDatabase private constructor() {
     enum class Migration {
         FROM_8_TO_9,
+        FROM_9_TO_10,
     }
 
     interface Instance {
@@ -44,6 +45,7 @@ class CommonDatabase private constructor() {
     val history: HistoryDatabase
     val threads: ThreadsDatabase
     val posts: PostsDatabase
+    val inbox: InboxDatabase
 
     private val helper: Helper
 
@@ -63,7 +65,8 @@ class CommonDatabase private constructor() {
         this.history = HistoryDatabase(this)
         this.threads = ThreadsDatabase(this)
         this.posts = PostsDatabase(this)
-        helper = Helper(listOf<Instance>(this.history, this.threads, this.posts))
+        this.inbox = InboxDatabase(this)
+        helper = Helper(listOf<Instance>(this.history, this.threads, this.posts, this.inbox))
     }
 
     fun query(callback: QueryCallback): Cursor? = callback.query(helper.database)
@@ -180,11 +183,15 @@ class CommonDatabase private constructor() {
                 dropAllTables(db)
                 onCreate(db)
             } else {
-                when (oldVersion) {
-                    8 -> {
-                        for (instance in instances) {
-                            instance.upgrade(db, Migration.FROM_8_TO_9)
-                        }
+                // Migrations are chained: an old enough database runs all of them in order
+                if (oldVersion <= 8) {
+                    for (instance in instances) {
+                        instance.upgrade(db, Migration.FROM_8_TO_9)
+                    }
+                }
+                if (oldVersion <= 9) {
+                    for (instance in instances) {
+                        instance.upgrade(db, Migration.FROM_9_TO_10)
                     }
                 }
             }
@@ -200,7 +207,7 @@ class CommonDatabase private constructor() {
             private const val DATABASE_NAME = "common.db"
             internal const val DATABASE_BACKUP_NAME = "common.backup.db"
             internal const val DATABASE_RESTORE_NAME = "common.restore.db"
-            internal const val DATABASE_VERSION = 9
+            internal const val DATABASE_VERSION = 10
         }
     }
 

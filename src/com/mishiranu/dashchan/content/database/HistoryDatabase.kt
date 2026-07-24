@@ -127,6 +127,8 @@ class HistoryDatabase internal constructor(
                 database.execSQL("CREATE INDEX history_order ON history (chan_name, time)")
                 database.execSQL("DROP TABLE history_old")
             }
+
+            Migration.FROM_9_TO_10 -> {}
         }
     }
 

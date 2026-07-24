@@ -9,6 +9,7 @@ import com.mishiranu.dashchan.content.Preferences.isMergeChans
 import com.mishiranu.dashchan.ui.navigator.page.ArchivePage
 import com.mishiranu.dashchan.ui.navigator.page.BoardsPage
 import com.mishiranu.dashchan.ui.navigator.page.HistoryPage
+import com.mishiranu.dashchan.ui.navigator.page.InboxPage
 import com.mishiranu.dashchan.ui.navigator.page.ListPage
 import com.mishiranu.dashchan.ui.navigator.page.PostsPage
 import com.mishiranu.dashchan.ui.navigator.page.SearchPage
@@ -32,6 +33,7 @@ class Page(
         BOARDS(PageFactory { BoardsPage() }),
         USER_BOARDS(PageFactory { UserBoardsPage() }),
         HISTORY(PageFactory { HistoryPage() }),
+        INBOX(PageFactory { InboxPage() }),
         ;
 
         private fun interface PageFactory {
@@ -44,18 +46,27 @@ class Page(
     val isThreadsOrPosts: Boolean
         get() = content == Content.THREADS || content == Content.POSTS
 
-    fun canDestroyIfNotInStack(): Boolean = content == Content.SEARCH || content == Content.ARCHIVE || content == Content.BOARDS || content == Content.HISTORY
+    fun canDestroyIfNotInStack(): Boolean =
+        content == Content.SEARCH ||
+            content == Content.ARCHIVE ||
+            content == Content.BOARDS ||
+            content == Content.HISTORY ||
+            content == Content.INBOX
 
     fun canRemoveFromStackIfDeep(): Boolean {
         if (content == Content.BOARDS) {
             val boardName = getDefaultBoardName(get(chanName))
             return boardName != null
         }
-        return content == Content.SEARCH || content == Content.ARCHIVE || content == Content.USER_BOARDS || content == Content.HISTORY
+        return content == Content.SEARCH ||
+            content == Content.ARCHIVE ||
+            content == Content.USER_BOARDS ||
+            content == Content.HISTORY ||
+            content == Content.INBOX
     }
 
     val isMultiChanAllowed: Boolean
-        get() = content == Content.HISTORY
+        get() = content == Content.HISTORY || content == Content.INBOX
 
     fun isThreadsOrPosts(
         chanName: String?,
@@ -84,14 +95,14 @@ class Page(
         var compareContentTypeOnlyThis = false
         var compareContentTypeOnlyCompared = false
         when (this.content) {
-            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY -> {
+            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.INBOX -> {
                 compareContentTypeOnlyThis = true
             }
 
             else -> {}
         }
         when (content) {
-            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY -> {
+            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.INBOX -> {
                 compareContentTypeOnlyCompared = true
             }
 

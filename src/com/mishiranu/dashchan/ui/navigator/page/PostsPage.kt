@@ -1760,6 +1760,12 @@ class PostsPage :
                 page.threadNumber,
                 result.replyPosts,
             )
+            CommonDatabase.getInstance().inbox.markReadAsync(
+                page.chanName!!,
+                page.boardName,
+                page.threadNumber!!,
+                result.replyPosts,
+            )
         }
         if (cancelled) {
             return

@@ -11,6 +11,7 @@ import chan.content.ThreadRedirectException
 import chan.http.HttpException
 import chan.http.HttpHolder
 import chan.util.CommonUtils
+import chan.util.StringUtils
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.database.PagesDatabase
@@ -227,10 +228,22 @@ class ReadPostsTask(
                 updateMeta = UpdateMeta(false, true)
                 return Result.Fail(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY))
             }
+            val replies = insertResult.replies
+            if (replies != null && replies.isNotEmpty()) {
+                // Collect the replies for the Inbox even when no notification is shown for them
+                val originalPost = posts.firstOrNull { it.number == originalPostNumber }
+                CommonDatabase.getInstance().inbox.addRepliesAsync(
+                    threadKey.chanName,
+                    boardName,
+                    threadNumber,
+                    StringUtils.nullIfEmpty(originalPost?.subject?.trim()),
+                    replies,
+                )
+            }
             return Result.Success(
                 insertResult.cacheState,
                 removedPendingUserPosts,
-                insertResult.replies,
+                replies,
                 insertResult.newCount,
             )
         } catch (e: HttpException) {
