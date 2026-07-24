@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
+		android:focusable="true"
+		android:focusableInTouchMode="true"
+		android:descendantFocusability="beforeDescendants"
+		android:paddingTop="@dimen/dialog_padding_text_half"
+		android:paddingBottom="@dimen/dialog_padding_text_half">
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
+			android:layout_marginBottom="8dp"
+			android:text="@string/environment__summary"
+			android:textAppearance="?android:attr/textAppearanceSmall" />
+
+		<com.mishiranu.dashchan.widget.SafePasteEditText
+			android:id="@+id/env"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
+			android:gravity="top"
+			android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
+			android:minLines="6"
+			android:fontFamily="monospace"
+			android:textSize="12sp"
+			android:imeOptions="flagNoExtractUi" />
+
+	</LinearLayout>
+
+</ScrollView>

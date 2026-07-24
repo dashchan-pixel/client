@@ -20,6 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there), so scripts can, for example, build a signature from a remote
  * source. A fresh engine is created per run and destroyed once the result arrives.
+ *
+ * The code also receives an `env` object holding the user's shared key→value store
+ * ([CommandsStorage.getEnv]), so a script can read a user-provided value with
+ * `env.CUSTOM_NAME_HERE`. It is a read-only snapshot taken at run time — assigning to it does not
+ * persist; the store is edited from the Commands screen.
  */
 object CommandRunner {
     sealed interface Result {
@@ -48,7 +53,7 @@ object CommandRunner {
         board: String?,
         callback: (Result) -> Unit,
     ) {
-        val script = buildScript(item.code.orEmpty(), comment, thread, board)
+        val script = buildScript(item.code.orEmpty(), comment, thread, board, CommandsStorage.getInstance().getEnv())
         // The script runs the user code as an *async* function, so a returned Promise (e.g. `await
         // fetch(...)`) is honoured. evaluateJavascript can't await Promises, so the result comes back
         // through a bridge instead of the evaluation's return value; a timeout guards a script that
@@ -83,6 +88,7 @@ object CommandRunner {
         comment: String,
         thread: String?,
         board: String?,
+        env: Map<String, String>,
     ): String =
         buildString {
             append("(function(){")
@@ -94,13 +100,17 @@ object CommandRunner {
             // rather than inlining also means a *syntax* error throws at construction and is caught,
             // surfacing a real message instead of a null result.
             append("var __AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;")
-            append("var __command=new __AsyncFunction(\"comment\",\"thread\",\"board\",")
+            append("var __command=new __AsyncFunction(\"comment\",\"thread\",\"board\",\"env\",")
             append(JSONObject.quote(code))
             append(");")
             append("Promise.resolve(__command(")
             append(jsArg(comment)).append(',')
             append(jsArg(thread)).append(',')
-            append(jsArg(board))
+            append(jsArg(board)).append(',')
+            // The shared env store, injected as a plain object so scripts read `env.NAME`. Frozen so
+            // a stray `env.X = …` is dropped (throwing under "use strict") rather than mutating a
+            // value that would never be persisted — this is a per-run snapshot.
+            append("Object.freeze(").append(JSONObject(env).toString()).append(')')
             append(")).then(function(__result){")
             append("__deliver({ok:true,result:(__result===undefined||__result===null)?null:String(__result)});")
             append("}).catch(function(__err){")

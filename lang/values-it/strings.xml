@@ -124,6 +124,8 @@
     <string name="enter_valid_data">Inserisci un dato valido</string>
     <string name="ephemeral_browsing">Modalità in incognito</string>
     <string name="ephemeral_browsing__summary">Non condividere cronologia e cookie con il browser</string>
+    <string name="environment">Ambiente</string>
+    <string name="environment__summary">Valori condivisi, uno NAME=valore per riga. Letti dagli script come env.NAME</string>
     <string name="every_number_sec__format">Ogni %d sec.</string>
     <string name="exif_metadata">Metadati exif</string>
     <string name="expand">Espandi</string>

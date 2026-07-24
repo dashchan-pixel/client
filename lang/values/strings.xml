@@ -152,6 +152,8 @@
 	<string name="enter_valid_data">Enter a valid data</string>
 	<string name="ephemeral_browsing">Incognito mode</string>
 	<string name="ephemeral_browsing__summary">Don\'t share history or cookies with your browser</string>
+	<string name="environment">Environment</string>
+	<string name="environment__summary">Shared values, one NAME=value per line. Read from scripts as env.NAME</string>
 	<string name="erase">Erase</string>
 	<string name="every_number_sec__format">Every %d sec.</string>
 	<string name="exif_metadata">Exif metadata</string>

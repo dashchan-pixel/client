@@ -99,6 +99,7 @@ class CommandsFragment :
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         menu.add(0, R.id.menu_add_command, 0, R.string.add_command)
+        menu.add(0, R.id.menu_environment, 0, R.string.environment)
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -109,6 +110,10 @@ class CommandsFragment :
             }
             R.id.menu_add_command -> {
                 launchAddCommand()
+                return true
+            }
+            R.id.menu_environment -> {
+                EnvironmentDialog().show(childFragmentManager, EnvironmentDialog::class.java.name)
                 return true
             }
         }
@@ -573,6 +578,61 @@ class CommandsFragment :
         companion object {
             private const val EXTRA_ITEM = "item"
             private const val EXTRA_INDEX = "index"
+        }
+    }
+
+    /**
+     * Editor for the shared command [environment][CommandsStorage.getEnv] — a plain key→value store
+     * that every command can read as `env.NAME`. Presented as free text, one `NAME=value` per line,
+     * which is the simplest thing to type and re-edit. Lines without a valid identifier key (or with
+     * no `=`) are ignored on save.
+     */
+    class EnvironmentDialog : DialogFragment() {
+        private lateinit var envEdit: EditText
+
+        @SuppressLint("InflateParams")
+        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
+            val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_environment, null)
+            envEdit = view.findViewById(R.id.env)
+            if (savedInstanceState == null) {
+                // On recreation the EditText restores its own text from the saved view state, so only
+                // seed it on first creation.
+                envEdit.setText(formatEnv(CommandsStorage.getInstance().getEnv()))
+            }
+            val dialog =
+                AlertDialog
+                    .Builder(requireContext())
+                    .setTitle(R.string.environment)
+                    .setView(view)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.save) { _, _ ->
+                        CommandsStorage.getInstance().setEnv(parseEnv(envEdit.text.toString()))
+                    }.create()
+            dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+            return dialog
+        }
+
+        companion object {
+            // Keys must be usable as `env.NAME`, i.e. valid JS identifiers.
+            private val KEY_REGEX = Regex("[A-Za-z_][A-Za-z0-9_]*")
+
+            private fun formatEnv(env: Map<String, String>): String = env.entries.joinToString("\n") { "${it.key}=${it.value}" }
+
+            private fun parseEnv(text: String): Map<String, String> {
+                val result = LinkedHashMap<String, String>()
+                for (rawLine in text.split('\n')) {
+                    val line = rawLine.trim()
+                    val eq = line.indexOf('=')
+                    if (eq <= 0) {
+                        continue
+                    }
+                    val key = line.substring(0, eq).trim()
+                    if (KEY_REGEX.matches(key)) {
+                        result[key] = line.substring(eq + 1)
+                    }
+                }
+                return result
+            }
         }
     }
 }

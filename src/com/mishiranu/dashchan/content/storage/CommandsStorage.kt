@@ -18,14 +18,38 @@ import org.json.JSONObject
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
  */
-class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List<CommandsStorage.CommandItem>>("commands", 1000, 10000) {
+class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<CommandsStorage.Snapshot>("commands", 1000, 10000) {
     private val commandItems = ArrayList<CommandItem>()
+
+    /**
+     * A tiny key→value store shared by every command. The values are injected into each script's
+     * scope as `env` (see [com.mishiranu.dashchan.content.CommandRunner]), so scripts can read a
+     * user-provided value with `env.CUSTOM_NAME_HERE`. Edited from the Commands screen. Ordered so
+     * the editor shows entries in a stable order. Keys are plain JS identifiers.
+     */
+    private val env = LinkedHashMap<String, String>()
 
     init {
         startRead()
     }
 
     fun getItems(): ArrayList<CommandItem> = commandItems
+
+    /** A copy of the shared environment, as an ordered key→value map. */
+    fun getEnv(): LinkedHashMap<String, String> = LinkedHashMap(env)
+
+    /** Replaces the whole shared environment (used by the environment editor), then serializes. */
+    fun setEnv(newEnv: Map<String, String>) {
+        env.clear()
+        env.putAll(newEnv)
+        serialize()
+    }
+
+    /** Snapshot of what gets persisted: the ordered command list plus the shared environment. */
+    class Snapshot(
+        val items: List<CommandItem>,
+        val env: Map<String, String>,
+    )
 
     /** Commands whose scope matches [chanName]/[boardName] and that target [useIn]. */
     fun getAvailable(
@@ -34,15 +58,23 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
         boardName: String?,
     ): List<CommandItem> = commandItems.filter { it.useIn == useIn && it.matches(chanName, boardName) }
 
-    override fun onClone(): List<CommandItem> {
+    override fun onClone(): Snapshot {
         val commandItems = ArrayList<CommandItem>(this.commandItems.size)
         for (commandItem in this.commandItems) {
             commandItems.add(CommandItem(commandItem))
         }
-        return commandItems
+        return Snapshot(commandItems, LinkedHashMap(env))
     }
 
     override fun onDeserialize(jsonObject: JSONObject) {
+        val envObject = jsonObject.optJSONObject(KEY_ENV)
+        if (envObject != null) {
+            val keys = envObject.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                env[key] = envObject.optString(key)
+            }
+        }
         val jsonArray = jsonObject.optJSONArray(KEY_DATA) ?: return
         var migrated = false
         for (i in 0 until jsonArray.length()) {
@@ -84,17 +116,26 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
     }
 
     @Throws(JSONException::class)
-    override fun onSerialize(data: List<CommandItem>): JSONObject? {
-        if (data.isNotEmpty()) {
+    override fun onSerialize(data: Snapshot): JSONObject? {
+        if (data.items.isEmpty() && data.env.isEmpty()) {
+            return null
+        }
+        val jsonObject = JSONObject()
+        if (data.items.isNotEmpty()) {
             val jsonArray = JSONArray()
-            for (commandItem in data) {
+            for (commandItem in data.items) {
                 jsonArray.put(serializeCommand(commandItem))
             }
-            val jsonObject = JSONObject()
             jsonObject.put(KEY_DATA, jsonArray)
-            return jsonObject
         }
-        return null
+        if (data.env.isNotEmpty()) {
+            val envObject = JSONObject()
+            for ((key, value) in data.env) {
+                envObject.put(key, value)
+            }
+            jsonObject.put(KEY_ENV, envObject)
+        }
+        return jsonObject
     }
 
     @Throws(JSONException::class)
@@ -291,6 +332,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
 
     companion object {
         private const val KEY_DATA = "data"
+        private const val KEY_ENV = "env"
         private const val KEY_ID = "id"
         private const val KEY_CHAN_NAMES = "chanNames"
         private const val KEY_BOARD_NAME = "boardName"
