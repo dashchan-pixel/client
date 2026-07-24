@@ -2073,10 +2073,10 @@ class PostsPage :
 
     /**
      * Snapshots the currently loaded posts as the `posts` array handed to a thread command. Comments go
-     * out as markup (what "Copy markup" yields), not as the rendered text.
+     * out as the post's HTML, the same form the replacement comes back in — always the post as it
+     * arrived, never an override a previous run left behind, so re-running a command is idempotent.
      */
     private fun collectThreadPosts(): List<CommandRunner.ThreadPost> {
-        val chan = this.chan
         val posts = ArrayList<CommandRunner.ThreadPost>()
         for (postItem in adapter) {
             val post = postItem.getPost()
@@ -2087,7 +2087,7 @@ class PostsPage :
                     nullIfEmpty(post.email),
                     post.icons.firstOrNull()?.title,
                     nullIfEmpty(post.subject),
-                    postItem.getCommentMarkup(chan),
+                    emptyIfNull(post.comment),
                 ),
             )
         }
@@ -2136,7 +2136,7 @@ class PostsPage :
     }
 
     /**
-     * Applies a thread command's [replacements] (post number → text) to the loaded posts, overriding
+     * Applies a thread command's [replacements] (post number → HTML) to the loaded posts, overriding
      * the displayed comment of matching posts and clearing any override on the rest, then rebinds.
      * Returns how many posts were overridden.
      */

@@ -16,10 +16,15 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `thread`, `board`, `env`. It should
  *   `return` the replacement comment; returning `undefined`/`null` leaves the field untouched.
  * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`. `posts` is an
- *   array of `{number, name, email, icon, subject, comment}`, `comment` being the post's markup — what
- *   "Copy markup" yields, not the stripped text. It should `return` an object mapping a post's `number`
- *   to the plain text to display in place of that post's comment (e.g. `{ "123": "decrypted…" }`);
- *   posts absent from the object are left as-is, and returning `undefined`/`null` changes nothing.
+ *   array of `{number, name, email, icon, subject, comment}`, `comment` being the post's HTML as the
+ *   chan sent it. It should `return` an object mapping a post's `number` to the HTML to display in
+ *   place of that post's comment (e.g. `{ "123": "<b>decrypted…</b>" }`); posts absent from the object
+ *   are left as-is, and returning `undefined`/`null` changes nothing.
+ *
+ *   In and out are the same form on purpose: a replacement is parsed exactly like a real comment, so
+ *   greentext, spoilers and `>>` links written the way the chan writes them keep working, and a script
+ *   that edits only the text it cares about can hand the rest of the post's HTML straight back. The
+ *   flip side is that a replacement is HTML, so plain text carrying `<` or `&` has to be escaped.
  *
  * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
  * is no such context. Being async, a body may `await` (e.g.
@@ -38,8 +43,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 object CommandRunner {
     /**
      * One post handed to a [CommandsStorage.UseIn.THREAD] script as an element of `posts`. [comment] is
-     * the post's markup, not the rendered text — see
-     * [PostItem.getCommentMarkup][com.mishiranu.dashchan.content.model.PostItem.getCommentMarkup].
+     * the post's HTML, not the rendered text — see
+     * [Post.comment][chan.content.model.Post.getComment].
      */
     data class ThreadPost(
         val number: String,
@@ -69,7 +74,7 @@ object CommandRunner {
     /** Outcome of a [CommandsStorage.UseIn.THREAD] command. */
     sealed interface ThreadResult {
         /**
-         * The command ran successfully. [replacements] maps a post number to the text to display in
+         * The command ran successfully. [replacements] maps a post number to the HTML to display in
          * place of that post's comment; it is empty when the script asked for no changes.
          */
         data class Success(
@@ -125,7 +130,7 @@ object CommandRunner {
                 thread = thread,
                 board = board,
                 env = CommandsStorage.getInstance().getEnv(),
-                // A thread command returns a { postNumber: replacementText } object.
+                // A thread command returns a { postNumber: replacementHtml } object.
                 resultExpr = "(__result===undefined||__result===null)?{}:__result",
             ) { append(postsJson).append(',') }
         execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback)
