@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.ui
 
 import android.animation.LayoutTransition
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -18,9 +19,11 @@ import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.util.Pair
 import android.view.ActionMode
+import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.OnHierarchyChangeListener
@@ -255,6 +258,7 @@ class MainActivity :
         // Allow CustomSearchView to ignore content inset
         toolbar.setClipChildren(false)
         toolbarHolder = addToolbarTitle(toolbar)
+        setupToolbarTitleToggle(toolbar)
         toolbarExtra = findViewById(R.id.toolbar_extra)
         val layoutTransition = LayoutTransition()
         layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0)
@@ -583,7 +587,49 @@ class MainActivity :
         title: CharSequence?,
         subtitle: CharSequence?,
     ) {
+        setTitleSubtitle(title, subtitle, false)
+    }
+
+    private fun setTitleSubtitle(
+        title: CharSequence?,
+        subtitle: CharSequence?,
+        fromPage: Boolean,
+    ) {
+        toolbarTitleFromPage = fromPage
         toolbarHolder!!.update(title, subtitle)
+        updateToolbarTitleVisibility()
+    }
+
+    // The title of a board or thread page can be hidden by a double tap on the toolbar.
+    private var toolbarTitleFromPage = false
+
+    private fun updateToolbarTitleVisibility() {
+        val toolbarHolder = this.toolbarHolder ?: return
+        val hide = toolbarTitleFromPage && Preferences.isHideToolbarTitle
+        toolbarHolder.layout.setVisibility(if (hide) View.GONE else View.VISIBLE)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupToolbarTitleToggle(toolbar: Toolbar) {
+        val gestureDetector =
+            GestureDetector(
+                toolbar.getContext(),
+                object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onDown(e: MotionEvent): Boolean = true
+
+                    override fun onDoubleTap(e: MotionEvent): Boolean {
+                        if (!toolbarTitleFromPage) {
+                            return false
+                        }
+                        Preferences.isHideToolbarTitle = !Preferences.isHideToolbarTitle
+                        updateToolbarTitleVisibility()
+                        return true
+                    }
+                },
+            )
+        // Children (navigation button, menu items, search view) handle their own touches,
+        // so only taps on the toolbar background and on the title itself arrive here.
+        toolbar.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
     }
 
     override fun getToolbarView(): ViewGroup = checkNotNull(toolbarHolder).toolbar
@@ -2747,7 +2793,7 @@ class MainActivity :
         title: String?,
         subtitle: String?,
     ) {
-        setTitleSubtitle(title, subtitle)
+        setTitleSubtitle(title, subtitle, true)
         if ((this.currentFragment as PageFragment).page.content == Page.Content.POSTS) {
             currentPageItem!!.threadTitle = title
         }

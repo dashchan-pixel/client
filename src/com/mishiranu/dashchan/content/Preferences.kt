@@ -850,6 +850,24 @@ object Preferences {
                 DEFAULT_HIDE_PERSONAL_DATA,
             )
 
+    const val KEY_HIDE_TOOLBAR_TITLE: String = "hide_toolbar_title"
+    const val DEFAULT_HIDE_TOOLBAR_TITLE: Boolean = false
+
+    // Toggled by a double tap on the toolbar of a board or thread page, no settings entry.
+    @JvmStatic
+    var isHideToolbarTitle: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_HIDE_TOOLBAR_TITLE,
+                DEFAULT_HIDE_TOOLBAR_TITLE,
+            )
+        set(value) {
+            prefs
+                .edit()
+                .put(KEY_HIDE_TOOLBAR_TITLE, value)
+                .close()
+        }
+
     const val KEY_HIGHLIGHT_UNREAD: String = "highlight_unread_posts"
     val DEFAULT_HIGHLIGHT_UNREAD: HighlightUnreadMode = HighlightUnreadMode.AUTOMATICALLY
 
