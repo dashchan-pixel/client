@@ -98,9 +98,16 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
     }
 
     @Throws(JSONException::class)
-    private fun serializeCommand(commandItem: CommandItem): JSONObject {
+    private fun serializeCommand(
+        commandItem: CommandItem,
+        includeId: Boolean = true,
+    ): JSONObject {
         val jsonObject = JSONObject()
-        jsonObject.put(KEY_ID, commandItem.id)
+        // The id is an internal storage detail (it keeps rows stable across launches); export/sharing
+        // JSON omits it, and re-import assigns a fresh one anyway (see parseCommand).
+        if (includeId) {
+            jsonObject.put(KEY_ID, commandItem.id)
+        }
         val chanNames = commandItem.chanNames
         if (!chanNames.isNullOrEmpty()) {
             val chanNamesArray = JSONArray()
@@ -119,7 +126,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
 
     /** JSON for one command, for export/sharing; re-importable via [parseCommands]. */
     @Throws(JSONException::class)
-    fun commandToJson(commandItem: CommandItem): JSONObject = serializeCommand(commandItem)
+    fun commandToJson(commandItem: CommandItem): JSONObject = serializeCommand(commandItem, includeId = false)
 
     fun add(commandItem: CommandItem) {
         commandItems.add(commandItem)
@@ -316,6 +323,39 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
                 parseCommand(jsonObject)?.let(result::add)
             }
             return result
+        }
+
+        /**
+         * Detects command JSON embedded in arbitrary post text (mirrors
+         * [com.mishiranu.dashchan.widget.ThemeEngine.fastParseThemeFromText]): a cheap key probe gates
+         * the parse, then the outermost `{ … }` is extracted and handed to [parseCommands]. A command's
+         * body ([KEY_CODE]) alone is too generic, so a scope/run flag key is also required. Returns the
+         * parsed commands, or an empty list when the text carries none.
+         */
+        fun fastParseCommandsFromText(text: String): List<CommandItem> {
+            if (text.contains("\"$KEY_CODE\"") &&
+                (
+                    text.contains("\"$KEY_USE_IN\"") ||
+                        text.contains("\"$KEY_AUTO_RUN\"") ||
+                        text.contains("\"$KEY_AUTO_RUN_LEGACY\"")
+                )
+            ) {
+                val start = text.indexOf('{')
+                val end = text.lastIndexOf('}') + 1
+                if (start >= 0 && end > start) {
+                    val jsonObject =
+                        try {
+                            JSONObject(text.substring(start, end))
+                        } catch (e: JSONException) {
+                            e.printStackTrace()
+                            null
+                        }
+                    if (jsonObject != null) {
+                        return parseCommands(jsonObject)
+                    }
+                }
+            }
+            return emptyList()
         }
 
         private fun parseCommand(item: JSONObject): CommandItem? {

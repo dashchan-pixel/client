@@ -55,6 +55,7 @@ import com.mishiranu.dashchan.content.model.PostItem
 import com.mishiranu.dashchan.content.model.PostItem.BumpLimitState
 import com.mishiranu.dashchan.content.model.PostItem.DescriptionBuilder
 import com.mishiranu.dashchan.content.model.PostNumber
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.Companion.getInstance
 import com.mishiranu.dashchan.text.style.LinkSuffixSpan
 import com.mishiranu.dashchan.ui.gallery.GalleryOverlay.NavigatePostMode
@@ -1131,6 +1132,20 @@ class ViewUnit
                                 if (theme != null) {
                                     if (click) {
                                         uiManager.navigator()!!.navigateSetTheme(theme)
+                                    }
+                                    return@Callback true
+                                }
+                                false
+                            },
+                        ),
+                        ExtraButton(
+                            context.getString(R.string.add_command),
+                            R.attr.iconActionAddRule,
+                            ExtraButton.Callback { view: CommentTextView, text: ExtraButton.Text, click: Boolean ->
+                                val commands = CommandsStorage.fastParseCommandsFromText(text.toString())
+                                if (commands.isNotEmpty()) {
+                                    if (click) {
+                                        uiManager.navigator()!!.navigateAddCommand(commands)
                                     }
                                     return@Callback true
                                 }

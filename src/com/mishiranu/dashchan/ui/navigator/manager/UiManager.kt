@@ -15,6 +15,7 @@ import com.mishiranu.dashchan.content.model.PostItem
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.content.service.DownloadService
 import com.mishiranu.dashchan.content.service.WatcherService
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.InstanceDialog
 import com.mishiranu.dashchan.ui.gallery.GalleryOverlay.NavigatePostMode
 import com.mishiranu.dashchan.ui.navigator.manager.DialogUnit.StackInstance
@@ -186,6 +187,8 @@ class UiManager(
         )
 
         fun navigateSetTheme(theme: ThemeEngine.Theme)
+
+        fun navigateAddCommand(commands: List<CommandsStorage.CommandItem>)
     }
 
     enum class Selection {

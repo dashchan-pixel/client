@@ -90,6 +90,7 @@ import com.mishiranu.dashchan.content.service.PostingService.FailResult
 import com.mishiranu.dashchan.content.service.PostingService.GlobalCallback
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.service.WatcherService.Companion.getClient
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.DraftsStorage.Companion.getInstance
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.Companion.getInstance
@@ -110,6 +111,7 @@ import com.mishiranu.dashchan.ui.navigator.page.ListPage.Retainable
 import com.mishiranu.dashchan.ui.posting.PostingFragment
 import com.mishiranu.dashchan.ui.posting.Replyable.ReplyData
 import com.mishiranu.dashchan.ui.preference.CategoriesFragment
+import com.mishiranu.dashchan.ui.preference.CommandsFragment
 import com.mishiranu.dashchan.ui.preference.ThemesFragment
 import com.mishiranu.dashchan.ui.preference.UpdateFragment
 import com.mishiranu.dashchan.ui.preference.UpdateFragment.Companion.checkNewVersions
@@ -787,6 +789,21 @@ class MainActivity :
                 }
             },
         )
+    }
+
+    override fun navigateAddCommand(commands: List<CommandsStorage.CommandItem>) {
+        if (commands.isEmpty()) {
+            return
+        }
+        val storage = CommandsStorage.getInstance()
+        for (command in commands) {
+            storage.add(command)
+        }
+        // Open the Commands screen so the added command is visible for review/edit (its parsed scope may
+        // need adjusting); a single command opens straight into its editor.
+        val fragment =
+            if (commands.size == 1) CommandsFragment(commands[0].id) else CommandsFragment()
+        navigateFragment(fragment, null, true)
     }
 
     override fun scrollToPost(
