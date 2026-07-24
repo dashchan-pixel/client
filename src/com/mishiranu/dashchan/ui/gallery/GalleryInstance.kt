@@ -1,11 +1,13 @@
 package com.mishiranu.dashchan.ui.gallery
 
 import android.content.Context
+import android.view.ContextThemeWrapper
 import android.view.Window
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelStoreOwner
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.ui.InstanceDialog
+import com.mishiranu.dashchan.widget.ThemeEngine
 
 class GalleryInstance(
     @JvmField val context: Context,
@@ -77,5 +79,25 @@ class GalleryInstance(
     companion object {
         @JvmStatic
         fun getCallback(provider: InstanceDialog.Provider): Callback = provider.parentFragment as Callback
+
+        /**
+         * A context for the gallery's own popups (context menus, dialogs). The gallery window is themed
+         * with [com.mishiranu.dashchan.R.style.Theme_Gallery], which is fullscreen — not a floating
+         * theme — so the [ThemeEngine] layout inflater it produces is not "direct". Dialogs inflated
+         * from it therefore skip [ThemeEngine]'s rounded-corner window background (it only applies to
+         * direct app surfaces), leaving gallery menus square while every other menu is rounded.
+         *
+         * This keeps the gallery Dialog's window token (so the popup stays attached to the immersive
+         * gallery window) but re-themes it with the normal app theme and re-attaches it to the
+         * [ThemeEngine], yielding a direct inflater. The popup then matches the rest of the app: the
+         * user's theme colours and the global corner radius.
+         */
+        @JvmStatic
+        fun menuContext(windowContext: Context): Context {
+            val base = ThemeEngine.getTheme(windowContext).base
+            val themed =
+                if (base != null) ContextThemeWrapper(windowContext, base.resId) else windowContext
+            return ThemeEngine.attach(themed)
+        }
     }
 }

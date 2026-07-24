@@ -761,7 +761,7 @@ class PagerUnit(
         if (capabilities.available && holder != null) {
             val galleryItem = holder.galleryItem!!
             val chan = get(galleryInstance.chanName)
-            val context = galleryInstance.callback.getWindow()!!.getContext()
+            val context = GalleryInstance.menuContext(galleryInstance.callback.getWindow()!!.getContext())
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
                 if (!StringUtils.isEmpty(galleryItem.originalName)) {

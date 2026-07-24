@@ -618,7 +618,7 @@ class ListUnit(
             allowNavigatePostManually: Boolean,
         ): AlertDialog {
             val callback = getCallback(provider)
-            val context = callback.getWindow()!!.getContext()
+            val context = GalleryInstance.menuContext(callback.getWindow()!!.getContext())
             val chan = get(chanName)
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(
