@@ -33,6 +33,10 @@
 	<item type="id" name="menu_make_threadshot" />
 	<item type="id" name="menu_add_command" />
 	<item type="id" name="menu_environment" />
+	<item type="id" name="button1" />
+	<item type="id" name="button2" />
+	<item type="id" name="button3" />
+	<item type="id" name="button4" />
 	<item type="id" name="menu_my_posts" />
 	<item type="id" name="menu_new_command" />
 	<item type="id" name="menu_new_rule" />

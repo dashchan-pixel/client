@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import chan.content.Chan.Companion.get
 import chan.util.StringUtils.copyToClipboard
 import chan.util.StringUtils.isEmpty
+import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.text.style.LinkSpan
 import com.mishiranu.dashchan.text.style.OverlineSpan.Companion.draw
 import com.mishiranu.dashchan.text.style.SpoilerSpan
@@ -1110,8 +1111,15 @@ class CommentTextView
 
             private val LIST_PATTERN: Pattern = Pattern.compile("^(?:(?:\\d+[.)]|[\u2022-]) |>(?!>) ?)")
 
+            // One menu-item id per supported extra button. Keep this array as long as the longest
+            // extra-button list a caller passes to setExtraButtons (currently ViewUnit's four).
             private val EXTRA_BUTTON_IDS =
-                intArrayOf(android.R.id.button1, android.R.id.button2, android.R.id.button3)
+                intArrayOf(
+                    R.id.button1,
+                    R.id.button2,
+                    R.id.button3,
+                    R.id.button4,
+                )
 
             private fun getSpanWatcher(text: Spannable): SpanWatcher? {
                 val watchers = text.getSpans<SpanWatcher?>(0, text.length, SpanWatcher::class.java)
