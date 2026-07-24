@@ -2325,28 +2325,13 @@ class PostingFragment :
         )
     }
 
-    /**
-     * The thread being replied to, as the `thread` object handed to a command — `null` when composing a
-     * new thread. The posting screen doesn't carry a thread title, so it goes out as `null`.
-     */
-    private fun commandThread(): CommandRunner.ThreadInfo? {
-        val threadNumber = this.threadNumber ?: return null
-        return CommandRunner.ThreadInfo(threadNumber, null)
-    }
-
-    /** The board being posted to, as the `board` object handed to a command. */
-    private fun commandBoard(): CommandRunner.BoardInfo? {
-        val boardName = this.boardName ?: return null
-        return CommandRunner.BoardInfo(boardName, get(this.chanName).configuration.getBoardTitle(boardName))
-    }
-
     private fun runCommand(command: CommandsStorage.CommandItem) {
         val commentView = commentView ?: return
         CommandRunner.run(
             command,
             commentView.getText().toString(),
-            commandThread(),
-            commandBoard(),
+            this.threadNumber,
+            this.boardName,
         ) { result ->
             // Delivered on the main thread; the view may be gone by the time it arrives.
             val liveCommentView = this.commentView ?: return@run
@@ -2399,7 +2384,7 @@ class PostingFragment :
             executeSendPost()
             return
         }
-        CommandRunner.run(commands[index], comment, commandThread(), commandBoard()) { result ->
+        CommandRunner.run(commands[index], comment, this.threadNumber, this.boardName) { result ->
             val liveCommentView = this.commentView
             if (liveCommentView == null) {
                 sendButtonEnabled = true

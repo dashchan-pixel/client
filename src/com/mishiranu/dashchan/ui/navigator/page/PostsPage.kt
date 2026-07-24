@@ -2071,19 +2071,6 @@ class PostsPage :
         subMenu.add(0, R.id.menu_edit_commands, commands.size, R.string.edit__ellipsis)
     }
 
-    /** The thread a command runs in, as the `thread` object handed to the script. */
-    private fun threadCommandThread(): CommandRunner.ThreadInfo? {
-        val threadNumber = getPage().threadNumber ?: return null
-        val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
-        return CommandRunner.ThreadInfo(threadNumber, nullIfEmpty(parcelableExtra.threadTitle))
-    }
-
-    /** The board a command runs in, as the `board` object handed to the script. */
-    private fun threadCommandBoard(): CommandRunner.BoardInfo? {
-        val boardName = getPage().boardName ?: return null
-        return CommandRunner.BoardInfo(boardName, chan.configuration.getBoardTitle(boardName))
-    }
-
     /**
      * Snapshots the currently loaded posts as the `posts` array handed to a thread command. Comments go
      * out as markup (what "Copy markup" yields), not as the rendered text.
@@ -2128,7 +2115,7 @@ class PostsPage :
         notifyEmpty: Boolean = true,
     ) {
         val posts = collectThreadPosts()
-        CommandRunner.runThread(command, posts, threadCommandThread(), threadCommandBoard()) { result ->
+        CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
             // Delivered on the main thread; the page may have been left by the time it arrives.
             if (!isRunning) {
                 return@runThread

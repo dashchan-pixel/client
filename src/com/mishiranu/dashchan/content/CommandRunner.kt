@@ -21,8 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   to the plain text to display in place of that post's comment (e.g. `{ "123": "decrypted…" }`);
  *   posts absent from the object are left as-is, and returning `undefined`/`null` changes nothing.
  *
- * `thread` is `{id, title}` and `board` is `{code, name}`; either is `null` when there is no such
- * context. Being async, a body may `await` (e.g. `return await fetch(url).then(r => r.text())`).
+ * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
+ * is no such context. Being async, a body may `await` (e.g.
+ * `return await fetch(url).then(r => r.text())`).
  *
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure
@@ -47,18 +48,6 @@ object CommandRunner {
         val icon: String?,
         val subject: String?,
         val comment: String,
-    )
-
-    /** The thread a command runs in, handed to the script as `thread` — [number] is exposed as `id`. */
-    data class ThreadInfo(
-        val number: String,
-        val title: String?,
-    )
-
-    /** The board a command runs in, handed to the script as `board`. */
-    data class BoardInfo(
-        val code: String,
-        val name: String?,
     )
 
     /** Outcome of a [CommandsStorage.UseIn.COMMENT] command. */
@@ -100,8 +89,8 @@ object CommandRunner {
     fun run(
         item: CommandsStorage.CommandItem,
         comment: String,
-        thread: ThreadInfo?,
-        board: BoardInfo?,
+        thread: String?,
+        board: String?,
         callback: (Result) -> Unit,
     ) {
         val script =
@@ -124,8 +113,8 @@ object CommandRunner {
     fun runThread(
         item: CommandsStorage.CommandItem,
         posts: List<ThreadPost>,
-        thread: ThreadInfo?,
-        board: BoardInfo?,
+        thread: String?,
+        board: String?,
         callback: (ThreadResult) -> Unit,
     ) {
         val postsJson = postsToJson(posts)
@@ -189,8 +178,8 @@ object CommandRunner {
     private fun buildScript(
         args: String,
         code: String,
-        thread: ThreadInfo?,
-        board: BoardInfo?,
+        thread: String?,
+        board: String?,
         env: Map<String, String>,
         resultExpr: String,
         leadingArg: StringBuilder.() -> Unit,
@@ -210,8 +199,8 @@ object CommandRunner {
             append(");")
             append("Promise.resolve(__command(")
             leadingArg()
-            append(jsThread(thread)).append(',')
-            append(jsBoard(board)).append(',')
+            append(jsArg(thread)).append(',')
+            append(jsArg(board)).append(',')
             // The shared env store, injected as a plain object so scripts read `env.NAME`. Frozen so
             // a stray `env.X = …` is dropped (throwing under "use strict") rather than mutating a
             // value that would never be persisted — this is a per-run snapshot.
@@ -241,30 +230,6 @@ object CommandRunner {
     }
 
     private fun jsArg(value: String?): String = if (value == null) "null" else JSONObject.quote(value)
-
-    /** `thread` as `{id, title}`, or `null` outside a thread. */
-    private fun jsThread(thread: ThreadInfo?): String {
-        if (thread == null) {
-            return "null"
-        }
-        val jsonObject = JSONObject()
-        // Thread numbers are strings in the chan API; hand JS a number when one parses, the raw string
-        // otherwise.
-        jsonObject.put("id", thread.number.toLongOrNull() ?: thread.number)
-        jsonObject.put("title", thread.title ?: JSONObject.NULL)
-        return jsonObject.toString()
-    }
-
-    /** `board` as `{code, name}`, or `null` when there is no board context. */
-    private fun jsBoard(board: BoardInfo?): String {
-        if (board == null) {
-            return "null"
-        }
-        val jsonObject = JSONObject()
-        jsonObject.put("code", board.code)
-        jsonObject.put("name", board.name ?: JSONObject.NULL)
-        return jsonObject.toString()
-    }
 
     private const val BRIDGE_NAME = "__commandBridge"
     private const val TIMEOUT_MS = 30000L
