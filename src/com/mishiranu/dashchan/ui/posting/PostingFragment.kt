@@ -13,6 +13,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Outline
 import android.graphics.Rect
+import android.graphics.drawable.InsetDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
@@ -30,16 +31,17 @@ import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.inputmethod.InputMethodManager
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
+import androidx.appcompat.widget.ListPopupWindow
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
@@ -58,6 +60,9 @@ import chan.util.DataFile
 import chan.util.StringUtils
 import chan.util.StringUtils.formatFileSize
 import chan.util.StringUtils.nullIfEmpty
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences.configuredFileNewname
@@ -71,6 +76,7 @@ import com.mishiranu.dashchan.content.Preferences.isAlwaysUniqueHash
 import com.mishiranu.dashchan.content.Preferences.isCaptchaAutoReload
 import com.mishiranu.dashchan.content.Preferences.isHidePersonalData
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
+import com.mishiranu.dashchan.content.Preferences.uiCornerRadius
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.content.async.SendPostTask.ProgressState
 import com.mishiranu.dashchan.content.async.TaskViewModel
@@ -100,6 +106,7 @@ import com.mishiranu.dashchan.ui.posting.text.MarkupButtonProvider.Companion.ite
 import com.mishiranu.dashchan.ui.posting.text.MarkupButtonProvider.Companion.obtainSupportedAndDisplayedTags
 import com.mishiranu.dashchan.ui.posting.text.NameEditWatcher
 import com.mishiranu.dashchan.ui.posting.text.QuoteEditWatcher
+import com.mishiranu.dashchan.ui.preference.CommandsFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.GraphicsUtils.Reencoding
 import com.mishiranu.dashchan.util.GraphicsUtils.applyAlpha
@@ -123,6 +130,7 @@ import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.DropdownView
 import com.mishiranu.dashchan.widget.ExpandedLayout
+import com.mishiranu.dashchan.widget.MaterialContext
 import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import com.mishiranu.dashchan.widget.UriPasteEditText
@@ -484,16 +492,16 @@ class PostingFragment :
         refreshCaptchaWhenLifetimeEnd = isCaptchaAutoReload
         val maxTranslationZ = (2f * density).toInt().toFloat()
         val sendButton =
-            object : Button(
-                captchaInputParentView.getContext(),
-                null,
-                0,
-                android.R.style.Widget_Material_Button_Colored,
-            ) {
+            object : MaterialButton(MaterialContext.wrap(captchaInputParentView.getContext())) {
                 override fun setTranslationZ(translationZ: Float) {
                     super.setTranslationZ(min(translationZ, maxTranslationZ))
                 }
             }
+        // Match the app-wide rounded look; drop MaterialButton's default vertical touch-target insets
+        // so the button keeps the full height the posting footer lays out for it.
+        sendButton.cornerRadius = (uiCornerRadius * density).toInt()
+        sendButton.insetTop = 0
+        sendButton.insetBottom = 0
         this.sendButton = sendButton
         val rect = Rect()
         // Limit elevation height since the shadow looks ugly when the view is at the bottom
@@ -2245,22 +2253,92 @@ class PostingFragment :
         if (commands.isEmpty()) {
             return
         }
-        val popup = PopupMenu(anchor.context, anchor)
-        for (i in commands.indices) {
-            val command = commands[i]
-            val name = command.name
-            val title = if (StringUtils.isEmpty(name)) getString(R.string.command) else name
-            val item = popup.menu.add(0, i, 0, title)
-            if (command.runOnSend) {
-                // Runs automatically on send; greyed out here rather than hidden.
-                item.isEnabled = false
+        // A PopupMenu (framework or Material) won't take the app-wide corner radius — its inner list
+        // draws its own background over any rounded window. Use a ListPopupWindow whose background we
+        // control directly: a MaterialShapeDrawable rounded to Preferences.uiCornerRadius, filled with
+        // the theme card colour.
+        val context = anchor.context
+        val density = ResourceUtils.obtainDensity(context)
+        val titles: List<CharSequence> =
+            commands.map { command ->
+                val name = command.name
+                if (name.isNullOrEmpty()) getString(R.string.command) else name
+            }
+        val itemPaddingHorizontal = (16f * density).toInt()
+        val itemPaddingVertical = (12f * density).toInt()
+        val adapter =
+            object : ArrayAdapter<CharSequence>(
+                context,
+                android.R.layout.simple_list_item_1,
+                android.R.id.text1,
+                titles,
+            ) {
+                override fun getView(
+                    position: Int,
+                    convertView: View?,
+                    parent: ViewGroup,
+                ): View {
+                    val view = super.getView(position, convertView, parent)
+                    view.setPadding(
+                        itemPaddingHorizontal,
+                        itemPaddingVertical,
+                        itemPaddingHorizontal,
+                        itemPaddingVertical,
+                    )
+                    // Run-on-send commands can't be run manually (greyed out) but can still be opened
+                    // for edit via long tap, so the row stays enabled; only the tap action is guarded.
+                    view.alpha = if (commands[position].autoRun) 0.5f else 1f
+                    return view
+                }
+            }
+        val popup = ListPopupWindow(context)
+        popup.anchorView = anchor
+        popup.isModal = true
+        // Don't disturb the soft keyboard's open/closed state when the dropdown shows or dismisses.
+        popup.inputMethodMode = ListPopupWindow.INPUT_METHOD_NOT_NEEDED
+        popup.setAdapter(adapter)
+        // Tap feedback in a ListView comes from the list selector, not item backgrounds. Use the app's
+        // neutral selectable-item ripple instead of the default accent-tinted selector that flashed
+        // orange.
+        popup.setListSelector(context.getDrawable(getResourceId(context, android.R.attr.selectableItemBackground, 0)))
+        popup.width = measureCommandsPopupWidth(adapter, context)
+        val radius = uiCornerRadius * density
+        val shape =
+            MaterialShapeDrawable(ShapeAppearanceModel.builder().setAllCornerSizes(radius).build())
+        shape.fillColor = ColorStateList.valueOf(getTheme(context).card)
+        val verticalInset = (4f * density).toInt()
+        popup.setBackgroundDrawable(InsetDrawable(shape, 0, verticalInset, 0, verticalInset))
+        popup.setOnItemClickListener { _, _, position, _ ->
+            popup.dismiss()
+            if (!commands[position].autoRun) {
+                runCommand(commands[position])
             }
         }
-        popup.setOnMenuItemClickListener { item ->
-            runCommand(commands[item.itemId])
+        popup.show()
+        // Long tap opens the command in Commands settings for editing/inspection — allowed even for the
+        // greyed-out run-on-send rows.
+        popup.listView?.setOnItemLongClickListener { _, _, position, _ ->
+            popup.dismiss()
+            (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(commands[position].id))
             true
         }
-        popup.show()
+    }
+
+    private fun measureCommandsPopupWidth(
+        adapter: ArrayAdapter<CharSequence>,
+        context: Context,
+    ): Int {
+        val density = ResourceUtils.obtainDensity(context)
+        val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        val fakeParent = FrameLayout(context)
+        var contentWidth = 0
+        var itemView: View? = null
+        for (i in 0 until adapter.count) {
+            itemView = adapter.getView(i, itemView, fakeParent)
+            itemView.measure(measureSpec, measureSpec)
+            contentWidth = max(contentWidth, itemView.measuredWidth)
+        }
+        return contentWidth.coerceIn((200f * density).toInt(), (280f * density).toInt())
     }
 
     private fun runCommand(command: CommandsStorage.CommandItem) {
@@ -2300,7 +2378,7 @@ class PostingFragment :
             CommandsStorage
                 .getInstance()
                 .getAvailable(CommandsStorage.UseIn.COMMENT, chanName, boardName)
-                .filter { it.runOnSend }
+                .filter { it.autoRun }
         if (commentView == null || commands.isEmpty()) {
             executeSendPost()
             return
@@ -2308,10 +2386,10 @@ class PostingFragment :
         // Disable the button so the send can't be re-triggered while the chain runs.
         sendButtonEnabled = false
         updateSendButtonState()
-        runOnSendChain(commands, 0, commentView.getText().toString())
+        autoRunChain(commands, 0, commentView.getText().toString())
     }
 
-    private fun runOnSendChain(
+    private fun autoRunChain(
         commands: List<CommandsStorage.CommandItem>,
         index: Int,
         comment: String,
@@ -2333,7 +2411,7 @@ class PostingFragment :
                     val newComment = result.comment ?: comment
                     liveCommentView.setText(newComment)
                     liveCommentView.setSelection(liveCommentView.getText().length)
-                    runOnSendChain(commands, index + 1, newComment)
+                    autoRunChain(commands, index + 1, newComment)
                 }
 
                 is CommandRunner.Result.Failure -> {

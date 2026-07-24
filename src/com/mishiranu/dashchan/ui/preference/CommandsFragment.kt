@@ -1,7 +1,11 @@
 package com.mishiranu.dashchan.ui.preference
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -9,10 +13,12 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.MimeTypeMap
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.RecyclerView
@@ -20,16 +26,31 @@ import chan.content.Chan
 import chan.content.ChanManager
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.storage.CommandsStorage
+import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.FragmentHandler
+import com.mishiranu.dashchan.util.IOUtils
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ResourceUtils
+import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.DropdownView
 import com.mishiranu.dashchan.widget.SimpleViewHolder
 import com.mishiranu.dashchan.widget.ViewFactory
+import org.json.JSONException
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 
-class CommandsFragment : BaseListFragment() {
+class CommandsFragment : BaseListFragment {
     private val items = ArrayList<CommandsStorage.CommandItem>()
+
+    constructor() : super()
+
+    /** Opens the fragment with the command of [editCommandId] shown in the edit dialog (e.g. from ⌘). */
+    constructor(editCommandId: Long) : this() {
+        arguments = Bundle().apply { putLong(EXTRA_EDIT_ID, editCommandId) }
+    }
 
     override fun onViewCreated(
         view: View,
@@ -43,6 +64,16 @@ class CommandsFragment : BaseListFragment() {
             setErrorText(getString(R.string.no_commands_defined))
         }
         getRecyclerView()!!.adapter = Adapter()
+
+        if (savedInstanceState == null) {
+            val editId = arguments?.getLong(EXTRA_EDIT_ID, 0) ?: 0
+            if (editId != 0L) {
+                val index = items.indexOfFirst { it.id == editId }
+                if (index >= 0) {
+                    editCommand(items[index], index)
+                }
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(
@@ -53,6 +84,7 @@ class CommandsFragment : BaseListFragment() {
             .add(0, R.id.menu_new_command, 0, R.string.new_command)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        menu.add(0, R.id.menu_add_command, 0, R.string.add_command)
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -61,8 +93,122 @@ class CommandsFragment : BaseListFragment() {
                 editCommand(null, -1)
                 return true
             }
+            R.id.menu_add_command -> {
+                launchAddCommand()
+                return true
+            }
         }
         return super.onMenuItemSelected(item)
+    }
+
+    private fun launchAddCommand() {
+        // Mirror ThemesFragment's "add theme": pick a JSON file and import command(s) from it.
+        var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json")
+        if (StringUtils.isEmpty(mimeType) || "application/octet-stream" == mimeType) {
+            mimeType = "*/*"
+        }
+        val intent =
+            Intent(Intent.ACTION_GET_CONTENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .setType(mimeType)
+                .putExtra("android.content.extra.SHOW_ADVANCED", true)
+        addCommandLauncher.launch(intent)
+    }
+
+    private val addCommandLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val data = result.data
+            if (result.resultCode == Activity.RESULT_OK && data != null) {
+                val uri = data.data
+                val fileHolder = if (uri != null) FileHolder.obtain(uri) else null
+                if (fileHolder != null) {
+                    val output = ByteArrayOutputStream()
+                    val success =
+                        try {
+                            fileHolder.openInputStream().use { input -> IOUtils.copyStream(input, output) }
+                            true
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                            false
+                        }
+                    val array = output.toByteArray()
+                    if (success && array.isNotEmpty()) {
+                        val jsonObject =
+                            try {
+                                JSONObject(String(array))
+                            } catch (e: JSONException) {
+                                e.printStackTrace()
+                                null
+                            }
+                        val commands =
+                            if (jsonObject != null) CommandsStorage.parseCommands(jsonObject) else emptyList()
+                        if (commands.isNotEmpty()) {
+                            addCommands(commands)
+                        } else {
+                            ClickableToast.show(R.string.invalid_data_format)
+                        }
+                    }
+                }
+            }
+        }
+
+    private fun addCommands(commands: List<CommandsStorage.CommandItem>) {
+        val storage = CommandsStorage.getInstance()
+        for (command in commands) {
+            storage.add(command)
+            items.add(command)
+        }
+        setErrorText(null)
+        getRecyclerView()!!.adapter!!.notifyDataSetChanged()
+    }
+
+    // Command awaiting a destination Uri from the create-document picker (Save from the context menu).
+    private var pendingSaveCommand: CommandsStorage.CommandItem? = null
+
+    private val saveCommandLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            val command = pendingSaveCommand
+            pendingSaveCommand = null
+            if (uri != null && command != null) {
+                val saved =
+                    try {
+                        val json = CommandsStorage.getInstance().commandToJson(command).toString()
+                        requireContext().contentResolver.openOutputStream(uri)?.use {
+                            it.write(json.toByteArray())
+                        }
+                        true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        false
+                    }
+                ClickableToast.show(if (saved) R.string.completed else R.string.unknown_error)
+            }
+        }
+
+    private fun showCommandContextMenu(command: CommandsStorage.CommandItem) {
+        val title = if (command.name.isNullOrEmpty()) getString(R.string.command) else command.name
+        DialogMenu(requireContext())
+            .setTitle(title)
+            .add(R.string.save) {
+                pendingSaveCommand = command
+                val baseName = command.name?.takeIf { it.isNotEmpty() } ?: "command"
+                saveCommandLauncher.launch("$baseName.json")
+            }.add(R.string.copy) { copyCommandJson(command) }
+            .create()
+            .show()
+    }
+
+    private fun copyCommandJson(command: CommandsStorage.CommandItem) {
+        try {
+            val json = CommandsStorage.getInstance().commandToJson(command).toString()
+            requireContext()
+                .getSystemService(ClipboardManager::class.java)
+                ?.setPrimaryClip(ClipData.newPlainText(getString(R.string.command), json))
+            ClickableToast.show(R.string.copied_to_clipboard)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ClickableToast.show(R.string.unknown_error)
+        }
     }
 
     private fun editCommand(
@@ -109,7 +255,11 @@ class CommandsFragment : BaseListFragment() {
             item: Unit?,
             longClick: Boolean,
         ): Boolean {
-            editCommand(items[position], position)
+            if (longClick) {
+                showCommandContextMenu(items[position])
+            } else {
+                editCommand(items[position], position)
+            }
             return true
         }
 
@@ -119,7 +269,7 @@ class CommandsFragment : BaseListFragment() {
         ): RecyclerView.ViewHolder =
             ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
                 SimpleViewHolder(ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_SINGLE_LINE).view),
-                false,
+                true,
                 null,
                 this,
             )
@@ -152,11 +302,15 @@ class CommandsFragment : BaseListFragment() {
                 builder.append(" & [").append(commandItem.boardName).append(']')
             }
             builder.append(" · ").append(getString(R.string.comment))
-            if (commandItem.runOnSend) {
-                builder.append(" · ").append(getString(R.string.run_on_send))
+            if (commandItem.autoRun) {
+                builder.append(" · ").append(getString(R.string.auto_run))
             }
             return builder
         }
+    }
+
+    companion object {
+        private const val EXTRA_EDIT_ID = "editId"
     }
 
     class CommandDialog :
@@ -169,8 +323,12 @@ class CommandsFragment : BaseListFragment() {
         private lateinit var boardNameEdit: EditText
         private lateinit var nameEdit: EditText
         private lateinit var useInView: DropdownView
-        private lateinit var runOnSendCheckBox: CheckBox
+        private lateinit var autoRunCheckBox: CheckBox
         private lateinit var codeEdit: EditText
+
+        // Identity of the command being edited, carried into readDialogView() so an edit keeps the same
+        // id (and a new command keeps one stable id for the life of the dialog).
+        private var editItemId: Long = 0
 
         constructor()
 
@@ -193,7 +351,7 @@ class CommandsFragment : BaseListFragment() {
             boardNameEdit = view.findViewById(R.id.board_name)
             nameEdit = view.findViewById(R.id.name)
             useInView = view.findViewById(R.id.use_in)
-            runOnSendCheckBox = view.findViewById(R.id.run_on_send)
+            autoRunCheckBox = view.findViewById(R.id.auto_run)
             codeEdit = view.findViewById(R.id.code)
             chanNameSelector.setOnClickListener { ChanMultiChoiceDialog(selectedChanNames).show(this) }
             chanNameSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
@@ -213,12 +371,14 @@ class CommandsFragment : BaseListFragment() {
                 commandItem = BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, CommandsStorage.CommandItem::class.java)
             }
             if (commandItem != null) {
+                editItemId = commandItem.id
                 commandItem.chanNames?.let { selectedChanNames.addAll(it) }
                 boardNameEdit.setText(commandItem.boardName)
                 nameEdit.setText(commandItem.name)
-                runOnSendCheckBox.isChecked = commandItem.runOnSend
+                autoRunCheckBox.isChecked = commandItem.autoRun
                 codeEdit.setText(commandItem.code)
             } else {
+                editItemId = CommandsStorage.CommandItem.generateId()
                 chanNameSelector.setText(R.string.all_forums)
             }
             updateSelectedText()
@@ -267,12 +427,13 @@ class CommandsFragment : BaseListFragment() {
 
         private fun readDialogView(): CommandsStorage.CommandItem =
             CommandsStorage.CommandItem(
+                editItemId,
                 if (selectedChanNames.isNotEmpty()) HashSet(selectedChanNames) else null,
                 boardNameEdit.text.toString(),
                 nameEdit.text.toString(),
                 codeEdit.text.toString(),
                 CommandsStorage.UseIn.COMMENT,
-                runOnSendCheckBox.isChecked,
+                autoRunCheckBox.isChecked,
             )
 
         override fun onChansSelected(chanNames: Collection<String>) {

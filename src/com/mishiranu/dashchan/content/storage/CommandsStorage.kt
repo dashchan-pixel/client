@@ -44,6 +44,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
 
     override fun onDeserialize(jsonObject: JSONObject) {
         val jsonArray = jsonObject.optJSONArray(KEY_DATA) ?: return
+        var migrated = false
         for (i in 0 until jsonArray.length()) {
             val item = jsonArray.optJSONObject(i)
             if (item != null) {
@@ -60,12 +61,25 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
                 val name = item.optString(KEY_NAME)
                 val code = item.optString(KEY_CODE)
                 val useIn = UseIn.fromKey(item.optString(KEY_USE_IN))
-                val runOnSend = item.optBoolean(KEY_RUN_ON_SEND)
+                val autoRun = item.optBoolean(KEY_AUTO_RUN, item.optBoolean(KEY_AUTO_RUN_LEGACY))
                 val boardName = if (item.isNull(KEY_BOARD_NAME)) null else item.optString(KEY_BOARD_NAME)
+                val storedId = item.optLong(KEY_ID)
+                val id =
+                    if (storedId != 0L) {
+                        storedId
+                    } else {
+                        // Legacy command saved before ids existed: assign one and re-persist so it stays
+                        // stable across launches.
+                        migrated = true
+                        CommandItem.generateId()
+                    }
                 commandItems.add(
-                    CommandItem(chanNames.ifEmpty { null }, boardName, name, code, useIn, runOnSend),
+                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun),
                 )
             }
+        }
+        if (migrated) {
+            serialize()
         }
     }
 
@@ -74,21 +88,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
         if (data.isNotEmpty()) {
             val jsonArray = JSONArray()
             for (commandItem in data) {
-                val jsonObject = JSONObject()
-                val chanNames = commandItem.chanNames
-                if (!chanNames.isNullOrEmpty()) {
-                    val chanNamesArray = JSONArray()
-                    for (chanName in chanNames) {
-                        chanNamesArray.put(chanName)
-                    }
-                    jsonObject.put(KEY_CHAN_NAMES, chanNamesArray)
-                }
-                AutohideStorage.putJson(jsonObject, KEY_BOARD_NAME, commandItem.boardName)
-                AutohideStorage.putJson(jsonObject, KEY_NAME, commandItem.name)
-                AutohideStorage.putJson(jsonObject, KEY_CODE, commandItem.code)
-                AutohideStorage.putJson(jsonObject, KEY_USE_IN, commandItem.useIn.key)
-                AutohideStorage.putJson(jsonObject, KEY_RUN_ON_SEND, commandItem.runOnSend)
-                jsonArray.put(jsonObject)
+                jsonArray.put(serializeCommand(commandItem))
             }
             val jsonObject = JSONObject()
             jsonObject.put(KEY_DATA, jsonArray)
@@ -97,8 +97,39 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
         return null
     }
 
+    @Throws(JSONException::class)
+    private fun serializeCommand(commandItem: CommandItem): JSONObject {
+        val jsonObject = JSONObject()
+        jsonObject.put(KEY_ID, commandItem.id)
+        val chanNames = commandItem.chanNames
+        if (!chanNames.isNullOrEmpty()) {
+            val chanNamesArray = JSONArray()
+            for (chanName in chanNames) {
+                chanNamesArray.put(chanName)
+            }
+            jsonObject.put(KEY_CHAN_NAMES, chanNamesArray)
+        }
+        AutohideStorage.putJson(jsonObject, KEY_BOARD_NAME, commandItem.boardName)
+        AutohideStorage.putJson(jsonObject, KEY_NAME, commandItem.name)
+        AutohideStorage.putJson(jsonObject, KEY_CODE, commandItem.code)
+        AutohideStorage.putJson(jsonObject, KEY_USE_IN, commandItem.useIn.key)
+        AutohideStorage.putJson(jsonObject, KEY_AUTO_RUN, commandItem.autoRun)
+        return jsonObject
+    }
+
+    /** JSON for one command, for export/sharing; re-importable via [parseCommands]. */
+    @Throws(JSONException::class)
+    fun commandToJson(commandItem: CommandItem): JSONObject = serializeCommand(commandItem)
+
     fun add(commandItem: CommandItem) {
         commandItems.add(commandItem)
+        serialize()
+    }
+
+    /** Replaces the whole ordered list (used to persist a drag-reorder), then serializes. */
+    fun replaceAll(newItems: List<CommandItem>) {
+        commandItems.clear()
+        commandItems.addAll(newItems)
         serialize()
     }
 
@@ -127,6 +158,9 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
     }
 
     class CommandItem : Parcelable {
+        /** Stable unique identity, kept across edits and reorders (used for drag-drop, edit lookup). */
+        @JvmField var id: Long = 0
+
         @JvmField var chanNames: Set<String>? = null
 
         @JvmField var boardName: String? = null
@@ -138,28 +172,31 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
         @JvmField var useIn: UseIn = UseIn.COMMENT
 
         /** When true the command runs automatically before sending, instead of from the ⌘ menu. */
-        @JvmField var runOnSend = false
+        @JvmField var autoRun = false
 
         constructor()
 
         constructor(commandItem: CommandItem) : this(
+            commandItem.id,
             commandItem.chanNames,
             commandItem.boardName,
             commandItem.name,
             commandItem.code,
             commandItem.useIn,
-            commandItem.runOnSend,
+            commandItem.autoRun,
         )
 
         constructor(
+            id: Long,
             chanNames: Set<String>?,
             boardName: String?,
             name: String?,
             code: String?,
             useIn: UseIn,
-            runOnSend: Boolean,
+            autoRun: Boolean,
         ) {
-            update(chanNames, boardName, name, code, useIn, runOnSend)
+            this.id = id
+            update(chanNames, boardName, name, code, useIn, autoRun)
         }
 
         fun update(
@@ -168,14 +205,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
             name: String?,
             code: String?,
             useIn: UseIn,
-            runOnSend: Boolean,
+            autoRun: Boolean,
         ) {
             this.chanNames = chanNames
             this.boardName = boardName
             this.name = StringUtils.emptyIfNull(name)
             this.code = StringUtils.emptyIfNull(code)
             this.useIn = useIn
-            this.runOnSend = runOnSend
+            this.autoRun = autoRun
         }
 
         /** True if this command should be offered for the given forum/board. */
@@ -200,20 +237,34 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
             dest: Parcel,
             flags: Int,
         ) {
+            dest.writeLong(id)
             dest.writeStringArray(CommonUtils.toArray(chanNames, String::class.java))
             dest.writeString(boardName)
             dest.writeString(name)
             dest.writeString(code)
             dest.writeString(useIn.key)
-            dest.writeByte(if (runOnSend) 1.toByte() else 0.toByte())
+            dest.writeByte(if (autoRun) 1.toByte() else 0.toByte())
         }
 
         companion object {
+            /** A fresh non-zero identity for a newly created command. */
+            fun generateId(): Long {
+                var id = 0L
+                while (id == 0L) {
+                    id =
+                        java.util.concurrent.ThreadLocalRandom
+                            .current()
+                            .nextLong()
+                }
+                return id
+            }
+
             @JvmField
             val CREATOR =
                 object : Parcelable.Creator<CommandItem> {
                     override fun createFromParcel(source: Parcel): CommandItem {
                         val commandItem = CommandItem()
+                        commandItem.id = source.readLong()
                         val chanNames = source.createStringArray()
                         if (chanNames != null) {
                             commandItem.chanNames = HashSet(chanNames.asList())
@@ -222,7 +273,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
                         commandItem.name = source.readString()
                         commandItem.code = source.readString()
                         commandItem.useIn = UseIn.fromKey(source.readString())
-                        commandItem.runOnSend = source.readByte().toInt() != 0
+                        commandItem.autoRun = source.readByte().toInt() != 0
                         return commandItem
                     }
 
@@ -233,16 +284,69 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<List
 
     companion object {
         private const val KEY_DATA = "data"
+        private const val KEY_ID = "id"
         private const val KEY_CHAN_NAMES = "chanNames"
         private const val KEY_BOARD_NAME = "boardName"
         private const val KEY_NAME = "name"
         private const val KEY_CODE = "code"
         private const val KEY_USE_IN = "useIn"
-        private const val KEY_RUN_ON_SEND = "runOnSend"
+        private const val KEY_AUTO_RUN = "autoRun"
+
+        /** Legacy key for [KEY_AUTO_RUN] (the flag was named "runOnSend" before). Read-only fallback. */
+        private const val KEY_AUTO_RUN_LEGACY = "runOnSend"
 
         private val INSTANCE = CommandsStorage()
 
         @JvmStatic
         fun getInstance(): CommandsStorage = INSTANCE
+
+        /**
+         * Parses commands from an imported JSON document — either a single command object or a full
+         * export (`{ "data": [ … ] }`). Every imported command is given a fresh [CommandItem.generateId]
+         * id so it can't collide with existing ones. Returns the parsed commands (empty if none valid).
+         */
+        fun parseCommands(jsonObject: JSONObject): List<CommandItem> {
+            val result = ArrayList<CommandItem>()
+            val array = jsonObject.optJSONArray(KEY_DATA)
+            if (array != null) {
+                for (i in 0 until array.length()) {
+                    array.optJSONObject(i)?.let { item -> parseCommand(item)?.let(result::add) }
+                }
+            } else {
+                parseCommand(jsonObject)?.let(result::add)
+            }
+            return result
+        }
+
+        private fun parseCommand(item: JSONObject): CommandItem? {
+            val code = item.optString(KEY_CODE)
+            if (code.isEmpty()) {
+                // Without a body there is nothing to run; treat as not a command.
+                return null
+            }
+            val chanNames = HashSet<String>()
+            val chanNamesArray = item.optJSONArray(KEY_CHAN_NAMES)
+            if (chanNamesArray != null) {
+                for (j in 0 until chanNamesArray.length()) {
+                    val chanName = chanNamesArray.optString(j, null)
+                    if (!chanName.isNullOrEmpty()) {
+                        chanNames.add(chanName)
+                    }
+                }
+            }
+            val name = item.optString(KEY_NAME)
+            val useIn = UseIn.fromKey(item.optString(KEY_USE_IN))
+            val autoRun = item.optBoolean(KEY_AUTO_RUN, item.optBoolean(KEY_AUTO_RUN_LEGACY))
+            val boardName = if (item.isNull(KEY_BOARD_NAME)) null else item.optString(KEY_BOARD_NAME)
+            return CommandItem(
+                CommandItem.generateId(),
+                chanNames.ifEmpty { null },
+                boardName,
+                name,
+                code,
+                useIn,
+                autoRun,
+            )
+        }
     }
 }
