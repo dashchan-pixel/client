@@ -48,9 +48,10 @@ class FlowDialog :
         /** Index within [items] to open at; -1 means the first video. */
         var startIndex = -1
 
-        /** One-shot playback position restore for [startSeekItem] (PiP -> fullscreen handback). */
+        /** One-shot playback position/speed restore for [startSeekItem] (PiP -> fullscreen handback). */
         var startSeekItem: GalleryItem? = null
         var startPosition = 0L
+        var startSpeed = 0f
     }
 
     private lateinit var viewModel: FlowViewModel
@@ -76,8 +77,10 @@ class FlowDialog :
             viewModel.items = pendingItems
             viewModel.threadTitle = pendingThreadTitle
             viewModel.startIndex = pendingItems?.indexOfFirst { it === pendingStartItem } ?: -1
-            viewModel.startSeekItem = if (pendingStartPosition > 0) pendingStartItem else null
+            viewModel.startSeekItem =
+                if (pendingStartPosition > 0 || pendingStartSpeed > 0) pendingStartItem else null
             viewModel.startPosition = pendingStartPosition
+            viewModel.startSpeed = pendingStartSpeed
         }
         pendingChan = null
         pendingAllItems = null
@@ -85,6 +88,7 @@ class FlowDialog :
         pendingStartItem = null
         pendingThreadTitle = null
         pendingStartPosition = 0
+        pendingStartSpeed = 0f
         if (viewModel.items == null) {
             // Handoff lost (e.g. process death) — nothing to show.
             dismiss()
@@ -335,26 +339,34 @@ class FlowDialog :
         view.setActive(false)
         VideoPipActivity.start(
             requireActivity(),
-            chan,
-            galleryItem,
-            viewModel.items?.toList(),
-            viewModel.allItems,
-            null,
-            viewModel.threadTitle,
-            view.playbackPosition(),
-            true,
-            view.videoDimensions(),
+            VideoPipActivity.Playback(
+                chan,
+                galleryItem,
+                viewModel.items?.toList(),
+                viewModel.allItems,
+                null,
+                viewModel.threadTitle,
+                VideoPipActivity.Playback.State(
+                    view.playbackPosition(),
+                    true,
+                    view.playbackSpeed(),
+                    view.videoDimensions(),
+                ),
+            ),
         )
         dismiss()
     }
 
     override fun onVideoReady(view: FlowVideoView) {
-        // Restore the playback position once for the page the PiP window handed back.
+        // Restore the playback position and speed once for the page the PiP window handed back.
         val startSeekItem = viewModel.startSeekItem ?: return
         if (view.boundGalleryItem() === startSeekItem) {
             viewModel.startSeekItem = null
             if (viewModel.startPosition > 0) {
                 view.seekTo(viewModel.startPosition)
+            }
+            if (viewModel.startSpeed > 0) {
+                view.setPlaybackSpeed(viewModel.startSpeed)
             }
         }
     }
@@ -444,11 +456,12 @@ class FlowDialog :
         private var pendingStartItem: GalleryItem? = null
         private var pendingThreadTitle: String? = null
         private var pendingStartPosition = 0L
+        private var pendingStartSpeed = 0f
 
         /**
          * Open the video feed for [galleryItems] (the full gallery attachment list; only videos are shown),
-         * starting at [startItem] if given, [startPosition] ms into it (a PiP window handing back).
-         * Shows a toast and does nothing if the thread has no videos.
+         * starting at [startItem] if given, [startPosition] ms into it and at [startSpeed] (a PiP
+         * window handing back). Shows a toast and does nothing if the thread has no videos.
          */
         @JvmStatic
         @JvmOverloads
@@ -459,6 +472,7 @@ class FlowDialog :
             startItem: GalleryItem?,
             threadTitle: String?,
             startPosition: Long = 0,
+            startSpeed: Float = 0f,
         ) {
             val videoItems = galleryItems.filterTo(mutableListOf()) { it.isVideo(chan) }
             if (videoItems.isEmpty()) {
@@ -472,6 +486,7 @@ class FlowDialog :
             pendingStartItem = startItem
             pendingThreadTitle = threadTitle
             pendingStartPosition = if (startItem != null) startPosition else 0
+            pendingStartSpeed = if (startItem != null) startSpeed else 0f
             FlowDialog().show(fragmentManager, TAG)
         }
     }

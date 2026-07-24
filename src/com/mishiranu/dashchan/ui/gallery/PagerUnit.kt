@@ -123,9 +123,15 @@ class PagerUnit(
     val videoDimensions: Point?
         get() = videoUnit.videoDimensions
 
-    /** One-shot start position for the next video that initializes (PiP window handing back).  */
-    fun setInitialVideoSeek(position: Long) {
-        videoUnit.setInitialSeekPosition(position)
+    val videoSpeed: Float
+        get() = videoUnit.currentPlaybackSpeed
+
+    /** One-shot start position and speed for the next video that initializes (PiP handing back).  */
+    fun setInitialVideoSeek(
+        position: Long,
+        speed: Float,
+    ) {
+        videoUnit.setInitialSeekPosition(position, speed)
     }
 
     fun onApplyWindowInsets(insets: InsetsLayout.Insets) {

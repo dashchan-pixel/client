@@ -93,8 +93,9 @@ class VideoUnit(
     private lateinit var videoFile: File
     private var initFromFile = false
 
-    // One-shot start position for the next initialized video (PiP window handing back).
+    // One-shot start position and speed for the next initialized video (PiP window handing back).
     private var initialSeekPosition: Long = 0
+    private var initialPlaybackSpeed = 0f
 
     fun addViews(frameLayout: FrameLayout) {
         frameLayout.addView(
@@ -178,8 +179,16 @@ class VideoUnit(
     val videoDimensions: Point?
         get() = if (this@VideoUnit.isInitialized) player!!.getDimensions() else null
 
-    fun setInitialSeekPosition(position: Long) {
+    /** The speed the current clip plays at, so a picture-in-picture handoff can keep it. */
+    val currentPlaybackSpeed: Float
+        get() = playbackSpeed
+
+    fun setInitialSeekPosition(
+        position: Long,
+        speed: Float,
+    ) {
         initialSeekPosition = position
+        initialPlaybackSpeed = speed
     }
 
     fun interrupt() {
@@ -682,6 +691,12 @@ class VideoUnit(
         // When enabled, route the video surface's double-tap into the seek gesture (off by default,
         // leaving the double-tap-to-zoom intact).
         holder.photoView.videoSeekEnabled = Preferences.isVideoMultiTapSeek
+        if (initialPlaybackSpeed > 0) {
+            // A picture-in-picture window handing playback back: keep the speed it was playing at
+            // instead of the 1× applyVideo just reset to.
+            playbackSpeed = initialPlaybackSpeed
+            initialPlaybackSpeed = 0f
+        }
         // Carry the global mute / playback-speed state onto the freshly-ready player.
         player.setVolume(if (Preferences.isVideoMuted) 0f else 1f)
         player.setPlaybackSpeed(playbackSpeed)

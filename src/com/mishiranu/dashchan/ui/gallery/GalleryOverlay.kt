@@ -185,9 +185,13 @@ class GalleryOverlay :
             }
         }
 
-    /** Start the opening video [position] ms in (a PiP window handing playback back).  */
-    fun setInitialVideoPosition(position: Long): GalleryOverlay {
+    /** Start the opening video [position] ms in, at [speed] (a PiP window handing playback back).  */
+    fun setInitialVideoPosition(
+        position: Long,
+        speed: Float,
+    ): GalleryOverlay {
         requireArguments().putLong(EXTRA_INITIAL_VIDEO_POSITION, position)
+        requireArguments().putFloat(EXTRA_INITIAL_VIDEO_SPEED, speed)
         return this
     }
 
@@ -414,9 +418,11 @@ class GalleryOverlay :
                 this.listUnit = listUnit
                 this.pagerUnit = pagerUnit
                 val initialVideoPosition = requireArguments().getLong(EXTRA_INITIAL_VIDEO_POSITION)
-                if (initialVideoPosition > 0) {
+                val initialVideoSpeed = requireArguments().getFloat(EXTRA_INITIAL_VIDEO_SPEED)
+                if (initialVideoPosition > 0 || initialVideoSpeed > 0) {
                     requireArguments().remove(EXTRA_INITIAL_VIDEO_POSITION)
-                    pagerUnit.setInitialVideoSeek(initialVideoPosition)
+                    requireArguments().remove(EXTRA_INITIAL_VIDEO_SPEED)
+                    pagerUnit.setInitialVideoSeek(initialVideoPosition, initialVideoSpeed)
                 }
                 retained.listUnit = listUnit
                 retained.pagerUnit = pagerUnit
@@ -629,15 +635,20 @@ class GalleryOverlay :
         // The item list and navigate mode let an expanded window reopen this gallery later.
         VideoPipActivity.start(
             requireActivity(),
-            get(instance.chanName),
-            galleryItem,
-            null,
-            instance.galleryItems,
-            requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
-            this.threadTitle,
-            pagerUnit.videoPosition,
-            pagerUnit.isVideoPlaying,
-            pagerUnit.videoDimensions,
+            VideoPipActivity.Playback(
+                get(instance.chanName),
+                galleryItem,
+                null,
+                instance.galleryItems,
+                requireArguments().getString(EXTRA_NAVIGATE_POST_MODE),
+                this.threadTitle,
+                VideoPipActivity.Playback.State(
+                    pagerUnit.videoPosition,
+                    pagerUnit.isVideoPlaying,
+                    pagerUnit.videoSpeed,
+                    pagerUnit.videoDimensions,
+                ),
+            ),
         )
         dismiss()
     }
@@ -1079,6 +1090,7 @@ class GalleryOverlay :
         private const val EXTRA_NAVIGATE_POST_MODE = "navigatePostMode"
         private const val EXTRA_INITIAL_GALLERY_MODE = "initialGalleryMode"
         private const val EXTRA_INITIAL_VIDEO_POSITION = "initialVideoPosition"
+        private const val EXTRA_INITIAL_VIDEO_SPEED = "initialVideoSpeed"
 
         private const val EXTRA_POSITION = "position"
         private const val EXTRA_SELECTED = "selected"

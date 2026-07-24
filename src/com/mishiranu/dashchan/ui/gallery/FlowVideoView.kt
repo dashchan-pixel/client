@@ -470,6 +470,19 @@ class FlowVideoView(
         player?.setPosition(position)
     }
 
+    fun playbackSpeed(): Float = playbackSpeed
+
+    /**
+     * Carry a speed the user picked elsewhere onto this clip (a picture-in-picture handoff in either
+     * direction). Applies to the current player if there is one, and to the one [bind] is still
+     * waiting on otherwise. Call it after [bind], which resets the speed to 1×.
+     */
+    fun setPlaybackSpeed(speed: Float) {
+        playbackSpeed = speed
+        player?.setPlaybackSpeed(speed)
+        sideControls.setSpeed(speed)
+    }
+
     fun videoDimensions(): Point? = player?.getDimensions()?.takeIf { it.x > 0 && it.y > 0 }
 
     fun boundGalleryItem(): GalleryItem? = galleryItem

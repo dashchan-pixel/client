@@ -46,17 +46,27 @@ import java.lang.ref.WeakReference
 class VideoPipActivity :
     Activity(),
     FlowVideoView.Callback {
-    private class Playback(
+    /** What the launching player hands over: the attachment to play and where it had got to. */
+    class Playback(
         val chan: Chan,
         val item: GalleryItem,
         val playlist: List<GalleryItem>?,
         val allItems: List<GalleryItem>?,
         val navigatePostMode: String?,
         val threadTitle: String?,
-        val position: Long,
-        val playing: Boolean,
-        val dimensions: Point?,
-    )
+        val state: State,
+    ) {
+        /**
+         * The point playback had reached: resume [position] ms in at [speed], [playing] or paused.
+         * Already-known [dimensions] shape the floating window before its first frame arrives.
+         */
+        class State(
+            val position: Long,
+            val playing: Boolean,
+            val speed: Float,
+            val dimensions: Point?,
+        )
+    }
 
     /** Snapshot for the fullscreen player's "Gallery" menu item, handed to [MainActivity][C.ACTION_VIDEO_PIP]. */
     private class Reopen(
@@ -67,6 +77,7 @@ class VideoPipActivity :
         val navigatePostMode: String?,
         val threadTitle: String?,
         val position: Long,
+        val speed: Float,
     )
 
     private lateinit var videoView: FlowVideoView
@@ -182,9 +193,9 @@ class VideoPipActivity :
         allItems = playback.allItems
         navigatePostMode = playback.navigatePostMode
         threadTitle = playback.threadTitle
-        pendingSeekPosition = playback.position
-        dimensions = playback.dimensions
-        playing = playback.playing
+        pendingSeekPosition = playback.state.position
+        dimensions = playback.state.dimensions
+        playing = playback.state.playing
         pausedByTransientLossOfFocus = false
         playlist = playback.playlist?.toMutableList()
         playlistIndex = (playlist?.indexOfFirst { it === playback.item } ?: 0).coerceAtLeast(0)
@@ -192,9 +203,13 @@ class VideoPipActivity :
         // gallery itself); hide the thread-host actions ("Save", "Go to post") this window can't run.
         videoView.setMenuScope(switchToGallery = playback.playlist != null, hostActions = false)
         videoView.bind(playback.chan, playback.item, this)
+        if (playback.state.speed > 0) {
+            // bind() reset the clip to 1×; keep the speed the launching player was using.
+            videoView.setPlaybackSpeed(playback.state.speed)
+        }
         // Starts buffering right away; playback begins once the player is ready.
         videoView.prepare()
-        videoView.setActive(playback.playing)
+        videoView.setActive(playback.state.playing)
         updatePictureInPictureParams()
     }
 
@@ -275,6 +290,7 @@ class VideoPipActivity :
                 navigatePostMode,
                 threadTitle,
                 videoView.playbackPosition(),
+                videoView.playbackSpeed(),
             )
         startActivity(Intent(this, MainActivity::class.java).setAction(C.ACTION_VIDEO_PIP))
         finish()
@@ -484,6 +500,7 @@ class VideoPipActivity :
                 navigatePostMode,
                 threadTitle,
                 videoView.playbackPosition(),
+                videoView.playbackSpeed(),
             )
         startActivity(Intent(this, MainActivity::class.java).setAction(C.ACTION_VIDEO_PIP))
         finish()
@@ -529,6 +546,7 @@ class VideoPipActivity :
                     reopen.item,
                     reopen.threadTitle,
                     reopen.position,
+                    reopen.speed,
                 )
             } else {
                 val galleryTag = GalleryOverlay::class.java.name
@@ -543,45 +561,25 @@ class VideoPipActivity :
                     reopen.navigatePostMode?.let { GalleryOverlay.NavigatePostMode.valueOf(it) }
                         ?: GalleryOverlay.NavigatePostMode.DISABLED,
                     false,
-                ).setInitialVideoPosition(reopen.position)
+                ).setInitialVideoPosition(reopen.position, reopen.speed)
                     .show(fragmentManager, galleryTag)
             }
         }
 
         /**
-         * Pop [galleryItem]'s video out into the floating player, resuming at [position]
-         * (already-known [dimensions] shape the window before the first frame). A Flow feed
-         * passes its video list as [playlist] so completed videos advance to the next one;
-         * the gallery passes null to keep single-video semantics. [allItems] (with
-         * [navigatePostMode] for the gallery) lets the fullscreen player's "Gallery" menu item
-         * reopen the gallery via [reopenInApp]. The caller is expected to stop its own playback
-         * and dismiss itself afterwards.
+         * Pop [playback]'s video out into the floating player, resuming where its
+         * [state][Playback.State] left off. A Flow feed passes its video list as
+         * [playlist][Playback.playlist] so completed videos advance to the next one; the gallery
+         * passes null to keep single-video semantics. [allItems][Playback.allItems] (with
+         * [navigatePostMode][Playback.navigatePostMode] for the gallery) lets the fullscreen
+         * player's "Gallery" menu item reopen the gallery via [reopenInApp]. The caller is expected
+         * to stop its own playback and dismiss itself afterwards.
          */
         @JvmStatic
         fun start(
             activity: Activity,
-            chan: Chan,
-            galleryItem: GalleryItem,
-            playlist: List<GalleryItem>?,
-            allItems: List<GalleryItem>?,
-            navigatePostMode: String?,
-            threadTitle: String?,
-            position: Long,
-            playing: Boolean,
-            dimensions: Point?,
+            playback: Playback,
         ) {
-            val playback =
-                Playback(
-                    chan,
-                    galleryItem,
-                    playlist,
-                    allItems,
-                    navigatePostMode,
-                    threadTitle,
-                    position,
-                    playing,
-                    dimensions,
-                )
             val existing = instance?.get()
             if (existing != null && !existing.isFinishing && !existing.isDestroyed) {
                 if (existing.isInPictureInPictureMode) {
