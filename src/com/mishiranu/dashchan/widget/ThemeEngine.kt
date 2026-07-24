@@ -28,6 +28,7 @@ import android.widget.TextView
 import android.widget.Toolbar
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
+import com.google.android.material.chip.Chip
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
@@ -969,15 +970,18 @@ class ThemeEngine {
             }
         }
 
-        // MaterialSwitch / Slider are built by us in a Material3 overlay context (see MaterialContext)
-        // and are not android.widget.Switch / AbsSeekBar, so the branches in applyStyle never reach
-        // them; without explicit tints they fall back to the stock Material3 palette. Tint them to the
-        // user theme here, unconditionally.
+        // MaterialSwitch / Slider / Chip are built by us in a Material3 overlay context (see
+        // MaterialContext) and are not android.widget.Switch / AbsSeekBar, so the branches in
+        // applyStyle never reach them; without explicit tints they fall back to the stock Material3
+        // palette (the purple baseline scheme). Tint them to the user theme here, unconditionally.
         private fun applyMaterialTint(
             view: View,
             themeContext: ThemeContext,
             theme: Theme,
         ) {
+            if (view is Chip) {
+                applyChipTint(view, theme)
+            }
             if (view is MaterialSwitch) {
                 // Mirror the framework Switch: thumb from the app switch-thumb colours, track from the
                 // accent colours at half alpha — the M3 track is fully opaque (the framework's is
@@ -998,6 +1002,32 @@ class ThemeEngine {
                 view.tickActiveTintList = transparent
                 view.tickInactiveTintList = transparent
             }
+        }
+
+        /**
+         * A checked chip is filled with the user theme's accent (M3 would use its own
+         * secondaryContainer, which is purple in the baseline scheme); an unchecked one stays a plain
+         * outline over the window. Text and the check mark flip to black or white for contrast with
+         * whichever of the two is behind them.
+         */
+        private fun applyChipTint(
+            view: Chip,
+            theme: Theme,
+        ) {
+            val states =
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(),
+                )
+            val onAccent = if (GraphicsUtils.isLight(theme.accent)) Color.BLACK else Color.WHITE
+            val onWindow = if (GraphicsUtils.isLight(theme.window)) Color.BLACK else Color.WHITE
+            view.chipBackgroundColor =
+                ColorStateList(states, intArrayOf(theme.accent, Color.TRANSPARENT))
+            view.chipStrokeColor =
+                ColorStateList(states, intArrayOf(theme.accent, theme.controlNormal21))
+            view.setTextColor(ColorStateList(states, intArrayOf(onAccent, onWindow)))
+            view.checkedIconTint = ColorStateList(states, intArrayOf(onAccent, onWindow))
+            view.rippleColor = ColorStateList.valueOf(applyAlpha(theme.accent, 0.30f))
         }
 
         private fun handleTag(

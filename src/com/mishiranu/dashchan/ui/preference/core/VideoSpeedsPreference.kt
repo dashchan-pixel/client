@@ -11,6 +11,7 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.MaterialContext
+import com.mishiranu.dashchan.widget.ThemeEngine
 
 /**
  * A single settings row that opens a dialog of Material chips for choosing which optional video
@@ -70,6 +71,10 @@ class VideoSpeedsPreference(
             val chip = Chip(chipContext)
             chip.text = entry.label
             chip.isCheckable = true
+            // The Material3 overlay only supplies M3 attrs; without this the chip would be filled
+            // with the stock (purple) palette instead of the user theme's accent. Done before the
+            // token tag is set below, which the theme engine also reads.
+            ThemeEngine.applyStyle(chip)
             if (entry.alwaysOn) {
                 // 1×: always checked and non-toggleable, so it can never be removed. No token tag,
                 // so it is excluded from the persisted set.
