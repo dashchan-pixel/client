@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Point
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.view.Gravity
 import android.view.View
@@ -706,7 +707,7 @@ class VideoUnit(
 
     private fun showSeekFeedback(seek: VideoSeekTapDetector.Seek) {
         val seconds = abs(seek.burstMs) / 1000
-        seekFeedbackView.setText(if (seek.forward) "»» $seconds s" else "«« $seconds s")
+        seekFeedbackView.setText(if (seek.forward) "+ $seconds s" else "- $seconds s")
         seekFeedbackView.setVisibility(View.VISIBLE)
         seekFeedbackView.removeCallbacks(hideSeekFeedbackRunnable)
         seekFeedbackView.postDelayed(hideSeekFeedbackRunnable, 700)
@@ -883,7 +884,11 @@ class VideoUnit(
             (16f * density).toInt(),
             (10f * density).toInt(),
         )
-        seekFeedbackView.setBackgroundColor(0x99000000.toInt())
+        seekFeedbackView.background =
+            GradientDrawable().apply {
+                cornerRadius = Preferences.uiCornerRadius * density
+                setColor(0x99000000.toInt())
+            }
         seekFeedbackView.setVisibility(View.GONE)
 
         audioFocus =

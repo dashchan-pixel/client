@@ -1403,6 +1403,27 @@ object Preferences {
                 ),
             ) / 100f
 
+    const val KEY_UI_CORNER_RADIUS: String = "ui_corner_radius"
+    const val MIN_UI_CORNER_RADIUS: Int = 0
+    const val MAX_UI_CORNER_RADIUS: Int = 32
+    const val STEP_UI_CORNER_RADIUS: Int = 1
+    const val DEFAULT_UI_CORNER_RADIUS: Int = 18
+
+    /**
+     * Corner radius, in dp, applied across rounded Material surfaces: the thread/post grid cards
+     * (`widget/CardView.kt`) and dialog windows (`widget/ThemeEngine.kt`).
+     */
+    @JvmStatic
+    val uiCornerRadius: Int
+        get() =
+            max(
+                MIN_UI_CORNER_RADIUS,
+                min(
+                    prefs.getInt(KEY_UI_CORNER_RADIUS, DEFAULT_UI_CORNER_RADIUS),
+                    MAX_UI_CORNER_RADIUS,
+                ),
+            )
+
     const val KEY_THEME: String = "theme"
 
     @JvmStatic
@@ -1479,7 +1500,7 @@ object Preferences {
             val threadsGridMode = PREFERENCES.getAll()["threads_grid_mode"]
             if (threadsGridMode is Boolean) {
                 val value =
-                    if (threadsGridMode) ThreadsView.LARGE_GRID.value else ThreadsView.CARDS.value
+                    if (threadsGridMode) ThreadsView.GRID.value else ThreadsView.CARDS.value
                 PREFERENCES
                     .edit()
                     .remove("threads_grid_mode")
@@ -2290,8 +2311,10 @@ object Preferences {
     ) {
         LIST("list", R.id.menu_list, R.string.list),
         CARDS("cards", R.id.menu_cards, R.string.cards),
-        LARGE_GRID("large_grid", R.id.menu_large_grid, R.string.large_grid),
-        SMALL_GRID("small_grid", R.id.menu_small_grid, R.string.small_grid),
+
+        // Persisted value stays "large_grid" for backward compatibility with saved prefs even
+        // though the constant/display name dropped "large" once the small-grid variant was removed.
+        GRID("large_grid", R.id.menu_grid, R.string.grid),
         ;
 
         internal val value: String?

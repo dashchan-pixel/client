@@ -341,6 +341,7 @@
 	<string name="success_number_not_loaded_number__format">Sucesso: %1$d, falhou: %2$d</string>
 	<string name="summary">Sumário</string>
 	<string name="text_scale">Escala do texto</string>
+	<string name="ui_corner_radius">Raio dos cantos da interface</string>
 	<string name="this_post">Este post</string>
 	<string name="this_recaptcha_is_not_supported">Esquema não suportado</string>
 	<string name="this_week">Essa semana</string>
@@ -397,8 +398,9 @@
 	<string name="commands">Comandos</string>
 	<string name="code">Código</string>
 	<string name="new_command">Novo comando</string>
+	<string name="add_command">Adicionar comando</string>
 	<string name="no_commands_defined">Nenhum comando definido</string>
 	<string name="use_in">Usar em</string>
 	<string name="run_before_sending">Executar automaticamente antes de enviar</string>
-	<string name="run_on_send">Ao enviar</string>
+	<string name="auto_run">Automático</string>
 </resources>

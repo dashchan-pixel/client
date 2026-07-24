@@ -219,6 +219,7 @@
 	<string name="image_is_corrupted">Image is corrupted</string>
 	<string name="images">Images</string>
 	<string name="images_are_disabled">Images are disabled</string>
+	<string name="add_command">Add command</string>
 	<string name="important__plural">Important</string>
 	<string name="in_thread_number__format">In thread %s</string>
 	<string name="incorrect_password">Incorrect password</string>
@@ -235,7 +236,7 @@
 	<string name="keep_all">Keep all</string>
 	<string name="keep_current_version">Keep current version</string>
 	<string name="language">Language</string>
-	<string name="large_grid">Large grid</string>
+	<string name="grid">Grid</string>
 	<string name="links_attachments__genitive">Links-attachments</string>
 	<string name="list">List</string>
 	<string name="load_captcha">Load captcha</string>
@@ -427,7 +428,7 @@
 	<string name="restore_data">Restore data</string>
 	<string name="retry">Retry</string>
 	<string name="run_before_sending">Run automatically before sending</string>
-	<string name="run_on_send">On send</string>
+	<string name="auto_run">Auto-run</string>
 	<string name="saf_instructions__sentence">You will be directed to the system directory picker where you should pick
 		a directory for downloads.\n\n<b>Don\'t select any directories under default \"Downloads\" section!</b>\n
 		\nInstead, open the storage from the navigation panel. You may need to enable \"Show internal storage\"
@@ -478,7 +479,6 @@
 	<string name="similar_to_number__format">Similar to %s</string>
 	<string name="since_date__format">Since %s</string>
 	<string name="skip">Skip</string>
-	<string name="small_grid">Small grid</string>
 	<string name="some_posts_have_been_edited">Some posts have been edited</string>
 	<string name="sorting">Sorting</string>
 	<string name="sound">Sound</string>
@@ -500,6 +500,7 @@
 	<string name="summary">Summary</string>
 	<string name="test_string">Test string</string>
 	<string name="text_scale">Text scale</string>
+	<string name="ui_corner_radius">UI corner radius</string>
 	<string name="themes">Themes</string>
 	<string name="this_post">This post</string>
 	<string name="this_recaptcha_is_not_supported">This reCAPTCHA is not supported</string>

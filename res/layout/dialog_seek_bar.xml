@@ -49,8 +49,10 @@
 			android:layout_height="wrap_content"
 			android:textAppearance="?android:attr/textAppearanceListItemSmall" />
 
-		<SeekBar
-			android:id="@+id/seek_bar"
+		<!-- A Material Slider is added here in code (ViewFactory.createSeekLayout); it must be built in
+		     a Material3 context, so it cannot be inflated inline with this app-themed layout. -->
+		<FrameLayout
+			android:id="@+id/seek_bar_container"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_weight="1" />

@@ -2,9 +2,7 @@ package com.mishiranu.dashchan.ui.preference.core
 
 import android.app.AlertDialog
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
-import android.view.ContextThemeWrapper
 import android.view.ViewGroup
 import android.widget.ScrollView
 import com.google.android.material.chip.Chip
@@ -12,7 +10,7 @@ import com.google.android.material.chip.ChipGroup
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.SharedPreferences
-import com.mishiranu.dashchan.widget.ThemeEngine
+import com.mishiranu.dashchan.widget.MaterialContext
 
 /**
  * A single settings row that opens a dialog of Material chips for choosing which optional video
@@ -54,23 +52,9 @@ class VideoSpeedsPreference(
         builder: AlertDialog.Builder,
     ): AlertDialog.Builder {
         // Material chips validate against a Material3 theme; the app's own theme is not one, so wrap
-        // the chip context in an isolated Material3 theme just for this dialog's chip group. Pick the
-        // light/dark variant from the app theme's actual window colour (not the system night setting)
-        // so the chips match the dialog this app-themed AlertDialog draws behind them.
-        val windowColor = ThemeEngine.getTheme(builder.context).window
-        val dark =
-            0.299 * Color.red(windowColor) +
-                0.587 * Color.green(windowColor) +
-                0.114 * Color.blue(windowColor) < 128
-        val chipContext =
-            ContextThemeWrapper(
-                builder.context,
-                if (dark) {
-                    com.google.android.material.R.style.Theme_Material3_Dark
-                } else {
-                    com.google.android.material.R.style.Theme_Material3_Light
-                },
-            )
+        // the chip context in an isolated Material3 theme just for this dialog's chip group, matching
+        // the light/dark variant of the app-themed AlertDialog it draws behind (see MaterialContext).
+        val chipContext = MaterialContext.wrap(builder.context)
         val density = ResourceUtils.obtainDensity(builder.context)
         val padding = (20f * density).toInt()
         val scrollView = ScrollView(builder.context)

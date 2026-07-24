@@ -12,12 +12,13 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toolbar
 import androidx.core.widget.TextViewCompat
 import chan.util.StringUtils
+import com.google.android.material.slider.LabelFormatter
+import com.google.android.material.slider.Slider
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.FlagUtils
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -304,26 +305,29 @@ object ViewFactory {
         @JvmField val layout: View,
         private val valueText: TextView,
         private val switchView: Switch,
-        private val seekBar: SeekBar,
+        private val slider: Slider,
         private val minValue: Int,
         private val step: Int,
         private val valueFormat: String?,
     ) {
         var isEnabled: Boolean
-            get() = seekBar.isEnabled
+            get() = slider.isEnabled
             set(enabled) {
                 if (switchView.isChecked != enabled) {
                     switchView.isChecked = enabled
                 }
-                seekBar.isEnabled = enabled
+                slider.isEnabled = enabled
             }
 
+        // The slider runs in step units (0..(max-min)/step, stepSize 1) exactly as the old SeekBar's
+        // progress did, so mixed step/divisibility never trips Slider's "value must land on a step"
+        // check; the real value is mapped back on the way in and out.
         var value: Int
-            get() = seekBar.progress * step + minValue
+            get() = slider.value.toInt() * step + minValue
             set(value) {
-                val progress = (value - minValue) / step
-                if (seekBar.progress != progress) {
-                    seekBar.progress = progress
+                val progress = ((value - minValue) / step).toFloat().coerceIn(slider.valueFrom, slider.valueTo)
+                if (slider.value != progress) {
+                    slider.value = progress
                 }
                 val text = if (valueFormat != null) String.format(valueFormat, value) else value.toString()
                 valueText.text = text
@@ -345,26 +349,25 @@ object ViewFactory {
         layout.findViewById<TextView>(R.id.max_value).text = maxValue.toString()
         val valueText = layout.findViewById<TextView>(R.id.current_value)
         val switchView = layout.findViewById<Switch>(R.id.switch_view)
-        val seekBar = layout.findViewById<SeekBar>(R.id.seek_bar)
-        val holder = SeekLayoutHolder(layout, valueText, switchView, seekBar, minValue, step, valueFormat)
-        layout.tag = holder
-        seekBar.isSaveEnabled = false
-        seekBar.max = (maxValue - minValue) / step
-        seekBar.setOnSeekBarChangeListener(
-            object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(
-                    seekBar: SeekBar,
-                    progress: Int,
-                    fromUser: Boolean,
-                ) {
-                    holder.value = progress * step + minValue
-                }
-
-                override fun onStartTrackingTouch(seekBar: SeekBar) {}
-
-                override fun onStopTrackingTouch(seekBar: SeekBar) {}
-            },
+        // The Slider must be built in a Material3 context and tinted to the user theme accent; the
+        // enclosing layout stays app-themed, so drop it into the placeholder container in code.
+        val slider = Slider(MaterialContext.wrap(context))
+        slider.valueFrom = 0f
+        slider.valueTo = ((maxValue - minValue) / step).toFloat().coerceAtLeast(1f)
+        slider.stepSize = 1f
+        slider.isSaveEnabled = false
+        slider.setLabelBehavior(LabelFormatter.LABEL_GONE)
+        ThemeEngine.applyStyle(slider)
+        layout.findViewById<FrameLayout>(R.id.seek_bar_container).addView(
+            slider,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
         )
+        val holder = SeekLayoutHolder(layout, valueText, switchView, slider, minValue, step, valueFormat)
+        layout.tag = holder
+        slider.addOnChangeListener { _, sliderValue, _ ->
+            holder.value = sliderValue.toInt() * step + minValue
+        }
         switchView.isSaveEnabled = false
         if (!showSwitch) {
             switchView.visibility = View.GONE

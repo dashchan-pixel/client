@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Point
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -243,7 +244,11 @@ class FlowVideoView(
             (16f * density).toInt(),
             (10f * density).toInt(),
         )
-        seekFeedbackView.setBackgroundColor(0x99000000.toInt())
+        seekFeedbackView.background =
+            GradientDrawable().apply {
+                cornerRadius = Preferences.uiCornerRadius * density
+                setColor(0x99000000.toInt())
+            }
         seekFeedbackView.visibility = GONE
         addView(seekFeedbackView, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
 
@@ -373,7 +378,7 @@ class FlowVideoView(
     private fun showSeekFeedback(seek: VideoSeekTapDetector.Seek) {
         val seconds = abs(seek.burstMs) / 1000
         seekFeedbackView.text =
-            if (seek.forward) "»» $seconds s" else "«« $seconds s"
+            if (seek.forward) "+ $seconds s" else "- $seconds s"
         seekFeedbackView.visibility = VISIBLE
         handler.removeCallbacks(seekFeedbackRunnable)
         handler.postDelayed(seekFeedbackRunnable, 700)

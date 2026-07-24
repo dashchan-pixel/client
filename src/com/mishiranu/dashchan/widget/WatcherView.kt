@@ -6,15 +6,19 @@ import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ProgressBar
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.service.WatcherService.Counter.State
+import com.mishiranu.dashchan.util.GraphicsUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import kotlin.math.abs
 
@@ -47,6 +51,7 @@ class WatcherView(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.LINEAR_TEXT_FLAG)
     private val rectF = RectF()
     private val rect = Rect()
+    private val clipPath = Path()
 
     override fun draw(canvas: Canvas) {
         val density = ResourceUtils.obtainDensity(this)
@@ -59,16 +64,25 @@ class WatcherView(
             (height - paddingVertical).toFloat(),
         )
 
-        val cornerRadius = density.toInt()
+        // Follow the app-wide corner radius; drawRoundRect caps it at half the badge height, so a
+        // large radius simply yields a pill.
+        val cornerRadius = Preferences.uiCornerRadius * density
         paint.color = color
-        canvas.drawRoundRect(rectF, cornerRadius.toFloat(), cornerRadius.toFloat(), paint)
+        canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, paint)
         canvas.save()
-        canvas.clipRect(rectF)
+        // Clip to the rounded badge shape (not a plain rect) so the tap ripple matches the badge
+        // instead of showing a square shade.
+        clipPath.rewind()
+        clipPath.addRoundRect(rectF, cornerRadius, cornerRadius, Path.Direction.CW)
+        canvas.clipPath(clipPath)
         super.draw(canvas)
 
+        // Keep the number/dot legible on bright badge colours by flipping to black.
+        val onColor = if (GraphicsUtils.isLight(color)) Color.BLACK else Color.WHITE
         if (progressBar.visibility != View.VISIBLE) {
             val fontSize = 12
-            paint.color = Color.WHITE
+            paint.color = onColor
+            paint.typeface = Typeface.DEFAULT_BOLD
             if (!hasNew) {
                 paint.alpha = 0x99
             }
@@ -84,7 +98,7 @@ class WatcherView(
             paint.getTextBounds(text, 0, text.length, rect)
             canvas.drawText(text, width / 2f, (height + rect.height()) / 2f, paint)
         } else if (hasNew) {
-            paint.color = Color.WHITE
+            paint.color = onColor
             canvas.drawCircle(width / 2f, height / 2f, (4f * density).toInt().toFloat(), paint)
         }
         canvas.restore()

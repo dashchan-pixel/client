@@ -49,6 +49,16 @@ class InterfaceFragment : PreferenceFragment() {
             Preferences.MAX_THUMBNAILS_SCALE,
             Preferences.STEP_THUMBNAILS_SCALE,
         ).setOnAfterChangeListener { requireActivity().recreate() }
+        addSeek(
+            Preferences.KEY_UI_CORNER_RADIUS,
+            Preferences.DEFAULT_UI_CORNER_RADIUS,
+            getString(R.string.ui_corner_radius),
+            "%d dp",
+            null,
+            Preferences.MIN_UI_CORNER_RADIUS,
+            Preferences.MAX_UI_CORNER_RADIUS,
+            Preferences.STEP_UI_CORNER_RADIUS,
+        ).setOnAfterChangeListener { requireActivity().recreate() }
         addCheck(
             true,
             Preferences.KEY_CUT_THUMBNAILS,

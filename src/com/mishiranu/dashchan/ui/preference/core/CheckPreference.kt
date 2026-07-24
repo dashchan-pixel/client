@@ -3,8 +3,9 @@ package com.mishiranu.dashchan.ui.preference.core
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.mishiranu.dashchan.util.SharedPreferences
+import com.mishiranu.dashchan.widget.MaterialContext
 import com.mishiranu.dashchan.widget.ThemeEngine
 
 class CheckPreference(
@@ -26,13 +27,15 @@ class CheckPreference(
 
     class CheckViewHolder(
         viewHolder: ViewHolder,
-        @JvmField val check: CheckBox,
+        @JvmField val check: MaterialSwitch,
     ) : ViewHolder(viewHolder)
 
     override fun createViewHolder(parent: ViewGroup): CheckViewHolder {
         val viewHolder = super.createViewHolder(parent)
         viewHolder.widgetFrame!!.visibility = View.VISIBLE
-        val check = CheckBox(viewHolder.widgetFrame.context)
+        // A Material switch is the on-pattern control for a boolean setting row. It must be built in a
+        // Material3 overlay context; ThemeEngine.applyStyle then tints it with the user theme accent.
+        val check = MaterialSwitch(MaterialContext.wrap(viewHolder.widgetFrame.context))
         ThemeEngine.applyStyle(check)
         check.isClickable = false
         check.isFocusable = false

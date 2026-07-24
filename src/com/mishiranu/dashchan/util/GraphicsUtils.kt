@@ -137,7 +137,11 @@ object GraphicsUtils {
     }
 
     @JvmStatic
-    fun isLight(color: Int): Boolean = (Color.red(color) + Color.green(color) + Color.blue(color)) / 3 >= 0x80
+    fun isLight(color: Int): Boolean =
+        // Perceptual luminance (Rec. 601), not a flat RGB average: the eye is far less sensitive to
+        // blue, so a plain average wrongly reads medium blues (e.g. Material blue #2196F3) as "light"
+        // and picks black content for them. The weighted form keeps those blues on the dark side.
+        0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color) >= 0x80
 
     @JvmStatic
     fun mixColors(

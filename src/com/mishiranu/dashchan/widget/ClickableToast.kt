@@ -15,6 +15,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
@@ -32,14 +33,13 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.view.ViewCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.graphics.BaseDrawable
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -333,12 +333,13 @@ class ClickableToast private constructor(
                 activity,
                 R.attr.colorClickableToastBackground,
             )
-        val clickableToastBackgroundColorFilter =
-            BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                clickableToastBackgroundColor,
-                BlendModeCompat.SRC_IN,
-            )
-        backgroundDrawable!!.setColorFilter(clickableToastBackgroundColorFilter)
+        // Round the toast to the app-wide radius: replace the platform toast frame with a rounded
+        // shape of the toast colour. The outline provider + clipToOutline set up below then clip the
+        // whole toast to these corners.
+        val roundedBackground = GradientDrawable()
+        roundedBackground.cornerRadius = Preferences.uiCornerRadius * density
+        roundedBackground.setColor(clickableToastBackgroundColor)
+        backgroundDrawable = roundedBackground
         // Make long text to avoid minimum widths
         val builder = StringBuilder()
         for (i in 0..99) {

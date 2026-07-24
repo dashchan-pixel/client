@@ -25,6 +25,7 @@ import androidx.activity.BackEventCompat
 import androidx.core.view.ViewCompat
 import androidx.customview.widget.ViewDragHelper
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.util.GraphicsUtils.getCornerRadius
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.getResourceId
@@ -866,6 +867,17 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
             setBackgroundResource(backgroundResId)
             this.elevation = elevation
             setBackgroundTintList(ColorStateList.valueOf(ThemeEngine.Companion.getTheme(context).card))
+            // Round the preview/stack card to the app-wide radius instead of the framework dialog
+            // drawable's small default. The background is a GradientDrawable (possibly inset-wrapped);
+            // mutate this instance so its corners follow Preferences.uiCornerRadius. draw() reads the
+            // same GradientDrawable radius for the dim overlay, so both stay in sync.
+            var shape = getBackground()?.mutate()
+            while (shape is InsetDrawable) {
+                shape = shape.getDrawable()
+            }
+            if (shape is GradientDrawable) {
+                shape.cornerRadius = Preferences.uiCornerRadius * obtainDensity(this)
+            }
 
             paint.setColor((dimAmount * 0xff).toInt() shl 24)
             setActive(true)

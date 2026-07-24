@@ -7,6 +7,8 @@ import android.content.ContextWrapper
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.drawable.InsetDrawable
 import android.util.AttributeSet
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -26,6 +28,10 @@ import android.widget.TextView
 import android.widget.Toolbar
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.slider.Slider
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.theme
@@ -37,6 +43,7 @@ import com.mishiranu.dashchan.util.GraphicsUtils.applyAlpha
 import com.mishiranu.dashchan.util.IOUtils.readRawResourceString
 import com.mishiranu.dashchan.util.ResourceUtils.getColor
 import com.mishiranu.dashchan.util.ResourceUtils.getColorStateList
+import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.util.ViewUtils.addWindowFocusListener
 import com.mishiranu.dashchan.util.ViewUtils.getDecorView
 import com.mishiranu.dashchan.util.ViewUtils.setEdgeEffectColor
@@ -375,7 +382,7 @@ class ThemeEngine {
                     val themeContext: ThemeContext? = obtainThemeContext(decorView.getContext())
                     if (themeContext != null) {
                         if (dialog && shouldApplyStyle(decorView.getContext())) {
-                            decorView.setBackgroundTintList(ColorStateList.valueOf(themeContext.engineTheme!!.card))
+                            applyRoundedWindowBackground(decorView, ensureTheme(themeContext).card)
                         }
                         val tag = decorView.getTag(R.id.tag_theme_engine)
                         val forceDialog = tag is Boolean && tag
@@ -781,7 +788,7 @@ class ThemeEngine {
                                 }
                                 val themeContext: ThemeContext =
                                     requireThemeContext(decorView.getContext())
-                                backgroundView.setBackgroundTintList(ColorStateList.valueOf(themeContext.engineTheme!!.card))
+                                applyRoundedWindowBackground(backgroundView, ensureTheme(themeContext).card)
                             }
                         }
                     }
@@ -957,7 +964,39 @@ class ThemeEngine {
                         setEdgeEffectColor(view, theme.accent)
                     }
                 }
+                applyMaterialTint(view, themeContext, theme)
                 Companion.handleTag(theme, view)
+            }
+        }
+
+        // MaterialSwitch / Slider are built by us in a Material3 overlay context (see MaterialContext)
+        // and are not android.widget.Switch / AbsSeekBar, so the branches in applyStyle never reach
+        // them; without explicit tints they fall back to the stock Material3 palette. Tint them to the
+        // user theme here, unconditionally.
+        private fun applyMaterialTint(
+            view: View,
+            themeContext: ThemeContext,
+            theme: Theme,
+        ) {
+            if (view is MaterialSwitch) {
+                // Mirror the framework Switch: thumb from the app switch-thumb colours, track from the
+                // accent colours at half alpha — the M3 track is fully opaque (the framework's is
+                // translucent) and would otherwise swallow the solid thumb.
+                view.thumbTintList = themeContext.switchThumbColors
+                themeContext.checkBoxColors?.let { view.trackTintList = it.withAlpha(0x80) }
+            }
+            if (view is Slider) {
+                // Active track/thumb take the accent, inactive track and halo faded accent; the discrete
+                // tick marks are hidden (ranges can have hundreds of steps, filling the track with dots).
+                val accent = ColorStateList.valueOf(theme.accent)
+                val fadedAccent = ColorStateList.valueOf(applyAlpha(theme.accent, 0.30f))
+                val transparent = ColorStateList.valueOf(Color.TRANSPARENT)
+                view.thumbTintList = accent
+                view.trackActiveTintList = accent
+                view.trackInactiveTintList = fadedAccent
+                view.haloTintList = fadedAccent
+                view.tickActiveTintList = transparent
+                view.tickInactiveTintList = transparent
             }
         }
 
@@ -1181,4 +1220,37 @@ class ThemeEngine {
             throw JSONException("Invalid color value: " + color)
         }
     }
+}
+
+/**
+ * Replaces a themed window/popup background with a rounded [MaterialShapeDrawable] filled with the
+ * theme card colour. Used for both dialog windows and popup windows — the `>>` post-preview cards
+ * (which stack), context menus and dropdowns. Formerly these hooks only tinted the framework drawable;
+ * now the corner radius follows the user's [Preferences.uiCornerRadius] so every floating surface
+ * matches the grid cards. The original drawable's padding (the shadow/content inset the surface relies
+ * on) is preserved by wrapping the shape in an [InsetDrawable]; the rounded outline it exposes keeps
+ * the elevation shadow following the corners.
+ *
+ * File-level (not a member) so the static nested attach listeners can call it.
+ */
+private fun applyRoundedWindowBackground(
+    view: View,
+    card: Int,
+) {
+    val radius = Preferences.uiCornerRadius * obtainDensity(view.context)
+    val shape =
+        MaterialShapeDrawable(ShapeAppearanceModel.builder().setAllCornerSizes(radius).build())
+    shape.fillColor = ColorStateList.valueOf(card)
+    val insets = Rect()
+    val previous = view.background
+    val hasInset =
+        previous != null &&
+            previous.getPadding(insets) &&
+            (insets.left or insets.top or insets.right or insets.bottom) != 0
+    view.background =
+        if (hasInset) {
+            InsetDrawable(shape, insets.left, insets.top, insets.right, insets.bottom)
+        } else {
+            shape
+        }
 }
