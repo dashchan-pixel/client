@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.util
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.graphics.Outline
@@ -12,6 +13,10 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.RippleDrawable
+import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.shapes.RoundRectShape
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.TypedValue
@@ -215,6 +220,45 @@ object ViewUtils {
             ResourceUtils
                 .getDrawable(view.context, android.R.attr.selectableItemBackground, 0),
         )
+    }
+
+    /**
+     * Like [setSelectableItemBackground], but masks the ripple/highlight into a rounded rectangle
+     * instead of the full edge-to-edge view bounds — the Material 3 "nav item" touch-feedback shape
+     * used by the drawer and settings rows. [cornerRadiusDp] is expected to be [Preferences
+     * .uiCornerRadius][com.mishiranu.dashchan.content.Preferences.uiCornerRadius] so it matches the
+     * app's other rounded surfaces (cards, dialogs); [insetDp] pulls the shape in from the row edges
+     * so adjacent rows don't visually merge when both are pressed/highlighted at once.
+     *
+     * Deliberately not folded into [setSelectableItemBackground] itself: that helper is used far
+     * beyond the drawer/settings (posting, gallery, video, cards, ...), and rounding it globally would
+     * be a much larger, harder-to-verify visual change than intended here.
+     */
+    @JvmStatic
+    fun setRoundedSelectableItemBackground(
+        view: View,
+        cornerRadiusDp: Int,
+        insetDp: Float = 4f,
+    ) {
+        val density = ResourceUtils.obtainDensity(view)
+        val radius = cornerRadiusDp * density
+        val mask =
+            ShapeDrawable(RoundRectShape(FloatArray(8) { radius }, null, null)).apply {
+                paint.color = -0x1
+            }
+        val highlight =
+            ResourceUtils.getColorStateList(view.context, android.R.attr.colorControlHighlight)
+                ?: ColorStateList.valueOf(0)
+        val inset = (insetDp * density).toInt()
+        val ripple =
+            InsetDrawable(
+                RippleDrawable(highlight, null, mask),
+                inset,
+                inset / 2,
+                inset,
+                inset / 2,
+            )
+        setBackgroundPreservePadding(view, ripple)
     }
 
     @JvmStatic

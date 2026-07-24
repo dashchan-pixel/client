@@ -70,7 +70,7 @@ import com.mishiranu.dashchan.util.ResourceUtils.getColor
 import com.mishiranu.dashchan.util.ResourceUtils.getColorStateList
 import com.mishiranu.dashchan.util.ResourceUtils.getResourceId
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
-import com.mishiranu.dashchan.util.ViewUtils.setSelectableItemBackground
+import com.mishiranu.dashchan.util.ViewUtils.setRoundedSelectableItemBackground
 import com.mishiranu.dashchan.util.ViewUtils.setTextSizeScaled
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.DividerItemDecoration
@@ -1323,7 +1323,9 @@ class DrawerForm(
             0,
         )
         textView.setPadding((textLeftDp * density).toInt(), 0, (textRightDp * density).toInt(), 0)
-        setSelectableItemBackground(linearLayout)
+        // Rounded to Preferences.uiCornerRadius: a Material 3 nav-drawer-style row highlight, inset
+        // from the row edges instead of the stock edge-to-edge ripple.
+        setRoundedSelectableItemBackground(linearLayout, Preferences.uiCornerRadius)
         linearLayout.setLayoutParams(
             RecyclerView.LayoutParams(
                 RecyclerView.LayoutParams.MATCH_PARENT,

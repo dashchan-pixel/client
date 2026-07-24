@@ -15,6 +15,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.ui.ContentFragment
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference.ValueCodec
 import com.mishiranu.dashchan.ui.preference.core.Preference.SummaryProvider
@@ -22,7 +23,7 @@ import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ListViewUtils.ClickCallback
 import com.mishiranu.dashchan.util.ResourceUtils.getColor
 import com.mishiranu.dashchan.util.SharedPreferences
-import com.mishiranu.dashchan.util.ViewUtils.setSelectableItemBackground
+import com.mishiranu.dashchan.util.ViewUtils.setRoundedSelectableItemBackground
 import com.mishiranu.dashchan.widget.DividerItemDecoration
 import com.mishiranu.dashchan.widget.ExpandedLayout
 import com.mishiranu.dashchan.widget.PaddedRecyclerView
@@ -619,7 +620,9 @@ abstract class PreferenceFragment : ContentFragment() {
             init {
                 ListViewUtils.bind(this, false, null, this)
                 if (itemView.getBackground() == null) {
-                    setSelectableItemBackground(itemView)
+                    // Rounded to Preferences.uiCornerRadius so a row's press-state highlight reads
+                    // as a Material 3 list item rather than the stock edge-to-edge ripple.
+                    setRoundedSelectableItemBackground(itemView, Preferences.uiCornerRadius)
                 }
             }
 
