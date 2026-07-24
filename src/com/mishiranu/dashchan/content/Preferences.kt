@@ -1731,7 +1731,7 @@ object Preferences {
     // KEY_VIDEO_SPEEDS, edited through the settings ChipGroup dialog (VideoSpeedsPreference).
     const val KEY_VIDEO_SPEEDS: String = "video_speeds"
     val VIDEO_SPEED_OPTIONS: List<Float> =
-        listOf(0.25f, 0.5f, 0.75f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f)
+        listOf(0.25f, 0.33f, 0.5f, 0.75f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f, 5f, 6f, 8f)
 
     /** Stable, locale-independent token identifying a speed in the stored set (e.g. 1.5 -> "150"). */
     @JvmStatic
