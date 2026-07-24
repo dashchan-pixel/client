@@ -33,13 +33,9 @@ class SearchImageDialog() : DialogFragment() {
             .add("Google") {
                 searchImageUri(
                     locator.buildQueryWithHost(
-                        "www.google.com",
-                        "searchbyimage",
-                        "sbisrc",
-                        "is",
-                        "safe",
-                        "off",
-                        "image_url",
+                        "lens.google.com",
+                        "uploadbyurl",
+                        "url",
                         imageUriString,
                     ),
                 )
@@ -50,42 +46,6 @@ class SearchImageDialog() : DialogFragment() {
                         "images/search",
                         "rpt",
                         "imageview",
-                        "url",
-                        imageUriString,
-                    ),
-                )
-            }.add("TinEye") {
-                searchImageUri(
-                    locator.buildQueryWithHost(
-                        "www.tineye.com",
-                        "search",
-                        "url",
-                        imageUriString,
-                    ),
-                )
-            }.add("SauceNAO") {
-                searchImageUri(
-                    locator.buildQueryWithHost(
-                        "saucenao.com",
-                        "search.php",
-                        "url",
-                        imageUriString,
-                    ),
-                )
-            }.add("iqdb.org") {
-                searchImageUri(
-                    locator.buildQueryWithHost(
-                        "iqdb.org",
-                        "/",
-                        "url",
-                        imageUriString,
-                    ),
-                )
-            }.add("trace.moe") {
-                searchImageUri(
-                    locator.buildQueryWithHost(
-                        "trace.moe",
-                        "/",
                         "url",
                         imageUriString,
                     ),
