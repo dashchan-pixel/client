@@ -6,11 +6,15 @@ import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.MimeTypeMap
@@ -35,15 +39,23 @@ import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.DropdownView
-import com.mishiranu.dashchan.widget.SimpleViewHolder
+import com.mishiranu.dashchan.widget.SortableHelper
+import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ViewFactory
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-class CommandsFragment : BaseListFragment {
+class CommandsFragment :
+    BaseListFragment,
+    SortableHelper.Callback<CommandsFragment.CommandViewHolder> {
     private val items = ArrayList<CommandsStorage.CommandItem>()
+
+    // Two-finger tap-and-drag reorder, mirroring the drawer's favourites/forums sorting: the gesture
+    // arms on a long press held with a second finger down, then ItemTouchHelper drives the drag.
+    private var sortableHelper: SortableHelper<CommandViewHolder>? = null
+    private val dragState = SortableHelper.DragState()
 
     constructor() : super()
 
@@ -63,7 +75,9 @@ class CommandsFragment : BaseListFragment {
         if (items.isEmpty()) {
             setErrorText(getString(R.string.no_commands_defined))
         }
-        getRecyclerView()!!.adapter = Adapter()
+        val recyclerView = getRecyclerView()!!
+        recyclerView.adapter = Adapter()
+        sortableHelper = SortableHelper(recyclerView, this)
 
         if (savedInstanceState == null) {
             val editId = arguments?.getLong(EXTRA_EDIT_ID, 0) ?: 0
@@ -244,19 +258,59 @@ class CommandsFragment : BaseListFragment {
         }
     }
 
+    override fun onDragStart(holder: CommandViewHolder) {
+        dragState.reset()
+        holder.setDragging(true, ThemeEngine.getTheme(requireContext()).accent)
+    }
+
+    override fun onDragFinish(
+        holder: CommandViewHolder?,
+        cancelled: Boolean,
+    ) {
+        if (!cancelled && dragState.getMovedTo() >= 0) {
+            CommandsStorage.getInstance().replaceAll(items)
+        }
+        holder?.setDragging(false, 0)
+    }
+
+    // Single flat list of commands, so any item may drop over any other.
+    override fun onDragCanMove(
+        fromHolder: CommandViewHolder,
+        toHolder: CommandViewHolder,
+    ): Boolean = true
+
+    override fun onDragMove(
+        fromHolder: CommandViewHolder,
+        toHolder: CommandViewHolder,
+    ): Boolean {
+        val from = fromHolder.bindingAdapterPosition
+        val to = toHolder.bindingAdapterPosition
+        if (from < 0 || to < 0) {
+            return false
+        }
+        items.add(to, items.removeAt(from))
+        getRecyclerView()!!.adapter!!.notifyItemMoved(from, to)
+        dragState.set(from, to)
+        return true
+    }
+
     private inner class Adapter :
-        RecyclerView.Adapter<RecyclerView.ViewHolder>(),
-        ListViewUtils.ClickCallback<Unit, RecyclerView.ViewHolder> {
+        RecyclerView.Adapter<CommandViewHolder>(),
+        ListViewUtils.ClickCallback<Unit, CommandViewHolder> {
         override fun getItemCount(): Int = items.size
 
         override fun onItemClick(
-            holder: RecyclerView.ViewHolder,
+            holder: CommandViewHolder,
             position: Int,
             item: Unit?,
             longClick: Boolean,
         ): Boolean {
             if (longClick) {
-                showCommandContextMenu(items[position])
+                if (holder.isMultipleFingers) {
+                    sortableHelper?.start(holder)
+                } else {
+                    showCommandContextMenu(items[position])
+                }
             } else {
                 editCommand(items[position], position)
             }
@@ -266,23 +320,22 @@ class CommandsFragment : BaseListFragment {
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int,
-        ): RecyclerView.ViewHolder =
-            ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
-                SimpleViewHolder(ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_SINGLE_LINE).view),
+        ): CommandViewHolder =
+            ListViewUtils.bind<Unit, CommandViewHolder>(
+                CommandViewHolder(ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_SINGLE_LINE)),
                 true,
                 null,
                 this,
             )
 
         override fun onBindViewHolder(
-            holder: RecyclerView.ViewHolder,
+            holder: CommandViewHolder,
             position: Int,
         ) {
-            val viewHolder = holder.itemView.tag as ViewFactory.TwoLinesViewHolder
             val commandItem = items[position]
-            viewHolder.text1.text =
+            holder.twoLines.text1.text =
                 if (StringUtils.isEmpty(commandItem.name)) getString(R.string.command) else commandItem.name
-            viewHolder.text2.text = describeScope(commandItem)
+            holder.twoLines.text2.text = describeScope(commandItem)
         }
 
         private fun describeScope(commandItem: CommandsStorage.CommandItem): CharSequence {
@@ -307,6 +360,81 @@ class CommandsFragment : BaseListFragment {
             }
             return builder
         }
+    }
+
+    /**
+     * Row holder that also tracks the two-finger gesture (like the drawer's sortable rows): a second
+     * finger held down during a long press arms the drag, distinguishing it from a plain long-press
+     * (which opens the context menu). [setDragging] tints the title while the row is being dragged.
+     */
+    class CommandViewHolder(
+        val twoLines: ViewFactory.TwoLinesViewHolder,
+    ) : RecyclerView.ViewHolder(twoLines.view),
+        View.OnTouchListener {
+        private var originalTextColors: ColorStateList? = null
+
+        private var multipleFingersCountingTime = false
+        private var multipleFingersTime = 0L
+        private var multipleFingersStartTime = 0L
+
+        init {
+            twoLines.view.setOnTouchListener(this)
+        }
+
+        fun setDragging(
+            dragging: Boolean,
+            activeColor: Int,
+        ) {
+            if (dragging) {
+                if (originalTextColors == null) {
+                    originalTextColors = twoLines.text1.textColors
+                }
+                twoLines.text1.setTextColor(activeColor)
+            } else {
+                originalTextColors?.let { twoLines.text1.setTextColor(it) }
+            }
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouch(
+            v: View?,
+            event: MotionEvent,
+        ): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    multipleFingersCountingTime = false
+                    multipleFingersStartTime = 0L
+                    multipleFingersTime = 0L
+                }
+
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    if (!multipleFingersCountingTime) {
+                        multipleFingersCountingTime = true
+                        multipleFingersStartTime = SystemClock.elapsedRealtime()
+                    }
+                }
+
+                MotionEvent.ACTION_POINTER_UP -> {
+                    // A two-finger gesture only ever has the second finger to lift, so we stop timing on
+                    // the first pointer-up. (The drawer's sortable rows also guard on pointerCount <= 2,
+                    // but that only matters for 3+ fingers, which this gesture doesn't care about.)
+                    if (multipleFingersCountingTime) {
+                        multipleFingersCountingTime = false
+                        multipleFingersTime += SystemClock.elapsedRealtime() - multipleFingersStartTime
+                    }
+                }
+            }
+            return false
+        }
+
+        val isMultipleFingers: Boolean
+            get() {
+                var time = multipleFingersTime
+                if (multipleFingersCountingTime) {
+                    time += SystemClock.elapsedRealtime() - multipleFingersStartTime
+                }
+                return time >= ViewConfiguration.getLongPressTimeout() / 10
+            }
     }
 
     companion object {
