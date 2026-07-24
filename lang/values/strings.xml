@@ -211,6 +211,8 @@
 	<string name="hidden_posts">Hidden posts</string>
 	<string name="hide">Hide</string>
 	<string name="hide_ai_posts">Hide AI-generated posts</string>
+	<string name="hide_captcha_pass_block">Hide captcha pass block</string>
+	<string name="hide_captcha_pass_block__summary">Do not waste space when a captcha pass is used</string>
 	<string name="hide_eventually__imperfective">Hide eventually</string>
 	<string name="hide_on_tap__imperfective">Hide on tap</string>
 	<string name="hide_pages">Hide pages</string>

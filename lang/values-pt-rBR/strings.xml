@@ -133,6 +133,8 @@
 	<string name="group">Grupo</string>
 	<string name="hidden_posts">Posts ocultos</string>
 	<string name="hide">Hide</string>
+	<string name="hide_captcha_pass_block">Esconder bloco da senha do captcha</string>
+	<string name="hide_captcha_pass_block__summary">Não desperdiçar espaço quando a senha do captcha é usada</string>
 	<string name="hide_eventually__imperfective">Esconder eventualmente</string>
 	<string name="hide_on_tap__imperfective">Esconder ao tocar</string>
 	<string name="hide_pages">Esconder páginas</string>

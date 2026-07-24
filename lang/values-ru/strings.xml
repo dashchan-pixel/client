@@ -205,6 +205,8 @@
 	<string name="hidden_posts">Скрытые сообщения</string>
 	<string name="hide">Скрыть</string>
 	<string name="hide_ai_posts">Скрыть посты сгенерированные ИИ</string>
+	<string name="hide_captcha_pass_block">Скрывать блок пропуска капчи</string>
+	<string name="hide_captcha_pass_block__summary">Не тратить место, когда используется пропуск капчи</string>
 	<string name="hide_eventually__imperfective">Скрывать со временем</string>
 	<string name="hide_on_tap__imperfective">Скрывать при нажатии</string>
 	<string name="hide_pages">Скрывать страницы</string>

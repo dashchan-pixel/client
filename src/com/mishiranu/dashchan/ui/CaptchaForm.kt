@@ -23,6 +23,7 @@ import androidx.core.os.ParcelCompat
 import chan.content.ChanConfiguration
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences.isCaptchaTimer
+import com.mishiranu.dashchan.content.Preferences.isHideCaptchaPassBlock
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -51,6 +52,7 @@ class CaptchaForm(
         IMAGE,
         SKIP,
         SKIP_LOCK,
+        PASS,
         ERROR,
     }
 
@@ -64,6 +66,7 @@ class CaptchaForm(
     private val lifetimeTimerView: TextView?
 
     private val captchaLifetimeTimerEnabled: Boolean
+    private val hideCaptchaPassBlock: Boolean
     private var captchaLifetimeSeconds = 0
     private var captchaImage: Bitmap? = null
 
@@ -258,7 +261,7 @@ class CaptchaForm(
             ReadCaptchaTask.CaptchaState.PASS -> {
                 skipTextView.setText(R.string.captcha_pass)
                 cancelView.setVisibility(View.VISIBLE)
-                switchToCaptchaView(CaptchaViewType.SKIP, null, false)
+                switchToCaptchaView(CaptchaViewType.PASS, null, false)
             }
         }
     }
@@ -302,6 +305,9 @@ class CaptchaForm(
             stopCaptchaLifetimeTimer()
             captchaImage = null
         }
+        // There is nothing to solve or to show with a captcha pass, so the block may be hidden
+        val blockHidden = captchaViewType == CaptchaViewType.PASS && hideCaptchaPassBlock
+        blockParentView.setVisibility(if (blockHidden) View.GONE else View.VISIBLE)
 
         when (captchaViewType) {
             CaptchaViewType.LOADING -> {
@@ -342,7 +348,7 @@ class CaptchaForm(
                 }
             }
 
-            CaptchaViewType.SKIP, CaptchaViewType.SKIP_LOCK -> {
+            CaptchaViewType.SKIP, CaptchaViewType.SKIP_LOCK, CaptchaViewType.PASS -> {
                 blockParentView.setClickable(captchaViewType != CaptchaViewType.SKIP_LOCK)
                 blockView.setVisibility(View.INVISIBLE)
                 imageView.setVisibility(View.VISIBLE)
@@ -437,6 +443,7 @@ class CaptchaForm(
         cancelView = container.findViewById<ImageView>(R.id.captcha_cancel)
         lifetimeTimerView = container.findViewById<TextView?>(R.id.captcha_lifetime_timer)
         captchaLifetimeTimerEnabled = isHugeCaptcha && isCaptchaTimer
+        hideCaptchaPassBlock = isHideCaptchaPassBlock
         if (hideInput) {
             inputView.setVisibility(View.GONE)
         }

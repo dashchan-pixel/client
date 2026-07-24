@@ -903,6 +903,17 @@ object Preferences {
                 DEFAULT_HUGE_CAPTCHA,
             )
 
+    const val KEY_HIDE_CAPTCHA_PASS_BLOCK: String = "hide_captcha_pass_block"
+    const val DEFAULT_HIDE_CAPTCHA_PASS_BLOCK: Boolean = true
+
+    @JvmStatic
+    val isHideCaptchaPassBlock: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_HIDE_CAPTCHA_PASS_BLOCK,
+                DEFAULT_HIDE_CAPTCHA_PASS_BLOCK,
+            )
+
     const val KEY_CAPTCHA_TIMER: String = "captcha_timer"
     const val DEFAULT_CAPTCHA_TIMER: Boolean = true
 

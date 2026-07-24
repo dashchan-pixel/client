@@ -69,6 +69,7 @@ import com.mishiranu.dashchan.content.Preferences.isAlwaysRemoveFilename
 import com.mishiranu.dashchan.content.Preferences.isAlwaysRenameFilename
 import com.mishiranu.dashchan.content.Preferences.isAlwaysUniqueHash
 import com.mishiranu.dashchan.content.Preferences.isCaptchaAutoReload
+import com.mishiranu.dashchan.content.Preferences.isHideCaptchaPassBlock
 import com.mishiranu.dashchan.content.Preferences.isHidePersonalData
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
 import com.mishiranu.dashchan.content.Preferences.isMarkupButtonsAtBottom
@@ -217,6 +218,8 @@ class PostingFragment :
     private var commandsButton: ImageView? = null
     private var commentCommands: List<CommandsStorage.CommandItem> = emptyList()
     private var captchaForm: CaptchaForm? = null
+    private var confirmationHeaderView: TextView? = null
+    private var footerContainer: FrameLayout? = null
     private var sendButton: Button? = null
     private var attachmentColumnCount = 0
 
@@ -327,6 +330,7 @@ class PostingFragment :
                 it.setOnDragListener(attachmentDragListener)
             }
         val footerContainer = view.findViewById<FrameLayout>(R.id.footer_container)
+        this.footerContainer = footerContainer
         val oldScrollViewHeight = intArrayOf(-1)
         scrollView.addOnLayoutChangeListener(
             OnLayoutChangeListener {
@@ -341,7 +345,9 @@ class PostingFragment :
                 oldBottom: Int,
                 ->
                 val currentScrollView = this.scrollView ?: return@OnLayoutChangeListener
-                val scrollViewHeight = currentScrollView.getHeight()
+                // Track the viewport, not the raw height: ExpandedLayout pushes the system insets
+                // onto this view as padding without changing its size
+                val scrollViewHeight = viewportHeight(currentScrollView)
                 if (scrollViewHeight != oldScrollViewHeight[0]) {
                     oldScrollViewHeight[0] = scrollViewHeight
                     resizeComment(false)
@@ -352,7 +358,12 @@ class PostingFragment :
 
         Companion.addHeader(personalDataBlock, 0, R.string.personal_data)
         addHeader(postingLayout, postingLayout.indexOfChild(subjectView), R.string.message_data)
-        addHeader(postingLayout, postingLayout.indexOfChild(footerContainer), R.string.confirmation)
+        confirmationHeaderView =
+            addHeader(
+                postingLayout,
+                postingLayout.indexOfChild(footerContainer),
+                R.string.confirmation,
+            )
         val tripcodeWarning = view.findViewById<TextView>(R.id.personal_tripcode_warning)
         val remainingCharacters = view.findViewById<TextView>(R.id.remaining_characters)
         setTextSizeScaled(tripcodeWarning, 12)
@@ -542,6 +553,16 @@ class PostingFragment :
         val states = arrayOf<IntArray?>(intArrayOf(-android.R.attr.state_enabled), intArrayOf())
         val colors = intArrayOf(colorControlDisabled, theme.accent)
         sendButton.setBackgroundTintList(ColorStateList(states, colors))
+        // The Material3 overlay is only there to supply M3 shapes and attrs; its stock palette must
+        // not leak in. Label and ripple default to colorOnPrimary, which is a dark purple in the M3
+        // dark theme — take them from the user theme instead, like the framework colored button did.
+        val buttonContext = captchaInputParentView.getContext()
+        getColorStateList(buttonContext, android.R.attr.textColorPrimaryInverse)?.let {
+            sendButton.setTextColor(it)
+        }
+        getColorStateList(buttonContext, android.R.attr.colorControlHighlight)?.let {
+            sendButton.rippleColor = it
+        }
 
         sendButton.setSingleLine(true)
         // setSingleLine breaks capitalization
@@ -891,6 +912,8 @@ class PostingFragment :
         commentEditWatcher = null
         commandsButton = null
         captchaForm = null
+        confirmationHeaderView = null
+        footerContainer = null
         sendButton = null
         attachments.clear()
     }
@@ -1592,6 +1615,7 @@ class PostingFragment :
         captcha = null
         updateSendButtonState()
         captchaForm!!.showLoading()
+        updateConfirmationHeaderState()
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
@@ -1616,6 +1640,19 @@ class PostingFragment :
 
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
 
+    // The captcha block itself is hidden with a captcha pass, so its header must go away too
+    private fun updateConfirmationHeaderState() {
+        val headerView = confirmationHeaderView ?: return
+        val footerContainer = this.footerContainer ?: return
+        val hidden = captchaState == ReadCaptchaTask.CaptchaState.PASS && isHideCaptchaPassBlock
+        headerView.setVisibility(if (hidden) View.GONE else View.VISIBLE)
+        // Without the header the send button would stick to the checkboxes above it
+        val density = obtainDensity(footerContainer)
+        footerContainer.setPadding(0, if (hidden) (16f * density).toInt() else 0, 0, 0)
+        // Showing or hiding the whole block changes the height left for the comment field
+        resizeComment(true)
+    }
+
     override fun onReadCaptchaSuccess(result: ReadCaptchaTask.Result) {
         showCaptcha(
             result.captchaState!!,
@@ -1633,6 +1670,7 @@ class PostingFragment :
     override fun onReadCaptchaError(errorItem: ErrorItem) {
         show(errorItem)
         captchaForm!!.showError()
+        updateConfirmationHeaderState()
         updatePostingConfigurationIfNeeded()
     }
 
@@ -1672,8 +1710,9 @@ class PostingFragment :
         val invertColors =
             blackAndWhite && !isLight(getColor(requireContext(), android.R.attr.colorBackground))
         captchaForm!!.showCaptcha(captchaState, input, captcha, large, invertColors)
+        updateConfirmationHeaderState()
         val scrollView = scrollView!!
-        if (scrollView.getScrollY() + scrollView.getHeight() >=
+        if (scrollView.getScrollY() + viewportHeight(scrollView) >=
             scrollView
                 .getChildAt(0)
                 .getHeight()
@@ -1683,7 +1722,8 @@ class PostingFragment :
                     val currentScrollView = this.scrollView ?: return@Runnable
                     currentScrollView.setScrollY(
                         max(
-                            currentScrollView.getChildAt(0).getHeight() - currentScrollView.getHeight(),
+                            currentScrollView.getChildAt(0).getHeight() -
+                                viewportHeight(currentScrollView),
                             0,
                         ),
                     )
@@ -2197,6 +2237,14 @@ class PostingFragment :
         }
     }
 
+    // The scroll view carries the system insets as its own padding (ExpandedLayout, clipToPadding
+    // false), so its height is larger than the area content can actually occupy. Filling the raw
+    // height instead made an empty form scrollable and pushed the send button off the bottom edge.
+    private fun viewportHeight(scrollView: ScrollView): Int {
+        val padding = scrollView.getPaddingTop() + scrollView.getPaddingBottom()
+        return scrollView.getHeight() - padding
+    }
+
     private fun resizeComment(post: Boolean) {
         val scrollView = scrollView!!
         scrollView.removeCallbacks(resizeComment)
@@ -2213,12 +2261,16 @@ class PostingFragment :
             val commentView = commentView ?: return@Runnable
             val postMain = scrollView.getChildAt(0)
             commentView.setMinLines(4)
+            // Drop the filler height added by the previous pass. Without this the field can only
+            // grow, so once anything else appears (attachments, captcha, keyboard) the extra height
+            // stays and pushes the send button below the bottom of the screen
+            commentView.setMinHeight(0)
             val widthMeasureSpec =
                 View.MeasureSpec.makeMeasureSpec(postMain.getWidth(), View.MeasureSpec.EXACTLY)
             val heightMeasureSpec =
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
             postMain.measure(widthMeasureSpec, heightMeasureSpec)
-            val delta = scrollView.getHeight() - postMain.getMeasuredHeight()
+            val delta = viewportHeight(scrollView) - postMain.getMeasuredHeight()
             if (delta > 0) {
                 commentView.setMinHeight(commentView.getMeasuredHeight() + delta)
             }
@@ -2490,13 +2542,14 @@ class PostingFragment :
             layout: ViewGroup,
             index: Int,
             textResId: Int,
-        ) {
+        ): TextView {
             val textView = makeListTextHeader(layout)
             textView.setText(textResId)
             layout.addView(textView, index)
             val density = obtainDensity(textView)
             textView.setPadding((4f * density).toInt(), 0, (4f * density).toInt(), 0)
             setNewMargin(textView, 0, 0, 0, (-8f * density).toInt())
+            return textView
         }
 
         private fun addAttachmentButton(

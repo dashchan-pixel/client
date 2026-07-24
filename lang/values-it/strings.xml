@@ -178,6 +178,8 @@
     <string name="headers_order">Ordine categorie</string>
     <string name="hidden_posts">Post nascosti</string>
     <string name="hide">Nascondi</string>
+    <string name="hide_captcha_pass_block">Nascondi sezione pass per captcha</string>
+    <string name="hide_captcha_pass_block__summary">Non sprecare spazio quando si usa un pass per captcha</string>
     <string name="hide_eventually__imperfective">Nascondi eventualmente</string>
     <string name="hide_on_tap__imperfective">Nascondi al tocco</string>
     <string name="hide_pages">Nascondi pagine</string>

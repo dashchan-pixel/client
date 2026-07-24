@@ -259,6 +259,13 @@ class InterfaceFragment : PreferenceFragment() {
             R.string.captcha_reload_automatically,
             R.string.captcha_reload_automatically__summary,
         ).setEnabled(captchaAutoReloadEnabled())
+        addCheck(
+            true,
+            Preferences.KEY_HIDE_CAPTCHA_PASS_BLOCK,
+            Preferences.DEFAULT_HIDE_CAPTCHA_PASS_BLOCK,
+            R.string.hide_captcha_pass_block,
+            R.string.hide_captcha_pass_block__summary,
+        )
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.user_interface), null)
     }
