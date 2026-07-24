@@ -3,11 +3,9 @@ package com.mishiranu.dashchan.ui
 import android.app.Dialog
 import android.net.Uri
 import android.os.Bundle
-import android.view.ContextThemeWrapper
 import androidx.core.os.BundleCompat
 import androidx.fragment.app.DialogFragment
 import chan.content.Chan
-import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.NavigationUtils
 
 class SearchImageDialog() : DialogFragment() {
@@ -29,7 +27,9 @@ class SearchImageDialog() : DialogFragment() {
                 .locator
                 .convert(uri)
                 .toString()
-        return DialogMenu(ContextThemeWrapper(context, R.style.Theme_Gallery))
+        // Plain context: Theme_Gallery is dark whatever the user theme is, and being fullscreen
+        // rather than floating it also skips the theme engine's rounded window background.
+        return DialogMenu(context)
             .add("Google") {
                 searchImageUri(
                     locator.buildQueryWithHost(

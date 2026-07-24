@@ -6,7 +6,6 @@ import android.content.DialogInterface
 import android.net.Uri
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.view.ContextThemeWrapper
 import android.view.View
 import androidx.fragment.app.FragmentManager
 import chan.content.Chan
@@ -868,7 +867,10 @@ class InteractionUnit internal constructor(
             canLoadThumbnailManually: Boolean,
         ): AlertDialog {
             val chan = get(chanName)
-            val context: Context = ContextThemeWrapper(provider.context, R.style.Theme_Gallery)
+            // Plain provider context, like every other post menu: Theme_Gallery is dark whatever the
+            // user theme is, and being fullscreen rather than floating it also skips the theme
+            // engine's rounded window background.
+            val context = provider.context
             val dialogMenu = DialogMenu(context)
             dialogMenu.setTitle(attachmentItem.getDialogTitle(chan))
             if (attachmentItem.canDownloadToStorage()) {
