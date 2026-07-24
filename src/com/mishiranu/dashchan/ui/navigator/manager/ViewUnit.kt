@@ -282,11 +282,38 @@ class ViewUnit
             holder.thumbnail.setOnLongClickListener(holder.thumbnailLongClickListener)
         }
 
+        private fun bindThreadCellSubject(
+            holder: ThreadViewHolder,
+            postItem: PostItem,
+            hidden: Boolean,
+        ) {
+            val subject = postItem.getSubject()
+            if (!StringUtils.isEmptyOrWhitespace(subject) && !hidden) {
+                holder.subject.setVisibility(View.VISIBLE)
+                holder.subject.setSingleLine(true)
+                val builder = SpannableStringBuilder(subject.trim { it <= ' ' })
+                builder.setSpan(
+                    RelativeSizeSpan(4f / 3f),
+                    0,
+                    builder.length,
+                    SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+                builder.setSpan(
+                    TypefaceSpan("sans-serif-light"),
+                    0,
+                    builder.length,
+                    SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+                holder.subject.setText(builder)
+            } else {
+                holder.subject.setVisibility(View.GONE)
+            }
+        }
+
         fun bindThreadCellView(
             viewHolder: RecyclerView.ViewHolder?,
             postItem: PostItem,
             configurationSet: ConfigurationSet,
-            small: Boolean,
             contentHeight: Int,
         ) {
             val context = uiManager.context
@@ -298,33 +325,11 @@ class ViewUnit
             val attachmentItems = postItem.getAttachmentItems()
             val hidden = postItem.getHideState().hidden
             (holder.threadContent!!.getParent() as View).setAlpha(if (hidden) ALPHA_HIDDEN_POST else 1f)
-            val subject = postItem.getSubject()
-            if (!StringUtils.isEmptyOrWhitespace(subject) && !hidden) {
-                holder.subject.setVisibility(View.VISIBLE)
-                holder.subject.setSingleLine(!small)
-                val builder = SpannableStringBuilder(subject.trim { it <= ' ' })
-                if (!small) {
-                    builder.setSpan(
-                        RelativeSizeSpan(4f / 3f),
-                        0,
-                        builder.length,
-                        SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
-                    )
-                    builder.setSpan(
-                        TypefaceSpan("sans-serif-light"),
-                        0,
-                        builder.length,
-                        SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
-                    )
-                }
-                holder.subject.setText(builder)
-            } else {
-                holder.subject.setVisibility(View.GONE)
-            }
+            bindThreadCellSubject(holder, postItem, hidden)
             var comment: CharSequence? = null
             if (hidden) {
                 comment = postItem.getHideReason()
-            } else if (!small || attachmentItems == null) {
+            } else {
                 val parentWidth =
                     (
                         obtainDensity(holder.itemView) *
@@ -1937,6 +1942,7 @@ class ViewUnit
         companion object {
             private const val ALPHA_HIDDEN_POST = 0.2f
             private const val ALPHA_DELETED_POST = 0.5f
+            private const val CARD_CONTENT_PADDING_DP = 8f
 
             private fun extractUri(text: String): Uri? {
                 var currentText = text
@@ -1978,6 +1984,10 @@ class ViewUnit
                 cardView.setBackgroundColor(theme.card)
                 val content = FrameLayout(cardView.getContext())
                 setSelectableItemBackground(content)
+                // Inner padding so the cell content clears the (now rounded) card edges. Applied to the
+                // ripple-backed content frame, not the card, so the ripple still fills the whole card.
+                val contentPadding = (CARD_CONTENT_PADDING_DP * obtainDensity(cardView.getContext())).toInt()
+                content.setPadding(contentPadding, contentPadding, contentPadding, contentPadding)
                 cardView.addView(
                     content,
                     ViewGroup.LayoutParams.MATCH_PARENT,

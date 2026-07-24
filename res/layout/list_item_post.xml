@@ -28,9 +28,9 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingLeft="3dp"
+                android:paddingLeft="10dp"
                 android:paddingTop="10dp"
-                android:paddingRight="10dp"
+                android:paddingRight="16dp"
                 android:paddingBottom="4dp">
 
                 <com.mishiranu.dashchan.widget.AttachmentView
@@ -93,9 +93,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:horizontalSpacing="6dp"
-                android:paddingLeft="3dp"
+                android:paddingLeft="10dp"
                 android:paddingTop="4dp"
-                android:paddingRight="10dp"
+                android:paddingRight="16dp"
                 android:paddingBottom="4dp"
                 android:verticalSpacing="10dp">
 
@@ -106,9 +106,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:horizontalSpacing="4dp"
-                android:paddingLeft="3dp"
+                android:paddingLeft="10dp"
                 android:paddingTop="4dp"
-                android:paddingRight="10dp"
+                android:paddingRight="16dp"
                 android:paddingBottom="4dp">
 
             </com.mishiranu.dashchan.widget.LinebreakLayout>
@@ -117,9 +117,9 @@
                 android:id="@+id/comment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingLeft="5dp"
+                android:paddingLeft="10dp"
                 android:paddingTop="4dp"
-                android:paddingRight="12dp"
+                android:paddingRight="16dp"
                 android:paddingBottom="2dp"
                 android:tag="theme.textColor=post"
                 android:textColor="?attr/colorTextPost"
@@ -141,7 +141,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingRight="6dp"
+                android:paddingLeft="4dp"
+                android:paddingRight="16dp"
                 android:paddingBottom="4dp">
 
                 <TextView

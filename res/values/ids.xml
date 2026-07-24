@@ -25,12 +25,13 @@
 	<item type="id" name="menu_expanded_screen" />
 	<item type="id" name="menu_flow" />
 	<item type="id" name="menu_gallery" />
+	<item type="id" name="menu_grid" />
 	<item type="id" name="menu_group" />
 	<item type="id" name="menu_hidden_posts" />
-	<item type="id" name="menu_large_grid" />
 	<item type="id" name="menu_list" />
 	<item type="id" name="menu_make_home_page" />
 	<item type="id" name="menu_make_threadshot" />
+	<item type="id" name="menu_add_command" />
 	<item type="id" name="menu_my_posts" />
 	<item type="id" name="menu_new_command" />
 	<item type="id" name="menu_new_rule" />
@@ -48,7 +49,6 @@
 	<item type="id" name="menu_select_all" />
 	<item type="id" name="menu_sfw_mode" />
 	<item type="id" name="menu_share_link" />
-	<item type="id" name="menu_small_grid" />
 	<item type="id" name="menu_sorting" />
 	<item type="id" name="menu_spoilers" />
 	<item type="id" name="menu_star_icon" />

@@ -42,7 +42,6 @@ class ThreadsAdapter(
 
     private class GridMode(
         val columns: Int,
-        val small: Boolean,
         val gridItemContentHeight: Int,
     )
 
@@ -120,7 +119,6 @@ class ThreadsAdapter(
                         holder,
                         postItem,
                         configurationSet,
-                        gridMode!!.small,
                         gridMode!!.gridItemContentHeight,
                     )
                 } else {
@@ -341,30 +339,20 @@ class ThreadsAdapter(
     }
 
     fun setThreadsView(threadsView: ThreadsView?): Int {
-        if (threadsView == ThreadsView.LARGE_GRID ||
-            threadsView == ThreadsView.SMALL_GRID
-        ) {
+        if (threadsView == ThreadsView.GRID) {
             val density = obtainDensity(context)
             val totalWidth =
                 (context.getResources().getConfiguration().screenWidthDp * density).toInt()
-            val minWidthSmall = (CARD_MIN_WIDTH_SMALL_DP * density).toInt()
-            val minWidthLarge = (CARD_MIN_WIDTH_LARGE_DP * density).toInt()
+            val minWidth = (CARD_MIN_WIDTH_DP * density).toInt()
             val paddingOut = (CARD_PADDING_OUT_DP * density).toInt()
             val paddingInExtra = ((CARD_PADDING_IN_DP + CARD_PADDING_IN_EXTRA_DP) * density).toInt()
-            var smallColumns: Int =
-                calculateColumnsCount(totalWidth, minWidthSmall, paddingOut, paddingInExtra)
-            val largeColumns: Int =
-                calculateColumnsCount(totalWidth, minWidthLarge, paddingOut, paddingInExtra)
-            if (smallColumns == largeColumns) {
-                smallColumns++
-            }
-            val small = threadsView == ThreadsView.SMALL_GRID
-            val columns = if (small) smallColumns else largeColumns
+            val columns: Int =
+                calculateColumnsCount(totalWidth, minWidth, paddingOut, paddingInExtra)
             val contentWidth =
                 (totalWidth - 2 * paddingOut - (columns - 1) * paddingInExtra) / columns
-            val contentHeight = (contentWidth * (if (small) 1.35f else 1.5f)).toInt()
+            val contentHeight = (contentWidth * 1.5f).toInt()
             cardsMode = true
-            gridMode = GridMode(columns, small, contentHeight)
+            gridMode = GridMode(columns, contentHeight)
             return columns
         } else {
             cardsMode = threadsView == ThreadsView.CARDS
@@ -392,11 +380,10 @@ class ThreadsAdapter(
 
     companion object {
         private const val LIST_PADDING = 12
-        private const val CARD_MIN_WIDTH_LARGE_DP = 120
-        private const val CARD_MIN_WIDTH_SMALL_DP = 90
-        private const val CARD_PADDING_OUT_DP = 8
-        private const val CARD_PADDING_IN_DP = 4
-        private const val CARD_PADDING_IN_EXTRA_DP = 1
+        private const val CARD_MIN_WIDTH_DP = 120
+        private const val CARD_PADDING_OUT_DP = 4
+        private const val CARD_PADDING_IN_DP = 1
+        private const val CARD_PADDING_IN_EXTRA_DP = 0
 
         private fun calculateColumnsCount(
             totalWidth: Int,
