@@ -2,13 +2,19 @@ package com.mishiranu.dashchan.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Rect
+import android.text.Editable
+import android.text.Spannable
+import android.text.TextWatcher
+import android.text.style.ForegroundColorSpan
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.ScrollView
+import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
 
@@ -33,6 +39,75 @@ open class CodeEditText : SafePasteEditText {
 
     private var isKeyboardOpen = false
     private var isExpanded = false
+
+    private var isUpdatingHighlight = false
+    private val highlightRunnable = Runnable { applyHighlighting() }
+
+    private val textWatcher =
+        object : TextWatcher {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int,
+            ) {}
+
+            override fun onTextChanged(
+                s: CharSequence?,
+                start: Int,
+                before: Int,
+                count: Int,
+            ) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                removeCallbacks(highlightRunnable)
+                postDelayed(highlightRunnable, 300)
+            }
+        }
+
+    init {
+        addTextChangedListener(textWatcher)
+    }
+
+    private fun applyHighlighting() {
+        val s = text ?: return
+        if (s.isEmpty()) return
+        if (isUpdatingHighlight) return
+        isUpdatingHighlight = true
+
+        val isNightMode = ThemeEngine.isNightMode(context)
+        val keywordColor = if (isNightMode) Color.parseColor("#CC7832") else Color.parseColor("#000080")
+        val stringColor = if (isNightMode) Color.parseColor("#6A8759") else Color.parseColor("#008000")
+        val commentColor = Color.parseColor("#808080")
+        val numberColor = if (isNightMode) Color.parseColor("#6897BB") else Color.parseColor("#0000FF")
+
+        val spans = s.getSpans(0, s.length, ForegroundColorSpan::class.java)
+        for (span in spans) {
+            s.removeSpan(span)
+        }
+
+        val matcher = SYNTAX_PATTERN.matcher(s)
+        while (matcher.find()) {
+            val color =
+                when {
+                    matcher.group("comment") != null -> commentColor
+                    matcher.group("string") != null -> stringColor
+                    matcher.group("keyword") != null -> keywordColor
+                    matcher.group("number") != null -> numberColor
+                    else -> null
+                }
+            if (color != null) {
+                s.setSpan(
+                    ForegroundColorSpan(color),
+                    matcher.start(),
+                    matcher.end(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+            }
+        }
+
+        isUpdatingHighlight = false
+    }
 
     private val layoutListener =
         android.view.ViewTreeObserver.OnGlobalLayoutListener {
@@ -195,5 +270,13 @@ open class CodeEditText : SafePasteEditText {
     companion object {
         private const val CONTEXT_LINES = 3
         private const val MAX_HEIGHT_FRACTION = 0.3f
+
+        private val SYNTAX_PATTERN =
+            Pattern.compile(
+                "(?<comment>//[^\\n]*|(?s:/\\*.*?\\*/))" +
+                    "|(?<string>\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*'|`[^`\\\\]*(?:\\\\.[^`\\\\]*)*`)" +
+                    "|(?<keyword>\\b(?:var|let|const|if|else|for|while|do|break|continue|return|function|class|extends|import|export|default|new|this|super|true|false|null|undefined|typeof|instanceof|switch|case|try|catch|finally|throw|yield|await|async|void|delete|in)\\b)" +
+                    "|(?<number>\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b)",
+            )
     }
 }
