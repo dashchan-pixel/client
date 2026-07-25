@@ -63,6 +63,7 @@
 	<string name="connection">Conexão</string>
 	<string name="connection_was_reset">Conexão foi reiniciada</string>
 	<string name="contents">Conteúdo</string>
+	<string name="copied_to_clipboard">Copiado para a área de transferência</string>
 	<string name="copy">Copiar</string>
 	<string name="copy_email">Copiar email</string>
 	<string name="copy_link">Copiar link</string>
@@ -92,6 +93,7 @@
 	<string name="download_files">Baixar arquivos</string>
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
+	<string name="duplicate">Duplicar</string>
 	<string name="echo">Eco</string>
 	<string name="echo__summary">Coletar respostas aos meus posts em uma lista separada</string>
 	<string name="echo_is_empty">Eco está vazio</string>

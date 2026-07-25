@@ -85,6 +85,7 @@
     <string name="context_menu">Menu contestuale</string>
     <string name="context_menu_description__sentence">Usa pressione prolungata per mostrare il menu
         contestuale.</string>
+    <string name="copied_to_clipboard">Copiato negli appunti</string>
     <string name="copy">Copia</string>
     <string name="copy_email">Copia email</string>
     <string name="copy_link">Copia link</string>
@@ -123,6 +124,7 @@
     <string name="downloading_number_of_number__format">Download in corso: %1$d di %2$d</string>
     <string name="downloads">Download</string>
     <string name="draft_saved">Bozza salvata</string>
+    <string name="duplicate">Duplica</string>
     <string name="echo">Eco</string>
     <string name="echo__summary">Raccogli le risposte ai miei post in un elenco separato</string>
     <string name="echo_is_empty">Eco vuoto</string>

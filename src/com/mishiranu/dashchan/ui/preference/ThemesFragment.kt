@@ -268,7 +268,7 @@ class ThemesFragment : BaseListFragment() {
     }
 
     /**
-     * Opens the theme editor. With no [originalName] the theme is being copied rather than edited,
+     * Opens the theme editor. With no [originalName] the theme is being duplicated rather than edited,
      * so it needs a name of its own — saving under an existing name would overwrite that theme.
      */
     internal fun openEditor(
@@ -592,8 +592,15 @@ class ThemesFragment : BaseListFragment() {
                 dialogMenu.add(R.string.edit__ellipsis) { openEditor(name) }
             }
             // A built-in or not yet installed theme can't be edited in place, but it makes a fine
-            // starting point: copying it hands the editor a renamed duplicate.
-            dialogMenu.add(R.string.copy) { openEditor(null) }
+            // starting point: duplicating it hands the editor a renamed copy.
+            dialogMenu.add(R.string.duplicate) { openEditor(null) }
+            dialogMenu.add(R.string.copy) {
+                val json = requireArguments().getString(EXTRA_JSON)
+                if (!json.isNullOrEmpty()) {
+                    StringUtils.copyToClipboard(requireContext(), json)
+                    ClickableToast.show(R.string.copied_to_clipboard)
+                }
+            }
             dialogMenu.add(R.string.save) {
                 val binder = (requireActivity() as FragmentHandler).getDownloadBinder()
                 if (binder != null) {
