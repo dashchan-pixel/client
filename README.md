@@ -1,9 +1,9 @@
-# Dashchan Pixel
+# Dashchan [redacted]
 
 Android client for imageboards.
 
 > [!IMPORTANT]
-> **Dashchan Pixel runs on Android 16 or newer only.** Devices on older
+> **Dashchan [redacted] runs on Android 16 or newer only.** Devices on older
 > Android versions are not supported and cannot install the app.
 
 A fork of [TrixiEther/DashchanFork](https://github.com/TrixiEther/DashchanFork),
@@ -60,7 +60,7 @@ and [metadata/en/changelogs](metadata/en/changelogs).
 2. Install Android SDK, define `ANDROID_HOME` environment variable or set `sdk.dir` in `local.properties`
 3. Run `./gradlew assembleRelease`
 
-The resulting APK file will appear as `build/outputs/apk/release/dashchan-pixel-release.apk`.
+The resulting APK file will appear as `build/outputs/apk/release/dashchan-redacted-release.apk`.
 
 ### Build Signed Binary
 
@@ -78,10 +78,10 @@ Without it, release builds are signed with the debug keystore.
 ### Building Extensions
 
 The source code of extensions is available in the
-[dashchan-pixel/extensions](https://github.com/dashchan-pixel/extensions) repository
+[dashchan-redacted/extensions](https://github.com/dashchan-redacted/extensions) repository
 (trimmed to dvach, fourchan, arhivach and local); the original is
 [Mishiranu/Dashchan-Extensions](https://github.com/Mishiranu/Dashchan-Extensions).
 
 ## License
 
-Dashchan Pixel is available under the [GNU General Public License, version 3 or later](COPYING).
+Dashchan [redacted] is available under the [GNU General Public License, version 3 or later](COPYING).

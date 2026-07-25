@@ -61,21 +61,21 @@ android {
             "String",
             "URI_UPDATES",
             "\"//raw.githubusercontent.com/" +
-                "dashchan-pixel/client/rework/update/data-v1.json\"",
+                "dashchan-redacted/client/rework/update/data-v1.json\"",
         )
         buildConfigField(
             "String",
             "URI_UPDATES_EXTENSIONS",
             "\"//raw.githubusercontent.com/" +
-                "dashchan-pixel/extensions/rework/update/data-v1.json\"",
+                "dashchan-redacted/extensions/rework/update/data-v1.json\"",
         )
         buildConfigField(
             "String",
             "URI_THEMES",
             "\"//raw.githubusercontent.com/" +
-                "dashchan-pixel/client/rework/update/themes.json\"",
+                "dashchan-redacted/client/rework/update/themes.json\"",
         )
-        buildConfigField("String", "GITHUB_URI_METADATA", "\"//github.com/dashchan-pixel/client\"")
+        buildConfigField("String", "GITHUB_URI_METADATA", "\"//github.com/dashchan-redacted/client\"")
         buildConfigField("String", "GITHUB_PATH_METADATA", "\"metadata\"")
     }
 

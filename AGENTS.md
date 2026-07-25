@@ -21,7 +21,7 @@ The **main app** of the Dashchan rework — an Android imageboard browser that d
 
 ## Git / workflow
 
-- **`rework` is the default branch** (origin `dashchan-pixel/client`, `origin/HEAD → rework`). Push/publish only with explicit user OK.
+- **`rework` is the default branch** (origin `dashchan-redacted/client`, `origin/HEAD → rework`). Push/publish only with explicit user OK.
 - To recover pre-conversion Java when a warning/NPE is suspect:
   `git show "$(git log --format=%H --diff-filter=D -1 -- <path>.java)^:<path>.java"`
 - **`.gitignore` is an allowlist** (`/*` then `!/…`) — a new top-level file won't be tracked until it's explicitly allowlisted.

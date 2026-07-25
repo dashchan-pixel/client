@@ -1,11 +1,11 @@
 # Update metadata
 
 - `data-v1.json` — update manifest for the **client only**; APKs are attached to
-  [GitHub Releases](https://github.com/dashchan-pixel/client/releases) of this
+  [GitHub Releases](https://github.com/dashchan-redacted/client/releases) of this
   repository (tag = version name).
 - `themes.json` — theme repository.
 - Extension updates come from separate, combinable sources (default:
-  [dashchan-pixel/extensions](https://github.com/dashchan-pixel/extensions)),
+  [dashchan-redacted/extensions](https://github.com/dashchan-redacted/extensions)),
   configurable in Settings → General → Updates (extensions).
 - Changelogs are read from `metadata/` of this repository via the GitHub API.
 

@@ -58,8 +58,8 @@ jobs:
         id: release_meta
         run: |
           code=$(python3 -c "import json; print(max(json.load(open('metadata/versions.json'))['versions'], key=lambda v: v['code'])['code'])")
-          cp build/outputs/apk/release/dashchan-pixel-release.apk "dashchan-pixel-$code.apk"
-          echo "apk=dashchan-pixel-$code.apk" >> "$GITHUB_OUTPUT"
+          cp build/outputs/apk/release/dashchan-redacted-release.apk "dashchan-redacted-$code.apk"
+          echo "apk=dashchan-redacted-$code.apk" >> "$GITHUB_OUTPUT"
           echo "changelog=metadata/en/changelogs/$code.txt" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
@@ -76,7 +76,7 @@ jobs:
           git fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
           git worktree add ../manifest "origin/$BRANCH"
           python3 scripts/update_manifest.py \
-              build/outputs/apk/release/dashchan-pixel-release.apk \
+              build/outputs/apk/release/dashchan-redacted-release.apk \
               ../manifest/update/data-v1.json "$GITHUB_REF_NAME"
           cd ../manifest
           git config user.name "github-actions[bot]"

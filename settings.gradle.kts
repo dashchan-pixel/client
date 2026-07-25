@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "dashchan-pixel"
+rootProject.name = "dashchan-redacted"
