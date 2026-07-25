@@ -157,6 +157,7 @@
     <string name="filed_on">Inviato il</string>
     <string name="files__genitive">File</string>
     <string name="files_limit_reached">Limite file raggiunto</string>
+    <string name="feedback">Feedback</string>
     <string name="files_only">Solo file</string>
     <string name="filter">Filtro</string>
     <string name="find_in_comments">Cerca nei commenti</string>

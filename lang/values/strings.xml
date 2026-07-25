@@ -186,6 +186,7 @@
 	<string name="filed_on">Filed on</string>
 	<string name="files__genitive">Files</string>
 	<string name="files_limit_reached">Files limit reached</string>
+	<string name="feedback">Feedback</string>
 	<string name="files_only">Files only</string>
 	<string name="filter">Filter</string>
 	<string name="find_in_comments">Find in comments</string>

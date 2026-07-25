@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui.preference
 
 import android.app.AlertDialog
 import android.content.DialogInterface
+import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.view.View
@@ -12,8 +13,10 @@ import com.mishiranu.dashchan.BuildConfig
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.BackupManager
 import com.mishiranu.dashchan.content.Preferences
+import com.mishiranu.dashchan.content.async.ReadFeedbackTask
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
+import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ClickableToast
@@ -46,6 +49,7 @@ class AboutFragment :
             }
         addButton(R.string.check_for_updates, 0)
             .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(UpdateFragment()) }
+
         addButton(R.string.foss_licenses, R.string.foss_licenses__summary)
             .setOnClickListener {
                 (requireActivity() as FragmentHandler).pushFragment(TextFragment(TextFragment.Type.LICENSES))
@@ -57,6 +61,24 @@ class AboutFragment :
             BuildConfig.VERSION_NAME +
                 (if (versionDate != null) " $versionDate" else ""),
         )
+
+        ReadFeedbackTask { feedbackUrl ->
+            if (isAdded && feedbackUrl != null) {
+                addButton(R.string.feedback, 0).setOnClickListener {
+                    try {
+                        NavigationUtils.handleUri(
+                            requireContext(),
+                            null,
+                            Uri.parse(feedbackUrl),
+                            NavigationUtils.BrowserType.AUTO,
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        ClickableToast.show(R.string.unknown_error)
+                    }
+                }
+            }
+        }.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.about), null)
     }

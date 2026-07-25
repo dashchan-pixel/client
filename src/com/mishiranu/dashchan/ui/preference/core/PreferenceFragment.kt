@@ -162,12 +162,16 @@ abstract class PreferenceFragment : ContentFragment() {
         preference: Preference<T>,
         persistent: Boolean,
     ) {
+        val index = preferences.size
         preferences.add(preference)
         if (preference.key != null && persistent) {
             preference.extract(getPreferences())
             this.persistent.add(preference)
         }
         preference.setOnChangeListener { newValue -> onChange(preference, newValue) }
+        if (recyclerView != null) {
+            listAdapter.notifyItemInserted(index)
+        }
     }
 
     fun movePreference(

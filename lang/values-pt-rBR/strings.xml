@@ -121,6 +121,7 @@
 	<string name="file_name__format">Arquivo %s</string>
 	<string name="files__genitive">Arquivos</string>
 	<string name="files_limit_reached">Limite de arquivos atingido</string>
+	<string name="feedback">Feedback</string>
 	<string name="files_only">Somente arquivos</string>
 	<string name="filter">Filtro</string>
 	<string name="find_in_comments">Encontre nas mensagens</string>

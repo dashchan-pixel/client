@@ -181,6 +181,7 @@
 	<string name="filed_on">Выдан</string>
 	<string name="files__genitive">Файлов</string>
 	<string name="files_limit_reached">Достигнут лимит файлов</string>
+	<string name="feedback">Обратная связь</string>
 	<string name="files_only">Только файлы</string>
 	<string name="filter">Фильтр</string>
 	<string name="find_in_comments">Искать в комментариях</string>
