@@ -72,10 +72,10 @@
 	<string name="clear">Clear</string>
 	<string name="clear_cache">Clear cache</string>
 	<string name="clear_deleted">Clear deleted</string>
-	<string name="clear_history">Clear history</string>
-	<string name="clear_history__sentence">Clear history?</string>
 	<string name="clear_echo">Clear echo</string>
 	<string name="clear_echo__sentence">Clear echo?</string>
+	<string name="clear_history">Clear history</string>
+	<string name="clear_history__sentence">Clear history?</string>
 	<string name="clear_old">Clear old</string>
 	<string name="clearing__ellipsis">Clearing…</string>
 	<string name="close">Close</string>
@@ -150,6 +150,8 @@
 	<string name="downloading_number_of_number__format">Downloading %1$d of %2$d</string>
 	<string name="downloads">Downloads</string>
 	<string name="draft_saved">Draft saved</string>
+	<string name="echo">Echo</string>
+	<string name="echo_is_empty">Echo is empty</string>
 	<string name="edit__ellipsis">Edit…</string>
 	<string name="empty_response">Empty response</string>
 	<string name="enabled">Enabled</string>
@@ -229,8 +231,6 @@
 	<string name="add_command">Add command</string>
 	<string name="important__plural">Important</string>
 	<string name="in_thread_number__format">In thread %s</string>
-	<string name="echo">Echo</string>
-	<string name="echo_is_empty">Echo is empty</string>
 	<string name="incorrect_password">Incorrect password</string>
 	<string name="initial_position">Initial position</string>
 	<string name="install">Install</string>
@@ -418,9 +418,9 @@
 	<string name="reload">Reload</string>
 	<string name="remember_history">Remember history</string>
 	<string name="remove_file_name">Remove file name</string>
+	<string name="remove_from_echo">Remove from echo</string>
 	<string name="remove_from_favorites">Remove from favorites</string>
 	<string name="remove_from_history">Remove from history</string>
-	<string name="remove_from_echo">Remove from echo</string>
 	<string name="remove_metadata">Remove metadata</string>
 	<string name="remove_rules">Remove rules</string>
 	<string name="rename">Rename</string>

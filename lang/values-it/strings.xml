@@ -58,10 +58,10 @@
     <string name="clear">Svuota</string>
     <string name="clear_cache">Svuota cache</string>
     <string name="clear_deleted">Rimuovi eliminati</string>
+    <string name="clear_echo">Svuota l\'eco</string>
+    <string name="clear_echo__sentence">Svuotare l\'eco?</string>
     <string name="clear_history">Cancella cronologia</string>
     <string name="clear_history__sentence">Cancellare la cronologia?</string>
-    <string name="clear_echo">Svuota l'eco</string>
-    <string name="clear_echo__sentence">Svuotare l'eco?</string>
     <string name="clearing__ellipsis">Cancellazione…</string>
     <string name="close_pages">Chiudi pagine</string>
     <string name="close_pages__summary">Chiudi pagine toccando il pulsante "indietro"</string>
@@ -121,6 +121,8 @@
     <string name="downloading_number_of_number__format">Download in corso: %1$d di %2$d</string>
     <string name="downloads">Download</string>
     <string name="draft_saved">Bozza salvata</string>
+    <string name="echo">Eco</string>
+    <string name="echo_is_empty">Eco vuoto</string>
     <string name="edit__ellipsis">Modifica…</string>
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
@@ -195,8 +197,6 @@
     <string name="images">Immagini</string>
     <string name="images_are_disabled">Immagini disabilitate</string>
     <string name="in_thread_number__format">Nel thread %s</string>
-    <string name="echo">Eco</string>
-    <string name="echo_is_empty">Eco vuoto</string>
     <string name="incorrect_password">Password errata</string>
     <string name="initial_position">Posizione iniziale</string>
     <string name="install">Installa</string>
@@ -364,9 +364,9 @@
     <string name="reload">Ricarica</string>
     <string name="remember_history">Ricorda cronologia</string>
     <string name="remove_file_name">Rimuovi nome file</string>
+    <string name="remove_from_echo">Rimuovi dall\'eco</string>
     <string name="remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="remove_from_history">Rimuovi dalla cronologia</string>
-    <string name="remove_from_echo">Rimuovi dall'eco</string>
     <string name="remove_metadata">Rimuovi metadati</string>
     <string name="remove_rules">Rimuovi regole</string>
     <string name="rename">Rinomina</string>

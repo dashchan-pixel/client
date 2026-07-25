@@ -71,10 +71,10 @@
 	<string name="clear">Очистить</string>
 	<string name="clear_cache">Очистить кэш</string>
 	<string name="clear_deleted">Очистить удалённые</string>
-	<string name="clear_history">Очистить историю</string>
-	<string name="clear_history__sentence">Очистить историю?</string>
 	<string name="clear_echo">Очистить эхо</string>
 	<string name="clear_echo__sentence">Очистить эхо?</string>
+	<string name="clear_history">Очистить историю</string>
+	<string name="clear_history__sentence">Очистить историю?</string>
 	<string name="clear_old">Очистить старые</string>
 	<string name="clearing__ellipsis">Очистка…</string>
 	<string name="close">Закрыть</string>
@@ -144,6 +144,8 @@
 	<string name="downloading_number_of_number__format">Загрузка %1$d из %2$d</string>
 	<string name="downloads">Загрузки</string>
 	<string name="draft_saved">Черновик сохранён</string>
+	<string name="echo">Эхо</string>
+	<string name="echo_is_empty">Эхо пусто</string>
 	<string name="edit__ellipsis">Изменить…</string>
 	<string name="empty_response">Пустой ответ сервера</string>
 	<string name="enabled">Включено</string>
@@ -222,8 +224,6 @@
 	<string name="images_are_disabled">Картинки отключены</string>
 	<string name="important__plural">Важные</string>
 	<string name="in_thread_number__format">В треде %s</string>
-	<string name="echo">Эхо</string>
-	<string name="echo_is_empty">Эхо пусто</string>
 	<string name="incorrect_password">Неправильный пароль</string>
 	<string name="initial_position">Начальное положение</string>
 	<string name="install">Установить</string>
@@ -424,9 +424,9 @@
 	<string name="reload">Перезагрузить</string>
 	<string name="remember_history">Запоминать историю</string>
 	<string name="remove_file_name">Удалить имя файла</string>
+	<string name="remove_from_echo">Удалить из эха</string>
 	<string name="remove_from_favorites">Удалить из избранного</string>
 	<string name="remove_from_history">Удалить из истории</string>
-	<string name="remove_from_echo">Удалить из эха</string>
 	<string name="remove_metadata">Стереть метаданные</string>
 	<string name="remove_rules">Удалить правила</string>
 	<string name="rename">Переименовать</string>

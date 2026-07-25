@@ -45,10 +45,10 @@
 	<string name="clear">Limpar</string>
 	<string name="clear_cache">Limpar cache</string>
 	<string name="clear_deleted">Limpado</string>
-	<string name="clear_history">Limpar histórico</string>
-	<string name="clear_history__sentence">Limpar histórico?</string>
 	<string name="clear_echo">Limpar eco</string>
 	<string name="clear_echo__sentence">Limpar eco?</string>
+	<string name="clear_history">Limpar histórico</string>
+	<string name="clear_history__sentence">Limpar histórico?</string>
 	<string name="clearing__ellipsis">Limpando…</string>
 	<string name="close_pages">Fechar páginas</string>
 	<string name="close_pages__summary">Feche as páginas ao apertar \"Voltar\"</string>
@@ -91,6 +91,8 @@
 	<string name="download_files">Baixar arquivos</string>
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
+	<string name="echo">Eco</string>
+	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="edit__ellipsis">Editar…</string>
 	<string name="empty_response">Resposta vazia</string>
 	<string name="enter_valid_data">Entre dados válidos</string>
@@ -149,8 +151,6 @@
 	<string name="image_is_corrupted">Imagem corrompida</string>
 	<string name="images_are_disabled">Imagens estão desabilitadas</string>
 	<string name="in_thread_number__format">No fio %s</string>
-	<string name="echo">Eco</string>
-	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="incorrect_password">Senha incorreta</string>
 	<string name="insufficient_device_space">Sem espaço no dispositivo</string>
 	<string name="internal_browser">Navegador interno</string>
@@ -287,9 +287,9 @@
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>
 	<string name="remove_file_name">Remover filename</string>
+	<string name="remove_from_echo">Remover do eco</string>
 	<string name="remove_from_favorites">Remover dos favoritos</string>
 	<string name="remove_from_history">Remover do histórico</string>
-	<string name="remove_from_echo">Remover do eco</string>
 	<string name="remove_metadata">Remover metadata</string>
 	<string name="remove_rules">Remover regras</string>
 	<string name="rename">Renomear</string>
