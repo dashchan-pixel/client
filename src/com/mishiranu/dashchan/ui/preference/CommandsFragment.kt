@@ -233,6 +233,7 @@ class CommandsFragment :
                 command.code,
                 command.useIn,
                 command.autoRun,
+                command.perPost,
             )
         editCommand(copy, -1)
     }
