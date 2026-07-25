@@ -208,6 +208,7 @@ class CommandsFragment :
         val title = if (command.name.isNullOrEmpty()) getString(R.string.command) else command.name
         DialogMenu(requireContext())
             .setTitle(title)
+            .add(R.string.duplicate) { duplicateCommand(command) }
             .add(R.string.save) {
                 pendingSaveCommand = command
                 val baseName = command.name?.takeIf { it.isNotEmpty() } ?: "command"
@@ -215,6 +216,35 @@ class CommandsFragment :
             }.add(R.string.copy) { copyCommandJson(command) }
             .create()
             .show()
+    }
+
+    /**
+     * Duplicates a command: the copy gets its own identity and a name of its own, and opens in the
+     * edit dialog as a new command (index -1), so it's stored only once the user confirms it.
+     */
+    private fun duplicateCommand(command: CommandsStorage.CommandItem) {
+        val name = command.name
+        val copy =
+            CommandsStorage.CommandItem(
+                CommandsStorage.CommandItem.generateId(),
+                command.chanNames?.let { HashSet(it) },
+                command.boardName,
+                if (name.isNullOrEmpty()) name else uniqueName(name),
+                command.code,
+                command.useIn,
+                command.autoRun,
+            )
+        editCommand(copy, -1)
+    }
+
+    /** Keeps the duplicate distinguishable in the list, where names are free-form and may repeat. */
+    private fun uniqueName(name: String): String {
+        val existing = items.mapTo(HashSet()) { it.name }
+        var index = 2
+        while ("$name ($index)" in existing) {
+            index++
+        }
+        return "$name ($index)"
     }
 
     private fun copyCommandJson(command: CommandsStorage.CommandItem) {
