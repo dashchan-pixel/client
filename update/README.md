@@ -13,7 +13,7 @@
 
 1. Append the new version to `metadata/versions.json` and add
    `metadata/{en,ru}/changelogs/<code>.txt` (one atomic commit), push.
-2. Push a tag named after the version (e.g. `26.7.5-redacted`).
+2. Push a tag named after the version (e.g. `26.7.5`).
 3. The `Release` workflow builds the APK, publishes the GitHub release with the
    English changelog as its body, and commits a refreshed `data-v1.json`
    (via `scripts/update_manifest.py`) hashing the exact published binary.
