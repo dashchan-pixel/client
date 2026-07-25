@@ -16,14 +16,14 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.WeakObservable
 
 /**
- * Collects the replies to the user's own posts, so they can be reviewed later in the Inbox
+ * Collects the replies to the user's own posts, so they can be reviewed later in the Echo
  * regardless of whether their notification was seen or dismissed.
  */
-class InboxDatabase internal constructor(
+class EchoDatabase internal constructor(
     private val database: CommonDatabase,
 ) : CommonDatabase.Instance {
     private interface Schema {
-        interface Inbox {
+        interface Echo {
             interface Columns {
                 companion object {
                     const val CHAN_NAME: String = "chan_name"
@@ -39,14 +39,14 @@ class InboxDatabase internal constructor(
             }
 
             companion object {
-                const val TABLE_NAME: String = "inbox"
+                const val TABLE_NAME: String = "echo"
                 const val MAX_COUNT: Int = 1000
                 const val MAX_COUNT_FACTOR: Float = 0.75f
             }
         }
     }
 
-    class InboxCursor internal constructor(
+    class EchoCursor internal constructor(
         cursor: Cursor,
         val hasItems: Boolean,
         val filtered: Boolean,
@@ -62,23 +62,23 @@ class InboxDatabase internal constructor(
         internal val unreadIndex: Int
 
         init {
-            chanNameIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.CHAN_NAME)
-            boardNameIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.BOARD_NAME)
-            threadNumberIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.THREAD_NUMBER)
+            chanNameIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.CHAN_NAME)
+            boardNameIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.BOARD_NAME)
+            threadNumberIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.THREAD_NUMBER)
             postNumberMajorIndex =
-                cursor.getColumnIndex(Schema.Inbox.Columns.Companion.POST_NUMBER_MAJOR)
+                cursor.getColumnIndex(Schema.Echo.Columns.Companion.POST_NUMBER_MAJOR)
             postNumberMinorIndex =
-                cursor.getColumnIndex(Schema.Inbox.Columns.Companion.POST_NUMBER_MINOR)
-            timeIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.TIME)
-            commentIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.COMMENT)
-            titleIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.TITLE)
-            unreadIndex = cursor.getColumnIndex(Schema.Inbox.Columns.Companion.UNREAD)
+                cursor.getColumnIndex(Schema.Echo.Columns.Companion.POST_NUMBER_MINOR)
+            timeIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.TIME)
+            commentIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.COMMENT)
+            titleIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.TITLE)
+            unreadIndex = cursor.getColumnIndex(Schema.Echo.Columns.Companion.UNREAD)
         }
     }
 
     /** A snapshot of the row the cursor currently points at. */
-    class InboxItem(
-        cursor: InboxCursor,
+    class EchoItem(
+        cursor: EchoCursor,
     ) {
         val chanName: String = cursor.getString(cursor.chanNameIndex)
         val boardName: String = cursor.getString(cursor.boardNameIndex)
@@ -106,7 +106,7 @@ class InboxDatabase internal constructor(
             Migration.FROM_8_TO_9 -> {}
 
             Migration.FROM_9_TO_10 -> {
-                // Add "inbox" table
+                // Add "echo" table
                 createTable(database)
             }
         }
@@ -115,23 +115,23 @@ class InboxDatabase internal constructor(
     override fun open(database: SQLiteDatabase) {
         val clean: Boolean
         database
-            .rawQuery("SELECT COUNT(*) FROM " + Schema.Inbox.Companion.TABLE_NAME, null)
+            .rawQuery("SELECT COUNT(*) FROM " + Schema.Echo.Companion.TABLE_NAME, null)
             .use { cursor ->
-                clean = cursor.moveToFirst() && cursor.getInt(0) > Schema.Inbox.Companion.MAX_COUNT
+                clean = cursor.moveToFirst() && cursor.getInt(0) > Schema.Echo.Companion.MAX_COUNT
             }
         if (clean) {
             val time: Long?
-            val projection = arrayOf<String?>(Schema.Inbox.Columns.Companion.TIME)
+            val projection = arrayOf<String?>(Schema.Echo.Columns.Companion.TIME)
             database
                 .query(
-                    Schema.Inbox.Companion.TABLE_NAME,
+                    Schema.Echo.Companion.TABLE_NAME,
                     projection,
                     null,
                     null,
                     null,
                     null,
-                    Schema.Inbox.Columns.Companion.TIME + " DESC",
-                    (Schema.Inbox.Companion.MAX_COUNT_FACTOR * Schema.Inbox.Companion.MAX_COUNT)
+                    Schema.Echo.Columns.Companion.TIME + " DESC",
+                    (Schema.Echo.Companion.MAX_COUNT_FACTOR * Schema.Echo.Companion.MAX_COUNT)
                         .toInt()
                         .toString() + ", 1",
                 ).use { cursor ->
@@ -139,8 +139,8 @@ class InboxDatabase internal constructor(
                 }
             if (time != null) {
                 database.delete(
-                    Schema.Inbox.Companion.TABLE_NAME,
-                    Schema.Inbox.Columns.Companion.TIME + " <= " + time,
+                    Schema.Echo.Companion.TABLE_NAME,
+                    Schema.Echo.Columns.Companion.TIME + " <= " + time,
                     null,
                 )
             }
@@ -175,8 +175,8 @@ class InboxDatabase internal constructor(
     private fun updateUnreadCount(database: SQLiteDatabase) {
         database
             .rawQuery(
-                "SELECT COUNT(*) FROM " + Schema.Inbox.Companion.TABLE_NAME +
-                    " WHERE " + Schema.Inbox.Columns.Companion.UNREAD + " != 0",
+                "SELECT COUNT(*) FROM " + Schema.Echo.Companion.TABLE_NAME +
+                    " WHERE " + Schema.Echo.Columns.Companion.UNREAD + " != 0",
                 null,
             ).use { cursor ->
                 unreadCount = if (cursor.moveToFirst()) cursor.getInt(0) else 0
@@ -211,7 +211,7 @@ class InboxDatabase internal constructor(
                         val postNumber = reply.postNumber ?: continue
                         val rowId =
                             database.insertWithOnConflict(
-                                Schema.Inbox.Companion.TABLE_NAME,
+                                Schema.Echo.Companion.TABLE_NAME,
                                 null,
                                 replyValues(chanName, boardName, threadNumber, title, reply, postNumber),
                                 SQLiteDatabase.CONFLICT_IGNORE,
@@ -222,9 +222,9 @@ class InboxDatabase internal constructor(
                         // A better title may have appeared since the older replies were stored
                         val filter = threadFilter(chanName, boardName, threadNumber)
                         val values = ContentValues()
-                        values.put(Schema.Inbox.Columns.Companion.TITLE, title)
+                        values.put(Schema.Echo.Columns.Companion.TITLE, title)
                         database.update(
-                            Schema.Inbox.Companion.TABLE_NAME,
+                            Schema.Echo.Companion.TABLE_NAME,
                             values,
                             filter.value,
                             filter.args,
@@ -243,7 +243,7 @@ class InboxDatabase internal constructor(
     }
 
     @Throws(OperationCanceledException::class)
-    private fun countInbox(
+    private fun countEcho(
         chanName: String?,
         signal: CancellationSignal?,
     ): Int? =
@@ -252,13 +252,13 @@ class InboxDatabase internal constructor(
                 val projection = arrayOf<String?>("COUNT(*)")
                 val filterBuilder = Expression.filter()
                 if (chanName != null) {
-                    filterBuilder.equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
+                    filterBuilder.equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
                 }
                 val filter = filterBuilder.build()
                 database
                     .query(
                         false,
-                        Schema.Inbox.Companion.TABLE_NAME,
+                        Schema.Echo.Companion.TABLE_NAME,
                         projection,
                         filter.value,
                         filter.args,
@@ -277,24 +277,24 @@ class InboxDatabase internal constructor(
         )
 
     @Throws(OperationCanceledException::class)
-    fun getInbox(
+    fun getEcho(
         chanName: String?,
         searchQuery: String?,
         signal: CancellationSignal?,
-    ): InboxCursor {
-        val count = countInbox(chanName, signal) ?: 0
+    ): EchoCursor {
+        val count = countEcho(chanName, signal) ?: 0
         val projection = arrayOf<String?>("rowid", "*")
         val filterBuilder = Expression.filter()
         if (chanName != null) {
-            filterBuilder.equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
+            filterBuilder.equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
         }
         var filtered = false
         if (!isEmpty(searchQuery)) {
             filterBuilder.append(
                 Expression
                     .filterOr()
-                    .like(Schema.Inbox.Columns.Companion.COMMENT, "%" + searchQuery + "%")
-                    .like(Schema.Inbox.Columns.Companion.TITLE, "%" + searchQuery + "%"),
+                    .like(Schema.Echo.Columns.Companion.COMMENT, "%" + searchQuery + "%")
+                    .like(Schema.Echo.Columns.Companion.TITLE, "%" + searchQuery + "%"),
             )
             filtered = true
         }
@@ -304,7 +304,7 @@ class InboxDatabase internal constructor(
                 QueryCallback { database: SQLiteDatabase ->
                     database.query(
                         false,
-                        Schema.Inbox.Companion.TABLE_NAME,
+                        Schema.Echo.Companion.TABLE_NAME,
                         projection,
                         filter.value,
                         filter.args,
@@ -312,13 +312,13 @@ class InboxDatabase internal constructor(
                         null,
                         // Newest first. Chans that report no post time leave every row tied on
                         // TIME, so fall back to insertion order to keep it reverse chronological.
-                        Schema.Inbox.Columns.Companion.TIME + " DESC, rowid DESC",
+                        Schema.Echo.Columns.Companion.TIME + " DESC, rowid DESC",
                         null,
                         signal,
                     )
                 },
             )
-        return InboxCursor(checkNotNull(cursor), count > 0, filtered)
+        return EchoCursor(checkNotNull(cursor), count > 0, filtered)
     }
 
     fun markReadAsync(
@@ -334,14 +334,14 @@ class InboxDatabase internal constructor(
             ExecuteCallback { database: SQLiteDatabase ->
                 var changed = 0
                 val values = ContentValues()
-                values.put(Schema.Inbox.Columns.Companion.UNREAD, 0)
+                values.put(Schema.Echo.Columns.Companion.UNREAD, 0)
                 database.beginTransaction()
                 try {
                     for (postNumber in postNumbers) {
                         val filter = postFilter(chanName, boardName, threadNumber, postNumber)
                         changed +=
                             database.update(
-                                Schema.Inbox.Companion.TABLE_NAME,
+                                Schema.Echo.Companion.TABLE_NAME,
                                 values,
                                 filter.value,
                                 filter.args,
@@ -362,16 +362,16 @@ class InboxDatabase internal constructor(
     fun markAllRead(chanName: String?) {
         val filterBuilder = Expression.filter()
         if (chanName != null) {
-            filterBuilder.equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
+            filterBuilder.equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
         }
-        filterBuilder.raw(Schema.Inbox.Columns.Companion.UNREAD + " != 0")
+        filterBuilder.raw(Schema.Echo.Columns.Companion.UNREAD + " != 0")
         val filter = filterBuilder.build()
         val values = ContentValues()
-        values.put(Schema.Inbox.Columns.Companion.UNREAD, 0)
+        values.put(Schema.Echo.Columns.Companion.UNREAD, 0)
         database.execute<Any?>(
             ExecuteCallback { database: SQLiteDatabase ->
                 database.update(
-                    Schema.Inbox.Companion.TABLE_NAME,
+                    Schema.Echo.Companion.TABLE_NAME,
                     values,
                     filter.value,
                     filter.args,
@@ -392,7 +392,7 @@ class InboxDatabase internal constructor(
         database.execute<Any?>(
             ExecuteCallback { database: SQLiteDatabase ->
                 database.delete(
-                    Schema.Inbox.Companion.TABLE_NAME,
+                    Schema.Echo.Companion.TABLE_NAME,
                     filter.value,
                     filter.args,
                 )
@@ -402,16 +402,16 @@ class InboxDatabase internal constructor(
         )
     }
 
-    fun clearInbox(chanName: String?) {
+    fun clearEcho(chanName: String?) {
         val filterBuilder = Expression.filter()
         if (chanName != null) {
-            filterBuilder.equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
+            filterBuilder.equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
         }
         val filter = filterBuilder.build()
         database.execute<Any?>(
             ExecuteCallback { database: SQLiteDatabase ->
                 database.delete(
-                    Schema.Inbox.Companion.TABLE_NAME,
+                    Schema.Echo.Companion.TABLE_NAME,
                     filter.value,
                     filter.args,
                 )
@@ -424,27 +424,27 @@ class InboxDatabase internal constructor(
     companion object {
         private fun createTable(database: SQLiteDatabase) {
             database.execSQL(
-                "CREATE TABLE " + Schema.Inbox.Companion.TABLE_NAME + " (" +
-                    Schema.Inbox.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MAJOR + " INTEGER NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MINOR + " INTEGER NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.TIME + " INTEGER NOT NULL, " +
-                    Schema.Inbox.Columns.Companion.COMMENT + " TEXT, " +
-                    Schema.Inbox.Columns.Companion.TITLE + " TEXT, " +
-                    Schema.Inbox.Columns.Companion.UNREAD + " INTEGER NOT NULL DEFAULT 1, " +
-                    "PRIMARY KEY (" + Schema.Inbox.Columns.Companion.CHAN_NAME + ", " +
-                    Schema.Inbox.Columns.Companion.BOARD_NAME + ", " +
-                    Schema.Inbox.Columns.Companion.THREAD_NUMBER + ", " +
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MAJOR + ", " +
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MINOR + "))",
+                "CREATE TABLE " + Schema.Echo.Companion.TABLE_NAME + " (" +
+                    Schema.Echo.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                    Schema.Echo.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                    Schema.Echo.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MAJOR + " INTEGER NOT NULL, " +
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MINOR + " INTEGER NOT NULL, " +
+                    Schema.Echo.Columns.Companion.TIME + " INTEGER NOT NULL, " +
+                    Schema.Echo.Columns.Companion.COMMENT + " TEXT, " +
+                    Schema.Echo.Columns.Companion.TITLE + " TEXT, " +
+                    Schema.Echo.Columns.Companion.UNREAD + " INTEGER NOT NULL DEFAULT 1, " +
+                    "PRIMARY KEY (" + Schema.Echo.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Echo.Columns.Companion.BOARD_NAME + ", " +
+                    Schema.Echo.Columns.Companion.THREAD_NUMBER + ", " +
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MAJOR + ", " +
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MINOR + "))",
             )
             database.execSQL(
-                "CREATE INDEX " + Schema.Inbox.Companion.TABLE_NAME + "_order " +
-                    "ON " + Schema.Inbox.Companion.TABLE_NAME + " (" +
-                    Schema.Inbox.Columns.Companion.CHAN_NAME + ", " +
-                    Schema.Inbox.Columns.Companion.TIME + ")",
+                "CREATE INDEX " + Schema.Echo.Companion.TABLE_NAME + "_order " +
+                    "ON " + Schema.Echo.Companion.TABLE_NAME + " (" +
+                    Schema.Echo.Columns.Companion.CHAN_NAME + ", " +
+                    Schema.Echo.Columns.Companion.TIME + ")",
             )
         }
 
@@ -457,19 +457,19 @@ class InboxDatabase internal constructor(
             postNumber: PostNumber,
         ): ContentValues {
             val values = ContentValues()
-            values.put(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
-            values.put(Schema.Inbox.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-            values.put(Schema.Inbox.Columns.Companion.THREAD_NUMBER, threadNumber)
-            values.put(Schema.Inbox.Columns.Companion.POST_NUMBER_MAJOR, postNumber.major)
-            values.put(Schema.Inbox.Columns.Companion.POST_NUMBER_MINOR, postNumber.minor)
+            values.put(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
+            values.put(Schema.Echo.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+            values.put(Schema.Echo.Columns.Companion.THREAD_NUMBER, threadNumber)
+            values.put(Schema.Echo.Columns.Companion.POST_NUMBER_MAJOR, postNumber.major)
+            values.put(Schema.Echo.Columns.Companion.POST_NUMBER_MINOR, postNumber.minor)
             // A post without a time would sort to 1970 and land under "older than 7 days"
             values.put(
-                Schema.Inbox.Columns.Companion.TIME,
+                Schema.Echo.Columns.Companion.TIME,
                 if (reply.timestamp > 0) reply.timestamp else System.currentTimeMillis(),
             )
-            values.put(Schema.Inbox.Columns.Companion.COMMENT, reply.comment)
-            values.put(Schema.Inbox.Columns.Companion.TITLE, title)
-            values.put(Schema.Inbox.Columns.Companion.UNREAD, 1)
+            values.put(Schema.Echo.Columns.Companion.COMMENT, reply.comment)
+            values.put(Schema.Echo.Columns.Companion.TITLE, title)
+            values.put(Schema.Echo.Columns.Companion.UNREAD, 1)
             return values
         }
 
@@ -480,9 +480,9 @@ class InboxDatabase internal constructor(
         ): Expression.Filter =
             Expression
                 .filter()
-                .equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
-                .equals(Schema.Inbox.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-                .equals(Schema.Inbox.Columns.Companion.THREAD_NUMBER, threadNumber)
+                .equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Schema.Echo.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                .equals(Schema.Echo.Columns.Companion.THREAD_NUMBER, threadNumber)
                 .build()
 
         private fun postFilter(
@@ -493,14 +493,14 @@ class InboxDatabase internal constructor(
         ): Expression.Filter =
             Expression
                 .filter()
-                .equals(Schema.Inbox.Columns.Companion.CHAN_NAME, chanName)
-                .equals(Schema.Inbox.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
-                .equals(Schema.Inbox.Columns.Companion.THREAD_NUMBER, threadNumber)
+                .equals(Schema.Echo.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Schema.Echo.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                .equals(Schema.Echo.Columns.Companion.THREAD_NUMBER, threadNumber)
                 .equals(
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MAJOR,
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MAJOR,
                     postNumber.major.toString(),
                 ).equals(
-                    Schema.Inbox.Columns.Companion.POST_NUMBER_MINOR,
+                    Schema.Echo.Columns.Companion.POST_NUMBER_MINOR,
                     postNumber.minor.toString(),
                 ).build()
     }

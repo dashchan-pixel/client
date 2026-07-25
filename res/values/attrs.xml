@@ -86,7 +86,7 @@
 	<attr name="iconDrawerMenuBoards" format="reference" />
 	<attr name="iconDrawerMenuUserBoards" format="reference" />
 	<attr name="iconDrawerMenuHistory" format="reference" />
-	<attr name="iconDrawerMenuInbox" format="reference" />
+	<attr name="iconDrawerMenuEcho" format="reference" />
 	<attr name="iconDrawerMenuPreferences" format="reference" />
 
 </resources>

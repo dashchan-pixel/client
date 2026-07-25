@@ -3,22 +3,22 @@ package com.mishiranu.dashchan.content.async
 import android.os.CancellationSignal
 import android.os.OperationCanceledException
 import com.mishiranu.dashchan.content.database.CommonDatabase
-import com.mishiranu.dashchan.content.database.InboxDatabase
+import com.mishiranu.dashchan.content.database.EchoDatabase
 
-class GetInboxTask(
+class GetEchoTask(
     private val callback: Callback,
     private val chanName: String?,
     private val searchQuery: String?,
-) : ExecutorTask<Unit, InboxDatabase.InboxCursor?>() {
+) : ExecutorTask<Unit, EchoDatabase.EchoCursor?>() {
     fun interface Callback {
-        fun onGetInboxResult(cursor: InboxDatabase.InboxCursor?)
+        fun onGetEchoResult(cursor: EchoDatabase.EchoCursor?)
     }
 
     private val signal = CancellationSignal()
 
-    override fun run(): InboxDatabase.InboxCursor? =
+    override fun run(): EchoDatabase.EchoCursor? =
         try {
-            CommonDatabase.getInstance().inbox.getInbox(chanName, searchQuery, signal)
+            CommonDatabase.getInstance().echo.getEcho(chanName, searchQuery, signal)
         } catch (_: OperationCanceledException) {
             null
         }
@@ -32,11 +32,11 @@ class GetInboxTask(
         }
     }
 
-    override fun onCancel(result: InboxDatabase.InboxCursor?) {
+    override fun onCancel(result: EchoDatabase.EchoCursor?) {
         result?.close()
     }
 
-    override fun onComplete(result: InboxDatabase.InboxCursor?) {
-        callback.onGetInboxResult(result)
+    override fun onComplete(result: EchoDatabase.EchoCursor?) {
+        callback.onGetEchoResult(result)
     }
 }

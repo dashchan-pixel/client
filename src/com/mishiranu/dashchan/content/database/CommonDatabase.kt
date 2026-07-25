@@ -45,7 +45,7 @@ class CommonDatabase private constructor() {
     val history: HistoryDatabase
     val threads: ThreadsDatabase
     val posts: PostsDatabase
-    val inbox: InboxDatabase
+    val echo: EchoDatabase
 
     private val helper: Helper
 
@@ -65,8 +65,8 @@ class CommonDatabase private constructor() {
         this.history = HistoryDatabase(this)
         this.threads = ThreadsDatabase(this)
         this.posts = PostsDatabase(this)
-        this.inbox = InboxDatabase(this)
-        helper = Helper(listOf<Instance>(this.history, this.threads, this.posts, this.inbox))
+        this.echo = EchoDatabase(this)
+        helper = Helper(listOf<Instance>(this.history, this.threads, this.posts, this.echo))
     }
 
     fun query(callback: QueryCallback): Cursor? = callback.query(helper.database)

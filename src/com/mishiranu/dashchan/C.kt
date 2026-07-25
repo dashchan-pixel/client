@@ -49,7 +49,7 @@ object C {
     const val EXTRA_FAIL_RESULT = "com.mishiranu.dashchan.extra.FAIL_RESULT"
     const val EXTRA_POST_NUMBER = "com.mishiranu.dashchan.extra.POST_NUMBER"
     const val EXTRA_FROM_CLIENT = "com.mishiranu.dashchan.extra.FROM_CLIENT"
-    const val EXTRA_OPEN_INBOX = "com.mishiranu.dashchan.extra.OPEN_INBOX"
+    const val EXTRA_OPEN_ECHO = "com.mishiranu.dashchan.extra.OPEN_ECHO"
     const val EXTRA_THREAD_NUMBER = "com.mishiranu.dashchan.extra.THREAD_NUMBER"
     const val EXTRA_UPDATE_DATA_MAP = "com.mishiranu.dashchan.extra.UPDATE_DATA_MAP"
 }

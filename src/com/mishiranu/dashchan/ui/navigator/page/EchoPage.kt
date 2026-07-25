@@ -9,35 +9,35 @@ import chan.content.Chan
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
-import com.mishiranu.dashchan.content.async.GetInboxTask
+import com.mishiranu.dashchan.content.async.GetEchoTask
 import com.mishiranu.dashchan.content.database.CommonDatabase
-import com.mishiranu.dashchan.content.database.InboxDatabase
+import com.mishiranu.dashchan.content.database.EchoDatabase
 import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.InstanceDialog
-import com.mishiranu.dashchan.ui.navigator.adapter.InboxAdapter
+import com.mishiranu.dashchan.ui.navigator.adapter.EchoAdapter
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.widget.DividerItemDecoration
 import com.mishiranu.dashchan.widget.HeaderItemDecoration
 
-class InboxPage :
+class EchoPage :
     ListPage(),
-    InboxAdapter.Callback,
-    GetInboxTask.Callback {
+    EchoAdapter.Callback,
+    GetEchoTask.Callback {
     private var chanName: String? = null
     private var searchQuery: String? = null
 
-    private var task: GetInboxTask? = null
+    private var task: GetEchoTask? = null
     private var firstLoad = true
 
-    private fun getAdapter(): InboxAdapter = getRecyclerView().adapter as InboxAdapter
+    private fun getAdapter(): EchoAdapter = getRecyclerView().adapter as EchoAdapter
 
     override fun onCreate() {
         val recyclerView = getRecyclerView()
         recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)
         chanName = if (Preferences.isMergeChans) null else getPage().chanName
         searchQuery = getInitSearch().currentQuery
-        CommonDatabase.getInstance().inbox.registerObserver(updateInboxRunnable)
-        val adapter = InboxAdapter(context, this, chanName)
+        CommonDatabase.getInstance().echo.registerObserver(updateEchoRunnable)
+        val adapter = EchoAdapter(context, this, chanName)
         recyclerView.adapter = adapter
         recyclerView.addItemDecoration(
             DividerItemDecoration(recyclerView.context) { configuration, _ -> configuration.need(true) },
@@ -45,11 +45,11 @@ class InboxPage :
         recyclerView.addItemDecoration(HeaderItemDecoration(adapter::getItemHeader))
         recyclerView.itemAnimator = null
         switchProgress()
-        updateInbox()
+        updateEcho()
     }
 
     override fun onDestroy() {
-        CommonDatabase.getInstance().inbox.unregisterObserver(updateInboxRunnable)
+        CommonDatabase.getInstance().echo.unregisterObserver(updateEchoRunnable)
         getAdapter().setCursor(null)
         if (task != null) {
             task?.cancel()
@@ -57,46 +57,46 @@ class InboxPage :
         }
     }
 
-    override fun obtainTitle(): String = getString(R.string.inbox)
+    override fun obtainTitle(): String = getString(R.string.echo)
 
-    override fun onItemClick(item: InboxDatabase.InboxItem?) {
-        val inboxItem = item ?: return
-        CommonDatabase.getInstance().inbox.markReadAsync(
-            inboxItem.chanName,
-            inboxItem.boardName,
-            inboxItem.threadNumber,
-            listOf(inboxItem.postNumber),
+    override fun onItemClick(item: EchoDatabase.EchoItem?) {
+        val echoItem = item ?: return
+        CommonDatabase.getInstance().echo.markReadAsync(
+            echoItem.chanName,
+            echoItem.boardName,
+            echoItem.threadNumber,
+            listOf(echoItem.postNumber),
         )
         uiManager.navigator()?.navigatePosts(
-            inboxItem.chanName,
-            inboxItem.boardName,
-            inboxItem.threadNumber,
-            inboxItem.postNumber,
+            echoItem.chanName,
+            echoItem.boardName,
+            echoItem.threadNumber,
+            echoItem.postNumber,
             null,
         )
     }
 
-    override fun onItemLongClick(item: InboxDatabase.InboxItem?): Boolean {
+    override fun onItemLongClick(item: EchoDatabase.EchoItem?): Boolean {
         showItemPopupMenu(fragmentManager, item ?: return false)
         return true
     }
 
     private fun showItemPopupMenu(
         fragmentManager: FragmentManager,
-        inboxItem: InboxDatabase.InboxItem,
+        echoItem: EchoDatabase.EchoItem,
     ) {
         InstanceDialog(fragmentManager, null) { provider ->
             val dialogMenu = DialogMenu(provider.context)
             dialogMenu.add(R.string.copy_link) {
                 val uri =
                     Chan
-                        .get(inboxItem.chanName)
+                        .get(echoItem.chanName)
                         .locator
                         .safe(true)
                         .createPostUri(
-                            inboxItem.boardName,
-                            inboxItem.threadNumber,
-                            inboxItem.postNumber,
+                            echoItem.boardName,
+                            echoItem.threadNumber,
+                            echoItem.postNumber,
                         )
                 if (uri != null) {
                     StringUtils.copyToClipboard(context, uri.toString())
@@ -104,19 +104,19 @@ class InboxPage :
             }
             dialogMenu.add(R.string.open_thread) {
                 uiManager.navigator()?.navigatePosts(
-                    inboxItem.chanName,
-                    inboxItem.boardName,
-                    inboxItem.threadNumber,
+                    echoItem.chanName,
+                    echoItem.boardName,
+                    echoItem.threadNumber,
                     null,
                     null,
                 )
             }
-            dialogMenu.add(R.string.remove_from_inbox) {
-                CommonDatabase.getInstance().inbox.remove(
-                    inboxItem.chanName,
-                    inboxItem.boardName,
-                    inboxItem.threadNumber,
-                    inboxItem.postNumber,
+            dialogMenu.add(R.string.remove_from_echo) {
+                CommonDatabase.getInstance().echo.remove(
+                    echoItem.chanName,
+                    echoItem.boardName,
+                    echoItem.threadNumber,
+                    echoItem.postNumber,
                 )
             }
             dialogMenu.create()
@@ -128,19 +128,19 @@ class InboxPage :
             .add(0, R.id.menu_search, 0, R.string.filter)
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
         menu.add(0, R.id.menu_mark_all_read, 0, R.string.mark_all_as_read)
-        menu.add(0, R.id.menu_clear, 0, R.string.clear_inbox)
+        menu.add(0, R.id.menu_clear, 0, R.string.clear_echo)
         menu.addSubMenu(0, R.id.menu_appearance, 0, R.string.appearance)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_mark_all_read -> {
-                CommonDatabase.getInstance().inbox.markAllRead(chanName)
+                CommonDatabase.getInstance().echo.markAllRead(chanName)
                 return true
             }
 
             R.id.menu_clear -> {
-                showClearInboxDialog(fragmentManager, chanName)
+                showClearEchoDialog(fragmentManager, chanName)
                 return true
             }
         }
@@ -149,21 +149,21 @@ class InboxPage :
 
     override fun onSearchQueryChange(query: String?) {
         searchQuery = query
-        updateInbox()
+        updateEcho()
     }
 
-    private val updateInboxRunnable = Runnable { updateInbox() }
+    private val updateEchoRunnable = Runnable { updateEcho() }
 
-    private fun updateInbox() {
+    private fun updateEcho() {
         if (task != null) {
             task?.cancel()
         }
-        val task = GetInboxTask(this, chanName, searchQuery)
+        val task = GetEchoTask(this, chanName, searchQuery)
         this.task = task
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
     }
 
-    override fun onGetInboxResult(cursor: InboxDatabase.InboxCursor?) {
+    override fun onGetEchoResult(cursor: EchoDatabase.EchoCursor?) {
         task = null
         if (cursor == null) {
             // The query was cancelled, a newer one is already on its way
@@ -179,22 +179,22 @@ class InboxPage :
                 listPosition.apply(getRecyclerView())
             }
         } else {
-            switchError(R.string.inbox_is_empty)
+            switchError(R.string.echo_is_empty)
         }
     }
 
     companion object {
-        private fun showClearInboxDialog(
+        private fun showClearEchoDialog(
             fragmentManager: FragmentManager,
             chanName: String?,
         ) {
             InstanceDialog(fragmentManager, null) { provider ->
                 AlertDialog
                     .Builder(provider.context)
-                    .setMessage(R.string.clear_inbox__sentence)
+                    .setMessage(R.string.clear_echo__sentence)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        CommonDatabase.getInstance().inbox.clearInbox(chanName)
+                        CommonDatabase.getInstance().echo.clearEcho(chanName)
                     }.create()
             }
         }

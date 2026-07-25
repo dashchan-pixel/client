@@ -138,28 +138,28 @@ object WatcherNotifications {
                 builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
 
                 val tag: String? = makeTag(chanName, boardName, threadNumber, reply.postNumber)
-                builder.setContentIntent(createInboxIntent(tag))
+                builder.setContentIntent(createEchoIntent(tag))
                 notificationManager.notify(tag, C.NOTIFICATION_ID_REPLIES, builder.build())
             }
             val builder = NotificationCompat.Builder(context, C.NOTIFICATION_CHANNEL_REPLIES)
             configureNotification(builder, color)
             builder.setGroup(GROUP_REPLIES)
             builder.setGroupSummary(true)
-            builder.setContentIntent(createInboxIntent(GROUP_REPLIES))
+            builder.setContentIntent(createEchoIntent(GROUP_REPLIES))
             notificationManager.notify(C.NOTIFICATION_ID_REPLIES, builder.build())
         }
 
         /**
-         * Replies are collected in the Inbox, so every reply notification opens it. The action
+         * Replies are collected in the Echo, so every reply notification opens it. The action
          * only keeps the pending intents of different notifications from being merged.
          */
-        fun createInboxIntent(action: String?): PendingIntent {
+        fun createEchoIntent(action: String?): PendingIntent {
             val intent =
                 Intent(context, MainActivity::class.java)
                     .setAction(action)
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     .putExtra(C.EXTRA_CHAN_NAME, chanName)
-                    .putExtra(C.EXTRA_OPEN_INBOX, true)
+                    .putExtra(C.EXTRA_OPEN_ECHO, true)
             return PendingIntent.getActivity(
                 context,
                 0,

@@ -946,9 +946,9 @@ class MainActivity :
         } else if (C.ACTION_VIDEO_PIP == intent.getAction()) {
             // An expanded picture-in-picture window handing playback back to its origin
             reopenInApp(this)
-        } else if (intent.getBooleanExtra(C.EXTRA_OPEN_INBOX, false)) {
-            // A reply notification: the reply itself is collected in the Inbox
-            navigateInbox(intent.getStringExtra(C.EXTRA_CHAN_NAME))
+        } else if (intent.getBooleanExtra(C.EXTRA_OPEN_ECHO, false)) {
+            // A reply notification: the reply itself is collected in the Echo
+            navigateEcho(intent.getStringExtra(C.EXTRA_CHAN_NAME))
         } else {
             val uri = intent.getData()
             if (uri != null) {
@@ -973,7 +973,7 @@ class MainActivity :
         }
     }
 
-    private fun navigateInbox(chanName: String?) {
+    private fun navigateEcho(chanName: String?) {
         // The chan of the reply may have been uninstalled since the notification was posted
         var targetChanName = get(chanName).name
         if (targetChanName == null) {
@@ -981,7 +981,7 @@ class MainActivity :
         }
         if (targetChanName != null) {
             navigatePage(
-                Page.Content.INBOX,
+                Page.Content.ECHO,
                 targetChanName,
                 null,
                 null,
@@ -1374,7 +1374,7 @@ class MainActivity :
                 }
 
                 Page.Content.ARCHIVE, Page.Content.BOARDS, Page.Content.USER_BOARDS,
-                Page.Content.HISTORY, Page.Content.INBOX,
+                Page.Content.HISTORY, Page.Content.ECHO,
                 -> {
                     prepareAddPage(content, chanName, boardName, null, null, null)
                 }
@@ -1557,7 +1557,7 @@ class MainActivity :
                         }
 
                         Page.Content.BOARDS, Page.Content.USER_BOARDS, Page.Content.HISTORY,
-                        Page.Content.INBOX,
+                        Page.Content.ECHO,
                         -> {
                             page.boardName != null || getPagesStackSize(page.chanName) > 1
                         }
@@ -2144,7 +2144,7 @@ class MainActivity :
             } else {
                 when (page.content) {
                     Page.Content.BOARDS, Page.Content.USER_BOARDS, Page.Content.HISTORY,
-                    Page.Content.INBOX,
+                    Page.Content.ECHO,
                     -> {
                         return false
                     }
@@ -2363,8 +2363,8 @@ class MainActivity :
                 content = Page.Content.HISTORY
             }
 
-            DrawerForm.Companion.MENU_ITEM_INBOX -> {
-                content = Page.Content.INBOX
+            DrawerForm.Companion.MENU_ITEM_ECHO -> {
+                content = Page.Content.ECHO
             }
 
             DrawerForm.Companion.MENU_ITEM_PREFERENCES -> {

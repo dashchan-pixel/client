@@ -230,9 +230,9 @@ class ReadPostsTask(
             }
             val replies = insertResult.replies
             if (replies != null && replies.isNotEmpty()) {
-                // Collect the replies for the Inbox even when no notification is shown for them
+                // Collect the replies for the Echo even when no notification is shown for them
                 val originalPost = posts.firstOrNull { it.number == originalPostNumber }
-                CommonDatabase.getInstance().inbox.addRepliesAsync(
+                CommonDatabase.getInstance().echo.addRepliesAsync(
                     threadKey.chanName,
                     boardName,
                     threadNumber,

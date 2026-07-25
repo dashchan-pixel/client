@@ -1760,7 +1760,7 @@ class PostsPage :
                 page.threadNumber,
                 result.replyPosts,
             )
-            CommonDatabase.getInstance().inbox.markReadAsync(
+            CommonDatabase.getInstance().echo.markReadAsync(
                 page.chanName!!,
                 page.boardName,
                 page.threadNumber!!,

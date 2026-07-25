@@ -47,8 +47,8 @@
 	<string name="clear_deleted">Limpado</string>
 	<string name="clear_history">Limpar histórico</string>
 	<string name="clear_history__sentence">Limpar histórico?</string>
-	<string name="clear_inbox">Limpar caixa de entrada</string>
-	<string name="clear_inbox__sentence">Limpar caixa de entrada?</string>
+	<string name="clear_echo">Limpar eco</string>
+	<string name="clear_echo__sentence">Limpar eco?</string>
 	<string name="clearing__ellipsis">Limpando…</string>
 	<string name="close_pages">Fechar páginas</string>
 	<string name="close_pages__summary">Feche as páginas ao apertar \"Voltar\"</string>
@@ -149,8 +149,8 @@
 	<string name="image_is_corrupted">Imagem corrompida</string>
 	<string name="images_are_disabled">Imagens estão desabilitadas</string>
 	<string name="in_thread_number__format">No fio %s</string>
-	<string name="inbox">Caixa de entrada</string>
-	<string name="inbox_is_empty">Caixa de entrada está vazia</string>
+	<string name="echo">Eco</string>
+	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="incorrect_password">Senha incorreta</string>
 	<string name="insufficient_device_space">Sem espaço no dispositivo</string>
 	<string name="internal_browser">Navegador interno</string>
@@ -289,7 +289,7 @@
 	<string name="remove_file_name">Remover filename</string>
 	<string name="remove_from_favorites">Remover dos favoritos</string>
 	<string name="remove_from_history">Remover do histórico</string>
-	<string name="remove_from_inbox">Remover da caixa de entrada</string>
+	<string name="remove_from_echo">Remover do eco</string>
 	<string name="remove_metadata">Remover metadata</string>
 	<string name="remove_rules">Remover regras</string>
 	<string name="rename">Renomear</string>

@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.database.InboxDatabase
+import com.mishiranu.dashchan.content.database.EchoDatabase
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.widget.CursorAdapter
@@ -15,12 +15,12 @@ import com.mishiranu.dashchan.widget.SimpleViewHolder
 import com.mishiranu.dashchan.widget.ViewFactory
 import java.util.Calendar
 
-class InboxAdapter(
+class EchoAdapter(
     context: Context,
     private val callback: Callback,
     private val chanName: String?,
-) : CursorAdapter<InboxDatabase.InboxCursor, RecyclerView.ViewHolder>() {
-    interface Callback : ListViewUtils.SimpleCallback<InboxDatabase.InboxItem>
+) : CursorAdapter<EchoDatabase.EchoCursor, RecyclerView.ViewHolder>() {
+    interface Callback : ListViewUtils.SimpleCallback<EchoDatabase.EchoItem>
 
     private enum class Header(
         val titleResId: Int,
@@ -65,7 +65,7 @@ class InboxAdapter(
         queryDayStart = calendar.timeInMillis
     }
 
-    private fun getItem(position: Int): InboxDatabase.InboxItem = InboxDatabase.InboxItem(moveTo(position))
+    private fun getItem(position: Int): EchoDatabase.EchoItem = EchoDatabase.EchoItem(moveTo(position))
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -88,28 +88,28 @@ class InboxAdapter(
         holder: RecyclerView.ViewHolder,
         position: Int,
     ) {
-        val inboxItem = getItem(position)
+        val echoItem = getItem(position)
         val viewHolder = holder.itemView.tag as ViewFactory.TwoLinesViewHolder
-        viewHolder.text1.text = formatComment(inboxItem.comment)
-        // Unread replies stand out until the post is opened or the Inbox is marked as read
+        viewHolder.text1.text = formatComment(echoItem.comment)
+        // Unread replies stand out until the post is opened or the Echo is marked as read
         viewHolder.text1.setTypeface(
             null,
-            if (inboxItem.unread) Typeface.BOLD else Typeface.NORMAL,
+            if (echoItem.unread) Typeface.BOLD else Typeface.NORMAL,
         )
-        var title = StringUtils.nullIfEmpty(inboxItem.title)
+        var title = StringUtils.nullIfEmpty(echoItem.title)
         if (title == null) {
             title =
                 StringUtils.formatThreadTitle(
-                    inboxItem.chanName,
-                    inboxItem.boardName,
-                    inboxItem.threadNumber,
+                    echoItem.chanName,
+                    echoItem.boardName,
+                    echoItem.threadNumber,
                 )
         }
         if (chanName == null) {
-            title = Chan.get(inboxItem.chanName).configuration.getTitle() + " — " + title
+            title = Chan.get(echoItem.chanName).configuration.getTitle() + " — " + title
         }
         viewHolder.text2.text = title
-        viewHolder.text2End?.text = postDateFormatter.formatDateTime(inboxItem.time)
+        viewHolder.text2End?.text = postDateFormatter.formatDateTime(echoItem.time)
     }
 
     private fun getItemHeader(position: Int): Header? {

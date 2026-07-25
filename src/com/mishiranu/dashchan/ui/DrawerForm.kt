@@ -130,7 +130,7 @@ class DrawerForm(
     private val chans = ArrayList<ListItem>()
 
     // Sits directly under the header, above the pages and favorites sections
-    private val inboxMenu = ArrayList<ListItem>()
+    private val echoMenu = ArrayList<ListItem>()
     private val pages = ArrayList<ListItem>()
     private val favorites = ArrayList<ListItem>()
     private val menu = ArrayList<ListItem>()
@@ -143,8 +143,8 @@ class DrawerForm(
     private var categoriesOrder: CategoriesOrder? = null
     private var chanName: String? = null
 
-    // The Inbox item carries the unread badge, so it must be rebound whenever the Inbox changes
-    private val updateInboxRunnable =
+    // The Echo item carries the unread badge, so it must be rebound whenever the Echo changes
+    private val updateEchoRunnable =
         Runnable {
             @Suppress("NotifyDataSetChanged")
             notifyDataSetChanged()
@@ -211,7 +211,7 @@ class DrawerForm(
             this.chanName = chanName
             val chan = get(chanName)
             chanNameView.setText(chan.configuration.getTitle())
-            inboxMenu.clear()
+            echoMenu.clear()
             menu.clear()
             val context = this.context
             val typedArray =
@@ -220,16 +220,16 @@ class DrawerForm(
                         R.attr.iconDrawerMenuBoards,
                         R.attr.iconDrawerMenuUserBoards,
                         R.attr.iconDrawerMenuHistory,
-                        R.attr.iconDrawerMenuInbox,
+                        R.attr.iconDrawerMenuEcho,
                         R.attr.iconDrawerMenuPreferences,
                     ),
                 )
-            inboxMenu.add(
+            echoMenu.add(
                 ListItem(
                     ListItem.Type.MENU,
-                    MENU_ITEM_INBOX,
+                    MENU_ITEM_ECHO,
                     typedArray.getResourceId(3, 0),
-                    context.getString(R.string.inbox),
+                    context.getString(R.string.echo),
                 ),
             )
             val hasUserBoards =
@@ -1167,8 +1167,8 @@ class DrawerForm(
                 }
 
                 ListItem.Type.MENU -> {
-                    // The Inbox carries its unread badge, drawn like a watched thread counter
-                    if (listItem.data == MENU_ITEM_INBOX) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
+                    // The Echo carries its unread badge, drawn like a watched thread counter
+                    if (listItem.data == MENU_ITEM_ECHO) ViewType.WATCHER_ICON else ViewType.ITEM_ICON
                 }
 
                 ListItem.Type.CHAN -> {
@@ -1210,7 +1210,7 @@ class DrawerForm(
         if (chanSelectMode) {
             count += chans.size
         } else {
-            count += inboxMenu.size
+            count += echoMenu.size
             val arraySize = prepareCategoriesArray()
             val categoriesArray = this.categoriesArray
             for (i in 0..<arraySize) {
@@ -1239,10 +1239,10 @@ class DrawerForm(
                     return chans.get(position)
                 }
             } else {
-                if (position < inboxMenu.size) {
-                    return inboxMenu[position]
+                if (position < echoMenu.size) {
+                    return echoMenu[position]
                 }
-                position -= inboxMenu.size
+                position -= echoMenu.size
                 val arraySize = prepareCategoriesArray()
                 val categoriesArray = this.categoriesArray
                 for (i in 0..<arraySize) {
@@ -1476,7 +1476,7 @@ class DrawerForm(
                     listItem.isThreadItem &&
                     watcherSupportSet.contains(listItem.chanName)
                 ) {
-                    // The view is shared with the Inbox badge, which hides it and disables its tap
+                    // The view is shared with the Echo badge, which hides it and disables its tap
                     watcher.visibility = View.VISIBLE
                     watcher.isClickable = true
                     watcher.update(getCounter(listItem))
@@ -1485,8 +1485,8 @@ class DrawerForm(
 
             ListItem.Type.SECTION, ListItem.Type.MENU, ListItem.Type.CHAN -> {
                 holder.text!!.setText(listItem.title)
-                if (listItem.type == ListItem.Type.MENU && listItem.data == MENU_ITEM_INBOX) {
-                    bindInboxCounter(holder)
+                if (listItem.type == ListItem.Type.MENU && listItem.data == MENU_ITEM_ECHO) {
+                    bindEchoCounter(holder)
                 }
             }
         }
@@ -1508,11 +1508,11 @@ class DrawerForm(
 
     /**
      * Shows the unread reply count with the watched thread counter. Unlike a thread's counter it
-     * isn't a toggle, so it stays unclickable and the tap opens the Inbox with the rest of the row.
+     * isn't a toggle, so it stays unclickable and the tap opens the Echo with the rest of the row.
      */
-    private fun bindInboxCounter(holder: ViewHolder) {
+    private fun bindEchoCounter(holder: ViewHolder) {
         val watcher = holder.watcher ?: return
-        val unreadCount = CommonDatabase.getInstance().inbox.unreadCount
+        val unreadCount = CommonDatabase.getInstance().echo.unreadCount
         watcher.visibility = if (unreadCount > 0) View.VISIBLE else View.GONE
         watcher.isClickable = false
         watcher.update(
@@ -1632,9 +1632,9 @@ class DrawerForm(
             (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS) ||
             current.type == ListItem.Type.MENU &&
             current.data == MENU_ITEM_USER_BOARDS ||
-            // The Inbox is its own section above the pages and favorites
+            // The Echo is its own section above the pages and favorites
             current.type == ListItem.Type.MENU &&
-            current.data == MENU_ITEM_INBOX
+            current.data == MENU_ITEM_ECHO
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
@@ -1944,7 +1944,7 @@ class DrawerForm(
 
         inputMethodManager =
             context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-        CommonDatabase.getInstance().inbox.registerObserver(updateInboxRunnable)
+        CommonDatabase.getInstance().echo.registerObserver(updateEchoRunnable)
         updatePreferencesWithoutConfiguration()
         updateChansWithoutConfiguration()
     }
@@ -2065,7 +2065,7 @@ class DrawerForm(
         const val MENU_ITEM_BOARDS: Int = 1
         const val MENU_ITEM_USER_BOARDS: Int = 2
         const val MENU_ITEM_HISTORY: Int = 3
-        const val MENU_ITEM_INBOX: Int = 4
+        const val MENU_ITEM_ECHO: Int = 4
         const val MENU_ITEM_PREFERENCES: Int = 5
 
         private fun showPageFavoriteMenu(

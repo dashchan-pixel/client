@@ -8,8 +8,8 @@ import com.mishiranu.dashchan.content.Preferences.getDefaultBoardName
 import com.mishiranu.dashchan.content.Preferences.isMergeChans
 import com.mishiranu.dashchan.ui.navigator.page.ArchivePage
 import com.mishiranu.dashchan.ui.navigator.page.BoardsPage
+import com.mishiranu.dashchan.ui.navigator.page.EchoPage
 import com.mishiranu.dashchan.ui.navigator.page.HistoryPage
-import com.mishiranu.dashchan.ui.navigator.page.InboxPage
 import com.mishiranu.dashchan.ui.navigator.page.ListPage
 import com.mishiranu.dashchan.ui.navigator.page.PostsPage
 import com.mishiranu.dashchan.ui.navigator.page.SearchPage
@@ -33,7 +33,7 @@ class Page(
         BOARDS(PageFactory { BoardsPage() }),
         USER_BOARDS(PageFactory { UserBoardsPage() }),
         HISTORY(PageFactory { HistoryPage() }),
-        INBOX(PageFactory { InboxPage() }),
+        ECHO(PageFactory { EchoPage() }),
         ;
 
         private fun interface PageFactory {
@@ -51,7 +51,7 @@ class Page(
             content == Content.ARCHIVE ||
             content == Content.BOARDS ||
             content == Content.HISTORY ||
-            content == Content.INBOX
+            content == Content.ECHO
 
     fun canRemoveFromStackIfDeep(): Boolean {
         if (content == Content.BOARDS) {
@@ -62,11 +62,11 @@ class Page(
             content == Content.ARCHIVE ||
             content == Content.USER_BOARDS ||
             content == Content.HISTORY ||
-            content == Content.INBOX
+            content == Content.ECHO
     }
 
     val isMultiChanAllowed: Boolean
-        get() = content == Content.HISTORY || content == Content.INBOX
+        get() = content == Content.HISTORY || content == Content.ECHO
 
     fun isThreadsOrPosts(
         chanName: String?,
@@ -95,14 +95,14 @@ class Page(
         var compareContentTypeOnlyThis = false
         var compareContentTypeOnlyCompared = false
         when (this.content) {
-            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.INBOX -> {
+            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.ECHO -> {
                 compareContentTypeOnlyThis = true
             }
 
             else -> {}
         }
         when (content) {
-            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.INBOX -> {
+            Content.SEARCH, Content.BOARDS, Content.USER_BOARDS, Content.HISTORY, Content.ECHO -> {
                 compareContentTypeOnlyCompared = true
             }
 
