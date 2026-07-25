@@ -2299,7 +2299,7 @@ object Preferences {
         titleResId: Int,
         componentSuffix: String,
     ) {
-        GRADIENT("gradient", R.string.gradient, "MainActivityGradient"),
+        GRADIENT("gradient", R.string.redacted, "MainActivityGradient"),
         STRIPED("striped", R.string.stripes, "MainActivityStriped"),
         ;
 

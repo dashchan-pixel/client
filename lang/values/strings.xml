@@ -207,7 +207,6 @@
 	<string name="go_to_search__sentence">Go to search?</string>
 	<string name="go_to_threads_list__sentence">Go to threads list?</string>
 	<string name="got_it">Got it</string>
-	<string name="gradient">Gradient</string>
 	<string name="group">Group</string>
 	<string name="headers_order">Headers order</string>
 	<string name="hidden_posts">Hidden posts</string>
@@ -408,6 +407,7 @@
 	<string name="read_only">Read only</string>
 	<string name="read_timeout_expired">Read timeout expired</string>
 	<string name="reason">Reason</string>
+	<string name="redacted">[redacted]</string>
 	<string name="reduce">Reduce</string>
 	<string name="reencode_image">Re-encode image</string>
 	<string name="refresh">Refresh</string>

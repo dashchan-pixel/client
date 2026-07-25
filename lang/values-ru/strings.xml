@@ -201,7 +201,6 @@
 	<string name="go_to_search__sentence">Перейти к поиску?</string>
 	<string name="go_to_threads_list__sentence">Перейти к списку тредов?</string>
 	<string name="got_it">Ясно</string>
-	<string name="gradient">Градиент</string>
 	<string name="group">Группировать</string>
 	<string name="headers_order">Порядок категорий</string>
 	<string name="hidden_posts">Скрытые сообщения</string>
@@ -414,6 +413,7 @@
 	<string name="read_only">Только чтение</string>
 	<string name="read_timeout_expired">Время ожидания приёма истекло</string>
 	<string name="reason">Причина</string>
+	<string name="redacted">[вымарано]</string>
 	<string name="reduce">Уменьшить</string>
 	<string name="reencode_image">Перекодировать</string>
 	<string name="refresh">Обновить</string>
