@@ -516,8 +516,9 @@ class ExpandedScreen(
         val foregroundDrawables: MutableList<ForegroundDrawable>
         if (fullScreenLayoutEnabled) {
             // Edge-to-edge is enforced: system bars are transparent and the scrims below
-            // draw the opaque bar backgrounds the window colors used to provide.
-            val statusBarColor = Color.BLACK
+            // draw the opaque bar backgrounds the window colors used to provide. Tint the
+            // status bar like the toolbar (theme.primary) so it reads as part of the header.
+            val statusBarColor = ThemeEngine.getTheme(activity).primary or -0x1000000
             val navigationBarColor = Color.BLACK
             contentForeground = LollipopContentForeground(statusBarColor, navigationBarColor)
             statusBarContentForeground = LollipopStatusBarForeground(statusBarColor)
