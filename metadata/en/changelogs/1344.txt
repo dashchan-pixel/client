@@ -7,7 +7,6 @@
 * Thumbnails already in the disk cache appear immediately instead of after a 500 ms delay
 * Fixed "Seek any frame", which had its meaning inverted and degraded seek accuracy when enabled
 * Fixed several crashes left by the Java→Kotlin conversion, including search grouping on posts without a thread number
-* The changelog groups all pixel releases under one "26.7-pixel" entry instead of splitting them into "1.6 — 26.7-pixel" and a "26.7" that never existed
 * The retired Webm library extension is no longer loaded or offered: the video player is built in
-* Extension updates are read from the dashchan-pixel/extensions repository
+* Extension updates are read from our own repository
 * New settings translated to Russian, Italian and Brazilian Portuguese

@@ -518,55 +518,55 @@
 		},
 		{
 			"code": 1337,
-			"name": "26.7-pixel",
+			"name": "26.7",
 			"date": "07.07.2026",
 			"changelog": false
 		},
 		{
 			"code": 1338,
-			"name": "26.7.1-pixel",
+			"name": "26.7.1",
 			"date": "09.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1339,
-			"name": "26.7.2-pixel",
+			"name": "26.7.2",
 			"date": "09.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1340,
-			"name": "26.7.3-pixel",
+			"name": "26.7.3",
 			"date": "10.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1341,
-			"name": "26.7.4-pixel",
+			"name": "26.7.4",
 			"date": "11.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1342,
-			"name": "26.7.5-pixel",
+			"name": "26.7.5",
 			"date": "11.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1343,
-			"name": "26.7.6-pixel",
+			"name": "26.7.6",
 			"date": "13.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1344,
-			"name": "26.7.7-pixel",
+			"name": "26.7.7",
 			"date": "17.07.2026",
 			"changelog": true
 		},
 		{
 			"code": 1345,
-			"name": "26.7.8-pixel",
+			"name": "26.7.8",
 			"date": "23.07.2026",
 			"changelog": true
 		}
