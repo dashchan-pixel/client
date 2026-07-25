@@ -589,7 +589,7 @@ class ThemesFragment : BaseListFragment() {
             val name = requireArguments().getString(EXTRA_NAME)
             val dialogMenu = DialogMenu(requireContext())
             if (requireArguments().getBoolean(EXTRA_EDITABLE)) {
-                dialogMenu.add(R.string.edit) { openEditor(name) }
+                dialogMenu.add(R.string.edit__ellipsis) { openEditor(name) }
             }
             // A built-in or not yet installed theme can't be edited in place, but it makes a fine
             // starting point: copying it hands the editor a renamed duplicate.

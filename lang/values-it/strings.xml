@@ -127,6 +127,7 @@
     <string name="echo__summary">Raccogli le risposte ai miei post in un elenco separato</string>
     <string name="echo_is_empty">Eco vuoto</string>
     <string name="edit">Modifica</string>
+    <string name="edit__ellipsis">Modifica…</string>
     <string name="edit_theme">Modifica tema</string>
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
