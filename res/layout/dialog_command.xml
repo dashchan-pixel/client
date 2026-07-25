@@ -75,7 +75,7 @@
 			android:text="@string/process_posts_individually"
 			android:textAppearance="?android:attr/textAppearanceSmall" />
 
-		<com.mishiranu.dashchan.widget.SafePasteEditText
+		<com.mishiranu.dashchan.widget.CodeEditText
 			android:id="@+id/code"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
@@ -87,6 +87,7 @@
 			android:minLines="6"
 			android:fontFamily="monospace"
 			android:textSize="12sp"
+			android:scrollbars="vertical"
 			android:imeOptions="flagNoExtractUi" />
 
 	</LinearLayout>

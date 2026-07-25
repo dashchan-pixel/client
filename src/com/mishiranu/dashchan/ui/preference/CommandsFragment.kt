@@ -606,7 +606,6 @@ class CommandsFragment :
             val builder =
                 AlertDialog
                     .Builder(requireContext())
-                    .setView(scrollView)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(R.string.save) { _, _ ->
                         (parentFragment as CommandsFragment).onEditComplete(readDialogView(), index)
@@ -616,8 +615,14 @@ class CommandsFragment :
                     (parentFragment as CommandsFragment).onDelete(index)
                 }
             }
-            val dialog = builder.create()
-            dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+
+            val dialog =
+                wrapWithRibbon(requireContext(), scrollView, codeEdit as com.mishiranu.dashchan.widget.CodeEditText) { view ->
+                    builder.setView(view).create()
+                }
+
+            @Suppress("DEPRECATION")
+            dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             return dialog
         }
 
@@ -712,16 +717,20 @@ class CommandsFragment :
                 // seed it on first creation.
                 envEdit.setText(formatEnv(CommandsStorage.getInstance().getEnv()))
             }
-            val dialog =
+            val builder =
                 AlertDialog
                     .Builder(requireContext())
                     .setTitle(R.string.environment)
-                    .setView(view)
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(R.string.save) { _, _ ->
                         CommandsStorage.getInstance().setEnv(parseEnv(envEdit.text.toString()))
-                    }.create()
-            dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+                    }
+            val dialog =
+                wrapWithRibbon(requireContext(), view, envEdit as com.mishiranu.dashchan.widget.CodeEditText) { newView ->
+                    builder.setView(newView).create()
+                }
+            @Suppress("DEPRECATION")
+            dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             return dialog
         }
 
@@ -748,4 +757,126 @@ class CommandsFragment :
             }
         }
     }
+}
+
+private fun createSymbolButton(
+    context: android.content.Context,
+    symbol: String,
+    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
+): android.widget.TextView =
+    android.widget.TextView(context).apply {
+        text = symbol
+        textSize = 16f
+        typeface = android.graphics.Typeface.MONOSPACE
+        gravity = android.view.Gravity.CENTER
+        val p = (12 * resources.displayMetrics.density).toInt()
+        setPadding(p, p, p, p)
+        val outValue = android.util.TypedValue()
+        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+        setBackgroundResource(outValue.resourceId)
+        isClickable = true
+        isFocusable = true
+        setOnClickListener {
+            val start = codeEdit.selectionStart
+            val end = codeEdit.selectionEnd
+            if (start >= 0 && end >= 0) {
+                codeEdit.text?.replace(Math.min(start, end), Math.max(start, end), symbol)
+            }
+        }
+    }
+
+private fun createOkButton(
+    context: android.content.Context,
+    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
+): android.widget.TextView =
+    android.widget.TextView(context).apply {
+        setText(android.R.string.ok)
+        textSize = 16f
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+        gravity = android.view.Gravity.CENTER
+        val pX = (16 * resources.displayMetrics.density).toInt()
+        val pY = (12 * resources.displayMetrics.density).toInt()
+        setPadding(pX, pY, pX, pY)
+        val outValue = android.util.TypedValue()
+        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+        setBackgroundResource(outValue.resourceId)
+        isClickable = true
+        isFocusable = true
+        setOnClickListener {
+            codeEdit.clearFocus()
+            val imm = context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.hideSoftInputFromWindow(codeEdit.windowToken, 0)
+        }
+    }
+
+private fun createBottomBar(
+    context: android.content.Context,
+    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
+): android.widget.LinearLayout {
+    val symbolsContainer =
+        android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+        }
+    val symbols = listOf("{", "}", "[", "]", "\"", "=", ":", ";", "(", ")", "<", ">", "&", "|")
+    for (symbol in symbols) {
+        val button = createSymbolButton(context, symbol, codeEdit)
+        symbolsContainer.addView(
+            button,
+            android.widget.LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+    }
+    val ribbonScroll =
+        android.widget.HorizontalScrollView(context).apply {
+            addView(symbolsContainer)
+            isHorizontalScrollBarEnabled = false
+        }
+    return android.widget.LinearLayout(context).apply {
+        orientation = android.widget.LinearLayout.HORIZONTAL
+        val px = (8 * resources.displayMetrics.density).toInt()
+        val py = (4 * resources.displayMetrics.density).toInt()
+        setPadding(px, py, px, py)
+        visibility = View.GONE
+        addView(ribbonScroll, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val okButton = createOkButton(context, codeEdit)
+        addView(
+            okButton,
+            android.widget.LinearLayout
+                .LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    marginStart = (8 * context.resources.displayMetrics.density).toInt()
+                },
+        )
+    }
+}
+
+private fun wrapWithRibbon(
+    context: android.content.Context,
+    scrollView: View,
+    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
+    dialogCreator: (View) -> AlertDialog,
+): AlertDialog {
+    val bottomBar = createBottomBar(context, codeEdit)
+
+    val root =
+        android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            addView(scrollView, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            addView(bottomBar, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        }
+
+    val dialog = dialogCreator(root)
+
+    codeEdit.onExpandedStateChanged = { expanded ->
+        bottomBar.visibility = if (expanded) View.VISIBLE else View.GONE
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.visibility = if (expanded) View.GONE else View.VISIBLE
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.visibility = if (expanded) View.GONE else View.VISIBLE
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.visibility = if (expanded) View.GONE else View.VISIBLE
+    }
+
+    return dialog
 }
