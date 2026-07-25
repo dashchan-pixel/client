@@ -1,7 +1,10 @@
 package com.mishiranu.dashchan.ui.navigator.adapter
 
 import android.content.Context
-import android.graphics.Typeface
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
@@ -10,8 +13,9 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.EchoDatabase
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
+import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.CursorAdapter
-import com.mishiranu.dashchan.widget.SimpleViewHolder
+import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ViewFactory
 import java.util.Calendar
 
@@ -48,7 +52,15 @@ class EchoAdapter(
         }
     }
 
+    /** Holds the tint of an unread row, drawn under the row's own touch feedback. */
+    private class EchoViewHolder(
+        val twoLines: ViewFactory.TwoLinesViewHolder,
+        val unreadBackground: ColorDrawable,
+    ) : RecyclerView.ViewHolder(twoLines.view)
+
     private val postDateFormatter = PostDateFormatter(context)
+
+    private val highlightBackgroundColor = ThemeEngine.getColorScheme(context).highlightBackgroundColor
 
     private var queryDayStart: Long = 0
 
@@ -70,32 +82,34 @@ class EchoAdapter(
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int,
-    ): RecyclerView.ViewHolder =
-        ListViewUtils.bind(
-            SimpleViewHolder(
-                ViewFactory
-                    .makeTwoLinesListItem(
-                        parent,
-                        ViewFactory.FEATURE_TEXT2_END,
-                    ).view,
-            ),
+    ): RecyclerView.ViewHolder {
+        val twoLines = ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_TEXT2_END)
+        val unreadBackground = ColorDrawable(Color.TRANSPARENT)
+        val layers: Array<Drawable> =
+            twoLines.view.background
+                ?.let { arrayOf(unreadBackground, it) }
+                ?: arrayOf(unreadBackground)
+        ViewUtils.setBackgroundPreservePadding(twoLines.view, LayerDrawable(layers))
+        return ListViewUtils.bind(
+            EchoViewHolder(twoLines, unreadBackground),
             true,
             this::getItem,
             callback,
         )
+    }
 
     override fun onBindViewHolder(
         holder: RecyclerView.ViewHolder,
         position: Int,
     ) {
         val echoItem = getItem(position)
-        val viewHolder = holder.itemView.tag as ViewFactory.TwoLinesViewHolder
+        val echoViewHolder = holder as EchoViewHolder
+        val viewHolder = echoViewHolder.twoLines
         viewHolder.text1.text = formatComment(echoItem.comment)
-        // Unread replies stand out until the post is opened or the Echo is marked as read
-        viewHolder.text1.setTypeface(
-            null,
-            if (echoItem.unread) Typeface.BOLD else Typeface.NORMAL,
-        )
+        // Unread replies get the tint a thread gives an unread post, until the post is opened
+        // or the Echo is marked as read
+        echoViewHolder.unreadBackground.color =
+            if (echoItem.unread) highlightBackgroundColor else Color.TRANSPARENT
         var title = StringUtils.nullIfEmpty(echoItem.title)
         if (title == null) {
             title =
