@@ -229,7 +229,7 @@ class ReadPostsTask(
                 return Result.Fail(ErrorItem(ErrorItem.Type.NO_ACCESS_TO_MEMORY))
             }
             val replies = insertResult.replies
-            if (replies != null && replies.isNotEmpty()) {
+            if (replies != null && replies.isNotEmpty() && Preferences.isEcho) {
                 // Collect the replies for the Echo even when no notification is shown for them
                 val originalPost = posts.firstOrNull { it.number == originalPostNumber }
                 CommonDatabase.getInstance().echo.addRepliesAsync(

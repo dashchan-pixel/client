@@ -119,6 +119,13 @@ class ContentsFragment : PreferenceFragment() {
             invalidateReplyNotifications()
         }
         invalidateReplyNotifications()
+        addCheck(
+            true,
+            Preferences.KEY_ECHO,
+            Preferences.DEFAULT_ECHO,
+            R.string.echo,
+            R.string.echo__summary,
+        )
 
         addHeader(R.string.additional)
         val clearCachePreference =

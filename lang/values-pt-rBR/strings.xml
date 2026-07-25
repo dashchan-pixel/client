@@ -92,6 +92,7 @@
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
 	<string name="echo">Eco</string>
+	<string name="echo__summary">Coletar respostas aos meus posts em uma lista separada</string>
 	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="edit__ellipsis">Editar…</string>
 	<string name="empty_response">Resposta vazia</string>

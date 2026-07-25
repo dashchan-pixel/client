@@ -47,6 +47,7 @@ import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.PagesListMode
 import com.mishiranu.dashchan.content.Preferences.chansOrder
 import com.mishiranu.dashchan.content.Preferences.getDefaultBoardName
+import com.mishiranu.dashchan.content.Preferences.isEcho
 import com.mishiranu.dashchan.content.Preferences.isFavoritesHidedAll
 import com.mishiranu.dashchan.content.Preferences.isFavoritesHidedDeleted
 import com.mishiranu.dashchan.content.Preferences.isMergeChans
@@ -137,6 +138,7 @@ class DrawerForm(
 
     private var mergeChans = false
     private var showHistory = false
+    private var showEcho = false
     private var pagesListMode: PagesListMode? = null
     private var chanSelectMode = false
     private var showRestartButton = false
@@ -224,14 +226,16 @@ class DrawerForm(
                         R.attr.iconDrawerMenuPreferences,
                     ),
                 )
-            echoMenu.add(
-                ListItem(
-                    ListItem.Type.MENU,
-                    MENU_ITEM_ECHO,
-                    typedArray.getResourceId(3, 0),
-                    context.getString(R.string.echo),
-                ),
-            )
+            if (isEcho) {
+                echoMenu.add(
+                    ListItem(
+                        ListItem.Type.MENU,
+                        MENU_ITEM_ECHO,
+                        typedArray.getResourceId(3, 0),
+                        context.getString(R.string.echo),
+                    ),
+                )
+            }
             val hasUserBoards =
                 chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
             if (chanName != null && !chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
@@ -347,10 +351,16 @@ class DrawerForm(
     private fun updatePreferencesWithoutConfiguration(): Boolean {
         val mergeChans = isMergeChans
         val showHistory = isRememberHistory
+        val showEcho = isEcho
         val pagesListMode = Preferences.pagesListMode
-        if (this.mergeChans != mergeChans || this.showHistory != showHistory || this.pagesListMode != pagesListMode) {
+        if (this.mergeChans != mergeChans ||
+            this.showHistory != showHistory ||
+            this.showEcho != showEcho ||
+            this.pagesListMode != pagesListMode
+        ) {
             this.mergeChans = mergeChans
             this.showHistory = showHistory
+            this.showEcho = showEcho
             this.pagesListMode = pagesListMode
             return true
         }

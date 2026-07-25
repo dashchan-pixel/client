@@ -138,14 +138,19 @@ object WatcherNotifications {
                 builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY)
 
                 val tag: String? = makeTag(chanName, boardName, threadNumber, reply.postNumber)
-                builder.setContentIntent(createEchoIntent(tag))
+                builder.setContentIntent(
+                    if (Preferences.isEcho) createEchoIntent(tag) else createPostIntent(tag, reply.postNumber),
+                )
                 notificationManager.notify(tag, C.NOTIFICATION_ID_REPLIES, builder.build())
             }
             val builder = NotificationCompat.Builder(context, C.NOTIFICATION_CHANNEL_REPLIES)
             configureNotification(builder, color)
             builder.setGroup(GROUP_REPLIES)
             builder.setGroupSummary(true)
-            builder.setContentIntent(createEchoIntent(GROUP_REPLIES))
+            if (Preferences.isEcho) {
+                // Without the Echo there is no single place the whole group could open
+                builder.setContentIntent(createEchoIntent(GROUP_REPLIES))
+            }
             notificationManager.notify(C.NOTIFICATION_ID_REPLIES, builder.build())
         }
 
@@ -160,6 +165,32 @@ object WatcherNotifications {
                     .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     .putExtra(C.EXTRA_CHAN_NAME, chanName)
                     .putExtra(C.EXTRA_OPEN_ECHO, true)
+            return PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        /** With the Echo turned off the notification is the only copy of the reply: jump to the post itself. */
+        fun createPostIntent(
+            action: String?,
+            postNumber: PostNumber?,
+        ): PendingIntent {
+            val intent =
+                Intent(context, MainActivity::class.java)
+                    .setAction(action)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    .putExtra(C.EXTRA_CHAN_NAME, chanName)
+                    .putExtra(C.EXTRA_BOARD_NAME, boardName)
+                    .putExtra(C.EXTRA_THREAD_NUMBER, threadNumber)
+                    .apply {
+                        // postNumber is nullable, and a bare toString() writes the literal string
+                        // "null" into the extra. The reader (MainActivity.parseNullable) then gets a
+                        // non-null "null" and tries to parse it as a post number. Omit the extra instead.
+                        postNumber?.let { putExtra(C.EXTRA_POST_NUMBER, it.toString()) }
+                    }
             return PendingIntent.getActivity(
                 context,
                 0,

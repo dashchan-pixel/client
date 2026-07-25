@@ -151,6 +151,7 @@
 	<string name="downloads">Downloads</string>
 	<string name="draft_saved">Draft saved</string>
 	<string name="echo">Echo</string>
+	<string name="echo__summary">Collect replies to my posts in a separate list</string>
 	<string name="echo_is_empty">Echo is empty</string>
 	<string name="edit__ellipsis">Edit…</string>
 	<string name="empty_response">Empty response</string>

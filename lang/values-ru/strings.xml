@@ -145,6 +145,7 @@
 	<string name="downloads">Загрузки</string>
 	<string name="draft_saved">Черновик сохранён</string>
 	<string name="echo">Эхо</string>
+	<string name="echo__summary">Собирать ответы на мои посты в отдельном списке</string>
 	<string name="echo_is_empty">Эхо пусто</string>
 	<string name="edit__ellipsis">Изменить…</string>
 	<string name="empty_response">Пустой ответ сервера</string>

@@ -743,6 +743,17 @@ object Preferences {
                 DrawerInitialPosition.VALUE_PROVIDER,
             )
 
+    const val KEY_ECHO: String = "echo"
+    const val DEFAULT_ECHO: Boolean = true
+
+    @JvmStatic
+    val isEcho: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_ECHO,
+                DEFAULT_ECHO,
+            )
+
     const val KEY_EXPANDED_SCREEN: String = "expanded_screen"
     const val DEFAULT_EXPANDED_SCREEN: Boolean = false
 

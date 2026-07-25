@@ -946,7 +946,7 @@ class MainActivity :
         } else if (C.ACTION_VIDEO_PIP == intent.getAction()) {
             // An expanded picture-in-picture window handing playback back to its origin
             reopenInApp(this)
-        } else if (intent.getBooleanExtra(C.EXTRA_OPEN_ECHO, false)) {
+        } else if (intent.getBooleanExtra(C.EXTRA_OPEN_ECHO, false) && Preferences.isEcho) {
             // A reply notification: the reply itself is collected in the Echo
             navigateEcho(intent.getStringExtra(C.EXTRA_CHAN_NAME))
         } else {
