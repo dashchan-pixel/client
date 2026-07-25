@@ -1,13 +1,13 @@
 name: Release
 
-# Pushing a tag equal to the newest metadata/versions.json entry (e.g. 26.7.5-pixel)
+# Pushing a tag equal to the newest metadata/versions.json entry (e.g. 26.7.5-redacted)
 # builds the release APK, publishes it as a GitHub release and refreshes
 # update/data-v1.json on the default branch so the update manifest hashes the
 # exact published binary.
 
 on:
   push:
-    tags: [ "*-pixel" ]
+    tags: [ "*-redacted" ]
 
 permissions:
   contents: write
