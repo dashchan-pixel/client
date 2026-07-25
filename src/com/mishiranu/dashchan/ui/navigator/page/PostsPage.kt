@@ -689,11 +689,23 @@ class PostsPage :
     }
 
     public override fun obtainTitle(): String? {
+        val page = getPage()
+        // A favorite's custom name wins over the thread's own subject: that name is what the thread
+        // is recognized by in the drawer, so the header must agree with it. Only the display is
+        // overridden — threadTitle stays the real subject for history, the gallery and sharing.
+        val favoriteTitle =
+            FavoritesStorage
+                .getInstance()
+                .getFavorite(page.chanName, page.boardName, page.threadNumber)
+                ?.takeIf { it.modifiedTitle }
+                ?.title
+        if (!StringUtils.isEmptyOrWhitespace(favoriteTitle)) {
+            return favoriteTitle
+        }
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         if (!StringUtils.isEmptyOrWhitespace(parcelableExtra.threadTitle)) {
             return parcelableExtra.threadTitle
         } else {
-            val page = getPage()
             return StringUtils.formatThreadTitle(
                 page.chanName!!,
                 page.boardName,
@@ -1059,13 +1071,18 @@ class PostsPage :
         favoriteItem: FavoriteItem,
         action: FavoritesStorage.Action,
     ) {
+        val page = getPage()
+        if (!favoriteItem.equals(page.chanName, page.boardName, page.threadNumber)) {
+            return
+        }
         when (action) {
             FavoritesStorage.Action.ADD, FavoritesStorage.Action.REMOVE -> {
-                val page = getPage()
-                if (favoriteItem.equals(page.chanName, page.boardName, page.threadNumber)) {
-                    updateOptionsMenu()
-                }
+                updateOptionsMenu()
+                // Removing a renamed favorite takes its name with it: the header falls back to the subject.
+                notifyTitleChanged()
             }
+
+            FavoritesStorage.Action.MODIFY_TITLE -> notifyTitleChanged()
 
             else -> {}
         }
