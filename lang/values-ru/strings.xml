@@ -634,7 +634,6 @@
 	<string name="command_failed__format">Ошибка команды: %s</string>
 	<string name="commands">Команды</string>
 	<string name="command_no_changes">Команда ничего не изменила</string>
-	<string name="code">Код</string>
 	<string name="new_command">Новая команда</string>
 	<string name="add_command">Добавить команду</string>
 	<string name="no_commands_defined">Команды не заданы</string>
@@ -642,4 +641,6 @@
 	<string name="run_before_sending">Выполнять автоматически перед отправкой</string>
 	<string name="run_when_thread_opens">Выполнять автоматически при открытии треда</string>
 	<string name="auto_run">Автозапуск</string>
+	<string name="process_posts_individually">Обрабатывать сообщения по отдельности</string>
+	<string name="per_post">По сообщению</string>
 </resources>

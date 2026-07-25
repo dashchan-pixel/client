@@ -94,6 +94,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 val code = item.optString(KEY_CODE)
                 val useIn = UseIn.fromKey(item.optString(KEY_USE_IN))
                 val autoRun = item.optBoolean(KEY_AUTO_RUN, item.optBoolean(KEY_AUTO_RUN_LEGACY))
+                val perPost = item.optBoolean(KEY_PER_POST)
                 val boardName = if (item.isNull(KEY_BOARD_NAME)) null else item.optString(KEY_BOARD_NAME)
                 val storedId = item.optLong(KEY_ID)
                 val id =
@@ -106,7 +107,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         CommandItem.generateId()
                     }
                 commandItems.add(
-                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun),
+                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun, perPost),
                 )
             }
         }
@@ -162,6 +163,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         AutohideStorage.putJson(jsonObject, KEY_CODE, commandItem.code)
         AutohideStorage.putJson(jsonObject, KEY_USE_IN, commandItem.useIn.key)
         AutohideStorage.putJson(jsonObject, KEY_AUTO_RUN, commandItem.autoRun)
+        AutohideStorage.putJson(jsonObject, KEY_PER_POST, commandItem.perPost)
         return jsonObject
     }
 
@@ -227,6 +229,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          */
         @JvmField var autoRun = false
 
+        /**
+         * [UseIn.THREAD] only: run the body once per post rather than once per thread. The body is then
+         * the `process` of a fold over the thread's posts — it takes a single `post` and returns that
+         * post's replacement — which trades n+1 engine calls for not having to build the result map by
+         * hand. See [com.mishiranu.dashchan.content.CommandRunner.runThread].
+         */
+        @JvmField var perPost = false
+
         constructor()
 
         constructor(commandItem: CommandItem) : this(
@@ -237,6 +247,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             commandItem.code,
             commandItem.useIn,
             commandItem.autoRun,
+            commandItem.perPost,
         )
 
         constructor(
@@ -247,9 +258,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             code: String?,
             useIn: UseIn,
             autoRun: Boolean,
+            perPost: Boolean,
         ) {
             this.id = id
-            update(chanNames, boardName, name, code, useIn, autoRun)
+            update(chanNames, boardName, name, code, useIn, autoRun, perPost)
         }
 
         fun update(
@@ -259,6 +271,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             code: String?,
             useIn: UseIn,
             autoRun: Boolean,
+            perPost: Boolean,
         ) {
             this.chanNames = chanNames
             this.boardName = boardName
@@ -266,6 +279,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             this.code = StringUtils.emptyIfNull(code)
             this.useIn = useIn
             this.autoRun = autoRun
+            this.perPost = perPost
         }
 
         /** True if this command should be offered for the given forum/board. */
@@ -297,6 +311,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             dest.writeString(code)
             dest.writeString(useIn.key)
             dest.writeByte(if (autoRun) 1.toByte() else 0.toByte())
+            dest.writeByte(if (perPost) 1.toByte() else 0.toByte())
         }
 
         companion object {
@@ -327,6 +342,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         commandItem.code = source.readString()
                         commandItem.useIn = UseIn.fromKey(source.readString())
                         commandItem.autoRun = source.readByte().toInt() != 0
+                        commandItem.perPost = source.readByte().toInt() != 0
                         return commandItem
                     }
 
@@ -345,6 +361,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         private const val KEY_CODE = "code"
         private const val KEY_USE_IN = "useIn"
         private const val KEY_AUTO_RUN = "autoRun"
+        private const val KEY_PER_POST = "perPost"
 
         /** Legacy key for [KEY_AUTO_RUN] (the flag was named "runOnSend" before). Read-only fallback. */
         private const val KEY_AUTO_RUN_LEGACY = "runOnSend"
@@ -424,6 +441,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             val name = item.optString(KEY_NAME)
             val useIn = UseIn.fromKey(item.optString(KEY_USE_IN))
             val autoRun = item.optBoolean(KEY_AUTO_RUN, item.optBoolean(KEY_AUTO_RUN_LEGACY))
+            val perPost = item.optBoolean(KEY_PER_POST)
             val boardName = if (item.isNull(KEY_BOARD_NAME)) null else item.optString(KEY_BOARD_NAME)
             return CommandItem(
                 CommandItem.generateId(),
@@ -433,6 +451,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 code,
                 useIn,
                 autoRun,
+                perPost,
             )
         }
     }

@@ -26,6 +26,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   that edits only the text it cares about can hand the rest of the post's HTML straight back. The
  *   flip side is that a replacement is HTML, so plain text carrying `<` or `&` has to be escaped.
  *
+ *   With [perPost][CommandsStorage.CommandItem.perPost] set the body instead runs once per post — it
+ *   receives a single `post` in place of `posts` and returns just that post's replacement (`undefined`/
+ *   `null` leaves the post alone), the fold into the result map being supplied here. It runs the body
+ *   n times instead of once, sequentially, in exchange for a body that only has to think about one
+ *   post.
+ *
  * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
  * is no such context. Being async, a body may `await` (e.g.
  * `return await fetch(url).then(r => r.text())`).
@@ -132,22 +138,34 @@ object CommandRunner {
                 env = CommandsStorage.getInstance().getEnv(),
                 // A thread command returns a { postNumber: replacementHtml } object.
                 resultExpr = "(__result===undefined||__result===null)?{}:__result",
+                perPost = item.perPost,
             ) { append(postsJson).append(',') }
-        execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback)
+        // A per-post body runs n times, so one deadline for the whole thread would fail a body that is
+        // fine per post (a fetch each, say) purely for the thread being long. Give it a share per post,
+        // capped so a runaway script still can't hold an engine forever.
+        val timeout =
+            if (item.perPost) {
+                (TIMEOUT_MS + PER_POST_TIMEOUT_MS * posts.size).coerceAtMost(MAX_PER_POST_TIMEOUT_MS)
+            } else {
+                TIMEOUT_MS
+            }
+        execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
     }
 
     /**
      * Runs [script] on a fresh [HeadlessJsEngine] and routes the outcome to [callback] on the main
      * thread. The script runs the user code as an *async* function, so a returned Promise (e.g. `await
      * fetch(...)`) is honoured. evaluateJavascript can't await Promises, so the result comes back
-     * through a bridge instead of the evaluation's return value; a timeout guards a script that never
-     * settles. [parse] turns the bridged JSON into a result; [failure] wraps a timeout/error message.
+     * through a bridge instead of the evaluation's return value; a [timeoutMs] deadline guards a script
+     * that never settles. [parse] turns the bridged JSON into a result; [failure] wraps a timeout/error
+     * message.
      */
     private fun <R> execute(
         script: String,
         parse: (String?) -> R,
         failure: (String) -> R,
         callback: (R) -> Unit,
+        timeoutMs: Long = TIMEOUT_MS,
     ) {
         val delivered = AtomicBoolean(false)
         val engineHolder = arrayOfNulls<HeadlessJsEngine>(1)
@@ -170,7 +188,7 @@ object CommandRunner {
             }
         val engine = HeadlessJsEngine(mapOf(BRIDGE_NAME to bridge))
         engineHolder[0] = engine
-        ConcurrentUtils.HANDLER.postDelayed(timeout, TIMEOUT_MS)
+        ConcurrentUtils.HANDLER.postDelayed(timeout, timeoutMs)
         engine.evaluate(script)
     }
 
@@ -179,6 +197,8 @@ object CommandRunner {
      * function; [leadingArg] appends the matching first actual argument(s) (already followed by a
      * comma), after which `thread`, `board` and the frozen `env` object are passed. [resultExpr] is the
      * JS expression that maps the resolved `__result` to the value delivered back through the bridge.
+     * With [perPost] the code is compiled as a single-post `process` and the fold over `posts` is
+     * supplied instead, so [args] then describes the wrapper rather than the user's body.
      */
     private fun buildScript(
         args: String,
@@ -187,6 +207,7 @@ object CommandRunner {
         board: String?,
         env: Map<String, String>,
         resultExpr: String,
+        perPost: Boolean = false,
         leadingArg: StringBuilder.() -> Unit,
     ): String =
         buildString {
@@ -199,9 +220,28 @@ object CommandRunner {
             // rather than inlining also means a *syntax* error throws at construction and is caught,
             // surfacing a real message instead of a null result.
             append("var __AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;")
-            append("var __command=new __AsyncFunction(").append(args).append(',')
-            append(JSONObject.quote(code))
-            append(");")
+            if (perPost) {
+                // The body is the `process` of the fold, so it is compiled against one `post` and the
+                // loop that collects `{ number: replacement }` lives here. Awaited one post at a time:
+                // a body that hits the network would otherwise fire the whole thread at once.
+                append("var __process=new __AsyncFunction(\"post\",\"thread\",\"board\",\"env\",")
+                append(JSONObject.quote(code))
+                append(");")
+                append("var __command=async function(__posts,__thread,__board,__env){")
+                append("var __acc={};")
+                append("for(var __i=0;__i<__posts.length;__i++){")
+                append("var __post=__posts[__i];")
+                append("var __value=await __process(__post,__thread,__board,__env);")
+                // Same contract as the whole-thread form, one post at a time: nothing returned means
+                // this post is left as it is.
+                append("if(__value!==undefined&&__value!==null){__acc[__post.number]=String(__value);}")
+                append('}')
+                append("return __acc;};")
+            } else {
+                append("var __command=new __AsyncFunction(").append(args).append(',')
+                append(JSONObject.quote(code))
+                append(");")
+            }
             append("Promise.resolve(__command(")
             leadingArg()
             append(jsArg(thread)).append(',')
@@ -238,6 +278,10 @@ object CommandRunner {
 
     private const val BRIDGE_NAME = "__commandBridge"
     private const val TIMEOUT_MS = 30000L
+
+    /** Extra deadline a per-post run gets for each post it has to walk. See [runThread]. */
+    private const val PER_POST_TIMEOUT_MS = 2000L
+    private const val MAX_PER_POST_TIMEOUT_MS = 300000L
 
     private fun parseComment(raw: String?): Result {
         if (raw == null) {

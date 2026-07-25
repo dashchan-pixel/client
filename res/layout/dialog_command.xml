@@ -65,6 +65,16 @@
 			android:text="@string/run_before_sending"
 			android:textAppearance="?android:attr/textAppearanceSmall" />
 
+		<CheckBox
+			android:id="@+id/per_post"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
+			android:layout_marginTop="8dp"
+			android:text="@string/process_posts_individually"
+			android:textAppearance="?android:attr/textAppearanceSmall" />
+
 		<com.mishiranu.dashchan.widget.SafePasteEditText
 			android:id="@+id/code"
 			android:layout_width="match_parent"
@@ -73,7 +83,6 @@
 			android:layout_marginRight="@dimen/dialog_padding_view"
 			android:layout_marginTop="8dp"
 			android:gravity="top"
-			android:hint="@string/code"
 			android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
 			android:minLines="6"
 			android:fontFamily="monospace"

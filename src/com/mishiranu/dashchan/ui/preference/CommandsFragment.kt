@@ -365,6 +365,9 @@ class CommandsFragment :
                     CommandsStorage.UseIn.THREAD -> R.string.thread
                 }
             builder.append(" · ").append(getString(useInRes))
+            if (commandItem.perPost && commandItem.useIn == CommandsStorage.UseIn.THREAD) {
+                builder.append(" · ").append(getString(R.string.per_post))
+            }
             if (commandItem.autoRun) {
                 builder.append(" · ").append(getString(R.string.auto_run))
             }
@@ -462,11 +465,16 @@ class CommandsFragment :
         private lateinit var nameEdit: EditText
         private lateinit var useInView: DropdownView
         private lateinit var autoRunCheckBox: CheckBox
+        private lateinit var perPostCheckBox: CheckBox
         private lateinit var codeEdit: EditText
 
         // Identity of the command being edited, carried into readDialogView() so an edit keeps the same
         // id (and a new command keeps one stable id for the life of the dialog).
         private var editItemId: Long = 0
+
+        // The target the dialog is currently showing options for. Tracked because the spinner resolves
+        // its own selection only at layout time, too late for the code placeholder.
+        private var selectedUseIn = CommandsStorage.UseIn.COMMENT
 
         constructor()
 
@@ -490,16 +498,15 @@ class CommandsFragment :
             nameEdit = view.findViewById(R.id.name)
             useInView = view.findViewById(R.id.use_in)
             autoRunCheckBox = view.findViewById(R.id.auto_run)
+            perPostCheckBox = view.findViewById(R.id.per_post)
             codeEdit = view.findViewById(R.id.code)
             chanNameSelector.setOnClickListener { ChanMultiChoiceDialog(selectedChanNames).show(this) }
             chanNameSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
 
             useInView.setItems(USE_IN_ORDER.map { getString(it.titleRes) })
-            // The auto-run checkbox means different things per target (run before sending vs. run when
-            // the thread opens), so relabel it as the selection changes.
-            useInView.setOnItemSelectedListener { position ->
-                autoRunCheckBox.setText(USE_IN_ORDER[position].autoRunRes)
-            }
+            useInView.setOnItemSelectedListener { position -> applyUseIn(USE_IN_ORDER[position]) }
+            // The sample depends on both, so the checkbox has to refresh it too.
+            perPostCheckBox.setOnCheckedChangeListener { _, _ -> updateCodeHint() }
 
             if (!ChanManager.getInstance().hasMultipleAvailableChans()) {
                 chanNameSelector.visibility = View.GONE
@@ -511,6 +518,8 @@ class CommandsFragment :
             if (commandItem == null) {
                 commandItem = BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, CommandsStorage.CommandItem::class.java)
             }
+            // The spinner delivers its initial selection on layout, i.e. after the dialog is built, so
+            // each branch applies its own target here rather than waiting for the listener.
             if (commandItem != null) {
                 editItemId = commandItem.id
                 commandItem.chanNames?.let { selectedChanNames.addAll(it) }
@@ -518,12 +527,42 @@ class CommandsFragment :
                 nameEdit.setText(commandItem.name)
                 useInView.setSelection(USE_IN_ORDER.indexOf(commandItem.useIn).coerceAtLeast(0))
                 autoRunCheckBox.isChecked = commandItem.autoRun
+                perPostCheckBox.isChecked = commandItem.perPost
                 codeEdit.setText(commandItem.code)
+                applyUseIn(commandItem.useIn)
             } else {
                 editItemId = CommandsStorage.CommandItem.generateId()
                 chanNameSelector.setText(R.string.all_forums)
+                applyUseIn(USE_IN_ORDER[0])
             }
             updateSelectedText()
+        }
+
+        /**
+         * Relabels and shows the target-dependent options: the auto-run checkbox means different things
+         * per target (run before sending vs. run when the thread opens), and per-post processing only
+         * exists for a thread command — a comment command is handed its single input already.
+         */
+        private fun applyUseIn(useIn: CommandsStorage.UseIn) {
+            selectedUseIn = useIn
+            autoRunCheckBox.setText(useIn.autoRunRes)
+            perPostCheckBox.visibility =
+                if (useIn == CommandsStorage.UseIn.THREAD) View.VISIBLE else View.GONE
+            updateCodeHint()
+        }
+
+        /**
+         * Shows the identity command for the current target as the empty code field's placeholder: the
+         * shortest body that hands the data back unchanged. It spells out what the body is given and
+         * what it has to return — which differs per target — without the user having to run anything.
+         */
+        private fun updateCodeHint() {
+            codeEdit.hint =
+                when {
+                    selectedUseIn == CommandsStorage.UseIn.COMMENT -> SAMPLE_COMMENT
+                    perPostCheckBox.isChecked -> SAMPLE_PER_POST
+                    else -> SAMPLE_THREAD
+                }
         }
 
         override fun onSaveInstanceState(outState: Bundle) {
@@ -567,16 +606,21 @@ class CommandsFragment :
             chanNameSelector.text = chanNameText
         }
 
-        private fun readDialogView(): CommandsStorage.CommandItem =
-            CommandsStorage.CommandItem(
+        private fun readDialogView(): CommandsStorage.CommandItem {
+            val useIn = USE_IN_ORDER[useInView.getSelectedItemPosition().coerceIn(USE_IN_ORDER.indices)]
+            return CommandsStorage.CommandItem(
                 editItemId,
                 if (selectedChanNames.isNotEmpty()) HashSet(selectedChanNames) else null,
                 boardNameEdit.text.toString(),
                 nameEdit.text.toString(),
                 codeEdit.text.toString(),
-                USE_IN_ORDER[useInView.getSelectedItemPosition().coerceIn(USE_IN_ORDER.indices)],
+                useIn,
                 autoRunCheckBox.isChecked,
+                // The checkbox is hidden for a comment command, so don't save what it happens to be
+                // left on from a target the user switched away from.
+                useIn == CommandsStorage.UseIn.THREAD && perPostCheckBox.isChecked,
             )
+        }
 
         override fun onChansSelected(chanNames: Collection<String>) {
             selectedChanNames.clear()
@@ -590,6 +634,18 @@ class CommandsFragment :
 
             // The dropdown's fixed order; the selected index maps back to a UseIn on save.
             private val USE_IN_ORDER = listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD)
+
+            // Placeholders for the code field: the do-nothing command for each target, i.e. the least
+            // code that returns the input unchanged. Not translated — it's JavaScript.
+            private const val SAMPLE_COMMENT = "return comment;"
+
+            private const val SAMPLE_THREAD =
+                "return posts.reduce((acc, post) => {\n" +
+                    "  acc[post.number] = post.comment;\n" +
+                    "  return acc;\n" +
+                    "}, {});"
+
+            private const val SAMPLE_PER_POST = "return post.comment;"
 
             private val CommandsStorage.UseIn.titleRes: Int
                 get() =

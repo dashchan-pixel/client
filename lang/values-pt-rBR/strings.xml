@@ -431,7 +431,6 @@
 	<string name="colors">Cores</string>
 	<string name="commands">Comandos</string>
 	<string name="command_no_changes">O comando não fez alterações</string>
-	<string name="code">Código</string>
 	<string name="new_command">Novo comando</string>
 	<string name="add_command">Adicionar comando</string>
 	<string name="no_commands_defined">Nenhum comando definido</string>
@@ -439,4 +438,6 @@
 	<string name="run_before_sending">Executar automaticamente antes de enviar</string>
 	<string name="run_when_thread_opens">Executar automaticamente ao abrir o fio</string>
 	<string name="auto_run">Automático</string>
+	<string name="process_posts_individually">Processar posts individualmente</string>
+	<string name="per_post">Por post</string>
 </resources>
