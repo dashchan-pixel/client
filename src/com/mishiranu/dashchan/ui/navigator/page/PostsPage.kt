@@ -2074,7 +2074,7 @@ class PostsPage :
             val title = if (name.isNullOrEmpty()) getString(R.string.command) else name
             subMenu.add(COMMANDS_GROUP, index, index, title).setEnabled(!command.autoRun)
         }
-        subMenu.add(0, R.id.menu_edit_commands, commands.size, R.string.edit__ellipsis)
+        subMenu.add(0, R.id.menu_edit_commands, commands.size, R.string.edit)
     }
 
     /**
