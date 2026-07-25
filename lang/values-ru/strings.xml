@@ -83,6 +83,7 @@
 	<string name="close_pages__summary">Закрывать страницы нажатием кнопки \"Назад\"</string>
 	<string name="closed">Закрыто</string>
 	<string name="code_number_address">Код, номер, адрес</string>
+	<string name="colors">Цвета</string>
 	<string name="comment">Комментарий</string>
 	<string name="comment_is_too_short">Комментарий слишком короткий</string>
 	<string name="completed">Завершено</string>
@@ -126,6 +127,7 @@
 	<string name="detailed_file_name__summary">Загружать файлы с номером треда в названии</string>
 	<string name="details">Подробнее</string>
 	<string name="disabled">Отключено</string>
+	<string name="discard_changes__sentence">Отменить изменения?</string>
 	<string name="display_hidden_threads">Выводить скрытые треды</string>
 	<string name="display_hidden_posts">Выводить скрытые посты</string>
 	<string name="display_hidden_posts__summary">Отключение функции полностью убирает отображение постов, которые были скрыты</string>
@@ -148,6 +150,7 @@
 	<string name="echo__summary">Собирать ответы на мои посты в отдельном списке</string>
 	<string name="echo_is_empty">Эхо пусто</string>
 	<string name="edit__ellipsis">Изменить…</string>
+	<string name="edit_theme">Изменить тему</string>
 	<string name="empty_response">Пустой ответ сервера</string>
 	<string name="enabled">Включено</string>
 	<string name="enter_valid_data">Введите корректные данные</string>
@@ -284,6 +287,7 @@
 	<string name="new_password_was_generated">Сгенерирован новый пароль</string>
 	<string name="new_post">Новое сообщение</string>
 	<string name="new_rule">Новое правило</string>
+	<string name="new_theme">Новая тема</string>
 	<string name="new_thread">Новый тред</string>
 	<string name="night_theme">Ночная тема</string>
 	<string name="no_access">Нет доступа</string>
@@ -518,6 +522,24 @@
 	<string name="test_string">Тестовая строка</string>
 	<string name="text_scale">Масштаб текста</string>
 	<string name="ui_corner_radius">Радиус скругления интерфейса</string>
+	<string name="theme_base">Основа</string>
+	<string name="theme_base_dark">Тёмная</string>
+	<string name="theme_base_light">Светлая</string>
+	<string name="theme_color_accent">Акцент</string>
+	<string name="theme_color_capcode">Капкод</string>
+	<string name="theme_color_card">Карточка</string>
+	<string name="theme_color_default">По умолчанию</string>
+	<string name="theme_color_highlight">Подсветка моих сообщений</string>
+	<string name="theme_color_link">Ссылка</string>
+	<string name="theme_color_meta">Сведения о сообщении</string>
+	<string name="theme_color_neuroslop">Сообщение ИИ</string>
+	<string name="theme_color_neuroslop_quote">Цитата сообщения ИИ</string>
+	<string name="theme_color_post">Текст сообщения</string>
+	<string name="theme_color_primary">Панель</string>
+	<string name="theme_color_quote">Цитата</string>
+	<string name="theme_color_spoiler">Спойлер</string>
+	<string name="theme_color_tripcode">Трипкод</string>
+	<string name="theme_color_window">Фон</string>
 	<string name="themes">Темы</string>
 	<string name="this_post">Это сообщение</string>
 	<string name="this_recaptcha_is_not_supported">Данная reCAPTCHA не поддерживается</string>

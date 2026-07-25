@@ -81,6 +81,7 @@
 	<string name="detailed_file_name">Nome de arquivo detalhado</string>
 	<string name="detailed_file_name__summary">Baixe arquivos com o número do fio no nome</string>
 	<string name="details">Detalhes</string>
+	<string name="discard_changes__sentence">Descartar as alterações?</string>
 	<string name="display_hidden_threads">Exibir fios escondidos</string>
 	<string name="display_post_icons">Exibirs ícones em algumas boards</string>
 	<string name="display_post_icons__summary">Ícones estão habilitados em algumas boards</string>
@@ -95,6 +96,7 @@
 	<string name="echo__summary">Coletar respostas aos meus posts em uma lista separada</string>
 	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="edit__ellipsis">Editar…</string>
+	<string name="edit_theme">Editar tema</string>
 	<string name="empty_response">Resposta vazia</string>
 	<string name="enter_valid_data">Entre dados válidos</string>
 	<string name="ephemeral_browsing">Modo anônimo</string>
@@ -189,6 +191,7 @@
 	<string name="new_password_was_generated">Uma nova senha foi gerada</string>
 	<string name="new_post">Responder</string>
 	<string name="new_rule">Nova regra</string>
+	<string name="new_theme">Novo tema</string>
 	<string name="new_thread">Criar fio</string>
 	<string name="night_theme">Tema noturno</string>
 	<string name="no_access">Acesso negado</string>
@@ -354,6 +357,24 @@
 	<string name="summary">Sumário</string>
 	<string name="text_scale">Escala do texto</string>
 	<string name="ui_corner_radius">Raio dos cantos da interface</string>
+	<string name="theme_base">Base</string>
+	<string name="theme_base_dark">Escuro</string>
+	<string name="theme_base_light">Claro</string>
+	<string name="theme_color_accent">Destaque</string>
+	<string name="theme_color_capcode">Capcode</string>
+	<string name="theme_color_card">Cartão</string>
+	<string name="theme_color_default">Padrão</string>
+	<string name="theme_color_highlight">Realce dos meus posts</string>
+	<string name="theme_color_link">Link</string>
+	<string name="theme_color_meta">Detalhes do post</string>
+	<string name="theme_color_neuroslop">Post de IA</string>
+	<string name="theme_color_neuroslop_quote">Citação de post de IA</string>
+	<string name="theme_color_post">Texto do post</string>
+	<string name="theme_color_primary">Barra de ferramentas</string>
+	<string name="theme_color_quote">Citação</string>
+	<string name="theme_color_spoiler">Spoiler</string>
+	<string name="theme_color_tripcode">Tripcode</string>
+	<string name="theme_color_window">Plano de fundo</string>
 	<string name="this_post">Este post</string>
 	<string name="this_recaptcha_is_not_supported">Esquema não suportado</string>
 	<string name="this_week">Essa semana</string>
@@ -407,6 +428,7 @@
 
 	<string name="command">Comando</string>
 	<string name="command_failed__format">Falha no comando: %s</string>
+	<string name="colors">Cores</string>
 	<string name="commands">Comandos</string>
 	<string name="command_no_changes">O comando não fez alterações</string>
 	<string name="code">Código</string>

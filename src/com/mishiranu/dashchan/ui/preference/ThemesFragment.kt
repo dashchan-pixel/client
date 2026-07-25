@@ -143,9 +143,14 @@ class ThemesFragment : BaseListFragment() {
             .add(0, R.id.menu_add_theme, 0, R.string.add_theme)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        menu.add(0, R.id.menu_new_theme, 0, R.string.new_theme)
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.menu_new_theme) {
+            (requireActivity() as FragmentHandler).pushFragment(ThemeEditorFragment(null, null))
+            return true
+        }
         if (item.itemId == R.id.menu_add_theme) {
             // Check Android supports "application/json" MIME-type
             var mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension("json")
@@ -257,8 +262,43 @@ class ThemesFragment : BaseListFragment() {
         } catch (e: JSONException) {
             throw RuntimeException(e)
         }
-        ContextMenuDialog(theme.name, json, installed && !theme.builtIn)
+        val editable = installed && !theme.builtIn
+        ContextMenuDialog(theme.name, json, editable)
             .show(childFragmentManager, ContextMenuDialog::class.java.name)
+    }
+
+    /**
+     * Opens the theme editor. With no [originalName] the theme is being copied rather than edited,
+     * so it needs a name of its own — saving under an existing name would overwrite that theme.
+     */
+    internal fun openEditor(
+        json: String,
+        originalName: String?,
+    ) {
+        val jsonObject =
+            try {
+                JSONObject(json)
+            } catch (e: JSONException) {
+                e.printStackTrace()
+                ClickableToast.show(R.string.invalid_data_format)
+                return
+            }
+        if (originalName == null) {
+            jsonObject.put("name", uniqueName(jsonObject.optString("name")))
+        }
+        (requireActivity() as FragmentHandler).pushFragment(ThemeEditorFragment(jsonObject, originalName))
+    }
+
+    private fun uniqueName(name: String): String {
+        val existing = ThemeEngine.getThemes().mapTo(HashSet()) { it.name }
+        if (!existing.contains(name)) {
+            return name
+        }
+        var index = 2
+        while (existing.contains("$name ($index)")) {
+            index++
+        }
+        return "$name ($index)"
     }
 
     private fun installTheme(
@@ -537,17 +577,23 @@ class ThemesFragment : BaseListFragment() {
     class ContextMenuDialog : DialogFragment {
         constructor()
 
-        constructor(name: String?, json: String, canDelete: Boolean) {
+        constructor(name: String?, json: String, editable: Boolean) {
             val args = Bundle()
             args.putString(EXTRA_NAME, name)
             args.putString(EXTRA_JSON, json)
-            args.putBoolean(EXTRA_CAN_DELETE, canDelete)
+            args.putBoolean(EXTRA_EDITABLE, editable)
             arguments = args
         }
 
         override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
             val name = requireArguments().getString(EXTRA_NAME)
             val dialogMenu = DialogMenu(requireContext())
+            if (requireArguments().getBoolean(EXTRA_EDITABLE)) {
+                dialogMenu.add(R.string.edit__ellipsis) { openEditor(name) }
+            }
+            // A built-in or not yet installed theme can't be edited in place, but it makes a fine
+            // starting point: copying it hands the editor a renamed duplicate.
+            dialogMenu.add(R.string.copy) { openEditor(null) }
             dialogMenu.add(R.string.save) {
                 val binder = (requireActivity() as FragmentHandler).getDownloadBinder()
                 if (binder != null) {
@@ -564,7 +610,7 @@ class ThemesFragment : BaseListFragment() {
                     )
                 }
             }
-            if (requireArguments().getBoolean(EXTRA_CAN_DELETE)) {
+            if (requireArguments().getBoolean(EXTRA_EDITABLE)) {
                 dialogMenu.add(R.string.delete) {
                     val themesFragment = parentFragment as ThemesFragment
                     themesFragment.view!!.post {
@@ -575,10 +621,16 @@ class ThemesFragment : BaseListFragment() {
             return dialogMenu.create()
         }
 
+        private fun openEditor(originalName: String?) {
+            val json = requireArguments().getString(EXTRA_JSON) ?: return
+            val themesFragment = parentFragment as ThemesFragment
+            themesFragment.requireView().post { themesFragment.openEditor(json, originalName) }
+        }
+
         companion object {
             private const val EXTRA_NAME = "name"
             private const val EXTRA_JSON = "json"
-            private const val EXTRA_CAN_DELETE = "canDelete"
+            private const val EXTRA_EDITABLE = "editable"
         }
     }
 

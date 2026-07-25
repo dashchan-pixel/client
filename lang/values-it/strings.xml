@@ -67,6 +67,7 @@
     <string name="close_pages__summary">Chiudi pagine toccando il pulsante "indietro"</string>
     <string name="closed">Chiuso</string>
     <string name="code_number_address">Board, numero pag. o indirizzo</string>
+    <string name="colors">Colori</string>
     <string name="comment">Commento</string>
     <string name="comment_is_too_short">Il commento è troppo corto</string>
     <string name="completed">Completato</string>
@@ -104,6 +105,7 @@
     <string name="detailed_file_name__summary">Scarica file col numero thread nel nome</string>
     <string name="details">Dettagli</string>
     <string name="disabled">Disabilitato</string>
+    <string name="discard_changes__sentence">Annullare le modifiche?</string>
     <string name="display_hidden_threads">Mostra thread nascosti</string>
     <string name="display_post_icons">Mostra icone post</string>
     <string name="display_post_icons__summary">Le icone sono disponibili su alcune board</string>
@@ -125,6 +127,7 @@
     <string name="echo__summary">Raccogli le risposte ai miei post in un elenco separato</string>
     <string name="echo_is_empty">Eco vuoto</string>
     <string name="edit__ellipsis">Modifica…</string>
+    <string name="edit_theme">Modifica tema</string>
     <string name="empty_response">Response vuota</string>
     <string name="enabled">Abilitato</string>
     <string name="enter_valid_data">Inserisci un dato valido</string>
@@ -249,6 +252,7 @@
     <string name="new_password_was_generated">Una nuova password è stata generata</string>
     <string name="new_post">Nuovo post</string>
     <string name="new_rule">Nuova regola</string>
+    <string name="new_theme">Nuovo tema</string>
     <string name="new_thread">Nuovo thread</string>
     <string name="night_theme">Tema notturno</string>
     <string name="no_access">Accesso negato</string>
@@ -448,6 +452,24 @@
     <string name="test_string">Stringa di test</string>
     <string name="text_scale">Dimensione testo</string>
     <string name="ui_corner_radius">Raggio angoli interfaccia</string>
+    <string name="theme_base">Base</string>
+    <string name="theme_base_dark">Scuro</string>
+    <string name="theme_base_light">Chiaro</string>
+    <string name="theme_color_accent">Accento</string>
+    <string name="theme_color_capcode">Capcode</string>
+    <string name="theme_color_card">Scheda</string>
+    <string name="theme_color_default">Predefinito</string>
+    <string name="theme_color_highlight">Evidenziazione dei post miei</string>
+    <string name="theme_color_link">Collegamento</string>
+    <string name="theme_color_meta">Dettagli del post</string>
+    <string name="theme_color_neuroslop">Post IA</string>
+    <string name="theme_color_neuroslop_quote">Citazione del post IA</string>
+    <string name="theme_color_post">Testo del post</string>
+    <string name="theme_color_primary">Barra degli strumenti</string>
+    <string name="theme_color_quote">Citazione</string>
+    <string name="theme_color_spoiler">Spoiler</string>
+    <string name="theme_color_tripcode">Tripcode</string>
+    <string name="theme_color_window">Sfondo</string>
     <string name="themes">Temi</string>
     <string name="this_post">Questo post</string>
     <string name="this_recaptcha_is_not_supported">Questo reCAPTCHA non è supportato</string>

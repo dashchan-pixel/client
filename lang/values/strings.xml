@@ -85,6 +85,7 @@
 	<string name="closed">Closed</string>
 	<string name="code">Code</string>
 	<string name="code_number_address">Code, number, address</string>
+	<string name="colors">Colors</string>
 	<string name="comment">Comment</string>
 	<string name="command">Command</string>
 	<string name="command_failed__format">Command failed: %s</string>
@@ -131,6 +132,7 @@
 	<string name="detailed_file_name__summary">Download files with thread number in names</string>
 	<string name="details">Details</string>
 	<string name="disabled">Disabled</string>
+	<string name="discard_changes__sentence">Discard changes?</string>
 	<string name="display_hidden_threads">Display hidden threads</string>
 	<string name="display_hidden_posts">Display hidden posts</string>
 	<string name="display_hidden_posts__summary">Deactivating the feature completely removes the display of posts that was hidden</string>
@@ -154,6 +156,7 @@
 	<string name="echo__summary">Collect replies to my posts in a separate list</string>
 	<string name="echo_is_empty">Echo is empty</string>
 	<string name="edit__ellipsis">Edit…</string>
+	<string name="edit_theme">Edit theme</string>
 	<string name="empty_response">Empty response</string>
 	<string name="enabled">Enabled</string>
 	<string name="enter_valid_data">Enter a valid data</string>
@@ -293,6 +296,7 @@
 	<string name="new_post">New post</string>
 	<string name="new_command">New command</string>
 	<string name="new_rule">New rule</string>
+	<string name="new_theme">New theme</string>
 	<string name="new_thread">New thread</string>
 	<string name="night_theme">Night theme</string>
 	<string name="no_access">No access</string>
@@ -517,6 +521,24 @@
 	<string name="test_string">Test string</string>
 	<string name="text_scale">Text scale</string>
 	<string name="ui_corner_radius">UI corner radius</string>
+	<string name="theme_base">Base</string>
+	<string name="theme_base_dark">Dark</string>
+	<string name="theme_base_light">Light</string>
+	<string name="theme_color_accent">Accent</string>
+	<string name="theme_color_capcode">Capcode</string>
+	<string name="theme_color_card">Card</string>
+	<string name="theme_color_default">Default</string>
+	<string name="theme_color_highlight">My post highlight</string>
+	<string name="theme_color_link">Link</string>
+	<string name="theme_color_meta">Post details</string>
+	<string name="theme_color_neuroslop">AI post</string>
+	<string name="theme_color_neuroslop_quote">AI post quote</string>
+	<string name="theme_color_post">Post text</string>
+	<string name="theme_color_primary">Toolbar</string>
+	<string name="theme_color_quote">Quote</string>
+	<string name="theme_color_spoiler">Spoiler</string>
+	<string name="theme_color_tripcode">Tripcode</string>
+	<string name="theme_color_window">Background</string>
 	<string name="themes">Themes</string>
 	<string name="this_post">This post</string>
 	<string name="this_recaptcha_is_not_supported">This reCAPTCHA is not supported</string>
