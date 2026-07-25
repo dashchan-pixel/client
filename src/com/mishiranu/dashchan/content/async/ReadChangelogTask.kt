@@ -15,8 +15,6 @@ import org.json.JSONObject
 import java.util.Locale
 import java.util.TreeMap
 
-private const val SUFFIX_PIXEL_VERSION = "-pixel"
-
 class ReadChangelogTask(
     private val callback: Callback,
     private val locales: List<Locale>,
@@ -35,34 +33,7 @@ class ReadChangelogTask(
         class Version(
             @JvmField val name: String,
             @JvmField val date: String,
-        ) {
-            // The "-pixel" suffix has to be stripped before the major.minor cut and put back
-            // after, or "26.7-pixel" (no patch component, so no second dot to cut at) keys as
-            // the whole name while "26.7.1-pixel" keys as a bare "26.7" — splitting one release
-            // line into two groups and dropping the suffix from the second one's header.
-            fun getMajorMinor(): String {
-                val suffix = if (name.endsWith(SUFFIX_PIXEL_VERSION)) SUFFIX_PIXEL_VERSION else ""
-                val bareName = name.substring(0, name.length - suffix.length)
-                var index = bareName.indexOf('.')
-                index = bareName.indexOf('.', index + 1)
-                val majorMinor = if (index >= 0) bareName.substring(0, index) else bareName
-                return majorMinor + suffix
-            }
-        }
-
-        fun getSingleMajorMinorOrNull(): String? {
-            var majorMinor: String? = null
-            for (version in versions) {
-                val versionMajorMinor = version.getMajorMinor()
-                if (majorMinor == null) {
-                    majorMinor = versionMajorMinor
-                } else if (versionMajorMinor != majorMinor) {
-                    majorMinor = null
-                    break
-                }
-            }
-            return majorMinor
-        }
+        )
 
         override fun describeContents(): Int = 0
 
@@ -215,33 +186,11 @@ class ReadChangelogTask(
                 entry.versions.add(Entry.Version(name, date))
             }
 
+            // One entry per version, newest first; versions without a changelog of their own
+            // are simply omitted rather than folded into a neighbouring release.
             val entries = ArrayList<Entry>(entriesMap.size)
             for (entry in entriesMap.values) {
-                if (entries.isNotEmpty()) {
-                    val lastEntry = entries[entries.size - 1]
-                    val majorMinor = entry.getSingleMajorMinorOrNull()
-                    val lastMajorMinor = lastEntry.getSingleMajorMinorOrNull()
-                    val sameMajorMinor = majorMinor != null && majorMinor == lastMajorMinor
-                    if (entry.texts.isEmpty()) {
-                        // A version with no changelog of its own joins the previous group, but
-                        // only within the same release line: "26.7-pixel" opens a new one, and
-                        // folding it into the 1.6 experimental group above it both mislabelled
-                        // that group ("1.6 — 26.7-pixel") and made the 26.7-pixel group's key
-                        // ambiguous, so the 26.7.x-pixel releases could not join it either.
-                        if (sameMajorMinor) {
-                            lastEntry.versions.addAll(entry.versions)
-                        } else {
-                            entries.add(entry)
-                        }
-                    } else {
-                        if (sameMajorMinor) {
-                            lastEntry.versions.addAll(entry.versions)
-                            lastEntry.texts.addAll(entry.texts)
-                        } else {
-                            entries.add(entry)
-                        }
-                    }
-                } else if (entry.texts.isNotEmpty()) {
+                if (entry.texts.isNotEmpty()) {
                     entries.add(entry)
                 }
             }

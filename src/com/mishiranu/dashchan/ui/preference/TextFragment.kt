@@ -409,41 +409,13 @@ class TextFragment : BaseListFragment {
             val versionText = context.getString(R.string.version)
             for (entry in changelogEntries) {
                 val builder = SpannableStringBuilder()
-                val header: String
-                val subHeader: String?
-                val start = entry.versions[0]
-                val startName = start.getMajorMinor()
+                val version = entry.versions[0]
+                val header = "$versionText ${version.name}"
                 // formatChangelogDate returns null on ParseException, and both the string
-                // templates below and SpannableStringBuilder.append() would render that as
-                // the literal text "null". Fall back to the raw date, which at least
-                // carries the original information.
-                val startDate = formatChangelogDate(dateFormat, start.date) ?: start.date
-                if (entry.versions.size >= 2) {
-                    val end = entry.versions[entry.versions.size - 1]
-                    val endName = end.getMajorMinor()
-                    val endDate = formatChangelogDate(dateFormat, end.date) ?: end.date
-                    if (startName == endName) {
-                        if (startDate == endDate) {
-                            header = "$versionText $startName"
-                            subHeader = startDate
-                        } else {
-                            header = "$versionText $startName"
-                            subHeader = "$startDate — $endDate"
-                        }
-                    } else {
-                        header = "$versionText $startName — $endName"
-                        subHeader = "$startDate — $endDate"
-                    }
-                } else {
-                    val startNameSuffix = start.name.substring(startName.length)
-                    header =
-                        if (startNameSuffix == ".0") {
-                            "$versionText $startName"
-                        } else {
-                            "$versionText ${start.name}"
-                        }
-                    subHeader = startDate
-                }
+                // template above and SpannableStringBuilder.append() would render that as the
+                // literal text "null". Fall back to the raw date, which at least carries the
+                // original information.
+                val subHeader = formatChangelogDate(dateFormat, version.date) ?: version.date
                 builder.append(header)
                 builder.setSpan(
                     ListHeaderSpan(false),
