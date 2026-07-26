@@ -2826,8 +2826,9 @@ class MainActivity :
         title: String?,
         subtitle: String?,
     ) {
-        setTitleSubtitle(title, subtitle, true)
-        if ((this.currentFragment as PageFragment).page.content == Page.Content.POSTS) {
+        val page = (this.currentFragment as PageFragment).page
+        setTitleSubtitle(title, subtitle, page.isThreadsOrPosts)
+        if (page.content == Page.Content.POSTS) {
             currentPageItem!!.threadTitle = title
         }
         drawerForm.updateItems(true, false)
