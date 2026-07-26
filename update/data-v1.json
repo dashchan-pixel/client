@@ -1,25 +1,25 @@
 {
-    "title": "Dashchan [redacted]",
-    "applications": [
-        {
-            "name": "client",
-            "type": "client",
-            "title": "Dashchan",
-            "packages": [
-                {
-                    "title": "Release",
-                    "version_name": "26.7.8",
-                    "version_code": 1345,
-                    "min_api_version": 1,
-                    "max_api_version": 1,
-                    "min_sdk": 36,
-                    "length": 6436185,
-                    "source": "//github.com/dashchan-redacted/client/releases/download/26.7.8/dashchan-redacted-1345.apk",
-                    "fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
-                    "sha256sum": "B6:15:BF:44:3D:ED:E2:91:C1:2C:A6:B5:14:FC:E6:A1:6B:CB:95:82:49:79:02:F9:59:8B:AD:D0:C3:EA:99:A0"
-                }
-            ]
-        }
-    ],
-    "feedback": "https://tally.so/r/1Ag1Q4"
+	"title": "Dashchan [redacted]",
+	"applications": [
+		{
+			"name": "client",
+			"type": "client",
+			"title": "Dashchan",
+			"packages": [
+				{
+					"title": "Release",
+					"version_name": "26.7.9",
+					"version_code": 1346,
+					"min_api_version": 1,
+					"max_api_version": 1,
+					"min_sdk": 36,
+					"length": 6625113,
+					"source": "//github.com/dashchan-redacted/client/releases/download/26.7.9/dashchan-redacted-1346.apk",
+					"fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
+					"sha256sum": "66:34:FE:1C:E5:20:72:29:1D:E2:74:85:10:14:62:03:B6:0F:52:AA:14:A2:58:A7:6D:CD:D7:5F:78:F8:58:54"
+				}
+			]
+		}
+	],
+	"feedback": "https://tally.so/r/1Ag1Q4"
 }
