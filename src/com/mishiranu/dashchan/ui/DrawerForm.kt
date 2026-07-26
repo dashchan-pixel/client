@@ -226,7 +226,7 @@ class DrawerForm(
                         R.attr.iconDrawerMenuPreferences,
                     ),
                 )
-            if (isEcho) {
+            if (chanName != null && isEcho) {
                 echoMenu.add(
                     ListItem(
                         ListItem.Type.MENU,
