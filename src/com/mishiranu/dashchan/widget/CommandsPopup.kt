@@ -81,6 +81,14 @@ object CommandsPopup {
         popup.setListSelector(context.getDrawable(getResourceId(context, android.R.attr.selectableItemBackground, 0)))
         popup.width = measureWidth(adapter, context)
         popup.setBackgroundDrawable(ThemeEngine.roundedPopupBackground(context))
+        try {
+            val popupField = androidx.appcompat.widget.ListPopupWindow::class.java.getDeclaredField("mPopup")
+            popupField.isAccessible = true
+            val popupWindow = popupField.get(popup) as android.widget.PopupWindow
+            popupWindow.elevation = 8f * density
+        } catch (e: Exception) {
+            android.util.Log.w("CommandsPopup", "Failed to set popup elevation", e)
+        }
         popup.setOnItemClickListener { _, _, position, _ ->
             popup.dismiss()
             if (!commands[position].autoRun) {
