@@ -62,7 +62,28 @@ class NeuroslopSpan :
         val paintStyle = paint.style
         paint.style = Paint.Style.FILL
         paint.color = barColor
-        canvas.drawRect(left.toFloat(), top.toFloat(), left + BAR_WIDTH, bottom.toFloat(), paint)
+
+        val radius = BAR_WIDTH / 2f
+        val spanned = text as? android.text.Spanned
+        val spanStart = spanned?.getSpanStart(this) ?: -1
+        val spanEnd = spanned?.getSpanEnd(this) ?: -1
+
+        val isFirstLine = spanStart in start until end
+        val isLastLine = spanEnd > start && spanEnd <= end
+
+        val drawTop = if (isFirstLine) top + radius else top.toFloat()
+        val drawBottom = if (isLastLine) bottom - radius else bottom.toFloat()
+
+        canvas.drawRect(left.toFloat(), drawTop, left + BAR_WIDTH, drawBottom, paint)
+
+        val centerX = left + radius
+        if (isFirstLine) {
+            canvas.drawCircle(centerX, top + radius, radius, paint)
+        }
+        if (isLastLine) {
+            canvas.drawCircle(centerX, bottom - radius, radius, paint)
+        }
+
         paint.color = paintColor
         paint.style = paintStyle
     }
