@@ -3,8 +3,7 @@ package com.mishiranu.dashchan.ui.navigator.adapter
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.LayerDrawable
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
@@ -13,7 +12,6 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.EchoDatabase
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
-import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.CursorAdapter
 import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ViewFactory
@@ -56,7 +54,8 @@ class EchoAdapter(
     private class EchoViewHolder(
         val twoLines: ViewFactory.TwoLinesViewHolder,
         val unreadBackground: ColorDrawable,
-    ) : RecyclerView.ViewHolder(twoLines.view)
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView)
 
     private val postDateFormatter = PostDateFormatter(context)
 
@@ -85,13 +84,17 @@ class EchoAdapter(
     ): RecyclerView.ViewHolder {
         val twoLines = ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_TEXT2_END)
         val unreadBackground = ColorDrawable(Color.TRANSPARENT)
-        val layers: Array<Drawable> =
-            twoLines.view.background
-                ?.let { arrayOf(unreadBackground, it) }
-                ?: arrayOf(unreadBackground)
-        ViewUtils.setBackgroundPreservePadding(twoLines.view, LayerDrawable(layers))
+        val frameLayout = android.widget.FrameLayout(parent.context)
+        frameLayout.layoutParams =
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+        frameLayout.background = unreadBackground
+        frameLayout.addView(twoLines.view)
         return ListViewUtils.bind(
-            EchoViewHolder(twoLines, unreadBackground),
+            EchoViewHolder(twoLines, unreadBackground, frameLayout),
+            twoLines.view,
             true,
             this::getItem,
             callback,
