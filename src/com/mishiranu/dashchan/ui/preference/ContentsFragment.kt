@@ -211,7 +211,7 @@ class ContentsFragment : PreferenceFragment() {
                 .setSingleChoiceItems(items, checkedIndex) { _, which -> checkedIndex = which }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     val clearingDialog = ClearingDialog(checkedIndex == 1)
-                    clearingDialog.show(parentFragment!!.parentFragmentManager, ClearingDialog::class.java.name)
+                    clearingDialog.show(requireParentFragment().parentFragmentManager, ClearingDialog::class.java.name)
                 }.setNegativeButton(android.R.string.cancel, null)
                 .create()
         }

@@ -228,6 +228,9 @@ class DialogStack<T : DialogStack.ViewFactory<T?>?>(
                         super.onActionModeFinished(mode)
                     }
 
+                    // Gestures go through the OnBackAnimationCallback below; this path is left for
+                    // real back keys, which is also where the long-press "clear all" shortcut lives.
+                    @SuppressLint("GestureBackNavigation")
                     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
                         if (getWindow()!!.superDispatchKeyEvent(event)) {
                             return true

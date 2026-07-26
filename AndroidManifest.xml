@@ -16,7 +16,13 @@
 	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 	<uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-	<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+	<!-- Extensions are discovered by scanning every installed package for a chan/lib extension
+	     <uses-feature> declaration (ChanManager). A <queries> element can only match components by
+	     intent, authority or package name, none of which identify an extension, so the broad
+	     permission is the only way to enumerate them. -->
+	<uses-permission
+		android:name="android.permission.QUERY_ALL_PACKAGES"
+		tools:ignore="QueryAllPackagesPermission" />
 	<!-- Android 16 silently split-grants ACCESS_LOCAL_NETWORK from INTERNET ("allowed to keep app
 	     working"). Declaring it explicitly revokes that auto-grant; the app never requests it, so it
 	     stays denied instead of showing as an allowed "Nearby devices" permission. -->

@@ -1142,7 +1142,7 @@ class ForegroundManager private constructor() : Handler.Callback {
             hcaptcha: Boolean,
             challengeExtra: ChallengeExtra?,
         ) : super(referer, apiKey, invisible, hcaptcha, challengeExtra) {
-            fillArguments(getArguments()!!, pendingDataId)
+            fillArguments(requireArguments(), pendingDataId)
         }
 
         public override fun publishResult(
@@ -1166,7 +1166,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         constructor(pendingDataId: String?, request: FirewallResolutionDialogRequest<T?>) : super(
             request,
         ) {
-            fillArguments(getArguments()!!, pendingDataId)
+            fillArguments(requireArguments(), pendingDataId)
         }
 
         override fun onFirewallResolutionFinished(firewallResolutionResult: T?) {

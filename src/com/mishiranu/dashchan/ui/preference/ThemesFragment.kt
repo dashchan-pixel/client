@@ -620,7 +620,7 @@ class ThemesFragment : BaseListFragment() {
             if (requireArguments().getBoolean(EXTRA_EDITABLE)) {
                 dialogMenu.add(R.string.delete) {
                     val themesFragment = parentFragment as ThemesFragment
-                    themesFragment.view!!.post {
+                    themesFragment.requireView().post {
                         themesFragment.deleteTheme(requireArguments().getString(EXTRA_NAME)!!)
                     }
                 }

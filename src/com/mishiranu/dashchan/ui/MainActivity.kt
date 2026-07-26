@@ -252,21 +252,23 @@ class MainActivity :
         drawerLayout.setSaveEnabled(false)
         val drawerInterlayer = findViewById<FrameLayout>(R.id.drawer_interlayer)
         getLayoutInflater().inflate(R.layout.widget_toolbar, drawerInterlayer)
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        // The toolbar ids come from widget_toolbar, not from the activity layout,
+        // so they are resolved against the container it was just inflated into.
+        val toolbar = drawerInterlayer.findViewById<Toolbar>(R.id.toolbar)
         setActionBar(toolbar)
         setTitle(null)
         // Allow CustomSearchView to ignore content inset
         toolbar.setClipChildren(false)
         toolbarHolder = addToolbarTitle(toolbar)
         setupToolbarTitleToggle(toolbar)
-        toolbarExtra = findViewById(R.id.toolbar_extra)
+        toolbarExtra = drawerInterlayer.findViewById(R.id.toolbar_extra)
         val layoutTransition = LayoutTransition()
         layoutTransition.setStartDelay(LayoutTransition.APPEARING, 0)
         layoutTransition.setStartDelay(LayoutTransition.CHANGE_DISAPPEARING, 0)
         layoutTransition.setDuration(100)
         toolbarExtra.setLayoutTransition(layoutTransition)
 
-        val toolbarLayout = findViewById<View>(R.id.toolbar_layout)
+        val toolbarLayout = drawerInterlayer.findViewById<View>(R.id.toolbar_layout)
 
         drawerToggle =
             DrawerToggle(
@@ -536,6 +538,7 @@ class MainActivity :
     }
 
     override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
         navigateIntent(intent, true)
     }
 
@@ -2030,6 +2033,9 @@ class MainActivity :
         return super.onOptionsItemSelected(item)
     }
 
+    // androidx.core's ComponentActivity marks dispatchKeyEvent @RestrictTo(LIBRARY_GROUP_PREFIX)
+    // even though overriding it in an app is the only way to see key events before the window does.
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val fragment = this.currentFragment
         return fragment!!.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)

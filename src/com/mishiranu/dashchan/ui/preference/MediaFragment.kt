@@ -314,7 +314,7 @@ class MediaFragment :
                 .setMultiChoiceItems(items, checkedItems) { _, which, isChecked -> checkedItems[which] = isChecked }
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     val clearingDialog = ClearingDialog(checkedItems[0], checkedItems[1])
-                    clearingDialog.show(parentFragment!!.parentFragmentManager, ClearingDialog::class.java.name)
+                    clearingDialog.show(requireParentFragment().parentFragmentManager, ClearingDialog::class.java.name)
                 }.setNegativeButton(android.R.string.cancel, null)
                 .create()
         }

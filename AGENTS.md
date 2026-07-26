@@ -45,7 +45,9 @@ The J2K converter systematically inserted `!!` / non-null casts where Java handl
 ## Lint & inspections
 
 - Use **`./gradlew lintRelease`** (report: `build/reports/lint-results-release.{html,xml,txt}`). `assembleRelease` only gates FATAL, so a green build can still hide non-fatal errors.
-- Still open at minSdk 36: `ObsoleteSdkInt` dead checks, leftover `@TargetApi`.
+- **`lintRelease` is error-clean — keep it that way.** Warnings are not gated (~300 left, led by `UseKtx`, `NotifyDataSetChanged`, `RtlHardcoded`, `MissingQuantity`).
+- Suppressed on purpose, each with its rationale at the site: `AppCompatCustomView` (disabled in the `lint {}` block — the app is framework-widget/framework-theme based and ThemeEngine does the tinting, so custom views extend the platform classes), `RestrictedApi` on `MainActivity.dispatchKeyEvent`, `GestureBackNavigation` in `DialogStack` (gestures go through its `OnBackAnimationCallback`; the key path keeps long-press "clear all"), `JavascriptInterface` in `HeadlessJsEngine` (bridges are typed `Any`), `QueryAllPackagesPermission` in the manifest (extensions are found by scanning installed packages for a chan/lib `<uses-feature>`).
+- Media3's `@UnstableApi` marker is `androidx.annotation.RequiresOptIn`, which **only lint enforces** — Kotlin compiles unstable usage silently. `VideoPlayer` opts in once at the class.
 
 ## Deliberate design — do NOT fix
 

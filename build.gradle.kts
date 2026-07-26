@@ -147,7 +147,10 @@ android {
     }
 
     lint {
-        disable += setOf("MissingTranslation", "ResourceType")
+        // AppCompatCustomView: the app runs on framework widgets and framework themes
+        // (FragmentActivity + setActionBar + ?android:attr styles) with ThemeEngine doing the
+        // tinting, so custom views deliberately extend the platform classes, not the AppCompat ones.
+        disable += setOf("MissingTranslation", "ResourceType", "AppCompatCustomView")
     }
 
     compileOptions {

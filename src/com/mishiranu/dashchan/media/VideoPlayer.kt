@@ -7,11 +7,13 @@ import android.net.Uri
 import android.view.PixelCopy
 import android.view.SurfaceView
 import android.view.View
+import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.BaseDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
@@ -29,7 +31,12 @@ import java.io.RandomAccessFile
  * as well as progressively downloaded partial files: the availability window is
  * updated via [setDownloadRange] and [setPartRange], and seeks outside the
  * downloaded region are forwarded to [RangeCallback].
+ *
+ * The partial-file streaming model is built on Media3 parts that are still marked
+ * `@UnstableApi` (`DataSource`, `ProgressiveMediaSource`, `SeekParameters`, `C`,
+ * `Format`), so the whole facade opts in once here.
  */
+@OptIn(UnstableApi::class)
 class VideoPlayer(
     private val listener: Listener,
     private val seekAnyFrame: Boolean,

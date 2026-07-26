@@ -114,7 +114,9 @@ class HeadlessJsEngine
             }
         }
 
-        @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
+        // JavascriptInterface: the bridges are typed Any here, so lint cannot see the
+        // @JavascriptInterface methods; annotating them is the caller's contract (see the ctor doc).
+        @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface", "JavascriptInterface")
         @Suppress("DEPRECATION")
         private fun create() {
             if (destroyed) {
