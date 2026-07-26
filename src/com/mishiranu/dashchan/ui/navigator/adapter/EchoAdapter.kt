@@ -9,7 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.database.EchoDatabase
+import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.widget.CursorAdapter
@@ -114,6 +116,24 @@ class EchoAdapter(
         echoViewHolder.unreadBackground.color =
             if (echoItem.unread) highlightBackgroundColor else Color.TRANSPARENT
         var title = StringUtils.nullIfEmpty(echoItem.title)
+        if (title == null) {
+            title =
+                StringUtils.nullIfEmpty(
+                    FavoritesStorage
+                        .getInstance()
+                        .getFavorite(echoItem.chanName, echoItem.boardName, echoItem.threadNumber)
+                        ?.title,
+                )
+        }
+        if (title == null) {
+            title =
+                StringUtils.nullIfEmpty(
+                    CommonDatabase
+                        .getInstance()
+                        .history
+                        .getTitle(echoItem.chanName, echoItem.boardName, echoItem.threadNumber),
+                )
+        }
         if (title == null) {
             title =
                 StringUtils.formatThreadTitle(

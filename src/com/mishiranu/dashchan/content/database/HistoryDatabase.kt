@@ -207,6 +207,38 @@ class HistoryDatabase internal constructor(
         }
     }
 
+    fun getTitle(
+        chanName: String,
+        boardName: String?,
+        threadNumber: String,
+    ): String? =
+        database.execute(
+            ExecuteCallback { database: SQLiteDatabase ->
+                val filter =
+                    Expression
+                        .filter()
+                        .equals(Schema.History.Columns.CHAN_NAME, chanName)
+                        .equals(Schema.History.Columns.BOARD_NAME, emptyIfNull(boardName))
+                        .equals(Schema.History.Columns.THREAD_NUMBER, threadNumber)
+                        .build()
+                database
+                    .query(
+                        Schema.History.TABLE_NAME,
+                        arrayOf(Schema.History.Columns.TITLE),
+                        filter.value,
+                        filter.args,
+                        null,
+                        null,
+                        null,
+                    ).use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            return@ExecuteCallback cursor.getString(0)
+                        }
+                    }
+                null
+            },
+        )
+
     @Throws(OperationCanceledException::class)
     fun getHistory(
         chanName: String?,

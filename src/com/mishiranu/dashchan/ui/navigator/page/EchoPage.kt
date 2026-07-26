@@ -102,15 +102,7 @@ class EchoPage :
                     StringUtils.copyToClipboard(context, uri.toString())
                 }
             }
-            dialogMenu.add(R.string.open_thread) {
-                uiManager.navigator()?.navigatePosts(
-                    echoItem.chanName,
-                    echoItem.boardName,
-                    echoItem.threadNumber,
-                    null,
-                    null,
-                )
-            }
+
             dialogMenu.add(R.string.remove_from_echo) {
                 CommonDatabase.getInstance().echo.remove(
                     echoItem.chanName,
