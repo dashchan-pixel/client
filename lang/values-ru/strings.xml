@@ -35,7 +35,7 @@
 	<string name="autohide">Автоскрытие</string>
 	<string name="available__plural">Доступные</string>
 	<string name="backup_data">Резервное копирование данных</string>
-	<string name="backup_data__summary">Сохранение всех настроек, избранного, истории и правил автоскрытия</string>
+	<string name="backup_data__summary">Сохранение всех настроек, избранного, истории, правил автоскрытия и команд</string>
 	<string name="backups_not_found">Резервных копий не найдено</string>
 	<string name="ban_id">ID бана</string>
 	<string name="block">Блокировать</string>

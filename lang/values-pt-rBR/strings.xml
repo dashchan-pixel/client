@@ -22,8 +22,8 @@
 	<string name="attachments_are_too_large">O arquivo é muito grande</string>
 	<string name="autohide">Auto-Esconder</string>
 	<string name="backup_data">Fazer backup de dados</string>
-	<string name="backup_data__summary">Salve todas as suas configurações, favoritos, histórico e regras do
-		autohide</string>
+	<string name="backup_data__summary">Salve todas as suas configurações, favoritos, histórico, regras do
+		autohide e comandos</string>
 	<string name="backups_not_found">Nenhum backup encontrado</string>
 	<string name="ban_id">Ban ID</string>
 	<string name="board">Board</string>
@@ -72,6 +72,7 @@
 	<string name="crop_thumbnails">Cortar miniaturas</string>
 	<string name="crop_thumbnails__summary">Faça miniaturas preencher o quadrado</string>
 	<string name="cyclical_thread">Fio cíclico</string>
+	<string name="database">Banco de dados</string>
 	<string name="day_and_night_theme">Tema diurno e noturno</string>
 	<string name="day_theme">Tema diurno</string>
 	<string name="default_name_cant_be_hidden">Não pode dar hide no nome padrão</string>
@@ -379,6 +380,7 @@
 	<string name="theme_color_spoiler">Spoiler</string>
 	<string name="theme_color_tripcode">Tripcode</string>
 	<string name="theme_color_window">Plano de fundo</string>
+	<string name="themes">Temas</string>
 	<string name="this_post">Este post</string>
 	<string name="this_recaptcha_is_not_supported">Esquema não suportado</string>
 	<string name="this_week">Essa semana</string>

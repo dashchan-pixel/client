@@ -32,7 +32,7 @@
     <string name="autohide">Autohide</string>
     <string name="available__plural">Disponibili</string>
     <string name="backup_data">Backup dei dati</string>
-    <string name="backup_data__summary">Salva tutte le impostazioni, i preferiti e le regole di autohide</string>
+    <string name="backup_data__summary">Salva tutte le impostazioni, i preferiti, la cronologia, le regole di autohide e i comandi</string>
     <string name="backups_not_found">Backup non trovati</string>
     <string name="ban_id">ID ban</string>
     <string name="block">Blocca</string>
@@ -94,6 +94,7 @@
     <string name="crop_thumbnails">Taglia anteprime</string>
     <string name="crop_thumbnails__summary">Le anteprime riempiranno il riquadro</string>
     <string name="cyclical_thread">Thread ciclico</string>
+    <string name="database">Database</string>
     <string name="day_and_night_theme">Tema diurno e notturno</string>
     <string name="day_theme">Tema diurno</string>
     <string name="ddos_protection_bypass_failed">Elusione protezione DDoS fallita</string>
