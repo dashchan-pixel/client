@@ -39,6 +39,22 @@ open class CodeEditText : SafePasteEditText {
 
     private var isKeyboardOpen = false
     private var isExpanded = false
+    private var isTouchDown = false
+
+    /** Siblings hidden by [updateExpansionState], to be restored when the editor collapses. */
+    private val hiddenSiblings = ArrayList<View>()
+
+    /**
+     * True while the user is working the selection — a finger is down on the text, or a range is
+     * selected so a handle may be dragging it.
+     *
+     * The caret context below is meant for typing, where the selection is collapsed. During a drag
+     * it fights the gesture: forcing an extra scroll moves the text out from under the finger, the
+     * next move event therefore resolves to a different offset, which scrolls again — and the
+     * request that leaks to the enclosing [ScrollView] makes the whole dialog jitter.
+     */
+    private val isSelecting: Boolean
+        get() = isTouchDown || hasSelection()
 
     private var isUpdatingHighlight = false
     private val highlightRunnable = Runnable { applyHighlighting() }
@@ -177,11 +193,23 @@ open class CodeEditText : SafePasteEditText {
         isExpanded = shouldExpand
 
         val parentGroup = parent as? ViewGroup ?: return
-        for (i in 0 until parentGroup.childCount) {
-            val child = parentGroup.getChildAt(i)
-            if (child != this) {
-                child.visibility = if (shouldExpand) View.GONE else View.VISIBLE
+        if (shouldExpand) {
+            // Only the siblings this view actually hides are remembered, so collapsing restores
+            // exactly them. A sibling the dialog had already hidden — an option that doesn't apply
+            // to what the user picked, like the per-post checkbox of a comment command — must stay
+            // hidden; blanket VISIBLE resurrected it.
+            for (i in 0 until parentGroup.childCount) {
+                val child = parentGroup.getChildAt(i)
+                if (child != this && child.visibility == View.VISIBLE) {
+                    child.visibility = View.GONE
+                    hiddenSiblings.add(child)
+                }
             }
+        } else {
+            for (child in hiddenSiblings) {
+                child.visibility = View.VISIBLE
+            }
+            hiddenSiblings.clear()
         }
 
         val lp = layoutParams
@@ -210,6 +238,9 @@ open class CodeEditText : SafePasteEditText {
 
     override fun bringPointIntoView(offset: Int): Boolean {
         val changed = super.bringPointIntoView(offset)
+        if (isSelecting) {
+            return changed
+        }
         return keepCaretContextVisible(offset) || changed
     }
 
@@ -218,18 +249,26 @@ open class CodeEditText : SafePasteEditText {
         requestRectangleVisible: Boolean,
     ): Boolean {
         val changed = super.bringPointIntoView(offset, requestRectangleVisible)
+        if (isSelecting) {
+            return changed
+        }
         return keepCaretContextVisible(offset) || changed
     }
 
     override fun getFocusedRect(r: Rect) {
         super.getFocusedRect(r)
-        addContextBelow(r)
+        if (!isSelecting) {
+            addContextBelow(r)
+        }
     }
 
     override fun requestRectangleOnScreen(
         rectangle: Rect,
         immediate: Boolean,
     ): Boolean {
+        if (isSelecting) {
+            return super.requestRectangleOnScreen(rectangle, immediate)
+        }
         requestRect.set(rectangle)
         addContextBelow(requestRect)
         return super.requestRectangleOnScreen(requestRect, immediate)
@@ -237,13 +276,19 @@ open class CodeEditText : SafePasteEditText {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (isTextScrollable) {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                isTouchDown = true
+                if (isTextScrollable) {
                     parent?.requestDisallowInterceptTouchEvent(true)
                 }
+            }
 
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            // Cleared before super so that the caret placed by this very event still gets its
+            // context — only the drag in between is left alone.
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                isTouchDown = false
+                if (isTextScrollable) {
                     parent?.requestDisallowInterceptTouchEvent(false)
                 }
             }
