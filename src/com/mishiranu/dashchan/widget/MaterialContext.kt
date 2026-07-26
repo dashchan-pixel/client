@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.widget
 import android.content.Context
 import android.graphics.Color
 import android.view.ContextThemeWrapper
+import com.mishiranu.dashchan.R
 
 /**
  * Material components validate their attributes against a Material3 theme, but this app is themed on
@@ -33,4 +34,16 @@ object MaterialContext {
             },
         )
     }
+
+    /**
+     * [wrap] with `colorSurface` blanked out, for building [com.google.android.material.chip.Chip].
+     *
+     * A Material3 chip composites its fill from a `?colorSurface` layer and the chip background on
+     * top of it. [ThemeEngine.applyStyle] leaves an unchecked chip's background transparent so the
+     * real background shows through, which with the stock surface layer in place means the
+     * Material3 baseline surface colour instead. Blanking `colorSurface` removes that layer; a
+     * checked chip is unaffected, its opaque accent covers it either way.
+     */
+    @JvmStatic
+    fun wrapChips(context: Context): Context = ContextThemeWrapper(wrap(context), R.style.ThemeOverlay_Chip)
 }

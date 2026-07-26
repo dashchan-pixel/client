@@ -441,6 +441,18 @@
 		<item name="android:overlapAnchor">true</item>
 
 	</style>
+	<!--
+		Applied over the Material3 overlay when building chips (see MaterialContext.wrapChips).
+		A Material3 chip paints a ?colorSurface layer underneath its chip background and composites
+		the two into its fill, so an unchecked chip — which ThemeEngine leaves with a transparent
+		background, to let whatever is behind it show through — would come out in the stock
+		Material3 surface colour (a purple tinted grey) rather than the real background.
+	-->
+	<style name="ThemeOverlay.Chip" parent="">
+
+		<item name="colorSurface">@android:color/transparent</item>
+
+	</style>
 	<style name="Theme.Special.White" parent="@android:style/Theme.Material">
 
 		<item name="android:colorPrimary">@android:color/white</item>

@@ -1034,6 +1034,10 @@ class ThemeEngine {
          * secondaryContainer, which is purple in the baseline scheme); an unchecked one stays a plain
          * outline over the window. Text and the check mark flip to black or white for contrast with
          * whichever of the two is behind them.
+         *
+         * The transparent unchecked background only reaches the screen if the chip was built in a
+         * context with `colorSurface` blanked out ([MaterialContext.wrapChips]) — M3 composites the
+         * chip fill from a `?colorSurface` layer and the chip background above it.
          */
         private fun applyChipTint(
             view: Chip,

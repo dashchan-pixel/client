@@ -54,8 +54,9 @@ class VideoSpeedsPreference(
     ): AlertDialog.Builder {
         // Material chips validate against a Material3 theme; the app's own theme is not one, so wrap
         // the chip context in an isolated Material3 theme just for this dialog's chip group, matching
-        // the light/dark variant of the app-themed AlertDialog it draws behind (see MaterialContext).
-        val chipContext = MaterialContext.wrap(builder.context)
+        // the light/dark variant of the app-themed AlertDialog it draws behind, minus the chip
+        // surface layer that would tint the unchecked chips (see MaterialContext.wrapChips).
+        val chipContext = MaterialContext.wrapChips(builder.context)
         val density = ResourceUtils.obtainDensity(builder.context)
         val padding = (20f * density).toInt()
         val scrollView = ScrollView(builder.context)
