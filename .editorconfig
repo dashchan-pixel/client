@@ -6,6 +6,12 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+# Spaces, same width as the Kotlin below. Theme files are hand-edited and pasted
+# between editors and the app, where a tab renders at whatever width it likes.
+[*.json]
+indent_style = space
+indent_size = 4
+
 [*.{kt,kts}]
 indent_style = space
 indent_size = 4

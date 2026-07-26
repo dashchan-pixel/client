@@ -7,11 +7,13 @@
 #   compileDebugKotlin  -- allWarningsAsErrors + -progressive: any warning is an error
 #   ktlintCheck         -- formatting, incl. the trailing commas that keep diffs small
 #   detekt              -- '!!'-free* new code, no empty catches, no swallowed exceptions
+#   jsonCheck           -- jq pretty-printing, and valid JSON at all (rides ktlintCheck)
 #
 #   (*) '!!' is advisory only for now; `detektDoubleBang` reports it without failing.
 #
-# Only runs when Kotlin/Gradle files are actually staged -- a docs- or resource-only
-# commit should not pay for a Gradle run.
+# Only runs when Kotlin/Gradle/JSON files are actually staged -- a docs- or resource-only
+# commit should not pay for a Gradle run. A JSON-only commit runs `jsonCheck` alone, which
+# skips the Kotlin compile it does not need.
 #
 # Escape hatches:
 #   git commit --no-verify     skip entirely (use sparingly)
@@ -29,22 +31,31 @@ fi
 
 # Only consider files staged for this commit (Added/Copied/Modified/Renamed).
 staged=$(git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts' 2>/dev/null)
-if [ -z "$staged" ]; then
+staged_json=$(git diff --cached --name-only --diff-filter=ACMR -- '*.json' 2>/dev/null)
+
+if [ -n "$staged" ]; then
+    # ktlintCheck pulls in jsonCheck, so Kotlin commits cover JSON for free.
+    tasks="compileDebugKotlin ktlintCheck detekt"
+    what="$(echo "$staged" | wc -l | tr -d ' ') Kotlin file(s)"
+elif [ -n "$staged_json" ]; then
+    tasks="jsonCheck"
+    what="$(echo "$staged_json" | wc -l | tr -d ' ') JSON file(s)"
+else
     exit 0
 fi
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root" || exit 1
 
-echo "pre-commit: $(echo "$staged" | wc -l | tr -d ' ') Kotlin file(s) staged — running quality gate..."
+echo "pre-commit: $what staged — running quality gate..."
 
 # --quiet keeps the hook readable; failures still print their own diagnostics.
-if ! ./gradlew --quiet compileDebugKotlin ktlintCheck detekt; then
+if ! ./gradlew --quiet $tasks; then
     cat >&2 <<'EOF'
 
 pre-commit: FAILED — commit aborted.
 
-  Formatting problems?      ./gradlew ktlintFormat   (auto-fixes most of them)
+  Formatting problems?      ./gradlew ktlintFormat   (auto-fixes most of them, JSON included)
   Warning treated as error? allWarningsAsErrors is on; fix the warning, do not suppress it.
   detekt finding?           New code must not add empty catches, swallowed exceptions,
                             or over-long methods. Existing legacy findings are frozen in
