@@ -569,6 +569,12 @@
             "name": "26.7.8",
             "date": "23.07.2026",
             "changelog": true
+        },
+        {
+            "code": 1346,
+            "name": "26.7.9",
+            "date": "27.07.2026",
+            "changelog": true
         }
     ]
 }

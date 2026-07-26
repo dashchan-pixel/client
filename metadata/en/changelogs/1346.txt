@@ -1,0 +1,17 @@
+* Theme editor: create a theme or edit an existing one from the Themes screen, with every colour slot on an HSV picker and a live thread preview above the list. Long-press a theme to duplicate it, copy its JSON or edit it.
+* A new theme set replaces the old one: Claude, Dracula, Gruvbox, Nord, Obsidian, Sepia, Solarized Light, Solarized Dark and Yotsuba
+* Echo: replies to your posts are collected in a screen of their own instead of living only in a notification you can dismiss. Unread replies are highlighted, the drawer entry carries the unread count, and reply notifications open it. Can be turned off in Contents.
+* Material redesign driven by a single "UI corner radius" setting in User interface: dialogs, popups, menus, grid cards, toasts and row highlights all follow it. Switches, sliders and chips now take their colours from the active theme.
+* Commands can now run against a thread: the script receives its posts and replaces their comments in place — enough to decrypt or translate a thread for whoever holds the key — on demand from the thread menu, or automatically when the thread opens. "Process posts individually" hands the script one post at a time.
+* Commands: a shared environment (NAME=value per line, read from a script as env.NAME), a full-screen code editor with JavaScript highlighting and a symbol ribbon, import from a post's text, add or save as JSON, duplicate, and drag to reorder.
+* Video: added 0.33x, 4x, 5x, 6x and 8x playback speeds; the current speed now survives picture-in-picture in both directions, and the side controls got a dark halo so they stay readable over light frames
+* The text formatting buttons can be placed below the comment field instead of under the toolbar (User interface → Posting)
+* The captcha block is hidden when a captcha pass makes it pointless
+* Double tap the toolbar on a board or thread to hide its title and subtitle
+* A favorite renamed by hand now shows its custom name in the thread header too
+* Image search is down to Google Lens and Yandex
+* Fixed restore rejecting a valid backup, and a backup taken with no themes or commands erasing them on restore
+* Fixed the send button sitting below the visible edge of an empty posting form
+* Fixed the attachment and gallery menus coming out dark and square on a light theme
+* The changelog lists every version on its own instead of grouping patch releases
+* Renamed to Dashchan [redacted], with a new launcher icon and a Feedback button in About
