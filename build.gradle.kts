@@ -2,7 +2,7 @@ import groovy.json.JsonSlurper
 import java.util.Properties
 
 plugins {
-    id("com.android.application") version "9.2.1"
+    id("com.android.application") version "9.3.1"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
 }
@@ -247,11 +247,11 @@ tasks.named("check") {
 
 dependencies {
     compileOnly("org.ccil.cowan.tagsoup:tagsoup:1.2.1")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.22.0")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.22.1")
     implementation("androidx.fragment:fragment:1.8.9")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
-    implementation("androidx.browser:browser:1.9.0")
+    implementation("androidx.browser:browser:1.10.0")
     implementation("androidx.media3:media3-exoplayer:1.10.1")
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.webkit:webkit:1.16.0")
