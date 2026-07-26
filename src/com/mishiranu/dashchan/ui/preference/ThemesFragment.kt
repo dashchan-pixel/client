@@ -140,10 +140,10 @@ class ThemesFragment : BaseListFragment() {
         primary: Boolean,
     ) {
         menu
-            .add(0, R.id.menu_add_theme, 0, R.string.add_theme)
+            .add(0, R.id.menu_new_theme, 0, R.string.new_theme)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-        menu.add(0, R.id.menu_new_theme, 0, R.string.new_theme)
+        menu.add(0, R.id.menu_add_theme, 0, R.string.add_theme)
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
