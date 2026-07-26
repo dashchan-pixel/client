@@ -159,7 +159,7 @@
 	<string name="ephemeral_browsing">Режим инкогнито</string>
 	<string name="ephemeral_browsing__summary">Не передавать историю и куки браузеру</string>
 	<string name="environment">Окружение</string>
-	<string name="environment__summary">Общие значения, по одному NAME=значение в строке. Доступ из скриптов как env.NAME</string>
+	<string name="environment__summary">Общие значения, по одному NAME=значение в строке. Значение в кавычках \' или \" сохраняет пробелы и может занимать несколько строк — до закрывающей кавычки; # начинает комментарий. Доступ из скриптов как env.NAME</string>
 	<string name="erase">Стереть</string>
 	<string name="every_number_sec__format">Каждые %d сек.</string>
 	<string name="exif_metadata">Метаданные Exif</string>

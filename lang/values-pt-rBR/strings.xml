@@ -105,7 +105,7 @@
 	<string name="ephemeral_browsing">Modo anônimo</string>
 	<string name="ephemeral_browsing__summary">Não compartilhar histórico e cookies com o navegador</string>
 	<string name="environment">Ambiente</string>
-	<string name="environment__summary">Valores compartilhados, um NAME=valor por linha. Lidos nos scripts como env.NAME</string>
+	<string name="environment__summary">Valores compartilhados, um NAME=valor por linha. Coloque um valor entre \' ou \" para manter os espaços ou fazê-lo continuar por várias linhas, até a aspa de fechamento; # inicia um comentário. Lidos nos scripts como env.NAME</string>
 	<string name="every_number_sec__format">A cada %d seg.</string>
 	<string name="expand">Expandir</string>
 	<string name="expanded_screen">Área expandida</string>

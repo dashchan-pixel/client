@@ -43,6 +43,15 @@ open class CodeEditText : SafePasteEditText {
     private var isUpdatingHighlight = false
     private val highlightRunnable = Runnable { applyHighlighting() }
 
+    /** What the text is highlighted as. Defaults to [Syntax.JAVASCRIPT] (command bodies). */
+    var syntax: Syntax = Syntax.JAVASCRIPT
+        set(value) {
+            if (field != value) {
+                field = value
+                applyHighlighting()
+            }
+        }
+
     private val textWatcher =
         object : TextWatcher {
             override fun beforeTextChanged(
@@ -86,23 +95,28 @@ open class CodeEditText : SafePasteEditText {
             s.removeSpan(span)
         }
 
-        val matcher = SYNTAX_PATTERN.matcher(s)
+        val matcher = syntax.pattern.matcher(s)
         while (matcher.find()) {
-            val color =
-                when {
-                    matcher.group("comment") != null -> commentColor
-                    matcher.group("string") != null -> stringColor
-                    matcher.group("keyword") != null -> keywordColor
-                    matcher.group("number") != null -> numberColor
-                    else -> null
+            // Only the groups the active syntax declares may be queried — asking a Pattern for a name
+            // it doesn't define throws.
+            for (group in syntax.groups) {
+                if (matcher.group(group) == null) {
+                    continue
                 }
-            if (color != null) {
+                val color =
+                    when (group) {
+                        GROUP_COMMENT -> commentColor
+                        GROUP_STRING -> stringColor
+                        GROUP_NUMBER -> numberColor
+                        else -> keywordColor
+                    }
                 s.setSpan(
                     ForegroundColorSpan(color),
-                    matcher.start(),
-                    matcher.end(),
+                    matcher.start(group),
+                    matcher.end(group),
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
                 )
+                break
             }
         }
 
@@ -267,16 +281,48 @@ open class CodeEditText : SafePasteEditText {
         return true
     }
 
+    /** The languages this editor can colour. */
+    enum class Syntax(
+        internal val pattern: Pattern,
+        /** Named groups of [pattern], in the order they should be tested. */
+        internal val groups: List<String>,
+    ) {
+        JAVASCRIPT(JS_PATTERN, listOf(GROUP_COMMENT, GROUP_STRING, GROUP_KEYWORD, GROUP_NUMBER)),
+
+        /** `NAME=value` lines with `#` comments — see the Commands environment editor. */
+        ENVIRONMENT(ENV_PATTERN, listOf(GROUP_COMMENT, GROUP_STRING, GROUP_KEY)),
+    }
+
     companion object {
         private const val CONTEXT_LINES = 3
         private const val MAX_HEIGHT_FRACTION = 0.3f
-
-        private val SYNTAX_PATTERN =
-            Pattern.compile(
-                "(?<comment>//[^\\n]*|(?s:/\\*.*?\\*/))" +
-                    "|(?<string>\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*'|`[^`\\\\]*(?:\\\\.[^`\\\\]*)*`)" +
-                    "|(?<keyword>\\b(?:var|let|const|if|else|for|while|do|break|continue|return|function|class|extends|import|export|default|new|this|super|true|false|null|undefined|typeof|instanceof|switch|case|try|catch|finally|throw|yield|await|async|void|delete|in)\\b)" +
-                    "|(?<number>\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b)",
-            )
     }
 }
+
+// Kept out of the companion object: an enum entry's constructor arguments are evaluated before the
+// companion is initialized, so Syntax can't read them from there.
+
+private const val GROUP_COMMENT = "comment"
+private const val GROUP_STRING = "string"
+private const val GROUP_KEYWORD = "keyword"
+private const val GROUP_NUMBER = "number"
+private const val GROUP_KEY = "key"
+
+private val JS_PATTERN =
+    Pattern.compile(
+        "(?<comment>//[^\\n]*|(?s:/\\*.*?\\*/))" +
+            "|(?<string>\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*'|`[^`\\\\]*(?:\\\\.[^`\\\\]*)*`)" +
+            "|(?<keyword>\\b(?:var|let|const|if|else|for|while|do|break|continue|return|function|class|extends|import|export|default|new|this|super|true|false|null|undefined|typeof|instanceof|switch|case|try|catch|finally|throw|yield|await|async|void|delete|in)\\b)" +
+            "|(?<number>\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b)",
+    )
+
+// Mirrors the parser of the environment editor: a `#` comment only starts at a line start or after
+// whitespace, single quotes are literal, double quotes take backslash escapes, and a quoted value
+// may run over several lines (so a string swallowing line ends is intended).
+private val ENV_PATTERN =
+    Pattern.compile(
+        "(?<comment>(?:^|(?<=[ \\t]))#[^\\n]*)" +
+            "|(?<string>\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^']*')" +
+            "|^[ \\t]*(?<key>[A-Za-z_][A-Za-z0-9_]*)(?=[ \\t]*=)",
+        Pattern.MULTILINE,
+    )

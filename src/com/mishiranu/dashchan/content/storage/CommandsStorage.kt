@@ -22,12 +22,19 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     private val commandItems = ArrayList<CommandItem>()
 
     /**
-     * A tiny key→value store shared by every command. The values are injected into each script's
-     * scope as `env` (see [com.mishiranu.dashchan.content.CommandRunner]), so scripts can read a
-     * user-provided value with `env.CUSTOM_NAME_HERE`. Edited from the Commands screen. Ordered so
-     * the editor shows entries in a stable order. Keys are plain JS identifiers.
+     * The shared environment as the user typed it (see [EnvText] for the format). This text — not
+     * the parsed map — is what gets stored, so comments, blank lines and layout survive a round trip
+     * through the editor.
      */
-    private val env = LinkedHashMap<String, String>()
+    private var envText = ""
+
+    /**
+     * A tiny key→value store shared by every command, parsed out of [envText]. The values are
+     * injected into each script's scope as `env` (see [com.mishiranu.dashchan.content.CommandRunner]),
+     * so scripts can read a user-provided value with `env.CUSTOM_NAME_HERE`. Edited from the Commands
+     * screen. Ordered so the editor shows entries in a stable order. Keys are plain JS identifiers.
+     */
+    private var env: Map<String, String> = emptyMap()
 
     init {
         startRead()
@@ -38,17 +45,20 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     /** A copy of the shared environment, as an ordered key→value map. */
     fun getEnv(): LinkedHashMap<String, String> = LinkedHashMap(env)
 
+    /** The shared environment as text, for the environment editor. */
+    fun getEnvText(): String = envText
+
     /** Replaces the whole shared environment (used by the environment editor), then serializes. */
-    fun setEnv(newEnv: Map<String, String>) {
-        env.clear()
-        env.putAll(newEnv)
+    fun setEnvText(newEnvText: String) {
+        envText = newEnvText
+        env = EnvText.parse(newEnvText)
         serialize()
     }
 
-    /** Snapshot of what gets persisted: the ordered command list plus the shared environment. */
+    /** Snapshot of what gets persisted: the ordered command list plus the shared environment text. */
     class Snapshot(
         val items: List<CommandItem>,
-        val env: Map<String, String>,
+        val envText: String,
     )
 
     /** Commands whose scope matches [chanName]/[boardName] and that target [useIn]. */
@@ -63,18 +73,26 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         for (commandItem in this.commandItems) {
             commandItems.add(CommandItem(commandItem))
         }
-        return Snapshot(commandItems, LinkedHashMap(env))
+        return Snapshot(commandItems, envText)
     }
 
     override fun onDeserialize(jsonObject: JSONObject) {
-        val envObject = jsonObject.optJSONObject(KEY_ENV)
-        if (envObject != null) {
-            val keys = envObject.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                env[key] = envObject.optString(key)
+        if (!jsonObject.isNull(KEY_ENV_TEXT)) {
+            envText = jsonObject.optString(KEY_ENV_TEXT)
+        } else {
+            // Stored before the text became the stored form: rebuild it from the key→value object.
+            val envObject = jsonObject.optJSONObject(KEY_ENV)
+            if (envObject != null) {
+                val legacyEnv = LinkedHashMap<String, String>()
+                val keys = envObject.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    legacyEnv[key] = envObject.optString(key)
+                }
+                envText = EnvText.format(legacyEnv)
             }
         }
+        env = EnvText.parse(envText)
         val jsonArray = jsonObject.optJSONArray(KEY_DATA) ?: return
         var migrated = false
         for (i in 0 until jsonArray.length()) {
@@ -118,7 +136,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
     @Throws(JSONException::class)
     override fun onSerialize(data: Snapshot): JSONObject? {
-        if (data.items.isEmpty() && data.env.isEmpty()) {
+        if (data.items.isEmpty() && data.envText.isEmpty()) {
             return null
         }
         val jsonObject = JSONObject()
@@ -129,12 +147,8 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             }
             jsonObject.put(KEY_DATA, jsonArray)
         }
-        if (data.env.isNotEmpty()) {
-            val envObject = JSONObject()
-            for ((key, value) in data.env) {
-                envObject.put(key, value)
-            }
-            jsonObject.put(KEY_ENV, envObject)
+        if (data.envText.isNotEmpty()) {
+            jsonObject.put(KEY_ENV_TEXT, data.envText)
         }
         return jsonObject
     }
@@ -353,6 +367,9 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
     companion object {
         private const val KEY_DATA = "data"
+        private const val KEY_ENV_TEXT = "envText"
+
+        /** Legacy key for [KEY_ENV_TEXT] (the environment was stored as a key→value object before). */
         private const val KEY_ENV = "env"
         private const val KEY_ID = "id"
         private const val KEY_CHAN_NAMES = "chanNames"
