@@ -792,9 +792,11 @@ class PostingFragment :
                     // Check if user replies to the same post
                     val index = builder.lastIndexOf(link, commentCarriage)
                     if (index < 0 ||
-                        index < commentCarriage &&
-                        commentCarriage <= builder.length &&
-                        builder.substring(index, commentCarriage).contains("\n>>")
+                        (
+                            index < commentCarriage &&
+                                commentCarriage <= builder.length &&
+                                builder.substring(index, commentCarriage).contains("\n>>")
+                        )
                     ) {
                         var afterSpace = false // If user wants to add link at the same line
                         if (commentCarriage > 0 && commentCarriage <= builder.length) {
@@ -1901,7 +1903,9 @@ class PostingFragment :
                     true
                 }
 
-                else -> true
+                else -> {
+                    true
+                }
             }
         }
 

@@ -1495,8 +1495,10 @@ class DialogUnit internal constructor(
         } else if (canDownload &&
             (
                 type == AttachmentItem.Type.IMAGE ||
-                    type == AttachmentItem.Type.VIDEO &&
-                    isOpenableVideoExtension(attachmentItem.getExtension())
+                    (
+                        type == AttachmentItem.Type.VIDEO &&
+                            isOpenableVideoExtension(attachmentItem.getExtension())
+                    )
             )
         ) {
             uiManager.navigator()!!.navigateGallery(
@@ -1817,7 +1819,7 @@ class DialogUnit internal constructor(
                     false,
                 )
             state.archiveThreadTitle = threadTitle
-            if (canArchiveLocal && archiveChanNames.size > 0 || archiveChanNames.size > 1) {
+            if ((canArchiveLocal && archiveChanNames.size > 0) || archiveChanNames.size > 1) {
                 InstanceDialog(
                     fragmentManager,
                     null,

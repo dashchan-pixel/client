@@ -337,25 +337,31 @@ class ThemeEditorFragment : BaseListFragment {
             viewType: Int,
         ): RecyclerView.ViewHolder =
             when (ViewType.entries[viewType]) {
-                ViewType.PREVIEW -> PreviewViewHolder(ThemePreviewView(parent.context))
+                ViewType.PREVIEW -> {
+                    PreviewViewHolder(ThemePreviewView(parent.context))
+                }
 
-                ViewType.HEADER -> SimpleViewHolder(ViewFactory.makeListTextHeader(parent))
+                ViewType.HEADER -> {
+                    SimpleViewHolder(ViewFactory.makeListTextHeader(parent))
+                }
 
-                ViewType.TEXT ->
+                ViewType.TEXT -> {
                     ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
                         TextViewHolder(iconPreference.createViewHolder(parent)),
                         false,
                         null,
                         this,
                     )
+                }
 
-                ViewType.COLOR ->
+                ViewType.COLOR -> {
                     ListViewUtils.bind<Unit, RecyclerView.ViewHolder>(
                         ColorViewHolder(iconPreference.createIconViewHolder(parent)),
                         false,
                         null,
                         this,
                     )
+                }
             }
 
         override fun onBindViewHolder(
@@ -365,11 +371,8 @@ class ThemeEditorFragment : BaseListFragment {
             val listItem = LIST_ITEMS[position]
             when (ViewType.entries[holder.itemViewType]) {
                 ViewType.PREVIEW -> resolveTheme()?.let { (holder as PreviewViewHolder).preview.setTheme(it) }
-
                 ViewType.HEADER -> (holder.itemView as TextView).setText(listItem.titleResId)
-
                 ViewType.TEXT -> bindText((holder as TextViewHolder).holder, listItem)
-
                 ViewType.COLOR -> bindColor((holder as ColorViewHolder).holder, listItem)
             }
         }
@@ -406,12 +409,13 @@ class ThemeEditorFragment : BaseListFragment {
 
     private fun onListItemClick(listItem: ListItem) {
         when (listItem.viewType) {
-            ViewType.TEXT ->
+            ViewType.TEXT -> {
                 if (listItem.key == KEY_NAME) {
                     NameDialog(themeName).show(childFragmentManager, NameDialog::class.java.name)
                 } else {
                     BaseDialog().show(childFragmentManager, BaseDialog::class.java.name)
                 }
+            }
 
             ViewType.COLOR -> {
                 val slot = listItem.key ?: return
@@ -420,7 +424,9 @@ class ThemeEditorFragment : BaseListFragment {
                     .show(childFragmentManager, ColorDialog::class.java.name)
             }
 
-            else -> Unit
+            else -> {
+                Unit
+            }
         }
     }
 

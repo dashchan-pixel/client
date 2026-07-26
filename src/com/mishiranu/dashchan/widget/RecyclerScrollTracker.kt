@@ -58,8 +58,7 @@ class RecyclerScrollTracker(
                     scrollingDown = this.firstPosition >= 0 &&
                         (
                             firstPosition > this.firstPosition ||
-                                firstPosition == this.firstPosition &&
-                                firstTop > this.firstTop
+                                (firstPosition == this.firstPosition && firstTop > this.firstTop)
                         )
                 }
             } else if (dy != 0) {

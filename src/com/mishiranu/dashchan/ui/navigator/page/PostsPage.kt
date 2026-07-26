@@ -1082,7 +1082,9 @@ class PostsPage :
                 notifyTitleChanged()
             }
 
-            FavoritesStorage.Action.MODIFY_TITLE -> notifyTitleChanged()
+            FavoritesStorage.Action.MODIFY_TITLE -> {
+                notifyTitleChanged()
+            }
 
             else -> {}
         }

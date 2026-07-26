@@ -231,7 +231,9 @@ class ColorPickerView(
                 parent?.requestDisallowInterceptTouchEvent(true)
             }
 
-            MotionEvent.ACTION_MOVE -> if (target == null) return false
+            MotionEvent.ACTION_MOVE -> {
+                if (target == null) return false
+            }
 
             MotionEvent.ACTION_UP -> {
                 if (target == null) {
@@ -245,7 +247,9 @@ class ColorPickerView(
                 return false
             }
 
-            else -> return false
+            else -> {
+                return false
+            }
         }
         updateFromTouch(event.x, event.y)
         if (event.actionMasked == MotionEvent.ACTION_UP) {
@@ -284,9 +288,13 @@ class ColorPickerView(
                 alphaShader = null
             }
 
-            Target.ALPHA -> colorAlpha = (255f * fraction(x, alphaRect.left, alphaRect.right)).roundToInt()
+            Target.ALPHA -> {
+                colorAlpha = (255f * fraction(x, alphaRect.left, alphaRect.right)).roundToInt()
+            }
 
-            null -> return
+            null -> {
+                return
+            }
         }
         invalidate()
         onColorChangedListener?.onColorChanged(color)

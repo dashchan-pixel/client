@@ -79,7 +79,7 @@ object ViewUtils {
     ): Boolean {
         val windowInsets = view.rootWindowInsets
         val insets = windowInsets.getInsets(WindowInsets.Type.systemGestures())
-        if (checkLeft && insets.left > 0 || checkRight && insets.right > 0) {
+        if ((checkLeft && insets.left > 0) || (checkRight && insets.right > 0)) {
             var left = view.left
             var parentView = view.parent as View
             while (true) {
@@ -92,7 +92,7 @@ object ViewUtils {
                 }
             }
             val right = parentView.width - left - view.width
-            return checkLeft && insets.left > left || checkRight && insets.right > right
+            return (checkLeft && insets.left > left) || (checkRight && insets.right > right)
         }
         return false
     }

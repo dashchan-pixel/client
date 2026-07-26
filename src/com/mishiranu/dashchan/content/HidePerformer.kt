@@ -150,8 +150,7 @@ class HidePerformer(
             ) {
                 if (StringUtils.isEmpty(autohideItem.boardName) || boardName == null || autohideItem.boardName == boardName) {
                     if (StringUtils.isEmpty(autohideItem.threadNumber) ||
-                        autohideItem.boardName != null &&
-                        autohideItem.threadNumber == originalPostNumberString
+                        (autohideItem.boardName != null && autohideItem.threadNumber == originalPostNumberString)
                     ) {
                         if ((!autohideItem.optionOriginalPost || autohideItem.optionOriginalPost == originalPost) &&
                             (!autohideItem.optionSage || autohideItem.optionSage == sage)

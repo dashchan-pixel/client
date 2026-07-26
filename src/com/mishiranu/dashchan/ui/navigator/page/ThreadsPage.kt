@@ -647,8 +647,10 @@ class ThreadsPage :
         var append = false
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         if (refreshPage == RefreshPage.CATALOG ||
-            refreshPage == RefreshPage.CURRENT &&
-            retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG
+            (
+                refreshPage == RefreshPage.CURRENT &&
+                    retainableExtra.startPageNumber == PAGE_NUMBER_CATALOG
+            )
         ) {
             pageNumber = PAGE_NUMBER_CATALOG
         } else {

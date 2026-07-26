@@ -638,10 +638,17 @@ class InteractionUnit internal constructor(
                 continue
             }
             when (entry.kind) {
-                MenuEntryKind.ITEM -> dialogMenu.add(entry.titleResId, entry.runnable)
-                MenuEntryKind.MORE -> dialogMenu.addMore(entry.titleResId, entry.runnable)
-                MenuEntryKind.CHECK ->
+                MenuEntryKind.ITEM -> {
+                    dialogMenu.add(entry.titleResId, entry.runnable)
+                }
+
+                MenuEntryKind.MORE -> {
+                    dialogMenu.addMore(entry.titleResId, entry.runnable)
+                }
+
+                MenuEntryKind.CHECK -> {
                     dialogMenu.addCheck(entry.titleResId, entry.checked, entry.runnable)
+                }
             }
         }
         val dialog = dialogMenu.create()
@@ -765,18 +772,20 @@ class InteractionUnit internal constructor(
             if (isUseInternalBrowser &&
                 (
                     chan.name == null ||
-                        !chan.locator
-                            .safe(false)
-                            .isBoardUri(uri) &&
-                        !chan.locator
-                            .safe(false)
-                            .isThreadUri(uri) &&
-                        !chan.locator
-                            .safe(false)
-                            .isAttachmentUri(uri) &&
-                        chan.locator
-                            .safe(false)
-                            .handleUriClickSpecial(uri) == null
+                        (
+                            !chan.locator
+                                .safe(false)
+                                .isBoardUri(uri) &&
+                                !chan.locator
+                                    .safe(false)
+                                    .isThreadUri(uri) &&
+                                !chan.locator
+                                    .safe(false)
+                                    .isAttachmentUri(uri) &&
+                                chan.locator
+                                    .safe(false)
+                                    .handleUriClickSpecial(uri) == null
+                        )
                 )
             ) {
                 dialogMenu.add(

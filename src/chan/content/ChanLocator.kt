@@ -264,7 +264,7 @@ open class ChanLocator internal constructor(
             val relative = uri.isRelative()
             val webScheme = isWebScheme(uri)
             var builder: Uri.Builder? = null
-            if (relative || webScheme && isConvertableChanHost(host!!)) {
+            if (relative || (webScheme && isConvertableChanHost(host!!))) {
                 if (!equals(host, preferredHost)) {
                     if (builder == null) {
                         builder = uri.buildUpon().scheme(preferredScheme)
@@ -281,9 +281,11 @@ open class ChanLocator internal constructor(
                 }
             }
             if (isEmpty(uri.getScheme()) ||
-                webScheme &&
-                (preferredScheme != uri.getScheme()) &&
-                isChanHost(host!!)
+                (
+                    webScheme &&
+                        (preferredScheme != uri.getScheme()) &&
+                        isChanHost(host!!)
+                )
             ) {
                 if (builder == null) {
                     builder = uri.buildUpon().scheme(preferredScheme)

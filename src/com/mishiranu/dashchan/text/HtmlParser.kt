@@ -306,8 +306,10 @@ class HtmlParser<E, D, S : HtmlParser.SpanProvider<E>> private constructor(
         val spacedTag = blockTag && tagData.spaced
         val preformattedTag =
             tagData.preformatted == TagData.Preformatted.ENABLED ||
-                tagData.preformatted == TagData.Preformatted.UNDEFINED &&
-                preformattedMode.check()
+                (
+                    tagData.preformatted == TagData.Preformatted.UNDEFINED &&
+                        preformattedMode.check()
+                )
         if (blockTag) {
             appendBlockBreak(spacedTag)
         }
@@ -438,7 +440,7 @@ class HtmlParser<E, D, S : HtmlParser.SpanProvider<E>> private constructor(
                 val c = ch[i]
                 // Ignore special characters
                 if (c >= ' ') {
-                    if (c != ' ' || p != ' ' && p != '\n') {
+                    if (c != ' ' || (p != ' ' && p != '\n')) {
                         builder.append(c)
                         realLength++
                     }

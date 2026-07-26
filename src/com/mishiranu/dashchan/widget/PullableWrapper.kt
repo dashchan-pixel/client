@@ -95,7 +95,7 @@ class PullableWrapper(
         if (side == null || side == Side.NONE) {
             return false
         }
-        if (busySide != Side.NONE || side != pullSides && pullSides != Side.BOTH) {
+        if (busySide != Side.NONE || (side != pullSides && pullSides != Side.BOTH)) {
             if (side == Side.BOTH && (busySide == Side.TOP || busySide == Side.BOTTOM)) {
                 val pullView = getSidePullView(busySide)
                 pullView!!.setState(
@@ -167,7 +167,7 @@ class PullableWrapper(
     fun onTouchEventOrNull(ev: MotionEvent?): Boolean {
         var pull = false
         val action = if (ev != null) ev.getAction() else MotionEvent.ACTION_CANCEL
-        if (action == MotionEvent.ACTION_DOWN || !listView.isScrolledToTop() && !listView.isScrolledToBottom()) {
+        if (action == MotionEvent.ACTION_DOWN || (!listView.isScrolledToTop() && !listView.isScrolledToBottom())) {
             startY = if (ev != null) ev.getY() else 0f
         } else if (updateStartY) {
             val hsize = if (ev != null) ev.getHistorySize() else 0

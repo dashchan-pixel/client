@@ -332,7 +332,9 @@ class FlowVideoView(
                 longPressed = false
             }
 
-            MotionEvent.ACTION_POINTER_DOWN -> tapValid = false
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                tapValid = false
+            }
 
             MotionEvent.ACTION_MOVE -> {
                 if (tapValid &&

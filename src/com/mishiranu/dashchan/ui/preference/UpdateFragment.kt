@@ -65,7 +65,7 @@ class UpdateFragment : BaseListFragment {
 
         fun isHeader(): Boolean = StringUtils.isEmpty(extensionName)
 
-        fun willBeInstalled(): Boolean = !isHeader() && (installed && targetIndex > 0 || !installed && targetIndex >= 0)
+        fun willBeInstalled(): Boolean = !isHeader() && ((installed && targetIndex > 0) || (!installed && targetIndex >= 0))
 
         fun setTarget(
             context: Context?,
@@ -73,7 +73,7 @@ class UpdateFragment : BaseListFragment {
             targetIndex: Int,
         ) {
             this.targetIndex = targetIndex
-            if (installed && targetIndex > 0 || !installed && targetIndex >= 0) {
+            if ((installed && targetIndex > 0) || (!installed && targetIndex >= 0)) {
                 val packageItem = applicationItem.packageItems[targetIndex]
                 var target = packageItem.title
                 if (context != null) {
@@ -618,8 +618,10 @@ class UpdateFragment : BaseListFragment {
                         if (checkVersionValid(applicationItem, updatePackageItem, minApiVersion, maxApiVersion)) {
                             // targetIndex < 0 - means installed version is not supported
                             if (targetIndex < 0 ||
-                                VERSION_TITLE_RELEASE == updatePackageItem.title &&
-                                compareForUpdates(installedExtensionData, updatePackageItem)
+                                (
+                                    VERSION_TITLE_RELEASE == updatePackageItem.title &&
+                                        compareForUpdates(installedExtensionData, updatePackageItem)
+                                )
                             ) {
                                 targetIndex = i
                                 break

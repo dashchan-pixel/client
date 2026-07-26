@@ -439,7 +439,7 @@ class ThemeEngine {
             typedArray.recycle()
             val inheritDirect = dialog || popup
             val forceDirect = newContext is Activity
-            val direct = isDirect() && inheritDirect || forceDirect
+            val direct = (isDirect() && inheritDirect) || forceDirect
             return ThemeLayoutInflater(this, newContext, direct, dialog, overlay, popup)
         }
 

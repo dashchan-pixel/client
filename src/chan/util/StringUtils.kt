@@ -254,8 +254,7 @@ object StringUtils {
         for (i in string.indices) {
             val c = string[i]
             if (c == '\\' ||
-                c == '/' &&
-                !isPath ||
+                (c == '/' && !isPath) ||
                 c == ':' ||
                 c == '*' ||
                 c == '?' ||

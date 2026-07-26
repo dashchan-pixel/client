@@ -122,8 +122,7 @@ class HttpSession internal constructor(
         checkThread()
         val responseCode = this.responseCode
         val success =
-            responseCode >= 200 &&
-                responseCode <= 303 ||
+            (responseCode >= 200 && responseCode <= 303) ||
                 responseCode == HttpClient.Companion.HTTP_TEMPORARY_REDIRECT
         if (!success) {
             val message: String? =

@@ -53,8 +53,7 @@ interface PendingUserPost {
                 val comment = HtmlParser.clear(post.comment)
                 val wordsData = ESTIMATOR.getWords<Unit>(comment)
                 if (ESTIMATOR.checkSimiliar(this.wordsData, wordsData) ||
-                    this.wordsData == null &&
-                    wordsData == null
+                    (this.wordsData == null && wordsData == null)
                 ) {
                     if (foundPost == null || abs(foundPost.timestamp - time) > abs(post.timestamp - time)) {
                         foundPost = post
@@ -70,10 +69,12 @@ interface PendingUserPost {
             }
             if (other is SimilarComment) {
                 return other.wordsData === wordsData ||
-                    other.wordsData != null &&
-                    wordsData != null &&
-                    other.wordsData.count == wordsData.count &&
-                    other.wordsData.words == wordsData.words
+                    (
+                        other.wordsData != null &&
+                            wordsData != null &&
+                            other.wordsData.count == wordsData.count &&
+                            other.wordsData.words == wordsData.words
+                    )
             }
             return false
         }

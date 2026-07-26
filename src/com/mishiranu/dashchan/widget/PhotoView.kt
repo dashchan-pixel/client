@@ -571,7 +571,9 @@ class PhotoView(
                 seekLongPressed = false
             }
 
-            MotionEvent.ACTION_POINTER_DOWN -> seekTapValid = false
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                seekTapValid = false
+            }
 
             MotionEvent.ACTION_MOVE -> {
                 if (seekTapValid &&
@@ -619,16 +621,14 @@ class PhotoView(
     fun canScrollLeft(): Boolean =
         hasImage() &&
             (
-                scrollEdgeX != ScrollEdge.START &&
-                    scrollEdgeX != ScrollEdge.BOTH ||
+                (scrollEdgeX != ScrollEdge.START && scrollEdgeX != ScrollEdge.BOTH) ||
                     this.isClosingTouchMode
             )
 
     fun canScrollRight(): Boolean =
         hasImage() &&
             (
-                scrollEdgeX != ScrollEdge.END &&
-                    scrollEdgeX != ScrollEdge.BOTH ||
+                (scrollEdgeX != ScrollEdge.END && scrollEdgeX != ScrollEdge.BOTH) ||
                     this.isClosingTouchMode
             )
 
@@ -1200,10 +1200,8 @@ class PhotoView(
                     if (touchMode == TouchMode.UNDEFINED) {
                         val allowClosing =
                             scrollEdgeY == ScrollEdge.BOTH ||
-                                scrollEdgeY == ScrollEdge.START &&
-                                dy > 0 ||
-                                scrollEdgeY == ScrollEdge.END &&
-                                dy < 0
+                                (scrollEdgeY == ScrollEdge.START && dy > 0) ||
+                                (scrollEdgeY == ScrollEdge.END && dy < 0)
                         var closing = false
                         if (allowClosing) {
                             val angle =

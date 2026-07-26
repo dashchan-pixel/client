@@ -366,8 +366,10 @@ class ExpandedScreen(
         var showActionBar = show
         if (!showActionBar) {
             showActionBar = checkState(State.LOCKED) ||
-                checkState(State.ACTION_MODE) &&
-                !activity.getWindow().hasFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
+                (
+                    checkState(State.ACTION_MODE) &&
+                        !activity.getWindow().hasFeature(Window.FEATURE_ACTION_MODE_OVERLAY)
+                )
         }
         if (enqueuedShowState != showActionBar) {
             enqueuedShowState = showActionBar

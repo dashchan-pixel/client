@@ -218,8 +218,7 @@ class ChanFragment :
         if (!localMode) {
             anotherDomainMode = !domains.contains(chan.locator.preferredHost) ||
                 domains.size == 1 ||
-                savedInstanceState != null &&
-                savedInstanceState.getBoolean(EXTRA_ANOTHER_DOMAIN_MODE)
+                (savedInstanceState != null && savedInstanceState.getBoolean(EXTRA_ANOTHER_DOMAIN_MODE))
             if (anotherDomainMode) {
                 addAnotherDomainPreference(domains[0])
             } else {

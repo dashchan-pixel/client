@@ -108,10 +108,12 @@ class CommandsFragment :
                 editCommand(null, -1)
                 return true
             }
+
             R.id.menu_add_command -> {
                 launchAddCommand()
                 return true
             }
+
             R.id.menu_environment -> {
                 EnvironmentDialog().show(childFragmentManager, EnvironmentDialog::class.java.name)
                 return true
@@ -378,14 +380,20 @@ class CommandsFragment :
             val builder = StringBuilder()
             val chanNames = commandItem.chanNames
             when {
-                chanNames.isNullOrEmpty() -> builder.append(getString(R.string.all_forums))
+                chanNames.isNullOrEmpty() -> {
+                    builder.append(getString(R.string.all_forums))
+                }
+
                 chanNames.size == 1 -> {
                     val chanName = chanNames.iterator().next()
                     val chan = Chan.get(chanName)
                     val title = if (chan.name != null) chan.configuration.getTitle() else chanName
                     builder.append(getString(R.string.forum_only__format, title))
                 }
-                else -> builder.append(getString(R.string.multiple_forums))
+
+                else -> {
+                    builder.append(getString(R.string.multiple_forums))
+                }
             }
             if (!StringUtils.isEmpty(commandItem.boardName)) {
                 builder.append(" & [").append(commandItem.boardName).append(']')

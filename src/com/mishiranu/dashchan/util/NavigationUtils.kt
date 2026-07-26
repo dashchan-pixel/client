@@ -51,8 +51,7 @@ object NavigationUtils {
             isWeb &&
                 (
                     browserType == BrowserType.INTERNAL ||
-                        browserType == BrowserType.AUTO &&
-                        Preferences.isUseInternalBrowser
+                        (browserType == BrowserType.AUTO && Preferences.isUseInternalBrowser)
                 )
         if (internalBrowser && browserType != BrowserType.INTERNAL) {
             val manager = ChanManager.getInstance()
@@ -176,8 +175,7 @@ object NavigationUtils {
             val internalUri = locator.convert(uri)
             val fileName = locator.createAttachmentFileName(internalUri!!)
             if (locator.isImageUri(internalUri) ||
-                locator.isVideoUri(internalUri) &&
-                isOpenableVideoPath(fileName)
+                (locator.isVideoUri(internalUri) && isOpenableVideoPath(fileName))
             ) {
                 openImageVideo(context, internalUri)
                 handled = true
@@ -189,8 +187,7 @@ object NavigationUtils {
         if (!handled && locator.isWebScheme(uri)) {
             val path = uri.path
             if (locator.isImageExtension(path) ||
-                locator.isVideoExtension(path) &&
-                isOpenableVideoPath(path)
+                (locator.isVideoExtension(path) && isOpenableVideoPath(path))
             ) {
                 openImageVideo(context, uri)
                 handled = true

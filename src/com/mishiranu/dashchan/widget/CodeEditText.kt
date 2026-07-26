@@ -239,9 +239,13 @@ open class CodeEditText : SafePasteEditText {
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (isTextScrollable) {
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> parent?.requestDisallowInterceptTouchEvent(true)
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                MotionEvent.ACTION_DOWN -> {
+                    parent?.requestDisallowInterceptTouchEvent(true)
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     parent?.requestDisallowInterceptTouchEvent(false)
+                }
             }
         }
         return super.onTouchEvent(event)

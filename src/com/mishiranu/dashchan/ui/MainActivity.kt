@@ -1110,14 +1110,14 @@ class MainActivity :
             val page = getSavedPage(savedPageItem)
             if (mergeChans || page.chanName == chanName) {
                 iterator.remove()
-                if (!(page.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts)) {
+                if (!(page.canDestroyIfNotInStack() || (closeOnBack && page.isThreadsOrPosts))) {
                     preservedPageItems.add(savedPageItem)
                 }
             }
         }
         val page = currentFragment.page
         if (mergeChans || page.chanName == chanName) {
-            if (!(page.canDestroyIfNotInStack() || closeOnBack && page.isThreadsOrPosts)) {
+            if (!(page.canDestroyIfNotInStack() || (closeOnBack && page.isThreadsOrPosts))) {
                 preservedPageItems.add(
                     currentPageItem!!.toSaved(
                         getSupportFragmentManager(),

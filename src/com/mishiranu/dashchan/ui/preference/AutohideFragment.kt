@@ -223,8 +223,7 @@ class AutohideFragment : BaseListFragment() {
                 val locale = Locale.getDefault()
                 for (item in items) {
                     val value = item.value
-                    if (!value.isNullOrEmpty() &&
-                        value.lowercase(locale).contains(searchQuery.lowercase(locale)) ||
+                    if ((!value.isNullOrEmpty() && value.lowercase(locale).contains(searchQuery.lowercase(locale))) ||
                         item.find(searchQuery) != null
                     ) {
                         filteredItems.add(item)

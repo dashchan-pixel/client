@@ -250,8 +250,7 @@ class PagerUnit(
             val isVideoInitialized = isOpenableVideo && videoUnit.isInitialized
             val imageHasMetadata = imageUnit.hasMetadata()
             save = holder.loadState == PagerInstance.LoadState.COMPLETE ||
-                isVideo &&
-                (!isOpenableVideo || holder.loadState == PagerInstance.LoadState.ERROR)
+                (isVideo && (!isOpenableVideo || holder.loadState == PagerInstance.LoadState.ERROR))
             refresh =
                 !isVideo ||
                 isVideoInitialized ||
@@ -345,7 +344,7 @@ class PagerUnit(
             )
             return
         }
-        if (isVideo && !isOpenableVideo || isOpenableVideo && mayShowThumbnailOnly) {
+        if ((isVideo && !isOpenableVideo) || (isOpenableVideo && mayShowThumbnailOnly)) {
             playButton.setVisibility(View.VISIBLE)
             photoView.setDrawDimForCurrentImage(true)
             return
@@ -397,11 +396,13 @@ class PagerUnit(
                 val galleryItem = holder.galleryItem
                 val setImage =
                     awaitImmediate ||
-                        galleryItem != null &&
-                        !photoView.hasImage() &&
-                        key ==
-                        CacheManager.getInstance().getCachedFileKey(
-                            galleryItem.getThumbnailUri(chan),
+                        (
+                            galleryItem != null &&
+                                !photoView.hasImage() &&
+                                key ==
+                                CacheManager.getInstance().getCachedFileKey(
+                                    galleryItem.getThumbnailUri(chan),
+                                )
                         )
                 if (setImage) {
                     val currentItem = holder.galleryItem!!

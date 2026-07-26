@@ -258,8 +258,7 @@ class ImageUnit(
         init {
             val holder = instance.currentHolder!!
             photoView = holder.photoView
-            if (fileHolder.imageWidth >= 2048 &&
-                fileHolder.imageHeight >= 2048 ||
+            if ((fileHolder.imageWidth >= 2048 && fileHolder.imageHeight >= 2048) ||
                 fileHolder.imageType == FileHolder.ImageType.IMAGE_SVG
             ) {
                 val progressBar = holder.progressBar

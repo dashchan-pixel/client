@@ -626,10 +626,8 @@ class ReadUpdateTask(
                     requireFingerprintChecksum = true
                 }
             }
-            if (minSdk > 0 &&
-                minSdk > Build.VERSION.SDK_INT ||
-                maxSdk > 0 &&
-                maxSdk < Build.VERSION.SDK_INT
+            if ((minSdk > 0 && minSdk > Build.VERSION.SDK_INT) ||
+                (maxSdk > 0 && maxSdk < Build.VERSION.SDK_INT)
             ) {
                 return null
             }
@@ -663,7 +661,7 @@ class ReadUpdateTask(
             if (sha256sumString != null) {
                 sha256sumString = sha256sumString.replace("[^a-fA-F0-9]".toRegex(), "").lowercase(Locale.US)
             }
-            if (installedCode != null && versionCode < installedCode || source == null) {
+            if ((installedCode != null && versionCode < installedCode) || source == null) {
                 return null
             }
             var sha256sum: ByteArray? = null

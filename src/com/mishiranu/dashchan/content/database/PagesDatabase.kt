@@ -1243,14 +1243,10 @@ class PagesDatabase private constructor() {
             removed = oldItems.keys
         }
 
-        if (newPosts != null &&
-            !newPosts.isEmpty() ||
-            deletedPosts != null &&
-            !deletedPosts.isEmpty() ||
-            editedPosts != null &&
-            !editedPosts.isEmpty() ||
-            replyPosts != null &&
-            !replyPosts.isEmpty()
+        if ((newPosts != null && !newPosts.isEmpty()) ||
+            (deletedPosts != null && !deletedPosts.isEmpty()) ||
+            (editedPosts != null && !editedPosts.isEmpty()) ||
+            (replyPosts != null && !replyPosts.isEmpty())
         ) {
             database.beginTransaction()
             try {

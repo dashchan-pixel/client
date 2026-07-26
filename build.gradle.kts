@@ -157,7 +157,7 @@ android {
 }
 
 ktlint {
-    version = "1.6.0"
+    version = "1.8.0"
     // Formatting rules live in .editorconfig (that is what turns trailing commas on),
     // so there is deliberately no rule configuration here.
     android = true

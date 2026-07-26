@@ -531,8 +531,7 @@ class ViewUnit
             holder.index.setText(postItem.getOrdinalIndexString())
             val showName =
                 holder.thumbnail.getVisibility() == View.VISIBLE ||
-                    !postItem.isUseDefaultName() &&
-                    !StringUtils.isEmpty(name)
+                    (!postItem.isUseDefaultName() && !StringUtils.isEmpty(name))
             holder.name.setVisibility(if (showName) View.VISIBLE else View.GONE)
             val showIndex = postItem.getOrdinalIndex() != PostItem.ORDINAL_INDEX_NONE
             holder.index.setVisibility(if (showIndex) View.VISIBLE else View.GONE)

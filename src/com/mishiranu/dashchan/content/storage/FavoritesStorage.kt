@@ -323,12 +323,9 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
         for (favoriteItem in favoriteItemsList) {
             if ((chanName == null || favoriteItem.chanName == chanName) &&
                 (
-                    threads &&
-                        boards ||
-                        favoriteItem.threadNumber != null &&
-                        threads ||
-                        favoriteItem.threadNumber == null &&
-                        boards
+                    (threads && boards) ||
+                        (favoriteItem.threadNumber != null && threads) ||
+                        (favoriteItem.threadNumber == null && boards)
                 )
             ) {
                 favoriteItems.add(favoriteItem)

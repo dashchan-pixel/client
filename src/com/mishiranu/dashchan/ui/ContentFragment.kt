@@ -40,13 +40,13 @@ abstract class ContentFragment :
 
     open fun onBackPressed(): Boolean = false
 
+    /**
+     * Whether [.onBackPressed] would currently handle a back press. Drives the enabled
+     * state of the activity's back callback: the predictive back-to-home animation only plays
+     * when no fragment claims the gesture. Override together with [.onBackPressed] and
+     * call [.notifyBackHandledChanged] whenever the returned value may have changed.
+     */
     open val isBackHandled: Boolean
-        /**
-         * Whether [.onBackPressed] would currently handle a back press. Drives the enabled
-         * state of the activity's back callback: the predictive back-to-home animation only plays
-         * when no fragment claims the gesture. Override together with [.onBackPressed] and
-         * call [.notifyBackHandledChanged] whenever the returned value may have changed.
-         */
         get() = false
 
     protected fun notifyBackHandledChanged() {

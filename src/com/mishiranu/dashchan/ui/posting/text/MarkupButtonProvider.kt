@@ -72,8 +72,7 @@ open class MarkupButtonProvider private constructor(
                 for (j in PROVIDERS.indices) {
                     val provider = PROVIDERS[j]
                     if (provider.priority == i) {
-                        if (markup != null &&
-                            markup.safe().isTagSupported(boardName, provider.tag) ||
+                        if ((markup != null && markup.safe().isTagSupported(boardName, provider.tag)) ||
                             provider.tag == ChanMarkup.TAG_QUOTE
                         ) {
                             var width = (provider.widthDp * density).toInt()

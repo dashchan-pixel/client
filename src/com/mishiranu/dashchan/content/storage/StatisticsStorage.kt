@@ -133,7 +133,7 @@ class StatisticsStorage private constructor() : StorageManager.Storage<Map<Strin
     ) {
         val chan = Chan.get(chanName)
         val statistics = chan.configuration.safe().obtainStatistics()
-        if (statistics == null || !(statistics.postsSent || statistics.threadsCreated && newThread)) {
+        if (statistics == null || !(statistics.postsSent || (statistics.threadsCreated && newThread))) {
             return
         }
         val statisticsItem = obtainStatisticsItem(chanName)

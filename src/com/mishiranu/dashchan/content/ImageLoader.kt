@@ -402,7 +402,7 @@ class ImageLoader private constructor() {
         target.onStart()
         val currentLoaderTask = loaderTasks[imageKey]
         val startTask =
-            currentLoaderTask == null || currentLoaderTask.finished || currentLoaderTask.fromCacheOnly && !fromCacheOnly
+            currentLoaderTask == null || currentLoaderTask.finished || (currentLoaderTask.fromCacheOnly && !fromCacheOnly)
         var registerLoaderTask = currentLoaderTask
         if (startTask) {
             val loaderTask = LoaderTask(uri, chan, imageKey, fromCacheOnly)

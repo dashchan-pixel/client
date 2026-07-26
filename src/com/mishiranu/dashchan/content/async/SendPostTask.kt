@@ -219,8 +219,7 @@ class SendPostTask<Key>(
                             val comment = HtmlParser.clear(post.comment)
                             val wordsData2 = estimator.getWords<Unit>(comment)
                             if (estimator.checkSimiliar(wordsData1, wordsData2) ||
-                                wordsData1 == null &&
-                                wordsData2 == null
+                                (wordsData1 == null && wordsData2 == null)
                             ) {
                                 result = ChanPerformer.SendPostResult(thread.threadNumber, null)
                                 break

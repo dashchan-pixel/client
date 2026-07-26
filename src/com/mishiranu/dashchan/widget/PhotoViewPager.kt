@@ -241,7 +241,7 @@ class PhotoViewPager(
                 val canScrollLeft = photoView.canScrollLeft()
                 val canScrollRight = photoView.canScrollRight()
                 val canScrollPhotoView =
-                    canScrollLeft && !scrollingRight || canScrollRight && scrollingRight
+                    (canScrollLeft && !scrollingRight) || (canScrollRight && scrollingRight)
                 val canScalePhotoView = !singlePointer
                 if (startScrollX == currentScrollX) {
                     if (!sendToPhotoView) {
@@ -271,10 +271,8 @@ class PhotoViewPager(
                     var actualScroll =
                         max(0, min((count - 1) * (width + innerPadding), desiredScroll))
                     val canFocusPhotoView =
-                        currentScrollX < startScrollX &&
-                            actualScroll >= startScrollX ||
-                            currentScrollX > startScrollX &&
-                            actualScroll <= startScrollX
+                        (currentScrollX < startScrollX && actualScroll >= startScrollX) ||
+                            (currentScrollX > startScrollX && actualScroll <= startScrollX)
                     if (canFocusPhotoView && canScrollPhotoView) {
                         // Fix scrolling to make PhotoView fill PhotoViewPager
                         // to ensure sendToPhotoView = true on next touch event

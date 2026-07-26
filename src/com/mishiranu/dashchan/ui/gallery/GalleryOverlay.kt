@@ -884,8 +884,7 @@ class GalleryOverlay :
     private fun checkAllowNavigatePost(manually: Boolean): Boolean {
         val navigatePostMode = this.navigatePostMode
         return navigatePostMode == NavigatePostMode.ENABLED ||
-            navigatePostMode == NavigatePostMode.MANUALLY &&
-            manually
+            (navigatePostMode == NavigatePostMode.MANUALLY && manually)
     }
 
     override fun navigatePost(

@@ -8,7 +8,11 @@ import chan.http.HttpRequest
 import org.json.JSONArray
 import org.json.JSONException
 
-/** Lists and downloads repository files through the GitHub REST API. */
+/**
+ * Lists and downloads repository files through the GitHub REST API.
+ *
+ * @param githubUri repository URI, e.g. `https://github.com/owner/repo`
+ */
 class GithubRepository(
     private val holder: HttpHolder,
     githubUri: Uri,
@@ -20,7 +24,6 @@ class GithubRepository(
 
     private val repositoryPath: String
 
-    /** @param githubUri repository URI, e.g. `https://github.com/owner/repo` */
     init {
         val path = githubUri.path
         require(!path.isNullOrEmpty()) { "Invalid GitHub URI: $githubUri" }

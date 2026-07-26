@@ -622,7 +622,7 @@ open class ChanMarkup internal constructor(
                 // Fast match >>\d+
                 for (i in 0..<string.length) {
                     val c = string[i]
-                    if (!(i < 2 && c == '>' || i >= 2 && c >= '0' && c <= '9')) {
+                    if (!((i < 2 && c == '>') || (i >= 2 && c >= '0' && c <= '9'))) {
                         return
                     }
                 }

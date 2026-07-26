@@ -401,8 +401,7 @@ class WakabaLikeHtmlBuilder(
         }
         val hasFileInfo =
             size != null ||
-                fileItem.width > 0 &&
-                fileItem.height > 0 ||
+                (fileItem.width > 0 && fileItem.height > 0) ||
                 !StringUtils.isEmpty(fileItem.originalName)
         if (hasFileInfo) {
             if (multiple) {

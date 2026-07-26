@@ -769,8 +769,7 @@ class DrawerForm(
             if (mergeChans || favoriteItem.chanName == chanName) {
                 if (addSection) {
                     if (watcherSupportSet.contains(favoriteItem.chanName) ||
-                        mergeChans &&
-                        !watcherSupportSet.isEmpty()
+                        (mergeChans && !watcherSupportSet.isEmpty())
                     ) {
                         favorites.add(
                             ListItem(
@@ -1633,18 +1632,16 @@ class DrawerForm(
     ): Boolean =
         current.type == ListItem.Type.HEADER ||
             current.type == ListItem.Type.RESTART ||
-            current.type != ListItem.Type.CHAN &&
-            next.type == ListItem.Type.CHAN ||
-            current.type != ListItem.Type.MENU &&
-            next.type == ListItem.Type.MENU ||
-            current.type == ListItem.Type.MENU &&
-            current.data == MENU_ITEM_BOARDS &&
-            (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS) ||
-            current.type == ListItem.Type.MENU &&
-            current.data == MENU_ITEM_USER_BOARDS ||
+            (current.type != ListItem.Type.CHAN && next.type == ListItem.Type.CHAN) ||
+            (current.type != ListItem.Type.MENU && next.type == ListItem.Type.MENU) ||
+            (
+                current.type == ListItem.Type.MENU &&
+                    current.data == MENU_ITEM_BOARDS &&
+                    (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS)
+            ) ||
+            (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_USER_BOARDS) ||
             // The Echo is its own section above the pages and favorites
-            current.type == ListItem.Type.MENU &&
-            current.data == MENU_ITEM_ECHO
+            (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_ECHO)
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
@@ -2023,12 +2020,14 @@ class DrawerForm(
         return from.type == to.type &&
             (
                 from.type == ListItem.Type.CHAN ||
-                    from.type == ListItem.Type.FAVORITE &&
-                    equals(
-                        from.chanName,
-                        to.chanName,
-                    ) &&
-                    (from.threadNumber == null) == (to.threadNumber == null)
+                    (
+                        from.type == ListItem.Type.FAVORITE &&
+                            equals(
+                                from.chanName,
+                                to.chanName,
+                            ) &&
+                            (from.threadNumber == null) == (to.threadNumber == null)
+                    )
             )
     }
 

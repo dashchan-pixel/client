@@ -266,8 +266,7 @@ class CaptchaSolving private constructor() {
             return response != null &&
                 (
                     response.startsWith("OK|") ||
-                        response.startsWith("ERROR_") &&
-                        response.contains("KEY")
+                        (response.startsWith("ERROR_") && response.contains("KEY"))
                 )
         }
 
