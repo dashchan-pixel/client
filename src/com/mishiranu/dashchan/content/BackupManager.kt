@@ -20,6 +20,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.PushbackInputStream
 import java.util.Arrays
 import java.util.Collections
 import java.util.UUID
@@ -41,6 +42,9 @@ object BackupManager {
 
     private const val BACKUP_VERSION_0 = "dashchan:0"
     private const val BACKUP_VERSION_1 = "dashchan:1"
+
+    // Anything filling the buffer is not a version marker
+    private const val MAX_VERSION_LENGTH = 1024
 
     fun getAvailableBackups(context: Context?): MutableList<BackupFile> {
         val root = obtain(DataFile.Target.DOWNLOADS, null)
@@ -88,10 +92,13 @@ object BackupManager {
             ZipOutputStream(FileOutputStream(backupFile)).use { zip ->
                 var hasEntries = false
                 for (entry in Entry.entries) {
-                    if (entry.writer != null) {
+                    val writer = entry.writer
+                    // An entry with nothing to write must be omitted entirely: a zero length entry
+                    // would overwrite the live storage with nothing on restore
+                    if (writer != null && writer.hasContent()) {
                         zip.putNextEntry(ZipEntry(entry.entryName))
                         try {
-                            entry.writer.write(zip)
+                            writer.write(zip)
                         } finally {
                             zip.closeEntry()
                         }
@@ -133,9 +140,25 @@ object BackupManager {
         }
     }
 
+    /**
+     * Wraps the current zip entry so its reader can be handed a stream, or returns null when the
+     * entry carries no data at all. Backups written before [Writer.hasContent] existed can hold
+     * such empty entries, and restoring one would wipe the live storage.
+     */
+    @Throws(IOException::class)
+    private fun openEntry(zip: ZipInputStream): InputStream? {
+        val input = PushbackInputStream(zip, 1)
+        val first = input.read()
+        if (first < 0) {
+            return null
+        }
+        input.unread(first)
+        return input
+    }
+
     fun readBackupEntries(file: DataFile): MutableList<Entry> {
         var version: String? = BACKUP_VERSION_0
-        val entries = HashSet<Entry?>()
+        val entries = HashSet<Entry>()
         try {
             ZipInputStream(file.openInputStream()).use { zip ->
                 var zipEntry: ZipEntry?
@@ -143,11 +166,19 @@ object BackupManager {
                     try {
                         val entry: Entry? = Entry.Companion.find(zipEntry!!.getName())
                         if (entry != null) {
-                            val restore = Restore(true, zip)
-                            restore.version = version
-                            entry.reader.read(restore)
-                            version = restore.version
-                            entries.add(entry)
+                            val input = openEntry(zip)
+                            if (input != null) {
+                                try {
+                                    val restore = Restore(true, input)
+                                    restore.version = version
+                                    entry.reader.read(restore)
+                                    version = restore.version
+                                    entries.add(entry)
+                                } catch (e: IOException) {
+                                    // A damaged entry must not hide the rest of the backup
+                                    e.printStackTrace()
+                                }
+                            }
                         }
                     } finally {
                         zip.closeEntry()
@@ -181,8 +212,11 @@ object BackupManager {
                     try {
                         val entry: Entry? = Entry.Companion.find(zipEntry!!.getName())
                         if (entry != null && entries.contains(entry)) {
-                            entry.reader.read(Restore(false, zip))
-                            success = true
+                            val input = openEntry(zip)
+                            if (input != null) {
+                                entry.reader.read(Restore(false, input))
+                                success = true
+                            }
                         }
                     } finally {
                         zip.closeEntry()
@@ -214,6 +248,9 @@ object BackupManager {
     internal fun interface Writer {
         @Throws(IOException::class)
         fun write(output: OutputStream)
+
+        /** Whether [write] would produce anything; an entry that would stay empty is not written. */
+        fun hasContent(): Boolean = true
     }
 
     internal fun interface Reader {
@@ -232,6 +269,9 @@ object BackupManager {
                 }
             }
         }
+
+        // A storage serializing to null leaves the file in place but empty, so length matters too
+        override fun hasContent(): Boolean = file.exists() && file.length() > 0
     }
 
     private class FileReader(
@@ -262,12 +302,20 @@ object BackupManager {
             BackupManager.Writer { output: OutputStream -> output.write((BACKUP_VERSION_1 + "\n").toByteArray()) },
             BackupManager.Reader { restore: Restore ->
                 restore.version = null
-                val data = ByteArray(1024)
-                val count = restore.input.read(data)
+                val data = ByteArray(MAX_VERSION_LENGTH)
+                // A single read may come up short, and a short read would yield a bogus version
+                var count = 0
+                while (count < data.size) {
+                    val read = restore.input.read(data, count, data.size - count)
+                    if (read < 0) {
+                        break
+                    }
+                    count += read
+                }
                 if (count <= 0 || count == data.size) {
                     throw IOException("Invalid version file")
                 }
-                restore.version = String(data).trim { it <= ' ' }
+                restore.version = String(data, 0, count, Charsets.UTF_8).trim { it <= ' ' }
             },
         ),
         DATABASE(
