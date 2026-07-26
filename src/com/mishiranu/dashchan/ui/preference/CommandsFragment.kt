@@ -804,7 +804,7 @@ private fun createBottomBar(
         android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
         }
-    val symbols = listOf("{", "}", "[", "]", "\"", "=", ":", ";", "(", ")", "<", ">", "&", "|")
+    val symbols = listOf("{", "}", "[", "]", "/", "\\", "\"", "=", ":", ";", "(", ")", "<", ">", "&", "|")
     for (symbol in symbols) {
         val button = createSymbolButton(context, symbol, codeEdit)
         symbolsContainer.addView(
