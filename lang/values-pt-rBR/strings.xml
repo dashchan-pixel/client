@@ -99,7 +99,6 @@
 	<string name="echo__summary">Coletar respostas aos meus posts em uma lista separada</string>
 	<string name="echo_is_empty">Eco está vazio</string>
 	<string name="edit">Editar</string>
-	<string name="edit__ellipsis">Editar…</string>
 	<string name="edit_theme">Editar tema</string>
 	<string name="empty_response">Resposta vazia</string>
 	<string name="enter_valid_data">Entre dados válidos</string>
