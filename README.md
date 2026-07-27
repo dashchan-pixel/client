@@ -78,8 +78,8 @@ Without it, release builds are signed with the debug keystore.
 ### Building Extensions
 
 The source code of extensions is available in the
-[dashchan-redacted/extensions](https://github.com/dashchan-redacted/extensions) repository
-(trimmed to dvach, fourchan, arhivach and local); the original is
+[dashchan-redacted/extensions](https://github.com/dashchan-redacted/extensions) repository;
+the original is
 [Mishiranu/Dashchan-Extensions](https://github.com/Mishiranu/Dashchan-Extensions).
 
 ## License
