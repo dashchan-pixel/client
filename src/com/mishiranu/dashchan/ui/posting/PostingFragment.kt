@@ -229,6 +229,9 @@ class PostingFragment :
     private val commandsProgress =
         DelayedProgress({ setCommandsRunning(true) }, { setCommandsRunning(false) })
     private var commandsRunning = false
+
+    /** The command runs started here that may still be going; see [cancelCommandRuns]. */
+    private val commandRuns = ArrayList<CommandRunner.Run>()
     private var captchaForm: CaptchaForm? = null
     private var confirmationHeaderView: TextView? = null
     private var footerContainer: FrameLayout? = null
@@ -927,6 +930,7 @@ class PostingFragment :
         commentEditWatcher = null
         // A command still running outlives the views it would have spun for: its callback finds the
         // comment field gone and never releases the spinner, so drop it here.
+        cancelCommandRuns()
         commandsProgress.cancel()
         commandsRunning = false
         commandsButton = null
@@ -2401,30 +2405,54 @@ class PostingFragment :
     private fun runCommand(command: CommandsStorage.CommandItem) {
         val commentView = commentView ?: return
         commandsProgress.start()
-        CommandRunner.run(
-            command,
-            commentView.getText().toString(),
-            this.threadNumber,
-            this.boardName,
-        ) { result ->
-            // Delivered on the main thread; the view may be gone by the time it arrives. Released
-            // before that check, since nothing releases it afterwards.
-            commandsProgress.finish()
-            val liveCommentView = this.commentView ?: return@run
-            when (result) {
-                is CommandRunner.Result.Success -> {
-                    val comment = result.comment
-                    if (comment != null) {
-                        liveCommentView.setText(comment)
-                        liveCommentView.setSelection(liveCommentView.getText().length)
+        trackCommandRun(
+            CommandRunner.run(
+                command,
+                commentView.getText().toString(),
+                this.threadNumber,
+                this.boardName,
+            ) { result ->
+                // Delivered on the main thread; the view may be gone by the time it arrives. Released
+                // before that check, since nothing releases it afterwards.
+                commandsProgress.finish()
+                val liveCommentView = this.commentView ?: return@run
+                when (result) {
+                    is CommandRunner.Result.Success -> {
+                        val comment = result.comment
+                        if (comment != null) {
+                            liveCommentView.setText(comment)
+                            liveCommentView.setSelection(liveCommentView.getText().length)
+                        }
+                    }
+
+                    is CommandRunner.Result.Failure -> {
+                        show(getString(R.string.command_failed__format, result.message))
                     }
                 }
+            },
+        )
+    }
 
-                is CommandRunner.Result.Failure -> {
-                    show(getString(R.string.command_failed__format, result.message))
-                }
-            }
+    /**
+     * Keeps [run] so [cancelCommandRuns] can reach it, dropping the ones that are over first — a send
+     * chain adds an entry per command in it, and the ⌘ button can be tapped again on any run that
+     * finishes before the spinner has replaced it.
+     */
+    private fun trackCommandRun(run: CommandRunner.Run) {
+        commandRuns.removeAll { it.isFinished }
+        commandRuns.add(run)
+    }
+
+    /**
+     * Stops the commands still running for this screen. Their results are dropped by the null check on
+     * the comment field anyway, so letting them go on would only hold an engine — and this fragment
+     * with it — until each one's deadline.
+     */
+    private fun cancelCommandRuns() {
+        for (run in commandRuns) {
+            run.cancel()
         }
+        commandRuns.clear()
     }
 
     /**
@@ -2464,30 +2492,32 @@ class PostingFragment :
             executeSendPost()
             return
         }
-        CommandRunner.run(commands[index], comment, this.threadNumber, this.boardName) { result ->
-            val liveCommentView = this.commentView
-            if (liveCommentView == null) {
-                commandsProgress.finish()
-                sendButtonEnabled = true
-                return@run
-            }
-            when (result) {
-                is CommandRunner.Result.Success -> {
-                    val newComment = result.comment ?: comment
-                    liveCommentView.setText(newComment)
-                    liveCommentView.setSelection(liveCommentView.getText().length)
-                    // Only the chain's end releases the spinner, so the recursion carries it along.
-                    autoRunChain(commands, index + 1, newComment)
-                }
-
-                is CommandRunner.Result.Failure -> {
+        trackCommandRun(
+            CommandRunner.run(commands[index], comment, this.threadNumber, this.boardName) { result ->
+                val liveCommentView = this.commentView
+                if (liveCommentView == null) {
                     commandsProgress.finish()
-                    show(getString(R.string.command_failed__format, result.message))
                     sendButtonEnabled = true
-                    updateSendButtonState()
+                    return@run
                 }
-            }
-        }
+                when (result) {
+                    is CommandRunner.Result.Success -> {
+                        val newComment = result.comment ?: comment
+                        liveCommentView.setText(newComment)
+                        liveCommentView.setSelection(liveCommentView.getText().length)
+                        // Only the chain's end releases the spinner, so the recursion carries it along.
+                        autoRunChain(commands, index + 1, newComment)
+                    }
+
+                    is CommandRunner.Result.Failure -> {
+                        commandsProgress.finish()
+                        show(getString(R.string.command_failed__format, result.message))
+                        sendButtonEnabled = true
+                        updateSendButtonState()
+                    }
+                }
+            },
+        )
     }
 
     private inner class MarkupButtonsBuilder(

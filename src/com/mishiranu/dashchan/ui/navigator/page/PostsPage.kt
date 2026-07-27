@@ -354,6 +354,9 @@ class PostsPage :
     private val commandsProgress =
         DelayedProgress({ startCommandProgress() }, { cancelCommandProgress() })
 
+    /** The command runs started here that may still be going; see [cancelCommandRuns]. */
+    private val commandRuns = ArrayList<CommandRunner.Run>()
+
     private var lastNewPostNumbers = mutableSetOf<PostNumber?>()
     private var lastEditedPostNumbers = mutableSetOf<PostNumber?>()
     private var importantPostsMarksFastScrollBarDecoration: ImportantPostsMarksFastScrollBarDecoration? =
@@ -665,6 +668,7 @@ class PostsPage :
         setCustomSearchView(null)
         // A command still running outlives the page: its callback finds it gone and never releases the
         // indicator, so drop it here.
+        cancelCommandRuns()
         commandsProgress.cancel()
     }
 
@@ -2241,26 +2245,50 @@ class PostsPage :
     ) {
         val posts = collectThreadPosts()
         commandsProgress.start()
-        CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
-            // Delivered on the main thread; the page may have been left by the time it arrives. The
-            // indicator is released before that check, since nothing releases it afterwards.
-            commandsProgress.finish()
-            if (!isRunning) {
-                return@runThread
-            }
-            when (result) {
-                is CommandRunner.ThreadResult.Success -> {
-                    val changed = applyThreadReplacements(result.replacements)
-                    if (changed == 0 && notifyEmpty) {
-                        show(R.string.command_no_changes)
+        val run =
+            CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
+                // Delivered on the main thread; the page may have been left by the time it arrives. The
+                // indicator is released before that check, since nothing releases it afterwards.
+                commandsProgress.finish()
+                if (!isRunning) {
+                    return@runThread
+                }
+                when (result) {
+                    is CommandRunner.ThreadResult.Success -> {
+                        val changed = applyThreadReplacements(result.replacements)
+                        if (changed == 0 && notifyEmpty) {
+                            show(R.string.command_no_changes)
+                        }
+                    }
+
+                    is CommandRunner.ThreadResult.Failure -> {
+                        show(getString(R.string.command_failed__format, result.message))
                     }
                 }
-
-                is CommandRunner.ThreadResult.Failure -> {
-                    show(getString(R.string.command_failed__format, result.message))
-                }
             }
+        trackCommandRun(run)
+    }
+
+    /**
+     * Keeps [run] so [cancelCommandRuns] can reach it, dropping the ones that are over first — a thread
+     * that auto-runs a command on every refresh would otherwise collect an entry per run for as long as
+     * it stays open.
+     */
+    private fun trackCommandRun(run: CommandRunner.Run) {
+        commandRuns.removeAll { it.isFinished }
+        commandRuns.add(run)
+    }
+
+    /**
+     * Stops the commands still running for this page. Their results would be dropped by the `isRunning`
+     * check anyway, so letting them go on would only hold an engine — and this page with it — until
+     * each one's deadline, which a per-post run over a long thread measures in minutes.
+     */
+    private fun cancelCommandRuns() {
+        for (run in commandRuns) {
+            run.cancel()
         }
+        commandRuns.clear()
     }
 
     /**

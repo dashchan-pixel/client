@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure
  * context), so scripts can encrypt/decrypt or translate posts. A fresh engine is created per run and
- * destroyed once the result arrives.
+ * destroyed once the result arrives — or once the run is given up on, see [Run].
  *
  * The code also receives an `env` object holding the user's shared key→value store
  * ([CommandsStorage.getEnv]), so a script can read a user-provided value with
@@ -84,6 +84,63 @@ object CommandRunner {
         ) : Result
     }
 
+    /**
+     * A run in flight, handed back by [run] and [runThread] so the screen that started one can give up
+     * on it — the result of a command whose screen is gone is dropped by the caller anyway, and the
+     * engine would otherwise be held until the deadline (minutes, for a per-post run over a long
+     * thread) still reaching the network.
+     *
+     * A run settles exactly once: through its result, through its deadline, or through [cancel]. The
+     * first of those to arrive owns the outcome and the teardown.
+     */
+    class Run internal constructor() {
+        private val settled = AtomicBoolean(false)
+
+        // Written on the main thread when the engine starts, read from the JS bridge thread.
+        @Volatile private var engine: HeadlessJsEngine? = null
+
+        @Volatile private var timeout: Runnable? = null
+
+        /** Whether the outcome has been decided, so there is nothing left to cancel. */
+        val isFinished: Boolean
+            get() = settled.get()
+
+        /**
+         * Gives up on the run: the engine is destroyed now and the callback is never invoked. A run
+         * that has already settled is left alone, so this is safe to call for anything still tracked.
+         * Main thread.
+         */
+        fun cancel() {
+            if (settle()) {
+                release()
+            }
+        }
+
+        /** Hands over what [cancel] has to tear down, once the run actually owns an engine. */
+        internal fun start(
+            engine: HeadlessJsEngine,
+            timeout: Runnable,
+        ) {
+            this.engine = engine
+            this.timeout = timeout
+        }
+
+        /** Claims the single outcome this run is allowed; true for the caller that got it. */
+        internal fun settle(): Boolean = settled.compareAndSet(false, true)
+
+        /**
+         * Drops the deadline and the engine. Callable from either thread —
+         * [HeadlessJsEngine.destroy] marshals itself onto the main one, and
+         * [Handler.removeCallbacks][android.os.Handler.removeCallbacks] is safe from any.
+         */
+        internal fun release() {
+            timeout?.let { ConcurrentUtils.HANDLER.removeCallbacks(it) }
+            timeout = null
+            engine?.destroy()
+            engine = null
+        }
+    }
+
     /** Outcome of a [CommandsStorage.UseIn.THREAD] command. */
     sealed interface ThreadResult {
         /**
@@ -102,7 +159,8 @@ object CommandRunner {
 
     /**
      * Evaluates a [CommandsStorage.UseIn.COMMENT] [item] against the given inputs and delivers the
-     * outcome to [callback] on the main thread. Safe to call from the main thread.
+     * outcome to [callback] on the main thread. Safe to call from the main thread. The returned [Run]
+     * lets the caller drop the run when the screen it belongs to goes away.
      */
     fun run(
         item: CommandsStorage.CommandItem,
@@ -110,8 +168,9 @@ object CommandRunner {
         thread: String?,
         board: String?,
         callback: (Result) -> Unit,
-    ) {
-        withLibraries(item, { Result.Failure(it) }, callback) { libraries ->
+    ): Run {
+        val handle = Run()
+        withLibraries(item, handle, { Result.Failure(it) }, callback) { libraries ->
             val script =
                 buildScript(
                     factorySource = buildFactorySource("comment,thread,board,env", item.code.orEmpty(), libraries, false),
@@ -121,13 +180,15 @@ object CommandRunner {
                     // A comment command replaces the field with a single string.
                     resultExpr = "(__result===undefined||__result===null)?null:String(__result)",
                 ) { append(jsArg(comment)).append(',') }
-            execute(script, ::parseComment, { Result.Failure(it) }, callback)
+            execute(handle, script, ::parseComment, { Result.Failure(it) }, callback)
         }
+        return handle
     }
 
     /**
      * Evaluates a [CommandsStorage.UseIn.THREAD] [item] against the thread's [posts] and delivers the
-     * outcome to [callback] on the main thread. Safe to call from the main thread.
+     * outcome to [callback] on the main thread. Safe to call from the main thread. The returned [Run]
+     * lets the caller drop the run when the screen it belongs to goes away.
      */
     fun runThread(
         item: CommandsStorage.CommandItem,
@@ -135,8 +196,9 @@ object CommandRunner {
         thread: String?,
         board: String?,
         callback: (ThreadResult) -> Unit,
-    ) {
-        withLibraries(item, { ThreadResult.Failure(it) }, callback) { libraries ->
+    ): Run {
+        val handle = Run()
+        withLibraries(item, handle, { ThreadResult.Failure(it) }, callback) { libraries ->
             val postsJson = postsToJson(posts)
             val bodyParams = if (item.perPost) "post,thread,board,env" else "posts,thread,board,env"
             val script =
@@ -157,8 +219,9 @@ object CommandRunner {
                 } else {
                     TIMEOUT_MS
                 }
-            execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
+            execute(handle, script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
         }
+        return handle
     }
 
     /**
@@ -167,17 +230,24 @@ object CommandRunner {
      * way that points at the wrong thing. [failure] wraps the message in the result type the caller
      * expects. Everything happens on the main thread; only the download itself doesn't (see
      * [CommandLibraries.load]).
+     *
+     * [handle] is settled by a failure the same way a run is, so a cancel and a missing library can't
+     * both be reported.
      */
     private fun <R> withLibraries(
         item: CommandsStorage.CommandItem,
+        handle: Run,
         failure: (String) -> R,
         callback: (R) -> Unit,
         proceed: (String) -> Unit,
     ) {
         CommandLibraries.load(item.libraries) { result ->
             when (result) {
-                is CommandLibraries.Result.Success -> proceed(result.source)
-                is CommandLibraries.Result.Failure -> callback(failure(result.message))
+                // Cancelled while a library was still downloading: no engine exists yet, so giving up
+                // here is the whole of it.
+                is CommandLibraries.Result.Success -> if (!handle.isFinished) proceed(result.source)
+
+                is CommandLibraries.Result.Failure -> if (handle.settle()) callback(failure(result.message))
             }
         }
     }
@@ -189,20 +259,23 @@ object CommandRunner {
      * through a bridge instead of the evaluation's return value; a [timeoutMs] deadline guards a script
      * that never settles. [parse] turns the bridged JSON into a result; [failure] wraps a timeout/error
      * message.
+     *
+     * The result arrives on the bridge's own thread and the deadline on the main one, so which of them
+     * gets to answer — and to tear the engine down — is decided by [handle], which a [Run.cancel] may
+     * also have taken first.
      */
     private fun <R> execute(
+        handle: Run,
         script: String,
         parse: (String?) -> R,
         failure: (String) -> R,
         callback: (R) -> Unit,
         timeoutMs: Long = TIMEOUT_MS,
     ) {
-        val delivered = AtomicBoolean(false)
-        val engineHolder = arrayOfNulls<HeadlessJsEngine>(1)
         val deliver: (R) -> Unit = { result ->
-            if (delivered.compareAndSet(false, true)) {
+            if (handle.settle()) {
                 ConcurrentUtils.HANDLER.post {
-                    engineHolder[0]?.destroy()
+                    handle.release()
                     callback(result)
                 }
             }
@@ -212,12 +285,11 @@ object CommandRunner {
             object {
                 @JavascriptInterface
                 fun onResult(json: String?) {
-                    ConcurrentUtils.HANDLER.removeCallbacks(timeout)
                     deliver(parse(json))
                 }
             }
         val engine = HeadlessJsEngine(mapOf(BRIDGE_NAME to bridge))
-        engineHolder[0] = engine
+        handle.start(engine, timeout)
         ConcurrentUtils.HANDLER.postDelayed(timeout, timeoutMs)
         engine.evaluate(script)
     }
