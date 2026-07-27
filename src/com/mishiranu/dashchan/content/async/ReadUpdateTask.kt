@@ -17,9 +17,13 @@ import chan.util.StringUtils
 import com.mishiranu.dashchan.content.FileProvider
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
+import com.mishiranu.dashchan.util.Hasher
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.util.Locale
 
@@ -281,6 +285,45 @@ class ReadUpdateTask(
         }
     }
 
+    /**
+     * The APK installed under an extension name, to compare a manifest package against
+     * by content rather than by the version it claims.
+     *
+     * A version cannot decide this: an APK built and installed locally carries the very
+     * version the release does, while being a different build. The bytes decide it.
+     *
+     * Reading them is deferred to a package that could be a copy at all -- the declared
+     * size is one stat against the hash's full read -- and happens at most once. An APK
+     * that cannot be read counts as no match, which leaves the package on offer.
+     */
+    private class InstalledApk(
+        private val path: String?,
+    ) {
+        private var sha256: ByteArray? = null
+        private var hashed = false
+
+        fun isSameBinary(
+            length: Long,
+            sha256sum: ByteArray?,
+        ): Boolean {
+            val path = this.path
+            if (path == null || sha256sum == null || length <= 0 || File(path).length() != length) {
+                return false
+            }
+            if (!hashed) {
+                hashed = true
+                sha256 =
+                    try {
+                        FileInputStream(path).use { Hasher.getInstanceSha256().calculate(it) }
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                        null
+                    }
+            }
+            return sha256.contentEquals(sha256sum)
+        }
+    }
+
     private class Response(
         var uri: Uri,
         val dataVersion: DataVersion,
@@ -323,17 +366,21 @@ class ReadUpdateTask(
         val fingerprintsMap = HashMap<String, ChanManager.Fingerprints?>()
         fingerprintsMap[ChanManager.EXTENSION_NAME_CLIENT] =
             ChanManager.getInstance().applicationFingerprints
+        val installedApks = HashMap<String, InstalledApk>()
         for (extensionItem in extensionItems) {
             fingerprintsMap[extensionItem.name!!] = extensionItem.fingerprints
+            installedApks[extensionItem.name] = InstalledApk(extensionItem.applicationInfo.sourceDir)
         }
         val applicationTitle: String
         val applicationVersionName: String?
         val applicationVersionCode: Long
         try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            applicationTitle = packageInfo.applicationInfo!!.loadLabel(context.packageManager).toString()
+            val applicationInfo = packageInfo.applicationInfo!!
+            applicationTitle = applicationInfo.loadLabel(context.packageManager).toString()
             applicationVersionName = packageInfo.versionName
             applicationVersionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
+            installedApks[ChanManager.EXTENSION_NAME_CLIENT] = InstalledApk(applicationInfo.sourceDir)
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
@@ -421,8 +468,8 @@ class ReadUpdateTask(
                                     extensionName,
                                     updateDataMap,
                                     fingerprintsMap,
+                                    installedApks,
                                     packagesArray,
-                                    DataVersion.LEGACY,
                                     null,
                                 )
                             }
@@ -442,8 +489,8 @@ class ReadUpdateTask(
                                         extractedItem.name,
                                         updateDataMap,
                                         fingerprintsMap,
+                                        installedApks,
                                         packagesArray,
-                                        DataVersion.V1,
                                         extractedItem,
                                     )
                                 }
@@ -479,7 +526,6 @@ class ReadUpdateTask(
                                     extensionName,
                                     installDataMap,
                                     packagesArray,
-                                    DataVersion.LEGACY,
                                     null,
                                 )
                             }
@@ -501,7 +547,6 @@ class ReadUpdateTask(
                                         extractedItem.name,
                                         installDataMap,
                                         packagesArray,
-                                        DataVersion.V1,
                                         extractedItem,
                                     )
                                 }
@@ -719,18 +764,19 @@ class ReadUpdateTask(
             extensionName: String,
             updateDataMap: HashMap<String, ApplicationItem>,
             fingerprintsMap: HashMap<String, ChanManager.Fingerprints?>,
+            installedApks: HashMap<String, InstalledApk>,
             packagesArray: JSONArray,
-            dataVersion: DataVersion,
             updateApplicationItem: ApplicationItem?,
         ) {
             val applicationItem = updateDataMap[extensionName]!!
             if (updateApplicationItem == null || applicationItem.type == updateApplicationItem.type) {
                 val installedCode = applicationItem.packageItems[0].versionCode
+                val installedApk = installedApks[extensionName]
                 val fingerprints = fingerprintsMap[extensionName]
                 for (i in 0 until packagesArray.length()) {
                     val packageItem =
                         extractPackageItem(
-                            dataVersion,
+                            response.dataVersion,
                             packagesArray.getJSONObject(i),
                             extensionName,
                             response.getRepositoryName(),
@@ -738,7 +784,13 @@ class ReadUpdateTask(
                             installedCode,
                             fingerprints,
                         )
-                    if (packageItem != null) {
+                    // A package can describe the APK that is already installed: its own
+                    // release, offered back to it. Nothing can come of installing it, so
+                    // it is not a target, and counting it as an update is what turns
+                    // metadata disagreeing over a version name into a standing prompt.
+                    if (packageItem != null &&
+                        installedApk?.isSameBinary(packageItem.length, packageItem.sha256sum) != true
+                    ) {
                         applicationItem.packageItems.add(packageItem)
                     }
                 }
@@ -751,13 +803,12 @@ class ReadUpdateTask(
             extensionName: String,
             installDataMap: HashMap<String, ApplicationItem>,
             packagesArray: JSONArray,
-            dataVersion: DataVersion,
             installApplicationItem: ApplicationItem?,
         ) {
             for (i in 0 until packagesArray.length()) {
                 val packageItem =
                     extractPackageItem(
-                        dataVersion,
+                        response.dataVersion,
                         packagesArray.getJSONObject(i),
                         extensionName,
                         response.getRepositoryName(),
