@@ -100,7 +100,7 @@ abstract class FirewallResolver {
         @Public
         fun getUri(): Uri?
 
-        override val holder: HttpHolder?
+        override fun getHolder(): HttpHolder?
 
         val chan: Chan?
 

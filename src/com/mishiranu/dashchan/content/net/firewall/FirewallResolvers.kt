@@ -141,14 +141,13 @@ class FirewallResolvers : FirewallResolver.Implementation() {
         internal val resolve: Boolean,
         private val exclusive: Boolean,
     ) : BaseSession(uri, chan, identifier) {
-        override val holder: HttpHolder
-            get() {
-                if (exclusive) {
-                    return checkHolder
-                } else {
-                    throw IllegalStateException()
-                }
+        override fun getHolder(): HttpHolder {
+            if (exclusive) {
+                return checkHolder
+            } else {
+                throw IllegalStateException()
             }
+        }
 
         override fun isResolveRequest(): Boolean = resolve
 
@@ -169,8 +168,7 @@ class FirewallResolvers : FirewallResolver.Implementation() {
     ) : BaseSession(uri, chan, identifier) {
         public override fun getUri(): Uri? = throw IllegalStateException()
 
-        override val holder: HttpHolder?
-            get() = throw IllegalStateException()
+        override fun getHolder(): HttpHolder? = throw IllegalStateException()
 
         override fun isResolveRequest(): Boolean = false
 

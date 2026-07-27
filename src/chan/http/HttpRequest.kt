@@ -9,23 +9,32 @@ import java.util.Objects
 
 @Public
 class HttpRequest {
+    // Declared as getter methods rather than Kotlin properties on purpose. The Java API these
+    // interfaces replaced backed every one of them with a *public field* on the implementing
+    // ChanPerformer.*Data classes, and extensions in the wild read those fields directly
+    // (`new HttpRequest(uri, data.holder, data)`). A Kotlin `override val` forces a private
+    // backing field, which turns such an access into IllegalAccessError at runtime. Keeping the
+    // interface member a method lets implementors expose `@JvmField val holder` and satisfy the
+    // interface with `override fun getHolder()`, reproducing the original ABI byte for byte.
     @Public
     interface Preset {
-        val holder: HttpHolder?
+        fun getHolder(): HttpHolder?
     }
 
     interface TimeoutsPreset : Preset {
-        val connectTimeout: Int
-        val readTimeout: Int
+        fun getConnectTimeout(): Int
+
+        fun getReadTimeout(): Int
     }
 
     interface OutputListenerPreset : Preset {
-        val outputListener: OutputListener?
+        fun getOutputListener(): OutputListener?
     }
 
     interface RangePreset : Preset {
-        val rangeStart: Long
-        val rangeEnd: Long
+        fun getRangeStart(): Long
+
+        fun getRangeEnd(): Long
     }
 
     interface OutputListener {
@@ -123,20 +132,20 @@ class HttpRequest {
 
     @Public
     constructor(uri: Uri?, preset: Preset?) {
-        val holder: HttpHolder = (if (preset != null) preset.holder else null)!!
+        val holder: HttpHolder = (if (preset != null) preset.getHolder() else null)!!
         Objects.requireNonNull<HttpHolder?>(holder)
         this.uri = uri
         this.holder = holder
         client = HttpClient.getInstance()
         if (preset is TimeoutsPreset) {
-            setTimeouts(preset.connectTimeout, preset.readTimeout)
+            setTimeouts(preset.getConnectTimeout(), preset.getReadTimeout())
         }
         if (preset is OutputListenerPreset) {
-            setOutputListener(preset.outputListener)
+            setOutputListener(preset.getOutputListener())
         }
         if (preset is RangePreset) {
             val rangePreset = preset
-            setRange(rangePreset.rangeStart, rangePreset.rangeEnd)
+            setRange(rangePreset.getRangeStart(), rangePreset.getRangeEnd())
         }
     }
 
