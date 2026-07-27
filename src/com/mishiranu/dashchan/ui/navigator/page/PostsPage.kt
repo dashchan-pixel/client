@@ -91,6 +91,7 @@ import com.mishiranu.dashchan.ui.navigator.manager.UiManager.PostStateProvider
 import com.mishiranu.dashchan.ui.posting.Replyable
 import com.mishiranu.dashchan.ui.posting.Replyable.ReplyData
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.DelayedProgress
 import com.mishiranu.dashchan.util.ListViewUtils.smoothScrollToPosition
 import com.mishiranu.dashchan.util.ResourceUtils.getColonString
 import com.mishiranu.dashchan.util.ResourceUtils.getColor
@@ -344,6 +345,14 @@ class PostsPage :
     private var searchControlView: View? = null
     private var searchProcessView: View? = null
     private lateinit var searchResultText: Button
+
+    /**
+     * Puts the list's busy indicator up while a thread command runs, but only once it has been running
+     * long enough to be worth saying so (see [DelayedProgress]) — most commands finish before the user
+     * could notice anything at all, and one that fetches or decrypts should not look like a no-op.
+     */
+    private val commandsProgress =
+        DelayedProgress({ startCommandProgress() }, { cancelCommandProgress() })
 
     private var lastNewPostNumbers = mutableSetOf<PostNumber?>()
     private var lastEditedPostNumbers = mutableSetOf<PostNumber?>()
@@ -654,6 +663,9 @@ class PostsPage :
         }
         FavoritesStorage.getInstance().getObservable().unregister(this)
         setCustomSearchView(null)
+        // A command still running outlives the page: its callback finds it gone and never releases the
+        // indicator, so drop it here.
+        commandsProgress.cancel()
     }
 
     override fun onNotifyAllAdaptersChanged() {
@@ -1760,6 +1772,10 @@ class PostsPage :
         if (!hasExtractTask() && !hasReadTask()) {
             val recyclerView = getRecyclerView()
             recyclerView.pullable.cancelBusyState()
+            // A command still running keeps the indicator the load is done with.
+            if (commandsProgress.isShowing) {
+                recyclerView.pullable.startBusyState(PullableWrapper.Side.TOP)
+            }
             switchList()
             val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
             val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
@@ -2192,6 +2208,29 @@ class PostsPage :
     }
 
     /**
+     * Shows a long-running command as the same top busy indicator a refresh uses, the thread staying
+     * readable while it works. A load already showing it wins — [PullableWrapper.startBusyState] is a
+     * no-op then, and the load owns what it put up.
+     */
+    private fun startCommandProgress() {
+        getRecyclerView().pullable.startBusyState(PullableWrapper.Side.TOP)
+    }
+
+    /**
+     * Takes the indicator down, unless a load is using it — the command's [startCommandProgress] was
+     * then a no-op, so its end must not end the load's. A load finishing first leaves the command
+     * without an indicator (see [cancelProgressIfNecessary]).
+     *
+     * Skipped once the page is gone: the indicator goes with the list, and the view models this asks
+     * about are no longer ours to reach.
+     */
+    private fun cancelCommandProgress() {
+        if (isRunning && !hasExtractTask() && !hasReadTask()) {
+            getRecyclerView().pullable.cancelBusyState()
+        }
+    }
+
+    /**
      * Runs [command] over the thread's posts and applies its inline replacements to the displayed
      * comments. [notifyEmpty] toasts when a manual run changed nothing, so the user gets feedback that
      * it ran; auto-runs stay silent.
@@ -2201,8 +2240,11 @@ class PostsPage :
         notifyEmpty: Boolean = true,
     ) {
         val posts = collectThreadPosts()
+        commandsProgress.start()
         CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
-            // Delivered on the main thread; the page may have been left by the time it arrives.
+            // Delivered on the main thread; the page may have been left by the time it arrives. The
+            // indicator is released before that check, since nothing releases it afterwards.
+            commandsProgress.finish()
             if (!isRunning) {
                 return@runThread
             }

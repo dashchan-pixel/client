@@ -36,6 +36,7 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -105,6 +106,7 @@ import com.mishiranu.dashchan.ui.posting.text.NameEditWatcher
 import com.mishiranu.dashchan.ui.posting.text.QuoteEditWatcher
 import com.mishiranu.dashchan.ui.preference.CommandsFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.DelayedProgress
 import com.mishiranu.dashchan.util.GraphicsUtils.Reencoding
 import com.mishiranu.dashchan.util.GraphicsUtils.applyAlpha
 import com.mishiranu.dashchan.util.GraphicsUtils.isLight
@@ -216,7 +218,17 @@ class PostingFragment :
     private var textFormatView: ViewGroup? = null
     private var commentEditWatcher: CommentEditWatcher? = null
     private var commandsButton: ImageView? = null
+    private var commandsProgressView: View? = null
     private var commentCommands: List<CommandsStorage.CommandItem> = emptyList()
+
+    /**
+     * Turns the ⌘ button into a spinner while a command runs, but only once it has been running long
+     * enough to be worth saying so (see [DelayedProgress]) — most commands finish before the user
+     * could notice anything at all.
+     */
+    private val commandsProgress =
+        DelayedProgress({ setCommandsRunning(true) }, { setCommandsRunning(false) })
+    private var commandsRunning = false
     private var captchaForm: CaptchaForm? = null
     private var confirmationHeaderView: TextView? = null
     private var footerContainer: FrameLayout? = null
@@ -462,6 +474,7 @@ class PostingFragment :
             ),
         )
         commandsButton = buildCommandsButton(commentWrapper, density)
+        commandsProgressView = buildCommandsProgress(commentWrapper, density)
         postingLayout.addView(commentWrapper, postingLayout.indexOfChild(commentParent))
         postingLayout.removeView(commentParent)
         if (markupAtBottom) {
@@ -912,7 +925,12 @@ class PostingFragment :
         personalDataBlock = null
         textFormatView = null
         commentEditWatcher = null
+        // A command still running outlives the views it would have spun for: its callback finds the
+        // comment field gone and never releases the spinner, so drop it here.
+        commandsProgress.cancel()
+        commandsRunning = false
         commandsButton = null
+        commandsProgressView = null
         captchaForm = null
         confirmationHeaderView = null
         footerContainer = null
@@ -2313,6 +2331,34 @@ class PostingFragment :
     }
 
     /**
+     * The spinner that stands in for the ⌘ button while a command runs: the same corner, the same box
+     * and the same tint, so it reads as the button itself being busy rather than as something new
+     * appearing next to it.
+     */
+    private fun buildCommandsProgress(
+        parent: FrameLayout,
+        density: Float,
+    ): View {
+        val context = parent.context
+        val progress = ProgressBar(context, null, android.R.attr.progressBarStyleSmall)
+        progress.indeterminateTintList =
+            ColorStateList.valueOf(getColor(context, android.R.attr.textColorSecondary))
+        // Padding rather than a smaller box: it keeps the spinner concentric with the button it
+        // replaces, since ProgressBar scales its drawable into whatever the padding leaves.
+        val padding = (10f * density).toInt()
+        progress.setPadding(padding, padding, padding, padding)
+        val size = (40f * density).toInt()
+        val params =
+            FrameLayout.LayoutParams(size, size, Gravity.BOTTOM or Gravity.END).apply {
+                val margin = (2f * density).toInt()
+                setMargins(0, 0, margin, margin)
+            }
+        progress.visibility = View.GONE
+        parent.addView(progress, params)
+        return progress
+    }
+
+    /**
      * Recomputes which commands apply to the current forum/board and shows or hides the ⌘ button.
      * Both manually-triggered and run-on-send commands are kept: the menu lists them all, but
      * run-on-send ones are shown disabled (they fire automatically from [onSendButtonClick]) so the
@@ -2323,7 +2369,24 @@ class PostingFragment :
             CommandsStorage
                 .getInstance()
                 .getAvailable(CommandsStorage.UseIn.COMMENT, chanName, boardName)
-        commandsButton?.visibility = if (commentCommands.isEmpty()) View.GONE else View.VISIBLE
+        updateCommandsViews()
+    }
+
+    /**
+     * Shows the ⌘ button, or the spinner in its place while a command is running, or neither when no
+     * command applies here. Both are driven from one place so a refresh of the available commands
+     * can't reveal the button from under the spinner.
+     */
+    private fun updateCommandsViews() {
+        val available = commentCommands.isNotEmpty()
+        commandsButton?.visibility = if (available && !commandsRunning) View.VISIBLE else View.GONE
+        commandsProgressView?.visibility =
+            if (available && commandsRunning) View.VISIBLE else View.GONE
+    }
+
+    private fun setCommandsRunning(running: Boolean) {
+        commandsRunning = running
+        updateCommandsViews()
     }
 
     private fun showCommandsPopup(anchor: View) {
@@ -2337,13 +2400,16 @@ class PostingFragment :
 
     private fun runCommand(command: CommandsStorage.CommandItem) {
         val commentView = commentView ?: return
+        commandsProgress.start()
         CommandRunner.run(
             command,
             commentView.getText().toString(),
             this.threadNumber,
             this.boardName,
         ) { result ->
-            // Delivered on the main thread; the view may be gone by the time it arrives.
+            // Delivered on the main thread; the view may be gone by the time it arrives. Released
+            // before that check, since nothing releases it afterwards.
+            commandsProgress.finish()
             val liveCommentView = this.commentView ?: return@run
             when (result) {
                 is CommandRunner.Result.Success -> {
@@ -2380,6 +2446,9 @@ class PostingFragment :
         // Disable the button so the send can't be re-triggered while the chain runs.
         sendButtonEnabled = false
         updateSendButtonState()
+        // Held around the whole chain rather than each command in it, so the spinner doesn't blink
+        // between two quick commands or restart its delay on each of them.
+        commandsProgress.start()
         autoRunChain(commands, 0, commentView.getText().toString())
     }
 
@@ -2389,6 +2458,7 @@ class PostingFragment :
         comment: String,
     ) {
         if (index >= commands.size) {
+            commandsProgress.finish()
             sendButtonEnabled = true
             updateSendButtonState()
             executeSendPost()
@@ -2397,6 +2467,7 @@ class PostingFragment :
         CommandRunner.run(commands[index], comment, this.threadNumber, this.boardName) { result ->
             val liveCommentView = this.commentView
             if (liveCommentView == null) {
+                commandsProgress.finish()
                 sendButtonEnabled = true
                 return@run
             }
@@ -2405,10 +2476,12 @@ class PostingFragment :
                     val newComment = result.comment ?: comment
                     liveCommentView.setText(newComment)
                     liveCommentView.setSelection(liveCommentView.getText().length)
+                    // Only the chain's end releases the spinner, so the recursion carries it along.
                     autoRunChain(commands, index + 1, newComment)
                 }
 
                 is CommandRunner.Result.Failure -> {
+                    commandsProgress.finish()
                     show(getString(R.string.command_failed__format, result.message))
                     sendButtonEnabled = true
                     updateSendButtonState()
