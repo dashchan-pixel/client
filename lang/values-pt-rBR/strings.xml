@@ -274,6 +274,7 @@
 	<string name="play_again">Reproduzir novamente</string>
 	<string name="playback_error">Erro na reprodução</string>
 	<string name="playback_speed_options">Opções de velocidade de reprodução</string>
+	<string name="popular">Populares</string>
 	<string name="port">Porta</string>
 	<string name="post_is_not_found">O post não foi encontrado</string>
 	<string name="post_rejected">Mensagem rejeitada</string>

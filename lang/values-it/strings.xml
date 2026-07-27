@@ -343,6 +343,7 @@
     <string name="play_again">Riproduci nuovamente</string>
     <string name="playback_speed_options">Opzioni velocità di riproduzione</string>
     <string name="playback_error">Errore riproduzione</string>
+    <string name="popular">Popolari</string>
     <string name="port">Porta</string>
     <string name="post_is_not_found">Post non trovato</string>
     <string name="post_rejected">Post respinto</string>

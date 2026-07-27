@@ -88,12 +88,27 @@ class PostsAdapter(
     private val recyclerView: RecyclerView
 
     private val postNumbers = java.util.ArrayList<PostNumber?>()
+
+    /**
+     * What the list actually shows. Equal to [postNumbers] in the default view; in the popular view it
+     * holds only the posts that have replies, most replied first, so it is neither sorted nor complete.
+     * Everything that means "the thread" — the original post, ordinal indexes, the bump limit divider,
+     * [iterator] — goes through [postNumbers] instead.
+     */
+    private val displayNumbers = java.util.ArrayList<PostNumber?>()
+
+    /** Reverse index of [displayNumbers], kept only for the popular view where a binary search can't work. */
+    private val displayPositions = HashMap<PostNumber?, Int>()
     private val postItemsMap: MutableMap<PostNumber?, PostItem>
     val hiddenPosts: PostItem.HideState.Map<PostNumber?>
     private val selected = HashSet<PostNumber?>()
 
     private var bumpLimitOrdinalIndex = PostItem.ORDINAL_INDEX_NONE
     private var selection = false
+
+    /** Whether the list is showing the popular posts instead of the thread. See [setPopularMode]. */
+    var isPopularMode: Boolean = false
+        private set
 
     fun createPostItemDecoration(
         context: Context,
@@ -108,7 +123,18 @@ class PostsAdapter(
         super.registerAdapterDataObserver(recyclerKeeper)
     }
 
-    override fun getItemCount(): Int = postNumbers.size
+    override fun getItemCount(): Int = displayNumbers.size
+
+    /** Number of posts the thread holds, whatever the current view shows. */
+    val postCount: Int
+        get() = postNumbers.size
+
+    /** The original post, or `null` while the thread is empty. Always the first one in post number order. */
+    val originalPostItem: PostItem?
+        get() = getPostAt(0)
+
+    /** [index]-th post in post number order, ignoring the current view. */
+    private fun getPostAt(index: Int): PostItem? = if (index >= 0 && index < postNumbers.size) postItemsMap[postNumbers[index]] else null
 
     val hiddenPostsCount: Int
         get() = hiddenPosts.count(PostItem.HideState.HIDDEN)
@@ -180,9 +206,77 @@ class PostsAdapter(
 
     fun copyItems(): MutableList<PostItem> = java.util.ArrayList(postItemsMap.values)
 
-    fun getItem(position: Int): PostItem = postItemsMap[postNumbers[position]]!!
+    fun getItem(position: Int): PostItem = postItemsMap[displayNumbers[position]]!!
 
-    fun positionOfPostNumber(postNumber: PostNumber): Int = Collections.binarySearch<PostNumber?>(postNumbers, postNumber)
+    fun positionOfPostNumber(postNumber: PostNumber): Int =
+        if (isPopularMode) {
+            displayPositions[postNumber] ?: -1
+        } else {
+            Collections.binarySearch<PostNumber?>(displayNumbers, postNumber)
+        }
+
+    /**
+     * Switches between the thread and the popular view. The popular view drops the posts nobody replied
+     * to and orders the rest by how many replies they got, ties going to the earlier post.
+     */
+    fun setPopularMode(popular: Boolean) {
+        if (isPopularMode != popular) {
+            isPopularMode = popular
+            cancelPreloading()
+            rebuildDisplayOrder()
+            notifyDataSetChanged()
+            preloadPosts(0)
+        }
+    }
+
+    /**
+     * Recomputes the popular order, which depends on what is hidden right now. A no-op in the thread
+     * view, where hiding a post can't reorder anything.
+     */
+    fun invalidatePopularOrder() {
+        if (isPopularMode) {
+            cancelPreloading()
+            rebuildDisplayOrder()
+            notifyDataSetChanged()
+            preloadPosts(0)
+        }
+    }
+
+    private fun rebuildDisplayOrder() {
+        displayNumbers.clear()
+        displayPositions.clear()
+        if (!isPopularMode) {
+            displayNumbers.addAll(postNumbers)
+            return
+        }
+        val postStateProvider = configurationSet.postStateProvider
+        val replyCounts = HashMap<PostNumber?, Int>()
+        for (postNumber in postNumbers) {
+            val postItem = postItemsMap[postNumber]
+            if (postItem == null || postStateProvider.isHiddenResolve(postItem)) {
+                continue
+            }
+            // A reply the user has hidden is not a vote for anything, so hiding a spammer takes his
+            // replies out of the ranking as well as his posts.
+            var replyCount = 0
+            for (referenceFrom in postItem.getReferencesFrom()) {
+                val reply = postItemsMap[referenceFrom]
+                if (reply != null && !postStateProvider.isHiddenResolve(reply)) {
+                    replyCount++
+                }
+            }
+            if (replyCount > 0) {
+                replyCounts[postNumber] = replyCount
+            }
+        }
+        val ordered = java.util.ArrayList<PostNumber?>(replyCounts.keys)
+        ordered.sortWith(nullsFirst(naturalOrder()))
+        // The sort is stable, so posts with the same number of replies stay in thread order.
+        displayNumbers.addAll(ordered.sortedByDescending { replyCounts[it] ?: 0 })
+        for (position in displayNumbers.indices) {
+            displayPositions[displayNumbers[position]] = position
+        }
+    }
 
     fun positionOfOrdinalIndex(ordinalIndex: Int): Int {
         for (i in 0..<getItemCount()) {
@@ -196,7 +290,11 @@ class PostsAdapter(
 
     override fun findPostItem(postNumber: PostNumber?): PostItem? = postItemsMap[postNumber]
 
-    override fun iterator(): MutableIterator<PostItem> = PostsIterator(true, 0)
+    /**
+     * Every post of the thread in post number order — not what the list shows. Use [iterate] to walk the
+     * list itself.
+     */
+    override fun iterator(): MutableIterator<PostItem> = ThreadIterator()
 
     override fun onLinkClick(
         view: CommentTextView,
@@ -204,7 +302,7 @@ class PostsAdapter(
         extra: LinkListener.Extra,
         confirmed: Boolean,
     ) {
-        val originalPostItem = getItem(0)
+        val originalPostItem = this.originalPostItem ?: return
         val chan = get(extra.chanName)
         val boardName = originalPostItem.getBoardName()
         val threadNumber = originalPostItem.getThreadNumber()
@@ -213,13 +311,15 @@ class PostsAdapter(
             (extra.inBoardLink || equals(boardName, chan.locator.safe(false).getBoardName(uri))) &&
             equals(threadNumber, chan.locator.safe(false).getThreadNumber(uri))
         ) {
+            // A link resolves against the thread, not against what the list happens to show, so it
+            // opens posts the popular view leaves out too.
             val postNumber = chan.locator.safe(false).getPostNumber(uri)
-            val position = if (postNumber == null) 0 else positionOfPostNumber(postNumber)
-            if (position < 0) {
+            val postItem = if (postNumber == null) originalPostItem else postItemsMap[postNumber]
+            if (postItem == null) {
                 show(R.string.post_is_not_found)
                 return
             }
-            uiManager.dialog().displaySingle(configurationSet, getItem(position))
+            uiManager.dialog().displaySingle(configurationSet, postItem)
         } else {
             uiManager.interaction().handleLinkClick(configurationSet, uri, extra, confirmed)
         }
@@ -289,15 +389,16 @@ class PostsAdapter(
         var ordinalIndex = 0
         bumpLimitOrdinalIndex = PostItem.ORDINAL_INDEX_NONE
         val chan = get(configurationSet.chanName)
+        val originalPostItem = this.originalPostItem
         val bumpLimit =
-            if (getItemCount() > 0) chan.configuration.getBumpLimitWithMode(getItem(0).getBoardName()) else -1
-        for (postItem in iterate(true, 0)) {
+            if (originalPostItem != null) chan.configuration.getBumpLimitWithMode(originalPostItem.getBoardName()) else -1
+        for (postItem in this) {
             if (postItem.isDeleted()) {
                 postItem.setOrdinalIndex(PostItem.ORDINAL_INDEX_DELETED)
             } else {
                 postItem.setOrdinalIndex(ordinalIndex++)
                 if (ordinalIndex == bumpLimit &&
-                    getItem(0).getBumpLimitReachedState(
+                    originalPostItem?.getBumpLimitReachedState(
                         chan,
                         ordinalIndex,
                     ) ==
@@ -307,6 +408,7 @@ class PostsAdapter(
                 }
             }
         }
+        rebuildDisplayOrder()
 
         notifyDataSetChanged()
         preloadPosts(0)
@@ -324,9 +426,8 @@ class PostsAdapter(
     }
 
     fun removeHiddenPost(post: PostItem) {
-        val position = positionOfPostNumber(post.getPostNumber())
         // Never remove the original post, it keeps the thread's subject and gallery title.
-        val wasHidden = position != 0 && postItemsMap.containsKey(post.getPostNumber())
+        val wasHidden = post !== originalPostItem && postItemsMap.containsKey(post.getPostNumber())
         if (wasHidden) {
             cancelPreloading()
             recyclerView.post(
@@ -342,6 +443,7 @@ class PostsAdapter(
                     postNumbers.clear()
                     postNumbers.addAll(postItemsMap.keys)
                     postNumbers.sortWith(nullsFirst(naturalOrder()))
+                    rebuildDisplayOrder()
                     notifyDataSetChanged()
                 },
             )
@@ -372,12 +474,13 @@ class PostsAdapter(
             postNumbers.clear()
             postNumbers.addAll(postItemsMap.keys)
             postNumbers.sortWith(nullsFirst(naturalOrder()))
+            rebuildDisplayOrder()
             notifyDataSetChanged()
         }
         return removed
     }
 
-    fun hasOldPosts(): Boolean = getItemCount() >= 2 && getItem(0).isCyclical() && getItem(1).isDeleted()
+    fun hasOldPosts(): Boolean = getPostAt(0)?.isCyclical() == true && getPostAt(1)?.isDeleted() == true
 
     fun hasDeletedPosts(): Boolean {
         for (postItem in this) {
@@ -498,6 +601,7 @@ class PostsAdapter(
         this.hiddenPosts = hiddenPosts
         postNumbers.addAll(postItemsMap.keys)
         postNumbers.sortWith(nullsFirst(naturalOrder()))
+        displayNumbers.addAll(postNumbers)
         preloadPosts(0)
         for (postItem in postItemsMap.values) {
             if (postItem.isOriginalPost()) {
@@ -549,6 +653,10 @@ class PostsAdapter(
     ): DividerItemDecoration.Configuration = configuration.need(!needBumpLimitDividerAbove(position + 1))
 
     private fun needBumpLimitDividerAbove(position: Int): Boolean {
+        // The bump limit marks a place in the thread; the popular view has no such place.
+        if (isPopularMode) {
+            return false
+        }
         val postItem = if (position >= 0 && position < getItemCount()) getItem(position) else null
         return postItem != null && bumpLimitOrdinalIndex >= 0 && postItem.getOrdinalIndex() == bumpLimitOrdinalIndex
     }
@@ -605,6 +713,16 @@ class PostsAdapter(
                 outRect.set(0, 0, 0, 0)
             }
         }
+    }
+
+    private inner class ThreadIterator : MutableIterator<PostItem> {
+        private var index = 0
+
+        override fun hasNext(): Boolean = index < postNumbers.size
+
+        override fun next(): PostItem = postItemsMap[postNumbers[index++]]!!
+
+        override fun remove(): Unit = throw UnsupportedOperationException()
     }
 
     private inner class PostsIterator(

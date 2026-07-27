@@ -170,6 +170,7 @@ class PostsPage :
         var threadTitle: String? = null
         var scrollToPostNumber: PostNumber? = null
         var selectedPosts: MutableSet<PostNumber>? = null
+        var popularPosts: Boolean = false
 
         override fun describeContents(): Int = 0
 
@@ -197,6 +198,7 @@ class PostsPage :
                     number.writeToParcel(dest, flags)
                 }
             }
+            dest.writeByte((if (popularPosts) 1 else 0).toByte())
         }
 
         companion object {
@@ -237,6 +239,7 @@ class PostsPage :
                             }
                             parcelableExtra.selectedPosts = selectedPosts
                         }
+                        parcelableExtra.popularPosts = source.readByte().toInt() != 0
                         return parcelableExtra
                     }
 
@@ -624,6 +627,8 @@ class PostsPage :
         readViewModel.observe(this, this)
         retainableExtra.dialogsState?.dropState()
         retainableExtra.dialogsState = null
+        // Last, so that the hide rules the order depends on are already decoded.
+        adapter.setPopularMode(parcelableExtra.popularPosts)
         queueNextRefresh(true)
     }
 
@@ -664,7 +669,7 @@ class PostsPage :
     }
 
     override fun onScrollToPost(postNumber: PostNumber) {
-        val position = this.adapter.positionOfPostNumber(postNumber)
+        val position = positionToScrollTo(postNumber)
         if (position >= 0) {
             uiManager.dialog().closeDialogs(this.adapter.configurationSet.stackInstance!!)
             smoothScrollToPosition(getRecyclerView(), position)
@@ -716,7 +721,10 @@ class PostsPage :
 
     public override fun obtainTitleSubtitle(): Pair<String?, String?>? {
         var subtitle: String? = null
-        if (!isDisplayHiddenPostsEnabled) {
+        if (this.adapter.isPopularMode) {
+            // The reordered list is easy to mistake for a broken thread, so say what it is.
+            subtitle = getString(R.string.popular)
+        } else if (!isDisplayHiddenPostsEnabled) {
             val hidden = this.adapter.hiddenPostsCount
             if (hidden > 0) subtitle = getString(R.string.hidden_posts_count__format, hidden)
         }
@@ -874,6 +882,7 @@ class PostsPage :
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
         menu.add(0, R.id.menu_gallery, 0, R.string.gallery)
         menu.add(0, R.id.menu_flow, 0, R.string.flow)
+        menu.add(0, R.id.menu_popular, 0, R.string.popular).setCheckable(true)
         menu.add(0, R.id.menu_select, 0, R.string.select)
         val contentsMenu = menu.addSubMenu(0, R.id.menu_contents, 0, R.string.contents)
         contentsMenu
@@ -911,6 +920,10 @@ class PostsPage :
             .findItem(R.id.menu_add_post)
             .setVisible(replyable?.onRequestReply(false) == true)
         menu.findItem(R.id.menu_erase).setVisible(adapter.getItemCount() > 0)
+        menu
+            .findItem(R.id.menu_popular)
+            .setVisible(adapter.postCount > 0)
+            .setChecked(adapter.isPopularMode)
         menu.findItem(R.id.menu_clear_old).setVisible(adapter.hasOldPosts())
         menu.findItem(R.id.menu_clear_deleted).setVisible(adapter.hasDeletedPosts())
         menu.findItem(R.id.menu_hidden_posts).setVisible(hidePerformer.hasLocalFilters())
@@ -986,6 +999,9 @@ class PostsPage :
                 gallerySet.getThreadTitle(),
             )
             return true
+        } else if (switchItemId0 == R.id.menu_popular) {
+            setPopularPosts(!adapter.isPopularMode)
+            return true
         } else if (switchItemId0 == R.id.menu_select) {
             selectionMode = startActionMode(SelectionCallback(this))
             return true
@@ -1037,7 +1053,7 @@ class PostsPage :
                 val boardName = chan.locator.safe(true).getBoardName(uri)
                 val threadNumber = chan.locator.safe(true).getThreadNumber(uri)
                 if (threadNumber != null) {
-                    val threadTitle = adapter.getItem(0).getSubjectOrComment()
+                    val threadTitle = adapter.originalPostItem?.getSubjectOrComment()
                     uiManager
                         .navigator()!!
                         .navigatePosts(chan.name, boardName, threadNumber, null, threadTitle)
@@ -1065,6 +1081,41 @@ class PostsPage :
             return true
         }
         return false
+    }
+
+    /**
+     * Switches the list between the thread and the popular posts — the posts that got replies, most
+     * replied first. Hidden posts are left out and their replies don't count towards anyone's total.
+     * A thread nobody replied in has nothing to show, so the switch is refused instead of emptying
+     * the list.
+     */
+    private fun setPopularPosts(popular: Boolean) {
+        val adapter = this.adapter
+        adapter.setPopularMode(popular)
+        if (popular && adapter.getItemCount() == 0) {
+            adapter.setPopularMode(false)
+            show(R.string.not_found)
+            return
+        }
+        getParcelableExtra(ParcelableExtra.FACTORY).popularPosts = popular
+        selectionMode?.finish()
+        (getRecyclerView().getLayoutManager() as LinearLayoutManager).scrollToPositionWithOffset(0, 0)
+        updateImportantPostsFastScrollBarDecorationData()
+        notifyTitleChanged()
+        updateOptionsMenu()
+    }
+
+    /**
+     * Position of [postNumber] in the list, leaving the popular view first when it doesn't list that
+     * post: going to a post means going to it in the thread. Negative if the post isn't loaded at all.
+     */
+    private fun positionToScrollTo(postNumber: PostNumber): Int {
+        val position = this.adapter.positionOfPostNumber(postNumber)
+        if (position >= 0 || !this.adapter.isPopularMode) {
+            return position
+        }
+        setPopularPosts(false)
+        return this.adapter.positionOfPostNumber(postNumber)
     }
 
     override fun onFavoritesUpdate(
@@ -1153,7 +1204,7 @@ class PostsPage :
             val postItems = adapter.selectedItems
             if (postItems.size > 0) {
                 val page = getPage()
-                val threadTitle = adapter.getItem(0).getSubjectOrComment()
+                val threadTitle = adapter.originalPostItem?.getSubjectOrComment()
                 ThreadshotPerformer(
                     fragmentManager,
                     page.chanName!!,
@@ -1322,7 +1373,7 @@ class PostsPage :
             retainableExtra.searchLastIndex =
                 (retainableExtra.searchLastIndex + addIndex + count) % count
             val position =
-                this.adapter.positionOfPostNumber(
+                positionToScrollTo(
                     retainableExtra.searchPostNumbers[retainableExtra.searchLastIndex],
                 )
             if (position >= 0) {
@@ -1346,6 +1397,11 @@ class PostsPage :
     }
 
     public override fun onDrawerNumberEntered(number: Int): Int {
+        if (this.adapter.isPopularMode) {
+            // Both the ordinal index and the post number the drawer takes count the thread, not the
+            // popular view, so go back to it before looking anything up.
+            setPopularPosts(false)
+        }
         val adapter = this.adapter
         val count = adapter.getItemCount()
         var success = false
@@ -1396,7 +1452,7 @@ class PostsPage :
         val parcelableExtra = getParcelableExtra(ParcelableExtra.FACTORY)
         val scrollToPostNumber = parcelableExtra.scrollToPostNumber
         if (scrollToPostNumber != null) {
-            val position = this.adapter.positionOfPostNumber(scrollToPostNumber)
+            val position = positionToScrollTo(scrollToPostNumber)
             if (position >= 0) {
                 val recyclerView = getRecyclerView()
                 if (instantly) {
@@ -1527,6 +1583,11 @@ class PostsPage :
 
     private val storePositionRunnable =
         Runnable {
+            if (this.adapter.isPopularMode) {
+                // The popular view isn't the thread's order, so where it stands says nothing about
+                // where the user was reading. Keep the position stored for the thread view.
+                return@Runnable
+            }
             val listPosition = obtain(getRecyclerView(), null)
             var state: ByteArray? = null
             if (listPosition != null) {
@@ -2295,10 +2356,13 @@ class PostsPage :
         postItem: PostItem,
         message: UiManager.Message,
     ) {
-        val position = this.adapter.positionOfPostNumber(postItem.getPostNumber())
-        if (position < 0) {
+        // The message is broadcast to every page, so drop the posts that aren't this thread's. Asking
+        // the thread rather than the list keeps hiding and marking working on the posts the popular
+        // view leaves out; the two branches that need a row check the position themselves.
+        if (this.adapter.findPostItem(postItem.getPostNumber()) == null) {
             return
         }
+        val position = this.adapter.positionOfPostNumber(postItem.getPostNumber())
         val recyclerView = getRecyclerView()
         when (message) {
             UiManager.Message.POST_INVALIDATE_ALL_VIEWS -> {
@@ -2318,7 +2382,9 @@ class PostsPage :
             }
 
             UiManager.Message.INVALIDATE_COMMENT_VIEW -> {
-                this.adapter.invalidateComment(position)
+                if (position >= 0) {
+                    this.adapter.invalidateComment(position)
+                }
             }
 
             UiManager.Message.PERFORM_SWITCH_USER_MARK -> {
@@ -2342,6 +2408,8 @@ class PostsPage :
                 if (postItem.getHideState() == HideState.HIDDEN) {
                     if (!isDisplayHiddenPostsEnabled) this.adapter.removeHiddenPost(postItem)
                 }
+                // Hiding a post drops it and its replies out of the popular ranking.
+                this.adapter.invalidatePopularOrder()
                 notifyTitleChanged()
                 updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = true
                 uiManager.sendPostItemMessage(
@@ -2386,6 +2454,7 @@ class PostsPage :
                     }
                     notifyAllAdaptersChanged()
                 }
+                adapter.invalidatePopularOrder()
                 adapter.preloadPosts(
                     (recyclerView.getLayoutManager() as LinearLayoutManager)
                         .findFirstVisibleItemPosition(),
@@ -2393,15 +2462,18 @@ class PostsPage :
             }
 
             UiManager.Message.PERFORM_GO_TO_POST -> {
-                // Avoid concurrent modification
-                recyclerView.post(
-                    Runnable {
-                        uiManager
-                            .dialog()
-                            .closeDialogs(this.adapter.configurationSet.stackInstance!!)
-                    },
-                )
-                smoothScrollToPosition(recyclerView, position)
+                val goToPosition = positionToScrollTo(postItem.getPostNumber())
+                if (goToPosition >= 0) {
+                    // Avoid concurrent modification
+                    recyclerView.post(
+                        Runnable {
+                            uiManager
+                                .dialog()
+                                .closeDialogs(this.adapter.configurationSet.stackInstance!!)
+                        },
+                    )
+                    smoothScrollToPosition(recyclerView, goToPosition)
+                }
             }
         }
     }
@@ -2743,6 +2815,7 @@ class PostsPage :
                                 if (hasDeleted) {
                                     val adapter = postsPage.adapter
                                     adapter.invalidateHidden()
+                                    adapter.invalidatePopularOrder()
                                     postsPage.notifyAllAdaptersChanged()
                                     postsPage.encodeAndStoreThreadExtra()
                                     adapter.preloadPosts(
