@@ -25,9 +25,12 @@ class CardView(
         cardElevation = ELEVATION_DP * density
         // No stroke: this is a filled+elevated card, coloured from the theme, not an outlined one.
         strokeWidth = 0
-        // Reserve space for the elevation shadow so it is not clipped by the list item bounds, the way
-        // the old custom implementation padded for its fake shadow.
-        setUseCompatPadding(true)
+        // No compat padding: since API 21 the framework draws the elevation shadow outside the view
+        // bounds (clipChildren does not clip it), so the card needs no reserved room for it. Enabling it
+        // would inset the visible rounded rect inside the item bounds by an asymmetric, corner-radius
+        // dependent amount (vertical > horizontal), which stacks on top of the list's own item spacing
+        // and makes the gap between two cards visibly larger than the gap to the screen edges.
+        setUseCompatPadding(false)
         // The content child carries its own selectable/ripple background; keep the card itself inert so
         // there is no second ripple or checkable overlay on top of it.
         isClickable = false

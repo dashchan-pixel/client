@@ -166,39 +166,36 @@ class ThreadsAdapter(
         column: Int,
         rect: Rect,
     ) {
-        val density = obtainDensity(view)
-        val paddingOut = (CARD_PADDING_OUT_DP * density).toInt()
-        val paddingIn = (CARD_PADDING_IN_DP * density).toInt()
         if (!cardsMode) {
             rect.set(0, 0, 0, 0)
         } else {
+            // One spacing value for every gap: between two cards and between a card and the edge of the
+            // list alike. The cards themselves add nothing on top of it (see CardView.useCompatPadding).
+            val spacing = (CARD_SPACING_DP * obtainDensity(view)).toInt()
             val columns = gridMode?.columns ?: 1
             val left: Int
             val right: Int
             if (columns >= 2) {
-                val paddingInExtra =
-                    ((CARD_PADDING_IN_DP + CARD_PADDING_IN_EXTRA_DP) * density).toInt()
-                val total = 2 * paddingOut + (columns - 1) * paddingInExtra
-                val average = total.toFloat() / columns
+                // Every column gets the same amount of horizontal space taken away from it, otherwise the
+                // cards would come out unequally wide; the split between left and right slides from
+                // "all left" in the first column to "all right" in the last one so that the visible
+                // gutters stay exactly one spacing wide.
+                val average = ((columns + 1) * spacing).toFloat() / columns
                 left =
                     lerp(
-                        paddingOut.toFloat(),
-                        average - paddingOut,
+                        spacing.toFloat(),
+                        average - spacing,
                         column.toFloat() / (columns - 1),
                     ).toInt()
                 right = average.toInt() - left
             } else {
-                left = paddingOut
-                right = paddingOut
+                left = spacing
+                right = spacing
             }
-            val firstRow = position - column == 0
+            // The top offset carries the whole gap between two rows, so the bottom one is only needed to
+            // close the list off after the last row.
             val lastRow = position + columns - column >= getItemCount()
-            rect.set(
-                left,
-                if (firstRow) paddingOut else paddingIn,
-                right,
-                if (lastRow) paddingOut else 0,
-            )
+            rect.set(left, spacing, right, if (lastRow) spacing else 0)
         }
     }
 
@@ -344,12 +341,9 @@ class ThreadsAdapter(
             val totalWidth =
                 (context.getResources().getConfiguration().screenWidthDp * density).toInt()
             val minWidth = (CARD_MIN_WIDTH_DP * density).toInt()
-            val paddingOut = (CARD_PADDING_OUT_DP * density).toInt()
-            val paddingInExtra = ((CARD_PADDING_IN_DP + CARD_PADDING_IN_EXTRA_DP) * density).toInt()
-            val columns: Int =
-                calculateColumnsCount(totalWidth, minWidth, paddingOut, paddingInExtra)
-            val contentWidth =
-                (totalWidth - 2 * paddingOut - (columns - 1) * paddingInExtra) / columns
+            val spacing = (CARD_SPACING_DP * density).toInt()
+            val columns: Int = calculateColumnsCount(totalWidth, minWidth, spacing)
+            val contentWidth = (totalWidth - (columns + 1) * spacing) / columns
             val contentHeight = (contentWidth * 1.5f).toInt()
             cardsMode = true
             gridMode = GridMode(columns, contentHeight)
@@ -381,23 +375,18 @@ class ThreadsAdapter(
     companion object {
         private const val LIST_PADDING = 12
         private const val CARD_MIN_WIDTH_DP = 120
-        private const val CARD_PADDING_OUT_DP = 4
-        private const val CARD_PADDING_IN_DP = 1
-        private const val CARD_PADDING_IN_EXTRA_DP = 0
 
+        /**
+         * The single gap used by the cards and grid views, both between two cards and between a card and
+         * the edge of the list. 16dp is the Material 3 list/card margin the platform Settings app uses.
+         */
+        private const val CARD_SPACING_DP = 16
+
+        /** How many columns of at least [minWidth] fit once every gap has been paid for. */
         private fun calculateColumnsCount(
             totalWidth: Int,
             minWidth: Int,
-            paddingOut: Int,
-            paddingInExtra: Int,
-        ): Int =
-            min(
-                max(
-                    1,
-                    (totalWidth - 2 * paddingOut + paddingInExtra) /
-                        (minWidth + paddingInExtra),
-                ),
-                6,
-            )
+            spacing: Int,
+        ): Int = min(max(1, (totalWidth - spacing) / (minWidth + spacing)), 6)
     }
 }
