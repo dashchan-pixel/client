@@ -849,6 +849,12 @@ class ReadUpdateTask(
             }
 
             val responses = LinkedHashMap<TargetUri, Response>()
+            // The same manifest is reachable under more than one URI: a renamed GitHub org
+            // keeps serving the old raw path, and every extension released before the rename
+            // carries that path as its own updateUri. Two URIs answering byte for byte are
+            // one source, not two, so they are merged like a target already fetched below --
+            // otherwise each of their extensions is offered twice, once per URI.
+            val responsesByBody = HashMap<String, Response>()
             for ((key, value) in targets) {
                 try {
                     var targetUri = key
@@ -857,14 +863,7 @@ class ReadUpdateTask(
                     while (redirects++ < 5) {
                         val response = responses[targetUri]
                         if (response != null) {
-                            if ("http" == response.uri.scheme && "https" == targetScheme) {
-                                response.uri =
-                                    response.uri
-                                        .buildUpon()
-                                        .scheme("https")
-                                        .build()
-                            }
-                            response.extensionNames.addAll(value)
+                            mergeResponse(response, targetScheme, value)
                             break
                         }
                         var responseUri: Uri? = null
@@ -909,13 +908,24 @@ class ReadUpdateTask(
                             targetUri = TargetUri(uri)
                             targetScheme = uri.scheme
                         } else {
-                            responses[targetUri] =
-                                Response(
-                                    responseUri!!,
-                                    responseDataVersion!!,
-                                    jsonObject,
-                                    HashSet(value),
-                                )
+                            val body = responseText.orEmpty()
+                            val sameBody = responsesByBody[body]
+                            if (sameBody != null) {
+                                mergeResponse(sameBody, targetScheme, value)
+                                // Both URIs now name one response, which the loop above can
+                                // still short-circuit on; the duplicate is dropped on return.
+                                responses[targetUri] = sameBody
+                            } else {
+                                val newResponse =
+                                    Response(
+                                        responseUri!!,
+                                        responseDataVersion!!,
+                                        jsonObject,
+                                        HashSet(value),
+                                    )
+                                responses[targetUri] = newResponse
+                                responsesByBody[body] = newResponse
+                            }
                             break
                         }
                     }
@@ -928,7 +938,29 @@ class ReadUpdateTask(
                     return emptyList()
                 }
             }
-            return responses.values
+            // Response has no equals, so this drops the URIs that share one response object
+            // while keeping the order they were requested in.
+            return LinkedHashSet(responses.values)
+        }
+
+        /**
+         * Fold a target into the response another target already produced: the extensions it
+         * asked for are added to that response's set, and https is preferred when the two
+         * disagree, since a package's relative source is resolved against the response URI.
+         */
+        private fun mergeResponse(
+            response: Response,
+            targetScheme: String?,
+            extensionNames: Set<String>,
+        ) {
+            if ("http" == response.uri.scheme && "https" == targetScheme) {
+                response.uri =
+                    response.uri
+                        .buildUpon()
+                        .scheme("https")
+                        .build()
+            }
+            response.extensionNames.addAll(extensionNames)
         }
     }
 }
