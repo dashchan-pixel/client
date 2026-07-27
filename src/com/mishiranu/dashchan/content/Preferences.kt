@@ -877,7 +877,7 @@ object Preferences {
     }
 
     const val KEY_GALLERY_SORT: String = "gallery_sort"
-    val DEFAULT_GALLERY_SORT: GallerySort = GallerySort.UNSORTED
+    val DEFAULT_GALLERY_SORT: GallerySort = GallerySort.POST_ORDER
 
     // Chosen from the gallery's own menu, no settings entry.
     var gallerySort: GallerySort
@@ -2353,7 +2353,7 @@ object Preferences {
     }
 
     /**
-     * How the gallery orders its files. [UNSORTED] is the order the thread posted them in, and it
+     * How the gallery orders its files. [POST_ORDER] is the order the thread posted them in, and it
      * is also what every other criterion falls back to for the files it cannot tell apart, because
      * the sorting is stable: files of the same size, resolution or type stay in post order.
      */
@@ -2361,7 +2361,7 @@ object Preferences {
         internal val value: String,
         val titleResId: Int,
     ) {
-        UNSORTED("unsorted", R.string.unsorted),
+        POST_ORDER("post_order", R.string.post_order),
         NAME("name", R.string.file_name),
         SIZE("size", R.string.file_size),
         RESOLUTION("resolution", R.string.resolution),

@@ -57,12 +57,12 @@ class GalleryInstance(
      * gallery is one that criterion says nothing about.
      */
     var sort: Preferences.GallerySort =
-        Preferences.gallerySort.takeIf { sortOptions.contains(it) } ?: Preferences.GallerySort.UNSORTED
+        Preferences.gallerySort.takeIf { sortOptions.contains(it) } ?: Preferences.GallerySort.POST_ORDER
         private set
 
     /** Whether the gallery shows every file in post order, the state it opens in by default. */
     val isDefaultOrder: Boolean
-        get() = mediaType == null && sort == Preferences.GallerySort.UNSORTED
+        get() = mediaType == null && sort == Preferences.GallerySort.POST_ORDER
 
     init {
         applyFilterAndSort()
@@ -110,7 +110,7 @@ class GalleryInstance(
     private fun createComparator(sort: Preferences.GallerySort): Comparator<GalleryItem>? {
         val chan = get(chanName)
         return when (sort) {
-            Preferences.GallerySort.UNSORTED -> {
+            Preferences.GallerySort.POST_ORDER -> {
                 null
             }
 
@@ -259,7 +259,7 @@ class GalleryInstance(
             val options = ArrayList<Preferences.GallerySort>()
             // Post order and file names are there for every gallery; the rest depend on what the
             // chan reports about these files
-            options.add(Preferences.GallerySort.UNSORTED)
+            options.add(Preferences.GallerySort.POST_ORDER)
             options.add(Preferences.GallerySort.NAME)
             if (galleryItems.any { it.size > 0 }) {
                 options.add(Preferences.GallerySort.SIZE)
