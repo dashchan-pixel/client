@@ -38,7 +38,9 @@ def main():
 	package['source'] = ('//github.com/dashchan-redacted/client/releases/download/'
 			f"{tag}/dashchan-redacted-{latest['code']}.apk")
 	with open(manifest_path, 'w') as f:
-		json.dump(manifest, f, indent='\t', ensure_ascii=False)
+		# 4 spaces, matching `jq --indent 4` -- jsonCheck (and the pre-commit
+		# hook) reject anything else.
+		json.dump(manifest, f, indent=4, ensure_ascii=False)
 		f.write('\n')
 
 
