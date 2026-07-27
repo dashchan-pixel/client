@@ -507,7 +507,8 @@ class ChanFragment :
     }
 
     companion object {
-        private const val EXTRA_CHAN_NAME = "chanName"
+        // internal: PreferenceSearch reads it to know which forum an open screen belongs to.
+        internal const val EXTRA_CHAN_NAME = "chanName"
 
         private const val VALUE_CUSTOM_DOMAIN = "custom_domain\n"
         private const val EXTRA_ANOTHER_DOMAIN_MODE = "anotherDomainMode"

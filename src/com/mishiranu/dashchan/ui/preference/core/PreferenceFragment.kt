@@ -14,15 +14,18 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.mishiranu.dashchan.BuildConfig
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.ui.ContentFragment
+import com.mishiranu.dashchan.ui.preference.PreferenceSearch
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference.ValueCodec
 import com.mishiranu.dashchan.ui.preference.core.Preference.SummaryProvider
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ListViewUtils.ClickCallback
 import com.mishiranu.dashchan.util.ResourceUtils.getColor
 import com.mishiranu.dashchan.util.SharedPreferences
+import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.util.ViewUtils.setRoundedSelectableItemBackground
 import com.mishiranu.dashchan.widget.DividerItemDecoration
 import com.mishiranu.dashchan.widget.ExpandedLayout
@@ -140,6 +143,72 @@ abstract class PreferenceFragment : ContentFragment() {
         dependencies.clear()
         recyclerView = null
     }
+
+    override fun onStart() {
+        super.onStart()
+
+        // Subclasses add their rows in onViewCreated, which has run by now.
+        val revealTitle = arguments?.getString(EXTRA_REVEAL_TITLE)
+        if (revealTitle != null) {
+            // One-shot: dropping the argument keeps a rotation, or a return from a child screen,
+            // from flashing the row all over again.
+            requireArguments().remove(EXTRA_REVEAL_TITLE)
+            revealPreference(revealTitle)
+        }
+        if (BuildConfig.DEBUG) {
+            // The framework knowing about the app-level index is a deliberate shortcut: onStart is
+            // the only hook every preference screen shares, and this check exists to fail during
+            // development rather than to ship.
+            PreferenceSearch.checkIndexed(this, searchableTitles())
+        }
+    }
+
+    /**
+     * Titles of the rows a user could search for -- settings and action buttons, but not the section
+     * headers or the navigation categories, which are structure rather than settings.
+     */
+    internal fun searchableTitles(): List<CharSequence> =
+        preferences
+            .filter {
+                val viewType = it.getViewType()
+                viewType != Preference.ViewType.HEADER && viewType != Preference.ViewType.CATEGORY
+            }.mapNotNull { it.title }
+
+    /** Scrolls the row titled [title] into view and pulses it, so the search hit is obvious. */
+    private fun revealPreference(title: String) {
+        val recyclerView = this.recyclerView ?: return
+        // Deferred, and the row is looked up again on each step: a screen can still drop rows after
+        // onStart -- ChanFragment removes its "Manage cookies" row in onResume -- so an index taken
+        // here would point at the wrong row by the time it is used.
+        recyclerView.post {
+            val index = indexOfTitle(title)
+            if (index >= 0) {
+                (recyclerView.getLayoutManager() as LinearLayoutManager).scrollToPositionWithOffset(index, 0)
+                flashPreference(recyclerView, title, FLASH_ATTEMPTS)
+            }
+        }
+    }
+
+    private fun flashPreference(
+        recyclerView: RecyclerView,
+        title: String,
+        attemptsLeft: Int,
+    ) {
+        recyclerView.post {
+            val index = indexOfTitle(title)
+            val itemView =
+                if (index >= 0) recyclerView.findViewHolderForAdapterPosition(index)?.itemView else null
+            if (itemView != null) {
+                ViewUtils.flashRoundedHighlight(itemView, Preferences.uiCornerRadius)
+            } else if (attemptsLeft > 1) {
+                // scrollToPositionWithOffset only requests a layout pass; until it has run there is
+                // no holder for the target row yet.
+                flashPreference(recyclerView, title, attemptsLeft - 1)
+            }
+        }
+    }
+
+    private fun indexOfTitle(title: String): Int = preferences.indexOfFirst { it.title?.toString() == title }
 
     private fun <T> onChange(
         preference: Preference<T>,
@@ -741,6 +810,16 @@ abstract class PreferenceFragment : ContentFragment() {
                 )
             }
         }
+    }
+
+    companion object {
+        /**
+         * Fragment argument: title of the row to scroll to and pulse once the screen is built. Set by
+         * [PreferenceSearch.Result.createFragment] when a search hit is opened.
+         */
+        internal const val EXTRA_REVEAL_TITLE = "revealTitle"
+
+        private const val FLASH_ATTEMPTS = 3
     }
 
     class PreferenceDialog : DialogFragment {

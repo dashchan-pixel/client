@@ -1,5 +1,8 @@
 package com.mishiranu.dashchan.util
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
@@ -25,6 +28,7 @@ import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowInsets
+import android.view.animation.DecelerateInterpolator
 import android.widget.EdgeEffect
 import android.widget.EditText
 import android.widget.ScrollView
@@ -259,6 +263,48 @@ object ViewUtils {
                 inset / 2,
             )
         setBackgroundPreservePadding(view, ripple)
+    }
+
+    /**
+     * Pulses a rounded highlight over [view] and then removes it, drawing it in the same shape and
+     * inset [setRoundedSelectableItemBackground] uses so it reads as that row lighting up. Used to
+     * point out the row the preferences search navigated to.
+     *
+     * Applied as the foreground rather than the background: the row's background is the rounded
+     * ripple, which the pulse must not replace.
+     */
+    @JvmStatic
+    fun flashRoundedHighlight(
+        view: View,
+        cornerRadiusDp: Int,
+        insetDp: Float = 4f,
+    ) {
+        val density = ResourceUtils.obtainDensity(view)
+        val radius = cornerRadiusDp * density
+        val shape =
+            ShapeDrawable(RoundRectShape(FloatArray(8) { radius }, null, null)).apply {
+                paint.color = ResourceUtils.getSystemSelectorColor(view.context)
+                alpha = 0
+            }
+        val inset = (insetDp * density).toInt()
+        val highlight = InsetDrawable(shape, inset, inset / 2, inset, inset / 2)
+        view.foreground = highlight
+        val animator = ValueAnimator.ofInt(0, 0xff)
+        animator.duration = 350
+        animator.repeatCount = 1
+        animator.repeatMode = ValueAnimator.REVERSE
+        animator.interpolator = DecelerateInterpolator()
+        animator.addUpdateListener { highlight.alpha = it.animatedValue as Int }
+        animator.addListener(
+            object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (view.foreground === highlight) {
+                        view.foreground = null
+                    }
+                }
+            },
+        )
+        animator.start()
     }
 
     @JvmStatic

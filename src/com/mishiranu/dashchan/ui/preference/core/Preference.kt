@@ -16,7 +16,9 @@ abstract class Preference<T>(
     val context: Context?,
     val key: String?,
     @JvmField val defaultValue: T?,
-    protected val title: CharSequence?,
+    // internal, not protected: PreferenceFragment matches rows by title to reveal the one the
+    // preferences search navigated to, and to check the search index against the built rows.
+    internal val title: CharSequence?,
     protected val summaryProvider: SummaryProvider<T>?,
 ) {
     enum class ViewType {
