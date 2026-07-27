@@ -305,8 +305,11 @@ class CaptchaForm(
             stopCaptchaLifetimeTimer()
             captchaImage = null
         }
-        // There is nothing to solve or to show with a captcha pass, so the block may be hidden
-        val blockHidden = captchaViewType == CaptchaViewType.PASS && hideCaptchaPassBlock
+        // There is nothing to solve or to show with a captcha pass or a captcha that is not
+        // required, so the block may be hidden
+        val blockHidden =
+            (captchaViewType == CaptchaViewType.PASS || captchaViewType == CaptchaViewType.SKIP_LOCK) &&
+                hideCaptchaPassBlock
         blockParentView.setVisibility(if (blockHidden) View.GONE else View.VISIBLE)
 
         when (captchaViewType) {

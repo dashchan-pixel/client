@@ -1642,11 +1642,17 @@ class PostingFragment :
 
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
 
-    // The captcha block itself is hidden with a captcha pass, so its header must go away too
+    // The captcha block itself is hidden with a captcha pass or no captcha at all,
+    // so its header must go away too
     private fun updateConfirmationHeaderState() {
         val headerView = confirmationHeaderView ?: return
         val footerContainer = this.footerContainer ?: return
-        val hidden = captchaState == ReadCaptchaTask.CaptchaState.PASS && isHideCaptchaPassBlock
+        val hidden =
+            (
+                captchaState == ReadCaptchaTask.CaptchaState.PASS ||
+                    captchaState == ReadCaptchaTask.CaptchaState.SKIP
+            ) &&
+                isHideCaptchaPassBlock
         headerView.setVisibility(if (hidden) View.GONE else View.VISIBLE)
         // Without the header the send button would stick to the checkboxes above it
         val density = obtainDensity(footerContainer)
