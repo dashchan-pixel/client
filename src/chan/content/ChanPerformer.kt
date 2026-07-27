@@ -341,6 +341,13 @@ open class ChanPerformer internal constructor(
     class ReadSinglePostData(
         @field:Public @JvmField val boardName: String?,
         @field:Public @JvmField val postNumber: String?,
+        /**
+         * Thread the post belongs to, when the link the post was reached through named it. Always
+         * set on the only path that reaches [onReadSinglePost] today, because the client requires
+         * a thread URI to offer the post card at all. Extensions whose engine can serve a post out
+         * of its thread should prefer this over resolving the thread themselves.
+         */
+        @field:Public @JvmField val threadNumber: String?,
         @JvmField val holder: HttpHolder?,
     ) : HttpRequest.Preset {
         override fun getHolder(): HttpHolder? = holder

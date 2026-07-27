@@ -270,9 +270,13 @@ class ReadPostsTask(
                 PagesDatabase.getInstance().setMetaFlags(threadKey, true, false)
                 if (chan.configuration.getOption(ChanConfiguration.OPTION_READ_SINGLE_POST)) {
                     try {
-                        // Check the post belongs to another thread
+                        // Check the post belongs to another thread. The thread is deliberately not
+                        // named here: finding out which thread holds the post is the whole point,
+                        // and this thread number has just turned out not to be one.
                         val result =
-                            chan.performer.safe().onReadSinglePost(ChanPerformer.ReadSinglePostData(boardName, threadNumber, holder))
+                            chan.performer.safe().onReadSinglePost(
+                                ChanPerformer.ReadSinglePostData(boardName, threadNumber, null, holder),
+                            )
                         val post = result?.post
                         if (post != null) {
                             val postThreadNumber = post.threadNumber

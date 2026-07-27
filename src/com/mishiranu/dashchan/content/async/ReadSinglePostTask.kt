@@ -31,7 +31,7 @@ class ReadSinglePostTask(
             val result =
                 chan.performer.safe().onReadSinglePost(
                     ChanPerformer
-                        .ReadSinglePostData(boardName, postNumber, holder),
+                        .ReadSinglePostData(boardName, postNumber, threadNumber, holder),
                 )
             val post = result?.post ?: throw HttpException.createNotFoundException()
             return Pair(
