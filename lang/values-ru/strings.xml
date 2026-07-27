@@ -645,4 +645,13 @@
 	<string name="auto_run">Автозапуск</string>
 	<string name="process_posts_individually">Обрабатывать сообщения по отдельности</string>
 	<string name="per_post">По сообщению</string>
+	<string name="libraries">Библиотеки</string>
+	<string name="libraries__format">Библиотеки: %s</string>
+	<string name="libraries__summary">Общий JavaScript, который команда загружает перед своим кодом: фрагмент, хранящийся здесь, или скрипт, загруженный по адресу и сохранённый до обновления. Всё, что он объявляет — функцию, const — команда может использовать</string>
+	<string name="library">Библиотека</string>
+	<string name="new_library">Новая библиотека</string>
+	<string name="no_libraries">Без библиотек</string>
+	<string name="no_libraries_defined">Библиотеки не заданы</string>
+	<string name="code_snippet">Фрагмент</string>
+	<string name="external_script">Внешний скрипт</string>
 </resources>

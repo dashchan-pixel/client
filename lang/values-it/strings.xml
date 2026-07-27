@@ -549,4 +549,13 @@
     <string name="auto_run">Automatico</string>
     <string name="process_posts_individually">Elabora i post singolarmente</string>
     <string name="per_post">Per post</string>
+    <string name="libraries">Librerie</string>
+    <string name="libraries__format">Librerie: %s</string>
+    <string name="libraries__summary">JavaScript condiviso che un comando carica prima del proprio codice: un frammento conservato qui, oppure uno script scaricato da un indirizzo e mantenuto fino all\'aggiornamento. Tutto ciò che dichiara — una funzione, una const — il comando può usarlo</string>
+    <string name="library">Libreria</string>
+    <string name="new_library">Nuova libreria</string>
+    <string name="no_libraries">Nessuna libreria</string>
+    <string name="no_libraries_defined">Nessuna libreria definita</string>
+    <string name="code_snippet">Frammento</string>
+    <string name="external_script">Script esterno</string>
 </resources>

@@ -445,4 +445,13 @@
 	<string name="auto_run">Automático</string>
 	<string name="process_posts_individually">Processar posts individualmente</string>
 	<string name="per_post">Por post</string>
+	<string name="libraries">Bibliotecas</string>
+	<string name="libraries__format">Bibliotecas: %s</string>
+	<string name="libraries__summary">JavaScript compartilhado que um comando carrega antes do próprio código: um trecho guardado aqui ou um script baixado de um endereço e mantido até você atualizar. Tudo o que ele declara — uma função, uma const — o comando pode usar</string>
+	<string name="library">Biblioteca</string>
+	<string name="new_library">Nova biblioteca</string>
+	<string name="no_libraries">Nenhuma biblioteca</string>
+	<string name="no_libraries_defined">Nenhuma biblioteca definida</string>
+	<string name="code_snippet">Trecho</string>
+	<string name="external_script">Script externo</string>
 </resources>

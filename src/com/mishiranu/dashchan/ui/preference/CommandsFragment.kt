@@ -100,6 +100,7 @@ class CommandsFragment :
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         menu.add(0, R.id.menu_add_command, 0, R.string.add_command)
         menu.add(0, R.id.menu_environment, 0, R.string.environment)
+        menu.add(0, R.id.menu_libraries, 0, R.string.libraries)
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -116,6 +117,11 @@ class CommandsFragment :
 
             R.id.menu_environment -> {
                 EnvironmentDialog().show(childFragmentManager, EnvironmentDialog::class.java.name)
+                return true
+            }
+
+            R.id.menu_libraries -> {
+                (requireActivity() as FragmentHandler).pushFragment(LibrariesFragment())
                 return true
             }
         }
@@ -161,10 +167,10 @@ class CommandsFragment :
                                 e.printStackTrace()
                                 null
                             }
-                        val commands =
-                            if (jsonObject != null) CommandsStorage.parseCommands(jsonObject) else emptyList()
-                        if (commands.isNotEmpty()) {
-                            addCommands(commands)
+                        val import =
+                            if (jsonObject != null) CommandsStorage.parseImport(jsonObject) else CommandsStorage.Import.EMPTY
+                        if (!import.isEmpty) {
+                            addCommands(import)
                         } else {
                             ClickableToast.show(R.string.invalid_data_format)
                         }
@@ -173,14 +179,21 @@ class CommandsFragment :
             }
         }
 
-    private fun addCommands(commands: List<CommandsStorage.CommandItem>) {
+    private fun addCommands(import: CommandsStorage.Import) {
         val storage = CommandsStorage.getInstance()
-        for (command in commands) {
+        // The libraries first: a command references them by name, so they have to exist before it
+        // runs. One the user already has is kept as it is.
+        storage.addMissingLibraries(import.libraries)
+        for (command in import.commands) {
             storage.add(command)
             items.add(command)
         }
-        setErrorText(null)
-        getRecyclerView()!!.adapter!!.notifyDataSetChanged()
+        if (import.commands.isNotEmpty()) {
+            setErrorText(null)
+            getRecyclerView()!!.adapter!!.notifyDataSetChanged()
+        } else {
+            ClickableToast.show(R.string.completed)
+        }
     }
 
     // Command awaiting a destination Uri from the create-document picker (Save from the context menu).
@@ -236,6 +249,7 @@ class CommandsFragment :
                 command.useIn,
                 command.autoRun,
                 command.perPost,
+                command.libraries?.let { LinkedHashSet(it) },
             )
         editCommand(copy, -1)
     }
@@ -495,8 +509,10 @@ class CommandsFragment :
 
     class CommandDialog :
         DialogFragment,
-        ChanMultiChoiceDialog.Callback {
+        ChanMultiChoiceDialog.Callback,
+        LibraryMultiChoiceDialog.Callback {
         private val selectedChanNames = HashSet<String>()
+        private val selectedLibraries = LinkedHashSet<String>()
 
         private lateinit var scrollView: ScrollView
         private lateinit var chanNameSelector: TextView
@@ -505,6 +521,7 @@ class CommandsFragment :
         private lateinit var useInView: DropdownView
         private lateinit var autoRunCheckBox: CheckBox
         private lateinit var perPostCheckBox: CheckBox
+        private lateinit var librariesSelector: TextView
         private lateinit var codeEdit: EditText
 
         // Identity of the command being edited, carried into readDialogView() so an edit keeps the same
@@ -538,9 +555,12 @@ class CommandsFragment :
             useInView = view.findViewById(R.id.use_in)
             autoRunCheckBox = view.findViewById(R.id.auto_run)
             perPostCheckBox = view.findViewById(R.id.per_post)
+            librariesSelector = view.findViewById(R.id.libraries)
             codeEdit = view.findViewById(R.id.code)
             chanNameSelector.setOnClickListener { ChanMultiChoiceDialog(selectedChanNames).show(this) }
             chanNameSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
+            librariesSelector.setOnClickListener { LibraryMultiChoiceDialog(selectedLibraries).show(this) }
+            librariesSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
 
             useInView.setItems(USE_IN_ORDER.map { getString(it.titleRes) })
             useInView.setOnItemSelectedListener { position -> applyUseIn(USE_IN_ORDER[position]) }
@@ -549,6 +569,11 @@ class CommandsFragment :
 
             if (!ChanManager.getInstance().hasMultipleAvailableChans()) {
                 chanNameSelector.visibility = View.GONE
+            }
+            // Nothing to pick from until the user has written a library, and a row that only ever says
+            // "no libraries" is one more thing between them and the code field.
+            if (CommandsStorage.getInstance().getLibraryItems().isEmpty()) {
+                librariesSelector.visibility = View.GONE
             }
             var commandItem: CommandsStorage.CommandItem? = null
             if (savedInstanceState != null) {
@@ -567,6 +592,7 @@ class CommandsFragment :
                 useInView.setSelection(USE_IN_ORDER.indexOf(commandItem.useIn).coerceAtLeast(0))
                 autoRunCheckBox.isChecked = commandItem.autoRun
                 perPostCheckBox.isChecked = commandItem.perPost
+                commandItem.libraries?.let { selectedLibraries.addAll(it) }
                 codeEdit.setText(commandItem.code)
                 applyUseIn(commandItem.useIn)
             } else {
@@ -575,6 +601,7 @@ class CommandsFragment :
                 applyUseIn(USE_IN_ORDER[0])
             }
             updateSelectedText()
+            updateLibrariesText()
         }
 
         /**
@@ -650,6 +677,32 @@ class CommandsFragment :
             chanNameSelector.text = chanNameText
         }
 
+        /** Lists the selected libraries, or says there are none — the row is hidden when none exist. */
+        private fun updateLibrariesText() {
+            librariesSelector.text =
+                if (selectedLibraries.isEmpty()) {
+                    getString(R.string.no_libraries)
+                } else {
+                    getString(R.string.libraries__format, orderedLibraries().joinToString(", "))
+                }
+        }
+
+        /**
+         * The selection in load order, which is the order the libraries run in — so the row reads the
+         * way the command will run, and that is also the order the command is saved with.
+         */
+        private fun orderedLibraries(): List<String> =
+            CommandsStorage
+                .getInstance()
+                .librariesFor(selectedLibraries)
+                .map { it.name }
+
+        override fun onLibrariesSelected(names: Collection<String>) {
+            selectedLibraries.clear()
+            selectedLibraries.addAll(names)
+            updateLibrariesText()
+        }
+
         private fun readDialogView(): CommandsStorage.CommandItem {
             val useIn = USE_IN_ORDER[useInView.getSelectedItemPosition().coerceIn(USE_IN_ORDER.indices)]
             return CommandsStorage.CommandItem(
@@ -663,6 +716,8 @@ class CommandsFragment :
                 // The checkbox is hidden for a comment command, so don't save what it happens to be
                 // left on from a target the user switched away from.
                 useIn == CommandsStorage.UseIn.THREAD && perPostCheckBox.isChecked,
+                // Kept in load order, so an export reads in the order the libraries run in.
+                LinkedHashSet(orderedLibraries()).ifEmpty { null },
             )
         }
 
@@ -841,7 +896,8 @@ private fun createBottomBar(
     }
 }
 
-private fun wrapWithRibbon(
+/** Also used by the library editor, which has the same code field under the same keyboard. */
+internal fun wrapWithRibbon(
     context: android.content.Context,
     scrollView: View,
     codeEdit: com.mishiranu.dashchan.widget.CodeEditText,

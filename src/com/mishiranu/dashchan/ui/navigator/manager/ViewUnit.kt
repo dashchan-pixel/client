@@ -1141,10 +1141,10 @@ class ViewUnit
                             context.getString(R.string.add_command),
                             R.attr.iconActionAddRule,
                             ExtraButton.Callback { view: CommentTextView, text: ExtraButton.Text, click: Boolean ->
-                                val commands = CommandsStorage.fastParseCommandsFromText(text.toString())
-                                if (commands.isNotEmpty()) {
+                                val import = CommandsStorage.fastParseImportFromText(text.toString())
+                                if (!import.isEmpty) {
                                     if (click) {
-                                        uiManager.navigator()!!.navigateAddCommand(commands)
+                                        uiManager.navigator()!!.navigateAddCommand(import)
                                     }
                                     return@Callback true
                                 }

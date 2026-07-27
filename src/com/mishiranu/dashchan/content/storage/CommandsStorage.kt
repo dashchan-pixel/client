@@ -17,9 +17,18 @@ import org.json.JSONObject
  *
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
+ *
+ * Alongside the commands this file also holds the two things they share: the environment (see
+ * [envText]) and the [libraries][LibraryItem] a command can pull into its scope.
  */
 class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<CommandsStorage.Snapshot>("commands", 1000, 10000) {
     private val commandItems = ArrayList<CommandItem>()
+
+    /**
+     * The defined libraries, in load order — a command loads the ones it selected in this order, so
+     * a library may rely on one listed above it. Reordered from the Libraries screen.
+     */
+    private val libraryItems = ArrayList<LibraryItem>()
 
     /**
      * The shared environment as the user typed it (see [EnvText] for the format). This text — not
@@ -55,11 +64,33 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         serialize()
     }
 
-    /** Snapshot of what gets persisted: the ordered command list plus the shared environment text. */
+    /**
+     * Snapshot of what gets persisted: the ordered command list, the shared environment text and the
+     * ordered library list.
+     */
     class Snapshot(
         val items: List<CommandItem>,
         val envText: String,
+        val libraries: List<LibraryItem>,
     )
+
+    /**
+     * What an imported JSON document turned out to hold: the [commands] plus the [libraries] they came
+     * with. The two are kept apart because they are stored apart — a command references a library by
+     * name, so importing one means adding any definition the user doesn't have yet (see
+     * [addMissingLibraries]).
+     */
+    class Import(
+        val commands: List<CommandItem>,
+        val libraries: List<LibraryItem>,
+    ) {
+        val isEmpty: Boolean
+            get() = commands.isEmpty() && libraries.isEmpty()
+
+        companion object {
+            val EMPTY = Import(emptyList(), emptyList())
+        }
+    }
 
     /** Commands whose scope matches [chanName]/[boardName] and that target [useIn]. */
     fun getAvailable(
@@ -73,10 +104,26 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         for (commandItem in this.commandItems) {
             commandItems.add(CommandItem(commandItem))
         }
-        return Snapshot(commandItems, envText)
+        val libraryItems = ArrayList<LibraryItem>(this.libraryItems.size)
+        for (libraryItem in this.libraryItems) {
+            libraryItems.add(LibraryItem(libraryItem))
+        }
+        return Snapshot(commandItems, envText, libraryItems)
     }
 
     override fun onDeserialize(jsonObject: JSONObject) {
+        readEnv(jsonObject)
+        // Either list may hold an entry saved before ids existed; both then get one here, and the file
+        // is written back once so they stay stable across launches.
+        val librariesMigrated = readLibraries(jsonObject)
+        val jsonArray = jsonObject.optJSONArray(KEY_DATA)
+        val commandsMigrated = jsonArray != null && readCommands(jsonArray)
+        if (librariesMigrated || commandsMigrated) {
+            serialize()
+        }
+    }
+
+    private fun readEnv(jsonObject: JSONObject) {
         if (!jsonObject.isNull(KEY_ENV_TEXT)) {
             envText = jsonObject.optString(KEY_ENV_TEXT)
         } else {
@@ -93,7 +140,29 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             }
         }
         env = EnvText.parse(envText)
-        val jsonArray = jsonObject.optJSONArray(KEY_DATA) ?: return
+    }
+
+    /** Reads the library list into [libraryItems]. Returns true if any entry had to be given an id. */
+    private fun readLibraries(jsonObject: JSONObject): Boolean {
+        var migrated = false
+        val librariesArray = jsonObject.optJSONArray(KEY_LIBRARIES) ?: return false
+        for (i in 0 until librariesArray.length()) {
+            val item = librariesArray.optJSONObject(i) ?: continue
+            val libraryItem = parseLibrary(item) ?: continue
+            val storedId = item.optLong(KEY_ID)
+            if (storedId != 0L) {
+                libraryItem.id = storedId
+            } else {
+                // parseLibrary has already generated one; keeping it means writing the file back.
+                migrated = true
+            }
+            libraryItems.add(libraryItem)
+        }
+        return migrated
+    }
+
+    /** Reads the command list into [commandItems]. Returns true if any entry had to be given an id. */
+    private fun readCommands(jsonArray: JSONArray): Boolean {
         var migrated = false
         for (i in 0 until jsonArray.length()) {
             val item = jsonArray.optJSONObject(i)
@@ -114,6 +183,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 val autoRun = item.optBoolean(KEY_AUTO_RUN, item.optBoolean(KEY_AUTO_RUN_LEGACY))
                 val perPost = item.optBoolean(KEY_PER_POST)
                 val boardName = if (item.isNull(KEY_BOARD_NAME)) null else item.optString(KEY_BOARD_NAME)
+                val libraries = parseLibraryNames(item)
                 val storedId = item.optLong(KEY_ID)
                 val id =
                     if (storedId != 0L) {
@@ -125,18 +195,16 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         CommandItem.generateId()
                     }
                 commandItems.add(
-                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun, perPost),
+                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun, perPost, libraries),
                 )
             }
         }
-        if (migrated) {
-            serialize()
-        }
+        return migrated
     }
 
     @Throws(JSONException::class)
     override fun onSerialize(data: Snapshot): JSONObject? {
-        if (data.items.isEmpty() && data.envText.isEmpty()) {
+        if (data.items.isEmpty() && data.envText.isEmpty() && data.libraries.isEmpty()) {
             return null
         }
         val jsonObject = JSONObject()
@@ -150,13 +218,26 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         if (data.envText.isNotEmpty()) {
             jsonObject.put(KEY_ENV_TEXT, data.envText)
         }
+        if (data.libraries.isNotEmpty()) {
+            val jsonArray = JSONArray()
+            for (libraryItem in data.libraries) {
+                jsonArray.put(serializeLibrary(libraryItem))
+            }
+            jsonObject.put(KEY_LIBRARIES, jsonArray)
+        }
         return jsonObject
     }
 
+    /**
+     * [embedLibraries] writes the referenced libraries as whole definitions rather than as names, so
+     * that an exported command carries the code it needs (see [parseImport]). Stored commands only
+     * ever reference by name — the definitions live once, in [libraryItems].
+     */
     @Throws(JSONException::class)
     private fun serializeCommand(
         commandItem: CommandItem,
         includeId: Boolean = true,
+        embedLibraries: Boolean = false,
     ): JSONObject {
         val jsonObject = JSONObject()
         // The id is an internal storage detail (it keeps rows stable across launches); export/sharing
@@ -178,12 +259,43 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         AutohideStorage.putJson(jsonObject, KEY_USE_IN, commandItem.useIn.key)
         AutohideStorage.putJson(jsonObject, KEY_AUTO_RUN, commandItem.autoRun)
         AutohideStorage.putJson(jsonObject, KEY_PER_POST, commandItem.perPost)
+        val libraries = commandItem.libraries
+        if (!libraries.isNullOrEmpty()) {
+            val librariesArray = JSONArray()
+            // Storing runs off a snapshot on the serializer thread, so only the export path — which
+            // runs on the main thread, for one command the user picked — looks the definitions up.
+            for (libraryName in if (embedLibraries) orderLibraryNames(libraries) else libraries) {
+                val libraryItem = if (embedLibraries) getLibrary(libraryName) else null
+                librariesArray.put(if (libraryItem != null) serializeLibrary(libraryItem, includeId = false) else libraryName)
+            }
+            jsonObject.put(KEY_LIBRARIES, librariesArray)
+        }
         return jsonObject
     }
 
-    /** JSON for one command, for export/sharing; re-importable via [parseCommands]. */
     @Throws(JSONException::class)
-    fun commandToJson(commandItem: CommandItem): JSONObject = serializeCommand(commandItem, includeId = false)
+    private fun serializeLibrary(
+        libraryItem: LibraryItem,
+        includeId: Boolean = true,
+    ): JSONObject {
+        val jsonObject = JSONObject()
+        if (includeId) {
+            jsonObject.put(KEY_ID, libraryItem.id)
+        }
+        jsonObject.put(KEY_NAME, libraryItem.name)
+        // The kind is told apart by which key carries the content, so there is no third key to keep
+        // in sync with it (see parseLibrary).
+        jsonObject.put(libraryItem.kind.key, libraryItem.content)
+        return jsonObject
+    }
+
+    /**
+     * JSON for one command, for export/sharing; re-importable via [parseImport]. The libraries the
+     * command uses are embedded whole, so the recipient gets a command that runs rather than one that
+     * fails on a library they don't have.
+     */
+    @Throws(JSONException::class)
+    fun commandToJson(commandItem: CommandItem): JSONObject = serializeCommand(commandItem, includeId = false, embedLibraries = true)
 
     fun add(commandItem: CommandItem) {
         commandItems.add(commandItem)
@@ -208,6 +320,92 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     fun delete(index: Int) {
         commandItems.removeAt(index)
         serialize()
+    }
+
+    fun getLibraryItems(): ArrayList<LibraryItem> = libraryItems
+
+    /** The library called [name], or `null` when no such library is defined. */
+    fun getLibrary(name: String): LibraryItem? = libraryItems.firstOrNull { it.name == name }
+
+    /**
+     * The definitions [names] refers to, in the order [libraryItems] lists them — that order is the
+     * load order, so a library may use what one above it declared. A name with no library behind it
+     * is skipped here and reported by the loader instead.
+     */
+    fun librariesFor(names: Set<String>?): List<LibraryItem> = if (names.isNullOrEmpty()) emptyList() else libraryItems.filter { it.name in names }
+
+    /** [names] sorted into load order, with names of undefined libraries kept at the end. */
+    private fun orderLibraryNames(names: Set<String>): List<String> {
+        val known = libraryItems.mapNotNull { if (it.name in names) it.name else null }
+        return known + names.filter { it !in known }
+    }
+
+    fun addLibrary(libraryItem: LibraryItem) {
+        libraryItems.add(libraryItem)
+        serialize()
+    }
+
+    /**
+     * Replaces the library at [index]. A rename is followed through the commands that referenced the
+     * old name, since a command names the libraries it loads — leaving them behind would silently
+     * unhook every command that used it.
+     */
+    fun updateLibrary(
+        index: Int,
+        libraryItem: LibraryItem,
+    ) {
+        val oldName = libraryItems[index].name
+        libraryItems[index] = libraryItem
+        if (oldName != libraryItem.name) {
+            renameLibraryReferences(oldName, libraryItem.name)
+        }
+        serialize()
+    }
+
+    fun deleteLibrary(index: Int) {
+        libraryItems.removeAt(index)
+        serialize()
+    }
+
+    /** Replaces the whole ordered library list (used to persist a drag-reorder), then serializes. */
+    fun replaceAllLibraries(newItems: List<LibraryItem>) {
+        libraryItems.clear()
+        libraryItems.addAll(newItems)
+        serialize()
+    }
+
+    /**
+     * Adds the [libraries] that are not defined yet, keeping the existing definition whenever a name
+     * is already taken — an import must not overwrite code the user wrote or trusts. Returns how many
+     * were added.
+     */
+    fun addMissingLibraries(libraries: List<LibraryItem>): Int {
+        var added = 0
+        for (libraryItem in libraries) {
+            if (getLibrary(libraryItem.name) == null) {
+                libraryItems.add(libraryItem)
+                added++
+            }
+        }
+        if (added > 0) {
+            serialize()
+        }
+        return added
+    }
+
+    private fun renameLibraryReferences(
+        oldName: String,
+        newName: String,
+    ) {
+        for (commandItem in commandItems) {
+            val libraries = commandItem.libraries
+            if (libraries != null && oldName in libraries) {
+                val renamed = LinkedHashSet(libraries)
+                renamed.remove(oldName)
+                renamed.add(newName)
+                commandItem.libraries = renamed
+            }
+        }
     }
 
     enum class UseIn(
@@ -251,6 +449,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          */
         @JvmField var perPost = false
 
+        /**
+         * Names of the [libraries][LibraryItem] loaded into this command's scope before its body runs
+         * (`null`/empty means none). They are named rather than pointed at by id so that a command
+         * survives being exported and imported next to its libraries; a rename is followed through by
+         * [renameLibraryReferences].
+         */
+        @JvmField var libraries: Set<String>? = null
+
         constructor()
 
         constructor(commandItem: CommandItem) : this(
@@ -262,6 +468,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             commandItem.useIn,
             commandItem.autoRun,
             commandItem.perPost,
+            commandItem.libraries,
         )
 
         constructor(
@@ -273,9 +480,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             useIn: UseIn,
             autoRun: Boolean,
             perPost: Boolean,
+            libraries: Set<String>? = null,
         ) {
             this.id = id
-            update(chanNames, boardName, name, code, useIn, autoRun, perPost)
+            update(chanNames, boardName, name, code, useIn, autoRun, perPost, libraries)
         }
 
         fun update(
@@ -286,6 +494,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             useIn: UseIn,
             autoRun: Boolean,
             perPost: Boolean,
+            libraries: Set<String>? = null,
         ) {
             this.chanNames = chanNames
             this.boardName = boardName
@@ -294,6 +503,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             this.useIn = useIn
             this.autoRun = autoRun
             this.perPost = perPost
+            this.libraries = libraries
         }
 
         /** True if this command should be offered for the given forum/board. */
@@ -326,6 +536,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             dest.writeString(useIn.key)
             dest.writeByte(if (autoRun) 1.toByte() else 0.toByte())
             dest.writeByte(if (perPost) 1.toByte() else 0.toByte())
+            dest.writeStringArray(CommonUtils.toArray(libraries, String::class.java))
         }
 
         companion object {
@@ -357,10 +568,101 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         commandItem.useIn = UseIn.fromKey(source.readString())
                         commandItem.autoRun = source.readByte().toInt() != 0
                         commandItem.perPost = source.readByte().toInt() != 0
+                        val libraries = source.createStringArray()
+                        if (libraries != null) {
+                            commandItem.libraries = LinkedHashSet(libraries.asList())
+                        }
                         return commandItem
                     }
 
                     override fun newArray(size: Int): Array<CommandItem?> = arrayOfNulls(size)
+                }
+        }
+    }
+
+    /**
+     * A piece of JavaScript shared by commands: either a snippet the user keeps here
+     * ([Kind.SNIPPET]) or the address of a script kept elsewhere ([Kind.URL], downloaded and cached by
+     * [com.mishiranu.dashchan.content.CommandLibraries]). A command lists the libraries it wants by
+     * [name] and they are loaded, in the order the Libraries screen shows them, into the scope its
+     * body runs in — so whatever a library declares at its top level (a function, a `const`, a class)
+     * the body can just use.
+     */
+    class LibraryItem : Parcelable {
+        /** Stable unique identity, kept across edits and reorders. Commands refer to [name] instead. */
+        @JvmField var id: Long = 0
+
+        /** Unique, non-empty; this is what a command stores to say it wants this library. */
+        @JvmField var name: String = ""
+
+        @JvmField var kind: Kind = Kind.SNIPPET
+
+        /** The JavaScript itself for a [Kind.SNIPPET], the address to download for a [Kind.URL]. */
+        @JvmField var content: String = ""
+
+        constructor()
+
+        constructor(libraryItem: LibraryItem) : this(
+            libraryItem.id,
+            libraryItem.name,
+            libraryItem.kind,
+            libraryItem.content,
+        )
+
+        constructor(
+            id: Long,
+            name: String?,
+            kind: Kind,
+            content: String?,
+        ) {
+            this.id = id
+            this.name = StringUtils.emptyIfNull(name)
+            this.kind = kind
+            this.content = StringUtils.emptyIfNull(content)
+        }
+
+        override fun describeContents(): Int = 0
+
+        override fun writeToParcel(
+            dest: Parcel,
+            flags: Int,
+        ) {
+            dest.writeLong(id)
+            dest.writeString(name)
+            dest.writeString(kind.key)
+            dest.writeString(content)
+        }
+
+        /** Where a library's code comes from. The [key] is also the JSON key its content is stored under. */
+        enum class Kind(
+            val key: String,
+        ) {
+            SNIPPET(KEY_CODE),
+            URL(KEY_URL),
+            ;
+
+            companion object {
+                fun fromKey(key: String?): Kind = entries.firstOrNull { it.key == key } ?: SNIPPET
+            }
+        }
+
+        companion object {
+            /** A fresh non-zero identity for a newly created library. */
+            fun generateId(): Long = CommandItem.generateId()
+
+            @JvmField
+            val CREATOR =
+                object : Parcelable.Creator<LibraryItem> {
+                    override fun createFromParcel(source: Parcel): LibraryItem {
+                        val libraryItem = LibraryItem()
+                        libraryItem.id = source.readLong()
+                        libraryItem.name = StringUtils.emptyIfNull(source.readString())
+                        libraryItem.kind = Kind.fromKey(source.readString())
+                        libraryItem.content = StringUtils.emptyIfNull(source.readString())
+                        return libraryItem
+                    }
+
+                    override fun newArray(size: Int): Array<LibraryItem?> = arrayOfNulls(size)
                 }
         }
     }
@@ -379,6 +681,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         private const val KEY_USE_IN = "useIn"
         private const val KEY_AUTO_RUN = "autoRun"
         private const val KEY_PER_POST = "perPost"
+        private const val KEY_URL = "url"
+
+        /**
+         * The library list. At the top level of the file it holds the definitions; inside a command it
+         * holds the libraries that command loads — as names when stored (the definitions are kept once,
+         * at the top level) or as whole definitions when the command was exported on its own.
+         */
+        private const val KEY_LIBRARIES = "libraries"
 
         /** Legacy key for [KEY_AUTO_RUN] (the flag was named "runOnSend" before). Read-only fallback. */
         private const val KEY_AUTO_RUN_LEGACY = "runOnSend"
@@ -389,31 +699,39 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         fun getInstance(): CommandsStorage = INSTANCE
 
         /**
-         * Parses commands from an imported JSON document — either a single command object or a full
-         * export (`{ "data": [ … ] }`). Every imported command is given a fresh [CommandItem.generateId]
-         * id so it can't collide with existing ones. Returns the parsed commands (empty if none valid).
+         * Parses an imported JSON document — a single command object, a full export
+         * (`{ "data": [ … ] }`), or either of those with libraries alongside. Every imported command
+         * and library is given a fresh id so it can't collide with an existing one. Returns what was
+         * found (empty if nothing valid was).
          */
-        fun parseCommands(jsonObject: JSONObject): List<CommandItem> {
-            val result = ArrayList<CommandItem>()
+        fun parseImport(jsonObject: JSONObject): Import {
+            val commands = ArrayList<CommandItem>()
+            // Keyed by name, which is what a command references; the first definition of a name wins.
+            val libraries = LinkedHashMap<String, LibraryItem>()
             val array = jsonObject.optJSONArray(KEY_DATA)
             if (array != null) {
                 for (i in 0 until array.length()) {
-                    array.optJSONObject(i)?.let { item -> parseCommand(item)?.let(result::add) }
+                    val item = array.optJSONObject(i) ?: continue
+                    parseCommand(item)?.let(commands::add)
+                    collectLibraries(item, libraries)
                 }
             } else {
-                parseCommand(jsonObject)?.let(result::add)
+                parseCommand(jsonObject)?.let(commands::add)
             }
-            return result
+            // A whole-storage export keeps its libraries at the top level; a single exported command
+            // carries them inside itself, which the loop above already picked up.
+            collectLibraries(jsonObject, libraries)
+            return Import(commands, ArrayList(libraries.values))
         }
 
         /**
          * Detects command JSON embedded in arbitrary post text (mirrors
          * [com.mishiranu.dashchan.widget.ThemeEngine.fastParseThemeFromText]): a cheap key probe gates
-         * the parse, then the outermost `{ … }` is extracted and handed to [parseCommands]. A command's
-         * body ([KEY_CODE]) alone is too generic, so a scope/run flag key is also required. Returns the
-         * parsed commands, or an empty list when the text carries none.
+         * the parse, then the outermost `{ … }` is extracted and handed to [parseImport]. A command's
+         * body ([KEY_CODE]) alone is too generic, so a scope/run flag key is also required. Returns
+         * what the text carries, or [Import.EMPTY] when it carries no command.
          */
-        fun fastParseCommandsFromText(text: String): List<CommandItem> {
+        fun fastParseImportFromText(text: String): Import {
             if (text.contains("\"$KEY_CODE\"") &&
                 (
                     text.contains("\"$KEY_USE_IN\"") ||
@@ -432,11 +750,66 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                             null
                         }
                     if (jsonObject != null) {
-                        return parseCommands(jsonObject)
+                        val import = parseImport(jsonObject)
+                        // Only a command makes this text an offer to add one; libraries on their own
+                        // are of no use to the button that asks.
+                        if (import.commands.isNotEmpty()) {
+                            return import
+                        }
                     }
                 }
             }
-            return emptyList()
+            return Import.EMPTY
+        }
+
+        /** Adds every library definition found in [item]'s library list to [out], first name winning. */
+        private fun collectLibraries(
+            item: JSONObject,
+            out: LinkedHashMap<String, LibraryItem>,
+        ) {
+            val array = item.optJSONArray(KEY_LIBRARIES) ?: return
+            for (i in 0 until array.length()) {
+                val libraryObject = array.optJSONObject(i) ?: continue
+                val libraryItem = parseLibrary(libraryObject) ?: continue
+                out.putIfAbsent(libraryItem.name, libraryItem)
+            }
+        }
+
+        /**
+         * Reads one library definition. The kind is told by which key carries the content, so nothing
+         * has to agree with a separate type field. Returns `null` for an entry with no name or no
+         * content — there would be nothing to reference or to run.
+         */
+        private fun parseLibrary(item: JSONObject): LibraryItem? {
+            val name = item.optString(KEY_NAME)
+            if (name.isEmpty()) {
+                return null
+            }
+            val url = if (item.isNull(KEY_URL)) "" else item.optString(KEY_URL)
+            val kind = if (url.isNotEmpty()) LibraryItem.Kind.URL else LibraryItem.Kind.SNIPPET
+            val content = if (kind == LibraryItem.Kind.URL) url else item.optString(KEY_CODE)
+            if (content.isEmpty()) {
+                return null
+            }
+            return LibraryItem(LibraryItem.generateId(), name, kind, content)
+        }
+
+        /**
+         * The libraries [item] says it loads. Entries may be names (how a stored command references
+         * them) or whole definitions (how an exported one carries them); either way what a command
+         * keeps is the name.
+         */
+        private fun parseLibraryNames(item: JSONObject): Set<String>? {
+            val array = item.optJSONArray(KEY_LIBRARIES) ?: return null
+            val names = LinkedHashSet<String>()
+            for (i in 0 until array.length()) {
+                val libraryObject = array.optJSONObject(i)
+                val name = if (libraryObject != null) libraryObject.optString(KEY_NAME) else array.optString(i, null)
+                if (!name.isNullOrEmpty()) {
+                    names.add(name)
+                }
+            }
+            return names.ifEmpty { null }
         }
 
         private fun parseCommand(item: JSONObject): CommandItem? {
@@ -469,6 +842,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 useIn,
                 autoRun,
                 perPost,
+                parseLibraryNames(item),
             )
         }
     }

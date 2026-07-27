@@ -45,6 +45,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * ([CommandsStorage.getEnv]), so a script can read a user-provided value with
  * `env.CUSTOM_NAME_HERE`. It is a read-only snapshot taken at run time — assigning to it does not
  * persist; the store is edited from the Commands screen.
+ *
+ * A command may also load [libraries][CommandsStorage.LibraryItem] — shared snippets, or scripts
+ * downloaded from an address (see [CommandLibraries]). Their sources run once, in an enclosing scope,
+ * before the body is created, so whatever they declare at their top level the body can use directly
+ * (`const` and `let` included, which is why this is a scope around the body rather than an eval into
+ * the global one). They see `thread`, `board` and `env` too. A library that fails to download, or a
+ * name with no library behind it, fails the run before the body is reached.
  */
 object CommandRunner {
     /**
@@ -104,17 +111,18 @@ object CommandRunner {
         board: String?,
         callback: (Result) -> Unit,
     ) {
-        val script =
-            buildScript(
-                args = "\"comment\",\"thread\",\"board\",\"env\"",
-                code = item.code.orEmpty(),
-                thread = thread,
-                board = board,
-                env = CommandsStorage.getInstance().getEnv(),
-                // A comment command replaces the field with a single string.
-                resultExpr = "(__result===undefined||__result===null)?null:String(__result)",
-            ) { append(jsArg(comment)).append(',') }
-        execute(script, ::parseComment, { Result.Failure(it) }, callback)
+        withLibraries(item, { Result.Failure(it) }, callback) { libraries ->
+            val script =
+                buildScript(
+                    factorySource = buildFactorySource("comment,thread,board,env", item.code.orEmpty(), libraries, false),
+                    thread = thread,
+                    board = board,
+                    env = CommandsStorage.getInstance().getEnv(),
+                    // A comment command replaces the field with a single string.
+                    resultExpr = "(__result===undefined||__result===null)?null:String(__result)",
+                ) { append(jsArg(comment)).append(',') }
+            execute(script, ::parseComment, { Result.Failure(it) }, callback)
+        }
     }
 
     /**
@@ -128,28 +136,50 @@ object CommandRunner {
         board: String?,
         callback: (ThreadResult) -> Unit,
     ) {
-        val postsJson = postsToJson(posts)
-        val script =
-            buildScript(
-                args = "\"posts\",\"thread\",\"board\",\"env\"",
-                code = item.code.orEmpty(),
-                thread = thread,
-                board = board,
-                env = CommandsStorage.getInstance().getEnv(),
-                // A thread command returns a { postNumber: replacementHtml } object.
-                resultExpr = "(__result===undefined||__result===null)?{}:__result",
-                perPost = item.perPost,
-            ) { append(postsJson).append(',') }
-        // A per-post body runs n times, so one deadline for the whole thread would fail a body that is
-        // fine per post (a fetch each, say) purely for the thread being long. Give it a share per post,
-        // capped so a runaway script still can't hold an engine forever.
-        val timeout =
-            if (item.perPost) {
-                (TIMEOUT_MS + PER_POST_TIMEOUT_MS * posts.size).coerceAtMost(MAX_PER_POST_TIMEOUT_MS)
-            } else {
-                TIMEOUT_MS
+        withLibraries(item, { ThreadResult.Failure(it) }, callback) { libraries ->
+            val postsJson = postsToJson(posts)
+            val bodyParams = if (item.perPost) "post,thread,board,env" else "posts,thread,board,env"
+            val script =
+                buildScript(
+                    factorySource = buildFactorySource(bodyParams, item.code.orEmpty(), libraries, item.perPost),
+                    thread = thread,
+                    board = board,
+                    env = CommandsStorage.getInstance().getEnv(),
+                    // A thread command returns a { postNumber: replacementHtml } object.
+                    resultExpr = "(__result===undefined||__result===null)?{}:__result",
+                ) { append(postsJson).append(',') }
+            // A per-post body runs n times, so one deadline for the whole thread would fail a body that
+            // is fine per post (a fetch each, say) purely for the thread being long. Give it a share per
+            // post, capped so a runaway script still can't hold an engine forever.
+            val timeout =
+                if (item.perPost) {
+                    (TIMEOUT_MS + PER_POST_TIMEOUT_MS * posts.size).coerceAtMost(MAX_PER_POST_TIMEOUT_MS)
+                } else {
+                    TIMEOUT_MS
+                }
+            execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
+        }
+    }
+
+    /**
+     * Resolves [item]'s libraries and hands their source to [proceed], or reports the failure through
+     * [callback] — the run never starts with a library missing, since the body would fail on it in a
+     * way that points at the wrong thing. [failure] wraps the message in the result type the caller
+     * expects. Everything happens on the main thread; only the download itself doesn't (see
+     * [CommandLibraries.load]).
+     */
+    private fun <R> withLibraries(
+        item: CommandsStorage.CommandItem,
+        failure: (String) -> R,
+        callback: (R) -> Unit,
+        proceed: (String) -> Unit,
+    ) {
+        CommandLibraries.load(item.libraries) { result ->
+            when (result) {
+                is CommandLibraries.Result.Success -> proceed(result.source)
+                is CommandLibraries.Result.Failure -> callback(failure(result.message))
             }
-        execute(script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
+        }
     }
 
     /**
@@ -193,21 +223,17 @@ object CommandRunner {
     }
 
     /**
-     * Builds the runnable script. [args] is the quoted, comma-separated argument list of the async
-     * function; [leadingArg] appends the matching first actual argument(s) (already followed by a
-     * comma), after which `thread`, `board` and the frozen `env` object are passed. [resultExpr] is the
-     * JS expression that maps the resolved `__result` to the value delivered back through the bridge.
-     * With [perPost] the code is compiled as a single-post `process` and the fold over `posts` is
-     * supplied instead, so [args] then describes the wrapper rather than the user's body.
+     * Builds the runnable script around [factorySource] (see [buildFactorySource]). [leadingArg]
+     * appends the matching first actual argument(s) of the command (already followed by a comma),
+     * after which `thread`, `board` and the frozen `env` object are passed. [resultExpr] is the JS
+     * expression that maps the resolved `__result` to the value delivered back through the bridge.
      */
     private fun buildScript(
-        args: String,
-        code: String,
+        factorySource: String,
         thread: String?,
         board: String?,
         env: Map<String, String>,
         resultExpr: String,
-        perPost: Boolean = false,
         leadingArg: StringBuilder.() -> Unit,
     ): String =
         buildString {
@@ -215,48 +241,76 @@ object CommandRunner {
             append("var __deliver=function(o){try{window.").append(BRIDGE_NAME)
             append(".onResult(JSON.stringify(o));}catch(__ignored){}};")
             append("try{")
-            // Compile the body as an *async* function (via the AsyncFunction constructor) so the user
-            // code may `await` — e.g. `return await fetch(url).then(r => r.text())`. Building it here
-            // rather than inlining also means a *syntax* error throws at construction and is caught,
-            // surfacing a real message instead of a null result.
+            // Compile through the AsyncFunction constructor so the user code may `await` — e.g.
+            // `return await fetch(url).then(r => r.text())`. Building it here rather than inlining also
+            // means a *syntax* error throws at construction and is caught, surfacing a real message
+            // instead of a null result.
             append("var __AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;")
-            if (perPost) {
-                // The body is the `process` of the fold, so it is compiled against one `post` and the
-                // loop that collects `{ number: replacement }` lives here. Awaited one post at a time:
-                // a body that hits the network would otherwise fire the whole thread at once.
-                append("var __process=new __AsyncFunction(\"post\",\"thread\",\"board\",\"env\",")
-                append(JSONObject.quote(code))
-                append(");")
-                append("var __command=async function(__posts,__thread,__board,__env){")
-                append("var __acc={};")
-                append("for(var __i=0;__i<__posts.length;__i++){")
-                append("var __post=__posts[__i];")
-                append("var __value=await __process(__post,__thread,__board,__env);")
-                // Same contract as the whole-thread form, one post at a time: nothing returned means
-                // this post is left as it is.
-                append("if(__value!==undefined&&__value!==null){__acc[__post.number]=String(__value);}")
-                append('}')
-                append("return __acc;};")
-            } else {
-                append("var __command=new __AsyncFunction(").append(args).append(',')
-                append(JSONObject.quote(code))
-                append(");")
-            }
-            append("Promise.resolve(__command(")
-            leadingArg()
-            append(jsArg(thread)).append(',')
-            append(jsArg(board)).append(',')
+            append("var __thread=").append(jsArg(thread)).append(';')
+            append("var __board=").append(jsArg(board)).append(';')
             // The shared env store, injected as a plain object so scripts read `env.NAME`. Frozen so
             // a stray `env.X = …` is dropped (throwing under "use strict") rather than mutating a
             // value that would never be persisted — this is a per-run snapshot.
-            append("Object.freeze(").append(JSONObject(env).toString()).append(')')
-            append(")).then(function(__result){")
+            append("var __env=Object.freeze(").append(JSONObject(env).toString()).append(");")
+            // What is compiled is a factory that runs the libraries and returns the command, rather
+            // than the command itself: the libraries then run once (even for a per-post body, which is
+            // called n times) and their declarations are simply in scope for it.
+            append("var __factory=new __AsyncFunction(\"thread\",\"board\",\"env\",")
+            append(JSONObject.quote(factorySource))
+            append(");")
+            append("Promise.resolve(__factory(__thread,__board,__env)).then(function(__command){")
+            append("return __command(")
+            leadingArg()
+            append("__thread,__board,__env);")
+            append("}).then(function(__result){")
             append("__deliver({ok:true,result:").append(resultExpr).append("});")
             append("}).catch(function(__err){")
             append("__deliver({ok:false,error:(__err&&__err.message)?String(__err.message):String(__err)});")
             append("});")
             append("}catch(__err){__deliver({ok:false,error:(__err&&__err.message)?String(__err.message):String(__err)});}")
             append("})();")
+        }
+
+    /**
+     * The body of the factory: the library sources, then the command they are there for. [bodyParams]
+     * is the comma-separated parameter list the user's body is compiled against. With [perPost] the
+     * body becomes a single-post `process` and the fold over `posts` is supplied here, so what the run
+     * calls is the wrapper rather than the user's body.
+     *
+     * Written on its own lines rather than packed onto one, because a `//` comment or a line the user
+     * ended without a semicolon has to stay where it is.
+     */
+    private fun buildFactorySource(
+        bodyParams: String,
+        code: String,
+        libraries: String,
+        perPost: Boolean,
+    ): String =
+        buildString {
+            append(libraries)
+            if (perPost) {
+                // The body is the `process` of the fold, so it is compiled against one `post` and the
+                // loop that collects `{ number: replacement }` lives here. Awaited one post at a time:
+                // a body that hits the network would otherwise fire the whole thread at once.
+                append("var __process=async function(").append(bodyParams).append("){\n")
+                append(code)
+                append("\n};\n")
+                append("return (async function(posts,thread,board,env){\n")
+                append("var __acc={};\n")
+                append("for(var __i=0;__i<posts.length;__i++){\n")
+                append("var __post=posts[__i];\n")
+                append("var __value=await __process(__post,thread,board,env);\n")
+                // Same contract as the whole-thread form, one post at a time: nothing returned means
+                // this post is left as it is.
+                append("if(__value!==undefined&&__value!==null){__acc[__post.number]=String(__value);}\n")
+                append("}\n")
+                append("return __acc;\n")
+                append("});")
+            } else {
+                append("return (async function(").append(bodyParams).append("){\n")
+                append(code)
+                append("\n});")
+            }
         }
 
     private fun postsToJson(posts: List<ThreadPost>): String {

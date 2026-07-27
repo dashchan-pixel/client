@@ -84,6 +84,7 @@
 	<string name="close_pages__summary">Close pages by clicking the \"Back\" button</string>
 	<string name="closed">Closed</string>
 	<string name="code_number_address">Code, number, address</string>
+	<string name="code_snippet">Snippet</string>
 	<string name="colors">Colors</string>
 	<string name="comment">Comment</string>
 	<string name="command">Command</string>
@@ -168,6 +169,7 @@
 	<string name="every_number_sec__format">Every %d sec.</string>
 	<string name="exif_metadata">Exif metadata</string>
 	<string name="expand">Expand</string>
+	<string name="external_script">External script</string>
 	<string name="expanded_screen">Expanded screen</string>
 	<string name="expires">Expires</string>
 	<string name="extension_error">Extension error</string>
@@ -251,6 +253,10 @@
 	<string name="keep_current_version">Keep current version</string>
 	<string name="language">Language</string>
 	<string name="grid">Grid</string>
+	<string name="libraries">Libraries</string>
+	<string name="libraries__format">Libraries: %s</string>
+	<string name="libraries__summary">Shared JavaScript a command loads before its own code: a snippet kept here, or a script downloaded from an address and kept until you refresh. Whatever it declares — a function, a const — the command can use</string>
+	<string name="library">Library</string>
 	<string name="links_attachments__genitive">Links-attachments</string>
 	<string name="list">List</string>
 	<string name="load_captcha">Load captcha</string>
@@ -293,6 +299,7 @@
 	<string name="never">Never</string>
 	<string name="never_highlight">Never highlight</string>
 	<string name="new_extensions_installed__sentence">New extensions were installed. Restart required.</string>
+	<string name="new_library">New library</string>
 	<string name="new_password_was_generated">A new password was generated</string>
 	<string name="new_post">New post</string>
 	<string name="new_command">New command</string>
@@ -307,6 +314,8 @@
 	<string name="no_extensions_installed">No extensions installed</string>
 	<string name="no_icon">No icon</string>
 	<string name="no_information">No information</string>
+	<string name="no_libraries">No libraries</string>
+	<string name="no_libraries_defined">No libraries defined</string>
 	<string name="no_matches_found">No matches found</string>
 	<string name="no_commands_defined">No commands defined</string>
 	<string name="no_rules_defined">No rules defined</string>

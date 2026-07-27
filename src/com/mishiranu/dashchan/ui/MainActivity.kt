@@ -840,11 +840,15 @@ class MainActivity :
         )
     }
 
-    override fun navigateAddCommand(commands: List<CommandsStorage.CommandItem>) {
+    override fun navigateAddCommand(import: CommandsStorage.Import) {
+        val commands = import.commands
         if (commands.isEmpty()) {
             return
         }
         val storage = CommandsStorage.getInstance()
+        // The libraries first: a command is stored referencing them by name, so they have to exist
+        // before it runs. One the user already has is kept as it is.
+        storage.addMissingLibraries(import.libraries)
         for (command in commands) {
             storage.add(command)
         }

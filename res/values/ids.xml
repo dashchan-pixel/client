@@ -36,6 +36,8 @@
 	<item type="id" name="menu_commands" />
 	<item type="id" name="menu_edit_commands" />
 	<item type="id" name="menu_environment" />
+	<item type="id" name="menu_libraries" />
+	<item type="id" name="menu_new_library" />
 	<item type="id" name="button1" />
 	<item type="id" name="button2" />
 	<item type="id" name="button3" />

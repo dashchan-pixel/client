@@ -15,27 +15,13 @@
 		android:paddingBottom="@dimen/dialog_padding_text_half">
 
 		<TextView
-			android:id="@+id/chan_name"
-			android:layout_width="match_parent"
-			android:layout_height="40dp"
-			android:gravity="center_vertical"
-			android:background="?android:attr/selectableItemBackground"
-			android:textAppearance="?android:attr/textAppearanceListItem"
-			android:layout_marginLeft="@dimen/dialog_padding_text_half"
-			android:layout_marginRight="@dimen/dialog_padding_text_half"
-			android:layout_marginBottom="8dp"
-			android:paddingLeft="@dimen/dialog_padding_text_half"
-			android:paddingRight="@dimen/dialog_padding_text_half" />
-
-		<com.mishiranu.dashchan.widget.SafePasteEditText
-			android:id="@+id/board_name"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:layout_marginLeft="@dimen/dialog_padding_view"
 			android:layout_marginRight="@dimen/dialog_padding_view"
-			android:hint="@string/board"
-			android:imeOptions="flagNoExtractUi|flagNoFullscreen"
-			android:singleLine="true" />
+			android:layout_marginBottom="8dp"
+			android:text="@string/libraries__summary"
+			android:textAppearance="?android:attr/textAppearanceSmall" />
 
 		<com.mishiranu.dashchan.widget.SafePasteEditText
 			android:id="@+id/name"
@@ -48,45 +34,24 @@
 			android:singleLine="true" />
 
 		<com.mishiranu.dashchan.widget.DropdownView
-			android:id="@+id/use_in"
+			android:id="@+id/kind"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:layout_marginLeft="@dimen/dialog_padding_view"
 			android:layout_marginRight="@dimen/dialog_padding_view"
 			android:layout_marginTop="8dp" />
 
-		<CheckBox
-			android:id="@+id/auto_run"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginLeft="@dimen/dialog_padding_view"
-			android:layout_marginRight="@dimen/dialog_padding_view"
-			android:layout_marginTop="8dp"
-			android:text="@string/run_before_sending"
-			android:textAppearance="?android:attr/textAppearanceSmall" />
-
-		<CheckBox
-			android:id="@+id/per_post"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_marginLeft="@dimen/dialog_padding_view"
-			android:layout_marginRight="@dimen/dialog_padding_view"
-			android:layout_marginTop="8dp"
-			android:text="@string/process_posts_individually"
-			android:textAppearance="?android:attr/textAppearanceSmall" />
-
-		<TextView
-			android:id="@+id/libraries"
+		<com.mishiranu.dashchan.widget.SafePasteEditText
+			android:id="@+id/url"
 			android:layout_width="match_parent"
-			android:layout_height="40dp"
-			android:gravity="center_vertical"
-			android:background="?android:attr/selectableItemBackground"
-			android:textAppearance="?android:attr/textAppearanceListItem"
-			android:layout_marginLeft="@dimen/dialog_padding_text_half"
-			android:layout_marginRight="@dimen/dialog_padding_text_half"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
 			android:layout_marginTop="8dp"
-			android:paddingLeft="@dimen/dialog_padding_text_half"
-			android:paddingRight="@dimen/dialog_padding_text_half" />
+			android:hint="@string/address"
+			android:imeOptions="flagNoExtractUi|flagNoFullscreen"
+			android:inputType="textUri"
+			android:singleLine="true" />
 
 		<com.mishiranu.dashchan.widget.CodeEditText
 			android:id="@+id/code"
