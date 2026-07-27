@@ -13,6 +13,7 @@ import chan.http.HttpHolder
 import chan.util.CommonUtils
 import chan.util.StringUtils
 import com.mishiranu.dashchan.content.Preferences
+import com.mishiranu.dashchan.content.ThreadContinuationResolver
 import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.database.PagesDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
@@ -239,6 +240,12 @@ class ReadPostsTask(
                     StringUtils.nullIfEmpty(originalPost?.subject?.trim()),
                     replies,
                 )
+            }
+            // Everything the continuation detector needs is here on a worker thread: the newest
+            // posts, the chan, and an open holder for the single verification request. Doing it here
+            // also covers the background watcher and a thread open in the UI with one hook.
+            if (Preferences.favoriteContinuation != Preferences.FavoriteContinuationMode.DISABLED && !temporary) {
+                ThreadContinuationResolver.onReadPostsSuccess(chan, boardName, threadNumber, posts, holder)
             }
             return Result.Success(
                 insertResult.cacheState,

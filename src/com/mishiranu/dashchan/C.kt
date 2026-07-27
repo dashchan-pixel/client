@@ -35,6 +35,7 @@ object C {
     const val NOTIFICATION_ID_AUDIO_PLAYER = 3
     const val NOTIFICATION_ID_UPDATES = 4
     const val NOTIFICATION_ID_REPLIES = 5
+    const val NOTIFICATION_ID_CONTINUATION = 6
 
     const val NOTIFICATION_CHANNEL_POSTING = "posting"
     const val NOTIFICATION_CHANNEL_POSTING_COMPLETE = "postingComplete"
@@ -43,6 +44,7 @@ object C {
     const val NOTIFICATION_CHANNEL_AUDIO_PLAYER = "audioPlayer"
     const val NOTIFICATION_CHANNEL_UPDATES = "updates"
     const val NOTIFICATION_CHANNEL_REPLIES = "replies"
+    const val NOTIFICATION_CHANNEL_CONTINUATION = "continuation"
 
     const val EXTRA_BOARD_NAME = "com.mishiranu.dashchan.extra.BOARD_NAME"
     const val EXTRA_CHAN_NAME = "com.mishiranu.dashchan.extra.CHAN_NAME"

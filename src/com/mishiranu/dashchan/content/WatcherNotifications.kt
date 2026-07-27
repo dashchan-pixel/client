@@ -7,7 +7,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import chan.util.StringUtils.clearHtml
+import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.formatHex
+import chan.util.StringUtils.formatThreadTitle
 import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.PagesDatabase.InsertResult.Reply
@@ -33,7 +35,98 @@ object WatcherNotifications {
         channel.enableLights(true)
         channel.enableVibration(true)
         notificationManager.createNotificationChannel(channel)
+        createContinuationChannel(context, notificationManager)
     }
+
+    /**
+     * A continuation is news, not a reply addressed to you: the channel is low importance so it
+     * never buzzes. Also created on demand, because a continuation can be detected from a thread
+     * open in the UI, with no [com.mishiranu.dashchan.content.service.WatcherService] started yet.
+     */
+    private fun createContinuationChannel(
+        context: Context,
+        notificationManager: NotificationManager,
+    ) {
+        notificationManager.createNotificationChannel(
+            NotificationChannel(
+                C.NOTIFICATION_CHANNEL_CONTINUATION,
+                context.getString(R.string.thread_continuations),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
+    }
+
+    /**
+     * Announces the continuation of a favorite thread. Tapping it opens the continuation; with
+     * [allowAdd] (the notify-only mode, where favorites were left untouched) it also offers to add
+     * the continuation to favorites.
+     */
+    fun notifyContinuation(
+        context: Context,
+        color: Int,
+        resolved: ThreadContinuationResolver.Resolved,
+        allowAdd: Boolean,
+    ) {
+        val applicationContext = context.applicationContext
+        val notificationManager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        createContinuationChannel(applicationContext, notificationManager)
+        val tag = makeContinuationTag(resolved)
+        val builder = NotificationCompat.Builder(applicationContext, C.NOTIFICATION_CHANNEL_CONTINUATION)
+        builder.setSmallIcon(R.drawable.ic_notification)
+        builder.setColor(color)
+        builder.setContentTitle(applicationContext.getString(R.string.thread_continued))
+        // A comment-only original post has no subject to name it by
+        val text =
+            resolved.title
+                ?: formatThreadTitle(resolved.chanName, resolved.boardName, resolved.threadNumber)
+        builder.setContentText(text)
+        builder.setStyle(NotificationCompat.BigTextStyle().bigText(text))
+        builder.setAutoCancel(true)
+        builder.setSilent(true)
+        val intent =
+            Intent(applicationContext, MainActivity::class.java)
+                .setAction(tag)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .putExtra(C.EXTRA_CHAN_NAME, resolved.chanName)
+                .putExtra(C.EXTRA_BOARD_NAME, resolved.boardName)
+                .putExtra(C.EXTRA_THREAD_NUMBER, resolved.threadNumber)
+        builder.setContentIntent(
+            PendingIntent.getActivity(
+                applicationContext,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        )
+        if (allowAdd) {
+            builder.addAction(
+                0,
+                applicationContext.getString(R.string.add_to_favorites),
+                ThreadContinuationResolver.createAddPendingIntent(applicationContext, tag, resolved),
+            )
+        }
+        notificationManager.notify(tag, C.NOTIFICATION_ID_CONTINUATION, builder.build())
+    }
+
+    /** Cancels a continuation notification by the tag its own pending intents carry as their action. */
+    fun cancelContinuation(
+        context: Context,
+        tag: String?,
+    ) {
+        val notificationManager =
+            context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(tag, C.NOTIFICATION_ID_CONTINUATION)
+    }
+
+    /** Keyed on the *predecessor*, so one thread can only ever have one continuation notification. */
+    private fun makeContinuationTag(resolved: ThreadContinuationResolver.Resolved): String? =
+        formatHex(
+            getInstanceSha256().calculate(
+                "continuation/" + resolved.chanName + "/" +
+                    emptyIfNull(resolved.boardName) + "/" + resolved.predecessorThreadNumber,
+            ),
+        )
 
     fun notifyReplies(
         context: Context,

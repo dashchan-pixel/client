@@ -140,6 +140,10 @@
 			android:name=".content.service.WatcherService"
 			android:exported="false" />
 
+		<receiver
+			android:name=".content.ThreadContinuationResolver$Receiver"
+			android:exported="false" />
+
 		<service
 			android:name=".content.service.AudioPlayerService"
 			android:exported="false"

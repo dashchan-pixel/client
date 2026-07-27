@@ -680,6 +680,29 @@ class PagesDatabase private constructor() {
         return postNumbers
     }
 
+    /**
+     * The number of posts the thread has in the cache, deleted ones excluded — the same filter
+     * [getLastExistingPostNumber] uses. Compared against the board's bump limit to tell whether the
+     * thread is at its end.
+     */
+    fun getPostsCount(threadKey: ThreadKey): Int {
+        Objects.requireNonNull<ThreadKey?>(threadKey)
+        val filter =
+            threadKey
+                .filterPosts()
+                .raw("NOT (" + Schema.Posts.Columns.Companion.FLAGS + " & " + Schema.Posts.Flags.Companion.DELETED + ")")
+                .build()
+        database
+            .rawQuery(
+                "SELECT COUNT(*) " +
+                    "FROM " + Schema.Posts.Companion.TABLE_NAME + " " +
+                    "WHERE " + filter.value,
+                filter.args,
+            ).use { cursor ->
+                return if (cursor.moveToFirst()) cursor.getInt(0) else 0
+            }
+    }
+
     fun getWatcherState(threadKey: ThreadKey): WatcherState {
         Objects.requireNonNull<ThreadKey?>(threadKey)
         val newCount: Int

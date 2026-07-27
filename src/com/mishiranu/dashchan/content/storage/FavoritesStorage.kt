@@ -43,6 +43,7 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
                             var title: String? = null
                             var modifiedTitle = false
                             var watcherEnabled = false
+                            var successorThreadNumber: String? = null
                             reader.startObject()
                             while (!reader.endStruct()) {
                                 when (reader.nextName()) {
@@ -52,6 +53,7 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
                                     KEY_TITLE -> title = reader.nextString()
                                     KEY_MODIFIED_TITLE -> modifiedTitle = reader.nextBoolean()
                                     KEY_WATCHER_ENABLED -> watcherEnabled = reader.nextBoolean()
+                                    KEY_SUCCESSOR_THREAD_NUMBER -> successorThreadNumber = reader.nextString()
                                     else -> reader.skip()
                                 }
                             }
@@ -64,6 +66,7 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
                                     modifiedTitle,
                                     watcherEnabled,
                                 )
+                            favoriteItem.successorThreadNumber = successorThreadNumber
                             favoriteItemsMap[makeKey(chanName, boardName, threadNumber)] = favoriteItem
                             favoriteItemsList.add(favoriteItem)
                         }
@@ -109,6 +112,11 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
             writer.value(favoriteItem.modifiedTitle)
             writer.name(KEY_WATCHER_ENABLED)
             writer.value(favoriteItem.watcherEnabled)
+            val successorThreadNumber = favoriteItem.successorThreadNumber
+            if (!successorThreadNumber.isNullOrEmpty()) {
+                writer.name(KEY_SUCCESSOR_THREAD_NUMBER)
+                writer.value(successorThreadNumber)
+            }
             writer.endObject()
         }
         writer.endArray()
@@ -118,7 +126,7 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
 
     private val observable = WeakObservable<Observer>()
 
-    enum class Action { ADD, REMOVE, MODIFY_TITLE, WATCHER_ENABLE, WATCHER_DISABLE }
+    enum class Action { ADD, REMOVE, MODIFY_TITLE, WATCHER_ENABLE, WATCHER_DISABLE, CONTINUED }
 
     fun interface Observer {
         fun onFavoritesUpdate(
@@ -292,6 +300,24 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
         }
     }
 
+    /**
+     * Records that the thread was continued into [successorThreadNumber]. Write-once: a resolved
+     * favorite is never scanned for a continuation again, so a second call is a no-op.
+     */
+    fun setSuccessorThreadNumber(
+        chanName: String?,
+        boardName: String?,
+        threadNumber: String?,
+        successorThreadNumber: String,
+    ) {
+        val favoriteItem = getFavorite(chanName, boardName, threadNumber)
+        if (favoriteItem != null && favoriteItem.successorThreadNumber == null) {
+            favoriteItem.successorThreadNumber = successorThreadNumber
+            notifyFavoritesUpdate(favoriteItem, Action.CONTINUED)
+            serialize()
+        }
+    }
+
     fun remove(
         chanName: String?,
         boardName: String?,
@@ -390,6 +416,15 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
 
         @JvmField var watcherEnabled = false
 
+        /**
+         * The thread this one was continued into ("перекат"), once
+         * [com.mishiranu.dashchan.content.ThreadContinuationResolver] has resolved one. Doing
+         * triple duty: it stops the detector from ever scanning this thread again, it drives the
+         * "open continuation" affordance, and being serialized it survives a process restart, so a
+         * restart does not re-probe.
+         */
+        @JvmField var successorThreadNumber: String? = null
+
         constructor(favoriteItem: FavoriteItem) : this(
             favoriteItem.chanName,
             favoriteItem.boardName,
@@ -397,7 +432,9 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
             favoriteItem.title,
             favoriteItem.modifiedTitle,
             favoriteItem.watcherEnabled,
-        )
+        ) {
+            successorThreadNumber = favoriteItem.successorThreadNumber
+        }
 
         constructor(
             chanName: String,
@@ -431,6 +468,7 @@ class FavoritesStorage private constructor() : StorageManager.Storage<List<Favor
         private const val KEY_TITLE = "title"
         private const val KEY_MODIFIED_TITLE = "modifiedTitle"
         private const val KEY_WATCHER_ENABLED = "watcherEnabled"
+        private const val KEY_SUCCESSOR_THREAD_NUMBER = "successorThreadNumber"
 
         private val INSTANCE = FavoritesStorage()
 

@@ -36,6 +36,7 @@ import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getPreferred
 import chan.content.ChanConfiguration
+import chan.content.ChanLocator
 import chan.content.ChanManager
 import chan.content.ChanMarkup
 import chan.util.CommonUtils.equals
@@ -2123,6 +2124,31 @@ class DrawerForm(
                         )
                     }
                     if (isFavorite) {
+                        // Set once ThreadContinuationResolver has followed this thread into its
+                        // continuation, and the only affordance that leads there when the mode is
+                        // "notify only" and the continuation never became a favorite of its own
+                        val successorThreadNumber =
+                            FavoritesStorage
+                                .getInstance()
+                                .getFavorite(chanName, boardName, threadNumber)
+                                ?.successorThreadNumber
+                        if (successorThreadNumber != null) {
+                            dialogMenu.add(
+                                R.string.open_continuation,
+                                Runnable {
+                                    (provider.activity as FragmentHandler).navigateTargetAllowReturn(
+                                        chanName,
+                                        ChanLocator.NavigationData(
+                                            ChanLocator.NavigationData.Target.POSTS,
+                                            boardName,
+                                            successorThreadNumber,
+                                            null,
+                                            null,
+                                        ),
+                                    )
+                                },
+                            )
+                        }
                         dialogMenu.add(
                             R.string.remove_from_favorites,
                             Runnable {

@@ -132,6 +132,7 @@
 	<string name="follow_system_day_night">Seguir dia/noite do sistema</string>
 	<string name="follow_system_day_night__summary">Usar temas diurno e noturno separados, alternando com a configuração do sistema</string>
 	<string name="follow_the_link__sentence">Abrir o link?</string>
+	<string name="follow_thread_continuation">Seguir a continuação do fio</string>
 	<string name="forum_only__format">%s somente</string>
 	<string name="flow">Fluxo</string>
 	<string name="gallery">Galeria</string>
@@ -207,6 +208,7 @@
 	<string name="no_information">Sem informação</string>
 	<string name="no_rules_defined">Não há regras definidas</string>
 	<string name="not_found">Não encontrado</string>
+	<string name="notify_only">Apenas notificar</string>
 	<string name="notify_when_download_is_completed">Notificar quando o download acabar</string>
 	<string name="notify_when_download_is_completed__summary">Mostrará notificação \"Heads-Up\" quando completar o
 		download</string>
@@ -250,6 +252,7 @@
 	<string name="on_multiple_downloading">Com mais de um</string>
 	<string name="only_original_posts">Somente OP</string>
 	<string name="only_posts_with_sage">Só posts com sage</string>
+	<string name="open_continuation">Abrir a continuação</string>
 	<string name="open_original">Abrir original</string>
 	<string name="open_pages__noun">Páginas abertas</string>
 	<string name="open_thread">Abrir fio</string>
@@ -296,6 +299,8 @@
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>
 	<string name="remove_file_name">Remover filename</string>
+	<string name="remove_finished_thread">Remover o fio encerrado</string>
+	<string name="remove_finished_thread__summary">Apenas se o fio encerrado não tiver mensagens não lidas</string>
 	<string name="remove_from_echo">Remover do eco</string>
 	<string name="remove_from_favorites">Remover dos favoritos</string>
 	<string name="remove_from_history">Remover do histórico</string>
@@ -385,6 +390,8 @@
 	<string name="this_recaptcha_is_not_supported">Esquema não suportado</string>
 	<string name="this_week">Essa semana</string>
 	<string name="thread">Fio</string>
+	<string name="thread_continuations">Continuações de fios</string>
+	<string name="thread_continued">O fio continuou</string>
 	<string name="thread_doesnt_exist">Esse fio não existe</string>
 	<string name="thread_is_closed">Fio fechado</string>
 	<string name="threads_list">Lista de fios</string>

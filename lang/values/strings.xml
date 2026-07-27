@@ -200,6 +200,7 @@
 		the verification.</string>
 	<string name="flags_are_enabled">Flags are enabled</string>
 	<string name="follow_the_link__sentence">Follow the link?</string>
+	<string name="follow_thread_continuation">Follow thread continuation</string>
 	<string name="forum">Forum</string>
 	<string name="forum_only__format">%s only</string>
 	<string name="forums">Forums</string>
@@ -322,6 +323,7 @@
 	<string name="no_video_attachments">No video attachments</string>
 	<string name="not_downloaded">Not downloaded</string>
 	<string name="not_found">Not found</string>
+	<string name="notify_only">Notify only</string>
 	<string name="notify_when_download_is_completed">Notify when download is completed</string>
 	<string name="notify_when_download_is_completed__summary">Will show \"Heads-Up\" notification</string>
 	<plurals name="number_deleted__format">
@@ -370,6 +372,7 @@
 	<string name="only_original_posts">Only original posts</string>
 	<string name="only_posts_with_sage">Only posts with sage</string>
 	<string name="open_forum__format_sentence">Open %s?</string>
+	<string name="open_continuation">Open continuation</string>
 	<string name="open_original">Open the original</string>
 	<string name="open_pages__noun">Open pages</string>
 	<string name="open_thread">Open thread</string>
@@ -436,6 +439,8 @@
 	<string name="reload">Reload</string>
 	<string name="remember_history">Remember history</string>
 	<string name="remove_file_name">Remove file name</string>
+	<string name="remove_finished_thread">Remove the finished thread</string>
+	<string name="remove_finished_thread__summary">Only when the finished thread has no unread posts</string>
 	<string name="remove_from_echo">Remove from echo</string>
 	<string name="remove_from_favorites">Remove from favorites</string>
 	<string name="remove_from_history">Remove from history</string>
@@ -557,6 +562,8 @@
 	<string name="this_recaptcha_is_not_supported">This reCAPTCHA is not supported</string>
 	<string name="this_week">This week</string>
 	<string name="thread">Thread</string>
+	<string name="thread_continuations">Thread continuations</string>
+	<string name="thread_continued">Thread continued</string>
 	<string name="thread_doesnt_exist">The thread doesn\'t exist</string>
 	<string name="thread_is_closed">Thread is closed</string>
 	<string name="thread_will_be_deleted_from_cache__sentence">The thread will be deleted from cache.</string>

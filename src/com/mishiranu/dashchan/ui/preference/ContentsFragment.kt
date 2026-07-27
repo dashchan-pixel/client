@@ -80,6 +80,20 @@ class ContentsFragment : PreferenceFragment() {
             R.string.add_thread_on_reply,
             enumResList(Preferences.FavoriteOnReplyMode.values()) { o -> o.titleResId },
         )
+        addList(
+            Preferences.KEY_FAVORITE_CONTINUATION,
+            enumList(Preferences.FavoriteContinuationMode.values()) { o -> o.value },
+            Preferences.DEFAULT_FAVORITE_CONTINUATION.value,
+            R.string.follow_thread_continuation,
+            enumResList(Preferences.FavoriteContinuationMode.values()) { o -> o.titleResId },
+        )
+        addCheck(
+            true,
+            Preferences.KEY_FAVORITE_CONTINUATION_REMOVE,
+            Preferences.DEFAULT_FAVORITE_CONTINUATION_REMOVE,
+            R.string.remove_finished_thread,
+            R.string.remove_finished_thread__summary,
+        )
         addCheck(
             true,
             Preferences.KEY_WATCHER_WATCH_INITIALLY,

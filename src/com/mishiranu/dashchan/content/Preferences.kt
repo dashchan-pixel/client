@@ -771,6 +771,32 @@ object Preferences {
                 .close()
         }
 
+    const val KEY_FAVORITE_CONTINUATION: String = "favorite_continuation"
+    val DEFAULT_FAVORITE_CONTINUATION: FavoriteContinuationMode = FavoriteContinuationMode.DISABLED
+
+    // getEnumValue falls back to defaultValue, so with a non-null default this can never be null;
+    // the `?: DEFAULT_FAVORITE_CONTINUATION` only re-states that for the compiler.
+    @JvmStatic
+    val favoriteContinuation: FavoriteContinuationMode
+        get() =
+            getEnumValue(
+                KEY_FAVORITE_CONTINUATION,
+                FavoriteContinuationMode.entries.toTypedArray(),
+                DEFAULT_FAVORITE_CONTINUATION,
+                FavoriteContinuationMode.Companion.VALUE_PROVIDER,
+            ) ?: DEFAULT_FAVORITE_CONTINUATION
+
+    const val KEY_FAVORITE_CONTINUATION_REMOVE: String = "favorite_continuation_remove"
+    const val DEFAULT_FAVORITE_CONTINUATION_REMOVE: Boolean = false
+
+    @JvmStatic
+    val isFavoriteContinuationRemove: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_FAVORITE_CONTINUATION_REMOVE,
+                DEFAULT_FAVORITE_CONTINUATION_REMOVE,
+            )
+
     const val KEY_FAVORITE_ON_REPLY: String = "favorite_on_reply"
     val DEFAULT_FAVORITE_ON_REPLY: FavoriteOnReplyMode = FavoriteOnReplyMode.DISABLED
 
@@ -2219,6 +2245,33 @@ object Preferences {
         companion object {
             internal val VALUE_PROVIDER: EnumValueProvider<DrawerInitialPosition> =
                 EnumValueProvider<DrawerInitialPosition> { o -> o?.value }
+        }
+    }
+
+    enum class FavoriteContinuationMode(
+        value: String,
+        titleResId: Int,
+    ) {
+        /** Nothing is detected and nothing is fetched: the whole feature costs zero. */
+        DISABLED("disabled", R.string.disabled),
+
+        /** Detect and verify, then only notify — favorites are left untouched. */
+        NOTIFY("notify", R.string.notify_only),
+
+        /** Add the continuation to favorites automatically, and notify so it isn't invisible. */
+        ENABLED("enabled", R.string.enabled),
+        ;
+
+        val value: String
+        val titleResId: Int
+
+        init {
+            this.value = value
+            this.titleResId = titleResId
+        }
+
+        companion object {
+            internal val VALUE_PROVIDER = EnumValueProvider<FavoriteContinuationMode> { o -> o?.value }
         }
     }
 
