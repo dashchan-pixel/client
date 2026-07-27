@@ -77,7 +77,7 @@ class UpdateFragment : BaseListFragment {
                 val packageItem = applicationItem.packageItems[targetIndex]
                 var target = packageItem.title
                 if (context != null) {
-                    target = context.getString(R.string.__enumeration_format, target, packageItem.versionName)
+                    target = describeTarget(context, applicationItem, packageItem)
                     if (packageItem.length > 0) {
                         target =
                             context.getString(
@@ -246,7 +246,7 @@ class UpdateFragment : BaseListFragment {
             targets.add(getString(R.string.keep_current_version))
             repositories.add(null)
             for (packageItem in applicationItem.packageItems.subList(1, applicationItem.packageItems.size)) {
-                targets.add(packageItem.title!!)
+                targets.add(describeTarget(requireContext(), applicationItem, packageItem))
                 repositories.add(packageItem.repository)
             }
             targetIndex = listItem.targetIndex
@@ -254,7 +254,7 @@ class UpdateFragment : BaseListFragment {
             targets.add(getString(R.string.dont_install))
             repositories.add(null)
             for (packageItem in applicationItem.packageItems) {
-                targets.add(packageItem.title!!)
+                targets.add(describeTarget(requireContext(), applicationItem, packageItem))
                 repositories.add(packageItem.repository)
             }
             targetIndex = listItem.targetIndex + 1
@@ -577,6 +577,37 @@ class UpdateFragment : BaseListFragment {
         ): Boolean =
             applicationItem.type != ReadUpdateTask.ApplicationItem.Type.CHAN ||
                 packageItem.apiVersion in minApiVersion..maxApiVersion
+
+        /**
+         * "26.7.1", or "Beta, 26.7.2" once an application publishes more than one channel.
+         *
+         * A package's title names the channel it is published on, and the client
+         * auto-selects [VERSION_TITLE_RELEASE] alone, so a manifest offering nothing but
+         * releases repeats that one word on every choice while the version -- the thing
+         * that actually tells them apart -- goes unsaid. Name the channel only where it
+         * distinguishes something. The installed entry carries no title of its own.
+         *
+         * The list row and the target dialog describe a choice the same way, so a row
+         * reads as whatever was picked for it.
+         */
+        private fun describeTarget(
+            context: Context,
+            applicationItem: ReadUpdateTask.ApplicationItem,
+            packageItem: ReadUpdateTask.PackageItem,
+        ): String {
+            val title = packageItem.title
+            val versionName = packageItem.versionName
+            val channels =
+                applicationItem.packageItems
+                    .mapNotNull { it.title }
+                    .distinct()
+                    .size
+            return when {
+                versionName.isNullOrEmpty() -> title.orEmpty()
+                title.isNullOrEmpty() || channels <= 1 -> versionName
+                else -> context.getString(R.string.__enumeration_format, title, versionName)
+            }
+        }
 
         private fun compareForUpdates(
             installed: ReadUpdateTask.PackageItem,
