@@ -202,6 +202,14 @@ class PagerUnit(
         }
     }
 
+    /**
+     * The gallery list was filtered or reordered while the grid was up. Only the page count has to
+     * follow here: the pages themselves are rebound when the grid navigates into one.
+     */
+    fun onItemsChanged() {
+        viewPager.setCount(galleryInstance.galleryItems.size)
+    }
+
     fun navigatePageFromList(
         position: Int,
         duration: Int,

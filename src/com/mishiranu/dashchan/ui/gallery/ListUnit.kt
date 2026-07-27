@@ -61,6 +61,13 @@ class ListUnit(
     private val instance: GalleryInstance,
 ) : ActionMode.Callback {
     private val recyclerView: PaddedRecyclerView
+
+    /** The grid with the filter bar laid over its top edge. */
+    private val container: FrameLayout
+
+    private val filterBar: GalleryFilterBar
+    private val filterBarHeight: Int
+
     private val selected = SparseIntArray()
 
     private var selectionMode: ActionMode? = null
@@ -79,7 +86,9 @@ class ListUnit(
             override fun onItemLongClick(position: Int): Boolean = this@ListUnit.onItemLongClick(position)
         }
 
-    fun getRecyclerView(): RecyclerView = recyclerView
+    /** The view the gallery adds to its window: the grid and the filter bar over it. */
+    val view: View
+        get() = container
 
     private val adapter: GridAdapter
         get() = recyclerView.getAdapter() as GridAdapter
@@ -143,11 +152,34 @@ class ListUnit(
         }
     }
 
+    // The insets the bar and the grid were last laid out against, so toggling the bar can move the
+    // grid's first row without waiting for new ones.
+    private var contentTop = 0
+    private var contentBottom = 0
+
     fun onApplyWindowInsets(insets: InsetsLayout.Insets): Boolean {
-        val top = insets.top + this.actionBarHeight
-        setNewMargin(recyclerView, insets.left, null, insets.right, null)
-        setNewPadding(recyclerView, null, top, null, insets.bottom)
+        contentTop = insets.top + this.actionBarHeight
+        contentBottom = insets.bottom
+        setNewMargin(container, insets.left, null, insets.right, null)
+        setNewMargin(filterBar, null, contentTop, null, null)
+        applyContentPadding()
         return true
+    }
+
+    /** The grid starts below the action bar, and below the filter bar while it is up. */
+    private fun applyContentPadding() {
+        val top = contentTop + if (isFilterBarVisible) filterBarHeight else 0
+        setNewPadding(recyclerView, null, top, null, contentBottom)
+    }
+
+    val isFilterBarVisible: Boolean
+        get() = filterBar.getVisibility() == View.VISIBLE
+
+    fun setFilterBarVisible(visible: Boolean) {
+        if (visible != isFilterBarVisible) {
+            filterBar.setVisibility(if (visible) View.VISIBLE else View.GONE)
+            applyContentPadding()
+        }
     }
 
     init {
@@ -161,6 +193,31 @@ class ListUnit(
         recyclerView.addItemDecoration(SpacingItemDecoration(spacing))
         val adapter = GridAdapter(callback, instance.chanName, instance.galleryItems)
         recyclerView.setAdapter(adapter)
+        filterBar =
+            GalleryFilterBar(instance.context, instance) {
+                onItemsChanged()
+                instance.callback.onGalleryFilterChanged()
+            }
+        // A gallery that opens in the order the last one was left in says so, rather than looking
+        // like a thread whose files came in an odd order
+        filterBar.setVisibility(if (instance.isDefaultOrder) View.GONE else View.VISIBLE)
+        filterBarHeight = (GalleryFilterBar.HEIGHT_DP * density).toInt()
+        container = FrameLayout(instance.context)
+        container.addView(
+            recyclerView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        container.addView(
+            filterBar,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                filterBarHeight,
+                Gravity.TOP,
+            ),
+        )
         updateGridMetrics(instance.context.getResources().getConfiguration())
     }
 
@@ -169,13 +226,13 @@ class ListUnit(
         duration: Int,
     ) {
         if (galleryMode) {
-            recyclerView.setVisibility(View.VISIBLE)
+            container.setVisibility(View.VISIBLE)
             this.adapter.activate()
             if (duration > 0) {
-                recyclerView.setAlpha(0f)
-                recyclerView.setScaleX(GRID_SCALE)
-                recyclerView.setScaleY(GRID_SCALE)
-                recyclerView
+                container.setAlpha(0f)
+                container.setScaleX(GRID_SCALE)
+                container.setScaleY(GRID_SCALE)
+                container
                     .animate()
                     .alpha(1f)
                     .scaleX(1f)
@@ -186,21 +243,30 @@ class ListUnit(
             }
         } else {
             if (duration > 0) {
-                recyclerView.setAlpha(1f)
-                recyclerView.setScaleX(1f)
-                recyclerView.setScaleY(1f)
-                recyclerView
+                container.setAlpha(1f)
+                container.setScaleX(1f)
+                container.setScaleY(1f)
+                container
                     .animate()
                     .alpha(0f)
                     .scaleX(GRID_SCALE)
                     .scaleY(GRID_SCALE)
                     .setDuration(duration.toLong())
-                    .setListener(AnimationUtils.VisibilityListener(recyclerView, View.GONE))
+                    .setListener(AnimationUtils.VisibilityListener(container, View.GONE))
                     .start()
             } else {
-                recyclerView.setVisibility(View.GONE)
+                container.setVisibility(View.GONE)
             }
         }
+    }
+
+    /** The gallery has been filtered or reordered, so every row shows a different file now. */
+    fun onItemsChanged() {
+        // Selection is kept by position. The filter bar can't be reached while the selection
+        // action bar is up, but a selection surviving a reorder would download the wrong files.
+        selectionMode?.finish()
+        this.adapter.notifyDataSetChanged()
+        scrollListToPosition(0, false)
     }
 
     private fun onItemClick(

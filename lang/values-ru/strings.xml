@@ -17,6 +17,7 @@
 	<string name="advanced_search__summary">Искать по словам и фразам в кавычках</string>
 	<string name="all_attachments">Все вложения</string>
 	<string name="all_attachments__summary">Показывать миниатюры всех вложений</string>
+	<string name="all_files">Все файлы</string>
 	<string name="all_forums">Все форумы</string>
 	<string name="all_posts">Все сообщения</string>
 	<string name="all_threads">Все треды</string>
@@ -176,7 +177,10 @@
 	<string name="fields_limit_exceeded">Превышение лимита полей</string>
 	<string name="file_contains_data__format_sentence">Данный файл содержит следующие данные: %s.</string>
 	<string name="file_format_is_not_supported">Формат файла не поддерживается</string>
+	<string name="file_name">Имя файла</string>
 	<string name="file_name__format">Файл %s</string>
+	<string name="file_size">Размер файла</string>
+	<string name="file_type">Тип файла</string>
 	<string name="filed_on">Выдан</string>
 	<string name="files__genitive">Файлов</string>
 	<string name="files_limit_reached">Достигнут лимит файлов</string>
@@ -457,6 +461,7 @@
 	<string name="report">Пожаловаться</string>
 	<string name="repositories">Репозитории</string>
 	<string name="request_has_been_sent_successfully">Запрос успешно отправлен</string>
+	<string name="resolution">Разрешение</string>
 	<string name="restart">Перезапуск</string>
 	<string name="restore_data">Восстановить данные</string>
 	<string name="retry">Повторить</string>
@@ -603,6 +608,7 @@
 	<string name="version">Версия</string>
 	<string name="vibration">Вибрация</string>
 	<string name="video_player">Видеоплеер</string>
+	<string name="videos">Видео</string>
 	<string name="view__verb">Просмотреть</string>
 	<string name="views">Просмотры</string>
 	<string name="warning">Предупреждение</string>

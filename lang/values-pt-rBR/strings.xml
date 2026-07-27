@@ -10,6 +10,7 @@
 	<string name="address">Endereço</string>
 	<string name="all_attachments">Todos os anexos</string>
 	<string name="all_attachments__summary">Exibir miniaturas para todos os anexos</string>
+	<string name="all_files">Todos os arquivos</string>
 	<string name="all_posts">Todos os posts</string>
 	<string name="all_threads">Todos of fios</string>
 	<string name="always">Sempre</string>
@@ -118,7 +119,10 @@
 	<string name="favorites_first">Favoritos primeiro</string>
 	<string name="favorites_watcher">Watcher de favoritos</string>
 	<string name="file_format_is_not_supported">Formato de arquivo não suportado</string>
+	<string name="file_name">Nome do arquivo</string>
 	<string name="file_name__format">Arquivo %s</string>
+	<string name="file_size">Tamanho do arquivo</string>
+	<string name="file_type">Tipo de arquivo</string>
 	<string name="files__genitive">Arquivos</string>
 	<string name="files_limit_reached">Limite de arquivos atingido</string>
 	<string name="feedback">Feedback</string>
@@ -157,6 +161,7 @@
 	<string name="huge_captcha">Captcha enorme</string>
 	<string name="icons_are_enabled">Ícones estão habilitados</string>
 	<string name="image_is_corrupted">Imagem corrompida</string>
+	<string name="images">Imagens</string>
 	<string name="images_are_disabled">Imagens estão desabilitadas</string>
 	<string name="in_thread_number__format">No fio %s</string>
 	<string name="incorrect_password">Senha incorreta</string>
@@ -314,6 +319,7 @@
 	<string name="report">Reportar</string>
 	<string name="repositories">Repositórios</string>
 	<string name="request_has_been_sent_successfully">A solicitação foi enviado com sucesso</string>
+	<string name="resolution">Resolução</string>
 	<string name="restart">Reiniciar</string>
 	<string name="restore_data">Restaurar</string>
 	<string name="retry">Tentar novamente</string>
@@ -427,6 +433,7 @@
 	<string name="verify_certificate__summary">A conexão será encerrada se o certificado for inválido</string>
 	<string name="version">Versão</string>
 	<string name="video_player">Reprodutor de vídeo</string>
+	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>

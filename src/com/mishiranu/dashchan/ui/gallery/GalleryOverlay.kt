@@ -412,6 +412,10 @@ class GalleryOverlay :
                 )
             this.instance = instance
             retained.instance = instance
+            // A gallery may open sorted, which moves the file the caller pointed at
+            val initialItem = galleryItems?.getOrNull(imagePosition)
+            val displayPosition =
+                if (initialItem != null) instance.galleryItems.indexOf(initialItem) else imagePosition
             if (!instance.galleryItems.isEmpty()) {
                 val listUnit = ListUnit(instance)
                 val pagerUnit = PagerUnit(instance)
@@ -427,7 +431,7 @@ class GalleryOverlay :
                 retained.listUnit = listUnit
                 retained.pagerUnit = pagerUnit
                 rootView.addView(
-                    listUnit.getRecyclerView(),
+                    listUnit.view,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
@@ -436,9 +440,9 @@ class GalleryOverlay :
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
-                pagerUnit.addAndInitViews(rootView, imagePosition)
+                pagerUnit.addAndInitViews(rootView, displayPosition)
             }
-            newImagePosition = imagePosition
+            newImagePosition = displayPosition
         }
 
         if (instance.galleryItems.isEmpty()) {
@@ -572,6 +576,10 @@ class GalleryOverlay :
             .add(0, R.id.menu_select, 0, R.string.select)
             .setIcon(getActionBarIcon(instance.context, R.attr.iconActionSelect))
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        menu
+            .add(0, R.id.menu_filter, 0, R.string.filter)
+            .setIcon(getActionBarIcon(instance.context, R.attr.iconActionFilter))
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
     }
 
     override fun onPrepareDialogMenu(menu: Menu) {
@@ -588,6 +596,9 @@ class GalleryOverlay :
             pagerUnit?.invalidatePopupMenu()
         } else {
             menu.findItem(R.id.menu_select).setVisible(listUnit!!.areItemsSelectable())
+            // Against the whole gallery, not what a filter currently leaves: the button is the only
+            // way back out of a filter that narrowed the grid down to a single file.
+            menu.findItem(R.id.menu_filter).setVisible((instance?.totalCount ?: 0) > 1)
         }
     }
 
@@ -602,8 +613,25 @@ class GalleryOverlay :
             pagerUnit!!.refreshCurrent()
         } else if (switchItemId0 == R.id.menu_select) {
             listUnit!!.startSelectionMode(null)
+        } else if (switchItemId0 == R.id.menu_filter) {
+            val listUnit = this.listUnit
+            listUnit?.setFilterBarVisible(!listUnit.isFilterBarVisible)
         }
         return true
+    }
+
+    override fun onGalleryFilterChanged() {
+        // The pager reads the same list, so its page count has to follow the grid's
+        pagerUnit?.onItemsChanged()
+        updateGalleryTitle()
+    }
+
+    private fun updateGalleryTitle() {
+        val count = instance?.galleryItems?.size ?: return
+        getDialog()?.setTitleSubtitle(
+            getString(R.string.gallery),
+            getResources().getQuantityString(R.plurals.number_files__format, count, count),
+        )
     }
 
     override fun switchToFlow() {
@@ -733,12 +761,7 @@ class GalleryOverlay :
         pagerUnit!!.switchMode(galleryMode, duration)
         listUnit!!.switchMode(galleryMode, duration)
         if (galleryMode) {
-            val count = instance!!.galleryItems.size
-            getDialog()!!.setTitleSubtitle(
-                getString(R.string.gallery),
-                getResources()
-                    .getQuantityString(R.plurals.number_files__format, count, count),
-            )
+            updateGalleryTitle()
             titleSubtitle = null
         }
         modifySystemUiVisibility(GalleryInstance.Flags.LOCKED_GRID, galleryMode)

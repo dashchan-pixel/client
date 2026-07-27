@@ -19,6 +19,7 @@
 	<string name="advanced_search__summary">Search by words or quoted phrases</string>
 	<string name="all_attachments">All attachments</string>
 	<string name="all_attachments__summary">Display thumbnails for all attachments</string>
+	<string name="all_files">All files</string>
 	<string name="all_forums">All forums</string>
 	<string name="all_posts">All posts</string>
 	<string name="all_threads">All threads</string>
@@ -183,7 +184,10 @@
 	<string name="fields_limit_exceeded">Fields limit exceeded</string>
 	<string name="file_contains_data__format_sentence">This file contains the following data: %s.</string>
 	<string name="file_format_is_not_supported">File format is not supported</string>
+	<string name="file_name">File name</string>
 	<string name="file_name__format">File %s</string>
+	<string name="file_size">File size</string>
+	<string name="file_type">File type</string>
 	<string name="filed_on">Filed on</string>
 	<string name="files__genitive">Files</string>
 	<string name="files_limit_reached">Files limit reached</string>
@@ -461,6 +465,7 @@
 	<string name="report">Report</string>
 	<string name="repositories">Repositories</string>
 	<string name="request_has_been_sent_successfully">The request has been sent successfully</string>
+	<string name="resolution">Resolution</string>
 	<string name="restart">Restart</string>
 	<string name="restore_data">Restore data</string>
 	<string name="retry">Retry</string>
@@ -614,6 +619,7 @@
 	<string name="version">Version</string>
 	<string name="vibration">Vibration</string>
 	<string name="video_player">Video player</string>
+	<string name="videos">Videos</string>
 	<string name="view__verb">View</string>
 	<string name="views">Views</string>
 	<string name="warning">Warning</string>

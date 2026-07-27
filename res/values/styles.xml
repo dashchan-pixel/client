@@ -260,6 +260,7 @@
 		<item name="iconActionBack">@drawable/ic_arrow_back</item>
 		<item name="iconActionDelete">@drawable/ic_delete</item>
 		<item name="iconActionDownload">@drawable/ic_file_download</item>
+		<item name="iconActionFilter">@drawable/ic_filter_list</item>
 		<item name="iconActionForward">@drawable/ic_arrow_forward</item>
 		<item name="iconActionMakeThreadshot">@drawable/ic_camera_alt</item>
 		<item name="iconActionPaste">@drawable/ic_paste</item>
@@ -334,6 +335,7 @@
 		<item name="iconActionBack">@drawable/ic_arrow_back</item>
 		<item name="iconActionDelete">@drawable/ic_delete</item>
 		<item name="iconActionDownload">@drawable/ic_file_download</item>
+		<item name="iconActionFilter">@drawable/ic_filter_list</item>
 		<item name="iconActionForward">@drawable/ic_arrow_forward</item>
 		<item name="iconActionMakeThreadshot">@drawable/ic_camera_alt</item>
 		<item name="iconActionPaste">@drawable/ic_paste</item>

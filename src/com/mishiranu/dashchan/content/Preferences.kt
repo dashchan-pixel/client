@@ -876,6 +876,22 @@ object Preferences {
         prefs.edit().put(KEY_FAVORITES_HIDED_DELETED, flag).close()
     }
 
+    const val KEY_GALLERY_SORT: String = "gallery_sort"
+    val DEFAULT_GALLERY_SORT: GallerySort = GallerySort.UNSORTED
+
+    // Chosen from the gallery's own menu, no settings entry.
+    var gallerySort: GallerySort
+        get() =
+            getEnumValue(
+                KEY_GALLERY_SORT,
+                GallerySort.entries.toTypedArray(),
+                DEFAULT_GALLERY_SORT,
+                GallerySort.VALUE_PROVIDER,
+            ) ?: DEFAULT_GALLERY_SORT
+        set(gallerySort) {
+            prefs.edit().put(KEY_GALLERY_SORT, gallerySort.value).close()
+        }
+
     const val KEY_HIDE_PERSONAL_DATA: String = "hide_personal_data"
     const val DEFAULT_HIDE_PERSONAL_DATA: Boolean = false
 
@@ -2333,6 +2349,27 @@ object Preferences {
 
         companion object {
             internal val VALUE_PROVIDER = EnumValueProvider<FavoritesOrder> { o -> o?.value }
+        }
+    }
+
+    /**
+     * How the gallery orders its files. [UNSORTED] is the order the thread posted them in, and it
+     * is also what every other criterion falls back to for the files it cannot tell apart, because
+     * the sorting is stable: files of the same size, resolution or type stay in post order.
+     */
+    enum class GallerySort(
+        internal val value: String,
+        val titleResId: Int,
+    ) {
+        UNSORTED("unsorted", R.string.unsorted),
+        NAME("name", R.string.file_name),
+        SIZE("size", R.string.file_size),
+        RESOLUTION("resolution", R.string.resolution),
+        TYPE("type", R.string.file_type),
+        ;
+
+        companion object {
+            internal val VALUE_PROVIDER = EnumValueProvider<GallerySort> { o -> o?.value }
         }
     }
 

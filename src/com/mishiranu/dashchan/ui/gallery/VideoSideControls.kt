@@ -4,23 +4,17 @@ import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.Checkable
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.widget.ListPopupWindow
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.graphics.IconShadowDrawable
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
-import com.mishiranu.dashchan.widget.ThemeEngine
+import com.mishiranu.dashchan.widget.DropdownPopup
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.max
 
 /**
  * Vertical column of overlay controls pinned to the bottom-right edge of a video surface,
@@ -137,82 +131,20 @@ class VideoSideControls(
     /**
      * Show the playback-speed chooser as a small single-choice dropdown anchored to the speed button
      * (it drops up from the player's bottom edge). [current] is pre-selected; [onSelect] fires with
-     * the picked speed. A popup window attaches to the anchor's window, so it works from the
-     * gallery's token-less base context where an [android.app.AlertDialog] would throw a
-     * BadTokenException.
-     *
-     * A [ListPopupWindow] rather than a framework `PopupMenu`, for the same reason as
-     * [com.mishiranu.dashchan.widget.CommandsPopup]: a PopupMenu draws the square background of its
-     * own popup style, which no amount of theming rounds off. Here the background is ours
-     * ([ThemeEngine.roundedPopupBackground]). The rows are built on a
-     * [menu context][GalleryInstance.menuContext] rather than this view's own, whose theme is the
-     * player's — white text, which the app-themed background behind it need not be dark enough for.
+     * the picked speed. The rows are built on a [menu context][GalleryInstance.menuContext] rather
+     * than this view's own, whose theme is the player's — see [DropdownPopup].
      */
     fun showSpeedPopup(
         current: Float,
         speeds: List<Float>,
         onSelect: (Float) -> Unit,
     ) {
-        val menuContext = GalleryInstance.menuContext(context)
-        val currentIndex = speeds.indexOfFirst { abs(it - current) < 0.001f }
-        val density = ResourceUtils.obtainDensity(menuContext)
-        val paddingHorizontal = (16f * density).toInt()
-        val paddingVertical = (12f * density).toInt()
-        val adapter =
-            object : ArrayAdapter<String>(
-                menuContext,
-                android.R.layout.simple_list_item_single_choice,
-                android.R.id.text1,
-                speeds.map { formatSpeed(it) },
-            ) {
-                override fun getView(
-                    position: Int,
-                    convertView: View?,
-                    parent: ViewGroup,
-                ): View {
-                    val view = super.getView(position, convertView, parent)
-                    view.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical)
-                    // The row is a CheckedTextView, so the radio mark rides along without the list
-                    // needing a choice mode of its own.
-                    (view as? Checkable)?.isChecked = position == currentIndex
-                    return view
-                }
-            }
-        val popup = ListPopupWindow(menuContext)
-        popup.anchorView = speedButton
-        popup.isModal = true
-        popup.setAdapter(adapter)
-        // Tap feedback in a ListView comes from the list selector, not item backgrounds.
-        popup.setListSelector(
-            menuContext.getDrawable(
-                ResourceUtils.getResourceId(menuContext, android.R.attr.selectableItemBackground, 0),
-            ),
-        )
-        popup.width = measureSpeedWidth(adapter, menuContext, density)
-        popup.setBackgroundDrawable(ThemeEngine.roundedPopupBackground(menuContext))
-        popup.setOnItemClickListener { _, _, position, _ ->
-            popup.dismiss()
-            onSelect(speeds[position])
-        }
-        popup.show()
-    }
-
-    /** Widest row, so the dropdown hugs its labels ("0.33x") instead of the anchor's width. */
-    private fun measureSpeedWidth(
-        adapter: ArrayAdapter<String>,
-        menuContext: Context,
-        density: Float,
-    ): Int {
-        val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-        val fakeParent = FrameLayout(menuContext)
-        var contentWidth = 0
-        var itemView: View? = null
-        for (i in 0 until adapter.count) {
-            itemView = adapter.getView(i, itemView, fakeParent)
-            itemView.measure(measureSpec, measureSpec)
-            contentWidth = max(contentWidth, itemView.measuredWidth)
-        }
-        return contentWidth.coerceAtLeast((112f * density).toInt())
+        DropdownPopup.show(
+            speedButton,
+            GalleryInstance.menuContext(context),
+            speeds.map { formatSpeed(it) },
+            speeds.indexOfFirst { abs(it - current) < 0.001f },
+        ) { position -> onSelect(speeds[position]) }
     }
 
     companion object {

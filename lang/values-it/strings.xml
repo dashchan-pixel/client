@@ -15,6 +15,7 @@
     <string name="advanced_search__summary">Cerca per parole o frasi</string>
     <string name="all_attachments">Tutti gli allegati</string>
     <string name="all_attachments__summary">Mostra anteprime per tutti gli allegati</string>
+    <string name="all_files">Tutti i file</string>
     <string name="all_forums">Tutte le imageboard</string>
     <string name="all_posts">Tutti i post</string>
     <string name="all_threads">Tutti i thread</string>
@@ -153,7 +154,10 @@
     <string name="favorites_watcher">Watcher dei preferiti</string>
     <string name="fields_limit_exceeded">Limite caratteri superato</string>
     <string name="file_format_is_not_supported">Formato file non supportato</string>
+    <string name="file_name">Nome del file</string>
     <string name="file_name__format">File %s</string>
+    <string name="file_size">Dimensione file</string>
+    <string name="file_type">Tipo di file</string>
     <string name="filed_on">Inviato il</string>
     <string name="files__genitive">File</string>
     <string name="files_limit_reached">Limite file raggiunto</string>
@@ -393,6 +397,7 @@
     <string name="report">Segnala</string>
     <string name="repositories">Repository</string>
     <string name="request_has_been_sent_successfully">Richiesta inviata con successo</string>
+    <string name="resolution">Risoluzione</string>
     <string name="restart">Riavvia</string>
     <string name="restore_data">Ripristina dati</string>
     <string name="retry">Riprova</string>
@@ -529,6 +534,7 @@
     <string name="verify_certificate__summary">La connessione verrà terminata se il certificato non è valido</string>
     <string name="version">Versione</string>
     <string name="video_player">Player video</string>
+    <string name="videos">Video</string>
     <string name="view__verb">Vedi</string>
     <string name="views">Visualizzazioni</string>
     <string name="warning">Avviso</string>
