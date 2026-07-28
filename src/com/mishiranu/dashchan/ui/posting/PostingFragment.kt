@@ -70,7 +70,6 @@ import com.mishiranu.dashchan.content.Preferences.isAlwaysRemoveFilename
 import com.mishiranu.dashchan.content.Preferences.isAlwaysRenameFilename
 import com.mishiranu.dashchan.content.Preferences.isAlwaysUniqueHash
 import com.mishiranu.dashchan.content.Preferences.isCaptchaAutoReload
-import com.mishiranu.dashchan.content.Preferences.isHideCaptchaPassBlock
 import com.mishiranu.dashchan.content.Preferences.isHidePersonalData
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
 import com.mishiranu.dashchan.content.Preferences.isMarkupButtonsAtBottom
@@ -233,7 +232,6 @@ class PostingFragment :
     /** The command runs started here that may still be going; see [cancelCommandRuns]. */
     private val commandRuns = ArrayList<CommandRunner.Run>()
     private var captchaForm: CaptchaForm? = null
-    private var confirmationHeaderView: TextView? = null
     private var footerContainer: FrameLayout? = null
     private var sendButton: Button? = null
     private var attachmentColumnCount = 0
@@ -373,12 +371,9 @@ class PostingFragment :
 
         Companion.addHeader(personalDataBlock, 0, R.string.personal_data)
         addHeader(postingLayout, postingLayout.indexOfChild(subjectView), R.string.message_data)
-        confirmationHeaderView =
-            addHeader(
-                postingLayout,
-                postingLayout.indexOfChild(footerContainer),
-                R.string.confirmation,
-            )
+        // The confirmation block has no header of its own, so the send button would otherwise stick
+        // to the checkboxes above it
+        footerContainer.setPadding(0, (16f * density).toInt(), 0, 0)
         val tripcodeWarning = view.findViewById<TextView>(R.id.personal_tripcode_warning)
         val remainingCharacters = view.findViewById<TextView>(R.id.remaining_characters)
         setTextSizeScaled(tripcodeWarning, 12)
@@ -936,7 +931,6 @@ class PostingFragment :
         commandsButton = null
         commandsProgressView = null
         captchaForm = null
-        confirmationHeaderView = null
         footerContainer = null
         sendButton = null
         attachments.clear()
@@ -1639,7 +1633,7 @@ class PostingFragment :
         captcha = null
         updateSendButtonState()
         captchaForm!!.showLoading()
-        updateConfirmationHeaderState()
+        updateCaptchaBlockLayout()
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
@@ -1664,22 +1658,12 @@ class PostingFragment :
 
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
 
-    // The captcha block itself is hidden with a captcha pass or no captcha at all,
-    // so its header must go away too
-    private fun updateConfirmationHeaderState() {
-        val headerView = confirmationHeaderView ?: return
-        val footerContainer = this.footerContainer ?: return
-        val hidden =
-            (
-                captchaState == ReadCaptchaTask.CaptchaState.PASS ||
-                    captchaState == ReadCaptchaTask.CaptchaState.SKIP
-            ) &&
-                isHideCaptchaPassBlock
-        headerView.setVisibility(if (hidden) View.GONE else View.VISIBLE)
-        // Without the header the send button would stick to the checkboxes above it
-        val density = obtainDensity(footerContainer)
-        footerContainer.setPadding(0, if (hidden) (16f * density).toInt() else 0, 0, 0)
-        // Showing or hiding the whole block changes the height left for the comment field
+    // The captcha block is hidden with a captcha pass or no captcha at all, and showing or hiding it
+    // changes the height left for the comment field
+    private fun updateCaptchaBlockLayout() {
+        if (footerContainer == null) {
+            return
+        }
         resizeComment(true)
     }
 
@@ -1700,7 +1684,7 @@ class PostingFragment :
     override fun onReadCaptchaError(errorItem: ErrorItem) {
         show(errorItem)
         captchaForm!!.showError()
-        updateConfirmationHeaderState()
+        updateCaptchaBlockLayout()
         updatePostingConfigurationIfNeeded()
     }
 
@@ -1740,7 +1724,7 @@ class PostingFragment :
         val invertColors =
             blackAndWhite && !isLight(getColor(requireContext(), android.R.attr.colorBackground))
         captchaForm!!.showCaptcha(captchaState, input, captcha, large, invertColors)
-        updateConfirmationHeaderState()
+        updateCaptchaBlockLayout()
         val scrollView = scrollView!!
         if (scrollView.getScrollY() + viewportHeight(scrollView) >=
             scrollView
