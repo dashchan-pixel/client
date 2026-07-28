@@ -129,6 +129,7 @@ import com.mishiranu.dashchan.util.DrawerToggle
 import com.mishiranu.dashchan.util.FlagUtils.get
 import com.mishiranu.dashchan.util.FlagUtils.set
 import com.mishiranu.dashchan.util.IOUtils.copyStream
+import com.mishiranu.dashchan.util.Logger
 import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.NavigationUtils.handleUri
 import com.mishiranu.dashchan.util.NavigationUtils.isOpenableVideoPath
@@ -430,25 +431,30 @@ class MainActivity :
                         val bundle = Bundle()
                         bundle.setClassLoader(javaClass.getClassLoader())
                         bundle.readFromParcel(parcel)
-                        savedState = bundle
+                        // Take the anchor fragment here, while the file can still be given up
+                        // on: Bundle defers its Parcelable reads, and a file left behind by
+                        // another build of the app fails them with a RuntimeException (R8
+                        // renames the classes the file names). Without the anchor there is
+                        // nothing to restore the stack behind, so both cases mean no state.
+                        currentFragmentFromSaved =
+                            BundleCompat
+                                .getParcelable(
+                                    bundle,
+                                    MainActivity.Companion.EXTRA_CURRENT_FRAGMENT,
+                                    StackItem::class.java,
+                                )?.create(null) as? ContentFragment
+                        if (currentFragmentFromSaved != null) {
+                            savedState = bundle
+                        }
                     }
                 } catch (e: IOException) {
                     // Ignore
+                } catch (ignored: RuntimeException) {
+                    currentFragmentFromSaved = null
+                    savedState = null
                 } finally {
                     parcel.recycle()
                     file.delete()
-                }
-            }
-            if (savedState != null) {
-                currentFragmentFromSaved =
-                    BundleCompat
-                        .getParcelable(
-                            savedState,
-                            MainActivity.Companion.EXTRA_CURRENT_FRAGMENT,
-                            StackItem::class.java,
-                        )?.create(null) as? ContentFragment
-                if (currentFragmentFromSaved == null) {
-                    savedState = null
                 }
             }
         }
@@ -2619,8 +2625,21 @@ class MainActivity :
         )
         val parcel = Parcel.obtain()
         try {
+            outState.writeToParcel(parcel, 0)
+            // marshall() throws on a parcel holding a binder or a file descriptor, and this
+            // runs from onStop, where a throw is fatal. A fragment's own saved state can put
+            // one there without this code knowing -- a Bitmap past the in-place blob limit
+            // becomes an ashmem descriptor -- so a state that cannot go to disk means no page
+            // restore, not a crash on the way out of the app.
+            if (parcel.hasFileDescriptors()) {
+                Logger.write(
+                    Logger.Type.ERROR,
+                    "Can't save open pages: state holds a file descriptor",
+                )
+                file.delete()
+                return false
+            }
             FileOutputStream(file).use { output ->
-                outState.writeToParcel(parcel, 0)
                 val data = parcel.marshall()
                 copyStream(ByteArrayInputStream(data), output)
             }

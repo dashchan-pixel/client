@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.ui
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Parcel
 import android.os.Parcelable
@@ -19,7 +20,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.TextView.OnEditorActionListener
-import androidx.core.os.ParcelCompat
 import chan.content.ChanConfiguration
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences.isCaptchaTimer
@@ -32,6 +32,7 @@ import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.getColorStateList
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.util.ViewUtils.setTextSizeScaled
+import java.io.ByteArrayOutputStream
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
@@ -93,13 +94,9 @@ class CaptchaForm(
             creationTimeMillis = SystemClock.elapsedRealtime()
         }
 
-        protected constructor(`in`: Parcel) {
-            image =
-                ParcelCompat.readParcelable<Bitmap?>(
-                    `in`,
-                    Bitmap::class.java.getClassLoader(),
-                    Bitmap::class.java,
-                )
+        private constructor(`in`: Parcel) {
+            val imageBytes = `in`.createByteArray()
+            image = imageBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
             lifetimeSeconds = `in`.readInt()
             creationTimeMillis = `in`.readLong()
         }
@@ -134,9 +131,21 @@ class CaptchaForm(
             dest: Parcel,
             flags: Int,
         ) {
-            dest.writeParcelable(image, flags)
+            // Not writeParcelable(image): a Bitmap over Parcel's 16 KiB in-place blob limit
+            // travels as an ashmem file descriptor, and this state also goes through
+            // Parcel.marshall() into MainActivity's saved-pages file, which rejects a parcel
+            // carrying one. PNG bytes cost a compress per save and stay marshallable, so the
+            // captcha survives leaving the posting screen (attaching a file, pressing Home)
+            // instead of killing onStop.
+            dest.writeByteArray(image?.let(::compressToPng))
             dest.writeInt(lifetimeSeconds)
             dest.writeLong(creationTimeMillis)
+        }
+
+        private fun compressToPng(image: Bitmap): ByteArray {
+            val output = ByteArrayOutputStream()
+            image.compress(Bitmap.CompressFormat.PNG, 100, output)
+            return output.toByteArray()
         }
 
         companion object {
