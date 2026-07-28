@@ -84,6 +84,14 @@ class PostItem private constructor(
     private val threadData: ThreadData?
     private val attachmentItems: List<AttachmentItem>?
 
+    // Replacement files installed by a thread command, standing in for the post's own until the
+    // command is run again or the page is left. Not persisted, the same way the comment override
+    // isn't: the post cache goes on holding what the board sent. The flag is what tells "no
+    // replacement" apart from "this post shows no files", which is a replacement a command may ask
+    // for -- see setAttachmentsOverride.
+    private var attachmentItemsOverride: List<AttachmentItem>? = null
+    private var attachmentsOverridden = false
+
     private var ordinalIndex = ORDINAL_INDEX_NONE
 
     private var subject: String? = null
@@ -429,15 +437,46 @@ class PostItem private constructor(
 
     fun getIcons(): List<Post.Icon> = post.icons
 
-    fun hasAttachments(): Boolean = attachmentItems != null
+    fun hasAttachments(): Boolean = currentAttachmentItems() != null
 
-    fun getAttachmentItems(): List<AttachmentItem>? = attachmentItems
+    fun getAttachmentItems(): List<AttachmentItem>? = currentAttachmentItems()
+
+    private fun currentAttachmentItems(): List<AttachmentItem>? = if (attachmentsOverridden) attachmentItemsOverride else attachmentItems
+
+    /**
+     * Replaces the files this post shows with [attachments] (a
+     * [com.mishiranu.dashchan.content.CommandRunner] thread command's result), or clears a previous
+     * replacement when [attachments] is `null` — which is not the same as an empty list, that being a
+     * post the command asked to show no files at all. The items are built exactly as the post's own
+     * were, so a replacement is thumbnailed, opened in the gallery and downloaded like any other file.
+     *
+     * Only the display changes: [getPost] keeps describing the post as it arrived, which is also what a
+     * re-run of the command sees.
+     *
+     * @return Whether anything changed, i.e. whether the post needs rebinding.
+     */
+    fun setAttachmentsOverride(
+        chan: Chan,
+        attachments: List<Post.Attachment>?,
+    ): Boolean {
+        if (attachments == null) {
+            if (!attachmentsOverridden) {
+                return false
+            }
+            attachmentsOverridden = false
+            attachmentItemsOverride = null
+        } else {
+            attachmentsOverridden = true
+            attachmentItemsOverride = AttachmentItem.obtain(this, attachments, post.comment, chan.locator)
+        }
+        return true
+    }
 
     fun getAttachmentsDescription(
         resources: Resources,
         formatMode: AttachmentItem.FormatMode,
     ): String {
-        val attachmentItems = this.attachmentItems!!
+        val attachmentItems = currentAttachmentItems()!!
         val count = attachmentItems.size
         if (count == 1) {
             return attachmentItems[0].getDescription(formatMode)

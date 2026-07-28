@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.content
 
 import android.webkit.JavascriptInterface
+import com.mishiranu.dashchan.content.model.Post
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.content.storage.DraftsStorage.AttachmentDraft
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -21,10 +22,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   file and leaves the text alone. See [CommandAttachments] for what an attachment looks like and
  *   for how a script adds one.
  * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`. `posts` is an
- *   array of `{number, name, email, icon, subject, comment}`, `comment` being the post's HTML as the
- *   chan sent it. It should `return` an object mapping a post's `number` to the HTML to display in
- *   place of that post's comment (e.g. `{ "123": "<b>decrypted…</b>" }`); posts absent from the object
- *   are left as-is, and returning `undefined`/`null` changes nothing.
+ *   array of `{number, name, email, icon, subject, comment, attachments}`, `comment` being the post's
+ *   HTML as the chan sent it and `attachments` its attached files (see [CommandPostAttachments]). It
+ *   should `return` an object mapping a post's `number` to what to show in place of that post's own —
+ *   either the replacement comment HTML (e.g. `{ "123": "<b>decrypted…</b>" }`) or an object whose
+ *   `comment` and `attachments` are each applied only if present, so `{ "123": { attachments: [] } }`
+ *   hides that post's files and leaves its text alone. Posts absent from the result are left as-is, and
+ *   returning `undefined`/`null` changes nothing.
  *
  *   In and out are the same form on purpose: a replacement is parsed exactly like a real comment, so
  *   greentext, spoilers and `>>` links written the way the chan writes them keep working, and a script
@@ -62,7 +66,8 @@ object CommandRunner {
     /**
      * One post handed to a [CommandsStorage.UseIn.THREAD] script as an element of `posts`. [comment] is
      * the post's HTML, not the rendered text — see
-     * [Post.comment][chan.content.model.Post.getComment].
+     * [Post.comment][chan.content.model.Post.getComment]. [attachments] are the post's attached files,
+     * which the script may hand back changed (see [CommandPostAttachments]).
      */
     data class ThreadPost(
         val number: String,
@@ -71,6 +76,7 @@ object CommandRunner {
         val icon: String?,
         val subject: String?,
         val comment: String,
+        val attachments: List<Post.Attachment.File>,
     )
 
     /** Outcome of a [CommandsStorage.UseIn.COMMENT] command. */
@@ -165,14 +171,24 @@ object CommandRunner {
         }
     }
 
+    /**
+     * What a thread command asked to show in place of one post's own. [comment] is the replacement HTML
+     * and [attachments] the replacement file list; either is `null` when the script asked for no change
+     * to that half of the post.
+     */
+    data class ThreadChange(
+        val comment: String?,
+        val attachments: List<Post.Attachment.File>?,
+    )
+
     /** Outcome of a [CommandsStorage.UseIn.THREAD] command. */
     sealed interface ThreadResult {
         /**
-         * The command ran successfully. [replacements] maps a post number to the HTML to display in
-         * place of that post's comment; it is empty when the script asked for no changes.
+         * The command ran successfully. [changes] maps a post number to what to display in place of
+         * that post's own comment and files; it is empty when the script asked for no changes.
          */
         data class Success(
-            val replacements: Map<String, String>,
+            val changes: Map<String, ThreadChange>,
         ) : ThreadResult
 
         /** The command threw or could not be evaluated; [message] describes what went wrong. */
@@ -266,8 +282,7 @@ object CommandRunner {
                     thread = thread,
                     board = board,
                     env = CommandsStorage.getInstance().getEnv(),
-                    // A thread command returns a { postNumber: replacementHtml } object.
-                    resultExpr = "(__result===undefined||__result===null)?{}:__result",
+                    resultExpr = THREAD_RESULT_EXPR,
                 ) { append(postsJson).append(',') }
             // A per-post body runs n times, so one deadline for the whole thread would fail a body that
             // is fine per post (a fetch each, say) purely for the thread being long. Give it a share per
@@ -278,7 +293,10 @@ object CommandRunner {
                 } else {
                     TIMEOUT_MS
                 }
-            execute(handle, script, ::parseThread, { ThreadResult.Failure(it) }, callback, timeout)
+            // The attachments a script asked for are resolved against the posts it was handed, right
+            // where the bridged JSON is parsed: unlike a draft's, a post's attachment is an address
+            // rather than bytes, so there is nothing to go and fetch first.
+            execute(handle, script, { raw -> parseThread(raw, posts) }, { ThreadResult.Failure(it) }, callback, timeout)
         }
         return handle
     }
@@ -432,8 +450,9 @@ object CommandRunner {
                 append("var __post=posts[__i];\n")
                 append("var __value=await __process(__post,thread,board,env);\n")
                 // Same contract as the whole-thread form, one post at a time: nothing returned means
-                // this post is left as it is.
-                append("if(__value!==undefined&&__value!==null){__acc[__post.number]=String(__value);}\n")
+                // this post is left as it is, and what is returned may be either the comment or the
+                // {comment?, attachments?} object — the normalizing is the same for both forms.
+                append("if(__value!==undefined&&__value!==null){__acc[__post.number]=__value;}\n")
                 append("}\n")
                 append("return __acc;\n")
                 append("});")
@@ -454,6 +473,7 @@ object CommandRunner {
             obj.put("icon", post.icon ?: JSONObject.NULL)
             obj.put("subject", post.subject ?: JSONObject.NULL)
             obj.put("comment", post.comment)
+            obj.put("attachments", CommandPostAttachments.toJson(post.attachments))
             array.put(obj)
         }
         return array.toString()
@@ -505,26 +525,76 @@ object CommandRunner {
         }
     }
 
-    private fun parseThread(raw: String?): ThreadResult {
+    /**
+     * Normalizes what a thread command returned into `{postNumber: {comment?, attachments?}}`. A post
+     * whose value is a bare string keeps the shorthand it has always been — it is the whole of the older
+     * contract, and every command written against it goes on meaning the same thing — while an object
+     * says which halves of the post it wants replaced by which keys it carries.
+     */
+    private const val THREAD_RESULT_EXPR =
+        "(function(__r){" +
+            "if(__r===undefined||__r===null||typeof __r!=='object'){return {};}" +
+            "var __o={};" +
+            "for(var __k in __r){" +
+            "if(!Object.prototype.hasOwnProperty.call(__r,__k)){continue;}" +
+            "var __v=__r[__k];" +
+            "if(__v===undefined||__v===null){continue;}" +
+            "if(typeof __v!=='object'){__o[__k]={comment:String(__v)};continue;}" +
+            "var __e={};" +
+            "if(__v.comment!==undefined&&__v.comment!==null){__e.comment=String(__v.comment);}" +
+            "if(Array.isArray(__v.attachments)){__e.attachments=__v.attachments;}" +
+            "__o[__k]=__e;" +
+            "}" +
+            "return __o;" +
+            "})(__result)"
+
+    /**
+     * Turns the bridged result into the change per post, resolving the attachments each one asked for
+     * against the [posts] the script was handed. A reference that resolves to no file fails the whole
+     * run rather than the one post: a half-applied thread is harder to make sense of than a message.
+     */
+    private fun parseThread(
+        raw: String?,
+        posts: List<ThreadPost>,
+    ): ThreadResult {
         if (raw == null) {
             return ThreadResult.Failure("No result (script did not evaluate)")
         }
         return try {
             val json = JSONObject(raw)
             if (json.optBoolean("ok")) {
-                val replacements = LinkedHashMap<String, String>()
+                val changes = LinkedHashMap<String, ThreadChange>()
                 // A non-object return (string, array, …) yields no object here and thus no changes.
                 val result = json.optJSONObject("result")
                 if (result != null) {
                     val keys = result.keys()
                     while (keys.hasNext()) {
                         val key = keys.next()
-                        if (!result.isNull(key)) {
-                            replacements[key] = result.optString(key)
+                        val value = result.optJSONObject(key) ?: continue
+                        val attachments = value.optJSONArray("attachments")
+                        val resolved =
+                            if (attachments != null) {
+                                val input = posts.firstOrNull { it.number == key }?.attachments.orEmpty()
+                                val requested = CommandPostAttachments.parse(attachments)
+                                when (val resolution = CommandPostAttachments.resolve(input, requested)) {
+                                    is CommandPostAttachments.Result.Success -> {
+                                        resolution.attachments
+                                    }
+
+                                    is CommandPostAttachments.Result.Failure -> {
+                                        return ThreadResult.Failure("Post $key: ${resolution.message}")
+                                    }
+                                }
+                            } else {
+                                null
+                            }
+                        val comment = if (value.isNull("comment")) null else value.optString("comment")
+                        if (comment != null || resolved != null) {
+                            changes[key] = ThreadChange(comment, resolved)
                         }
                     }
                 }
-                ThreadResult.Success(replacements)
+                ThreadResult.Success(changes)
             } else {
                 ThreadResult.Failure(json.optString("error", "Unknown error"))
             }

@@ -345,9 +345,22 @@ abstract class AttachmentItem protected constructor(
             master: Master,
             post: Post,
             locator: ChanLocator,
+        ): ArrayList<AttachmentItem>? = obtain(master, post.attachments, post.comment, locator)
+
+        /**
+         * The items for an arbitrary [attachments] list rather than a post's own, so a thread command
+         * can hand a post the attachments it wants shown (see
+         * [com.mishiranu.dashchan.content.CommandPostAttachments]). [comment] is still the post's, since
+         * the links embedded in it produce items of their own.
+         */
+        fun obtain(
+            master: Master,
+            attachments: List<Post.Attachment>,
+            comment: String?,
+            locator: ChanLocator,
         ): ArrayList<AttachmentItem>? {
             val attachmentItems = ArrayList<AttachmentItem>()
-            for (attachment in post.attachments) {
+            for (attachment in attachments) {
                 val attachmentItem: AttachmentItem? =
                     when (attachment) {
                         is Post.Attachment.File -> {
@@ -367,7 +380,7 @@ abstract class AttachmentItem protected constructor(
                 }
             }
             for (embeddedType in EmbeddedType.values()) {
-                addCommentAttachmentItems(attachmentItems, master, locator, post.comment, embeddedType)
+                addCommentAttachmentItems(attachmentItems, master, locator, comment, embeddedType)
             }
             if (attachmentItems.isNotEmpty()) {
                 attachmentItems.trimToSize()

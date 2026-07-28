@@ -2179,8 +2179,12 @@ class PostsPage :
 
     /**
      * Snapshots the currently loaded posts as the `posts` array handed to a thread command. Comments go
-     * out as the post's HTML, the same form the replacement comes back in — always the post as it
-     * arrived, never an override a previous run left behind, so re-running a command is idempotent.
+     * out as the post's HTML and attachments as the files the post arrived with, the same forms the
+     * replacements come back in — always the post as it arrived, never an override a previous run left
+     * behind, so re-running a command is idempotent.
+     *
+     * Only a post's [files][Post.Attachment.File] are handed over: what the chan embedded, and what the
+     * app parsed out of the comment, is not a file a script could point elsewhere.
      */
     private fun collectThreadPosts(): List<CommandRunner.ThreadPost> {
         val posts = ArrayList<CommandRunner.ThreadPost>()
@@ -2194,6 +2198,7 @@ class PostsPage :
                     post.icons.firstOrNull()?.title,
                     nullIfEmpty(post.subject),
                     emptyIfNull(post.comment),
+                    post.attachments.filterIsInstance<Post.Attachment.File>(),
                 ),
             )
         }
@@ -2255,7 +2260,7 @@ class PostsPage :
                 }
                 when (result) {
                     is CommandRunner.ThreadResult.Success -> {
-                        val changed = applyThreadReplacements(result.replacements)
+                        val changed = applyThreadChanges(result.changes)
                         if (changed == 0 && notifyEmpty) {
                             show(R.string.command_no_changes)
                         }
@@ -2292,16 +2297,26 @@ class PostsPage :
     }
 
     /**
-     * Applies a thread command's [replacements] (post number → HTML) to the loaded posts, overriding
-     * the displayed comment of matching posts and clearing any override on the rest, then rebinds.
-     * Returns how many posts were overridden.
+     * Applies a thread command's [changes] (post number → replacement comment and files) to the loaded
+     * posts, overriding what the matching posts display and clearing any override on the rest, then
+     * rebinds. Returns how many posts the command changed.
+     *
+     * A post whose files were replaced also has its gallery entry rebuilt, since the gallery is a list
+     * of its own, filled when a post is loaded — leaving it alone would open the file the post no longer
+     * shows.
      */
-    private fun applyThreadReplacements(replacements: Map<String, String>): Int {
+    private fun applyThreadChanges(changes: Map<String, CommandRunner.ThreadChange>): Int {
+        val chan = chan
+        val gallerySet = adapter.gallerySet
         var changed = 0
         for (postItem in adapter) {
-            val replacement = replacements[postItem.getPostNumber().toString()]
-            postItem.setCommentOverride(replacement)
-            if (replacement != null) {
+            val change = changes[postItem.getPostNumber().toString()]
+            postItem.setCommentOverride(change?.comment)
+            if (postItem.setAttachmentsOverride(chan, change?.attachments)) {
+                gallerySet.remove(postItem.getPostNumber())
+                gallerySet.put(postItem.getPostNumber(), postItem.getAttachmentItems())
+            }
+            if (change != null) {
                 changed++
             }
         }

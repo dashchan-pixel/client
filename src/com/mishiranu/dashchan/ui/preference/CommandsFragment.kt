@@ -740,11 +740,12 @@ class CommandsFragment :
 
             private const val SAMPLE_THREAD =
                 "return posts.reduce((acc, post) => {\n" +
-                    "  acc[post.number] = post.comment;\n" +
+                    "  acc[post.number] = { comment: post.comment,\n" +
+                    "    attachments: post.attachments };\n" +
                     "  return acc;\n" +
                     "}, {});"
 
-            private const val SAMPLE_PER_POST = "return post.comment;"
+            private const val SAMPLE_PER_POST = "return { comment: post.comment, attachments: post.attachments };"
 
             private val CommandsStorage.UseIn.titleRes: Int
                 get() =

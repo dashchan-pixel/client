@@ -12,9 +12,9 @@ import org.json.JSONObject
  * User-defined scripts ("Commands"). A command carries a name, a body of JavaScript [code] and a
  * target ([useIn]) that decides what it operates on: [UseIn.COMMENT] rewrites a posting form's draft —
  * its text and the files attached to it — before it is sent, while [UseIn.THREAD] reads the posts of a
- * thread being viewed and produces some text to show back. Like Autohide rules a command can be scoped
- * to specific forums ([chanNames], `null`/empty means every forum) and optionally to a single board
- * ([boardName]).
+ * thread being viewed and produces the comment and the files to show back for each of them. Like
+ * Autohide rules a command can be scoped to specific forums ([chanNames], `null`/empty means every
+ * forum) and optionally to a single board ([boardName]).
  *
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
@@ -418,6 +418,11 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * or exported before the attachments existed keeps working unchanged.
          */
         COMMENT("comment"),
+
+        /**
+         * The posts of the thread being viewed — their comments and their attached files, each post
+         * showing what the command hands back for it until the thread is left or read again.
+         */
         THREAD("thread"),
         ;
 
@@ -449,9 +454,9 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
         /**
          * [UseIn.THREAD] only: run the body once per post rather than once per thread. The body is then
-         * the `process` of a fold over the thread's posts — it takes a single `post` and returns that
-         * post's replacement — which trades n+1 engine calls for not having to build the result map by
-         * hand. See [com.mishiranu.dashchan.content.CommandRunner.runThread].
+         * the `process` of a fold over the thread's posts — it takes a single `post` and returns just
+         * that post's replacement — which trades n+1 engine calls for not having to build the result
+         * map by hand. See [com.mishiranu.dashchan.content.CommandRunner.runThread].
          */
         @JvmField var perPost = false
 
