@@ -11,6 +11,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.widget.ScrollView
 import com.mishiranu.dashchan.util.GraphicsUtils
@@ -43,6 +44,15 @@ open class CodeEditText : SafePasteEditText {
 
     /** Siblings hidden by [updateExpansionState], to be restored when the editor collapses. */
     private val hiddenSiblings = ArrayList<View>()
+
+    /** This field's own margins, dropped while it is expanded and given back when it collapses. */
+    private var collapsedMargins: Rect? = null
+
+    /** The container's padding, dropped and given back the same way as [collapsedMargins]. */
+    private var collapsedContainerPadding: Rect? = null
+
+    /** This field's own padding, widened while it is expanded and given back when it collapses. */
+    private var collapsedPadding: Rect? = null
 
     /**
      * True while the user is working the selection — a finger is down on the text, or a range is
@@ -146,32 +156,34 @@ open class CodeEditText : SafePasteEditText {
     }
 
     private val layoutListener =
-        android.view.ViewTreeObserver.OnGlobalLayoutListener {
+        ViewTreeObserver.OnGlobalLayoutListener {
             if (isExpanded) {
-                val parentGroup = parent as? ViewGroup ?: return@OnGlobalLayoutListener
-                val scrollView = parentGroup.parent as? ScrollView ?: return@OnGlobalLayoutListener
-                val availableHeight = scrollView.height - parentGroup.paddingTop - parentGroup.paddingBottom
-
-                if (availableHeight > 0 && layoutParams.height != availableHeight) {
-                    if (layoutParams.height == resources.displayMetrics.heightPixels) {
-                        layoutParams.height = availableHeight
-                        requestLayout()
-                    }
-                }
+                updateExpandedHeight()
             }
         }
+
+    /**
+     * Keeps the expanded field exactly as tall as the scroller holding it. The height it is expanded
+     * to is the display's — before the first layout nothing knows the real one, and asking for more
+     * than the dialog has is what makes the dialog hand out everything it has — and is corrected here
+     * once the scroller has been measured, in both directions, so the field also follows a keyboard
+     * that grows or shrinks.
+     */
+    private fun updateExpandedHeight() {
+        val container = parent as? ViewGroup ?: return
+        val scrollView = container.parent as? ScrollView ?: return
+        val available = scrollView.height - container.paddingTop - container.paddingBottom
+        if (available > 0 && layoutParams.height != available) {
+            layoutParams.height = available
+            requestLayout()
+        }
+    }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         setOnApplyWindowInsetsListener { _, insets ->
             isKeyboardOpen = insets.isVisible(WindowInsets.Type.ime())
             updateExpansionState()
-
-            if (isExpanded) {
-                layoutParams.height = resources.displayMetrics.heightPixels
-                requestLayout()
-            }
-
             insets
         }
         viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
@@ -198,35 +210,79 @@ open class CodeEditText : SafePasteEditText {
         if (isExpanded == shouldExpand) return
         isExpanded = shouldExpand
 
-        val parentGroup = parent as? ViewGroup ?: return
-        if (shouldExpand) {
-            // Only the siblings this view actually hides are remembered, so collapsing restores
-            // exactly them. A sibling the dialog had already hidden — an option that doesn't apply
-            // to what the user picked, like the per-post checkbox of a comment command — must stay
-            // hidden; blanket VISIBLE resurrected it.
-            for (i in 0 until parentGroup.childCount) {
-                val child = parentGroup.getChildAt(i)
-                if (child != this && child.visibility == View.VISIBLE) {
-                    child.visibility = View.GONE
-                    hiddenSiblings.add(child)
+        val container = parent as? ViewGroup
+        if (container != null) {
+            if (shouldExpand) {
+                // Only the siblings this view actually hides are remembered, so collapsing restores
+                // exactly them. A sibling the dialog had already hidden — an option that doesn't apply
+                // to what the user picked, like the per-post checkbox of a comment command — must stay
+                // hidden; blanket VISIBLE resurrected it.
+                for (i in 0 until container.childCount) {
+                    val child = container.getChildAt(i)
+                    if (child != this && child.visibility == View.VISIBLE) {
+                        child.visibility = View.GONE
+                        hiddenSiblings.add(child)
+                    }
                 }
+                collapsedContainerPadding =
+                    Rect(
+                        container.paddingLeft,
+                        container.paddingTop,
+                        container.paddingRight,
+                        container.paddingBottom,
+                    )
+                container.setPadding(0, 0, 0, 0)
+            } else {
+                for (child in hiddenSiblings) {
+                    child.visibility = View.VISIBLE
+                }
+                hiddenSiblings.clear()
+                collapsedContainerPadding?.let {
+                    container.setPadding(it.left, it.top, it.right, it.bottom)
+                }
+                collapsedContainerPadding = null
             }
-        } else {
-            for (child in hiddenSiblings) {
-                child.visibility = View.VISIBLE
-            }
-            hiddenSiblings.clear()
         }
-
-        val lp = layoutParams
-        if (shouldExpand) {
-            lp.height = resources.displayMetrics.heightPixels
-        } else {
-            lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
-        }
-        layoutParams = lp
+        applyExpandedLayout(shouldExpand)
 
         onExpandedStateChanged?.invoke(shouldExpand)
+    }
+
+    /**
+     * Gives the expanded field the whole screen to grow into — [updateExpandedHeight] cuts it back to
+     * what the dialog really has — and takes its margins away with it, since a fullscreen editor is
+     * not laid out inside a form any more.
+     *
+     * The margins become padding rather than being dropped: the first and the last character of a line
+     * have to be tappable, and a margin is outside the field, where a tap lands on nothing. Padding is
+     * inside it, so a tap next to the text still puts the caret at the end of the line it belongs to.
+     */
+    private fun applyExpandedLayout(expand: Boolean) {
+        if (expand) {
+            collapsedPadding = Rect(paddingLeft, paddingTop, paddingRight, paddingBottom)
+            val horizontal = (EXPANDED_HORIZONTAL_PADDING_DP * resources.displayMetrics.density).toInt()
+            setPadding(max(paddingLeft, horizontal), paddingTop, max(paddingRight, horizontal), paddingBottom)
+        } else {
+            collapsedPadding?.let { setPadding(it.left, it.top, it.right, it.bottom) }
+            collapsedPadding = null
+        }
+        val lp = layoutParams ?: return
+        if (lp is ViewGroup.MarginLayoutParams) {
+            if (expand) {
+                collapsedMargins = Rect(lp.leftMargin, lp.topMargin, lp.rightMargin, lp.bottomMargin)
+                lp.setMargins(0, 0, 0, 0)
+            } else {
+                collapsedMargins?.let { lp.setMargins(it.left, it.top, it.right, it.bottom) }
+                collapsedMargins = null
+            }
+        }
+        lp.height =
+            if (expand) {
+                resources.displayMetrics.heightPixels
+            } else {
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            }
+        layoutParams = lp
     }
 
     override fun onMeasure(
@@ -351,6 +407,9 @@ open class CodeEditText : SafePasteEditText {
     companion object {
         private const val CONTEXT_LINES = 3
         private const val MAX_HEIGHT_FRACTION = 0.3f
+
+        /** How far from the screen edges the expanded field keeps its text, in dp. */
+        private const val EXPANDED_HORIZONTAL_PADDING_DP = 12f
 
         // Both palettes are kept above 4.5:1 against the surface they belong to, comments aside:
         // those are deliberately the quietest token of the four.

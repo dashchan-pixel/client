@@ -5,10 +5,17 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -16,10 +23,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowInsets
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.HorizontalScrollView
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +50,7 @@ import com.mishiranu.dashchan.util.IOUtils
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
+import com.mishiranu.dashchan.widget.CodeEditText
 import com.mishiranu.dashchan.widget.DropdownView
 import com.mishiranu.dashchan.widget.SortableHelper
 import com.mishiranu.dashchan.widget.ThemeEngine
@@ -46,6 +59,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import kotlin.math.max
+import kotlin.math.min
 
 class CommandsFragment :
     BaseListFragment,
@@ -522,7 +537,7 @@ class CommandsFragment :
         private lateinit var autoRunCheckBox: CheckBox
         private lateinit var perPostCheckBox: CheckBox
         private lateinit var librariesSelector: TextView
-        private lateinit var codeEdit: EditText
+        private lateinit var codeEdit: CodeEditText
 
         // Identity of the command being edited, carried into readDialogView() so an edit keeps the same
         // id (and a new command keeps one stable id for the life of the dialog).
@@ -652,7 +667,7 @@ class CommandsFragment :
             }
 
             val dialog =
-                wrapWithRibbon(requireContext(), scrollView, codeEdit as com.mishiranu.dashchan.widget.CodeEditText) { view ->
+                wrapWithRibbon(requireContext(), scrollView, codeEdit) { view ->
                     builder.setView(view).create()
                 }
 
@@ -771,13 +786,13 @@ class CommandsFragment :
      * JavaScript, so it is highlighted as an env file rather than as a command body.
      */
     class EnvironmentDialog : DialogFragment() {
-        private lateinit var envEdit: com.mishiranu.dashchan.widget.CodeEditText
+        private lateinit var envEdit: CodeEditText
 
         @SuppressLint("InflateParams")
         override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog {
             val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_environment, null)
             envEdit = view.findViewById(R.id.env)
-            envEdit.syntax = com.mishiranu.dashchan.widget.CodeEditText.Syntax.ENVIRONMENT
+            envEdit.syntax = CodeEditText.Syntax.ENVIRONMENT
             if (savedInstanceState == null) {
                 // On recreation the EditText restores its own text from the saved view state, so only
                 // seed it on first creation.
@@ -803,18 +818,18 @@ class CommandsFragment :
 }
 
 private fun createSymbolButton(
-    context: android.content.Context,
+    context: Context,
     symbol: String,
-    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
-): android.widget.TextView =
-    android.widget.TextView(context).apply {
+    codeEdit: CodeEditText,
+): TextView =
+    TextView(context).apply {
         text = symbol
         textSize = 16f
-        typeface = android.graphics.Typeface.MONOSPACE
-        gravity = android.view.Gravity.CENTER
+        typeface = Typeface.MONOSPACE
+        gravity = Gravity.CENTER
         val p = (12 * resources.displayMetrics.density).toInt()
         setPadding(p, p, p, p)
-        val outValue = android.util.TypedValue()
+        val outValue = TypedValue()
         context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
         setBackgroundResource(outValue.resourceId)
         isClickable = true
@@ -823,70 +838,70 @@ private fun createSymbolButton(
             val start = codeEdit.selectionStart
             val end = codeEdit.selectionEnd
             if (start >= 0 && end >= 0) {
-                codeEdit.text?.replace(Math.min(start, end), Math.max(start, end), symbol)
+                codeEdit.text?.replace(min(start, end), max(start, end), symbol)
             }
         }
     }
 
 private fun createOkButton(
-    context: android.content.Context,
-    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
-): android.widget.TextView =
-    android.widget.TextView(context).apply {
+    context: Context,
+    codeEdit: CodeEditText,
+): TextView =
+    TextView(context).apply {
         setText(android.R.string.ok)
         textSize = 16f
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-        gravity = android.view.Gravity.CENTER
+        typeface = Typeface.DEFAULT_BOLD
+        gravity = Gravity.CENTER
         val pX = (16 * resources.displayMetrics.density).toInt()
         val pY = (12 * resources.displayMetrics.density).toInt()
         setPadding(pX, pY, pX, pY)
-        val outValue = android.util.TypedValue()
+        val outValue = TypedValue()
         context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
         setBackgroundResource(outValue.resourceId)
         isClickable = true
         isFocusable = true
         setOnClickListener {
             codeEdit.clearFocus()
-            val imm = context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(codeEdit.windowToken, 0)
         }
     }
 
 private fun createBottomBar(
-    context: android.content.Context,
-    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
-): android.widget.LinearLayout {
+    context: Context,
+    codeEdit: CodeEditText,
+): LinearLayout {
     val symbolsContainer =
-        android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
+        LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
         }
-    val symbols = listOf("{", "}", "[", "]", "/", "\\", "\"", "=", ":", ";", "(", ")", "<", ">", "&", "|")
+    val symbols = listOf("{", "}", "[", "]", "/", "\\", "$", "`", "=", "\"", ":", ";", "(", ")", "<", ">", "&", "|")
     for (symbol in symbols) {
         val button = createSymbolButton(context, symbol, codeEdit)
         symbolsContainer.addView(
             button,
-            android.widget.LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ),
         )
     }
     val ribbonScroll =
-        android.widget.HorizontalScrollView(context).apply {
+        HorizontalScrollView(context).apply {
             addView(symbolsContainer)
             isHorizontalScrollBarEnabled = false
         }
-    return android.widget.LinearLayout(context).apply {
-        orientation = android.widget.LinearLayout.HORIZONTAL
+    return LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
         val px = (8 * resources.displayMetrics.density).toInt()
         val py = (4 * resources.displayMetrics.density).toInt()
         setPadding(px, py, px, py)
         visibility = View.GONE
-        addView(ribbonScroll, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        addView(ribbonScroll, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         val okButton = createOkButton(context, codeEdit)
         addView(
             okButton,
-            android.widget.LinearLayout
+            LinearLayout
                 .LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -897,29 +912,174 @@ private fun createBottomBar(
     }
 }
 
+/**
+ * Turns the dialog around an expanded code field into a fullscreen editor, so that the screen holds
+ * nothing but the status bar, the code, the symbol ribbon and the keyboard — and turns it back into
+ * a dialog when the field collapses, because the same dialog is also the form with the other fields
+ * on it.
+ *
+ * What is in the way, from the outside in: the floating window is only as large as the form and its
+ * background is an inset rounded rectangle whose inset the decor takes as padding; the dialog's own
+ * title and button bar sit above and below the custom view (the ribbon replaces the buttons, and the
+ * only title is the environment editor's); and each panel between the window and the field pads it.
+ * All of it is measured or hidden here and restored on the way out.
+ */
+private class FullscreenEditor(
+    private val dialog: AlertDialog,
+    private val content: View,
+) {
+    private var enabled = false
+    private val hiddenViews = ArrayList<View>()
+    private val paddings = ArrayList<Pair<View, Rect>>()
+    private val heights = ArrayList<Pair<View, Int>>()
+
+    private var windowWidth = WindowManager.LayoutParams.WRAP_CONTENT
+    private var windowHeight = WindowManager.LayoutParams.WRAP_CONTENT
+    private var windowGravity = Gravity.CENTER
+    private var windowBackground: Drawable? = null
+
+    fun setEnabled(enable: Boolean) {
+        if (enabled == enable) {
+            return
+        }
+        val window = dialog.window ?: return
+        if (enable) {
+            // Where the panels the dialog builds around the custom view end is the one thing that has
+            // to be known before anything is touched, because the panels above it hold the window's
+            // own insets and must be left alone.
+            val contentParent = window.findViewById<View>(android.R.id.content) ?: return
+            enabled = true
+            enter(window, contentParent)
+        } else {
+            enabled = false
+            leave(window)
+        }
+    }
+
+    private fun enter(
+        window: Window,
+        contentParent: View,
+    ) {
+        val decorView = window.decorView
+        var view = content
+        while (true) {
+            val parent = view.parent as? ViewGroup ?: break
+            // Everything the dialog puts beside the code field — its title, its buttons, the message
+            // panel — is either replaced by the ribbon or empty, so none of it is laid out. Only the
+            // views actually hidden here are remembered, so leaving restores exactly them.
+            for (i in 0 until parent.childCount) {
+                val child = parent.getChildAt(i)
+                if (child !== view && child.visibility == View.VISIBLE) {
+                    child.visibility = View.GONE
+                    hiddenViews.add(child)
+                }
+            }
+            dropPadding(parent)
+            // Every panel on the way down has to be told to fill, or the field is measured against
+            // the text it holds instead of against the screen.
+            fillParent(view)
+            if (parent === contentParent) {
+                break
+            }
+            view = parent
+        }
+
+        window.attributes.let {
+            windowWidth = it.width
+            windowHeight = it.height
+            windowGravity = it.gravity
+        }
+        windowBackground = decorView.background
+        window.setBackgroundDrawable(ColorDrawable(ThemeEngine.getTheme(dialog.context).card))
+        dropPadding(decorView)
+        window.setGravity(Gravity.TOP or Gravity.START)
+        window.setLayout(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+        )
+
+        // A fullscreen window is laid out behind the system bars and the keyboard where the app draws
+        // edge to edge, and is inset by the framework where it doesn't — in which case the insets
+        // arrive here already spent and the padding stays zero.
+        content.setOnApplyWindowInsetsListener { paddedView, insets ->
+            val bars =
+                insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            val keyboard = insets.getInsets(WindowInsets.Type.ime())
+            paddedView.setPadding(bars.left, bars.top, bars.right, max(bars.bottom, keyboard.bottom))
+            insets
+        }
+        content.requestApplyInsets()
+    }
+
+    private fun leave(window: Window) {
+        content.setOnApplyWindowInsetsListener(null)
+        content.setPadding(0, 0, 0, 0)
+        for (view in hiddenViews) {
+            view.visibility = View.VISIBLE
+        }
+        hiddenViews.clear()
+        for ((view, height) in heights) {
+            view.layoutParams = view.layoutParams.also { it.height = height }
+        }
+        heights.clear()
+        // The background goes back before the paddings: it carries the inset the decor's padding came
+        // from, and assigning it applies that inset again.
+        window.setBackgroundDrawable(windowBackground)
+        windowBackground = null
+        for ((view, padding) in paddings) {
+            view.setPadding(padding.left, padding.top, padding.right, padding.bottom)
+        }
+        paddings.clear()
+        window.setGravity(windowGravity)
+        window.setLayout(windowWidth, windowHeight)
+    }
+
+    private fun dropPadding(view: View) {
+        val padding = Rect(view.paddingLeft, view.paddingTop, view.paddingRight, view.paddingBottom)
+        if (padding.left != 0 || padding.top != 0 || padding.right != 0 || padding.bottom != 0) {
+            paddings.add(view to padding)
+            view.setPadding(0, 0, 0, 0)
+        }
+    }
+
+    private fun fillParent(view: View) {
+        val layoutParams = view.layoutParams ?: return
+        if (layoutParams.height != ViewGroup.LayoutParams.MATCH_PARENT) {
+            heights.add(view to layoutParams.height)
+            layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+            view.layoutParams = layoutParams
+        }
+    }
+}
+
 /** Also used by the library editor, which has the same code field under the same keyboard. */
 internal fun wrapWithRibbon(
-    context: android.content.Context,
+    context: Context,
     scrollView: View,
-    codeEdit: com.mishiranu.dashchan.widget.CodeEditText,
+    codeEdit: CodeEditText,
     dialogCreator: (View) -> AlertDialog,
 ): AlertDialog {
     val bottomBar = createBottomBar(context, codeEdit)
 
     val root =
-        android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            addView(scrollView, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
-            addView(bottomBar, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(scrollView, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+            addView(
+                bottomBar,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
+            )
         }
 
     val dialog = dialogCreator(root)
+    val fullscreenEditor = FullscreenEditor(dialog, root)
 
     codeEdit.onExpandedStateChanged = { expanded ->
         bottomBar.visibility = if (expanded) View.VISIBLE else View.GONE
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.visibility = if (expanded) View.GONE else View.VISIBLE
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.visibility = if (expanded) View.GONE else View.VISIBLE
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.visibility = if (expanded) View.GONE else View.VISIBLE
+        fullscreenEditor.setEnabled(expanded)
     }
 
     return dialog
