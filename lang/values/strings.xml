@@ -79,6 +79,7 @@
 	<string name="clear_history__sentence">Clear history?</string>
 	<string name="clear_old">Clear old</string>
 	<string name="clearing__ellipsis">Clearing…</string>
+	<string name="client">Client</string>
 	<string name="close">Close</string>
 	<string name="close_all">Close all</string>
 	<string name="close_pages">Close pages</string>
@@ -175,6 +176,7 @@
 	<string name="expires">Expires</string>
 	<string name="extension_error">Extension error</string>
 	<string name="extension_name__format">Extension %s</string>
+	<string name="extensions">Extensions</string>
 	<string name="favorite_boards">Favorite boards</string>
 	<string name="favorite_threads">Favorite threads</string>
 	<string name="favorite_threads_order">Favorite threads order</string>
@@ -601,7 +603,6 @@
 	<string name="update_reminder__sentence">You can track downloading progress in notification bar.\n\nYou can install
 		applications when download finishes.</string>
 	<string name="updates">Updates</string>
-	<string name="updates_extensions">Updates (extensions)</string>
 	<string name="updates_available__genitive">Updates available</string>
 	<string name="use_built_in_video_player">Use built-in video player</string>
 	<string name="use_built_in_video_player__summary">Play WebM video attachments</string>

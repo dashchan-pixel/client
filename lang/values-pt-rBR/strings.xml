@@ -51,6 +51,7 @@
 	<string name="clear_history">Limpar histórico</string>
 	<string name="clear_history__sentence">Limpar histórico?</string>
 	<string name="clearing__ellipsis">Limpando…</string>
+	<string name="client">Cliente</string>
 	<string name="close_pages">Fechar páginas</string>
 	<string name="close_pages__summary">Feche as páginas ao apertar \"Voltar\"</string>
 	<string name="code_number_address">Código, número, endereço</string>
@@ -112,6 +113,7 @@
 	<string name="expanded_screen">Área expandida</string>
 	<string name="expires">Até</string>
 	<string name="extension_error">Erro de extensão</string>
+	<string name="extensions">Extensões</string>
 	<string name="favorite_boards">Boards favoritas</string>
 	<string name="favorite_threads">Fios favoritos</string>
 	<string name="favorite_threads_order">Ordem de favoritos</string>

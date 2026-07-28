@@ -64,6 +64,7 @@
     <string name="clear_history">Cancella cronologia</string>
     <string name="clear_history__sentence">Cancellare la cronologia?</string>
     <string name="clearing__ellipsis">Cancellazione…</string>
+    <string name="client">Client</string>
     <string name="close_pages">Chiudi pagine</string>
     <string name="close_pages__summary">Chiudi pagine toccando il pulsante "indietro"</string>
     <string name="closed">Chiuso</string>
@@ -146,6 +147,7 @@
     <string name="expires">Scade</string>
     <string name="extension_error">Errore estensione</string>
     <string name="extension_name__format">Estensione %s</string>
+    <string name="extensions">Estensioni</string>
     <string name="favorite_boards">Board preferite</string>
     <string name="favorite_threads">Thread preferiti</string>
     <string name="favorite_threads_order">Ordine thread preferiti</string>

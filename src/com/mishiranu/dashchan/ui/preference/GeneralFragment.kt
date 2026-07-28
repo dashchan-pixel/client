@@ -150,10 +150,10 @@ class GeneralFragment :
         )
 
         addHeader(R.string.repositories)
-        addRepositoryUri(Preferences.KEY_URI_UPDATES, R.string.updates, BuildConfig.URI_UPDATES)
+        addRepositoryUri(Preferences.KEY_URI_UPDATES, R.string.client, BuildConfig.URI_UPDATES)
         addRepositoryUri(
             Preferences.KEY_URI_UPDATES_EXTENSIONS,
-            R.string.updates_extensions,
+            R.string.extensions,
             BuildConfig.URI_UPDATES_EXTENSIONS,
         )
         addRepositoryUri(Preferences.KEY_URI_THEMES, R.string.themes, BuildConfig.URI_THEMES)
