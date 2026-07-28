@@ -660,6 +660,7 @@ class InteractionUnit internal constructor(
             c.postItem,
             c.postItem.getBoardName(),
             c.postItem.getThreadNumber(),
+            c.configurationSet,
             menu,
         )
     }

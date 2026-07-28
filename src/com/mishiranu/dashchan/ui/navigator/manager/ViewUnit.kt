@@ -790,6 +790,7 @@ class ViewUnit
                     postItem,
                     postItem.getBoardName(),
                     postItem.getThreadNumber(),
+                    holder.configurationSet,
                 )
             state.slot.setVisibility(if (view != null) View.VISIBLE else View.GONE)
         }
@@ -1868,6 +1869,7 @@ class ViewUnit
                     postItem,
                     postItem.getBoardName(),
                     postItem.getThreadNumber(),
+                    configurationSet,
                     uri,
                     longClick,
                 )

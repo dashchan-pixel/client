@@ -25,6 +25,13 @@
 	<item name="captcha_lifetime_timer_text_size" type="dimen">16sp</item>
 	<item name="captcha_lifetime_timer_text_padding" type="dimen">2dp</item>
 
+	<!--
+		The size of a post's comment text, before Preferences.textScale is applied to it. Named
+		rather than inlined because DecoratorUnit hands it to ChanPostDecorator.PostTheme, and a
+		decorator's own text has to come out the size of the comment it sits under.
+	-->
+	<item name="post_comment_text_size" type="dimen">12sp</item>
+
 	<item name="dialog_padding_text" type="dimen">24dp</item>
 	<item name="dialog_padding_text_half" type="dimen">12dp</item>
 	<item name="dialog_padding_view" type="dimen">20dp</item>

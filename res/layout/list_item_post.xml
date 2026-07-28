@@ -123,7 +123,7 @@
                 android:paddingBottom="2dp"
                 android:tag="theme.textColor=post"
                 android:textColor="?attr/colorTextPost"
-                android:textSize="12sp" />
+                android:textSize="@dimen/post_comment_text_size" />
 
             <View
                 android:id="@+id/text_selection_padding"

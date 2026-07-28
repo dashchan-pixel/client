@@ -13,6 +13,7 @@ import chan.http.HttpException
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.ImageLoader
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.PostItem
@@ -20,6 +21,7 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
+import com.mishiranu.dashchan.widget.CommentTextView
 
 /**
  * Supports [ChanPostDecorator]: resolves the host theme it is handed, implements the callbacks it
@@ -36,14 +38,21 @@ class DecoratorUnit internal constructor(
     private var themeContext: Context? = null
 
     /**
-     * Resolves the client's theme colors for `context`, recomputing them if the context changed --
-     * which is how a theme or night-mode switch reaches a decorator, since that recreates the views.
+     * Resolves the client's theme colors and metrics for `context`, recomputing them if the context
+     * changed -- which is how a theme or night-mode switch reaches a decorator, since that recreates
+     * the views. A text scale or corner radius change recreates them too, so the two metrics are
+     * cached alongside the colors rather than read per post.
+     *
+     * The comment's own text size is the one every post is bound with
+     * ([com.mishiranu.dashchan.util.ViewUtils.applyScaleSize] scales it from the same dimension), so
+     * a decorator's text comes out the size of the text it sits under instead of a guess at it.
      */
     fun getTheme(context: Context): ChanPostDecorator.PostTheme {
         val theme = this.theme
         if (theme != null && themeContext === context) {
             return theme
         }
+        val density = ResourceUtils.obtainDensity(context)
         val created =
             ChanPostDecorator.PostTheme(
                 ResourceUtils.getColor(context, R.attr.colorAccentSupport),
@@ -51,6 +60,8 @@ class DecoratorUnit internal constructor(
                 ResourceUtils.getColor(context, R.attr.colorTextMeta),
                 ResourceUtils.getColor(context, R.attr.colorCardBackground),
                 ResourceUtils.getColor(context, R.attr.colorWindowBackground),
+                context.resources.getDimension(R.dimen.post_comment_text_size) * Preferences.textScale,
+                Preferences.uiCornerRadius * density,
             )
         this.theme = created
         themeContext = context
@@ -67,7 +78,8 @@ class DecoratorUnit internal constructor(
         postItem: PostItem,
         boardName: String?,
         threadNumber: String?,
-    ): ChanPostDecorator.PostContext = PostContextImpl(chan, postItem, boardName, threadNumber)
+        configurationSet: UiManager.ConfigurationSet,
+    ): ChanPostDecorator.PostContext = PostContextImpl(chan, postItem, boardName, threadNumber, configurationSet)
 
     /**
      * Drops the payload replacements installed by [ChanPostDecorator.ActionResult.setExtra].
@@ -105,6 +117,7 @@ class DecoratorUnit internal constructor(
         private val postItem: PostItem,
         private val boardName: String?,
         private val threadNumber: String?,
+        private val configurationSet: UiManager.ConfigurationSet,
     ) : ChanPostDecorator.PostContext {
         override fun invalidatePost() {
             uiManager.sendPostItemMessage(postItem, UiManager.Message.POST_INVALIDATE_ALL_VIEWS)
@@ -119,12 +132,24 @@ class DecoratorUnit internal constructor(
             task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         }
 
+        /**
+         * Opens the address the same way a clicked link in a comment is opened -- which is not the
+         * same as handing it to a browser. A board or a thread of a chan the app knows resolves
+         * inside the app, and only what nothing claims ends up in a browser. Handing every address
+         * straight to [NavigationUtils.handleUri], as this used to, left the app for a thread of
+         * the very board the post was read from.
+         *
+         * Counted as confirmed, so it navigates rather than asking first: a link is confirmed
+         * because the user may have hit it by accident in a wall of text, while a decorator's view
+         * is a control they aimed at, and a button that answers with a dialog every time is a
+         * button that takes two taps.
+         */
         override fun navigate(uri: Uri) {
-            NavigationUtils.handleUri(
-                uiManager.context,
-                chan.name,
+            uiManager.interaction().handleLinkClick(
+                configurationSet,
                 uri,
-                NavigationUtils.BrowserType.AUTO,
+                CommentTextView.LinkListener.Extra(chan.name, false),
+                true,
             )
         }
 
@@ -215,6 +240,7 @@ class DecoratorUnit internal constructor(
         postItem: PostItem,
         boardName: String?,
         threadNumber: String?,
+        configurationSet: UiManager.ConfigurationSet,
         uri: Uri,
         longClick: Boolean,
     ): Boolean {
@@ -227,7 +253,7 @@ class DecoratorUnit internal constructor(
                 postItem.getPostNumber().toString(),
                 postItem.getDecoratorExtra(),
                 longClick,
-                createPostContext(chan, postItem, boardName, threadNumber),
+                createPostContext(chan, postItem, boardName, threadNumber, configurationSet),
             ),
         )
     }
@@ -239,6 +265,7 @@ class DecoratorUnit internal constructor(
         postItem: PostItem,
         boardName: String?,
         threadNumber: String?,
+        configurationSet: UiManager.ConfigurationSet,
         menu: ChanPostDecorator.PostMenu,
     ) {
         val decorator = chan.postDecorator ?: return
@@ -251,7 +278,7 @@ class DecoratorUnit internal constructor(
                 postItem.getPostNumber().toString(),
                 postItem.getDecoratorExtra(),
                 getTheme(context),
-                createPostContext(chan, postItem, boardName, threadNumber),
+                createPostContext(chan, postItem, boardName, threadNumber, configurationSet),
             ),
         )
     }
@@ -267,6 +294,7 @@ class DecoratorUnit internal constructor(
         postItem: PostItem,
         boardName: String?,
         threadNumber: String?,
+        configurationSet: UiManager.ConfigurationSet,
     ): View? {
         val decorator = chan.postDecorator
         // The post view pool is shared across chans and pages, so a holder built for one decorator
@@ -305,7 +333,7 @@ class DecoratorUnit internal constructor(
                     postItem.getOriginalPostNumber().toString(),
                     postItem.getDecoratorExtra(),
                     theme,
-                    createPostContext(chan, postItem, boardName, threadNumber),
+                    createPostContext(chan, postItem, boardName, threadNumber, configurationSet),
                 ),
             )
         if (shown) {

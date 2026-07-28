@@ -98,8 +98,13 @@ open class ChanPostDecorator internal constructor(
     protected open fun onPerformAction(data: PerformActionData): ActionResult? = null
 
     /**
-     * Host colors resolved from the current theme, so a decorator's views can match the client
-     * without guessing at its resources.
+     * Host colors and metrics resolved from the current theme and the user's preferences, so a
+     * decorator's views can match the client without guessing at its resources.
+     *
+     * The two metrics are pixels, with the preference that scales each one already applied, so they
+     * are passed to [android.widget.TextView.setTextSize] and
+     * [android.graphics.drawable.GradientDrawable.setCornerRadius] as they arrive. Both are read at
+     * view creation, and changing either preference recreates the views.
      */
     @Public
     class PostTheme(
@@ -108,6 +113,8 @@ open class ChanPostDecorator internal constructor(
         @field:Public @JvmField val metaTextColor: Int,
         @field:Public @JvmField val cardBackgroundColor: Int,
         @field:Public @JvmField val windowBackgroundColor: Int,
+        @field:Public @JvmField val postTextSize: Float,
+        @field:Public @JvmField val cornerRadius: Float,
     )
 
     /**
@@ -133,7 +140,14 @@ open class ChanPostDecorator internal constructor(
             actionExtra: String?,
         )
 
-        /** Opens `uri` the way the client opens a link the user clicked. */
+        /**
+         * Opens `uri` the way the client opens a link the user clicked: a board or a thread of a
+         * chan the client knows is opened inside the client, and anything else in a browser. Unlike
+         * a clicked link it is not confirmed first, because a decorator's view is a control the user
+         * aimed at rather than a link that happened to be in the text.
+         *
+         * Pass an absolute uri: a relative one belongs to no host, so nothing can claim it.
+         */
         fun navigate(uri: Uri)
 
         /**
