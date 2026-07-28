@@ -10,10 +10,11 @@ import org.json.JSONObject
 
 /**
  * User-defined scripts ("Commands"). A command carries a name, a body of JavaScript [code] and a
- * target ([useIn]) that decides what it operates on: [UseIn.COMMENT] transforms the text of a posting
- * form before it is sent, while [UseIn.THREAD] reads the posts of a thread being viewed and produces
- * some text to show back. Like Autohide rules a command can be scoped to specific forums ([chanNames],
- * `null`/empty means every forum) and optionally to a single board ([boardName]).
+ * target ([useIn]) that decides what it operates on: [UseIn.COMMENT] rewrites a posting form's draft —
+ * its text and the files attached to it — before it is sent, while [UseIn.THREAD] reads the posts of a
+ * thread being viewed and produces some text to show back. Like Autohide rules a command can be scoped
+ * to specific forums ([chanNames], `null`/empty means every forum) and optionally to a single board
+ * ([boardName]).
  *
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
@@ -411,6 +412,11 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     enum class UseIn(
         val key: String,
     ) {
+        /**
+         * The posting form's draft — its comment and its attachments. Shown as "Draft"; the stored key
+         * is still `comment`, which is all it could reach when it was named that, so a command written
+         * or exported before the attachments existed keeps working unchanged.
+         */
         COMMENT("comment"),
         THREAD("thread"),
         ;

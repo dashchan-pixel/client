@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.content
 
 import android.webkit.JavascriptInterface
 import com.mishiranu.dashchan.content.storage.CommandsStorage
+import com.mishiranu.dashchan.content.storage.DraftsStorage.AttachmentDraft
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import org.json.JSONArray
 import org.json.JSONObject
@@ -13,8 +14,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * The command's [code][CommandsStorage.CommandItem.code] is treated as the body of an **async**
  * JavaScript function whose arguments and expected return value depend on the command's target:
  *
- * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `thread`, `board`, `env`. It should
- *   `return` the replacement comment; returning `undefined`/`null` leaves the field untouched.
+ * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `attachments`, `thread`, `board`, `env`.
+ *   It should `return` the replacement comment; returning `undefined`/`null` leaves the draft
+ *   untouched. To manage the attached files too it may instead return an object, whose `comment` and
+ *   `attachments` are each applied only if present — so `return { attachments: [] }` detaches every
+ *   file and leaves the text alone. See [CommandAttachments] for what an attachment looks like and
+ *   for how a script adds one.
  * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`. `posts` is an
  *   array of `{number, name, email, icon, subject, comment}`, `comment` being the post's HTML as the
  *   chan sent it. It should `return` an object mapping a post's `number` to the HTML to display in
@@ -71,17 +76,36 @@ object CommandRunner {
     /** Outcome of a [CommandsStorage.UseIn.COMMENT] command. */
     sealed interface Result {
         /**
-         * The command ran successfully. [comment] is the replacement text, or `null` if the script
-         * returned nothing — in which case the field should be left untouched.
+         * The command ran successfully. [comment] is the replacement text and [attachments] the
+         * replacement attachment list; either is `null` when the script asked for no change to that
+         * half of the draft, which for both is what returning nothing means.
          */
         data class Success(
             val comment: String?,
+            val attachments: List<AttachmentDraft>?,
         ) : Result
 
         /** The command threw or could not be evaluated; [message] describes what went wrong. */
         data class Failure(
             val message: String,
         ) : Result
+    }
+
+    /**
+     * What the script returned, before the attachments it asked for have been resolved (see
+     * [CommandAttachments.resolve] — a new file may still have to be downloaded). Kept apart from
+     * [Result] because that resolution is itself asynchronous, so it can't happen where the bridged
+     * JSON is parsed.
+     */
+    private sealed interface RawResult {
+        data class Success(
+            val comment: String?,
+            val attachments: List<CommandAttachments.Requested>?,
+        ) : RawResult
+
+        data class Failure(
+            val message: String,
+        ) : RawResult
     }
 
     /**
@@ -165,22 +189,57 @@ object CommandRunner {
     fun run(
         item: CommandsStorage.CommandItem,
         comment: String,
+        attachments: List<AttachmentDraft>,
         thread: String?,
         board: String?,
         callback: (Result) -> Unit,
     ): Run {
         val handle = Run()
         withLibraries(item, handle, { Result.Failure(it) }, callback) { libraries ->
+            val attachmentsJson = CommandAttachments.toJson(attachments)
             val script =
                 buildScript(
-                    factorySource = buildFactorySource("comment,thread,board,env", item.code.orEmpty(), libraries, false),
+                    factorySource =
+                        buildFactorySource("comment,attachments,thread,board,env", item.code.orEmpty(), libraries, false),
                     thread = thread,
                     board = board,
                     env = CommandsStorage.getInstance().getEnv(),
-                    // A comment command replaces the field with a single string.
-                    resultExpr = "(__result===undefined||__result===null)?null:String(__result)",
-                ) { append(jsArg(comment)).append(',') }
-            execute(handle, script, ::parseComment, { Result.Failure(it) }, callback)
+                    resultExpr = COMMENT_RESULT_EXPR,
+                ) {
+                    append(jsArg(comment)).append(',')
+                    append(attachmentsJson).append(',')
+                }
+            execute(handle, script, ::parseComment, { RawResult.Failure(it) }, callback = { raw ->
+                when (raw) {
+                    is RawResult.Failure -> {
+                        callback(Result.Failure(raw.message))
+                    }
+
+                    is RawResult.Success -> {
+                        val requested = raw.attachments
+                        if (requested == null) {
+                            callback(Result.Success(raw.comment, null))
+                        } else {
+                            // The run has already settled by now, so a cancel can no longer stop this
+                            // — a screen that went away drops the result instead. It is the price of
+                            // resolving after the engine is gone, and all it costs is one download.
+                            CommandAttachments.resolve(attachments, requested) { resolved ->
+                                callback(
+                                    when (resolved) {
+                                        is CommandAttachments.Result.Success -> {
+                                            Result.Success(raw.comment, resolved.attachments)
+                                        }
+
+                                        is CommandAttachments.Result.Failure -> {
+                                            Result.Failure(resolved.message)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+            })
         }
         return handle
     }
@@ -409,19 +468,40 @@ object CommandRunner {
     private const val PER_POST_TIMEOUT_MS = 2000L
     private const val MAX_PER_POST_TIMEOUT_MS = 300000L
 
-    private fun parseComment(raw: String?): Result {
+    /**
+     * Normalizes what a Draft command returned into `{comment?, attachments?}`, or `null` for "change
+     * nothing". A bare string stays the shorthand it has always been — it is the whole of the older
+     * contract, and every command written against it goes on meaning the same thing — while an object
+     * says which halves of the draft it wants replaced by which keys it carries.
+     */
+    private const val COMMENT_RESULT_EXPR =
+        "(function(__r){" +
+            "if(__r===undefined||__r===null){return null;}" +
+            "if(typeof __r!=='object'){return {comment:String(__r)};}" +
+            "var __o={};" +
+            "if(__r.comment!==undefined&&__r.comment!==null){__o.comment=String(__r.comment);}" +
+            "if(Array.isArray(__r.attachments)){__o.attachments=__r.attachments;}" +
+            "return __o;" +
+            "})(__result)"
+
+    private fun parseComment(raw: String?): RawResult {
         if (raw == null) {
-            return Result.Failure("No result (script did not evaluate)")
+            return RawResult.Failure("No result (script did not evaluate)")
         }
         return try {
             val json = JSONObject(raw)
             if (json.optBoolean("ok")) {
-                Result.Success(if (json.isNull("result")) null else json.optString("result"))
+                val result = json.optJSONObject("result")
+                val attachments = result?.optJSONArray("attachments")
+                RawResult.Success(
+                    if (result == null || result.isNull("comment")) null else result.optString("comment"),
+                    if (attachments == null) null else CommandAttachments.parse(attachments),
+                )
             } else {
-                Result.Failure(json.optString("error", "Unknown error"))
+                RawResult.Failure(json.optString("error", "Unknown error"))
             }
         } catch (e: Exception) {
-            Result.Failure(e.message ?: raw)
+            RawResult.Failure(e.message ?: raw)
         }
     }
 

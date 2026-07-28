@@ -414,7 +414,7 @@ class CommandsFragment :
             }
             val useInRes =
                 when (commandItem.useIn) {
-                    CommandsStorage.UseIn.COMMENT -> R.string.comment
+                    CommandsStorage.UseIn.COMMENT -> R.string.draft
                     CommandsStorage.UseIn.THREAD -> R.string.thread
                 }
             builder.append(" · ").append(getString(useInRes))
@@ -607,7 +607,7 @@ class CommandsFragment :
         /**
          * Relabels and shows the target-dependent options: the auto-run checkbox means different things
          * per target (run before sending vs. run when the thread opens), and per-post processing only
-         * exists for a thread command — a comment command is handed its single input already.
+         * exists for a thread command — a draft command is handed its single input already.
          */
         private fun applyUseIn(useIn: CommandsStorage.UseIn) {
             selectedUseIn = useIn
@@ -625,7 +625,7 @@ class CommandsFragment :
         private fun updateCodeHint() {
             codeEdit.hint =
                 when {
-                    selectedUseIn == CommandsStorage.UseIn.COMMENT -> SAMPLE_COMMENT
+                    selectedUseIn == CommandsStorage.UseIn.COMMENT -> SAMPLE_DRAFT
                     perPostCheckBox.isChecked -> SAMPLE_PER_POST
                     else -> SAMPLE_THREAD
                 }
@@ -736,7 +736,7 @@ class CommandsFragment :
 
             // Placeholders for the code field: the do-nothing command for each target, i.e. the least
             // code that returns the input unchanged. Not translated — it's JavaScript.
-            private const val SAMPLE_COMMENT = "return comment;"
+            private const val SAMPLE_DRAFT = "return { comment, attachments };"
 
             private const val SAMPLE_THREAD =
                 "return posts.reduce((acc, post) => {\n" +
@@ -749,7 +749,7 @@ class CommandsFragment :
             private val CommandsStorage.UseIn.titleRes: Int
                 get() =
                     when (this) {
-                        CommandsStorage.UseIn.COMMENT -> R.string.comment
+                        CommandsStorage.UseIn.COMMENT -> R.string.draft
                         CommandsStorage.UseIn.THREAD -> R.string.thread
                     }
 

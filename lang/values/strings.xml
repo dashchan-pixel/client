@@ -153,6 +153,7 @@
 	<string name="downloading_audio">Downloading audio</string>
 	<string name="downloading_number_of_number__format">Downloading %1$d of %2$d</string>
 	<string name="downloads">Downloads</string>
+	<string name="draft">Draft</string>
 	<string name="draft_saved">Draft saved</string>
 	<string name="duplicate">Duplicate</string>
 	<string name="echo">Echo</string>

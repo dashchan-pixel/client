@@ -936,27 +936,31 @@ class PostingFragment :
         attachments.clear()
     }
 
-    private fun obtainPostDraft(): PostDraft {
-        var attachmentDrafts: ArrayList<AttachmentDraft>? = null
-        if (attachments.size > 0) {
-            attachmentDrafts = ArrayList<AttachmentDraft>(attachments.size)
-            for (holder in attachments) {
-                attachmentDrafts.add(
-                    AttachmentDraft(
-                        holder.hash!!,
-                        holder.name,
-                        holder.newname,
-                        holder.rating,
-                        holder.optionUniqueHash,
-                        holder.optionRemoveMetadata,
-                        holder.optionRemoveFileName,
-                        holder.optionSpoiler,
-                        holder.reencoding,
-                        holder.optionCustomName,
-                    ),
-                )
-            }
+    /** The attached files as drafts, which is the form both storage and a command work in. */
+    private fun obtainAttachmentDrafts(): ArrayList<AttachmentDraft> {
+        val attachmentDrafts = ArrayList<AttachmentDraft>(attachments.size)
+        for (holder in attachments) {
+            attachmentDrafts.add(
+                AttachmentDraft(
+                    holder.hash!!,
+                    holder.name,
+                    holder.newname,
+                    holder.rating,
+                    holder.optionUniqueHash,
+                    holder.optionRemoveMetadata,
+                    holder.optionRemoveFileName,
+                    holder.optionSpoiler,
+                    holder.reencoding,
+                    holder.optionCustomName,
+                ),
+            )
         }
+        return attachmentDrafts
+    }
+
+    private fun obtainPostDraft(): PostDraft {
+        // Kept null rather than empty: a draft with no attachments stores no attachment list at all.
+        val attachmentDrafts = if (attachments.size > 0) obtainAttachmentDrafts() else null
         val subject = subjectView!!.getText().toString()
         val comment = commentView!!.getText().toString()
         val commentCarriage = commentView!!.getSelectionEnd()
@@ -2393,6 +2397,7 @@ class PostingFragment :
             CommandRunner.run(
                 command,
                 commentView.getText().toString(),
+                obtainAttachmentDrafts(),
                 this.threadNumber,
                 this.boardName,
             ) { result ->
@@ -2407,6 +2412,10 @@ class PostingFragment :
                             liveCommentView.setText(comment)
                             liveCommentView.setSelection(liveCommentView.getText().length)
                         }
+                        result.attachments?.let { applyCommandAttachments(it) }
+                        // The comment field stores the draft as it is typed in, but nothing does that
+                        // for a command's output, and a rewritten draft is worth keeping.
+                        getInstance().store(obtainPostDraft())
                     }
 
                     is CommandRunner.Result.Failure -> {
@@ -2415,6 +2424,47 @@ class PostingFragment :
                 }
             },
         )
+    }
+
+    /**
+     * Replaces the attached files with what a command returned, in the order it returned them. The
+     * views are rebuilt rather than reconciled: a command may have reordered, dropped and added files
+     * in one go, and each holder's preview is built from its file anyway.
+     *
+     * Anything past what the board accepts is dropped with the same message the file picker uses for
+     * a file it couldn't attach — the command asked for more than the form can hold, which the user
+     * has to know about before sending.
+     */
+    private fun applyCommandAttachments(attachmentDrafts: List<AttachmentDraft>) {
+        attachments.clear()
+        attachmentContainer!!.removeAllViews()
+        val allowed = attachmentDrafts.take(postingConfiguration.attachmentCount)
+        for (attachmentDraft in allowed) {
+            addAttachment(
+                attachmentDraft.hash,
+                attachmentDraft.name,
+                attachmentDraft.newname,
+                attachmentDraft.rating,
+                attachmentDraft.optionUniqueHash,
+                attachmentDraft.optionRemoveMetadata,
+                attachmentDraft.optionRemoveFileName,
+                attachmentDraft.optionSpoiler,
+                attachmentDraft.reencoding,
+                attachmentDraft.optionCustomName,
+            )
+        }
+        invalidateOptionsMenu()
+        resizeComment(true)
+        val droppedCount = attachmentDrafts.size - allowed.size
+        if (droppedCount > 0) {
+            show(
+                getResources().getQuantityString(
+                    R.plurals.number_files_havent_been_attached__format,
+                    droppedCount,
+                    droppedCount,
+                ),
+            )
+        }
     }
 
     /**
@@ -2440,9 +2490,9 @@ class PostingFragment :
     }
 
     /**
-     * Send-button handler. Runs any commands marked "run on send" against the comment first — in
-     * order, each seeing the previous one's output — and only sends once they all succeed. A failing
-     * command aborts the send with a toast so nothing is posted half-transformed.
+     * Send-button handler. Runs any commands marked "run on send" against the draft first — in order,
+     * each seeing the previous one's output — and only sends once they all succeed. A failing command
+     * aborts the send with a toast so nothing is posted half-transformed.
      */
     private fun onSendButtonClick() {
         val commentView = this.commentView
@@ -2464,6 +2514,12 @@ class PostingFragment :
         autoRunChain(commands, 0, commentView.getText().toString())
     }
 
+    /**
+     * One link of the send chain. The comment is threaded through the recursion, but the attachments
+     * are read back off the form each time instead: a command's list is applied to the views before
+     * the next one runs, and the ids it hands out are positions in the list it was given, so the next
+     * command has to be given the list the form actually holds.
+     */
     private fun autoRunChain(
         commands: List<CommandsStorage.CommandItem>,
         index: Int,
@@ -2477,7 +2533,13 @@ class PostingFragment :
             return
         }
         trackCommandRun(
-            CommandRunner.run(commands[index], comment, this.threadNumber, this.boardName) { result ->
+            CommandRunner.run(
+                commands[index],
+                comment,
+                obtainAttachmentDrafts(),
+                this.threadNumber,
+                this.boardName,
+            ) { result ->
                 val liveCommentView = this.commentView
                 if (liveCommentView == null) {
                     commandsProgress.finish()
@@ -2489,6 +2551,11 @@ class PostingFragment :
                         val newComment = result.comment ?: comment
                         liveCommentView.setText(newComment)
                         liveCommentView.setSelection(liveCommentView.getText().length)
+                        result.attachments?.let { applyCommandAttachments(it) }
+                        // Each link persists its own output rather than the chain persisting once at
+                        // the end: a file a command downloaded is only kept by the drafts store for as
+                        // long as a draft names it.
+                        getInstance().store(obtainPostDraft())
                         // Only the chain's end releases the spinner, so the recursion carries it along.
                         autoRunChain(commands, index + 1, newComment)
                     }

@@ -147,6 +147,7 @@
 	<string name="downloading_audio">Загрузка аудио</string>
 	<string name="downloading_number_of_number__format">Загрузка %1$d из %2$d</string>
 	<string name="downloads">Загрузки</string>
+	<string name="draft">Черновик</string>
 	<string name="draft_saved">Черновик сохранён</string>
 	<string name="duplicate">Дублировать</string>
 	<string name="echo">Эхо</string>
