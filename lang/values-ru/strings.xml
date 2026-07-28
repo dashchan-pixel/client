@@ -600,8 +600,6 @@
 	<string name="use_built_in_video_player">Использовать встроенный видеоплеер</string>
 	<string name="use_built_in_video_player__summary">Воспроизводить вложенные WebM видео</string>
 	<string name="use_forum_settings">Использовать настройки форума</string>
-	<string name="use_javascript_for_recaptcha">Использ. JavaScript для reCAPTCHA</string>
-	<string name="use_javascript_for_recaptcha__summary">Google reCAPTCHA может быть упрощена</string>
 	<string name="user_authorization">Авторизация пользователя</string>
 	<string name="user_boards">Пользовательские разделы</string>
 	<string name="user_interface">Интерфейс</string>

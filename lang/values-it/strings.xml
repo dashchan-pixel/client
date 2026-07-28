@@ -528,8 +528,6 @@
     <string name="updates_available__genitive">Aggiornamenti disponibili</string>
     <string name="use_built_in_video_player">Usa il player video interno</string>
     <string name="use_built_in_video_player__summary">Riproduci allegati video WebM</string>
-    <string name="use_javascript_for_recaptcha">Usa JavaScript per i reCAPTCHA</string>
-    <string name="use_javascript_for_recaptcha__summary">Potrebbe semplificare i reCAPTCHA di Google</string>
     <string name="user_authorization">Autorizzazione utente</string>
     <string name="user_boards">Board utenti</string>
     <string name="user_interface">Interfaccia utente</string>

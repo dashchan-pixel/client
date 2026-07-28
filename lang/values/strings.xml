@@ -611,8 +611,6 @@
 	<string name="use_built_in_video_player__summary">Play WebM video attachments</string>
 	<string name="use_forum_settings">Use forum settings</string>
 	<string name="use_in">Use in</string>
-	<string name="use_javascript_for_recaptcha">Use JavaScript for reCAPTCHA</string>
-	<string name="use_javascript_for_recaptcha__summary">May simplify Google reCAPTCHA</string>
 	<string name="user_authorization">User authorization</string>
 	<string name="user_boards">User boards</string>
 	<string name="user_interface">User interface</string>

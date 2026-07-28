@@ -4,12 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
-import android.util.Pair
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -29,30 +26,21 @@ import androidx.lifecycle.ViewModelProvider
 import chan.content.Chan.Companion.getFallback
 import chan.http.HttpException
 import chan.http.HttpHolder
-import chan.http.HttpRequest
-import chan.http.UrlEncodedEntity
-import chan.util.StringUtils
 import chan.util.StringUtils.isEmpty
 import chan.util.StringUtils.nullIfEmpty
 import com.mishiranu.dashchan.R
-import com.mishiranu.dashchan.content.AdvancedPreferences.getGoogleCookie
 import com.mishiranu.dashchan.content.MainApplication
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.RecaptchaReader.ChallengeExtra.ForegroundSolver
 import com.mishiranu.dashchan.content.net.RecaptchaReader.WebViewHolder.ArgumentsProvider
-import com.mishiranu.dashchan.text.HtmlParser.Companion.clear
 import com.mishiranu.dashchan.ui.ForegroundManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ConcurrentUtils.mainGet
-import com.mishiranu.dashchan.util.GraphicsUtils.handleBlackAndWhiteCaptchaImage
-import com.mishiranu.dashchan.util.GraphicsUtils.isBlackAndWhiteCaptchaImage
 import com.mishiranu.dashchan.util.IOUtils.readRawResourceString
 import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.widget.ScaledWebView
 import java.util.Arrays
 import java.util.concurrent.Callable
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 import kotlin.math.min
 
 class RecaptchaReader private constructor() {
@@ -98,7 +86,6 @@ class RecaptchaReader private constructor() {
         apiKey: String,
         invisible: Boolean,
         referer: String?,
-        useJavaScript: Boolean,
         solveInBackground: Boolean,
         solveAutomatically: Boolean,
     ): ChallengeExtra? {
@@ -115,142 +102,31 @@ class RecaptchaReader private constructor() {
                 return ChallengeExtra(null, autoResponse, null)
             }
         }
-        if (useJavaScript) {
-            val solver =
-                ForegroundSolver { newHolder: HttpHolder, challengeExtra: ChallengeExtra? ->
-                    synchronized(accessLock) {
-                        val response =
-                            ForegroundManager
-                                .getInstance()
-                                .requireUserRecaptchaV2(
-                                    refererFinal,
-                                    apiKey,
-                                    invisible,
-                                    false,
-                                    challengeExtra,
-                                )
-                        if (response == null) {
-                            throw CancelException()
-                        }
-                        return@ForegroundSolver response
+        val solver =
+            ForegroundSolver { newHolder: HttpHolder, challengeExtra: ChallengeExtra? ->
+                synchronized(accessLock) {
+                    val response =
+                        ForegroundManager
+                            .getInstance()
+                            .requireUserRecaptchaV2(
+                                refererFinal,
+                                apiKey,
+                                invisible,
+                                false,
+                                challengeExtra,
+                            )
+                    if (response == null) {
+                        throw CancelException()
                     }
-                }
-            synchronized(accessLock) {
-                if (solveInBackground) {
-                    return BackgroundSolver(solver, refererFinal, apiKey, invisible, false).await()
-                } else {
-                    return ChallengeExtra(solver, null, null)
+                    return@ForegroundSolver response
                 }
             }
-        } else {
-            val chan = getFallback()
-            val uri =
-                chan.locator.buildQueryWithHost(
-                    "www.google.com",
-                    "recaptcha/api/fallback",
-                    "k",
-                    apiKey,
-                )
-            val acceptLanguage = "en-US,en;q=0.5"
-            val initialResponseText: String? =
-                HttpRequest(uri, initialHolder)
-                    .addCookie(getGoogleCookie())
-                    .addHeader("Accept-Language", acceptLanguage)
-                    .addHeader("Referer", refererFinal)
-                    .perform()!!
-                    .readString()
-            if (initialResponseText == null) {
-                throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
+        synchronized(accessLock) {
+            if (solveInBackground) {
+                return BackgroundSolver(solver, refererFinal, apiKey, invisible, false).await()
+            } else {
+                return ChallengeExtra(solver, null, null)
             }
-            val initialResponse: Pair<String?, String?>? = parseResponse2(initialResponseText)
-            if (initialResponse == null) {
-                if (initialResponseText
-                        .contains("Please enable JavaScript to get a reCAPTCHA challenge")
-                ) {
-                    return getChallenge2(
-                        initialHolder,
-                        apiKey,
-                        invisible,
-                        refererFinal,
-                        true,
-                        solveInBackground,
-                        false,
-                    )
-                } else {
-                    throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
-                }
-            }
-            val consumed = booleanArrayOf(false)
-            val solver =
-                ForegroundSolver { holder: HttpHolder, challengeExtra: ChallengeExtra? ->
-                    var captchaImage: Bitmap? = null
-                    var response: Pair<String?, String?>?
-                    if (consumed[0]) {
-                        val responseText: String? =
-                            HttpRequest(uri, holder)
-                                .addCookie(getGoogleCookie())
-                                .addHeader("Accept-Language", acceptLanguage)
-                                .addHeader("Referer", refererFinal)
-                                .perform()!!
-                                .readString()
-                        response = parseResponse2(responseText!!)
-                    } else {
-                        consumed[0] = true
-                        response = initialResponse
-                    }
-                    while (true) {
-                        if (response != null) {
-                            if (captchaImage != null) {
-                                captchaImage.recycle()
-                            }
-                            captchaImage = getImage2(holder, apiKey, response.second, null, false).first
-                            val result =
-                                ForegroundManager.getInstance().requireUserImageMultipleChoice(
-                                    3,
-                                    null,
-                                    Companion.splitImages(captchaImage!!, 3, 3),
-                                    clear(response.first),
-                                    null,
-                                )
-                            if (result != null) {
-                                var hasSelected = false
-                                val entity = UrlEncodedEntity("c", response.second!!)
-                                for (i in result.indices) {
-                                    if (result[i]) {
-                                        entity.add("response", i.toString())
-                                        hasSelected = true
-                                    }
-                                }
-                                if (!hasSelected) {
-                                    continue
-                                }
-                                // readString() is null only for an empty body, which matches
-                                // neither pattern; the Java simply NPE'd on it.
-                                val responseText: String =
-                                    HttpRequest(uri, holder)
-                                        .setPostMethod(entity)
-                                        .addCookie(getGoogleCookie())
-                                        .setRedirectHandler(HttpRequest.RedirectHandler.STRICT)
-                                        .addHeader("Accept-Language", acceptLanguage)
-                                        .addHeader("Referer", referer)
-                                        .perform()!!
-                                        .readString()
-                                        .orEmpty()
-                                val matcher: Matcher = RECAPTCHA_RESULT_PATTERN.matcher(responseText)
-                                if (matcher.find()) {
-                                    return@ForegroundSolver matcher.group(1)
-                                }
-                                response = parseResponse2(responseText)
-                                continue
-                            }
-                            throw CancelException()
-                        } else {
-                            throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
-                        }
-                    }
-                    throw CancelException()
-                }
-            return ChallengeExtra(solver, null, null)
         }
     }
 
@@ -294,41 +170,6 @@ class RecaptchaReader private constructor() {
             } else {
                 return ChallengeExtra(solver, null, null)
             }
-        }
-    }
-
-    @Throws(HttpException::class)
-    private fun getImage2(
-        holder: HttpHolder,
-        apiKey: String?,
-        challenge: String?,
-        id: String?,
-        transformBlackAndWhite: Boolean,
-    ): Pair<Bitmap?, Boolean> {
-        var blackAndWhite = transformBlackAndWhite
-        val chan = getFallback()
-        val uri =
-            chan.locator.buildQueryWithHost(
-                "www.google.com",
-                "recaptcha/api2/payload",
-                "c",
-                challenge,
-                "k",
-                apiKey,
-                "id",
-                StringUtils.emptyIfNull(id),
-            )
-        val image: Bitmap? = HttpRequest(uri, holder).perform()!!.readBitmap()
-        if (blackAndWhite) {
-            blackAndWhite = isBlackAndWhiteCaptchaImage(image)
-        }
-        return if (blackAndWhite) {
-            handleBlackAndWhiteCaptchaImage(image)
-        } else {
-            Pair(
-                image,
-                false,
-            )
         }
     }
 
@@ -993,47 +834,5 @@ class RecaptchaReader private constructor() {
 
         @JvmStatic
         fun getInstance(): RecaptchaReader = INSTANCE
-
-        private val RECAPTCHA_FALLBACK_PATTERN: Pattern =
-            Pattern.compile(
-                "(?:(?:<div " +
-                    "class=\"(?:rc-imageselect-desc(?:-no-canonical)?|fbc-imageselect-message-error)\">)(.*?)" +
-                    "</div>.*?)?value=\"(.{20,}?)\"",
-            )
-        private val RECAPTCHA_RESULT_PATTERN: Pattern =
-            Pattern.compile("<textarea.*?>(.*?)</textarea>")
-
-        private fun parseResponse2(responseText: String): Pair<String?, String?>? {
-            val matcher: Matcher = RECAPTCHA_FALLBACK_PATTERN.matcher(responseText)
-            if (matcher.find()) {
-                val imageSelectorDescription = matcher.group(1)
-                val challenge = matcher.group(2)
-                return Pair<String?, String?>(imageSelectorDescription, challenge)
-            }
-            return null
-        }
-
-        private fun splitImages(
-            image: Bitmap,
-            sizeX: Int,
-            sizeY: Int,
-        ): Array<Bitmap?> {
-            val images = arrayOfNulls<Bitmap>(sizeX * sizeY)
-            val width = image.getWidth() / sizeX
-            val height = image.getHeight() / sizeY
-            for (y in 0..<sizeY) {
-                for (x in 0..<sizeX) {
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-                    Canvas(bitmap).drawBitmap(
-                        image,
-                        (-x * width).toFloat(),
-                        (-y * height).toFloat(),
-                        null,
-                    )
-                    images[y * sizeX + x] = bitmap
-                }
-            }
-            return images
-        }
     }
 }

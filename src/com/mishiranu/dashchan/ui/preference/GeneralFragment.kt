@@ -101,13 +101,6 @@ class GeneralFragment :
         addHeader(R.string.services)
         addCheck(
             true,
-            Preferences.KEY_RECAPTCHA_JAVASCRIPT,
-            Preferences.DEFAULT_RECAPTCHA_JAVASCRIPT,
-            R.string.use_javascript_for_recaptcha,
-            R.string.use_javascript_for_recaptcha__summary,
-        )
-        addCheck(
-            true,
             Preferences.KEY_RECAPTCHA_SOLVE_INVISIBLE,
             Preferences.DEFAULT_RECAPTCHA_SOLVE_INVISIBLE,
             R.string.solve_invisible_recaptcha,

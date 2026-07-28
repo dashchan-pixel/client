@@ -28,7 +28,6 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.MainApplication
 import com.mishiranu.dashchan.content.Preferences.FirewallResolutionMethod
 import com.mishiranu.dashchan.content.Preferences.firewallResolutionMethod
-import com.mishiranu.dashchan.content.Preferences.isRecaptchaJavascript
 import com.mishiranu.dashchan.content.Preferences.isVerifyCertificate
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask.CaptchaReader
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask.RemoteResult
@@ -349,7 +348,6 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                             apiKey!!,
                             invisible,
                             referer,
-                            isRecaptchaJavascript,
                             true,
                             allowSolveAutomatically,
                         )

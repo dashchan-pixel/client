@@ -1273,17 +1273,6 @@ object Preferences {
         return unpackOrCastMultipleValues(value, KEYS_PROXY) as Map<String, String>?
     }
 
-    const val KEY_RECAPTCHA_JAVASCRIPT: String = "recaptcha_javascript"
-    const val DEFAULT_RECAPTCHA_JAVASCRIPT: Boolean = true
-
-    @JvmStatic
-    val isRecaptchaJavascript: Boolean
-        get() =
-            prefs.getBoolean(
-                KEY_RECAPTCHA_JAVASCRIPT,
-                DEFAULT_RECAPTCHA_JAVASCRIPT,
-            )
-
     const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
     const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true
 

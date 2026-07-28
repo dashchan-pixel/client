@@ -268,7 +268,6 @@ class ReadCaptchaTask(
                             apiKey!!,
                             invisible,
                             referer,
-                            Preferences.isRecaptchaJavascript,
                             false,
                             allowSolveAutomatically,
                         )
