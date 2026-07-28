@@ -204,6 +204,8 @@
     <string name="hide_captcha_pass_block">Nascondi sezione pass per captcha</string>
     <string name="hide_captcha_pass_block__summary">Non sprecare spazio quando si usa un pass per captcha</string>
     <string name="hide_eventually__imperfective">Nascondi eventualmente</string>
+    <string name="hide_invisible_recaptcha">Nascondi i reCAPTCHA invisibili</string>
+    <string name="hide_invisible_recaptcha__summary">Risolvi subito invece di mostrare un pulsante di caricamento</string>
     <string name="hide_on_tap__imperfective">Nascondi al tocco</string>
     <string name="hide_pages">Nascondi pagine</string>
     <string name="hide_personal_data_block">Nascondi sezione dati personali</string>
@@ -456,8 +458,6 @@
     <string name="similar_to_number__format">Simile a %s</string>
     <string name="since_date__format">Dal %s</string>
     <string name="skip">Salta</string>
-    <string name="solve_invisible_recaptcha">Risolvi i reCAPTCHA invisibili</string>
-    <string name="solve_invisible_recaptcha__summary">Risolvi subito invece di mostrare un pulsante di caricamento</string>
     <string name="some_posts_have_been_edited">Alcuni post sono stati modificati</string>
     <string name="sorting">Ordina</string>
     <string name="specific_to_internal_services__sentence">Questa opzione riguarda unicamente alcuni servizi interni

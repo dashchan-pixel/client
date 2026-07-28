@@ -235,6 +235,8 @@
 	<string name="hide_captcha_pass_block">Hide captcha pass block</string>
 	<string name="hide_captcha_pass_block__summary">Do not waste space when a captcha pass is used</string>
 	<string name="hide_eventually__imperfective">Hide eventually</string>
+	<string name="hide_invisible_recaptcha">Hide invisible reCAPTCHA</string>
+	<string name="hide_invisible_recaptcha__summary">Solve at once instead of showing a load button</string>
 	<string name="hide_on_tap__imperfective">Hide on tap</string>
 	<string name="hide_pages">Hide pages</string>
 	<string name="hide_personal_data_block">Hide personal data block</string>
@@ -532,8 +534,6 @@
 	<string name="similar_to_number__format">Similar to %s</string>
 	<string name="since_date__format">Since %s</string>
 	<string name="skip">Skip</string>
-	<string name="solve_invisible_recaptcha">Solve invisible reCAPTCHA</string>
-	<string name="solve_invisible_recaptcha__summary">Solve at once instead of showing a load button</string>
 	<string name="some_posts_have_been_edited">Some posts have been edited</string>
 	<string name="sorting">Sorting</string>
 	<string name="sound">Sound</string>

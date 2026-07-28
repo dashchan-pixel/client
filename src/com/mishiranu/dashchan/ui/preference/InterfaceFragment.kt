@@ -266,6 +266,13 @@ class InterfaceFragment : PreferenceFragment() {
             R.string.hide_captcha_pass_block,
             R.string.hide_captcha_pass_block__summary,
         )
+        addCheck(
+            true,
+            Preferences.KEY_RECAPTCHA_SOLVE_INVISIBLE,
+            Preferences.DEFAULT_RECAPTCHA_SOLVE_INVISIBLE,
+            R.string.hide_invisible_recaptcha,
+            R.string.hide_invisible_recaptcha__summary,
+        )
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.user_interface), null)
     }

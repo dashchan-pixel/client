@@ -99,13 +99,6 @@ class GeneralFragment :
         addDependency(Preferences.KEY_EPHEMERAL_BROWSING, Preferences.KEY_INTERNAL_BROWSER, true)
 
         addHeader(R.string.services)
-        addCheck(
-            true,
-            Preferences.KEY_RECAPTCHA_SOLVE_INVISIBLE,
-            Preferences.DEFAULT_RECAPTCHA_SOLVE_INVISIBLE,
-            R.string.solve_invisible_recaptcha,
-            R.string.solve_invisible_recaptcha__summary,
-        )
 
         val captchaSolvingPreference =
             addMultipleEdit(
