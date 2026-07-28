@@ -10,6 +10,7 @@
 	<string name="address">Endereço</string>
 	<string name="all_attachments">Todos os anexos</string>
 	<string name="all_attachments__summary">Exibir miniaturas para todos os anexos</string>
+	<string name="all_boards">Todas as boards</string>
 	<string name="all_files">Todos os arquivos</string>
 	<string name="all_posts">Todos os posts</string>
 	<string name="all_threads">Todos of fios</string>
@@ -29,6 +30,8 @@
 	<string name="ban_id">Ban ID</string>
 	<string name="board">Board</string>
 	<string name="board_doesnt_exist">Essa board não existe</string>
+	<string name="board_intervals">Intervalos das boards</string>
+	<string name="board_intervals__summary">Atualizar os favoritos das boards escolhidas com um intervalo próprio</string>
 	<string name="boards">Boards</string>
 	<string name="cache_is_unavailable">Cache não disponível</string>
 	<string name="cached_files">Arquivos em cache</string>
@@ -204,6 +207,7 @@
 	<string name="new_extensions_installed__sentence">Novas extensões foram instaladas. Reiniciar é mandatório.</string>
 	<string name="new_password_was_generated">Uma nova senha foi gerada</string>
 	<string name="new_post">Responder</string>
+	<string name="new_interval">Novo intervalo</string>
 	<string name="new_rule">Nova regra</string>
 	<string name="new_theme">Novo tema</string>
 	<string name="new_thread">Criar fio</string>
@@ -215,6 +219,7 @@
 	<string name="no_extensions_installed">Não há extensões instaladas</string>
 	<string name="no_icon">Sem ícone</string>
 	<string name="no_information">Sem informação</string>
+	<string name="no_intervals_defined">Não há intervalos definidos</string>
 	<string name="no_rules_defined">Não há regras definidas</string>
 	<string name="not_found">Não encontrado</string>
 	<string name="notify_only">Apenas notificar</string>

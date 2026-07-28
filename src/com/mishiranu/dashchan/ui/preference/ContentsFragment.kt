@@ -113,6 +113,12 @@ class ContentsFragment : PreferenceFragment() {
             Preferences.MAX_WATCHER_REFRESH_INTERVAL,
             Preferences.STEP_WATCHER_REFRESH_INTERVAL,
         )
+        // The rules are edited on their own screen, but the setting they override lives here, so the
+        // way to them does too.
+        addButton(R.string.board_intervals, R.string.board_intervals__summary)
+            .setOnClickListener {
+                (requireActivity() as FragmentHandler).pushFragment(WatcherIntervalsFragment())
+            }
         addCheck(true, Preferences.KEY_WATCHER_WIFI_ONLY, Preferences.DEFAULT_WATCHER_WIFI_ONLY, R.string.wifi_only, 0)
         replyNotifications =
             addCheck(

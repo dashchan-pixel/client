@@ -15,6 +15,7 @@
     <string name="advanced_search__summary">Cerca per parole o frasi</string>
     <string name="all_attachments">Tutti gli allegati</string>
     <string name="all_attachments__summary">Mostra anteprime per tutti gli allegati</string>
+    <string name="all_boards">Tutte le board</string>
     <string name="all_files">Tutti i file</string>
     <string name="all_forums">Tutte le imageboard</string>
     <string name="all_posts">Tutti i post</string>
@@ -39,6 +40,8 @@
     <string name="block">Blocca</string>
     <string name="board">Board</string>
     <string name="board_doesnt_exist">La board non esiste</string>
+    <string name="board_intervals">Intervalli delle board</string>
+    <string name="board_intervals__summary">Aggiorna i preferiti delle board scelte con un intervallo proprio</string>
     <string name="boards">Board</string>
     <string name="cache_is_unavailable">Cache non disponibile</string>
     <string name="cache_size">Dimensione cache</string>
@@ -264,6 +267,7 @@
     <string name="new_extensions_installed__sentence">Nuove estensioni installate. Riavvio richiesto.</string>
     <string name="new_password_was_generated">Una nuova password è stata generata</string>
     <string name="new_post">Nuovo post</string>
+    <string name="new_interval">Nuovo intervallo</string>
     <string name="new_rule">Nuova regola</string>
     <string name="new_theme">Nuovo tema</string>
     <string name="new_thread">Nuovo thread</string>
@@ -275,6 +279,7 @@
     <string name="no_extensions_installed">Nessuna estensione installata</string>
     <string name="no_icon">Nessuna icona</string>
     <string name="no_information">Nessuna informazione</string>
+    <string name="no_intervals_defined">Nessun intervallo definito</string>
     <string name="no_matches_found">Nessuna corrispondenza trovata</string>
     <string name="no_rules_defined">Nessuna regola definita</string>
     <string name="not_downloaded">Non scaricato</string>

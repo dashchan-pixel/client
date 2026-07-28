@@ -19,6 +19,7 @@
 	<string name="advanced_search__summary">Search by words or quoted phrases</string>
 	<string name="all_attachments">All attachments</string>
 	<string name="all_attachments__summary">Display thumbnails for all attachments</string>
+	<string name="all_boards">All boards</string>
 	<string name="all_files">All files</string>
 	<string name="all_forums">All forums</string>
 	<string name="all_posts">All posts</string>
@@ -44,6 +45,8 @@
 	<string name="block">Block</string>
 	<string name="board">Board</string>
 	<string name="board_doesnt_exist">The board doesn\'t exist</string>
+	<string name="board_intervals">Board intervals</string>
+	<string name="board_intervals__summary">Refresh the favorites of chosen boards at their own interval</string>
 	<string name="boards">Boards</string>
 	<string name="bump_limit">Bump limit</string>
 	<string name="cache_is_unavailable">Cache is unavailable</string>
@@ -312,6 +315,7 @@
 	<string name="new_password_was_generated">A new password was generated</string>
 	<string name="new_post">New post</string>
 	<string name="new_command">New command</string>
+	<string name="new_interval">New interval</string>
 	<string name="new_rule">New rule</string>
 	<string name="new_theme">New theme</string>
 	<string name="new_thread">New thread</string>
@@ -323,6 +327,7 @@
 	<string name="no_extensions_installed">No extensions installed</string>
 	<string name="no_icon">No icon</string>
 	<string name="no_information">No information</string>
+	<string name="no_intervals_defined">No intervals defined</string>
 	<string name="no_libraries">No libraries</string>
 	<string name="no_libraries_defined">No libraries defined</string>
 	<string name="no_matches_found">No matches found</string>

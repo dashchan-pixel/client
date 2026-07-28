@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
+		android:focusable="true"
+		android:focusableInTouchMode="true"
+		android:descendantFocusability="beforeDescendants"
+		android:paddingTop="@dimen/dialog_padding_text_half"
+		android:paddingBottom="@dimen/dialog_padding_text_half">
+
+		<TextView
+			android:id="@+id/chan_name"
+			android:layout_width="match_parent"
+			android:layout_height="40dp"
+			android:gravity="center_vertical"
+			android:background="?android:attr/selectableItemBackground"
+			android:textAppearance="?android:attr/textAppearanceListItem"
+			android:layout_marginLeft="@dimen/dialog_padding_text_half"
+			android:layout_marginRight="@dimen/dialog_padding_text_half"
+			android:layout_marginBottom="8dp"
+			android:paddingLeft="@dimen/dialog_padding_text_half"
+			android:paddingRight="@dimen/dialog_padding_text_half" />
+
+		<com.mishiranu.dashchan.widget.SafePasteEditText
+			android:id="@+id/board_name"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
+			android:hint="@string/board"
+			android:imeOptions="flagNoExtractUi|flagNoFullscreen"
+			android:singleLine="true" />
+
+		<!-- The interval picker is built in code (ViewFactory.createSeekLayout), the same one the
+		     seek preferences use, and dropped in here. -->
+		<FrameLayout
+			android:id="@+id/interval_container"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content" />
+
+	</LinearLayout>
+
+</ScrollView>

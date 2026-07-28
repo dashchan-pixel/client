@@ -912,7 +912,7 @@ class WatcherService : BaseService() {
                     }
                 }
             }
-            val interval = getRefreshInterval(foreground)
+            val interval = getSweepRefreshInterval(foreground)
             if (interval > 0) {
                 if (lastRefreshAll == 0L) {
                     lastRefreshAll = SystemClock.elapsedRealtime()
@@ -1069,7 +1069,6 @@ class WatcherService : BaseService() {
         forceNow: Boolean,
     ) {
         val now = SystemClock.elapsedRealtime()
-        val interval = getRefreshInterval(true)
         val unavailable =
             !forceNetwork && isWatcherWifiOnly && !NetworkObserver.getInstance().isWifiConnected()
         for (watcherItem in watcherItems.values) {
@@ -1086,7 +1085,7 @@ class WatcherService : BaseService() {
                         }
                     } else {
                         if (watcherItem.state != WatcherState.ENQUEUED &&
-                            (forceNow || watcherItem.checkInterval(now, interval))
+                            (forceNow || watcherItem.checkInterval(now, getCheckInterval(watcherItem.threadKey)))
                         ) {
                             watcherItem.state = WatcherState.ENQUEUED
                             notifyWatcherUpdate(watcherItem)
@@ -1158,19 +1157,62 @@ class WatcherService : BaseService() {
         )
     }
 
-    private fun getRefreshInterval(foreground: Boolean): Int {
-        val interval = watcherRefreshInterval * 1000
-        if (!foreground) {
-            val backgroundInterval = 10 * 60 * 1000
-            return max(interval, backgroundInterval)
-        } else {
-            return interval
+    /**
+     * How often [threadKey]'s board asks to be refreshed, in milliseconds; the plain global setting
+     * when there is no thread to ask for. In the background the service polls no more often than
+     * [BACKGROUND_REFRESH_INTERVAL] whatever the setting says — including when refreshing is turned
+     * off, which only stops the periodic refresh while a client is in the foreground.
+     */
+    private fun getRefreshInterval(
+        foreground: Boolean,
+        threadKey: ThreadKey?,
+    ): Int {
+        val seconds =
+            if (threadKey != null) {
+                Preferences.getWatcherRefreshInterval(threadKey.chanName, threadKey.boardName)
+            } else {
+                watcherRefreshInterval
+            }
+        val interval = seconds * 1000
+        return if (!foreground) max(interval, BACKGROUND_REFRESH_INTERVAL) else interval
+    }
+
+    /**
+     * How long until the next sweep: the shortest interval any watched thread asks for, since one
+     * sweep serves them all and each thread's own [WatcherItem.checkInterval] then decides whether
+     * it is due. 0 — don't schedule one — when every watched thread has refreshing turned off. With
+     * nothing watched the global setting answers, so an empty watcher schedules what it always did.
+     */
+    private fun getSweepRefreshInterval(foreground: Boolean): Int {
+        if (watcherItems.isEmpty()) {
+            return getRefreshInterval(foreground, null)
         }
+        var result = 0
+        for (watcherItem in watcherItems.values) {
+            val interval = getRefreshInterval(foreground, watcherItem.threadKey)
+            if (interval > 0 && (result == 0 || interval < result)) {
+                result = interval
+            }
+        }
+        return result
+    }
+
+    /**
+     * The shortest gap [threadKey] accepts between two refreshes. A thread whose refreshing is
+     * turned off keeps the background floor rather than 0: a sweep happens anyway — every
+     * [BACKGROUND_REFRESH_INTERVAL] in the background, and as often as some other board asked for —
+     * and letting a 0 through would make it pick this thread up every single time.
+     */
+    private fun getCheckInterval(threadKey: ThreadKey): Int {
+        val interval = getRefreshInterval(true, threadKey)
+        return if (interval > 0) interval else BACKGROUND_REFRESH_INTERVAL
     }
 
     private val preferencesListener =
         SharedPreferences.Listener { key: String? ->
-            if (Preferences.KEY_WATCHER_REFRESH_INTERVAL == key) {
+            if (Preferences.KEY_WATCHER_REFRESH_INTERVAL == key ||
+                Preferences.KEY_WATCHER_REFRESH_OVERRIDES == key
+            ) {
                 ConcurrentUtils.HANDLER.removeCallbacks(refreshAllRunnable)
                 startNext()
             } else if (Preferences.KEY_THEME == key) {
@@ -1213,6 +1255,9 @@ class WatcherService : BaseService() {
         fun getClient(activity: ComponentActivity): Client = ViewModelProvider(activity).get<ViewModel>(ViewModel::class.java)
 
         private fun isWatcherSupported(chan: Chan): Boolean = chan.name != null && !chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE)
+
+        /** The floor on refreshing while no client is in the foreground. */
+        private const val BACKGROUND_REFRESH_INTERVAL = 10 * 60 * 1000
 
         private val CONSUME_REPLIES_EMPTY = ConsumeReplies {}
 

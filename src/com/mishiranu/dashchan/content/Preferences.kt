@@ -1825,28 +1825,167 @@ object Preferences {
     const val KEY_WATCHER_REFRESH_INTERVAL: String = "watcher_refresh_interval"
     const val DISABLED_WATCHER_REFRESH_INTERVAL: Int = 0
     const val MIN_WATCHER_REFRESH_INTERVAL: Int = 15
-    const val MAX_WATCHER_REFRESH_INTERVAL: Int = 60
+    const val MAX_WATCHER_REFRESH_INTERVAL: Int = 300
     const val STEP_WATCHER_REFRESH_INTERVAL: Int = 5
     const val DEFAULT_WATCHER_REFRESH_INTERVAL: Int = 30
 
     @JvmStatic
     val watcherRefreshInterval: Int
-        get() {
-            val value =
+        get() =
+            clampWatcherRefreshInterval(
                 prefs.getInt(
                     KEY_WATCHER_REFRESH_INTERVAL,
                     DEFAULT_WATCHER_REFRESH_INTERVAL,
-                )
-            return if (value > MAX_WATCHER_REFRESH_INTERVAL) {
-                MAX_WATCHER_REFRESH_INTERVAL
-            } else {
-                if (value < MIN_WATCHER_REFRESH_INTERVAL) {
-                    DISABLED_WATCHER_REFRESH_INTERVAL
-                } else {
-                    value
+                ),
+            )
+
+    /**
+     * A value below the minimum is not a slow interval but the off switch, so it collapses to
+     * [DISABLED_WATCHER_REFRESH_INTERVAL] rather than to [MIN_WATCHER_REFRESH_INTERVAL]. Also
+     * guards against a value stored while the maximum was lower.
+     */
+    private fun clampWatcherRefreshInterval(value: Int): Int =
+        when {
+            value > MAX_WATCHER_REFRESH_INTERVAL -> MAX_WATCHER_REFRESH_INTERVAL
+            value < MIN_WATCHER_REFRESH_INTERVAL -> DISABLED_WATCHER_REFRESH_INTERVAL
+            else -> value
+        }
+
+    const val KEY_WATCHER_REFRESH_OVERRIDES: String = "watcher_refresh_overrides"
+    private const val KEY_OVERRIDE_CHAN_NAMES = "chanNames"
+    private const val KEY_OVERRIDE_BOARD_NAME = "boardName"
+    private const val KEY_OVERRIDE_INTERVAL = "interval"
+
+    /**
+     * A board that refreshes at its own pace instead of at [watcherRefreshInterval]. The scope is
+     * spelled the way an autohide rule or a command spells it: [chanNames] `null`/empty means every
+     * forum, [boardName] `null`/empty every board of them.
+     */
+    class WatcherRefreshOverride(
+        val chanNames: Set<String>?,
+        val boardName: String?,
+        val interval: Int,
+    ) {
+        fun matches(
+            chanName: String?,
+            boardName: String?,
+        ): Boolean {
+            val chanNames = this.chanNames
+            if (!chanNames.isNullOrEmpty() && (chanName == null || chanName !in chanNames)) {
+                return false
+            }
+            val requiredBoard = this.boardName
+            return requiredBoard.isNullOrEmpty() || requiredBoard == boardName
+        }
+
+        /**
+         * How narrow the scope is, so that a rule naming a board wins over one covering a whole
+         * forum and that one over a rule covering everything.
+         */
+        internal val specificity: Int
+            get() = (if (!boardName.isNullOrEmpty()) 2 else 0) + (if (!chanNames.isNullOrEmpty()) 1 else 0)
+    }
+
+    // Parsing the list on every lookup would repeat once per watched thread per refresh sweep, so
+    // the result is kept next to the string it came from: the string is a map lookup away, and any
+    // edit (from this process or, after a restore, from another) changes it.
+    private class WatcherRefreshOverridesCache(
+        val value: String?,
+        val overrides: List<WatcherRefreshOverride>,
+    )
+
+    @Volatile private var watcherRefreshOverridesCache: WatcherRefreshOverridesCache? = null
+
+    val watcherRefreshOverrides: List<WatcherRefreshOverride>
+        get() {
+            val value = prefs.getString(KEY_WATCHER_REFRESH_OVERRIDES, null)
+            val cache = watcherRefreshOverridesCache
+            if (cache != null && cache.value == value) {
+                return cache.overrides
+            }
+            val overrides = parseWatcherRefreshOverrides(value)
+            watcherRefreshOverridesCache = WatcherRefreshOverridesCache(value, overrides)
+            return overrides
+        }
+
+    private fun parseWatcherRefreshOverrides(value: String?): List<WatcherRefreshOverride> {
+        if (isEmpty(value)) {
+            return emptyList()
+        }
+        try {
+            val jsonArray = JSONArray(value)
+            val overrides = ArrayList<WatcherRefreshOverride>(jsonArray.length())
+            for (i in 0..<jsonArray.length()) {
+                val jsonObject = jsonArray.optJSONObject(i) ?: continue
+                val chanNames = HashSet<String>()
+                val chanNamesArray = jsonObject.optJSONArray(KEY_OVERRIDE_CHAN_NAMES)
+                if (chanNamesArray != null) {
+                    for (j in 0..<chanNamesArray.length()) {
+                        val chanName = chanNamesArray.optString(j)
+                        if (!isEmpty(chanName)) {
+                            chanNames.add(chanName)
+                        }
+                    }
                 }
+                val boardName = nullIfEmpty(jsonObject.optString(KEY_OVERRIDE_BOARD_NAME))
+                val interval =
+                    clampWatcherRefreshInterval(
+                        jsonObject.optInt(KEY_OVERRIDE_INTERVAL, DEFAULT_WATCHER_REFRESH_INTERVAL),
+                    )
+                overrides.add(WatcherRefreshOverride(chanNames.ifEmpty { null }, boardName, interval))
+            }
+            return overrides
+        } catch (e: JSONException) {
+            // Invalid or unspecified data, ignore exception
+            return emptyList()
+        }
+    }
+
+    fun setWatcherRefreshOverrides(overrides: List<WatcherRefreshOverride>) {
+        if (overrides.isEmpty()) {
+            prefs.edit().remove(KEY_WATCHER_REFRESH_OVERRIDES).close()
+            return
+        }
+        val jsonArray = JSONArray()
+        for (override in overrides) {
+            val jsonObject = JSONObject()
+            val chanNames = override.chanNames
+            if (!chanNames.isNullOrEmpty()) {
+                val chanNamesArray = JSONArray()
+                for (chanName in chanNames) {
+                    chanNamesArray.put(chanName)
+                }
+                jsonObject.put(KEY_OVERRIDE_CHAN_NAMES, chanNamesArray)
+            }
+            if (!override.boardName.isNullOrEmpty()) {
+                jsonObject.put(KEY_OVERRIDE_BOARD_NAME, override.boardName)
+            }
+            jsonObject.put(KEY_OVERRIDE_INTERVAL, override.interval)
+            jsonArray.put(jsonObject)
+        }
+        prefs.edit().put(KEY_WATCHER_REFRESH_OVERRIDES, jsonArray.toString()).close()
+    }
+
+    /**
+     * How often the favorites watcher should refresh a thread of the given board: the narrowest
+     * matching override, or [watcherRefreshInterval] when none matches. Equal scopes are decided by
+     * list order, first one winning.
+     */
+    @JvmStatic
+    fun getWatcherRefreshInterval(
+        chanName: String,
+        boardName: String?,
+    ): Int {
+        var best: WatcherRefreshOverride? = null
+        for (override in watcherRefreshOverrides) {
+            if (override.matches(chanName, boardName) &&
+                (best == null || override.specificity > best.specificity)
+            ) {
+                best = override
             }
         }
+        return best?.interval ?: watcherRefreshInterval
+    }
 
     init {
         if (PREFERENCES != null) {

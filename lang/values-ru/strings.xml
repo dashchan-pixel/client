@@ -17,6 +17,7 @@
 	<string name="advanced_search__summary">Искать по словам и фразам в кавычках</string>
 	<string name="all_attachments">Все вложения</string>
 	<string name="all_attachments__summary">Показывать миниатюры всех вложений</string>
+	<string name="all_boards">Все разделы</string>
 	<string name="all_files">Все файлы</string>
 	<string name="all_forums">Все форумы</string>
 	<string name="all_posts">Все сообщения</string>
@@ -42,6 +43,8 @@
 	<string name="block">Блокировать</string>
 	<string name="board">Раздел</string>
 	<string name="board_doesnt_exist">Раздел не существует</string>
+	<string name="board_intervals">Интервалы разделов</string>
+	<string name="board_intervals__summary">Обновление избранного в выбранных разделах со своим интервалом</string>
 	<string name="boards">Разделы</string>
 	<string name="bump_limit">Бамплимит</string>
 	<string name="cache_is_unavailable">Кэш недоступен</string>
@@ -297,6 +300,7 @@
 	<string name="new_extensions_installed__sentence">Были установлены новые расширения. Необходим перезапуск.</string>
 	<string name="new_password_was_generated">Сгенерирован новый пароль</string>
 	<string name="new_post">Новое сообщение</string>
+	<string name="new_interval">Новый интервал</string>
 	<string name="new_rule">Новое правило</string>
 	<string name="new_theme">Новая тема</string>
 	<string name="new_thread">Новый тред</string>
@@ -308,6 +312,7 @@
 	<string name="no_extensions_installed">Не установлено ни одного расширения</string>
 	<string name="no_icon">Нет иконки</string>
 	<string name="no_information">Нет информации</string>
+	<string name="no_intervals_defined">Интервалы не заданы</string>
 	<string name="no_matches_found">Совпадений не найдено</string>
 	<string name="no_rules_defined">Правила не заданы</string>
 	<string name="not_downloaded">Не загружено</string>

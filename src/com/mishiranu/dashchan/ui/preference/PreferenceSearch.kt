@@ -242,6 +242,12 @@ object PreferenceSearch {
                 R.string.refresh_favorites,
                 R.string.every_number_sec__format,
             ),
+            Entry(
+                Screen.CONTENTS,
+                R.string.favorites_watcher,
+                R.string.board_intervals,
+                R.string.board_intervals__summary,
+            ),
             Entry(Screen.CONTENTS, R.string.favorites_watcher, R.string.wifi_only, 0),
             Entry(
                 Screen.CONTENTS,
