@@ -6,7 +6,10 @@ object C {
     @JvmField val IMAGE_EXTENSIONS: Set<String> =
         immutableSet("jpg", "jpe", "jpeg", "png", "apng", "gif", "webp", "bmp", "svg")
 
-    @JvmField val AUDIO_EXTENSIONS: Set<String> = immutableSet("mp3", "ogg", "flac", "wav")
+    // Everything the audio player (Media3) can decode; "mid" is left out on purpose, ExoPlayer
+    // has no MIDI extractor, so those attachments still go to an external app.
+    @JvmField val AUDIO_EXTENSIONS: Set<String> =
+        immutableSet("mp3", "ogg", "oga", "opus", "flac", "wav", "m4a", "aac")
 
     @JvmField val VIDEO_EXTENSIONS: Set<String> = immutableSet("webm", "mkv", "mp4")
 

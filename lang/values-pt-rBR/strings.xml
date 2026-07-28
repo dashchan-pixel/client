@@ -22,6 +22,8 @@
 	<string name="archive__verb">Arquivar</string>
 	<string name="attach">Anexar</string>
 	<string name="attachments_are_too_large">O arquivo é muito grande</string>
+	<string name="audio_playback">Reprodução de áudio</string>
+	<string name="audio_player">Reprodutor de áudio</string>
 	<string name="autohide">Auto-Esconder</string>
 	<string name="backup_data">Fazer backup de dados</string>
 	<string name="backup_data__summary">Salve todas as suas configurações, favoritos, histórico, regras do

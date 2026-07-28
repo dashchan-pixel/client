@@ -341,6 +341,7 @@ dependencies {
     implementation("androidx.drawerlayout:drawerlayout:1.2.0")
     implementation("androidx.browser:browser:1.10.0")
     implementation("androidx.media3:media3-exoplayer:1.10.1")
+    implementation("androidx.media3:media3-session:1.10.1")
     implementation("com.google.android.material:material:1.14.0")
     implementation("androidx.webkit:webkit:1.16.0")
     implementation("com.squareup.okhttp3:okhttp:5.4.0")

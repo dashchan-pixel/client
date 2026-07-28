@@ -55,7 +55,7 @@ class AudioPlayerDialog : DialogFragment() {
                     val textView = this@AudioPlayerDialog.textView ?: return
                     seekBar.removeCallbacks(seekBarUpdate)
                     textView.text = audioPlayerBinder.getFileName()
-                    seekBar.max = audioPlayerBinder.duration
+                    seekBar.max = audioPlayerBinder.duration.coerceAtLeast(0)
                     updatePlayState()
                     seekBarUpdate.run()
                 } else {
@@ -76,6 +76,12 @@ class AudioPlayerDialog : DialogFragment() {
             override fun run() {
                 val audioPlayerBinder = audioPlayerBinder ?: return
                 val seekBar = this@AudioPlayerDialog.seekBar ?: return
+                // The player prepares asynchronously, so the duration is usually still unknown
+                // when the dialog binds: pick it up as soon as the file has been parsed
+                val duration = audioPlayerBinder.duration
+                if (duration > 0 && seekBar.max != duration) {
+                    seekBar.max = duration
+                }
                 if (!tracking) {
                     seekBar.progress = audioPlayerBinder.position
                 }
@@ -192,7 +198,8 @@ class AudioPlayerDialog : DialogFragment() {
         if (isResumed) {
             dismiss()
         } else {
-            shouldCancel = false
+            // Dismissing a stopped fragment throws, so defer it to onResume
+            shouldCancel = true
         }
     }
 

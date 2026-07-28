@@ -88,6 +88,7 @@
 	<attr name="iconDrawerMenuUserBoards" format="reference" />
 	<attr name="iconDrawerMenuHistory" format="reference" />
 	<attr name="iconDrawerMenuEcho" format="reference" />
+	<attr name="iconDrawerMenuAudioPlayer" format="reference" />
 	<attr name="iconDrawerMenuPreferences" format="reference" />
 
 </resources>

@@ -1152,6 +1152,19 @@ object Preferences {
                 DEFAULT_NOTIFY_DOWNLOAD_COMPLETE,
             )
 
+    // Not a user setting: remembers that POST_NOTIFICATIONS was already asked for once, so a
+    // refusal is not turned into a prompt on every launch
+    const val KEY_NOTIFICATION_PERMISSION_REQUESTED: String = "notification_permission_requested"
+
+    @JvmStatic
+    val isNotificationPermissionRequested: Boolean
+        get() = prefs.getBoolean(KEY_NOTIFICATION_PERMISSION_REQUESTED, false)
+
+    @JvmStatic
+    fun setNotificationPermissionRequested(requested: Boolean) {
+        prefs.edit().put(KEY_NOTIFICATION_PERMISSION_REQUESTED, requested).close()
+    }
+
     const val KEY_PAGE_BY_PAGE: String = "page_by_page"
     const val DEFAULT_PAGE_BY_PAGE: Boolean = false
 

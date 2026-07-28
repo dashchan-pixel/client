@@ -57,6 +57,7 @@ import com.mishiranu.dashchan.content.Preferences.setFavoritesHideAll
 import com.mishiranu.dashchan.content.Preferences.setFavoritesHideDeleted
 import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.model.PostNumber
+import com.mishiranu.dashchan.content.service.AudioPlayerService
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.FavoriteItem
@@ -131,8 +132,9 @@ class DrawerForm(
 
     private val chans = ArrayList<ListItem>()
 
-    // Sits directly under the header, above the pages and favorites sections
-    private val echoMenu = ArrayList<ListItem>()
+    // Sits directly under the header, above the pages and favorites sections: the Echo and,
+    // while something is playing, the audio player
+    private val topMenu = ArrayList<ListItem>()
     private val pages = ArrayList<ListItem>()
     private val favorites = ArrayList<ListItem>()
     private val menu = ArrayList<ListItem>()
@@ -143,6 +145,7 @@ class DrawerForm(
     private var pagesListMode: PagesListMode? = null
     private var chanSelectMode = false
     private var showRestartButton = false
+    private var audioPlayerActive = AudioPlayerService.isActive
     private var categoriesOrder: CategoriesOrder? = null
     private var chanName: String? = null
 
@@ -214,7 +217,7 @@ class DrawerForm(
             this.chanName = chanName
             val chan = get(chanName)
             chanNameView.setText(chan.configuration.getTitle())
-            echoMenu.clear()
+            topMenu.clear()
             menu.clear()
             val context = this.context
             val typedArray =
@@ -228,7 +231,7 @@ class DrawerForm(
                     ),
                 )
             if (chanName != null && isEcho) {
-                echoMenu.add(
+                topMenu.add(
                     ListItem(
                         ListItem.Type.MENU,
                         MENU_ITEM_ECHO,
@@ -237,6 +240,7 @@ class DrawerForm(
                     ),
                 )
             }
+            updateAudioPlayerItem()
             val hasUserBoards =
                 chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
             if (chanName != null && !chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
@@ -284,6 +288,52 @@ class DrawerForm(
 
     fun updateConfiguration(chanName: String?) {
         updateConfigurationInternal(chanName, false)
+    }
+
+    /**
+     * Shows or hides the audio player entry. It is only offered while [AudioPlayerService] holds a
+     * player, and it is the only way back to the player controls when notifications are denied.
+     */
+    fun setAudioPlayerActive(active: Boolean) {
+        if (audioPlayerActive != active) {
+            audioPlayerActive = active
+            if (updateAudioPlayerItem()) {
+                @Suppress("NotifyDataSetChanged")
+                notifyDataSetChanged()
+            }
+        }
+    }
+
+    // Returns true when the top menu changed
+    private fun updateAudioPlayerItem(): Boolean {
+        val index =
+            topMenu.indexOfFirst {
+                it.type == ListItem.Type.MENU && it.data == MENU_ITEM_AUDIO_PLAYER
+            }
+        if (audioPlayerActive) {
+            if (index >= 0) {
+                return false
+            }
+            val typedArray =
+                context.obtainStyledAttributes(intArrayOf(R.attr.iconDrawerMenuAudioPlayer))
+            val iconResId = typedArray.getResourceId(0, 0)
+            typedArray.recycle()
+            topMenu.add(
+                ListItem(
+                    ListItem.Type.MENU,
+                    MENU_ITEM_AUDIO_PLAYER,
+                    iconResId,
+                    context.getString(R.string.audio_player),
+                ),
+            )
+            return true
+        } else {
+            if (index < 0) {
+                return false
+            }
+            topMenu.removeAt(index)
+            return true
+        }
     }
 
     val contentView: View
@@ -1220,7 +1270,7 @@ class DrawerForm(
         if (chanSelectMode) {
             count += chans.size
         } else {
-            count += echoMenu.size
+            count += topMenu.size
             val arraySize = prepareCategoriesArray()
             val categoriesArray = this.categoriesArray
             for (i in 0..<arraySize) {
@@ -1249,10 +1299,10 @@ class DrawerForm(
                     return chans.get(position)
                 }
             } else {
-                if (position < echoMenu.size) {
-                    return echoMenu[position]
+                if (position < topMenu.size) {
+                    return topMenu[position]
                 }
-                position -= echoMenu.size
+                position -= topMenu.size
                 val arraySize = prepareCategoriesArray()
                 val categoriesArray = this.categoriesArray
                 for (i in 0..<arraySize) {
@@ -1641,8 +1691,13 @@ class DrawerForm(
                     (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS)
             ) ||
             (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_USER_BOARDS) ||
-            // The Echo is its own section above the pages and favorites
-            (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_ECHO)
+            // The Echo and the audio player form their own section above the pages and favorites
+            (
+                current.type == ListItem.Type.MENU &&
+                    current.data == MENU_ITEM_ECHO &&
+                    (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_AUDIO_PLAYER)
+            ) ||
+            (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_AUDIO_PLAYER)
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
@@ -2077,6 +2132,7 @@ class DrawerForm(
         const val MENU_ITEM_HISTORY: Int = 3
         const val MENU_ITEM_ECHO: Int = 4
         const val MENU_ITEM_PREFERENCES: Int = 5
+        const val MENU_ITEM_AUDIO_PLAYER: Int = 6
 
         private fun showPageFavoriteMenu(
             fragmentManager: FragmentManager,

@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.ui
 
+import android.Manifest
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.app.AlertDialog
@@ -11,6 +12,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
@@ -81,6 +83,7 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.GalleryItem
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.content.model.PostNumber.Companion.parseNullable
+import com.mishiranu.dashchan.content.service.AudioPlayerService
 import com.mishiranu.dashchan.content.service.AudioPlayerService.Companion.start
 import com.mishiranu.dashchan.content.service.DownloadService
 import com.mishiranu.dashchan.content.service.DownloadService.ChoiceRequest
@@ -209,6 +212,18 @@ class MainActivity :
     private var navigateIntentOnResume: Intent? = null
     private var storageRequestState: StorageRequestState = StorageRequestState.NONE
 
+    // A field, not a lambda passed inline: AudioPlayerService keeps state callbacks weakly
+    private val audioPlayerStateCallback =
+        AudioPlayerService.StateCallback { active -> drawerForm.setAudioPlayerActive(active) }
+
+    // Without POST_NOTIFICATIONS the foreground service notifications (audio playback above all,
+    // whose transport controls are the only way to stop it) are silently dropped.
+    private val notificationPermissionLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts
+                .RequestPermission(),
+        ) { }
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(attach(LocaleManager.getInstance().apply(newBase)))
     }
@@ -245,6 +260,8 @@ class MainActivity :
         drawerWide.setBackgroundColor(drawerBackground)
         drawerForm =
             DrawerForm(drawerContext, this, getSupportFragmentManager(), watcherServiceClient)
+        // Registered once drawerForm exists: the callback reaches straight into it
+        AudioPlayerService.registerStateCallback(audioPlayerStateCallback)
         drawerParent = FrameLayout(this)
         drawerParent.addView(drawerForm.contentView)
         drawerCommon.addView(drawerParent)
@@ -535,6 +552,23 @@ class MainActivity :
         if (storageRequestState == StorageRequestState.INSTRUCTIONS) {
             showStorageInstructionsDialog()
         }
+        requestNotificationPermission()
+    }
+
+    /**
+     * Asks for POST_NOTIFICATIONS once. The permission is deny-by-default, and without it every
+     * foreground service notification is dropped: downloads and posting lose their progress, and
+     * audio playback loses the transport controls that are the only way to stop it.
+     */
+    private fun requestNotificationPermission() {
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED ||
+            Preferences.isNotificationPermissionRequested
+        ) {
+            return
+        }
+        Preferences.setNotificationPermissionRequested(true)
+        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -945,11 +979,7 @@ class MainActivity :
         } else if (C.ACTION_GALLERY == intent.getAction()) {
             navigateGalleryUri(intent.getData())
         } else if (C.ACTION_PLAYER == intent.getAction()) {
-            val fragmentManager = getSupportFragmentManager()
-            val tag = AudioPlayerDialog::class.java.getName()
-            if (fragmentManager.findFragmentByTag(tag) == null) {
-                AudioPlayerDialog().show(fragmentManager, tag)
-            }
+            showAudioPlayerDialog()
         } else if (C.ACTION_VIDEO_PIP == intent.getAction()) {
             // An expanded picture-in-picture window handing playback back to its origin
             reopenInApp(this)
@@ -1493,6 +1523,14 @@ class MainActivity :
         }
     }
 
+    private fun showAudioPlayerDialog() {
+        val fragmentManager = getSupportFragmentManager()
+        val tag = AudioPlayerDialog::class.java.getName()
+        if (fragmentManager.findFragmentByTag(tag) == null) {
+            AudioPlayerDialog().show(fragmentManager, tag)
+        }
+    }
+
     private fun closeOverlaysForNavigation() {
         navigateOrCloseGallery(null)
         if (!wideMode) {
@@ -1692,6 +1730,7 @@ class MainActivity :
         FavoritesStorage.getInstance().getObservable().unregister(this)
         Preferences.prefs.unregister(preferencesListener)
         ChanManager.getInstance().observable.unregister(chanManagerCallback)
+        AudioPlayerService.unregisterStateCallback(audioPlayerStateCallback)
         for (chan in ChanManager.getInstance().availableChans) {
             chan.configuration.commit()
         }
@@ -2385,6 +2424,10 @@ class MainActivity :
                     fragments.clear()
                     navigateFragment(CategoriesFragment(), null, true)
                 }
+            }
+
+            DrawerForm.Companion.MENU_ITEM_AUDIO_PLAYER -> {
+                showAudioPlayerDialog()
             }
         }
         var success = false
