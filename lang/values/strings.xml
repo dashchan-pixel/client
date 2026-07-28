@@ -258,6 +258,7 @@
 	<string name="invalid_server_response">Invalid server response</string>
 	<string name="keep_all">Keep all</string>
 	<string name="keep_current_version">Keep current version</string>
+	<string name="keep_current_version__format">Keep version %s</string>
 	<string name="language">Language</string>
 	<string name="grid">Grid</string>
 	<string name="libraries">Libraries</string>

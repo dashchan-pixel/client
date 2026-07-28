@@ -250,6 +250,7 @@
 	<string name="invalid_server_response">Некорректный ответ сервера</string>
 	<string name="keep_all">Сохранить все</string>
 	<string name="keep_current_version">Без обновления</string>
+	<string name="keep_current_version__format">Оставить версию %s</string>
 	<string name="language">Язык</string>
 	<string name="grid">Сетка</string>
 	<string name="links_attachments__genitive">Вложений-ссылок</string>

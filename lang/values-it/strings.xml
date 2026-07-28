@@ -225,6 +225,7 @@
     <string name="invalid_server_response">Risposta server non valida</string>
     <string name="keep_all">Mantieni tutti</string>
     <string name="keep_current_version">Mantieni versione attuale</string>
+    <string name="keep_current_version__format">Mantieni versione %s</string>
     <string name="language">Lingua</string>
     <string name="links_attachments__genitive">Allegati-link</string>
     <string name="load_captcha">Carica captcha</string>

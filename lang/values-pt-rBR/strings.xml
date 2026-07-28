@@ -175,6 +175,7 @@
 	<string name="invalid_data_format">Formato de dados inválidos</string>
 	<string name="invalid_server_response">Resposta do servidor inválida</string>
 	<string name="keep_all">Guardar tudo</string>
+	<string name="keep_current_version__format">Manter versão %s</string>
 	<string name="language">Linguagem</string>
 	<string name="links_attachments__genitive">Anexo do link</string>
 	<string name="load_catalog">Carregar catálogo</string>

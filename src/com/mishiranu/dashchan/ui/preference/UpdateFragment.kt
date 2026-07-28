@@ -89,7 +89,7 @@ class UpdateFragment : BaseListFragment {
                 }
                 this.target = target
             } else if (targetIndex == 0) {
-                target = if (context != null) context.getString(R.string.keep_current_version) else null
+                target = if (context != null) describeKeepInstalled(context, applicationItem) else null
             } else {
                 target = if (context != null) context.getString(R.string.dont_install) else null
             }
@@ -243,7 +243,7 @@ class UpdateFragment : BaseListFragment {
         val targetIndex: Int
         val applicationItem = updateDataMap!!.get(listItem.extensionName, listItem.installed)!!
         if (listItem.installed) {
-            targets.add(getString(R.string.keep_current_version))
+            targets.add(describeKeepInstalled(requireContext(), applicationItem))
             repositories.add(null)
             for (packageItem in applicationItem.packageItems.subList(1, applicationItem.packageItems.size)) {
                 targets.add(describeTarget(requireContext(), applicationItem, packageItem))
@@ -606,6 +606,24 @@ class UpdateFragment : BaseListFragment {
                 versionName.isNullOrEmpty() -> title.orEmpty()
                 title.isNullOrEmpty() || channels <= 1 -> versionName
                 else -> context.getString(R.string.__enumeration_format, title, versionName)
+            }
+        }
+
+        /**
+         * "Keep version 26.7.1", naming the version the choice keeps.
+         *
+         * The installed package is the first entry, and it is the one a keep leaves in
+         * place. A manifest that omits its version name falls back to the unnamed wording.
+         */
+        private fun describeKeepInstalled(
+            context: Context,
+            applicationItem: ReadUpdateTask.ApplicationItem,
+        ): String {
+            val versionName = applicationItem.packageItems.firstOrNull()?.versionName
+            return if (versionName.isNullOrEmpty()) {
+                context.getString(R.string.keep_current_version)
+            } else {
+                context.getString(R.string.keep_current_version__format, versionName)
             }
         }
 
