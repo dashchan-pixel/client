@@ -138,6 +138,21 @@ class PostItem private constructor(
 
     fun getPost(): Post = post
 
+    // Replacement for the parsed decorator payload, set by a ChanPostDecorator action so the post
+    // can show what the action changed without re-reading the thread. Deliberately not persisted:
+    // it lasts only until the thread is read again, at which point the cache holds the board's own
+    // answer and this must give way to it -- see DecoratorUnit.discardExtraOverrides.
+    private var decoratorExtraOverride: String? = null
+
+    fun getDecoratorExtra(): String? = decoratorExtraOverride ?: StringUtils.nullIfEmpty(post.extra)
+
+    /** The replacement alone, so a caller can tell it apart from the parsed payload. */
+    fun getDecoratorExtraOverride(): String? = decoratorExtraOverride
+
+    fun setDecoratorExtraOverride(extra: String?) {
+        decoratorExtraOverride = extra
+    }
+
     fun setOrdinalIndex(ordinalIndex: Int) {
         this.ordinalIndex = ordinalIndex
     }

@@ -13,6 +13,7 @@ import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getPreferred
 import chan.content.ChanConfiguration
 import chan.content.ChanLocator.NavigationData
+import chan.content.ChanPostDecorator
 import chan.util.StringUtils
 import chan.util.StringUtils.copyToClipboard
 import com.mishiranu.dashchan.R
@@ -253,6 +254,9 @@ class InteractionUnit internal constructor(
         val titleResId: Int,
         val checked: Boolean,
         val runnable: Runnable,
+        // Set instead of titleResId by a ChanPostDecorator entry, whose title is the extension's
+        // string rather than one of the client's resources.
+        val title: String? = null,
         // Copy/share submenu leaves live in this list so a swipe can run one directly, but the
         // top-level dialog must not show them -- it offers the submenu entry instead.
         val inDialog: Boolean = true,
@@ -586,6 +590,7 @@ class InteractionUnit internal constructor(
     private fun buildPostMenuEntries(
         configurationSet: ConfigurationSet,
         postItem: PostItem,
+        footer: FooterHolder? = null,
     ): List<MenuEntry> {
         val chan = get(configurationSet.chanName)
         val menuContext =
@@ -605,7 +610,63 @@ class InteractionUnit internal constructor(
         addModerationEntries(entries, menuContext)
         addPostStateEntries(entries, menuContext)
         addVoteEntries(entries, menuContext)
+        addDecoratorEntries(entries, menuContext, footer)
         return entries
+    }
+
+    /**
+     * Appends the chan decorator's entries, after every entry of the client's own. Also collects a
+     * footer view, which only the dialog can show: a swipe action has nowhere to put one.
+     *
+     * Called every time the menu is built, including the rebuild after a configuration change, so a
+     * decorator's contributions must be derived from the post rather than from the gesture.
+     */
+    private fun addDecoratorEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+        footer: FooterHolder? = null,
+    ) {
+        if (c.chan.postDecorator == null) {
+            return
+        }
+        val menu =
+            object : ChanPostDecorator.PostMenu {
+                override fun addItem(
+                    title: String,
+                    runnable: Runnable,
+                ) {
+                    entries.add(MenuEntry(null, MenuEntryKind.ITEM, 0, false, runnable, title))
+                }
+
+                override fun addCheckItem(
+                    title: String,
+                    checked: Boolean,
+                    runnable: Runnable,
+                ) {
+                    entries.add(MenuEntry(null, MenuEntryKind.CHECK, 0, checked, runnable, title))
+                }
+
+                override fun setFooterView(view: View) {
+                    footer?.view = view
+                }
+
+                override fun dismiss() {
+                    footer?.dismiss?.run()
+                }
+            }
+        uiManager.decorator().createPostMenu(
+            c.context,
+            c.chan,
+            c.postItem,
+            c.postItem.getBoardName(),
+            c.postItem.getThreadNumber(),
+            menu,
+        )
+    }
+
+    private class FooterHolder {
+        var view: View? = null
+        var dismiss: Runnable? = null
     }
 
     /**
@@ -633,13 +694,19 @@ class InteractionUnit internal constructor(
     ) {
         val context = uiManager.context
         val dialogMenu = DialogMenu(context)
-        for (entry in buildPostMenuEntries(configurationSet, postItem)) {
+        val footer = FooterHolder()
+        for (entry in buildPostMenuEntries(configurationSet, postItem, footer)) {
             if (!entry.inDialog) {
                 continue
             }
+            val title = entry.title
             when (entry.kind) {
                 MenuEntryKind.ITEM -> {
-                    dialogMenu.add(entry.titleResId, entry.runnable)
+                    if (title != null) {
+                        dialogMenu.add(title, entry.runnable)
+                    } else {
+                        dialogMenu.add(entry.titleResId, entry.runnable)
+                    }
                 }
 
                 MenuEntryKind.MORE -> {
@@ -647,11 +714,19 @@ class InteractionUnit internal constructor(
                 }
 
                 MenuEntryKind.CHECK -> {
-                    dialogMenu.addCheck(entry.titleResId, entry.checked, entry.runnable)
+                    if (title != null) {
+                        dialogMenu.addCheck(title, entry.checked, entry.runnable)
+                    } else {
+                        dialogMenu.addCheck(entry.titleResId, entry.checked, entry.runnable)
+                    }
                 }
             }
         }
+        dialogMenu.setFooterView(footer.view)
         val dialog = dialogMenu.create()
+        // Assigned after creation because the decorator only runs it from the footer, on a later
+        // touch; the footer view itself was collected while the entries were built.
+        footer.dismiss = Runnable { dialog.dismiss() }
         uiManager
             .dialog()
             .handlePostContextMenu(configurationSet, postItem.getPostNumber(), true, dialog)

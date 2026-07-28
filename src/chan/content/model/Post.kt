@@ -302,6 +302,23 @@ class Post : Comparable<Post> {
     }
 
     @Public
+    fun getExtra(): String? = StringUtils.nullIfEmpty(builder!!.builder.extra)
+
+    /**
+     * Stores an opaque payload the client keeps with this post and hands back to the extension's
+     * [chan.content.ChanPostDecorator] when the post is displayed. The client never parses it, so
+     * any self-describing encoding works; [chan.text.JsonSerial] is the intended one.
+     *
+     * The payload is written to the post cache along with the rest of the post, so it survives an
+     * application restart. Keep it small: it is held in memory for every loaded post.
+     */
+    @Public
+    fun setExtra(extra: String?): Post {
+        builder!!.builder.extra = extra
+        return this
+    }
+
+    @Public
     override fun compareTo(other: Post): Int = builder!!.builder.number!!.compareTo(other.builder!!.builder.number!!)
 
     private class ChanBuilder {

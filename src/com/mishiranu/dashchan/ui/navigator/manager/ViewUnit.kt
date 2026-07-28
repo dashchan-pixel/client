@@ -31,6 +31,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.Chan.Companion.getFallback
 import chan.util.StringUtils
@@ -574,6 +575,7 @@ class ViewUnit
                 holder.commentTextView.setLinesLimit(0, 0)
             }
             holder.bottomBarExpand.setVisibility(View.GONE)
+            handlePostViewDecorator(holder, postItem, demandSet, chan)
             holder.invalidateBottomBar()
 
             val viewsEnabled = demandSet.selection == UiManager.Selection.DISABLED
@@ -762,6 +764,34 @@ class ViewUnit
                 holder.attachments.setVisibility(View.GONE)
                 holder.attachmentViewCount = 1
             }
+        }
+
+        /**
+         * Gives the chan's [chan.content.ChanPostDecorator], if it has one, the chance to attach a
+         * view to this post. Skipped for threadshots, which render offscreen with no interaction and
+         * would otherwise let a decorator start work nothing will consume.
+         */
+        private fun handlePostViewDecorator(
+            holder: PostViewHolder,
+            postItem: PostItem,
+            demandSet: DemandSet,
+            chan: Chan,
+        ) {
+            val state = holder.decoratorState
+            if (demandSet.selection == UiManager.Selection.THREADSHOT) {
+                uiManager.decorator().unbindPostView(state)
+                state.slot.setVisibility(View.GONE)
+                return
+            }
+            val view =
+                uiManager.decorator().bindPostView(
+                    chan,
+                    state,
+                    postItem,
+                    postItem.getBoardName(),
+                    postItem.getThreadNumber(),
+                )
+            state.slot.setVisibility(if (view != null) View.VISIBLE else View.GONE)
         }
 
         private fun handlePostViewIcons(holder: PostViewHolder) {
@@ -1519,7 +1549,7 @@ class ViewUnit
 
         private class PostViewHolder(
             parent: ViewGroup,
-            uiManager: UiManager,
+            private val uiManager: UiManager,
             dimensions: Lazy<Dimensions>,
         ) : BasePostViewHolder(
                 LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_post, parent, false),
@@ -1551,6 +1581,7 @@ class ViewUnit
             val attachmentInfo: TextView
             override val commentTextView: CommentTextView
             val textSelectionPadding: View?
+            val decoratorState: DecoratorUnit.DecoratorState
             val textBarPadding: View
             val bottomBar: View
             val bottomBarReplies: TextView
@@ -1601,6 +1632,8 @@ class ViewUnit
                 attachmentInfo = itemView.findViewById<TextView>(R.id.attachment_info)
                 this.commentTextView = itemView.findViewById<CommentTextView>(R.id.comment)
                 textSelectionPadding = itemView.findViewById<View?>(R.id.text_selection_padding)
+                decoratorState =
+                    DecoratorUnit.DecoratorState(itemView.findViewById<ViewGroup>(R.id.decorator))
                 textBarPadding = itemView.findViewById<View>(R.id.text_bar_padding)
                 bottomBar = itemView.findViewById<View>(R.id.bottom_bar)
                 bottomBarReplies = itemView.findViewById<TextView>(R.id.bottom_bar_replies)
@@ -1800,6 +1833,9 @@ class ViewUnit
 
             override fun onViewDetachedFromWindow(v: View) {
                 resetAnimations()
+                // Detaching is how a row leaves the screen, so tell the decorator to stop whatever
+                // its view is doing. A row that comes back is rebound, which binds it again.
+                uiManager.decorator().unbindPostView(decoratorState)
             }
 
             override fun onApplyLimit(limited: Boolean) {
@@ -1814,12 +1850,38 @@ class ViewUnit
             val linkListener: LinkListener
                 get() = configurationSet.linkListener ?: defaultLinkListener
 
+            // Both the thread page and the post popup install their own LinkListener, and each is
+            // reached through the property above, so this is the one place every link click inside a
+            // post passes through -- the right place to offer it to the chan's decorator first.
+            private fun handleDecoratorLinkClick(
+                uri: Uri,
+                longClick: Boolean,
+            ): Boolean {
+                val configurationSet = configurationSet
+                val chan = get(configurationSet.chanName)
+                if (chan.postDecorator == null) {
+                    return false
+                }
+                val postItem = postItem
+                return uiManager.decorator().handleLinkClick(
+                    chan,
+                    postItem,
+                    postItem.getBoardName(),
+                    postItem.getThreadNumber(),
+                    uri,
+                    longClick,
+                )
+            }
+
             override fun onLinkClick(
                 view: CommentTextView,
                 uri: Uri,
                 extra: LinkListener.Extra,
                 confirmed: Boolean,
             ) {
+                if (handleDecoratorLinkClick(uri, false)) {
+                    return
+                }
                 this.linkListener.onLinkClick(view, uri, extra, confirmed)
             }
 
@@ -1828,6 +1890,9 @@ class ViewUnit
                 uri: Uri,
                 extra: LinkListener.Extra,
             ) {
+                if (handleDecoratorLinkClick(uri, true)) {
+                    return
+                }
                 this.linkListener.onLinkLongClick(view, uri, extra)
             }
 

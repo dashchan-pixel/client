@@ -131,6 +131,19 @@
                 android:layout_height="64dp"
                 android:visibility="gone" />
 
+            <!--
+                Slot for chan.content.ChanPostDecorator. Sits between the comment and the bottom
+                bar, and stays GONE unless the chan's decorator supplies a view for the bound post.
+                Padded to line up with the comment text above it.
+            -->
+            <FrameLayout
+                android:id="@+id/decorator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:paddingRight="16dp"
+                android:visibility="gone" />
+
             <View
                 android:id="@+id/text_bar_padding"
                 android:layout_width="match_parent"

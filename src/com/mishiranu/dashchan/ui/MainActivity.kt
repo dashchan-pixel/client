@@ -1679,6 +1679,9 @@ class MainActivity :
     override fun onFinish() {
         super.onFinish()
 
+        // Decorator actions outlive the post that started them, so drop the ones still running
+        // instead of letting them come back to a dead activity.
+        uiManager.decorator().cancelAll()
         postingBinder?.unregister(postingGlobalCallback)
         postingBinder = null
         downloadBinderField?.unregister(downloadCallback)

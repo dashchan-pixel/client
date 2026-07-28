@@ -123,6 +123,7 @@ class ChanManager private constructor() {
         val classPerformer: String?,
         val classLocator: String?,
         val classMarkup: String?,
+        val classPostDecorator: String?,
     ) {
         enum class Type {
             CHAN,
@@ -154,6 +155,7 @@ class ChanManager private constructor() {
             classPerformer: String,
             classLocator: String,
             classMarkup: String,
+            classPostDecorator: String?,
         ) : this(
             Type.CHAN,
             name,
@@ -172,6 +174,7 @@ class ChanManager private constructor() {
             classPerformer,
             classLocator,
             classMarkup,
+            classPostDecorator,
         )
 
         constructor(
@@ -201,6 +204,7 @@ class ChanManager private constructor() {
             null,
             null,
             null,
+            null,
         )
 
         fun changeTrustState(trusted: Boolean): ExtensionItem {
@@ -224,6 +228,7 @@ class ChanManager private constructor() {
                 classPerformer,
                 classLocator,
                 classMarkup,
+                classPostDecorator,
             )
         }
     }
@@ -691,6 +696,7 @@ class ChanManager private constructor() {
                 ChanLocator(fallbackChanProvider),
                 ChanMarkup(fallbackChanProvider),
                 null,
+                null,
             )
         fallbackChanProvider.set(fallbackChan)
         this.fallbackChan = fallbackChan
@@ -790,6 +796,9 @@ class ChanManager private constructor() {
         private const val META_CHAN_EXTENSION_CLASS_PERFORMER = "chan.extension.class.performer"
         private const val META_CHAN_EXTENSION_CLASS_LOCATOR = "chan.extension.class.locator"
         private const val META_CHAN_EXTENSION_CLASS_MARKUP = "chan.extension.class.markup"
+
+        // Optional: absent for every extension that does not decorate posts.
+        private const val META_CHAN_EXTENSION_CLASS_POST_DECORATOR = "chan.extension.class.postdecorator"
 
         private const val FEATURE_LIB_EXTENSION = "lib.extension"
         private const val META_LIB_EXTENSION_NAME = "lib.extension.name"
@@ -919,6 +928,10 @@ class ChanManager private constructor() {
                 classPerformer = extendClassName(classPerformer, packageInfo.packageName)
                 classLocator = extendClassName(classLocator, packageInfo.packageName)
                 classMarkup = extendClassName(classMarkup, packageInfo.packageName)
+                val classPostDecorator =
+                    data.getString(META_CHAN_EXTENSION_CLASS_POST_DECORATOR)?.let {
+                        extendClassName(it, packageInfo.packageName)
+                    }
                 val supported = apiVersion >= MIN_VERSION && apiVersion <= MAX_VERSION
                 extensionItem =
                     ExtensionItem(
@@ -937,6 +950,7 @@ class ChanManager private constructor() {
                         classPerformer,
                         classLocator,
                         classMarkup,
+                        classPostDecorator,
                     )
             } else if (libExtension) {
                 val source = data.getString(META_LIB_EXTENSION_SOURCE)
@@ -1020,6 +1034,27 @@ class ChanManager private constructor() {
                             chanProvider,
                             resources,
                         )
+                    // Optional, and deliberately isolated: a decorator that fails to load must cost
+                    // the user its decorations, not the whole chan. The surrounding catch would
+                    // discard the extension entirely.
+                    val postDecorator: ChanPostDecorator? =
+                        chanItem.classPostDecorator?.let { className ->
+                            try {
+                                ChanPostDecorator.INITIALIZER.initialize(
+                                    classLoader,
+                                    className,
+                                    chanName,
+                                    chanProvider,
+                                    resources,
+                                )
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            } catch (e: LinkageError) {
+                                e.printStackTrace()
+                                null
+                            }
+                        }
                     val icon =
                         if (chanItem.iconResId != 0) {
                             resources.getDrawable(chanItem.iconResId, null)
@@ -1034,6 +1069,7 @@ class ChanManager private constructor() {
                             performer,
                             locator,
                             markup,
+                            postDecorator,
                             icon,
                         )
                     chanProvider.set(chan)

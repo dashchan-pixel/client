@@ -31,6 +31,7 @@ class DialogMenu(
 ) {
     private val listItems = ArrayList<ListItem>()
     private var title: CharSequence? = null
+    private var footerView: View? = null
 
     private enum class ViewType { ITEM, MORE, CHECK }
 
@@ -83,9 +84,20 @@ class DialogMenu(
         runnable: Runnable,
     ): DialogMenu = add(ViewType.CHECK, title, checked, runnable)
 
+    /**
+     * Puts `view` below the entry list, for a menu that needs a control a list of entries cannot
+     * express. Must be set before [create]; [update] does not rebuild it.
+     */
+    fun setFooterView(view: View?): DialogMenu {
+        footerView = view
+        return this
+    }
+
     private fun getRecyclerView(dialog: AlertDialog): RecyclerView {
         val custom = dialog.findViewById<FrameLayout>(android.R.id.custom)
-        return custom.getChildAt(0) as RecyclerView
+        val child = custom.getChildAt(0)
+        // A footer wraps the list in a LinearLayout, so the list is not always the direct child.
+        return child as? RecyclerView ?: (child as ViewGroup).getChildAt(0) as RecyclerView
     }
 
     private fun setAdapter(
@@ -126,9 +138,39 @@ class DialogMenu(
         val density = ResourceUtils.obtainDensity(recyclerView)
         recyclerView.clipToPadding = false
         recyclerView.setPadding(0, (8f * density).toInt(), 0, (8f * density).toInt())
-        val dialog = builder.setView(recyclerView).create()
+        val dialog = builder.setView(wrapWithFooter(builder.context, recyclerView)).create()
         updateInternal(dialog, recyclerView)
         return dialog
+    }
+
+    /**
+     * Places the footer under the list rather than inside it, so it stays put while the entries
+     * scroll. The list carries the weight, so a long entry list shrinks before the footer does.
+     */
+    private fun wrapWithFooter(
+        context: Context,
+        recyclerView: RecyclerView,
+    ): View {
+        val footerView = this.footerView ?: return recyclerView
+        val wrapper = LinearLayout(context)
+        wrapper.orientation = LinearLayout.VERTICAL
+        wrapper.addView(
+            recyclerView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f,
+            ),
+        )
+        ViewUtils.removeFromParent(footerView)
+        wrapper.addView(
+            footerView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
+        )
+        return wrapper
     }
 
     private class Adapter(

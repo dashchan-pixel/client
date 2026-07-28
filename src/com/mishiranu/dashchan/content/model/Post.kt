@@ -7,6 +7,13 @@ import chan.util.StringUtils
 import com.mishiranu.dashchan.util.FlagUtils
 import java.io.IOException
 
+/**
+ * A parsed post.
+ *
+ * [extra] is an opaque extension-owned payload, empty when the extension supplied none. The client
+ * never interprets it: it is stored and restored verbatim, including through the post cache, so a
+ * [chan.content.ChanPostDecorator] can render data that has no representation in this model.
+ */
 class Post private constructor(
     @JvmField val number: PostNumber,
     @JvmField val deleted: Boolean,
@@ -23,6 +30,7 @@ class Post private constructor(
     @JvmField val attachments: List<Attachment>,
     @JvmField val icons: List<Icon>,
     @JvmField val vote: Vote?,
+    @JvmField val extra: String,
 ) : Comparable<Post> {
     interface Attachment {
         class File private constructor(
@@ -348,6 +356,10 @@ class Post private constructor(
             writer.value(vote.dislike)
             writer.endObject()
         }
+        if (extra.isNotEmpty()) {
+            writer.name("extra")
+            writer.value(extra)
+        }
         writer.endObject()
     }
 
@@ -378,6 +390,9 @@ class Post private constructor(
         @JvmField var icons: MutableList<Icon>? = null
 
         @JvmField var vote: Vote? = null
+
+        /** Opaque extension-owned payload. See [Post.extra]. */
+        @JvmField var extra: String? = null
 
         var isSage: Boolean
             get() = FlagUtils.get(flags, Flags.SAGE)
@@ -461,6 +476,7 @@ class Post private constructor(
                 attachments.orEmpty(),
                 icons.orEmpty(),
                 vote,
+                StringUtils.emptyIfNull(extra),
             )
         }
     }
@@ -486,6 +502,7 @@ class Post private constructor(
             var attachments: List<Attachment> = emptyList()
             var icons: List<Icon> = emptyList()
             var vote: Vote? = null
+            var extra = ""
             reader.startObject()
             while (!reader.endStruct()) {
                 when (reader.nextName()) {
@@ -670,6 +687,10 @@ class Post private constructor(
                         vote = Vote(like, dislike)
                     }
 
+                    "extra" -> {
+                        extra = reader.nextString()!!
+                    }
+
                     else -> {
                         reader.skip()
                     }
@@ -691,6 +712,7 @@ class Post private constructor(
                 attachments,
                 icons,
                 vote,
+                extra,
             )
         }
     }

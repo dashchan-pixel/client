@@ -2393,6 +2393,12 @@ class PostsPage :
         val readViewModel = getViewModel(ReadViewModel::class.java)
         val retainableExtra = getRetainableExtra(RetainableExtra.FACTORY)
         retainableExtra.cacheState = cacheState
+        // The cache now holds what the board just said, so a decorator's local payload replacement
+        // has to give way to it. Rebind explicitly: a post that came back identical to its cached
+        // copy is reported as unchanged, so extraction alone would never redraw it.
+        if (uiManager.decorator().discardExtraOverrides(this.adapter)) {
+            scheduleNotifyDataSetChanged()
+        }
         if ((readViewModel.visibleReadResult || this.autoRefreshInterval > 0) && !hasExtractTask() && retainableExtra.shouldExtract()) {
             consumeReplies.consume()
             if (!readViewModel.visibleReadResult) {
@@ -2420,6 +2426,24 @@ class PostsPage :
     }
 
     private var postNotifyDataSetChanged: Runnable? = null
+
+    private fun scheduleNotifyDataSetChanged() {
+        if (postNotifyDataSetChanged == null) {
+            postNotifyDataSetChanged =
+                Runnable {
+                    this.adapter.notifyDataSetChanged()
+                    if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
+                        updateImportantPostsFastScrollBarDecorationData()
+                        updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews =
+                            false
+                    }
+                }
+        }
+        val recyclerView = getRecyclerView()
+        recyclerView.removeCallbacks(postNotifyDataSetChanged)
+        recyclerView.post(postNotifyDataSetChanged)
+    }
+
     private var updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews = false
 
     override fun onPostItemMessage(
@@ -2436,19 +2460,7 @@ class PostsPage :
         val recyclerView = getRecyclerView()
         when (message) {
             UiManager.Message.POST_INVALIDATE_ALL_VIEWS -> {
-                if (postNotifyDataSetChanged == null) {
-                    postNotifyDataSetChanged =
-                        Runnable {
-                            this.adapter.notifyDataSetChanged()
-                            if (updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews) {
-                                updateImportantPostsFastScrollBarDecorationData()
-                                updateImportantPostsFastScrollBarDecorationDataAfterInvalidateAllViews =
-                                    false
-                            }
-                        }
-                }
-                recyclerView.removeCallbacks(postNotifyDataSetChanged)
-                recyclerView.post(postNotifyDataSetChanged)
+                scheduleNotifyDataSetChanged()
             }
 
             UiManager.Message.INVALIDATE_COMMENT_VIEW -> {

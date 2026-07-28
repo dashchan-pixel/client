@@ -36,6 +36,7 @@ class UiManager(
     private val viewUnit: ViewUnit
     private val dialogUnit: DialogUnit
     private val interactionUnit: InteractionUnit
+    private val decoratorUnit: DecoratorUnit
     private val observable = WeakObservable<Observer>()
 
     private val callback: Callback?
@@ -45,6 +46,7 @@ class UiManager(
         viewUnit = ViewUnit(this)
         dialogUnit = DialogUnit(this)
         interactionUnit = InteractionUnit(this)
+        decoratorUnit = DecoratorUnit(this)
         this.callback = callback
         this.localNavigator = localNavigator
     }
@@ -54,6 +56,8 @@ class UiManager(
     fun dialog(): DialogUnit = dialogUnit
 
     fun interaction(): InteractionUnit = interactionUnit
+
+    fun decorator(): DecoratorUnit = decoratorUnit
 
     fun callback(): Callback? = callback
 

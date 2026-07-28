@@ -10,6 +10,11 @@ class Chan internal constructor(
     @JvmField val performer: ChanPerformer,
     @JvmField val locator: ChanLocator,
     @JvmField val markup: ChanMarkup,
+    /**
+     * Optional fifth component: `null` when the extension declares no post decorator, or when its
+     * class failed to load. Everything that reads it must tolerate absence.
+     */
+    @JvmField val postDecorator: ChanPostDecorator?,
     @JvmField internal val icon: Drawable?,
 ) {
     internal class Provider(
