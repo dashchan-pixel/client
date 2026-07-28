@@ -587,12 +587,13 @@ class PostsAdapter(
                 uiManager.dialog().createStackInstance(),
                 this,
                 callback,
-                true,
-                false,
-                true,
-                true,
-                true,
-                null,
+                mayCollapse = true,
+                isDialog = false,
+                allowMyMarkEdit = true,
+                allowHiding = true,
+                allowCommands = true,
+                allowGoToPost = true,
+                repliesToPost = null,
             )
         recyclerKeeper = RecyclerKeeper(recyclerView)
         this.recyclerView = recyclerView

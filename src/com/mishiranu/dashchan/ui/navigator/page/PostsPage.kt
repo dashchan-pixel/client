@@ -2178,17 +2178,17 @@ class PostsPage :
     }
 
     /**
-     * Snapshots the currently loaded posts as the `posts` array handed to a thread command. Comments go
-     * out as the post's HTML and attachments as the files the post arrived with, the same forms the
-     * replacements come back in — always the post as it arrived, never an override a previous run left
-     * behind, so re-running a command is idempotent.
+     * Snapshots [postItems] as the `posts` array handed to a thread command. Comments go out as the
+     * post's HTML and attachments as the files the post arrived with, the same forms the replacements
+     * come back in — always the post as it arrived, never an override a previous run left behind, so
+     * re-running a command is idempotent.
      *
      * Only a post's [files][Post.Attachment.File] are handed over: what the chan embedded, and what the
      * app parsed out of the comment, is not a file a script could point elsewhere.
      */
-    private fun collectThreadPosts(): List<CommandRunner.ThreadPost> {
+    private fun collectThreadPosts(postItems: List<PostItem>): List<CommandRunner.ThreadPost> {
         val posts = ArrayList<CommandRunner.ThreadPost>()
-        for (postItem in adapter) {
+        for (postItem in postItems) {
             val post = postItem.getPost()
             posts.add(
                 CommandRunner.ThreadPost(
@@ -2240,15 +2240,21 @@ class PostsPage :
     }
 
     /**
-     * Runs [command] over the thread's posts and applies its inline replacements to the displayed
-     * comments. [notifyEmpty] toasts when a manual run changed nothing, so the user gets feedback that
-     * it ran; auto-runs stay silent.
+     * Runs [command] over [postItems] and applies its inline replacements to the displayed comments.
+     * [notifyEmpty] toasts when a manual run changed nothing, so the user gets feedback that it ran;
+     * auto-runs stay silent.
+     *
+     * [postItems] is the whole thread for a run started from the thread menu and a single post for one
+     * started from that post's context menu (see [onRunPostCommand]). It is snapshotted here rather
+     * than read again when the result arrives, so what the command was handed and what its result is
+     * applied to are the same posts even if the thread has been refreshed meanwhile.
      */
     private fun runThreadCommand(
         command: CommandsStorage.CommandItem,
+        postItems: List<PostItem> = adapter.toList(),
         notifyEmpty: Boolean = true,
     ) {
-        val posts = collectThreadPosts()
+        val posts = collectThreadPosts(postItems)
         commandsProgress.start()
         val run =
             CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
@@ -2260,7 +2266,7 @@ class PostsPage :
                 }
                 when (result) {
                     is CommandRunner.ThreadResult.Success -> {
-                        val changed = applyThreadChanges(result.changes)
+                        val changed = applyThreadChanges(postItems, result.changes)
                         if (changed == 0 && notifyEmpty) {
                             show(R.string.command_no_changes)
                         }
@@ -2297,19 +2303,26 @@ class PostsPage :
     }
 
     /**
-     * Applies a thread command's [changes] (post number → replacement comment and files) to the loaded
-     * posts, overriding what the matching posts display and clearing any override on the rest, then
-     * rebinds. Returns how many posts the command changed.
+     * Applies a thread command's [changes] (post number → replacement comment and files) to [postItems],
+     * overriding what the matching posts display and clearing any override on the rest, then rebinds.
+     * Returns how many posts the command changed.
+     *
+     * Only the posts the run was given are touched: a run over a single post must leave the overrides of
+     * the posts it never saw alone, while a run over the whole thread clearing them is what makes
+     * re-running a command replace its previous result rather than add to it.
      *
      * A post whose files were replaced also has its gallery entry rebuilt, since the gallery is a list
      * of its own, filled when a post is loaded — leaving it alone would open the file the post no longer
      * shows.
      */
-    private fun applyThreadChanges(changes: Map<String, CommandRunner.ThreadChange>): Int {
+    private fun applyThreadChanges(
+        postItems: List<PostItem>,
+        changes: Map<String, CommandRunner.ThreadChange>,
+    ): Int {
         val chan = chan
         val gallerySet = adapter.gallerySet
-        var changed = 0
-        for (postItem in adapter) {
+        val changedPostItems = ArrayList<PostItem>()
+        for (postItem in postItems) {
             val change = changes[postItem.getPostNumber().toString()]
             postItem.setCommentOverride(change?.comment)
             if (postItem.setAttachmentsOverride(chan, change?.attachments)) {
@@ -2317,11 +2330,34 @@ class PostsPage :
                 gallerySet.put(postItem.getPostNumber(), postItem.getAttachmentItems())
             }
             if (change != null) {
-                changed++
+                changedPostItems.add(postItem)
             }
         }
         notifyAllAdaptersChanged()
-        return changed
+        // The dialogs standing over these posts show the page's own post items, so the override is
+        // already theirs — but their lists are not this adapter's, and one of them may be where the
+        // command was started from. A post whose override was only cleared is not in the changes at all,
+        // which is why the rebind above is not just this.
+        for (postItem in changedPostItems) {
+            uiManager.sendPostItemMessage(postItem, UiManager.Message.POST_INVALIDATE_ALL_VIEWS)
+        }
+        return changedPostItems.size
+    }
+
+    /**
+     * Runs a per-post thread command over the one post its context menu was opened on (see
+     * [UiManager.Observer.onRunPostCommand]). Broadcast to every page, so the posts that aren't this
+     * thread's are dropped — the same guard [onPostItemMessage] uses.
+     */
+    override fun onRunPostCommand(
+        postItem: PostItem,
+        command: CommandsStorage.CommandItem,
+    ) {
+        // The list's own post item, not the one the menu was built from: the override belongs on what
+        // this page renders, which is the same object for every menu that can reach here but need not
+        // stay so.
+        val target = adapter.findPostItem(postItem.getPostNumber()) ?: return
+        runThreadCommand(command, listOf(target))
     }
 
     private fun initializeImportantPostsMarksFastScrollBarDecoration(

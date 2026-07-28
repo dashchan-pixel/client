@@ -56,12 +56,13 @@ class SearchAdapter(
                 uiManager.dialog().createStackInstance(),
                 null,
                 callback,
-                true,
-                false,
-                false,
-                false,
-                false,
-                null,
+                mayCollapse = true,
+                isDialog = false,
+                allowMyMarkEdit = false,
+                allowHiding = false,
+                allowCommands = false,
+                allowGoToPost = false,
+                repliesToPost = null,
             )
         demandSet.highlightText = mutableSetOf(searchQuery!!)
     }

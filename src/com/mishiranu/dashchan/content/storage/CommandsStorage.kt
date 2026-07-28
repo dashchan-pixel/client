@@ -457,6 +457,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * the `process` of a fold over the thread's posts — it takes a single `post` and returns just
          * that post's replacement — which trades n+1 engine calls for not having to build the result
          * map by hand. See [com.mishiranu.dashchan.content.CommandRunner.runThread].
+         *
+         * Taking one post at a time is also what lets such a command be run on one post alone, from that
+         * post's context menu rather than the thread's menu — unless it is an [autoRun] one, which has
+         * already had its turn over the whole thread.
          */
         @JvmField var perPost = false
 

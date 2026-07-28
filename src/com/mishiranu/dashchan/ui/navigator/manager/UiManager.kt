@@ -81,6 +81,16 @@ class UiManager(
         ) {}
 
         fun onReloadAttachmentItem(attachmentItem: AttachmentItem) {}
+
+        /**
+         * Runs [command] over [postItem] alone, the page that shows the post applying what comes back.
+         * A [Message] can't say which command, and the run is the thread page's to own anyway — it
+         * holds the progress indicator and cancels what is still running when it goes away.
+         */
+        fun onRunPostCommand(
+            postItem: PostItem,
+            command: CommandsStorage.CommandItem,
+        ) {}
     }
 
     fun sendPostItemMessage(
@@ -97,6 +107,20 @@ class UiManager(
     ) {
         for (observer in observable) {
             observer.onPostItemMessage(postItem, message)
+        }
+    }
+
+    /**
+     * Asks the page showing [postItem] to run [command] over that one post; see
+     * [Observer.onRunPostCommand]. Broadcast like a [Message] is, so the pages the post doesn't belong
+     * to drop it.
+     */
+    fun runPostCommand(
+        postItem: PostItem,
+        command: CommandsStorage.CommandItem,
+    ) {
+        for (observer in observable) {
+            observer.onRunPostCommand(postItem, command)
         }
     }
 
@@ -217,6 +241,14 @@ class UiManager(
         var highlightText: MutableCollection<String> = mutableListOf()
     }
 
+    /**
+     * What a list or a dialog showing posts lets be done with them.
+     *
+     * @property allowCommands Whether a post's context menu may offer to run a per-post thread command
+     * on it. True only where the post's own page can apply what the command hands back — the thread
+     * page, which owns the run (see [Observer.onRunPostCommand]). A list of someone else's posts, or a
+     * dialog over posts this page does not hold, would show an entry that does nothing.
+     */
     class ConfigurationSet(
         @JvmField val chanName: String?,
         val replyable: Replyable?,
@@ -231,6 +263,7 @@ class UiManager(
         val isDialog: Boolean,
         val allowMyMarkEdit: Boolean,
         val allowHiding: Boolean,
+        val allowCommands: Boolean,
         val allowGoToPost: Boolean,
         val repliesToPost: PostNumber?,
     ) {
@@ -254,6 +287,7 @@ class UiManager(
                 isDialog,
                 allowMyMarkEdit,
                 allowHiding,
+                allowCommands,
                 allowGoToPost,
                 repliesToPost,
             )

@@ -39,7 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   receives a single `post` in place of `posts` and returns just that post's replacement (`undefined`/
  *   `null` leaves the post alone), the fold into the result map being supplied here. It runs the body
  *   n times instead of once, sequentially, in exchange for a body that only has to think about one
- *   post.
+ *   post. Such a command may also be run over a single post, from that post's context menu — the same
+ *   call with a `posts` of one.
  *
  * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
  * is no such context. Being async, a body may `await` (e.g.

@@ -24,6 +24,7 @@ import com.mishiranu.dashchan.content.Preferences.isUseInternalBrowser
 import com.mishiranu.dashchan.content.model.AttachmentItem
 import com.mishiranu.dashchan.content.model.PostItem
 import com.mishiranu.dashchan.content.service.DownloadService
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.text.style.LinkSuffixSpan
 import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.InstanceDialog
@@ -587,6 +588,40 @@ class InteractionUnit internal constructor(
         }
     }
 
+    /**
+     * Adds the Commands submenu, listing the per-post thread commands this post can be run through. Left
+     * out entirely where there are none, and where the post's page could not apply a result (see
+     * [ConfigurationSet.allowCommands]).
+     *
+     * No [PostSwipeAction] backs it: which command a swipe would run is not something a single gesture
+     * can say, and the entries change with what the user has defined.
+     */
+    private fun addCommandEntries(
+        entries: MutableList<MenuEntry>,
+        c: PostMenuContext,
+    ) {
+        if (!c.configurationSet.allowCommands ||
+            availablePostCommands(c.configurationSet.chanName, c.postItem.getBoardName()).isEmpty()
+        ) {
+            return
+        }
+        entries.add(
+            MenuEntry(
+                null,
+                MenuEntryKind.MORE,
+                R.string.commands,
+                false,
+                Runnable {
+                    showPostCommandsDialog(
+                        c.configurationSet.fragmentManager!!,
+                        c.configurationSet.chanName,
+                        c.postItem,
+                    )
+                },
+            ),
+        )
+    }
+
     private fun buildPostMenuEntries(
         configurationSet: ConfigurationSet,
         postItem: PostItem,
@@ -610,6 +645,7 @@ class InteractionUnit internal constructor(
         addModerationEntries(entries, menuContext)
         addPostStateEntries(entries, menuContext)
         addVoteEntries(entries, menuContext)
+        addCommandEntries(entries, menuContext)
         addDecoratorEntries(entries, menuContext, footer)
         return entries
     }
@@ -1111,6 +1147,51 @@ class InteractionUnit internal constructor(
                             )
                         },
                     )
+                    dialogMenu.create()
+                },
+            )
+        }
+
+        /**
+         * The commands a single post can be run through: [CommandsStorage.UseIn.THREAD] commands scoped
+         * to its forum/board that are written per post and don't run by themselves. A whole-thread body
+         * is handed every post at once and returns a map, so one post is not a thing it can be asked
+         * about; an auto-run command has already had its turn when the thread was read.
+         */
+        private fun availablePostCommands(
+            chanName: String?,
+            boardName: String?,
+        ): List<CommandsStorage.CommandItem> =
+            CommandsStorage
+                .getInstance()
+                .getAvailable(CommandsStorage.UseIn.THREAD, chanName, boardName)
+                .filter { it.perPost && !it.autoRun }
+
+        /**
+         * The Commands submenu: picking a command runs it over [postItem] alone, the page showing the
+         * post applying what comes back (see [UiManager.runPostCommand]).
+         *
+         * The list is read here rather than handed in, so the dialog rebuilt after a configuration change
+         * shows the commands as they are now instead of as they were when the menu was opened.
+         */
+        private fun showPostCommandsDialog(
+            fragmentManager: FragmentManager,
+            chanName: String?,
+            postItem: PostItem,
+        ) {
+            InstanceDialog(
+                fragmentManager,
+                null,
+                InstanceDialog.Factory { provider: InstanceDialog.Provider ->
+                    val uiManager: UiManager? = UiManager.Companion.extract(provider)
+                    val context = provider.context
+                    val dialogMenu = DialogMenu(context)
+                    for (command in availablePostCommands(chanName, postItem.getBoardName())) {
+                        val name = command.name
+                        val title =
+                            if (name.isNullOrEmpty()) context.getString(R.string.command) else name
+                        dialogMenu.add(title, Runnable { uiManager!!.runPostCommand(postItem, command) })
+                    }
                     dialogMenu.create()
                 },
             )

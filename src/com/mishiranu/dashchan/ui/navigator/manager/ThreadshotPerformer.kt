@@ -58,12 +58,13 @@ class ThreadshotPerformer(
                         null,
                         null,
                         null,
-                        false,
-                        false,
-                        false,
-                        false,
-                        false,
-                        null,
+                        mayCollapse = false,
+                        isDialog = false,
+                        allowMyMarkEdit = false,
+                        allowHiding = false,
+                        allowCommands = false,
+                        allowGoToPost = false,
+                        repliesToPost = null,
                     )
                 val demandSet = UiManager.DemandSet()
                 demandSet.selection = UiManager.Selection.THREADSHOT
