@@ -605,7 +605,24 @@ class ThreadsPage :
         if (number >= 0) {
             // loadDesiredThreadsPage will leave error message, if number is incorrect
             result = result or DrawerForm.RESULT_REMOVE_ERROR_MESSAGE
-            if (loadThreadsPage(number, false)) {
+            val success =
+                if (pageNumberExists(number)) {
+                    loadThreadsPage(number, false)
+                } else {
+                    // Too large for a page number: handle it as a thread number, as if "#number"
+                    // was entered. Thread numbers are usually way beyond the pages count, so this
+                    // is more useful than complaining about a page that can't exist.
+                    val page = getPage()
+                    uiManager.navigator()!!.navigatePosts(
+                        page.chanName,
+                        page.boardName,
+                        number.toString(),
+                        null,
+                        null,
+                    )
+                    true
+                }
+            if (success) {
                 result = result or DrawerForm.RESULT_SUCCESS
             }
         }
@@ -692,6 +709,10 @@ class ThreadsPage :
         append: Boolean,
     ): Boolean = loadThreadsPage(pageNumber, append, !getAdapter().isRealEmpty)
 
+    private fun pageNumberExists(pageNumber: Int): Boolean =
+        pageNumber >= PAGE_NUMBER_CATALOG &&
+            pageNumber < maxOf(chan.configuration.getPagesCount(getPage().boardName), 1)
+
     private fun loadThreadsPage(
         pageNumber: Int,
         append: Boolean,
@@ -701,10 +722,7 @@ class ThreadsPage :
         val chan = chan
         val readViewModel = getViewModel(ReadViewModel::class.java)
         val recyclerView = getRecyclerView()
-        if (pageNumber < PAGE_NUMBER_CATALOG ||
-            pageNumber >=
-            maxOf(chan.configuration.getPagesCount(page.boardName), 1)
-        ) {
+        if (!pageNumberExists(pageNumber)) {
             recyclerView.pullable.cancelBusyState()
             ClickableToast.show(getString(R.string.number_page_doesnt_exist__format, pageNumber))
             readViewModel.attach(null)
