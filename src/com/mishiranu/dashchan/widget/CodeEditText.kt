@@ -2,7 +2,6 @@ package com.mishiranu.dashchan.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Rect
 import android.text.Editable
 import android.text.Spannable
@@ -14,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.ScrollView
+import com.mishiranu.dashchan.util.GraphicsUtils
 import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
@@ -100,11 +100,17 @@ open class CodeEditText : SafePasteEditText {
         if (isUpdatingHighlight) return
         isUpdatingHighlight = true
 
-        val isNightMode = ThemeEngine.isNightMode(context)
-        val keywordColor = if (isNightMode) Color.parseColor("#CC7832") else Color.parseColor("#000080")
-        val stringColor = if (isNightMode) Color.parseColor("#6A8759") else Color.parseColor("#008000")
-        val commentColor = Color.parseColor("#808080")
-        val numberColor = if (isNightMode) Color.parseColor("#6897BB") else Color.parseColor("#0000FF")
+        // Which palette applies follows the surface this editor is drawn on, not the system's night
+        // mode: themes are picked by name in the app's own settings, so a dark theme is routinely in
+        // effect while the system is in day mode (and with "follow system" on, the night slot may
+        // even hold a light theme). The colour the theme gave the unhighlighted text says which it
+        // is — light text means a dark surface. Going by the system flag put the navy-and-green day
+        // palette on dark backgrounds, where it read as nearly black.
+        val onDarkSurface = GraphicsUtils.isLight(currentTextColor)
+        val keywordColor = if (onDarkSurface) KEYWORD_DARK else KEYWORD_LIGHT
+        val stringColor = if (onDarkSurface) STRING_DARK else STRING_LIGHT
+        val commentColor = if (onDarkSurface) COMMENT_DARK else COMMENT_LIGHT
+        val numberColor = if (onDarkSurface) NUMBER_DARK else NUMBER_LIGHT
 
         val spans = s.getSpans(0, s.length, ForegroundColorSpan::class.java)
         for (span in spans) {
@@ -345,6 +351,18 @@ open class CodeEditText : SafePasteEditText {
     companion object {
         private const val CONTEXT_LINES = 3
         private const val MAX_HEIGHT_FRACTION = 0.3f
+
+        // Both palettes are kept above 4.5:1 against the surface they belong to, comments aside:
+        // those are deliberately the quietest token of the four.
+        private val KEYWORD_DARK = 0xffff9d62.toInt()
+        private val STRING_DARK = 0xffa5d6a7.toInt()
+        private val COMMENT_DARK = 0xffa0a0a0.toInt()
+        private val NUMBER_DARK = 0xff90caf9.toInt()
+
+        private val KEYWORD_LIGHT = 0xff000080.toInt()
+        private val STRING_LIGHT = 0xff008000.toInt()
+        private val COMMENT_LIGHT = 0xff808080.toInt()
+        private val NUMBER_LIGHT = 0xff0000ff.toInt()
     }
 }
 
