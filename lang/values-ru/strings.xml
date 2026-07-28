@@ -515,6 +515,8 @@
 	<string name="similar_to_number__format">Похожие на %s</string>
 	<string name="since_date__format">Начиная с %s</string>
 	<string name="skip">Пропустить</string>
+	<string name="solve_invisible_recaptcha">Решать невидимую reCAPTCHA</string>
+	<string name="solve_invisible_recaptcha__summary">Решать сразу, не показывая кнопку загрузки</string>
 	<string name="some_posts_have_been_edited">Есть изменённые сообщения</string>
 	<string name="sorting">Сортировка</string>
 	<string name="sound">Звук</string>

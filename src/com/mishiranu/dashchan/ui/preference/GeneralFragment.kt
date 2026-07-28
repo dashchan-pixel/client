@@ -106,6 +106,13 @@ class GeneralFragment :
             R.string.use_javascript_for_recaptcha,
             R.string.use_javascript_for_recaptcha__summary,
         )
+        addCheck(
+            true,
+            Preferences.KEY_RECAPTCHA_SOLVE_INVISIBLE,
+            Preferences.DEFAULT_RECAPTCHA_SOLVE_INVISIBLE,
+            R.string.solve_invisible_recaptcha,
+            R.string.solve_invisible_recaptcha__summary,
+        )
 
         val captchaSolvingPreference =
             addMultipleEdit(

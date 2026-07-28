@@ -1284,6 +1284,17 @@ object Preferences {
                 DEFAULT_RECAPTCHA_JAVASCRIPT,
             )
 
+    const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
+    const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true
+
+    @JvmStatic
+    val isRecaptchaSolveInvisible: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_RECAPTCHA_SOLVE_INVISIBLE,
+                DEFAULT_RECAPTCHA_SOLVE_INVISIBLE,
+            )
+
     const val KEY_REMEMBER_HISTORY: String = "remember_history"
     const val DEFAULT_REMEMBER_HISTORY: Boolean = true
 

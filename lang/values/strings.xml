@@ -525,6 +525,8 @@
 	<string name="similar_to_number__format">Similar to %s</string>
 	<string name="since_date__format">Since %s</string>
 	<string name="skip">Skip</string>
+	<string name="solve_invisible_recaptcha">Solve invisible reCAPTCHA</string>
+	<string name="solve_invisible_recaptcha__summary">Solve at once instead of showing a load button</string>
 	<string name="some_posts_have_been_edited">Some posts have been edited</string>
 	<string name="sorting">Sorting</string>
 	<string name="sound">Sound</string>

@@ -138,8 +138,11 @@ class ReadCaptchaTask(
                         // An invisible captcha asks the user for nothing, so a load button would
                         // only add a tap that resolves itself. It is skipped even where a button
                         // is allowed, at the cost of the token possibly ageing out while the post
-                        // is still being written, which a refused send recovers from anyway.
-                        val invisible = foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE
+                        // is still being written, which a refused send recovers from anyway. The
+                        // setting exists for whoever prefers to mint the token by hand instead.
+                        val invisible =
+                            foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE &&
+                                Preferences.isRecaptchaSolveInvisible
                         if (!mayShowLoadButton || invisible) {
                             val response =
                                 readForegroundCaptcha(

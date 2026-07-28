@@ -358,6 +358,8 @@
 	<string name="show_thumbnail">Mostrar miniatura</string>
 	<string name="similar_posts">Posts similares</string>
 	<string name="similar_to_number__format">Similar a %s</string>
+	<string name="solve_invisible_recaptcha">Resolver reCAPTCHA invisível</string>
+	<string name="solve_invisible_recaptcha__summary">Resolver na hora em vez de mostrar um botão de carregar</string>
 	<string name="some_posts_have_been_edited">Alguns posts foram editados</string>
 	<string name="sorting">Ordenar</string>
 	<string name="specific_to_internal_services__sentence">A configuração a seguir só funciona no captcha ou

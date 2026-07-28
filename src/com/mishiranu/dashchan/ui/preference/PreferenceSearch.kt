@@ -152,6 +152,12 @@ object PreferenceSearch {
                 R.string.use_javascript_for_recaptcha,
                 R.string.use_javascript_for_recaptcha__summary,
             ),
+            Entry(
+                Screen.GENERAL,
+                R.string.services,
+                R.string.solve_invisible_recaptcha,
+                R.string.solve_invisible_recaptcha__summary,
+            ),
             Entry(Screen.GENERAL, R.string.services, R.string.captcha_solving, R.string.captcha_solving__summary),
             Entry(Screen.GENERAL, R.string.services, R.string.firewall_resolution_method, 0),
             Entry(Screen.GENERAL, R.string.connection, R.string.secure_connection, R.string.secure_connection__summary),
