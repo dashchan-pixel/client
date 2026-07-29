@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.ContextThemeWrapper
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
@@ -150,7 +151,12 @@ class FlowVideoView(
         errorView.visibility = GONE
         addView(errorView, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER))
 
-        // Controls mirror VideoUnit's single-video (portrait) layout.
+        // Controls mirror VideoUnit's single-video (portrait) layout. VideoUnit builds them from
+        // the gallery window context (Theme_Gallery), which is dark and pins colorAccent to white
+        // whatever the user theme is; the flow is hosted by an ordinary app window, so its bar has
+        // to be wrapped in the same theme or the scrub bar and time labels come out in the host
+        // theme's colours - dark on the black control bar under a light theme.
+        val controlsContext = ContextThemeWrapper(context, R.style.Theme_Gallery)
         val density = ResourceUtils.obtainDensity(context)
         controlsView = LinearLayout(context)
         controlsView.orientation = LinearLayout.VERTICAL
@@ -177,10 +183,10 @@ class FlowVideoView(
             LinearLayout.LayoutParams.WRAP_CONTENT,
         )
 
-        positionText = timeLabel(context)
-        durationText = timeLabel(context)
+        positionText = timeLabel(controlsContext)
+        durationText = timeLabel(controlsContext)
 
-        seekBar = SeekBar(context)
+        seekBar = SeekBar(controlsContext)
         seekBar.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(
@@ -204,7 +210,7 @@ class FlowVideoView(
             },
         )
 
-        playPauseButton = ImageButton(context, null, android.R.attr.borderlessButtonStyle)
+        playPauseButton = ImageButton(controlsContext, null, android.R.attr.borderlessButtonStyle)
         playPauseButton.scaleType = ImageView.ScaleType.CENTER
         playPauseButton.setOnClickListener { toggle() }
 
@@ -656,7 +662,7 @@ class FlowVideoView(
     private fun updatePlayPauseIcon() {
         playPauseButton.setImageResource(
             ResourceUtils.getResourceId(
-                context,
+                playPauseButton.context,
                 if (player?.isPlaying() == true) R.attr.iconButtonPause else R.attr.iconButtonPlay,
                 0,
             ),
