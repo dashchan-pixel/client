@@ -54,16 +54,7 @@ class CloudFlareResolver : FirewallResolver() {
         // An empty body carries no <title>, so treat null as "" rather than NPE-ing.
         val responseText = response.readString().orEmpty()
         val titleMatcher = titlePattern.matcher(responseText)
-        if (titleMatcher.find()) {
-            val cloudflareTitles = arrayOf("Attention Required! | Cloudflare", "Just a moment...", "Please wait…")
-            val title = titleMatcher.group(1)
-            for (cloudflareTitle in cloudflareTitles) {
-                if (cloudflareTitle == title) {
-                    return true
-                }
-            }
-        }
-        return false
+        return titleMatcher.find() && isChallengeTitle(titleMatcher.group(1))
     }
 
     private fun toKey(session: FirewallResolver.Session): FirewallResolver.Exclusive.Key = session.getKey(FirewallResolver.Identifier.Flag.USER_AGENT, FirewallResolver.Identifier.Flag.HOST)!!
@@ -128,6 +119,14 @@ class CloudFlareResolver : FirewallResolver() {
             cookies: Map<String, String>,
             title: String?,
         ): Boolean {
+            // Cloudflare already hands out a cf_clearance while the interstitial is still on
+            // screen when a non-interactive challenge has not passed: the title stays at the
+            // challenge one and a cf_chl_* challenge state cookie is left behind. That
+            // clearance is worthless — the next request is blocked again — and taking it also
+            // swallows the "auto then manual" fallback, which only runs on a null result.
+            if (isChallengeTitle(title) || cookies.keys.any { it.startsWith(COOKIE_CHALLENGE_PREFIX) }) {
+                return false
+            }
             val cookie = cookies[COOKIE_CLOUDFLARE] ?: return false
             setResult(CookieResult(cookie, uri))
             return true
@@ -163,5 +162,14 @@ class CloudFlareResolver : FirewallResolver() {
 
     companion object {
         private const val COOKIE_CLOUDFLARE = "cf_clearance"
+
+        // Transient state of an unfinished challenge, e.g. cf_chl_rc_ni for a
+        // non-interactive one. Cloudflare drops these once the challenge is passed.
+        private const val COOKIE_CHALLENGE_PREFIX = "cf_chl_"
+
+        private val CHALLENGE_TITLES =
+            arrayOf("Attention Required! | Cloudflare", "Just a moment...", "Please wait…")
+
+        private fun isChallengeTitle(title: String?): Boolean = title != null && CHALLENGE_TITLES.contains(title)
     }
 }
