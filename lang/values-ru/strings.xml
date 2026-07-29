@@ -591,6 +591,7 @@
 		в чистом виде без преобразования в трипкод.</string>
 	<string name="tripcodes_are_disabled">Трипкоды отключены</string>
 	<string name="unable_to_download_data">Ошибка при загрузке данных</string>
+	<string name="unavailable">Недоступно</string>
 	<string name="uninstall_extension">Удалить расширение</string>
 	<string name="unique_hash">Уникальный хеш</string>
 	<string name="unique_posters__genitive">Уникальных отправителей</string>
@@ -621,6 +622,7 @@
 	<string name="videos">Видео</string>
 	<string name="view__verb">Просмотреть</string>
 	<string name="views">Просмотры</string>
+	<string name="visible_address">Видимый адрес</string>
 	<string name="warning">Предупреждение</string>
 	<string name="watch_initially">Отслеживать изначально</string>
 	<string name="watch_initially__summary">Включать отслеживание при добавлении в избранное</string>

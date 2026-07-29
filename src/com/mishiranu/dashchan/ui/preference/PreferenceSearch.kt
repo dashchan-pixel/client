@@ -308,6 +308,7 @@ object PreferenceSearch {
             ChanEntry(R.string.connection, R.string.partial_thread_loading, R.string.partial_thread_loading__summary) {
                 it.readThreadPartially
             },
+            ChanEntry(R.string.connection, R.string.visible_address, 0) { !it.localMode },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.uninstall_extension, 0) { true },
         )

@@ -521,6 +521,7 @@
         inviata senza la conversione a tripcode.</string>
     <string name="tripcodes_are_disabled">I tripcode sono disabilitati</string>
     <string name="unable_to_download_data">Impossibile scaricare dati</string>
+    <string name="unavailable">Non disponibile</string>
     <string name="uninstall_extension">Disinstalla estensione</string>
     <string name="unique_hash">Hash unico</string>
     <string name="unique_posters__genitive">Poster unici</string>
@@ -548,6 +549,7 @@
     <string name="videos">Video</string>
     <string name="view__verb">Vedi</string>
     <string name="views">Visualizzazioni</string>
+    <string name="visible_address">Indirizzo visibile</string>
     <string name="warning">Avviso</string>
     <string name="watch_initially">Monitora subito</string>
     <string name="watch_initially__summary">Abilita watcher quando aggiungi il thread ai preferiti</string>

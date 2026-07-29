@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.view.View
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
@@ -16,6 +17,7 @@ import chan.content.InvalidResponseException
 import chan.http.HttpClient
 import chan.http.HttpException
 import chan.http.HttpHolder
+import chan.http.HttpRequest
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
@@ -38,6 +40,8 @@ class ChanFragment :
     internal var captchaPassPreference: Preference<List<String>>? = null
     internal var userAuthorizationPreference: Preference<List<String>>? = null
     private var cookiePreference: Preference<*>? = null
+    private var visibleAddressPreference: Preference<*>? = null
+    private var visibleAddressViewModel: VisibleAddressViewModel? = null
 
     private var anotherDomainMode = false
 
@@ -294,6 +298,19 @@ class ChanFragment :
                 R.string.partial_thread_loading__summary,
             )
         }
+        if (!localMode) {
+            val visibleAddressPreference =
+                addButton(getString(R.string.visible_address)) { visibleAddressSummary() }
+            this.visibleAddressPreference = visibleAddressPreference
+            visibleAddressPreference.setOnClickListener { checkVisibleAddress(force = true) }
+            val viewModel = ViewModelProvider(this).get(VisibleAddressViewModel::class.java)
+            this.visibleAddressViewModel = viewModel
+            viewModel.observe(viewLifecycleOwner) { address ->
+                viewModel.address = address
+                visibleAddressPreference.invalidate()
+            }
+            checkVisibleAddress(force = false)
+        }
 
         if (aiAgentsPostingSupport) {
             addHeader(R.string.ai_settings)
@@ -326,6 +343,8 @@ class ChanFragment :
         captchaPassPreference = null
         userAuthorizationPreference = null
         cookiePreference = null
+        visibleAddressPreference = null
+        visibleAddressViewModel = null
     }
 
     override fun onResume() {
@@ -362,6 +381,34 @@ class ChanFragment :
                 this.cookiePreference = null
             }
         }
+    }
+
+    /**
+     * The address the forum sees, from its Cloudflare `/cdn-cgi/trace` endpoint: what matters here
+     * is whether it matches the device's own address, i.e. whether the proxy configured above (Tor
+     * and friends) is actually carrying this forum's traffic.
+     */
+    private fun visibleAddressSummary(): CharSequence {
+        val viewModel = visibleAddressViewModel
+        val address = viewModel?.address
+        return when {
+            viewModel == null || viewModel.getTask() != null -> getString(R.string.loading__ellipsis)
+            address.isNullOrEmpty() -> getString(R.string.unavailable)
+            else -> address
+        }
+    }
+
+    /** [force] re-checks an address already resolved; otherwise a known one is kept. */
+    private fun checkVisibleAddress(force: Boolean) {
+        val viewModel = visibleAddressViewModel ?: return
+        if (viewModel.getTask() != null || (!force && viewModel.address != null)) {
+            return
+        }
+        val task = VisibleAddressTask(viewModel, Chan.get(getChanName()))
+        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        viewModel.attach(task)
+        viewModel.address = null
+        visibleAddressPreference?.invalidate()
     }
 
     private fun addAnotherDomainPreference(primaryDomain: String): Preference<String> {
@@ -503,6 +550,60 @@ class ChanFragment :
 
         companion object {
             @JvmField val SUCCESS = ErrorItem("")
+        }
+    }
+
+    class VisibleAddressViewModel : TaskViewModel<VisibleAddressTask, String>() {
+        /** Last result: `null` until the first check, empty when it failed. */
+        var address: String? = null
+    }
+
+    class VisibleAddressTask(
+        private val viewModel: VisibleAddressViewModel,
+        chan: Chan,
+    ) : HttpHolderTask<Unit, String>(chan) {
+        private val uri = chan.locator.buildPath("cdn-cgi", "trace")
+
+        override fun run(holder: HttpHolder): String =
+            try {
+                formatTrace(HttpRequest(uri, holder).perform()?.readString())
+            } catch (e: HttpException) {
+                // Not every forum is behind Cloudflare: /cdn-cgi/trace is a 404 for the rest.
+                Log.w(TAG, "Failed to read the visible address", e)
+                ""
+            }
+
+        override fun onComplete(result: String) {
+            viewModel.handleResult(result)
+        }
+
+        companion object {
+            private const val TAG = "VisibleAddress"
+
+            /** The response is a couple dozen `key=value` lines; anything longer isn't a trace. */
+            private const val MAX_TRACE_LINES = 64
+
+            private fun formatTrace(text: String?): String {
+                if (text.isNullOrEmpty()) {
+                    return ""
+                }
+                var ip: String? = null
+                var loc: String? = null
+                for (line in text.lineSequence().take(MAX_TRACE_LINES)) {
+                    val separator = line.indexOf('=')
+                    if (separator >= 0) {
+                        when (line.substring(0, separator)) {
+                            "ip" -> ip = line.substring(separator + 1).trim()
+                            "loc" -> loc = line.substring(separator + 1).trim()
+                        }
+                    }
+                }
+                if (ip.isNullOrEmpty()) {
+                    return ""
+                }
+                // Cloudflare answers "XX" when it can't place the address, common behind Tor exits.
+                return if (loc.isNullOrEmpty() || loc == "XX") ip else "$ip · $loc"
+            }
         }
     }
 

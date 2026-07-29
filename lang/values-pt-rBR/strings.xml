@@ -425,6 +425,7 @@
 		na forma pura sem converter a um tripcode.</string>
 	<string name="tripcodes_are_disabled">Tripcodes estão desabilitados</string>
 	<string name="unable_to_download_data">Não foi possível baixar</string>
+	<string name="unavailable">Indisponível</string>
 	<string name="uninstall_extension">Remover extensões</string>
 	<string name="unique_hash">Hash único</string>
 	<string name="unique_posters__genitive">Postadores únicos</string>
@@ -450,6 +451,7 @@
 	<string name="video_player">Reprodutor de vídeo</string>
 	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
+	<string name="visible_address">Endereço visível</string>
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>
 	<string name="wifi_only">Somente Wi-Fi</string>

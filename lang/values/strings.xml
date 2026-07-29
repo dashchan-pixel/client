@@ -606,6 +606,7 @@
 		in clear form without conversion to tripcode.</string>
 	<string name="tripcodes_are_disabled">Tripcodes are disabled</string>
 	<string name="unable_to_download_data">Unable to download data</string>
+	<string name="unavailable">Unavailable</string>
 	<string name="uninstall_extension">Uninstall extension</string>
 	<string name="unique_hash">Unique hash</string>
 	<string name="unique_posters__genitive">Unique posters</string>
@@ -637,6 +638,7 @@
 	<string name="videos">Videos</string>
 	<string name="view__verb">View</string>
 	<string name="views">Views</string>
+	<string name="visible_address">Visible address</string>
 	<string name="warning">Warning</string>
 	<string name="watch_initially">Watch initially</string>
 	<string name="watch_initially__summary">Enable watcher when thread is added to favorites</string>
