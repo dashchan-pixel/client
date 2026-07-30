@@ -159,6 +159,14 @@ class ContentsFragment : PreferenceFragment() {
         }
         clearCachePreference.invalidate()
 
+        // Only the mode that actually edits favorites can remove the thread that ended: in
+        // notify-only mode favorites are left untouched, so the check would do nothing.
+        addDependency(
+            Preferences.KEY_FAVORITE_CONTINUATION_REMOVE,
+            Preferences.KEY_FAVORITE_CONTINUATION,
+            true,
+            Preferences.FavoriteContinuationMode.ENABLED.value,
+        )
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.contents), null)
     }
 
