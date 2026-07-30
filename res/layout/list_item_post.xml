@@ -94,7 +94,7 @@
                 android:layout_height="wrap_content"
                 android:horizontalSpacing="6dp"
                 android:paddingLeft="10dp"
-                android:paddingTop="4dp"
+                android:paddingTop="10dp"
                 android:paddingRight="16dp"
                 android:paddingBottom="4dp"
                 android:verticalSpacing="10dp">
