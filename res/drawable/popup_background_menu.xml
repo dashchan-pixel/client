@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+	The background of Widget.OverlapPopupMenu, and the same rounded rectangle Material's
+	popup_background_material draws — except held 12dp clear of the bottom of the popup window, so
+	the window has room inside itself for the elevation shadow.
+
+	A PopupWindow reserves shadow room by growing its surface ceil(2 * z) on every side, which is a
+	constant, but the shadow it has to hold is not: the spot light sits at the top edge of the display
+	(light_y = 0dp, light_z = 500dp, light_radius = 800dp), so a popup opened low on the screen throws
+	its shadow that much further down — around 13dp of offset plus a 13dp penumbra at 8dp of elevation
+	near the bottom of a phone, against the 16dp the surface reserved. The shadow was cut off along a
+	hard horizontal line, and only looked right when the drawer was scrolled far enough for the popup
+	to open near the top of the screen.
+
+	The inset is empty space, not padding the user sees: the popup lays its content out inside the
+	background's padding, so the rounded rectangle still ends exactly where the last row does.
+
+	ThemeEngine's popup hook re-fills this with the theme card colour at the user's corner radius,
+	carrying the inset over — the colour and radius here only apply if that hook does not run.
+-->
+
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+	android:insetBottom="12dp">
+
+	<shape android:shape="rectangle">
+
+		<corners android:radius="2dp" />
+		<solid android:color="?android:attr/colorBackground" />
+
+	</shape>
+
+</inset>
