@@ -190,8 +190,18 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
     }
 
     fun getAttachmentDraftFileHolder(hash: String?): FileHolder? {
+        val file = getAttachmentDraftStoredFile(hash)
+        return if (file != null) FileHolder.obtain(file) else null
+    }
+
+    /**
+     * The file an attachment draft is stored in, or null when it is gone. The file is named after the
+     * content hash alone, with no extension, so anything that goes by the file name — the media type
+     * of a preview, of the player to open it in — has to take it from the draft's own name instead.
+     */
+    fun getAttachmentDraftStoredFile(hash: String?): File? {
         val file = getAttachmentDraftFile(hash)
-        return if (file != null && file.isFile) FileHolder.obtain(file) else null
+        return if (file != null && file.isFile) file else null
     }
 
     fun store(fileHolder: FileHolder): String? {

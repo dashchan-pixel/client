@@ -12,6 +12,10 @@ class AttachmentHolder(
     @JvmField val imageView: ImageView,
     @JvmField val warningButton: View,
     @JvmField val ratingButton: View,
+    /** Covers the preview above the controls strip: opens the file, and is gone without a preview. */
+    @JvmField val previewButton: View,
+    /** The play or audio icon over a preview that stands for something to play. */
+    @JvmField val previewBadge: ImageView,
 ) {
     @JvmField var hash: String? = null
 

@@ -11,6 +11,7 @@ import android.content.ServiceConnection
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Outline
 import android.graphics.Rect
 import android.media.MediaMetadataRetriever
@@ -43,9 +44,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
-import chan.content.Chan
 import chan.content.Chan.Companion.get
-import chan.content.Chan.Companion.getFallback
 import chan.content.ChanConfiguration
 import chan.content.ChanConfiguration.Posting
 import chan.content.ChanMarkup
@@ -61,6 +60,7 @@ import chan.util.StringUtils.nullIfEmpty
 import com.google.android.material.button.MaterialButton
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CommandRunner
+import com.mishiranu.dashchan.content.DraftAttachmentMedia
 import com.mishiranu.dashchan.content.Preferences.configuredFileNewname
 import com.mishiranu.dashchan.content.Preferences.getCaptchaPass
 import com.mishiranu.dashchan.content.Preferences.getPassword
@@ -78,6 +78,7 @@ import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.content.async.SendPostTask.ProgressState
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.model.ErrorItem
+import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
@@ -134,6 +135,7 @@ import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import com.mishiranu.dashchan.widget.UriPasteEditText
 import com.mishiranu.dashchan.widget.ViewFactory.makeListTextHeader
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -1831,6 +1833,13 @@ class PostingFragment :
             )
         }
 
+    /** Shows the attached file itself: an image or a video in the gallery, music in the audio player. */
+    private val attachmentPreviewListener =
+        View.OnClickListener { v: View ->
+            val holder = v.getTag() as AttachmentHolder
+            DraftAttachmentMedia.open(requireContext(), holder.hash, holder.name)
+        }
+
     private val attachmentWarningListener =
         View.OnClickListener { v: View ->
             val holder = v.getTag() as AttachmentHolder?
@@ -2047,6 +2056,23 @@ class PostingFragment :
             FrameLayout.LayoutParams.MATCH_PARENT,
         )
 
+        // Everything above the controls strip opens the file itself. It is a target of its own rather
+        // than a check inside the options click, so the strip keeps the whole width for the options and
+        // neither has to guess where the other one ends. With no preview the attachment is exactly as
+        // tall as the strip, which leaves this view no height and nothing to catch.
+        val preview = View(view.getContext())
+        setSelectableItemBackground(preview)
+        preview.setOnClickListener(attachmentPreviewListener)
+        preview.setOnLongClickListener(attachmentDragStartListener)
+        preview.setVisibility(View.GONE)
+        view.addView(preview, previewAreaLayoutParams(minHeight))
+        // Marks a preview that stands for something to play, the way a video or audio thumbnail is
+        // marked in a post: the same icons over the same dim.
+        val previewBadge = ImageView(view.getContext())
+        previewBadge.setScaleType(ImageView.ScaleType.CENTER)
+        previewBadge.setVisibility(View.GONE)
+        view.addView(previewBadge, previewAreaLayoutParams(minHeight))
+
         val controls = LinearLayout(view.getContext())
         controls.setOrientation(LinearLayout.HORIZONTAL)
         view.addView(controls, FrameLayout.LayoutParams.MATCH_PARENT, minHeight)
@@ -2118,11 +2144,14 @@ class PostingFragment :
                 imageView,
                 warningButton,
                 ratingButton,
+                preview,
+                previewBadge,
             )
         warningButton.setTag(holder)
         ratingButton.setTag(holder)
         removeButton.setTag(holder)
         options.setTag(holder)
+        preview.setTag(holder)
         attachments.add(holder)
         invalidateOptionsMenu()
         resizeComment(true)
@@ -2161,6 +2190,8 @@ class PostingFragment :
         var bitmap: Bitmap? = null
         val metrics = getResources().getDisplayMetrics()
         val targetImageSize = max(metrics.widthPixels, metrics.heightPixels)
+        val video = DraftAttachmentMedia.isVideo(name)
+        val audio = DraftAttachmentMedia.isAudio(name)
         if (fileHolder != null) {
             if (fileHolder.isImage) {
                 try {
@@ -2170,35 +2201,111 @@ class PostingFragment :
                 }
                 fileSize += " " + fileHolder.imageWidth + '×' + fileHolder.imageHeight
             }
-            if (bitmap == null) {
-                if (Chan.getFallback().locator.isVideoExtension(fileHolder.name)) {
-                    val retriever = MediaMetadataRetriever()
-                    try {
-                        fileHolder.openFileDescriptor().use { descriptor ->
-                            retriever.setDataSource(descriptor.getFileDescriptor())
-                            val fullBitmap = retriever.getFrameAtTime(-1)
-                            if (fullBitmap != null) {
-                                bitmap = reduceBitmapSize(fullBitmap, targetImageSize, true)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    } catch (e: OutOfMemoryError) {
-                        e.printStackTrace()
-                    }
-                }
+            // The type is taken from the draft's own name, not from the stored file's: the file is named
+            // after its content hash, so it has no extension of its own to go by, and this check used to
+            // match nothing at all — which is why videos went without a preview.
+            if (bitmap == null && (video || audio)) {
+                val mediaPreview = readMediaPreview(fileHolder, video, targetImageSize)
+                bitmap = mediaPreview.bitmap
+                fileSize += mediaPreview.summary
             }
         }
-        if (bitmap != null) {
-            holder.imageView.setVisibility(View.VISIBLE)
-            holder.imageView.setImageBitmap(bitmap)
-            holder.view.getLayoutParams().height = (128f * obtainDensity(this)).toInt()
-        }
+        applyAttachmentPreview(holder, bitmap, video, audio)
         holder.fileSize.setText(fileSize)
         if ((jpegData == null || jpegData.exifData == null) && (pngData == null || !pngData.hasMetadata)) {
             holder.warningButton.setVisibility(View.GONE)
         }
         updateAttachmentConfiguration(holder)
+    }
+
+    /**
+     * Gives the attachment its preview box: the image itself when there is one to show, the play or
+     * headset icon of what it stands for, and the tap target that opens the file.
+     */
+    private fun applyAttachmentPreview(
+        holder: AttachmentHolder,
+        previewBitmap: Bitmap?,
+        video: Boolean,
+        audio: Boolean,
+    ) {
+        // Music has no frame to show, and usually no cover art either, but it still needs somewhere to
+        // tap to play it, so it is given the preview box either way.
+        if (previewBitmap == null && !audio) {
+            return
+        }
+        holder.view.getLayoutParams().height = (128f * obtainDensity(this)).toInt()
+        if (previewBitmap != null) {
+            holder.imageView.setVisibility(View.VISIBLE)
+            holder.imageView.setImageBitmap(previewBitmap)
+        }
+        if (video || audio) {
+            holder.previewBadge.setImageDrawable(
+                getDrawable(
+                    holder.previewBadge.getContext(),
+                    if (video) R.attr.iconAttachmentVideo else R.attr.iconAttachmentAudio,
+                    0,
+                ),
+            )
+            // Dimmed only over a frame, where the icon needs the contrast — the empty box of a music
+            // file with no cover art has nothing to dim.
+            holder.previewBadge.setBackgroundColor(if (previewBitmap != null) PREVIEW_DIM_COLOR else 0)
+            holder.previewBadge.setVisibility(View.VISIBLE)
+        }
+        holder.previewButton.setContentDescription(
+            getString(if (video || audio) R.string.play else R.string.view__verb),
+        )
+        holder.previewButton.setVisibility(View.VISIBLE)
+    }
+
+    /** What a video or audio attachment can show of itself. */
+    private class MediaPreview(
+        val bitmap: Bitmap?,
+        /** Appended to the file size: the frame size of a video, and the duration of either. */
+        val summary: String,
+    )
+
+    private fun readMediaPreview(
+        fileHolder: FileHolder,
+        video: Boolean,
+        targetImageSize: Int,
+    ): MediaPreview {
+        var bitmap: Bitmap? = null
+        var summary = ""
+        try {
+            MediaMetadataRetriever().use { retriever ->
+                fileHolder.openFileDescriptor().use { descriptor ->
+                    retriever.setDataSource(descriptor.getFileDescriptor())
+                    if (video) {
+                        val fullBitmap = retriever.getFrameAtTime(-1)
+                        if (fullBitmap != null) {
+                            bitmap = reduceBitmapSize(fullBitmap, targetImageSize, true)
+                        }
+                        val width = extractMetadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                        val height = extractMetadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                        if (width > 0 && height > 0) {
+                            summary += " " + width + '×' + height
+                        }
+                    } else {
+                        val picture = retriever.getEmbeddedPicture()
+                        if (picture != null) {
+                            val fullBitmap = BitmapFactory.decodeByteArray(picture, 0, picture.size)
+                            if (fullBitmap != null) {
+                                bitmap = reduceBitmapSize(fullBitmap, targetImageSize, true)
+                            }
+                        }
+                    }
+                    val duration = extractMetadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    if (duration > 0) {
+                        summary += " " + formatDuration(duration)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } catch (e: OutOfMemoryError) {
+            e.printStackTrace()
+        }
+        return MediaPreview(bitmap, summary)
     }
 
     private fun updateAttachmentConfiguration(holder: AttachmentHolder) {
@@ -2686,6 +2793,31 @@ class PostingFragment :
         private const val EXTRA_REPLY_DATA_LIST = "replyDataList"
 
         private const val EXTRA_CAPTCHA_DRAFT = "captchaDraft"
+
+        /** The same shade a post's thumbnail is dimmed with under a play or audio icon. */
+        private const val PREVIEW_DIM_COLOR = 0x66000000.toInt()
+
+        /**
+         * Fills the attachment down to the top of the controls strip. An attachment with no preview is
+         * exactly as tall as that strip, which leaves nothing of the view — that is what keeps the
+         * preview target and its badge out of the way when there is no preview to speak of.
+         */
+        private fun previewAreaLayoutParams(stripHeight: Int): FrameLayout.LayoutParams =
+            FrameLayout
+                .LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ).apply { bottomMargin = stripHeight }
+
+        private fun extractMetadataInt(
+            retriever: MediaMetadataRetriever,
+            key: Int,
+        ): Int = retriever.extractMetadata(key)?.toIntOrNull() ?: 0
+
+        private fun formatDuration(milliseconds: Int): String {
+            val seconds = milliseconds / 1000
+            return String.format(Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
+        }
 
         private fun addHeader(
             layout: ViewGroup,

@@ -294,6 +294,33 @@ object NavigationUtils {
         )
     }
 
+    /**
+     * Hands a cached file to whatever app can display it, for the types the app has no viewer of its
+     * own for. Goes through the same temporary copy sharing does, since an outside app cannot read the
+     * cache directory.
+     */
+    @JvmStatic
+    fun openFileExternal(
+        context: Context,
+        file: File,
+        fileName: String?,
+    ) {
+        val data = CacheManager.getInstance().prepareFileForShare(file, fileName)
+        if (data == null) {
+            ClickableToast.show(R.string.cache_is_unavailable)
+            return
+        }
+        try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(data.first, data.second)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION),
+            )
+        } catch (e: ActivityNotFoundException) {
+            ClickableToast.show(R.string.unknown_address)
+        }
+    }
+
     @JvmStatic
     fun restartApplication(context: Context) {
         val intent =
