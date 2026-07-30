@@ -23,13 +23,21 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!--
+                The header row, and with it the thumbnail of a post with a single attachment (the
+                usual case — the attachments block below only takes over when Preferences
+                .isAllAttachments is on). Its top padding is 16dp rather than the 10dp of its left
+                padding because the 10dp is measured from the post border strip, which is itself
+                6dp in from the post's edge: 6 + 10 puts the thumbnail 16dp from the left, and the
+                16dp here gives it the same air above.
+            -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingLeft="10dp"
-                android:paddingTop="10dp"
+                android:paddingTop="16dp"
                 android:paddingRight="16dp"
                 android:paddingBottom="4dp">
 
