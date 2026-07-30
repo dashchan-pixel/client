@@ -380,7 +380,7 @@ class DrawerForm(
                     ListItem.Type.MENU,
                     MENU_ITEM_AUDIO_PLAYER,
                     iconResId,
-                    context.getString(R.string.audio_player),
+                    context.getString(R.string.audio),
                 ),
             )
             return true

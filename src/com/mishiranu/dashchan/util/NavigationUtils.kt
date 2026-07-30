@@ -179,7 +179,7 @@ object NavigationUtils {
             ) {
                 openImageVideo(context, internalUri)
                 handled = true
-            } else if (locator.isAudioUri(internalUri)) {
+            } else if (locator.isAudioUri(internalUri) && Preferences.isUseAudioPlayer) {
                 AudioPlayerService.start(context, targetChanName, internalUri, fileName)
                 handled = true
             }

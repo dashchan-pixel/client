@@ -41,6 +41,7 @@ import chan.util.CommonUtils.equals
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.ImageLoader
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.Preferences.getPassword
 import com.mishiranu.dashchan.content.async.ReadSinglePostTask
 import com.mishiranu.dashchan.content.async.SendLocalArchiveTask
@@ -1492,7 +1493,7 @@ class DialogUnit internal constructor(
         val chan = get(chanName)
         val uri = attachmentItem.getFileUri(chan)
         val type = attachmentItem.getType()
-        if (canDownload && type == AttachmentItem.Type.AUDIO) {
+        if (canDownload && type == AttachmentItem.Type.AUDIO && Preferences.isUseAudioPlayer) {
             start(context, chanName, uri, attachmentItem.getFileName(chan))
         } else if (canDownload &&
             (

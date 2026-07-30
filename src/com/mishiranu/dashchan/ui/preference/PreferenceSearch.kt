@@ -287,6 +287,12 @@ object PreferenceSearch {
             Entry(Screen.MEDIA, R.string.video_player, R.string.seek_any_frame, R.string.seek_any_frame__summary),
             Entry(Screen.MEDIA, R.string.video_player, R.string.multi_tap_seek, R.string.multi_tap_seek__summary),
             Entry(Screen.MEDIA, R.string.video_player, R.string.playback_speed_options, 0),
+            Entry(
+                Screen.MEDIA,
+                R.string.audio_player,
+                R.string.use_built_in_audio_player,
+                R.string.use_built_in_audio_player__summary,
+            ),
             Entry(Screen.MEDIA, R.string.additional, R.string.cache_size, 0),
             Entry(Screen.MEDIA, R.string.additional, R.string.clear_cache, 0),
         )

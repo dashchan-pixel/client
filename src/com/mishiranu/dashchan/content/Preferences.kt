@@ -1715,6 +1715,19 @@ object Preferences {
                 DEFAULT_USE_HTTPS,
             )
 
+    // Unlike the video player this one is opt-out: an audio attachment has nothing to show, so
+    // handing it to another app buys the user nothing the in-app player does not already do.
+    const val KEY_USE_AUDIO_PLAYER: String = "use_audio_player"
+    const val DEFAULT_USE_AUDIO_PLAYER: Boolean = true
+
+    @JvmStatic
+    val isUseAudioPlayer: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_USE_AUDIO_PLAYER,
+                DEFAULT_USE_AUDIO_PLAYER,
+            )
+
     const val KEY_USE_VIDEO_PLAYER: String = "use_video_player"
     const val DEFAULT_USE_VIDEO_PLAYER: Boolean = false
 

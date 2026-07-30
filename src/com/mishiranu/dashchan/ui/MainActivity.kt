@@ -218,7 +218,17 @@ class MainActivity :
 
     // A field, not a lambda passed inline: AudioPlayerService keeps state callbacks weakly
     private val audioPlayerStateCallback =
-        AudioPlayerService.StateCallback { active -> drawerForm.setAudioPlayerActive(active) }
+        AudioPlayerService.StateCallback { active ->
+            drawerForm.setAudioPlayerActive(active)
+            if (active) {
+                // The file is playing now, so bring up the controls instead of leaving the user to
+                // look for them in the drawer or in the notification shade.
+                showAudioPlayerDialogWhenResumed()
+            }
+        }
+
+    /** Set while the player started with the activity stopped, so its dialog waits for [onResume]. */
+    private var showAudioPlayerDialogOnResume = false
 
     // Without POST_NOTIFICATIONS the foreground service notifications (audio playback above all,
     // whose transport controls are the only way to stop it) are silently dropped.
@@ -1566,6 +1576,19 @@ class MainActivity :
         }
     }
 
+    /**
+     * Shows the player dialog, deferring it to [onResume] when the activity is not resumed: showing
+     * a dialog fragment past onSaveInstanceState throws, and the state the dialog reads is the
+     * service's rather than its own, so waiting costs nothing.
+     */
+    private fun showAudioPlayerDialogWhenResumed() {
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            showAudioPlayerDialog()
+        } else {
+            showAudioPlayerDialogOnResume = true
+        }
+    }
+
     private fun showDraftsDialog() {
         if (!DraftsStorage.getInstance().hasPostDrafts()) {
             // A row that outlived the drafts it stands for, rather than an empty list to look at
@@ -1739,6 +1762,13 @@ class MainActivity :
         this.navigateIntentOnResume = null
         if (navigateIntentOnResume != null) {
             navigateIntentUnchecked(navigateIntentOnResume)
+        }
+        if (showAudioPlayerDialogOnResume) {
+            showAudioPlayerDialogOnResume = false
+            // Playback may well have been stopped from the notification in the meantime
+            if (AudioPlayerService.isActive) {
+                showAudioPlayerDialog()
+            }
         }
         // Expanding a PiP window returns this task to the front on the system's initiative,
         // possibly before the window's activity managed to send C.ACTION_VIDEO_PIP: consume a

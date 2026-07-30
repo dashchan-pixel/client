@@ -35,6 +35,7 @@
 	<string name="archive__verb">Save to archive</string>
 	<string name="attach">Attach</string>
 	<string name="attachments_are_too_large">Attachments are too large</string>
+	<string name="audio">Audio</string>
 	<string name="audio_playback">Audio playback</string>
 	<string name="audio_player">Audio player</string>
 	<string name="autohide">Autohide</string>
@@ -622,6 +623,8 @@
 		applications when download finishes.</string>
 	<string name="updates">Updates</string>
 	<string name="updates_available__genitive">Updates available</string>
+	<string name="use_built_in_audio_player">Use built-in audio player</string>
+	<string name="use_built_in_audio_player__summary">Play audio attachments in the app</string>
 	<string name="use_built_in_video_player">Use built-in video player</string>
 	<string name="use_built_in_video_player__summary">Play WebM video attachments</string>
 	<string name="use_forum_settings">Use forum settings</string>

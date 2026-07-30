@@ -11,20 +11,27 @@ import android.os.Bundle
 import android.os.IBinder
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.service.AudioPlayerService
+import com.mishiranu.dashchan.ui.gallery.VideoSideControls
 import com.mishiranu.dashchan.util.ResourceUtils
+import com.mishiranu.dashchan.util.ViewUtils
+import com.mishiranu.dashchan.widget.DropdownPopup
 import com.mishiranu.dashchan.widget.ThemeEngine
+import kotlin.math.abs
 
 class AudioPlayerDialog : DialogFragment() {
     private var textView: TextView? = null
     private var seekBar: SeekBar? = null
     private var button: ImageButton? = null
+    private var speedButton: TextView? = null
 
     private var tracking = false
     private var shouldCancel = false
@@ -57,6 +64,7 @@ class AudioPlayerDialog : DialogFragment() {
                     textView.text = audioPlayerBinder.getFileName()
                     seekBar.max = audioPlayerBinder.duration.coerceAtLeast(0)
                     updatePlayState()
+                    updateSpeedState()
                     seekBarUpdate.run()
                 } else {
                     handleCancel()
@@ -112,6 +120,18 @@ class AudioPlayerDialog : DialogFragment() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         tracking = false
+        // The same speeds the video player offers, in a dropdown anchored to a text button. Hidden
+        // when the user has left only 1x enabled, since then there is nothing to choose between.
+        val speedButton = TextView(context, null, android.R.attr.borderlessButtonStyle)
+        this.speedButton = speedButton
+        speedButton.gravity = Gravity.CENTER
+        speedButton.typeface = ResourceUtils.TYPEFACE_MEDIUM
+        speedButton.minWidth = (48f * density).toInt()
+        speedButton.contentDescription = getString(R.string.playback_speed)
+        ViewUtils.setTextSizeScaled(speedButton, 14)
+        horizontal.addView(speedButton, LinearLayout.LayoutParams.WRAP_CONTENT, (48f * density).toInt())
+        speedButton.visibility = if (Preferences.enabledVideoSpeeds.size > 1) View.VISIBLE else View.GONE
+        speedButton.setOnClickListener { showSpeedPopup() }
         val seekBar = SeekBar(context)
         this.seekBar = seekBar
         ThemeEngine.applyStyle(seekBar)
@@ -154,6 +174,7 @@ class AudioPlayerDialog : DialogFragment() {
             ),
         )
         updatePlayState()
+        updateSpeedState()
         button.setOnClickListener {
             audioPlayerBinder?.togglePlayback()
         }
@@ -184,6 +205,7 @@ class AudioPlayerDialog : DialogFragment() {
         textView = null
         seekBar = null
         button = null
+        speedButton = null
     }
 
     override fun onResume() {
@@ -200,6 +222,26 @@ class AudioPlayerDialog : DialogFragment() {
         } else {
             // Dismissing a stopped fragment throws, so defer it to onResume
             shouldCancel = true
+        }
+    }
+
+    private fun updateSpeedState() {
+        val speedButton = this.speedButton ?: return
+        speedButton.text = VideoSideControls.formatSpeed(audioPlayerBinder?.speed ?: 1f)
+    }
+
+    private fun showSpeedPopup() {
+        val speedButton = this.speedButton ?: return
+        val audioPlayerBinder = this.audioPlayerBinder ?: return
+        val speeds = Preferences.enabledVideoSpeeds
+        DropdownPopup.show(
+            speedButton,
+            speedButton.context,
+            speeds.map { VideoSideControls.formatSpeed(it) },
+            speeds.indexOfFirst { abs(it - audioPlayerBinder.speed) < 0.001f },
+        ) { position ->
+            audioPlayerBinder.speed = speeds[position]
+            updateSpeedState()
         }
     }
 

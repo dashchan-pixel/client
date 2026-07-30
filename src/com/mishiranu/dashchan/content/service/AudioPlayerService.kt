@@ -201,6 +201,11 @@ class AudioPlayerService :
         if (player.isPlaying) {
             player.pause()
         } else {
+            // Playing again after the track ran out has to rewind first: play() alone would leave
+            // the player sitting at the end. This is what the session's own play command does too.
+            if (player.getPlaybackState() == Player.STATE_ENDED) {
+                player.seekTo(0)
+            }
             player.play()
         }
         // The player events refresh the notification and the bound dialog
@@ -256,6 +261,16 @@ class AudioPlayerService :
         fun seekTo(msec: Int) {
             player?.seekTo(msec.toLong())
         }
+
+        /**
+         * The playback speed, 1 while there is no player. Pitch is left alone, so a sped-up track
+         * still sounds like itself.
+         */
+        var speed: Float
+            get() = player?.getPlaybackParameters()?.speed ?: 1f
+            set(speed) {
+                player?.setPlaybackSpeed(speed)
+            }
     }
 
     override fun onBind(intent: Intent?): Binder? = this.Binder()
@@ -306,8 +321,8 @@ class AudioPlayerService :
             true,
         )
         player.setHandleAudioBecomingNoisy(true)
-        // The old MediaPlayer path restarted the file from the beginning once it completed
-        player.setRepeatMode(Player.REPEAT_MODE_ONE)
+        // A track plays once and stops at its end; the service stays up so it can be played again
+        player.setRepeatMode(Player.REPEAT_MODE_OFF)
         player.addListener(playerListener)
         player.setMediaItem(
             MediaItem

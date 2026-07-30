@@ -58,7 +58,7 @@ object DraftAttachmentMedia {
             return
         }
         val locator = Chan.getFallback().locator
-        if (isAudio(name)) {
+        if (isAudio(name) && Preferences.isUseAudioPlayer) {
             // No chan name: the file is the user's own, so there is no forum to credit it to.
             AudioPlayerService.start(context, null, uri, name)
         } else if (locator.isImageExtension(name) ||
@@ -66,7 +66,8 @@ object DraftAttachmentMedia {
         ) {
             NavigationUtils.openImageVideo(context, uri)
         } else {
-            // A video the built-in player is turned off for, or a type the app has no viewer for.
+            // A video or a track the built-in player is turned off for, or a type the app has no
+            // viewer for.
             NavigationUtils.openFileExternal(context, file, name)
         }
     }

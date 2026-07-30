@@ -29,6 +29,7 @@
     <string name="archive__verb">Archivia</string>
     <string name="attach">Allega</string>
     <string name="attachments_are_too_large">Gli allegati sono troppo grandi</string>
+    <string name="audio">Audio</string>
     <string name="audio_playback">Riproduzione audio</string>
     <string name="audio_player">Player audio</string>
     <string name="autohide">Autohide</string>
@@ -361,6 +362,7 @@
     <string name="play_after_scroll">Riproduci allo scorrimento</string>
     <string name="play_after_scroll__summary">Nascondi pulsante play prima di riprodurre il video</string>
     <string name="play_again">Riproduci nuovamente</string>
+    <string name="playback_speed">Velocità di riproduzione</string>
     <string name="playback_speed_options">Opzioni velocità di riproduzione</string>
     <string name="playback_error">Errore riproduzione</string>
     <string name="popular">Popolari</string>
@@ -535,6 +537,8 @@
         installare applicazioni quando il download finisce.</string>
     <string name="updates">Aggiornamenti</string>
     <string name="updates_available__genitive">Aggiornamenti disponibili</string>
+    <string name="use_built_in_audio_player">Usa il player audio interno</string>
+    <string name="use_built_in_audio_player__summary">Riproduci gli allegati audio nell\'app</string>
     <string name="use_built_in_video_player">Usa il player video interno</string>
     <string name="use_built_in_video_player__summary">Riproduci allegati video WebM</string>
     <string name="user_authorization">Autorizzazione utente</string>

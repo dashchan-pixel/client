@@ -22,6 +22,7 @@
 	<string name="archive__verb">Arquivar</string>
 	<string name="attach">Anexar</string>
 	<string name="attachments_are_too_large">O arquivo é muito grande</string>
+	<string name="audio">Áudio</string>
 	<string name="audio_playback">Reprodução de áudio</string>
 	<string name="audio_player">Reprodutor de áudio</string>
 	<string name="autohide">Auto-Esconder</string>
@@ -297,6 +298,7 @@
 	<string name="play">Retomar</string>
 	<string name="play_again">Reproduzir novamente</string>
 	<string name="playback_error">Erro na reprodução</string>
+	<string name="playback_speed">Velocidade de reprodução</string>
 	<string name="playback_speed_options">Opções de velocidade de reprodução</string>
 	<string name="popular">Populares</string>
 	<string name="port">Porta</string>
@@ -440,6 +442,8 @@
 		pode instalar as aplicações quando o download acabar.</string>
 	<string name="updates">Atualizações</string>
 	<string name="updates_available__genitive">Atualizações disponíveis</string>
+	<string name="use_built_in_audio_player">Usar reprodutor de áudio embutido</string>
+	<string name="use_built_in_audio_player__summary">Reproduzir anexos de áudio no app</string>
 	<string name="use_built_in_video_player">Usar reprodutor de vídeo embutido</string>
 	<string name="use_built_in_video_player__summary">Reproduzir anexos Webm</string>
 	<string name="user_authorization">Autorização de usuário</string>
