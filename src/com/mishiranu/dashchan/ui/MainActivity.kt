@@ -546,9 +546,9 @@ class MainActivity :
         ) {
             navigateIntent(getIntent(), false)
         }
-        if (savedState == null) {
-            showErrorReportReminder()
-        }
+        // Unconditional: a crash relaunches the activity with its state restored, so gating on a
+        // null saved state would hide the reminder; lastSeenErrorReport holds it to once per crash.
+        showErrorReportReminder()
         if (this.currentFragment == null) {
             if (!navigateInitial(false)) {
                 show(
