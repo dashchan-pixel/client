@@ -10,8 +10,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.ErrorReports
 import com.mishiranu.dashchan.ui.FragmentHandler
-import com.mishiranu.dashchan.util.Logger
 import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.util.ResourceUtils
@@ -30,10 +30,7 @@ class ErrorReportFragment : BaseListFragment {
         arguments = Bundle().apply { putString(EXTRA_FILE_NAME, fileName) }
     }
 
-    private fun getFile(): File? {
-        val directory = Logger.getErrorsDirectory(requireContext()) ?: return null
-        return File(directory, requireArguments().getString(EXTRA_FILE_NAME)!!)
-    }
+    private fun getFile(): File? = ErrorReports.getFile(requireContext(), requireArguments().getString(EXTRA_FILE_NAME)!!)
 
     override fun onViewCreated(
         view: View,
@@ -42,12 +39,12 @@ class ErrorReportFragment : BaseListFragment {
         super.onViewCreated(view, savedInstanceState)
 
         val file = getFile()
-        val text = if (file != null) ErrorReportsFragment.readReport(file) else null
+        val text = if (file != null) ErrorReports.readReport(file) else null
         this.text = text
         (requireActivity() as FragmentHandler).setTitleSubtitle(
             getString(R.string.error_report),
             if (file != null) {
-                PostDateFormatter(requireContext()).formatDateTime(ErrorReportsFragment.getTime(file))
+                PostDateFormatter(requireContext()).formatDateTime(ErrorReports.getTime(file))
             } else {
                 null
             },

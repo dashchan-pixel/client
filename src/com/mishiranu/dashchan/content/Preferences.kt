@@ -1011,6 +1011,28 @@ object Preferences {
                 DEFAULT_EPHEMERAL_BROWSING,
             )
 
+    const val KEY_LAST_SEEN_ERROR_REPORT: String = "last_seen_error_report"
+
+    /**
+     * Time of the newest crash report the user has been told about, so the reminder is shown once
+     * per crash instead of on every start.
+     */
+    @JvmStatic
+    var lastSeenErrorReport: Long
+        get() =
+            prefs.getLong(
+                KEY_LAST_SEEN_ERROR_REPORT,
+                0L,
+            )
+        set(lastSeenErrorReport) {
+            prefs
+                .edit()
+                .put(
+                    KEY_LAST_SEEN_ERROR_REPORT,
+                    lastSeenErrorReport,
+                ).close()
+        }
+
     const val KEY_LAST_UPDATE_CHECK: String = "last_update_check"
 
     @JvmStatic

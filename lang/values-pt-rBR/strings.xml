@@ -489,7 +489,8 @@
 
 	<string name="error_report">Relatório de erro</string>
 	<string name="error_reports">Relatórios de erro</string>
-	<string name="error_reports__summary">Relatórios salvos quando o aplicativo parou inesperadamente</string>
+	<string name="error_reports__summary">Relatórios salvos quando o aplicativo travou</string>
 	<string name="no_error_reports">Nenhum relatório de erro</string>
 	<string name="delete_all_error_reports__sentence">Excluir todos os relatórios de erro?</string>
+	<string name="application_crashed">O aplicativo travou</string>
 </resources>

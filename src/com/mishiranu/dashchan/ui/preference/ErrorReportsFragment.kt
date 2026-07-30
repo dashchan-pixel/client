@@ -11,21 +11,19 @@ import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.RecyclerView
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.ErrorReports
 import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.util.ListViewUtils
-import com.mishiranu.dashchan.util.Logger
 import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.PostDateFormatter
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.ViewFactory
 import java.io.File
-import java.io.IOException
 
 /**
- * Lists the crash reports the uncaught exception handler leaves in [Logger]'s errors directory,
- * one "error-<millis>.txt" per crash. Nothing else ever reads them, so this is also the only way
- * to get rid of them from inside the app.
+ * Lists the crash reports of [ErrorReports]. Nothing else ever reads them, so this is also the
+ * only way to get rid of them from inside the app.
  */
 class ErrorReportsFragment : BaseListFragment() {
     private val items = ArrayList<ReportItem>()
@@ -92,7 +90,7 @@ class ErrorReportsFragment : BaseListFragment() {
     }
 
     private fun shareReport(reportItem: ReportItem) {
-        val text = readReport(reportItem.file)
+        val text = ErrorReports.readReport(reportItem.file)
         if (text != null) {
             NavigationUtils.shareText(requireContext(), getString(R.string.error_report), text, null)
         } else {
@@ -101,7 +99,7 @@ class ErrorReportsFragment : BaseListFragment() {
     }
 
     private fun copyReport(reportItem: ReportItem) {
-        val text = readReport(reportItem.file)
+        val text = ErrorReports.readReport(reportItem.file)
         if (text != null) {
             StringUtils.copyToClipboard(requireContext(), text)
             ClickableToast.show(R.string.copied_to_clipboard)
@@ -185,76 +183,15 @@ class ErrorReportsFragment : BaseListFragment() {
     )
 
     companion object {
-        private const val NAME_PREFIX = "error-"
-        private const val NAME_SUFFIX = ".txt"
-
-        // Reports are stack traces of a few kilobytes; the cap only guards against a file that
-        // somehow grew out of hand, since the whole text goes into a single TextView.
-        private const val MAX_REPORT_SIZE = 1024 * 1024
-
-        /** Newest first: the report the user came here for is the one that just crashed the app. */
         private fun collectItems(context: Context): List<ReportItem> {
-            val files = Logger.getErrorsDirectory(context)?.listFiles() ?: return emptyList()
             val dateFormatter = PostDateFormatter(context)
-            return files
-                .filter { it.isFile && it.name.startsWith(NAME_PREFIX) }
-                .sortedByDescending { getTime(it) }
-                .map { file ->
-                    ReportItem(
-                        file,
-                        dateFormatter.formatDateTime(getTime(file)),
-                        readSummary(file) ?: StringUtils.formatFileSize(file.length(), false),
-                    )
-                }
-        }
-
-        fun getTime(file: File): Long {
-            val name = file.name
-            if (name.startsWith(NAME_PREFIX) && name.endsWith(NAME_SUFFIX)) {
-                val time =
-                    name
-                        .substring(NAME_PREFIX.length, name.length - NAME_SUFFIX.length)
-                        .toLongOrNull()
-                if (time != null) {
-                    return time
-                }
+            return ErrorReports.getFiles(context).map { file ->
+                ReportItem(
+                    file,
+                    dateFormatter.formatDateTime(ErrorReports.getTime(file)),
+                    ErrorReports.readSummary(file) ?: StringUtils.formatFileSize(file.length(), false),
+                )
             }
-            return file.lastModified()
         }
-
-        /**
-         * The first line of the stack trace, i.e. the exception that killed the app: the report
-         * starts with the technical data block, which is the same for every report of a build.
-         */
-        private fun readSummary(file: File): String? {
-            try {
-                file.bufferedReader().use { reader ->
-                    var afterDivider = false
-                    var line = reader.readLine()
-                    while (line != null) {
-                        if (afterDivider) {
-                            if (line.isNotBlank()) {
-                                return line.trim()
-                            }
-                        } else if (line.length >= 3 && line.all { it == '-' }) {
-                            afterDivider = true
-                        }
-                        line = reader.readLine()
-                    }
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            return null
-        }
-
-        fun readReport(file: File): String? =
-            try {
-                val bytes = file.inputStream().use { it.readNBytes(MAX_REPORT_SIZE) }
-                String(bytes) + if (file.length() > MAX_REPORT_SIZE) "\n…" else ""
-            } catch (e: IOException) {
-                e.printStackTrace()
-                null
-            }
     }
 }

@@ -57,6 +57,7 @@ import chan.util.CommonUtils.equals
 import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CacheManager
+import com.mishiranu.dashchan.content.ErrorReports
 import com.mishiranu.dashchan.content.LocaleManager
 import com.mishiranu.dashchan.content.LocaleManager.Companion.getInstance
 import com.mishiranu.dashchan.content.Preferences
@@ -119,6 +120,7 @@ import com.mishiranu.dashchan.ui.posting.PostingFragment
 import com.mishiranu.dashchan.ui.posting.Replyable.ReplyData
 import com.mishiranu.dashchan.ui.preference.CategoriesFragment
 import com.mishiranu.dashchan.ui.preference.CommandsFragment
+import com.mishiranu.dashchan.ui.preference.ErrorReportFragment
 import com.mishiranu.dashchan.ui.preference.ThemesFragment
 import com.mishiranu.dashchan.ui.preference.UpdateFragment
 import com.mishiranu.dashchan.ui.preference.UpdateFragment.Companion.checkNewVersions
@@ -534,6 +536,9 @@ class MainActivity :
         ) {
             navigateIntent(getIntent(), false)
         }
+        if (savedState == null) {
+            showErrorReportReminder()
+        }
         if (this.currentFragment == null) {
             if (!navigateInitial(false)) {
                 show(
@@ -560,6 +565,29 @@ class MainActivity :
             showStorageInstructionsDialog()
         }
         requestNotificationPermission()
+    }
+
+    /**
+     * A crash takes the application away without a word: the uncaught exception handler writes a
+     * report and the process dies. The next start is the only moment the user is around to hear
+     * that the report exists and can be sent on, so the newest one is offered here once.
+     */
+    private fun showErrorReportReminder() {
+        val file = ErrorReports.getFiles(this).firstOrNull() ?: return
+        val time = ErrorReports.getTime(file)
+        if (time <= Preferences.lastSeenErrorReport) {
+            return
+        }
+        Preferences.lastSeenErrorReport = time
+        show(
+            getString(R.string.application_crashed),
+            null,
+            ClickableToast.Button(
+                R.string.error_report,
+                false,
+                Runnable { pushFragment(ErrorReportFragment(file.name)) },
+            ),
+        )
     }
 
     /**

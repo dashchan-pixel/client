@@ -29,6 +29,7 @@
 	<string name="another">Another</string>
 	<string name="app_icon">App icon</string>
 	<string name="appearance">Appearance</string>
+	<string name="application_crashed">The app crashed</string>
 	<string name="application_name_update__format">%s update</string>
 	<string name="archive">Archive</string>
 	<string name="archive__verb">Save to archive</string>
@@ -176,7 +177,7 @@
 	<string name="erase">Erase</string>
 	<string name="error_report">Error report</string>
 	<string name="error_reports">Error reports</string>
-	<string name="error_reports__summary">Reports saved when the application stopped unexpectedly</string>
+	<string name="error_reports__summary">Reports saved when the app crashed</string>
 	<string name="every_number_sec__format">Every %d sec.</string>
 	<string name="exif_metadata">Exif metadata</string>
 	<string name="expand">Expand</string>
