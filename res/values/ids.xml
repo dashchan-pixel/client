@@ -16,6 +16,7 @@
 	<item type="id" name="menu_clear_deleted" />
 	<item type="id" name="menu_clear_old" />
 	<item type="id" name="menu_contents" />
+	<item type="id" name="menu_copy" />
 	<item type="id" name="menu_copy_link" />
 	<item type="id" name="menu_date_created" />
 	<item type="id" name="menu_delete" />
@@ -62,6 +63,7 @@
 	<item type="id" name="menu_select" />
 	<item type="id" name="menu_select_all" />
 	<item type="id" name="menu_sfw_mode" />
+	<item type="id" name="menu_share" />
 	<item type="id" name="menu_share_link" />
 	<item type="id" name="menu_sorting" />
 	<item type="id" name="menu_spoilers" />

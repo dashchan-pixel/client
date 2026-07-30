@@ -130,6 +130,7 @@
 	<string name="default_name_cant_be_hidden">Default name can\'t be hidden</string>
 	<string name="default_starting_board">Default starting board</string>
 	<string name="delete">Delete</string>
+	<string name="delete_all_error_reports__sentence">Delete all error reports?</string>
 	<string name="delete_on_exit">Delete on exit</string>
 	<string name="deleted_posts_will_be_deleted__sentence">Deleted posts will be permanently deleted.</string>
 	<string name="description">Description</string>
@@ -173,6 +174,9 @@
 	<string name="environment">Environment</string>
 	<string name="environment__summary">Shared values, one NAME=value per line. Wrap a value in \' or \" to keep its spaces or let it run over several lines, up to the closing quote; # starts a comment. Read from scripts as env.NAME</string>
 	<string name="erase">Erase</string>
+	<string name="error_report">Error report</string>
+	<string name="error_reports">Error reports</string>
+	<string name="error_reports__summary">Reports saved when the application stopped unexpectedly</string>
 	<string name="every_number_sec__format">Every %d sec.</string>
 	<string name="exif_metadata">Exif metadata</string>
 	<string name="expand">Expand</string>
@@ -327,6 +331,7 @@
 	<string name="no_access_to_memory">No access to memory</string>
 	<string name="no_available_updates">No available updates</string>
 	<string name="no_enough_memory_to_handle_image">No enough memory to handle image</string>
+	<string name="no_error_reports">No error reports</string>
 	<string name="no_extensions_installed">No extensions installed</string>
 	<string name="no_icon">No icon</string>
 	<string name="no_information">No information</string>

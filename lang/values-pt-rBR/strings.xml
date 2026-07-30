@@ -484,4 +484,10 @@
 	<string name="no_libraries_defined">Nenhuma biblioteca definida</string>
 	<string name="code_snippet">Trecho</string>
 	<string name="external_script">Script externo</string>
+
+	<string name="error_report">Relatório de erro</string>
+	<string name="error_reports">Relatórios de erro</string>
+	<string name="error_reports__summary">Relatórios salvos quando o aplicativo parou inesperadamente</string>
+	<string name="no_error_reports">Nenhum relatório de erro</string>
+	<string name="delete_all_error_reports__sentence">Excluir todos os relatórios de erro?</string>
 </resources>

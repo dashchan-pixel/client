@@ -159,13 +159,22 @@ object Logger {
 
     @JvmStatic
     fun init(context: Context) {
-        val cacheDirectory = context.externalCacheDir
-        if (cacheDirectory != null) {
-            val packageDirectory = cacheDirectory.parentFile
-            if (packageDirectory != null) {
-                initDirectories(packageDirectory)
-            }
+        val packageDirectory = getPackageDirectory(context)
+        if (packageDirectory != null) {
+            initDirectories(packageDirectory)
         }
+    }
+
+    private fun getPackageDirectory(context: Context): File? = context.externalCacheDir?.parentFile
+
+    /**
+     * Where the uncaught exception handler writes its reports, one "error-<millis>.txt" per crash.
+     * Null when external storage is unavailable, in which case nothing was written either.
+     */
+    @JvmStatic
+    fun getErrorsDirectory(context: Context): File? {
+        val packageDirectory = getPackageDirectory(context) ?: return null
+        return File(packageDirectory, "errors")
     }
 
     private fun initDirectories(packageDirectory: File) {

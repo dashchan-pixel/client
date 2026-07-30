@@ -678,4 +678,10 @@
 	<string name="no_libraries_defined">Библиотеки не заданы</string>
 	<string name="code_snippet">Фрагмент</string>
 	<string name="external_script">Внешний скрипт</string>
+
+	<string name="error_report">Отчёт об ошибке</string>
+	<string name="error_reports">Отчёты об ошибках</string>
+	<string name="error_reports__summary">Отчёты, сохранённые при аварийном завершении приложения</string>
+	<string name="no_error_reports">Нет отчётов об ошибках</string>
+	<string name="delete_all_error_reports__sentence">Удалить все отчёты об ошибках?</string>
 </resources>

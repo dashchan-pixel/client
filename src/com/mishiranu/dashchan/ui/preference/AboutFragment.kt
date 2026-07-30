@@ -43,6 +43,8 @@ class AboutFragment :
             .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(StatisticsFragment()) }
         addButton(R.string.backup_data, R.string.backup_data__summary)
             .setOnClickListener { BackupDialog().show(childFragmentManager, BackupDialog::class.java.name) }
+        addButton(R.string.error_reports, R.string.error_reports__summary)
+            .setOnClickListener { (requireActivity() as FragmentHandler).pushFragment(ErrorReportsFragment()) }
         addButton(R.string.changelog, 0)
             .setOnClickListener {
                 (requireActivity() as FragmentHandler).pushFragment(TextFragment(TextFragment.Type.CHANGELOG))
