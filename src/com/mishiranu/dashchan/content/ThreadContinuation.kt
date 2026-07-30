@@ -32,7 +32,10 @@ object ThreadContinuation {
     /** A continuation is the next volume, allowing for a few threads that never became favorites. */
     private const val MAX_VOLUME_GAP = 5L
 
-    /** Subjects are re-typed every thread and drift, so a word added or dropped must not break the chain. */
+    /**
+     * Subjects are re-typed every thread and drift, so a word added or dropped must not break the
+     * chain. Only used where the text has to carry the decision alone — see [titlesMatch].
+     */
     private const val MIN_TOKEN_JACCARD = 0.75
 
     fun interface LinkResolver {
@@ -56,10 +59,14 @@ object ThreadContinuation {
         /** The successor's subject continues the predecessor's. */
         MATCH,
 
-        /** One of the subjects is empty — very common, comment-only original posts. */
+        /**
+         * The subject neither confirms nor denies: one of the two is empty (very common,
+         * comment-only original posts), or the volume number continues but the title around it does
+         * not follow.
+         */
         INCONCLUSIVE,
 
-        /** The subjects are unrelated, or the volume number went backwards. */
+        /** The numbering contradicts, or two unnumbered subjects are unrelated. */
         MISMATCH,
     }
 
@@ -74,8 +81,9 @@ object ThreadContinuation {
     private val PATTERN_TAG = Pattern.compile("<[^>]*>", Pattern.DOTALL)
     private val PATTERN_WHITESPACE = Pattern.compile("\\s+")
     private val PATTERN_ENTITY = Pattern.compile("&(#[Xx]?[0-9A-Fa-f]+|[A-Za-z]+);")
-    private val PATTERN_TRAILING_DIGITS = Pattern.compile("\\d+")
+    private val PATTERN_DIGITS = Pattern.compile("\\d+")
     private val PATTERN_VOLUME_MARKER = Pattern.compile("[\u2116#\uFF03]")
+    private val PATTERN_MARKED_VOLUME = Pattern.compile("#\\s*(\\d+)")
 
     /**
      * Scans the newest [SCAN_DEPTH] of [comments] (ordered oldest to newest, as the posts of a
@@ -165,82 +173,116 @@ object ThreadContinuation {
         currentSubject: String?,
         nextSubject: String?,
     ): SubjectRelation {
-        val current = normalize(currentSubject)
-        val next = normalize(nextSubject)
-        if (current.isEmpty() || next.isEmpty()) {
+        val currentNormalized = normalize(currentSubject)
+        val nextNormalized = normalize(nextSubject)
+        if (currentNormalized.isEmpty() || nextNormalized.isEmpty()) {
             return SubjectRelation.INCONCLUSIVE
         }
-        if (!skeletonsMatch(skeleton(current), skeleton(next))) {
+        val current = parse(currentNormalized)
+        val next = parse(nextNormalized)
+        if (current.volume == null && next.volume == null) {
+            // No numbers to go on, so the text has to carry the whole decision by itself
+            return if (jaccardMatch(current.title, next.title)) {
+                SubjectRelation.MATCH
+            } else {
+                SubjectRelation.MISMATCH
+            }
+        }
+        if (!volumesContinue(current.volume, next.volume)) {
             return SubjectRelation.MISMATCH
         }
-        val currentVolume = volume(current)
-        val nextVolume = volume(next)
-        val volumesMatch =
-            when {
-                currentVolume != null && nextVolume != null -> {
-                    nextVolume > currentVolume && nextVolume - currentVolume <= MAX_VOLUME_GAP
-                }
-
-                currentVolume == null && nextVolume != null -> {
-                    nextVolume == 2L
-                }
-
-                currentVolume == null && nextVolume == null -> {
-                    true
-                }
-
-                // The predecessor is numbered and the successor is not: the chain broke
-                else -> {
-                    false
-                }
-            }
-        return if (volumesMatch) SubjectRelation.MATCH else SubjectRelation.MISMATCH
+        // A clean increment is never evidence *against* a continuation, so a title that fails to
+        // confirm one only falls back on how unambiguous the link was — it must not veto, and it
+        // must not blacklist the candidate for good. Series re-title themselves freely between
+        // volumes, and the titles are what drifts while the numbering holds: four consecutive
+        // volumes of one observed series shared no title word at all, one of them not even written
+        // in the same language as the rest.
+        return if (titlesMatch(current.title, next.title)) {
+            SubjectRelation.MATCH
+        } else {
+            SubjectRelation.INCONCLUSIVE
+        }
     }
 
-    /** NFKC, lower case, every non-alphanumeric run (`№`, `#`, punctuation) collapsed to a space. */
-    fun normalize(subject: String?): String {
-        if (subject.isNullOrEmpty()) {
-            return ""
-        }
-        // The volume markers go first, because NFKC expands "№" into the *letters* "No" while "#"
-        // stays punctuation: leaving them in makes the two spellings of the same subject differ, and
-        // leaves a stray "no" token in the skeleton of the numbered side only.
-        val unmarked = PATTERN_VOLUME_MARKER.matcher(subject).replaceAll(" ")
-        val decomposed = Normalizer.normalize(unmarked, Normalizer.Form.NFKC).lowercase(Locale.ROOT)
-        val builder = StringBuilder(decomposed.length)
-        for (c in decomposed) {
-            builder.append(if (Character.isLetterOrDigit(c)) c else ' ')
-        }
-        return collapse(builder.toString())
-    }
+    /**
+     * A subject split into the two parts that identify a series: the recurring title in front of the
+     * volume number, and the number itself.
+     *
+     * Everything *after* the number is deliberately dropped. Real series carry a fresh subtitle
+     * every thread — only the title and the volume number recur, the tail is re-invented — so
+     * comparing whole subjects scored three consecutive threads of one series at a token overlap of
+     * 0.14 and 0.07 and rejected the chain.
+     */
+    private class Series(
+        val title: String,
+        val volume: Long?,
+    )
 
-    /** The last digit run of a normalized subject: "ukraine 2024 57" is volume 57, not 2024. */
-    fun volume(normalizedSubject: String): Long? {
-        val matcher = PATTERN_TRAILING_DIGITS.matcher(normalizedSubject)
-        var value: String? = null
-        while (matcher.find()) {
-            value = matcher.group()
-        }
-        // Long.MAX_VALUE has 19 digits: anything longer is not a volume anyway
-        return if (value != null && value.length <= 18) value.toLong() else null
-    }
-
-    /** A normalized subject with its volume number removed, so only the recurring title is left. */
-    fun skeleton(normalizedSubject: String): String {
-        val matcher = PATTERN_TRAILING_DIGITS.matcher(normalizedSubject)
+    private fun parse(normalizedSubject: String): Series {
+        // A marked number ("topic #12") is the volume even when the free-form part goes on to
+        // mention another number; unmarked, the last number is the best guess ("topic 2024 57" is
+        // volume 57, not 2024).
+        val marked = PATTERN_MARKED_VOLUME.matcher(normalizedSubject)
         var start = -1
         var end = -1
-        while (matcher.find()) {
-            start = matcher.start()
-            end = matcher.end()
+        if (marked.find()) {
+            start = marked.start(1)
+            end = marked.end(1)
+        } else {
+            val digits = PATTERN_DIGITS.matcher(normalizedSubject)
+            while (digits.find()) {
+                start = digits.start()
+                end = digits.end()
+            }
         }
-        if (start < 0) {
-            return normalizedSubject
-        }
-        return collapse(normalizedSubject.substring(0, start) + " " + normalizedSubject.substring(end))
+        // Long.MAX_VALUE has 19 digits: anything longer is not a volume anyway, and stays title text
+        val volume =
+            if (start >= 0 && end - start <= 18) {
+                normalizedSubject.substring(start, end).toLong()
+            } else {
+                null
+            }
+        val title = if (volume != null) normalizedSubject.substring(0, start) else normalizedSubject
+        return Series(clearMarkers(title), volume)
     }
 
-    private fun skeletonsMatch(
+    private fun volumesContinue(
+        current: Long?,
+        next: Long?,
+    ): Boolean =
+        when {
+            current != null && next != null -> next > current && next - current <= MAX_VOLUME_GAP
+
+            // An unnumbered thread continues into the second volume of its series
+            current == null && next != null -> next == 2L
+
+            // The predecessor is numbered and the successor is not: the chain broke
+            else -> false
+        }
+
+    /**
+     * Titles of a numbered series only have to *overlap*, because the volume numbers already carry
+     * the chain and a series routinely gains or loses a word ("topic" → "topic thread"). One title's
+     * tokens being contained in the other's is enough; failing that, the same [MIN_TOKEN_JACCARD]
+     * the unnumbered case uses.
+     */
+    private fun titlesMatch(
+        lhs: String,
+        rhs: String,
+    ): Boolean {
+        val lhsTokens = tokens(lhs)
+        val rhsTokens = tokens(rhs)
+        // Checked before the sets are compared, because two subjects that are nothing but a number
+        // are equal without naming any series, and so confirm nothing
+        if (lhsTokens.isEmpty() || rhsTokens.isEmpty()) {
+            return false
+        }
+        return lhsTokens.containsAll(rhsTokens) ||
+            rhsTokens.containsAll(lhsTokens) ||
+            jaccard(lhsTokens, rhsTokens) >= MIN_TOKEN_JACCARD
+    }
+
+    private fun jaccardMatch(
         lhs: String,
         rhs: String,
     ): Boolean {
@@ -252,12 +294,43 @@ object ThreadContinuation {
         if (lhsTokens.isEmpty() || rhsTokens.isEmpty()) {
             return false
         }
-        val intersection = lhsTokens.count { rhsTokens.contains(it) }
-        val union = lhsTokens.size + rhsTokens.size - intersection
-        return union > 0 && intersection.toDouble() / union >= MIN_TOKEN_JACCARD
+        return jaccard(lhsTokens, rhsTokens) >= MIN_TOKEN_JACCARD
     }
 
-    private fun tokens(skeleton: String): Set<String> = if (skeleton.isEmpty()) emptySet() else skeleton.split(' ').filterTo(HashSet()) { it.isNotEmpty() }
+    private fun jaccard(
+        lhs: Set<String>,
+        rhs: Set<String>,
+    ): Double {
+        val intersection = lhs.count { rhs.contains(it) }
+        val union = lhs.size + rhs.size - intersection
+        return if (union > 0) intersection.toDouble() / union else 0.0
+    }
+
+    private fun tokens(title: String): Set<String> = if (title.isEmpty()) emptySet() else title.split(' ').filterTo(HashSet()) { it.isNotEmpty() }
+
+    /**
+     * NFKC, lower case, every non-alphanumeric run collapsed to a space — except the volume markers
+     * `№ # ＃`, which are unified into an ASCII `#` and kept as a token of their own so [parse] can
+     * tell the volume number from a number that merely appears in the subject.
+     *
+     * The markers are rewritten before NFKC, because NFKC expands "№" into the *letters* "No" while
+     * "#" stays punctuation: normalizing first makes the two spellings of one subject differ, and
+     * leaves a stray "no" token in the title of the "№" side only.
+     */
+    private fun normalize(subject: String?): String {
+        if (subject.isNullOrEmpty()) {
+            return ""
+        }
+        val marked = PATTERN_VOLUME_MARKER.matcher(subject).replaceAll(" # ")
+        val decomposed = Normalizer.normalize(marked, Normalizer.Form.NFKC).lowercase(Locale.ROOT)
+        val builder = StringBuilder(decomposed.length)
+        for (c in decomposed) {
+            builder.append(if (Character.isLetterOrDigit(c) || c == '#') c else ' ')
+        }
+        return collapse(builder.toString())
+    }
+
+    private fun clearMarkers(title: String): String = collapse(title.replace('#', ' '))
 
     /**
      * Compares thread numbers of arbitrary length, or returns null when either is not a plain

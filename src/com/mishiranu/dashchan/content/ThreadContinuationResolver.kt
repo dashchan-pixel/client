@@ -141,8 +141,9 @@ object ThreadContinuationResolver {
             when (ThreadContinuation.subjectRelation(originalPost.subject, subject)) {
                 ThreadContinuation.SubjectRelation.MATCH -> true
 
-                // Without a subject the probe can neither confirm nor deny, so lean on how
-                // unambiguous the link itself was
+                // The probe can neither confirm nor deny — no subject to compare, or a volume
+                // number that continues under a title that drifted — so lean on how unambiguous
+                // the link itself was
                 ThreadContinuation.SubjectRelation.INCONCLUSIVE -> candidate.strongLink
 
                 ThreadContinuation.SubjectRelation.MISMATCH -> false
