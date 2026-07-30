@@ -1063,20 +1063,30 @@ class WatcherService : BaseService() {
             refreshAll(null, false, false)
         }
 
+    /**
+     * Refreshes every watched thread that is due. [userRequest] marks the sweep as one the user
+     * asked for, which is what lifts both holds a thread can be under: the Wi-Fi-only wait, and its
+     * board's refreshing being turned off.
+     */
     private fun refreshAll(
         chanName: String?,
-        forceNetwork: Boolean,
+        userRequest: Boolean,
         forceNow: Boolean,
     ) {
         val now = SystemClock.elapsedRealtime()
         val unavailable =
-            !forceNetwork && isWatcherWifiOnly && !NetworkObserver.getInstance().isWifiConnected()
+            !userRequest && isWatcherWifiOnly && !NetworkObserver.getInstance().isWifiConnected()
         for (watcherItem in watcherItems.values) {
             if (chanName == null || chanName == watcherItem.threadKey.chanName) {
                 val chan = get(watcherItem.threadKey.chanName)
+                // A board asking for no refreshing at all is passed over by the sweep entirely: it is
+                // the only way a thread of it would be picked up, since the sweep runs whenever some
+                // other board is due and in the background regardless.
+                val checkInterval = getCheckInterval(watcherItem.threadKey)
                 if (isWatcherSupported(chan) &&
                     !isBlocked(watcherItem.threadKey) &&
-                    isEnabled(watcherItem.threadKey)
+                    isEnabled(watcherItem.threadKey) &&
+                    (userRequest || checkInterval > 0)
                 ) {
                     if (unavailable) {
                         if (watcherItem.state == WatcherState.IDLE) {
@@ -1085,7 +1095,7 @@ class WatcherService : BaseService() {
                         }
                     } else {
                         if (watcherItem.state != WatcherState.ENQUEUED &&
-                            (forceNow || watcherItem.checkInterval(now, getCheckInterval(watcherItem.threadKey)))
+                            (forceNow || watcherItem.checkInterval(now, checkInterval))
                         ) {
                             watcherItem.state = WatcherState.ENQUEUED
                             notifyWatcherUpdate(watcherItem)
@@ -1159,9 +1169,9 @@ class WatcherService : BaseService() {
 
     /**
      * How often [threadKey]'s board asks to be refreshed, in milliseconds; the plain global setting
-     * when there is no thread to ask for. In the background the service polls no more often than
-     * [BACKGROUND_REFRESH_INTERVAL] whatever the setting says — including when refreshing is turned
-     * off, which only stops the periodic refresh while a client is in the foreground.
+     * when there is no thread to ask for. 0 when refreshing is turned off for it — nothing polls it,
+     * in the foreground or behind. In the background an interval shorter than
+     * [BACKGROUND_REFRESH_INTERVAL] is stretched to it, so no board polls faster than that there.
      */
     private fun getRefreshInterval(
         foreground: Boolean,
@@ -1173,6 +1183,9 @@ class WatcherService : BaseService() {
             } else {
                 watcherRefreshInterval
             }
+        if (seconds <= 0) {
+            return 0
+        }
         val interval = seconds * 1000
         return if (!foreground) max(interval, BACKGROUND_REFRESH_INTERVAL) else interval
     }
@@ -1198,15 +1211,12 @@ class WatcherService : BaseService() {
     }
 
     /**
-     * The shortest gap [threadKey] accepts between two refreshes. A thread whose refreshing is
-     * turned off keeps the background floor rather than 0: a sweep happens anyway — every
-     * [BACKGROUND_REFRESH_INTERVAL] in the background, and as often as some other board asked for —
-     * and letting a 0 through would make it pick this thread up every single time.
+     * The shortest gap [threadKey] accepts between two refreshes, or 0 when its board is not to be
+     * refreshed at all. The gap is the foreground one: the background floor is already in the
+     * spacing of the sweeps themselves, and applying it here as well would hold a thread back for
+     * another ten minutes after a sweep that was due.
      */
-    private fun getCheckInterval(threadKey: ThreadKey): Int {
-        val interval = getRefreshInterval(true, threadKey)
-        return if (interval > 0) interval else BACKGROUND_REFRESH_INTERVAL
-    }
+    private fun getCheckInterval(threadKey: ThreadKey): Int = getRefreshInterval(true, threadKey)
 
     private val preferencesListener =
         SharedPreferences.Listener { key: String? ->

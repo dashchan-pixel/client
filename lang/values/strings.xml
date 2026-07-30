@@ -46,6 +46,7 @@
 	<string name="block">Block</string>
 	<string name="board">Board</string>
 	<string name="board_doesnt_exist">The board doesn\'t exist</string>
+	<string name="board_interval_off__summary">Off stops the favorites of the chosen boards from being refreshed at all</string>
 	<string name="board_intervals">Board intervals</string>
 	<string name="board_intervals__summary">Refresh the favorites of chosen boards at their own interval</string>
 	<string name="boards">Boards</string>

@@ -8,9 +8,12 @@
 	android:paddingTop="@dimen/dialog_padding_text"
 	android:paddingBottom="@dimen/dialog_padding_text">
 
+	<!-- The row grows with the switch instead of holding a fixed height: a Material switch is taller
+	     than the text beside it, and a fixed 32dp row would clip its thumb. -->
 	<LinearLayout
 		android:layout_width="match_parent"
-		android:layout_height="32dp"
+		android:layout_height="wrap_content"
+		android:minHeight="32dp"
 		android:orientation="horizontal"
 		android:gravity="center_vertical"
 		android:paddingLeft="@dimen/dialog_padding_view"
@@ -26,8 +29,9 @@
 			android:paddingLeft="4dp"
 			android:paddingRight="4dp" />
 
-		<Switch
-			android:id="@+id/switch_view"
+		<!-- A MaterialSwitch is added here in code, for the same reason as the Slider below. -->
+		<FrameLayout
+			android:id="@+id/switch_container"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:layout_marginLeft="4dp"

@@ -192,6 +192,7 @@ class WatcherIntervalsFragment : BaseListFragment() {
                     Preferences.STEP_WATCHER_REFRESH_INTERVAL,
                     getString(R.string.every_number_sec__format),
                 )
+            intervalHolder.disabledText = getString(R.string.disabled)
             this.intervalHolder = intervalHolder
             view.findViewById<FrameLayout>(R.id.interval_container).addView(
                 intervalHolder.layout,

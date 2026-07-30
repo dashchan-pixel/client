@@ -12,11 +12,11 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toolbar
 import androidx.core.widget.TextViewCompat
 import chan.util.StringUtils
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.LabelFormatter
 import com.google.android.material.slider.Slider
 import com.mishiranu.dashchan.R
@@ -304,12 +304,26 @@ object ViewFactory {
     class SeekLayoutHolder(
         @JvmField val layout: View,
         private val valueText: TextView,
-        private val switchView: Switch,
+        private val switchView: MaterialSwitch,
         private val slider: Slider,
         private val minValue: Int,
         private val step: Int,
         private val valueFormat: String?,
+        private val disabledAlpha: Float,
     ) {
+        private val minText: TextView = layout.findViewById(R.id.min_value)
+        private val maxText: TextView = layout.findViewById(R.id.max_value)
+
+        /**
+         * What the value reads while the switch is off — "Disabled" and the like. Without one the
+         * value keeps standing there in words, which is not what an off switch means.
+         */
+        var disabledText: CharSequence? = null
+            set(text) {
+                field = text
+                updateValueText()
+            }
+
         var isEnabled: Boolean
             get() = slider.isEnabled
             set(enabled) {
@@ -317,6 +331,13 @@ object ViewFactory {
                     switchView.isChecked = enabled
                 }
                 slider.isEnabled = enabled
+                // The slider's own tints have a disabled state, but the range labels around it are
+                // plain text: fade them the way the framework fades a disabled view, so the whole
+                // block reads as off rather than just the track.
+                val alpha = if (enabled) 1f else disabledAlpha
+                minText.alpha = alpha
+                maxText.alpha = alpha
+                updateValueText()
             }
 
         // The slider runs in step units (0..(max-min)/step, stepSize 1) exactly as the old SeekBar's
@@ -329,9 +350,20 @@ object ViewFactory {
                 if (slider.value != progress) {
                     slider.value = progress
                 }
-                val text = if (valueFormat != null) String.format(valueFormat, value) else value.toString()
-                valueText.text = text
+                updateValueText()
             }
+
+        private fun updateValueText() {
+            val disabledText = this.disabledText
+            valueText.text =
+                if (!isEnabled && disabledText != null) {
+                    disabledText
+                } else if (valueFormat != null) {
+                    String.format(valueFormat, value)
+                } else {
+                    value.toString()
+                }
+        }
     }
 
     @JvmStatic
@@ -345,10 +377,21 @@ object ViewFactory {
     ): SeekLayoutHolder {
         val inflater = LayoutInflater.from(context)
         val layout = inflater.inflate(R.layout.dialog_seek_bar, null)
-        layout.findViewById<TextView>(R.id.min_value).text = minValue.toString()
-        layout.findViewById<TextView>(R.id.max_value).text = maxValue.toString()
+        val minText = layout.findViewById<TextView>(R.id.min_value)
+        val maxText = layout.findViewById<TextView>(R.id.max_value)
+        minText.text = minValue.toString()
+        maxText.text = maxValue.toString()
         val valueText = layout.findViewById<TextView>(R.id.current_value)
-        val switchView = layout.findViewById<Switch>(R.id.switch_view)
+        // The switch is the on-pattern control for a boolean, the same one the settings rows use, and
+        // like the Slider below it must be built in a Material3 context and tinted to the user theme.
+        val switchView = MaterialSwitch(MaterialContext.wrap(context))
+        ThemeEngine.applyStyle(switchView)
+        val switchContainer = layout.findViewById<FrameLayout>(R.id.switch_container)
+        switchContainer.addView(
+            switchView,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
         // The Slider must be built in a Material3 context and tinted to the user theme accent; the
         // enclosing layout stays app-themed, so drop it into the placeholder container in code.
         val slider = Slider(MaterialContext.wrap(context))
@@ -363,17 +406,27 @@ object ViewFactory {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
         )
-        val holder = SeekLayoutHolder(layout, valueText, switchView, slider, minValue, step, valueFormat)
+        val holder =
+            SeekLayoutHolder(
+                layout,
+                valueText,
+                switchView,
+                slider,
+                minValue,
+                step,
+                valueFormat,
+                ThemeEngine.getTheme(context).disabledAlpha21,
+            )
         layout.tag = holder
         slider.addOnChangeListener { _, sliderValue, _ ->
             holder.value = sliderValue.toInt() * step + minValue
         }
         switchView.isSaveEnabled = false
         if (!showSwitch) {
-            switchView.visibility = View.GONE
+            switchContainer.visibility = View.GONE
         } else {
             switchView.setOnCheckedChangeListener { _, isChecked -> holder.isEnabled = isChecked }
-            ViewUtils.setNewMarginRelative(switchView, null, null, 0, null)
+            ViewUtils.setNewMarginRelative(switchContainer, null, null, 0, null)
         }
         return holder
     }

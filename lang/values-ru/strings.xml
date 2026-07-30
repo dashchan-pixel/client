@@ -43,6 +43,7 @@
 	<string name="block">Блокировать</string>
 	<string name="board">Раздел</string>
 	<string name="board_doesnt_exist">Раздел не существует</string>
+	<string name="board_interval_off__summary">Отключение полностью останавливает обновление избранного в выбранных разделах</string>
 	<string name="board_intervals">Интервалы разделов</string>
 	<string name="board_intervals__summary">Обновление избранного в выбранных разделах со своим интервалом</string>
 	<string name="boards">Разделы</string>

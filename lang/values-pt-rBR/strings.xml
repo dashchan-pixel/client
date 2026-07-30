@@ -32,6 +32,7 @@
 	<string name="ban_id">Ban ID</string>
 	<string name="board">Board</string>
 	<string name="board_doesnt_exist">Essa board não existe</string>
+	<string name="board_interval_off__summary">Quando desligado, os favoritos das boards escolhidas não são atualizados</string>
 	<string name="board_intervals">Intervalos das boards</string>
 	<string name="board_intervals__summary">Atualizar os favoritos das boards escolhidas com um intervalo próprio</string>
 	<string name="boards">Boards</string>
@@ -90,6 +91,7 @@
 	<string name="detailed_file_name">Nome de arquivo detalhado</string>
 	<string name="detailed_file_name__summary">Baixe arquivos com o número do fio no nome</string>
 	<string name="details">Detalhes</string>
+	<string name="disabled">Desligado</string>
 	<string name="discard_changes__sentence">Descartar as alterações?</string>
 	<string name="display_hidden_threads">Exibir fios escondidos</string>
 	<string name="display_post_icons">Exibirs ícones em algumas boards</string>

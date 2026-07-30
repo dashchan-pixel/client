@@ -44,6 +44,16 @@
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content" />
 
+		<!-- What the switch beside the interval means: the one thing the picker cannot show. -->
+		<TextView
+			android:id="@+id/interval_hint"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginLeft="@dimen/dialog_padding_view"
+			android:layout_marginRight="@dimen/dialog_padding_view"
+			android:text="@string/board_interval_off__summary"
+			android:textAppearance="?android:attr/textAppearanceSmall" />
+
 	</LinearLayout>
 
 </ScrollView>

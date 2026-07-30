@@ -1017,8 +1017,22 @@ class ThemeEngine {
             if (view is Slider) {
                 // Active track/thumb take the accent, inactive track and halo faded accent; the discrete
                 // tick marks are hidden (ranges can have hundreds of steps, filling the track with dots).
-                val accent = ColorStateList.valueOf(theme.accent)
-                val fadedAccent = ColorStateList.valueOf(applyAlpha(theme.accent, 0.30f))
+                // Disabled drops the accent for the faded control colour the framework fades a disabled
+                // control to — a slider switched off has to look switched off, and a plain accent
+                // ColorStateList would keep it as bright as a live one.
+                val states =
+                    arrayOf<IntArray?>(
+                        intArrayOf(-android.R.attr.state_enabled),
+                        intArrayOf(),
+                    )
+                val disabled = applyAlpha(theme.controlNormal21, theme.disabledAlpha21)
+                val accent =
+                    ColorStateList(states, intArrayOf(disabled, theme.accent))
+                val fadedAccent =
+                    ColorStateList(
+                        states,
+                        intArrayOf(applyAlpha(disabled, 0.30f), applyAlpha(theme.accent, 0.30f)),
+                    )
                 val transparent = ColorStateList.valueOf(Color.TRANSPARENT)
                 view.thumbTintList = accent
                 view.trackActiveTintList = accent

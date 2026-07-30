@@ -36,6 +36,7 @@ class SeekPreference(
     ) {
     private val valueFormat: String?
     private val specialValue: Int?
+    private val specialValueText: String?
 
     init {
         require(
@@ -47,6 +48,7 @@ class SeekPreference(
         )
         this.valueFormat = valueFormat
         this.specialValue = specialValue?.first
+        this.specialValueText = specialValue?.second
     }
 
     override fun extract(preferences: SharedPreferences) {
@@ -70,6 +72,9 @@ class SeekPreference(
                 step,
                 valueFormat,
             )
+        // The switch off stands for the special value, so the row says what it stands for — the same
+        // word the preference summary shows for it — instead of a number the setting is not at.
+        holder.disabledText = specialValueText
         if (savedInstanceState != null) {
             holder.isEnabled = savedInstanceState.getBoolean(STATE_ENABLED)
             holder.value = savedInstanceState.getInt(STATE_VALUE)
