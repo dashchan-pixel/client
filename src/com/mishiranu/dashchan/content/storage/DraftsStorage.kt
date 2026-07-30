@@ -25,7 +25,7 @@ import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 
 class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage.Data>("drafts", 2000, 10000) {
-    private val postDrafts = LruCache<String, PostDraft>(5) { _, v -> handleRemovePostDraft(v) }
+    private val postDrafts = LruCache<String, PostDraft>(1000) { _, v -> handleRemovePostDraft(v) }
 
     private var captchaChanName: String? = null
     private var captchaDraft: CaptchaDraft? = null

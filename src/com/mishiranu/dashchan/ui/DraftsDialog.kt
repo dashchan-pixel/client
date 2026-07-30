@@ -104,11 +104,28 @@ class DraftsDialog : DialogFragment() {
             // Enough of the comment to recognize the draft by, without rows of unequal height
             viewHolder.text2.maxLines = 3
             viewHolder.text2.ellipsize = TextUtils.TruncateAt.END
+            alignWithDialog(viewHolder.view)
             val holder = ItemViewHolder(viewHolder)
             val widgetFrame = checkNotNull(viewHolder.widgetFrame)
             widgetFrame.addView(createDeleteButton(parent.context, viewHolder, holder), 0)
             widgetFrame.visibility = View.VISIBLE
             return ListViewUtils.bind(holder, false, drafts::get, this)
+        }
+
+        /**
+         * A list item is padded for a screen, 16dp, while the dialog lays its title and buttons out
+         * at 24dp. The start edge takes the missing 8dp so the text lines up with the title. The end
+         * edge does not: the delete button is 8dp wider than the cross drawn in the middle of it, so
+         * a 16dp padding is what puts that cross 24dp from the edge, level with the text.
+         */
+        private fun alignWithDialog(view: View) {
+            val extra = (8f * ResourceUtils.obtainDensity(view.context) + 0.5f).toInt()
+            view.setPaddingRelative(
+                view.paddingStart + extra,
+                view.paddingTop,
+                view.paddingEnd,
+                view.paddingBottom,
+            )
         }
 
         private fun createDeleteButton(
