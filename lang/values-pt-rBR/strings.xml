@@ -102,6 +102,7 @@
 	<string name="downloading_audio">Baixando áudio</string>
 	<string name="downloading_number_of_number__format">Baixando %1$d de %2$d</string>
 	<string name="draft">Rascunho</string>
+	<string name="drafts">Rascunhos</string>
 	<string name="duplicate">Duplicar</string>
 	<string name="echo">Eco</string>
 	<string name="echo__summary">Coletar respostas aos meus posts em uma lista separada</string>

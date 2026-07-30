@@ -131,6 +131,7 @@
     <string name="downloads">Download</string>
     <string name="draft">Bozza</string>
     <string name="draft_saved">Bozza salvata</string>
+    <string name="drafts">Bozze</string>
     <string name="duplicate">Duplica</string>
     <string name="echo">Eco</string>
     <string name="echo__summary">Raccogli le risposte ai miei post in un elenco separato</string>

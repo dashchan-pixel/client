@@ -158,6 +158,7 @@
 	<string name="downloads">Downloads</string>
 	<string name="draft">Draft</string>
 	<string name="draft_saved">Draft saved</string>
+	<string name="drafts">Drafts</string>
 	<string name="duplicate">Duplicate</string>
 	<string name="echo">Echo</string>
 	<string name="echo__summary">Collect replies to my posts in a separate list</string>

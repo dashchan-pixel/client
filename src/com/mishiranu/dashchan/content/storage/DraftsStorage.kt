@@ -146,6 +146,14 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
         threadNumber: String?,
     ): PostDraft? = postDrafts[makeKey(chanName, boardName, threadNumber)]
 
+    fun hasPostDrafts(): Boolean = postDrafts.isNotEmpty()
+
+    /**
+     * All stored drafts, the most recently used one first. Iterating the cache doesn't count as an
+     * access, so listing the drafts can't evict any of them.
+     */
+    fun getPostDrafts(): List<PostDraft> = postDrafts.values.reversed()
+
     fun removePostDraft(
         chanName: String?,
         boardName: String?,

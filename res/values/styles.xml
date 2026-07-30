@@ -307,6 +307,7 @@
 		<item name="iconDrawerMenuUserBoards">@drawable/ic_group</item>
 		<item name="iconDrawerMenuHistory">@drawable/ic_history</item>
 		<item name="iconDrawerMenuEcho">@drawable/ic_echo</item>
+		<item name="iconDrawerMenuDrafts">@drawable/ic_edit</item>
 		<item name="iconDrawerMenuAudioPlayer">@drawable/ic_audiotrack_white_24dp</item>
 		<item name="iconDrawerMenuPreferences">@drawable/ic_settings</item>
 
@@ -383,6 +384,7 @@
 		<item name="iconDrawerMenuUserBoards">@drawable/ic_group</item>
 		<item name="iconDrawerMenuHistory">@drawable/ic_history</item>
 		<item name="iconDrawerMenuEcho">@drawable/ic_echo</item>
+		<item name="iconDrawerMenuDrafts">@drawable/ic_edit</item>
 		<item name="iconDrawerMenuAudioPlayer">@drawable/ic_audiotrack_white_24dp</item>
 		<item name="iconDrawerMenuPreferences">@drawable/ic_settings</item>
 

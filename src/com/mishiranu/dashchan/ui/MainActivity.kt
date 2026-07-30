@@ -171,6 +171,7 @@ class MainActivity :
     StateActivity(),
     DrawerForm.Callback,
     ThemeDialog.Callback,
+    DraftsDialog.Callback,
     FavoritesStorage.Observer,
     WatcherService.Client.Callback,
     UiManager.Callback,
@@ -1537,6 +1538,18 @@ class MainActivity :
         }
     }
 
+    private fun showDraftsDialog() {
+        val fragmentManager = getSupportFragmentManager()
+        val tag = DraftsDialog::class.java.getName()
+        if (fragmentManager.findFragmentByTag(tag) == null) {
+            DraftsDialog().show(fragmentManager, tag)
+        }
+    }
+
+    override fun onDraftsChanged() {
+        drawerForm.updateDrafts()
+    }
+
     private fun closeOverlaysForNavigation() {
         navigateOrCloseGallery(null)
         if (!wideMode) {
@@ -2435,40 +2448,50 @@ class MainActivity :
             DrawerForm.Companion.MENU_ITEM_AUDIO_PLAYER -> {
                 showAudioPlayerDialog()
             }
-        }
-        var success = false
-        if (content != null) {
-            val currentFragment = this.currentFragment
-            var page = if (currentFragment is PageFragment) currentFragment.page else null
-            if (page == null || page.content != content) {
-                if (page == null && !stackPageItems.isEmpty()) {
-                    page = getSavedPage(stackPageItems[stackPageItems.size - 1])
-                }
-                var chanName = if (page != null) page.chanName else null
-                var boardName = if (page != null) page.boardName else null
-                if (chanName == null) {
-                    val chan = ChanManager.getInstance().defaultChan
-                    chanName = chan!!.name
-                    boardName = getDefaultBoardName(chan)
-                }
-                if (chanName != null) {
-                    navigatePage(
-                        content,
-                        chanName,
-                        boardName,
-                        null,
-                        null,
-                        null,
-                        null,
-                        FLAG_PAGE_CLOSE_OVERLAYS or FLAG_PAGE_RESET_SCROLL,
-                    )
-                    success = true
-                }
+
+            DrawerForm.Companion.MENU_ITEM_DRAFTS -> {
+                showDraftsDialog()
             }
         }
-        if (!success) {
+        if (content == null || !navigateDrawerPage(content)) {
             closeOverlaysForNavigation()
         }
+    }
+
+    /**
+     * Opens a drawer entry that is a page of its own, in the chan and board of the current page.
+     * Returns false when there is nowhere to go, the page being open already among the reasons.
+     */
+    private fun navigateDrawerPage(content: Page.Content): Boolean {
+        val currentFragment = this.currentFragment
+        var page = if (currentFragment is PageFragment) currentFragment.page else null
+        if (page != null && page.content == content) {
+            return false
+        }
+        if (page == null && !stackPageItems.isEmpty()) {
+            page = getSavedPage(stackPageItems[stackPageItems.size - 1])
+        }
+        var chanName = if (page != null) page.chanName else null
+        var boardName = if (page != null) page.boardName else null
+        if (chanName == null) {
+            val chan = ChanManager.getInstance().defaultChan
+            chanName = chan!!.name
+            boardName = getDefaultBoardName(chan)
+        }
+        if (chanName == null) {
+            return false
+        }
+        navigatePage(
+            content,
+            chanName,
+            boardName,
+            null,
+            null,
+            null,
+            null,
+            FLAG_PAGE_CLOSE_OVERLAYS or FLAG_PAGE_RESET_SCROLL,
+        )
+        return true
     }
 
     override fun onDraggingStateChanged(dragging: Boolean) {

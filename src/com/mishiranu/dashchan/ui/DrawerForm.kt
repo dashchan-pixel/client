@@ -59,6 +59,7 @@ import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.content.service.AudioPlayerService
 import com.mishiranu.dashchan.content.service.WatcherService
+import com.mishiranu.dashchan.content.storage.DraftsStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.FavoriteItem
 import com.mishiranu.dashchan.graphics.ChanIconDrawable
@@ -240,6 +241,7 @@ class DrawerForm(
                     ),
                 )
             }
+            updateDraftsItem()
             updateAudioPlayerItem()
             val hasUserBoards =
                 chan.configuration.getOption(ChanConfiguration.OPTION_READ_USER_BOARDS)
@@ -288,6 +290,59 @@ class DrawerForm(
 
     fun updateConfiguration(chanName: String?) {
         updateConfigurationInternal(chanName, false)
+        // Drafts come and go with the posting form, which changes no configuration
+        updateDrafts()
+    }
+
+    /** Rebinds the drafts entry after the set of stored drafts may have changed. */
+    fun updateDrafts() {
+        if (updateDraftsItem()) {
+            @Suppress("NotifyDataSetChanged")
+            notifyDataSetChanged()
+        }
+    }
+
+    /**
+     * Shows or hides the drafts entry. Drafts are stored per thread, so without this entry they are
+     * only reachable by reopening the posting form of the thread each one belongs to.
+     *
+     * Returns true when the top menu changed.
+     */
+    private fun updateDraftsItem(): Boolean {
+        val index =
+            topMenu.indexOfFirst {
+                it.type == ListItem.Type.MENU && it.data == MENU_ITEM_DRAFTS
+            }
+        if (DraftsStorage.getInstance().hasPostDrafts()) {
+            if (index >= 0) {
+                return false
+            }
+            val typedArray =
+                context.obtainStyledAttributes(intArrayOf(R.attr.iconDrawerMenuDrafts))
+            val iconResId = typedArray.getResourceId(0, 0)
+            typedArray.recycle()
+            // Right below the Echo, which heads the section, and above the audio player
+            val echoIndex =
+                topMenu.indexOfFirst {
+                    it.type == ListItem.Type.MENU && it.data == MENU_ITEM_ECHO
+                }
+            topMenu.add(
+                echoIndex + 1,
+                ListItem(
+                    ListItem.Type.MENU,
+                    MENU_ITEM_DRAFTS,
+                    iconResId,
+                    context.getString(R.string.drafts),
+                ),
+            )
+            return true
+        } else {
+            if (index < 0) {
+                return false
+            }
+            topMenu.removeAt(index)
+            return true
+        }
     }
 
     /**
@@ -706,6 +761,7 @@ class DrawerForm(
         pages: Boolean,
         favorites: Boolean,
     ) {
+        updateDraftsItem()
         if (pages && pagesListMode != PagesListMode.HIDE_PAGES) {
             updateListPages()
         }
@@ -1691,13 +1747,13 @@ class DrawerForm(
                     (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_USER_BOARDS)
             ) ||
             (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_USER_BOARDS) ||
-            // The Echo and the audio player form their own section above the pages and favorites
+            // The Echo, the drafts and the audio player form their own section above the pages
+            // and favorites
             (
                 current.type == ListItem.Type.MENU &&
-                    current.data == MENU_ITEM_ECHO &&
-                    (next.type != ListItem.Type.MENU || next.data != MENU_ITEM_AUDIO_PLAYER)
-            ) ||
-            (current.type == ListItem.Type.MENU && current.data == MENU_ITEM_AUDIO_PLAYER)
+                    current.data in TOP_MENU_ITEMS &&
+                    (next.type != ListItem.Type.MENU || next.data !in TOP_MENU_ITEMS)
+            )
 
     private fun configureDivider(
         configuration: DividerItemDecoration.Configuration,
@@ -2133,6 +2189,11 @@ class DrawerForm(
         const val MENU_ITEM_ECHO: Int = 4
         const val MENU_ITEM_PREFERENCES: Int = 5
         const val MENU_ITEM_AUDIO_PLAYER: Int = 6
+        const val MENU_ITEM_DRAFTS: Int = 7
+
+        // The entries of the section directly under the header, in the order they are shown
+        private val TOP_MENU_ITEMS =
+            setOf(MENU_ITEM_ECHO, MENU_ITEM_DRAFTS, MENU_ITEM_AUDIO_PLAYER)
 
         private fun showPageFavoriteMenu(
             fragmentManager: FragmentManager,
