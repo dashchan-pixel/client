@@ -33,8 +33,8 @@
     <string name="audio_player">Player audio</string>
     <string name="autohide">Autohide</string>
     <string name="available__plural">Disponibili</string>
-    <string name="backup_data">Backup dei dati</string>
-    <string name="backup_data__summary">Salva tutte le impostazioni, i preferiti, la cronologia, le regole di autohide e i comandi</string>
+    <string name="backup_data">Backup e ripristino</string>
+    <string name="backup_data__summary">Tutte le impostazioni, i preferiti, la cronologia, le risposte, le regole di autohide e i comandi</string>
     <string name="backups_not_found">Backup non trovati</string>
     <string name="ban_id">ID ban</string>
     <string name="block">Blocca</string>
