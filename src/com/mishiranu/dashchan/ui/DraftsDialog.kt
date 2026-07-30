@@ -15,7 +15,9 @@ import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.database.CommonDatabase
 import com.mishiranu.dashchan.content.storage.DraftsStorage
+import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.ui.navigator.manager.UiManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ListViewUtils
@@ -29,18 +31,25 @@ import com.mishiranu.dashchan.widget.ViewFactory
  * be reviewed, resumed or thrown away.
  */
 class DraftsDialog : DialogFragment() {
-    private val drafts = ArrayList<DraftsStorage.PostDraft>()
+    /** A draft with the two lines it is shown as, resolved once for the life of the dialog. */
+    private class Item(
+        val draft: DraftsStorage.PostDraft,
+        val text: String,
+        val thread: String,
+    )
+
+    private val items = ArrayList<Item>()
     private var adapter: Adapter? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val context = requireContext()
-        drafts.clear()
-        drafts.addAll(DraftsStorage.getInstance().getPostDrafts())
+        items.clear()
+        items.addAll(buildItems(context))
         val recyclerView = PaddedRecyclerView(context)
         recyclerView.layoutManager = LinearLayoutManager(context)
         val density = ResourceUtils.obtainDensity(context)
         recyclerView.setPadding(0, (12f * density).toInt(), 0, 0)
-        val adapter = Adapter(drafts, this::onDraftClick, this::onDeleteClick)
+        val adapter = Adapter(items, this::onDraftClick, this::onDeleteClick)
         this.adapter = adapter
         recyclerView.adapter = adapter
         return AlertDialog
@@ -56,8 +65,9 @@ class DraftsDialog : DialogFragment() {
         adapter = null
     }
 
-    private fun onDraftClick(draft: DraftsStorage.PostDraft) {
+    private fun onDraftClick(item: Item) {
         val navigator = activity as UiManager.LocalNavigator
+        val draft = item.draft
         dismiss()
         // The posting form looks the draft up by chan, board and thread on its own
         ConcurrentUtils.HANDLER.post {
@@ -66,10 +76,10 @@ class DraftsDialog : DialogFragment() {
     }
 
     private fun onDeleteClick(position: Int) {
-        val draft = drafts.removeAt(position)
+        val draft = items.removeAt(position).draft
         // The drawer entry follows the storage, so it hears about this on its own
         DraftsStorage.getInstance().removePostDraft(draft.chanName, draft.boardName, draft.threadNumber)
-        if (drafts.isEmpty()) {
+        if (items.isEmpty()) {
             dismiss()
         } else {
             adapter?.notifyItemRemoved(position)
@@ -81,30 +91,33 @@ class DraftsDialog : DialogFragment() {
     ) : RecyclerView.ViewHolder(holder.view)
 
     private class Adapter(
-        private val drafts: List<DraftsStorage.PostDraft>,
-        private val clickCallback: (DraftsStorage.PostDraft) -> Unit,
+        private val items: List<Item>,
+        private val clickCallback: (Item) -> Unit,
         private val deleteCallback: (Int) -> Unit,
     ) : RecyclerView.Adapter<ItemViewHolder>(),
-        ListViewUtils.ClickCallback<DraftsStorage.PostDraft, ItemViewHolder> {
-        // Drafts of a single chan need no chan title, the board name already tells them apart
-        private val multipleChans = drafts.mapTo(HashSet()) { it.chanName }.size >= 2
-
-        override fun getItemCount(): Int = drafts.size
+        ListViewUtils.ClickCallback<Item, ItemViewHolder> {
+        override fun getItemCount(): Int = items.size
 
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int,
         ): ItemViewHolder {
-            val viewHolder = ViewFactory.makeTwoLinesListItem(parent, ViewFactory.FEATURE_WIDGET)
-            // Enough of the comment to recognize the draft by, without rows of unequal height
-            viewHolder.text2.maxLines = 3
-            viewHolder.text2.ellipsize = TextUtils.TruncateAt.END
+            val viewHolder =
+                ViewFactory.makeTwoLinesListItem(
+                    parent,
+                    ViewFactory.FEATURE_WIDGET or ViewFactory.FEATURE_SINGLE_LINE,
+                )
+            // The draft's own text is what a draft is; enough of it to recognize one by, without
+            // rows of wildly unequal height. The thread it is meant for reads as its caption.
+            viewHolder.text1.isSingleLine = false
+            viewHolder.text1.maxLines = 3
+            viewHolder.text1.ellipsize = TextUtils.TruncateAt.END
             alignWithDialog(viewHolder.view)
             val holder = ItemViewHolder(viewHolder)
             val widgetFrame = checkNotNull(viewHolder.widgetFrame)
             widgetFrame.addView(createDeleteButton(parent.context, viewHolder, holder), 0)
             widgetFrame.visibility = View.VISIBLE
-            return ListViewUtils.bind(holder, false, drafts::get, this)
+            return ListViewUtils.bind(holder, false, items::get, this)
         }
 
         /**
@@ -155,7 +168,7 @@ class DraftsDialog : DialogFragment() {
         override fun onItemClick(
             holder: ItemViewHolder,
             position: Int,
-            item: DraftsStorage.PostDraft?,
+            item: Item?,
             longClick: Boolean,
         ): Boolean {
             if (item != null) {
@@ -168,49 +181,79 @@ class DraftsDialog : DialogFragment() {
             holder: ItemViewHolder,
             position: Int,
         ) {
-            val context = holder.itemView.context
-            val draft = drafts[position]
-            val viewHolder = holder.holder
-            viewHolder.text1.text = formatTarget(context, draft, multipleChans)
-            val description = describe(context, draft)
-            viewHolder.text2.text = description
-            viewHolder.text2.visibility = if (description == null) View.GONE else View.VISIBLE
+            val item = items[position]
+            holder.holder.text1.text = item.text
+            holder.holder.text2.text = item.thread
         }
     }
 
     private companion object {
         private val WHITESPACE = Regex("\\s+")
 
-        /** The thread the draft is meant for, named the way the drawer and the history name it. */
-        fun formatTarget(
+        fun buildItems(context: Context): List<Item> {
+            val drafts = DraftsStorage.getInstance().getPostDrafts()
+            // Drafts of a single chan need no chan title, the board name already tells them apart
+            val multipleChans = drafts.mapTo(HashSet()) { it.chanName }.size >= 2
+            return drafts.map {
+                Item(it, describe(context, it), formatThread(context, it, multipleChans))
+            }
+        }
+
+        /**
+         * The thread the draft is meant for: the title the favorites or the history remember for it,
+         * the way the Echo names the thread a reply came from, and its number when neither of them
+         * has ever seen it.
+         */
+        fun formatThread(
             context: Context,
             draft: DraftsStorage.PostDraft,
             multipleChans: Boolean,
         ): String {
             val chanName = draft.chanName.orEmpty()
-            val target =
-                if (draft.threadNumber.isNullOrEmpty()) {
+            val threadNumber = draft.threadNumber
+            val thread =
+                if (threadNumber.isNullOrEmpty()) {
                     StringUtils.formatBoardTitle(
                         chanName,
                         draft.boardName,
                         context.getString(R.string.new_thread),
                     )
                 } else {
-                    StringUtils.formatThreadTitle(chanName, draft.boardName, draft.threadNumber)
+                    findThreadTitle(draft.chanName, draft.boardName, threadNumber)
+                        ?: StringUtils.formatThreadTitle(chanName, draft.boardName, threadNumber)
                 }
             val chanTitle =
                 if (multipleChans) Chan.get(draft.chanName).configuration.getTitle() else null
-            return if (chanTitle.isNullOrEmpty()) target else "$chanTitle — $target"
+            return if (chanTitle.isNullOrEmpty()) thread else "$chanTitle — $thread"
+        }
+
+        private fun findThreadTitle(
+            chanName: String?,
+            boardName: String?,
+            threadNumber: String,
+        ): String? {
+            if (chanName == null) {
+                return null
+            }
+            val favoriteTitle =
+                FavoritesStorage
+                    .getInstance()
+                    .getFavorite(chanName, boardName, threadNumber)
+                    ?.title
+            return StringUtils.nullIfEmpty(favoriteTitle)
+                ?: StringUtils.nullIfEmpty(
+                    CommonDatabase.getInstance().history.getTitle(chanName, boardName, threadNumber),
+                )
         }
 
         /**
-         * What the draft holds. Options alone can keep a draft alive, so this can come out empty;
-         * the second line of the item is hidden in that case.
+         * What the draft holds, which is the whole of what one is. Options alone can keep a draft
+         * alive, and a draft with nothing to quote is still named rather than shown as a blank row.
          */
         fun describe(
             context: Context,
             draft: DraftsStorage.PostDraft,
-        ): String? {
+        ): String {
             val pieces = ArrayList<String>(2)
             val subject = draft.subject?.trim()
             if (!subject.isNullOrEmpty()) {
@@ -230,7 +273,7 @@ class DraftsDialog : DialogFragment() {
                     ),
                 )
             }
-            return if (pieces.isEmpty()) null else pieces.joinToString(" — ")
+            return if (pieces.isEmpty()) context.getString(R.string.draft) else pieces.joinToString(" — ")
         }
     }
 }
