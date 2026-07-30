@@ -1833,13 +1833,6 @@ class PostingFragment :
             )
         }
 
-    /** Shows the attached file itself: an image or a video in the gallery, music in the audio player. */
-    private val attachmentPreviewListener =
-        View.OnClickListener { v: View ->
-            val holder = v.getTag() as AttachmentHolder
-            DraftAttachmentMedia.open(requireContext(), holder.hash, holder.name)
-        }
-
     private val attachmentWarningListener =
         View.OnClickListener { v: View ->
             val holder = v.getTag() as AttachmentHolder?
@@ -2056,18 +2049,9 @@ class PostingFragment :
             FrameLayout.LayoutParams.MATCH_PARENT,
         )
 
-        // Everything above the controls strip opens the file itself. It is a target of its own rather
-        // than a check inside the options click, so the strip keeps the whole width for the options and
-        // neither has to guess where the other one ends. With no preview the attachment is exactly as
-        // tall as the strip, which leaves this view no height and nothing to catch.
-        val preview = View(view.getContext())
-        setSelectableItemBackground(preview)
-        preview.setOnClickListener(attachmentPreviewListener)
-        preview.setOnLongClickListener(attachmentDragStartListener)
-        preview.setVisibility(View.GONE)
-        view.addView(preview, previewAreaLayoutParams(minHeight))
         // Marks a preview that stands for something to play, the way a video or audio thumbnail is
-        // marked in a post: the same icons over the same dim.
+        // marked in a post: the same icons over the same dim. Not a target of its own — the whole
+        // attachment keeps opening the options, where the file itself can be played.
         val previewBadge = ImageView(view.getContext())
         previewBadge.setScaleType(ImageView.ScaleType.CENTER)
         previewBadge.setVisibility(View.GONE)
@@ -2144,14 +2128,12 @@ class PostingFragment :
                 imageView,
                 warningButton,
                 ratingButton,
-                preview,
                 previewBadge,
             )
         warningButton.setTag(holder)
         ratingButton.setTag(holder)
         removeButton.setTag(holder)
         options.setTag(holder)
-        preview.setTag(holder)
         attachments.add(holder)
         invalidateOptionsMenu()
         resizeComment(true)
@@ -2210,7 +2192,7 @@ class PostingFragment :
                 fileSize += mediaPreview.summary
             }
         }
-        applyAttachmentPreview(holder, bitmap, video, audio)
+        bitmap?.let { applyAttachmentPreview(holder, it, video, audio) }
         holder.fileSize.setText(fileSize)
         if ((jpegData == null || jpegData.exifData == null) && (pngData == null || !pngData.hasMetadata)) {
             holder.warningButton.setVisibility(View.GONE)
@@ -2219,25 +2201,19 @@ class PostingFragment :
     }
 
     /**
-     * Gives the attachment its preview box: the image itself when there is one to show, the play or
-     * headset icon of what it stands for, and the tap target that opens the file.
+     * Gives the attachment its preview box: the image, the frame or the cover art, marked with what it
+     * stands for. Called only when there is something to show — a music file with no cover art stays the
+     * bare row it was, and is played from the options dialog like every other attachment.
      */
     private fun applyAttachmentPreview(
         holder: AttachmentHolder,
-        previewBitmap: Bitmap?,
+        previewBitmap: Bitmap,
         video: Boolean,
         audio: Boolean,
     ) {
-        // Music has no frame to show, and usually no cover art either, but it still needs somewhere to
-        // tap to play it, so it is given the preview box either way.
-        if (previewBitmap == null && !audio) {
-            return
-        }
         holder.view.getLayoutParams().height = (128f * obtainDensity(this)).toInt()
-        if (previewBitmap != null) {
-            holder.imageView.setVisibility(View.VISIBLE)
-            holder.imageView.setImageBitmap(previewBitmap)
-        }
+        holder.imageView.setVisibility(View.VISIBLE)
+        holder.imageView.setImageBitmap(previewBitmap)
         if (video || audio) {
             holder.previewBadge.setImageDrawable(
                 getDrawable(
@@ -2246,15 +2222,9 @@ class PostingFragment :
                     0,
                 ),
             )
-            // Dimmed only over a frame, where the icon needs the contrast — the empty box of a music
-            // file with no cover art has nothing to dim.
-            holder.previewBadge.setBackgroundColor(if (previewBitmap != null) PREVIEW_DIM_COLOR else 0)
+            holder.previewBadge.setBackgroundColor(AttachmentHolder.PREVIEW_DIM_COLOR)
             holder.previewBadge.setVisibility(View.VISIBLE)
         }
-        holder.previewButton.setContentDescription(
-            getString(if (video || audio) R.string.play else R.string.view__verb),
-        )
-        holder.previewButton.setVisibility(View.VISIBLE)
     }
 
     /** What a video or audio attachment can show of itself. */
@@ -2794,13 +2764,10 @@ class PostingFragment :
 
         private const val EXTRA_CAPTCHA_DRAFT = "captchaDraft"
 
-        /** The same shade a post's thumbnail is dimmed with under a play or audio icon. */
-        private const val PREVIEW_DIM_COLOR = 0x66000000.toInt()
-
         /**
          * Fills the attachment down to the top of the controls strip. An attachment with no preview is
-         * exactly as tall as that strip, which leaves nothing of the view — that is what keeps the
-         * preview target and its badge out of the way when there is no preview to speak of.
+         * exactly as tall as that strip, which leaves nothing of the view — that is what keeps the badge
+         * out of the way when there is no preview to speak of.
          */
         private fun previewAreaLayoutParams(stripHeight: Int): FrameLayout.LayoutParams =
             FrameLayout

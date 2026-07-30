@@ -69,6 +69,16 @@ class GalleryItem {
 
     fun isOpenableVideo(chan: Chan): Boolean = NavigationUtils.isOpenableVideoPath(getFileName(chan))
 
+    /**
+     * True when the file has a web address of its own to be fetched from again. A local one — a draft
+     * attachment shown from the posting form, a data uri embedded in a post — cannot be refreshed, and
+     * its uri is of no use to anything that expects a link.
+     */
+    fun isRemote(chan: Chan): Boolean {
+        val fileUri = getFileUri(chan) ?: return false
+        return chan.locator.isWebScheme(fileUri)
+    }
+
     fun getFileUri(chan: Chan): Uri? {
         if (fileUri == null && fileUriString != null) {
             fileUri = chan.locator.convert(Uri.parse(fileUriString))

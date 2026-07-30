@@ -12,8 +12,6 @@ class AttachmentHolder(
     @JvmField val imageView: ImageView,
     @JvmField val warningButton: View,
     @JvmField val ratingButton: View,
-    /** Covers the preview above the controls strip: opens the file, and is gone without a preview. */
-    @JvmField val previewButton: View,
     /** The play or audio icon over a preview that stands for something to play. */
     @JvmField val previewBadge: ImageView,
 ) {
@@ -36,4 +34,12 @@ class AttachmentHolder(
     @JvmField var optionCustomName = false
 
     @JvmField var reencoding: GraphicsUtils.Reencoding? = null
+
+    companion object {
+        /**
+         * The same shade a post's thumbnail is dimmed with under a play or audio icon. Shared by the
+         * small preview in the form and the large one in the options dialog.
+         */
+        internal const val PREVIEW_DIM_COLOR = 0x66000000.toInt()
+    }
 }

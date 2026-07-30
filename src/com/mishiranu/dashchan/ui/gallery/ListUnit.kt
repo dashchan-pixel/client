@@ -698,7 +698,10 @@ class ListUnit(
                 R.string.download_file,
                 Runnable { callback.downloadGalleryItem(galleryItem) },
             )
-            if (galleryItem.getDisplayImageUri(chan) != null) {
+            // A local file — a draft attachment opened from the posting form — is all there is of
+            // itself: its uri is of no use to a search engine, a clipboard or another app.
+            val isRemote = galleryItem.isRemote(chan)
+            if (isRemote && galleryItem.getDisplayImageUri(chan) != null) {
                 dialogMenu.add(
                     R.string.search_image,
                     Runnable {
@@ -709,31 +712,35 @@ class ListUnit(
                     },
                 )
             }
-            dialogMenu.add(
-                R.string.copy_link,
-                Runnable {
-                    StringUtils.copyToClipboard(
-                        context,
-                        galleryItem.getFileUri(chan).toString(),
-                    )
-                },
-            )
+            if (isRemote) {
+                dialogMenu.add(
+                    R.string.copy_link,
+                    Runnable {
+                        StringUtils.copyToClipboard(
+                            context,
+                            galleryItem.getFileUri(chan).toString(),
+                        )
+                    },
+                )
+            }
             if (allowNavigatePostManually && galleryItem.postNumber != null) {
                 dialogMenu.add(
                     R.string.go_to_post,
                     Runnable { callback.navigatePost(galleryItem, true, true) },
                 )
             }
-            dialogMenu.add(
-                R.string.share_link,
-                Runnable {
-                    NavigationUtils.shareLink(
-                        context,
-                        null,
-                        galleryItem.getFileUri(chan)!!,
-                    )
-                },
-            )
+            if (isRemote) {
+                dialogMenu.add(
+                    R.string.share_link,
+                    Runnable {
+                        NavigationUtils.shareLink(
+                            context,
+                            null,
+                            galleryItem.getFileUri(chan)!!,
+                        )
+                    },
+                )
+            }
             return dialogMenu.create()
         }
     }

@@ -34,6 +34,12 @@ object DraftAttachmentMedia {
     fun isAudio(name: String?): Boolean = Chan.getFallback().locator.isAudioExtension(name)
 
     /**
+     * True for the kinds [open] has somewhere to send: a picture, a video, a track. Anything else is a
+     * file the app can only hand to another app, which is not worth offering as a preview.
+     */
+    fun canOpen(name: String?): Boolean = Chan.getFallback().locator.isImageExtension(name) || isVideo(name) || isAudio(name)
+
+    /**
      * Shows the attachment stored under [hash] with [name] as its file name, toasting the reason when
      * the file is gone or there is nothing to show it in.
      */

@@ -19,6 +19,7 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.HeaderViewListAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -28,6 +29,7 @@ import androidx.fragment.app.DialogFragment
 import chan.util.StringUtils.getFileExtension
 import chan.util.StringUtils.removeFileExtension
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.DraftAttachmentMedia
 import com.mishiranu.dashchan.content.storage.DraftsStorage.Companion.getInstance
 import com.mishiranu.dashchan.graphics.TransparentTileDrawable
 import com.mishiranu.dashchan.ui.posting.AttachmentHolder
@@ -186,12 +188,8 @@ class AttachmentOptionsDialog :
         }
         val linearLayout = LinearLayout(activity)
         linearLayout.setOrientation(LinearLayout.VERTICAL)
-        val imageView = ImageView(activity)
-        imageView.setBackground(TransparentTileDrawable(activity, true))
-        imageView.setImageDrawable(holder.imageView.getDrawable())
-        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP)
         linearLayout.addView(
-            imageView,
+            createPreview(activity, holder),
             LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f),
         )
         listView = ListView(activity)
@@ -280,6 +278,66 @@ class AttachmentOptionsDialog :
         val dialog = AlertDialog.Builder(activity).setView(linearLayout).create()
         dialog.setCanceledOnTouchOutside(true)
         return dialog
+    }
+
+    /**
+     * The large preview at the top of the dialog, and the one place a draft attachment can be looked at
+     * in full: tapping it opens the image or the video in the gallery, and plays music in the audio
+     * player. The small preview in the form opens this dialog instead, so this is the only way in.
+     *
+     * The box is here whether or not there is anything to show in it, since the layout gives it the
+     * space left over — which is what makes a music file with no cover art playable all the same.
+     */
+    private fun createPreview(
+        context: Context,
+        holder: AttachmentHolder,
+    ): View {
+        val preview = FrameLayout(context)
+        preview.setBackground(TransparentTileDrawable(context, true))
+        val imageView = ImageView(context)
+        val drawable = holder.imageView.getDrawable()
+        imageView.setImageDrawable(drawable)
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP)
+        preview.addView(
+            imageView,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+        )
+        if (!DraftAttachmentMedia.canOpen(holder.name)) {
+            return preview
+        }
+        val video = DraftAttachmentMedia.isVideo(holder.name)
+        val audio = DraftAttachmentMedia.isAudio(holder.name)
+        if (video || audio) {
+            val badge = ImageView(context)
+            badge.setImageDrawable(
+                ResourceUtils.getDrawable(
+                    context,
+                    if (video) R.attr.iconAttachmentVideo else R.attr.iconAttachmentAudio,
+                    0,
+                ),
+            )
+            badge.setScaleType(ImageView.ScaleType.CENTER)
+            // Dimmed only over a frame or a cover, where the icon needs the contrast — an empty box has
+            // nothing to dim.
+            if (drawable != null) {
+                badge.setBackgroundColor(AttachmentHolder.PREVIEW_DIM_COLOR)
+            }
+            preview.addView(
+                badge,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            )
+        }
+        // As the foreground, so the ripple lies over the preview instead of replacing the tiles behind it
+        preview.setForeground(
+            ResourceUtils.getDrawable(context, android.R.attr.selectableItemBackground, 0),
+        )
+        preview.setContentDescription(getString(if (video || audio) R.string.play else R.string.view__verb))
+        preview.setOnClickListener {
+            DraftAttachmentMedia.open(context, holder.hash, holder.name)
+        }
+        return preview
     }
 
     override fun onResume() {

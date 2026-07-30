@@ -257,14 +257,20 @@ class PagerUnit(
             val isOpenableVideo = isVideo && galleryItem.isOpenableVideo(chan)
             val isVideoInitialized = isOpenableVideo && videoUnit.isInitialized
             val imageHasMetadata = imageUnit.hasMetadata()
+            // A local file is all there is of itself: there is nothing to fetch it from again, and no
+            // link to hand to a search engine.
+            val isRemote = galleryItem.isRemote(chan)
             save = holder.loadState == PagerInstance.LoadState.COMPLETE ||
                 (isVideo && (!isOpenableVideo || holder.loadState == PagerInstance.LoadState.ERROR))
             refresh =
-                !isVideo ||
-                isVideoInitialized ||
-                holder.loadState == PagerInstance.LoadState.ERROR
+                isRemote &&
+                (
+                    !isVideo ||
+                        isVideoInitialized ||
+                        holder.loadState == PagerInstance.LoadState.ERROR
+                )
             viewMetadata = isVideoInitialized || imageHasMetadata
-            searchImage = galleryItem.getDisplayImageUri(chan) != null
+            searchImage = isRemote && galleryItem.getDisplayImageUri(chan) != null
             copyImage =
                 galleryItem.isImage(chan) &&
                 holder.loadState == PagerInstance.LoadState.COMPLETE
@@ -785,7 +791,10 @@ class PagerUnit(
                     galleryItem.getFileName(chan)
                 },
             )
-            if (galleryItem.isVideo(chan)) {
+            // A local file — a draft attachment opened from the posting form — has no address to be
+            // fetched from again, which is what the flow player and both link options need.
+            val isRemote = galleryItem.isRemote(chan)
+            if (galleryItem.isVideo(chan) && isRemote) {
                 // Mirrors the flow player's context menu, which offers switching to the gallery.
                 // Picture-in-picture is offered through the side-column button, not this menu.
                 dialogMenu.add(R.string.flow, Runnable { galleryInstance.callback.switchToFlow() })
@@ -853,22 +862,24 @@ class PagerUnit(
                     },
                 )
             }
-            dialogMenu.add(
-                R.string.copy_link,
-                Runnable {
-                    StringUtils.copyToClipboard(
-                        context,
-                        galleryItem.getFileUri(chan).toString(),
-                    )
-                },
-            )
-            dialogMenu.add(
-                R.string.share_link,
-                Runnable {
-                    videoUnit.forcePause()
-                    NavigationUtils.shareLink(context, null, galleryItem.getFileUri(chan)!!)
-                },
-            )
+            if (isRemote) {
+                dialogMenu.add(
+                    R.string.copy_link,
+                    Runnable {
+                        StringUtils.copyToClipboard(
+                            context,
+                            galleryItem.getFileUri(chan).toString(),
+                        )
+                    },
+                )
+                dialogMenu.add(
+                    R.string.share_link,
+                    Runnable {
+                        videoUnit.forcePause()
+                        NavigationUtils.shareLink(context, null, galleryItem.getFileUri(chan)!!)
+                    },
+                )
+            }
             if (capabilities.shareFile) {
                 Companion.addGalleryFileOption(
                     dialogMenu,
