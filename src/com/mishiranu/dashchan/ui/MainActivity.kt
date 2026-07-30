@@ -97,6 +97,7 @@ import com.mishiranu.dashchan.content.service.PostingService.GlobalCallback
 import com.mishiranu.dashchan.content.service.WatcherService
 import com.mishiranu.dashchan.content.service.WatcherService.Companion.getClient
 import com.mishiranu.dashchan.content.storage.CommandsStorage
+import com.mishiranu.dashchan.content.storage.DraftsStorage
 import com.mishiranu.dashchan.content.storage.DraftsStorage.Companion.getInstance
 import com.mishiranu.dashchan.content.storage.FavoritesStorage
 import com.mishiranu.dashchan.content.storage.FavoritesStorage.Companion.getInstance
@@ -171,7 +172,6 @@ class MainActivity :
     StateActivity(),
     DrawerForm.Callback,
     ThemeDialog.Callback,
-    DraftsDialog.Callback,
     FavoritesStorage.Observer,
     WatcherService.Client.Callback,
     UiManager.Callback,
@@ -1539,15 +1539,16 @@ class MainActivity :
     }
 
     private fun showDraftsDialog() {
+        if (!DraftsStorage.getInstance().hasPostDrafts()) {
+            // A row that outlived the drafts it stands for, rather than an empty list to look at
+            drawerForm.updateDrafts()
+            return
+        }
         val fragmentManager = getSupportFragmentManager()
         val tag = DraftsDialog::class.java.getName()
         if (fragmentManager.findFragmentByTag(tag) == null) {
             DraftsDialog().show(fragmentManager, tag)
         }
-    }
-
-    override fun onDraftsChanged() {
-        drawerForm.updateDrafts()
     }
 
     private fun closeOverlaysForNavigation() {

@@ -13,10 +13,12 @@ import com.mishiranu.dashchan.content.CacheManager
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.ui.CaptchaForm
+import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.GraphicsUtils
 import com.mishiranu.dashchan.util.Hasher
 import com.mishiranu.dashchan.util.IOUtils
 import com.mishiranu.dashchan.util.LruCache
+import com.mishiranu.dashchan.util.WeakObservable
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -126,6 +128,27 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
         writer.flush()
     }
 
+    private val observable = WeakObservable<Observer>()
+
+    /** Reached whenever a post draft is stored, replaced or dropped. */
+    fun interface Observer {
+        fun onPostDraftsChanged()
+    }
+
+    fun getObservable(): WeakObservable<Observer> = observable
+
+    private val onPostDraftsChanged =
+        Runnable {
+            for (observer in observable) {
+                observer.onPostDraftsChanged()
+            }
+        }
+
+    private fun notifyPostDraftsChanged() {
+        // The posting service drops a sent draft on a thread of its own
+        ConcurrentUtils.HANDLER.post(onPostDraftsChanged)
+    }
+
     fun store(postDraft: PostDraft?) {
         if (postDraft != null) {
             var serialize = true
@@ -136,6 +159,7 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
             }
             if (serialize) {
                 serialize()
+                notifyPostDraftsChanged()
             }
         }
     }
@@ -162,6 +186,7 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
         val postDraft = postDrafts.remove(makeKey(chanName, boardName, threadNumber))
         if (postDraft != null) {
             serialize()
+            notifyPostDraftsChanged()
         }
     }
 

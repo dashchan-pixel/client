@@ -29,11 +29,6 @@ import com.mishiranu.dashchan.widget.ViewFactory
  * be reviewed, resumed or thrown away.
  */
 class DraftsDialog : DialogFragment() {
-    interface Callback {
-        /** The drawer entry disappears with the last draft, so it is rebound after a removal. */
-        fun onDraftsChanged()
-    }
-
     private val drafts = ArrayList<DraftsStorage.PostDraft>()
     private var adapter: Adapter? = null
 
@@ -72,8 +67,8 @@ class DraftsDialog : DialogFragment() {
 
     private fun onDeleteClick(position: Int) {
         val draft = drafts.removeAt(position)
+        // The drawer entry follows the storage, so it hears about this on its own
         DraftsStorage.getInstance().removePostDraft(draft.chanName, draft.boardName, draft.threadNumber)
-        (activity as? Callback)?.onDraftsChanged()
         if (drafts.isEmpty()) {
             dismiss()
         } else {

@@ -157,6 +157,10 @@ class DrawerForm(
             notifyDataSetChanged()
         }
 
+    // The drafts entry follows the stored drafts, which the posting form writes on its way out and
+    // the posting service drops after a send - neither of them a moment the drawer would hear about
+    private val updateDraftsObserver = DraftsStorage.Observer { updateDrafts() }
+
     private enum class CategoriesOrder {
         PAGES_FIRST,
         FAVORITES_FIRST,
@@ -290,8 +294,6 @@ class DrawerForm(
 
     fun updateConfiguration(chanName: String?) {
         updateConfigurationInternal(chanName, false)
-        // Drafts come and go with the posting form, which changes no configuration
-        updateDrafts()
     }
 
     /** Rebinds the drafts entry after the set of stored drafts may have changed. */
@@ -761,7 +763,6 @@ class DrawerForm(
         pages: Boolean,
         favorites: Boolean,
     ) {
-        updateDraftsItem()
         if (pages && pagesListMode != PagesListMode.HIDE_PAGES) {
             updateListPages()
         }
@@ -2064,6 +2065,7 @@ class DrawerForm(
         inputMethodManager =
             context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         CommonDatabase.getInstance().echo.registerObserver(updateEchoRunnable)
+        DraftsStorage.getInstance().getObservable().register(updateDraftsObserver)
         updatePreferencesWithoutConfiguration()
         updateChansWithoutConfiguration()
     }
