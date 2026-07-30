@@ -85,7 +85,7 @@ object CommandsPopup {
             val popupField = androidx.appcompat.widget.ListPopupWindow::class.java.getDeclaredField("mPopup")
             popupField.isAccessible = true
             val popupWindow = popupField.get(popup) as android.widget.PopupWindow
-            popupWindow.elevation = 8f * density
+            popupWindow.elevation = context.resources.getDimension(R.dimen.popup_elevation)
         } catch (e: Exception) {
             android.util.Log.w("CommandsPopup", "Failed to set popup elevation", e)
         }

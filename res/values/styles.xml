@@ -442,9 +442,18 @@
 		<item name="android:navigationBarColor">@android:color/black</item>
 
 	</style>
+	<!--
+		The drawer's favourites menu. Material's popup elevation is @dimen/floating_window_z (16dp),
+		twice what the app's own popups use (see CommandsPopup). A PopupWindow reserves room for its
+		shadow by growing the surface ceil(2 * z) on every side, but the spot light sits above the top
+		of the display, so the shadow of a popup low on the screen is thrown further down than that —
+		and gets cut off along the bottom edge, plainly visible on a light theme. Half the elevation,
+		half the overhang.
+	-->
 	<style name="Widget.OverlapPopupMenu" parent="@android:style/Widget.Material.PopupMenu">
 
 		<item name="android:overlapAnchor">true</item>
+		<item name="android:popupElevation">@dimen/popup_elevation</item>
 
 	</style>
 	<!--
