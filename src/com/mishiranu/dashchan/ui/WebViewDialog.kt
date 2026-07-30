@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Message
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,8 +62,15 @@ abstract class WebViewDialog : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        val dialog = dialog
-        dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        val window = dialog?.window ?: return
+        // A third of the screen, pinned to the top: the challenge needs little room,
+        // and the page behind it stays visible.
+        val screenHeight =
+            window.windowManager.currentWindowMetrics
+                .bounds
+                .height()
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, screenHeight / 3)
+        window.setGravity(Gravity.TOP)
     }
 
     protected fun setWebChromeClient(webChromeClient: WebChromeClient) {
