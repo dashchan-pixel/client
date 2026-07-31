@@ -69,7 +69,7 @@ abstract class WebViewDialog : DialogFragment() {
             window.windowManager.currentWindowMetrics
                 .bounds
                 .height()
-        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, screenHeight / 3)
+        window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, screenHeight / 3 * 2)
         window.setGravity(Gravity.TOP)
     }
 
