@@ -722,7 +722,7 @@ class VideoUnit(
 
     private fun showSeekFeedback(seek: VideoSeekTapDetector.Seek) {
         val seconds = abs(seek.burstMs) / 1000
-        seekFeedbackView.setText(if (seek.forward) "+ $seconds s" else "- $seconds s")
+        seekFeedbackView.setText(if (seek.forward) "+$seconds s" else "–$seconds s")
         seekFeedbackView.setVisibility(View.VISIBLE)
         seekFeedbackView.removeCallbacks(hideSeekFeedbackRunnable)
         seekFeedbackView.postDelayed(hideSeekFeedbackRunnable, 700)
