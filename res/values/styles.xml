@@ -124,6 +124,15 @@
 		<item name="android:textSize">12sp</item>
 		<item name="android:textColor">?attr/colorTextMeta</item>
 		<item name="android:tag">theme.textColor=meta</item>
+		<!--
+			No font padding: the 12sp line box is ~5dp taller than the glyphs and seats them in
+			its lower half, so the first header line's text floats well below the box top even
+			when the box itself is flush with the thumbnail. That extra air reads as too much
+			space above the number/name/date line (worst on attachment-less posts, which have no
+			thumbnail to justify it). Trimming it lifts the glyphs to the box top, level with the
+			attachment.
+		-->
+		<item name="android:includeFontPadding">false</item>
 
 	</style>
 
