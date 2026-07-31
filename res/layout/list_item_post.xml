@@ -30,16 +30,11 @@
                 padding because the 10dp is measured from the post border strip, which is itself
                 6dp in from the post's edge: 6 + 10 puts the thumbnail 16dp from the left, and the
                 16dp here gives it the same air above.
-
-                gravity is top, not center_vertical: the thumbnail is match_parent height so it
-                fills the row, but the header text is wrap_content and would otherwise centre
-                against a taller thumbnail and drift below its top. Top-aligning keeps the text
-                starting level with the thumbnail, matching the thread list/card text columns.
             -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="top"
+                android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingLeft="10dp"
                 android:paddingTop="16dp"
@@ -48,8 +43,8 @@
 
                 <!--
                     16dp of air between the thumbnail and the header text, the same gap the thread
-                    list/card views keep between their thumbnail and subject. (The head below adds a
-                    2dp inset of its own, so the text glyphs land ~18dp out — the 2dp is negligible.)
+                    list/card views keep between their thumbnail and subject. (The head adds a 2dp
+                    inset on its sides, so the text glyphs land ~18dp out — the 2dp is negligible.)
                 -->
                 <com.mishiranu.dashchan.widget.AttachmentView
                     android:id="@+id/thumbnail"
@@ -58,12 +53,22 @@
                     android:layout_marginEnd="16dp"
                     android:layout_marginRight="16dp" />
 
+                <!--
+                    No top padding on the head. The row stretches the match_parent thumbnail to the
+                    text's own height, so the thumbnail and this text box already share a top edge;
+                    a 2dp top inset here would push the first header line 2dp below the thumbnail's
+                    top and read as extra air before the text. Dropping it lands the first line
+                    level with the thumbnail, the way the thread list's subject sits flush with its
+                    thumbnail top. Sides and bottom keep their 2dp.
+                -->
                 <com.mishiranu.dashchan.widget.LinebreakLayout
                     android:id="@+id/head"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:horizontalSpacing="4dp"
-                    android:padding="2dp">
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:paddingBottom="2dp">
 
                     <TextView
                         android:id="@+id/index"
