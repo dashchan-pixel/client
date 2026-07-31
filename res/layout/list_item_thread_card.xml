@@ -71,13 +71,19 @@
 		android:paddingRight="8dp"
 		android:background="?android:attr/selectableItemBackground">
 
+		<!--
+			paddingBottom is 4dp, not the 8dp of paddingTop: the reply line sits above the
+			CardView's own 8dp content pad, so 4 + 8 = 12dp of air below it, matching the list
+			view (its description's 8dp bottom pad + the text column's 4dp). Without this the
+			card would leave 8 + 8 = 16dp and hang lower than the list.
+		-->
 		<com.mishiranu.dashchan.widget.ThreadDescriptionView
 			android:id="@+id/thread_description"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_weight="1"
 			android:paddingTop="8dp"
-			android:paddingBottom="8dp" />
+			android:paddingBottom="4dp" />
 
 	</LinearLayout>
 

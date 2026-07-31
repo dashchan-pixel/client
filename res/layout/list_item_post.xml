@@ -30,11 +30,16 @@
                 padding because the 10dp is measured from the post border strip, which is itself
                 6dp in from the post's edge: 6 + 10 puts the thumbnail 16dp from the left, and the
                 16dp here gives it the same air above.
+
+                gravity is top, not center_vertical: the thumbnail is match_parent height so it
+                fills the row, but the header text is wrap_content and would otherwise centre
+                against a taller thumbnail and drift below its top. Top-aligning keeps the text
+                starting level with the thumbnail, matching the thread list/card text columns.
             -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:gravity="top"
                 android:orientation="horizontal"
                 android:paddingLeft="10dp"
                 android:paddingTop="16dp"
