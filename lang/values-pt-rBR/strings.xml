@@ -203,6 +203,7 @@
 	<string name="max_lines_count__summary">Corte posts longos se passar de um valor pré-determinado</string>
 	<string name="merge_pages">Fundir páginas</string>
 	<string name="message_data">Dados da mensagem</string>
+	<string name="minimize">Minimizar</string>
 	<string name="multi_tap_seek">Avanço com múltiplos toques</string>
 	<string name="multi_tap_seek__summary">Toque duas vezes para pular 5 s, depois mais 5 s a cada toque rápido seguinte (esquerda retrocede, direita avança)</string>
 	<string name="my_post">Meu post</string>

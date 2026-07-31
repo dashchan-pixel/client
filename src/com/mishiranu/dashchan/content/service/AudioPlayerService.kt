@@ -67,6 +67,10 @@ class AudioPlayerService :
     private var fileName: String? = null
     private var audioFile: File? = null
 
+    // Raw bytes of the embedded cover art (ID3 APIC / FLAC picture / …) as ExoPlayer parses them
+    // out of the file, or null while none has turned up. Handed to the dialog to decode and show.
+    private var artworkData: ByteArray? = null
+
     private var foregroundStarted = false
 
     private var progress = 0
@@ -109,6 +113,12 @@ class AudioPlayerService :
     private fun notifyCancel() {
         for (callback in callbacks) {
             callback.onCancel()
+        }
+    }
+
+    private fun notifyArtwork() {
+        for (callback in callbacks) {
+            callback.onArtworkChanged()
         }
     }
 
@@ -180,6 +190,7 @@ class AudioPlayerService :
             player.release()
         }
         player = null
+        artworkData = null
         wakeLock.release()
         setActive(false)
         if (stopSelf) {
@@ -216,6 +227,9 @@ class AudioPlayerService :
         fun onTogglePlayback()
 
         fun onCancel()
+
+        /** The embedded cover art has been parsed (or cleared); read it back from the binder. */
+        fun onArtworkChanged()
     }
 
     /** Notified when audio playback starts or stops, so the UI can offer the player. */
@@ -247,6 +261,10 @@ class AudioPlayerService :
             get() = player?.isPlaying == true
 
         fun getFileName(): String? = fileName
+
+        /** Raw bytes of the embedded cover art, or null while the file has none (or none yet). */
+        val artworkData: ByteArray?
+            get() = this@AudioPlayerService.artworkData
 
         val position: Int
             get() = player?.getCurrentPosition()?.toInt() ?: -1
@@ -296,6 +314,15 @@ class AudioPlayerService :
                     }
                     updatePlaybackNotification()
                     notifyToggle()
+                }
+                if (events.contains(Player.EVENT_MEDIA_METADATA_CHANGED)) {
+                    // ExoPlayer merges the tags it reads out of the file into the media metadata,
+                    // so the cover art turns up here once the file has been parsed.
+                    val data = player.mediaMetadata.artworkData
+                    if (!data.contentEquals(artworkData)) {
+                        artworkData = data
+                        notifyArtwork()
+                    }
                 }
             }
 

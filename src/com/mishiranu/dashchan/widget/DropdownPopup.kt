@@ -11,8 +11,9 @@ import com.mishiranu.dashchan.util.ResourceUtils
 import kotlin.math.max
 
 /**
- * A single-choice dropdown anchored to a view: the current row carries a radio mark and the list
- * hugs its widest label instead of the anchor's width.
+ * A single-choice dropdown anchored to a view: the current row carries a radio mark (unless
+ * [showRadio] turns it off, for a chooser whose anchor already shows the current value) and the
+ * list hugs its widest label instead of the anchor's width.
  *
  * A [ListPopupWindow] rather than a framework `PopupMenu`, for the same reason as [CommandsPopup]:
  * a PopupMenu draws the square background of its own popup style, which no amount of theming rounds
@@ -25,14 +26,20 @@ import kotlin.math.max
  * rows need not be dark enough for.
  */
 object DropdownPopup {
-    /** Minimum width, so a dropdown of short labels still reads as a list rather than a tooltip. */
+    /**
+     * Minimum width for a radio (menu-style) dropdown, so a list of short labels still reads as a
+     * list rather than a tooltip. A no-radio chooser hugs its content down to [TAP_WIDTH_DP], which
+     * keeps a speed picker of "1x"-width labels from floating in a needlessly wide popup.
+     */
     private const val MIN_WIDTH_DP = 112f
+    private const val TAP_WIDTH_DP = 48f
 
     fun show(
         anchor: View,
         menuContext: Context,
         labels: List<CharSequence>,
         checkedIndex: Int,
+        showRadio: Boolean = true,
         onSelect: (Int) -> Unit,
     ) {
         val density = ResourceUtils.obtainDensity(menuContext)
@@ -41,7 +48,11 @@ object DropdownPopup {
         val adapter =
             object : ArrayAdapter<CharSequence>(
                 menuContext,
-                android.R.layout.simple_list_item_single_choice,
+                if (showRadio) {
+                    android.R.layout.simple_list_item_single_choice
+                } else {
+                    android.R.layout.simple_list_item_1
+                },
                 android.R.id.text1,
                 labels,
             ) {
@@ -52,8 +63,9 @@ object DropdownPopup {
                 ): View {
                     val view = super.getView(position, convertView, parent)
                     view.setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical)
-                    // The row is a CheckedTextView, so the radio mark rides along without the list
-                    // needing a choice mode of its own.
+                    // With the radio layout the row is a CheckedTextView, so the mark rides along
+                    // without the list needing a choice mode of its own; the plain layout is not
+                    // Checkable and this is a no-op.
                     (view as? Checkable)?.isChecked = position == checkedIndex
                     return view
                 }
@@ -68,7 +80,7 @@ object DropdownPopup {
                 ResourceUtils.getResourceId(menuContext, android.R.attr.selectableItemBackground, 0),
             ),
         )
-        popup.width = measureWidth(adapter, menuContext, density)
+        popup.width = measureWidth(adapter, menuContext, density, showRadio)
         popup.setBackgroundDrawable(ThemeEngine.roundedPopupBackground(menuContext))
         popup.setOnItemClickListener { _, _, position, _ ->
             popup.dismiss()
@@ -81,6 +93,7 @@ object DropdownPopup {
         adapter: ArrayAdapter<CharSequence>,
         menuContext: Context,
         density: Float,
+        showRadio: Boolean,
     ): Int {
         val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
         val fakeParent = FrameLayout(menuContext)
@@ -91,6 +104,7 @@ object DropdownPopup {
             itemView.measure(measureSpec, measureSpec)
             contentWidth = max(contentWidth, itemView.measuredWidth)
         }
-        return contentWidth.coerceAtLeast((MIN_WIDTH_DP * density).toInt())
+        val minWidthDp = if (showRadio) MIN_WIDTH_DP else TAP_WIDTH_DP
+        return contentWidth.coerceAtLeast((minWidthDp * density).toInt())
     }
 }

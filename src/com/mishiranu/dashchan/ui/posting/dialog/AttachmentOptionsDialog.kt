@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.ui.posting.dialog
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
@@ -38,8 +39,10 @@ import com.mishiranu.dashchan.util.FilenameUtils.getFilenameMaxCharacterCount
 import com.mishiranu.dashchan.util.FilenameUtils.isValidCharacter
 import com.mishiranu.dashchan.util.GraphicsUtils.Reencoding
 import com.mishiranu.dashchan.util.GraphicsUtils.canRemoveMetadata
+import com.mishiranu.dashchan.util.GraphicsUtils.isLight
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.MaterialButton
+import com.mishiranu.dashchan.widget.ThemeEngine
 
 class AttachmentOptionsDialog :
     DialogFragment,
@@ -309,20 +312,32 @@ class AttachmentOptionsDialog :
         val video = DraftAttachmentMedia.isVideo(holder.name)
         val audio = DraftAttachmentMedia.isAudio(holder.name)
         if (video || audio) {
+            val icon =
+                ResourceUtils
+                    .getDrawable(
+                        context,
+                        if (video) R.attr.iconAttachmentVideo else R.attr.iconAttachmentAudio,
+                        0,
+                    )?.mutate()
             val badge = ImageView(context)
-            badge.setImageDrawable(
-                ResourceUtils.getDrawable(
-                    context,
-                    if (video) R.attr.iconAttachmentVideo else R.attr.iconAttachmentAudio,
-                    0,
-                ),
-            )
             badge.setScaleType(ImageView.ScaleType.CENTER)
-            // Dimmed only over a frame or a cover, where the icon needs the contrast — an empty box has
-            // nothing to dim.
             if (drawable != null) {
+                // Over a frame or a cover the icon just needs a dim behind it for the contrast.
                 badge.setBackgroundColor(AttachmentHolder.PREVIEW_DIM_COLOR)
+            } else {
+                // A cover-less audio (or frame-less video) would otherwise leave the white glyph on
+                // the bare transparency tiles: fill the box with the accent so it reads as a playable
+                // preview, dark-tinting the glyph on a light accent so it stays legible. With no image
+                // to give it height the box would otherwise collapse to the glyph, so give it a proper
+                // one — a cover would have supplied its own.
+                val accent = ThemeEngine.getTheme(context).accent
+                preview.setBackgroundColor(accent)
+                preview.minimumHeight = (PREVIEW_MIN_HEIGHT_DP * context.resources.displayMetrics.density).toInt()
+                if (isLight(accent)) {
+                    icon?.setTint(Color.BLACK)
+                }
             }
+            badge.setImageDrawable(icon)
             preview.addView(
                 badge,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -442,5 +457,8 @@ class AttachmentOptionsDialog :
         val TAG: String = AttachmentOptionsDialog::class.java.getName()
 
         private const val EXTRA_ATTACHMENT_INDEX = "attachmentIndex"
+
+        /** Height of the cover-less audio / video preview box, which has no image to size itself. */
+        private const val PREVIEW_MIN_HEIGHT_DP = 128f
     }
 }

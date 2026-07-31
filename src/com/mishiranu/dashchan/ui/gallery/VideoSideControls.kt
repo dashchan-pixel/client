@@ -144,6 +144,8 @@ class VideoSideControls(
             GalleryInstance.menuContext(context),
             speeds.map { formatSpeed(it) },
             speeds.indexOfFirst { abs(it - current) < 0.001f },
+            // The speed button already shows the current speed, so a radio mark would be redundant.
+            showRadio = false,
         ) { position -> onSelect(speeds[position]) }
     }
 
