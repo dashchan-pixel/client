@@ -41,12 +41,17 @@
                 android:paddingRight="16dp"
                 android:paddingBottom="4dp">
 
+                <!--
+                    16dp of air between the thumbnail and the header text, the same gap the thread
+                    list/card views keep between their thumbnail and subject. (The head below adds a
+                    2dp inset of its own, so the text glyphs land ~18dp out — the 2dp is negligible.)
+                -->
                 <com.mishiranu.dashchan.widget.AttachmentView
                     android:id="@+id/thumbnail"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginEnd="6dp"
-                    android:layout_marginRight="6dp" />
+                    android:layout_marginEnd="16dp"
+                    android:layout_marginRight="16dp" />
 
                 <com.mishiranu.dashchan.widget.LinebreakLayout
                     android:id="@+id/head"
