@@ -179,7 +179,7 @@ object NavigationUtils {
             ) {
                 openImageVideo(context, internalUri)
                 handled = true
-            } else if (locator.isAudioUri(internalUri) && Preferences.isUseAudioPlayer) {
+            } else if (locator.isAudioUri(internalUri) && Preferences.isUsePlayer) {
                 AudioPlayerService.start(context, targetChanName, internalUri, fileName)
                 handled = true
             }
@@ -214,7 +214,7 @@ object NavigationUtils {
     fun isOpenableVideoPath(path: String?): Boolean = isOpenableVideoExtension(StringUtils.getFileExtension(path))
 
     @JvmStatic
-    fun isOpenableVideoExtension(extension: String?): Boolean = Preferences.isUseVideoPlayer && C.OPENABLE_VIDEO_EXTENSIONS.contains(extension)
+    fun isOpenableVideoExtension(extension: String?): Boolean = Preferences.isUsePlayer && C.OPENABLE_VIDEO_EXTENSIONS.contains(extension)
 
     @JvmStatic
     fun shareText(

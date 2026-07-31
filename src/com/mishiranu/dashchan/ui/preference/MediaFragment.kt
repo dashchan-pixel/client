@@ -178,13 +178,13 @@ class MediaFragment :
             enumResList(Preferences.MediaLoadingAction.values()) { v -> v.titleResId },
         )
 
-        addHeader(R.string.video_player)
+        addHeader(R.string.player)
         addCheck(
             true,
-            Preferences.KEY_USE_VIDEO_PLAYER,
-            Preferences.DEFAULT_USE_VIDEO_PLAYER,
-            R.string.use_built_in_video_player,
-            R.string.use_built_in_video_player__summary,
+            Preferences.KEY_USE_PLAYER,
+            Preferences.DEFAULT_USE_PLAYER,
+            R.string.use_built_in_player,
+            R.string.use_built_in_player__summary,
         )
         addList(
             Preferences.KEY_VIDEO_COMPLETION,
@@ -216,8 +216,8 @@ class MediaFragment :
         )
         // Configurable playback speeds for the player's side-column button (1× is always available;
         // if none of the optional ones are enabled the button is hidden). A single row opens a
-        // chip dialog rather than one checkbox per speed. The audio player's speed button offers the
-        // same set, so this row is not tied to the built-in video player being on.
+        // chip dialog rather than one checkbox per speed. Both the video and audio players draw from
+        // this set, so it is greyed out only when the built-in player is off entirely.
         addDialogPreference(
             VideoSpeedsPreference(
                 requireContext(),
@@ -245,19 +245,11 @@ class MediaFragment :
                 speeds.joinToString(", ") { VideoSideControls.formatSpeed(it) }
             },
         )
-        addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_VIDEO_PLAYER, true)
-        addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_VIDEO_PLAYER, true)
-        addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_VIDEO_PLAYER, true)
-        addDependency(Preferences.KEY_VIDEO_MULTI_TAP_SEEK, Preferences.KEY_USE_VIDEO_PLAYER, true)
-
-        addHeader(R.string.audio_player)
-        addCheck(
-            true,
-            Preferences.KEY_USE_AUDIO_PLAYER,
-            Preferences.DEFAULT_USE_AUDIO_PLAYER,
-            R.string.use_built_in_audio_player,
-            R.string.use_built_in_audio_player__summary,
-        )
+        addDependency(Preferences.KEY_VIDEO_COMPLETION, Preferences.KEY_USE_PLAYER, true)
+        addDependency(Preferences.KEY_VIDEO_PLAY_AFTER_SCROLL, Preferences.KEY_USE_PLAYER, true)
+        addDependency(Preferences.KEY_VIDEO_SEEK_ANY_FRAME, Preferences.KEY_USE_PLAYER, true)
+        addDependency(Preferences.KEY_VIDEO_MULTI_TAP_SEEK, Preferences.KEY_USE_PLAYER, true)
+        addDependency(Preferences.KEY_VIDEO_SPEEDS, Preferences.KEY_USE_PLAYER, true)
 
         addHeader(R.string.additional)
         addSeek(

@@ -25,6 +25,7 @@ import com.mishiranu.dashchan.C
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CacheManager
 import com.mishiranu.dashchan.content.LocaleManager
+import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.ReadFileTask
 import com.mishiranu.dashchan.content.async.ReadFileTask.FileCallback
 import com.mishiranu.dashchan.content.database.ChanDatabase
@@ -321,8 +322,15 @@ class AudioPlayerService :
             true,
         )
         player.setHandleAudioBecomingNoisy(true)
-        // A track plays once and stops at its end; the service stays up so it can be played again
-        player.setRepeatMode(Player.REPEAT_MODE_OFF)
+        // Honour the same "action on playback completion" setting the video player uses: loop the
+        // track, or stop at its end. Either way the service stays up so it can be played again.
+        player.setRepeatMode(
+            if (Preferences.videoCompletionMode == Preferences.VideoCompletionMode.LOOP) {
+                Player.REPEAT_MODE_ONE
+            } else {
+                Player.REPEAT_MODE_OFF
+            },
+        )
         player.addListener(playerListener)
         player.setMediaItem(
             MediaItem

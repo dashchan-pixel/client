@@ -58,7 +58,7 @@ object DraftAttachmentMedia {
             return
         }
         val locator = Chan.getFallback().locator
-        if (isAudio(name) && Preferences.isUseAudioPlayer) {
+        if (isAudio(name) && Preferences.isUsePlayer) {
             // No chan name: the file is the user's own, so there is no forum to credit it to.
             AudioPlayerService.start(context, null, uri, name)
         } else if (locator.isImageExtension(name) ||

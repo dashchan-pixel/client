@@ -421,6 +421,7 @@
 	<string name="playback_speed">Скорость воспроизведения</string>
 	<string name="playback_speed_options">Доступные скорости воспроизведения</string>
 	<string name="playback_error">Ошибка воспроизведения</string>
+	<string name="player">Плеер</string>
 	<string name="popular">Популярные</string>
 	<string name="port">Порт</string>
 	<string name="post_is_not_found">Сообщение не найдено</string>
@@ -608,10 +609,8 @@
 		установить приложения после окончания загрузки.</string>
 	<string name="updates">Обновления</string>
 	<string name="updates_available__genitive">Доступно обновлений</string>
-	<string name="use_built_in_audio_player">Использовать встроенный аудиоплеер</string>
-	<string name="use_built_in_audio_player__summary">Воспроизводить аудиовложения в приложении</string>
-	<string name="use_built_in_video_player">Использовать встроенный видеоплеер</string>
-	<string name="use_built_in_video_player__summary">Воспроизводить вложенные WebM видео</string>
+	<string name="use_built_in_player">Использовать встроенный плеер</string>
+	<string name="use_built_in_player__summary">Воспроизводить медиавложения в приложении</string>
 	<string name="use_forum_settings">Использовать настройки форума</string>
 	<string name="user_authorization">Авторизация пользователя</string>
 	<string name="user_boards">Пользовательские разделы</string>
@@ -623,7 +622,6 @@
 	<string name="verify_certificate__summary">Соединение будет разорвано, если сертификат не достоверен</string>
 	<string name="version">Версия</string>
 	<string name="vibration">Вибрация</string>
-	<string name="video_player">Видеоплеер</string>
 	<string name="videos">Видео</string>
 	<string name="view__verb">Просмотреть</string>
 	<string name="views">Просмотры</string>

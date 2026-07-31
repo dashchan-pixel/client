@@ -25,6 +25,7 @@ import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
 import com.mishiranu.dashchan.widget.DropdownPopup
 import com.mishiranu.dashchan.widget.ThemeEngine
+import java.util.Locale
 import kotlin.math.abs
 
 class AudioPlayerDialog : DialogFragment() {
@@ -32,6 +33,7 @@ class AudioPlayerDialog : DialogFragment() {
     private var seekBar: SeekBar? = null
     private var button: ImageButton? = null
     private var speedButton: TextView? = null
+    private var timeTextView: TextView? = null
 
     private var tracking = false
     private var shouldCancel = false
@@ -93,6 +95,7 @@ class AudioPlayerDialog : DialogFragment() {
                 if (!tracking) {
                     seekBar.progress = audioPlayerBinder.position
                 }
+                updateTimeState()
                 seekBar.postDelayed(this, 500)
             }
         }
@@ -120,23 +123,11 @@ class AudioPlayerDialog : DialogFragment() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
         )
         tracking = false
-        // The same speeds the video player offers, in a dropdown anchored to a text button. Hidden
-        // when the user has left only 1x enabled, since then there is nothing to choose between.
-        val speedButton = TextView(context, null, android.R.attr.borderlessButtonStyle)
-        this.speedButton = speedButton
-        speedButton.gravity = Gravity.CENTER
-        speedButton.typeface = ResourceUtils.TYPEFACE_MEDIUM
-        speedButton.minWidth = (48f * density).toInt()
-        speedButton.contentDescription = getString(R.string.playback_speed)
-        ViewUtils.setTextSizeScaled(speedButton, 14)
-        horizontal.addView(speedButton, LinearLayout.LayoutParams.WRAP_CONTENT, (48f * density).toInt())
-        speedButton.visibility = if (Preferences.enabledVideoSpeeds.size > 1) View.VISIBLE else View.GONE
-        speedButton.setOnClickListener { showSpeedPopup() }
         val seekBar = SeekBar(context)
         this.seekBar = seekBar
         ThemeEngine.applyStyle(seekBar)
         horizontal.addView(seekBar, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        seekBar.setPadding((8f * density).toInt(), 0, (16f * density).toInt(), 0)
+        seekBar.setPadding(0, 0, (16f * density).toInt(), 0)
         seekBar.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(
@@ -147,6 +138,7 @@ class AudioPlayerDialog : DialogFragment() {
                     if (audioPlayerBinder != null && fromUser) {
                         audioPlayerBinder?.seekTo(progress)
                     }
+                    updateTimeState()
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar) {
@@ -173,8 +165,35 @@ class AudioPlayerDialog : DialogFragment() {
                 0,
             ),
         )
+        // The bottom line carries the elapsed / total timestamps on the left and, pushed to the
+        // right, the speed button. It offers the same speeds the video player does, in a dropdown
+        // anchored to a text button, and is hidden when the user has left only 1x enabled, since
+        // then there is nothing to choose between.
+        val bottom = LinearLayout(context)
+        bottom.orientation = LinearLayout.HORIZONTAL
+        bottom.gravity = Gravity.CENTER_VERTICAL
+        linearLayout.addView(
+            bottom,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        )
+        val timeTextView = TextView(context, null, android.R.attr.textAppearanceSmall)
+        this.timeTextView = timeTextView
+        bottom.addView(timeTextView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        bottom.addView(View(context), LinearLayout.LayoutParams(0, 1, 1f))
+        val speedButton = TextView(context, null, android.R.attr.borderlessButtonStyle)
+        this.speedButton = speedButton
+        speedButton.gravity = Gravity.CENTER
+        speedButton.typeface = ResourceUtils.TYPEFACE_MEDIUM
+        speedButton.minWidth = (48f * density).toInt()
+        speedButton.contentDescription = getString(R.string.playback_speed)
+        ViewUtils.setTextSizeScaled(speedButton, 14)
+        bottom.addView(speedButton, LinearLayout.LayoutParams.WRAP_CONTENT, (48f * density).toInt())
+        speedButton.visibility = if (Preferences.enabledVideoSpeeds.size > 1) View.VISIBLE else View.GONE
+        speedButton.setOnClickListener { showSpeedPopup() }
         updatePlayState()
         updateSpeedState()
+        updateTimeState()
         button.setOnClickListener {
             audioPlayerBinder?.togglePlayback()
         }
@@ -206,6 +225,7 @@ class AudioPlayerDialog : DialogFragment() {
         seekBar = null
         button = null
         speedButton = null
+        timeTextView = null
     }
 
     override fun onResume() {
@@ -228,6 +248,27 @@ class AudioPlayerDialog : DialogFragment() {
     private fun updateSpeedState() {
         val speedButton = this.speedButton ?: return
         speedButton.text = VideoSideControls.formatSpeed(audioPlayerBinder?.speed ?: 1f)
+    }
+
+    private fun updateTimeState() {
+        val timeTextView = this.timeTextView ?: return
+        val seekBar = this.seekBar ?: return
+        // The seek bar mirrors the player position when idle and the scrubbed value while tracking,
+        // so it is the right source for the elapsed time either way. The total is shown once the
+        // file has been parsed and its duration is known.
+        val position = seekBar.progress.coerceAtLeast(0)
+        val duration = audioPlayerBinder?.duration ?: 0
+        timeTextView.text =
+            if (duration > 0) {
+                "${formatTime(position)} / ${formatTime(duration)}"
+            } else {
+                formatTime(position)
+            }
+    }
+
+    private fun formatTime(ms: Int): String {
+        val totalSeconds = ms / 1000
+        return String.format(Locale.US, "%d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 
     private fun showSpeedPopup() {

@@ -1493,7 +1493,7 @@ class DialogUnit internal constructor(
         val chan = get(chanName)
         val uri = attachmentItem.getFileUri(chan)
         val type = attachmentItem.getType()
-        if (canDownload && type == AttachmentItem.Type.AUDIO && Preferences.isUseAudioPlayer) {
+        if (canDownload && type == AttachmentItem.Type.AUDIO && Preferences.isUsePlayer) {
             start(context, chanName, uri, attachmentItem.getFileName(chan))
         } else if (canDownload &&
             (

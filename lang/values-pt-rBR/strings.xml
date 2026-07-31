@@ -300,6 +300,7 @@
 	<string name="playback_error">Erro na reprodução</string>
 	<string name="playback_speed">Velocidade de reprodução</string>
 	<string name="playback_speed_options">Opções de velocidade de reprodução</string>
+	<string name="player">Reprodutor</string>
 	<string name="popular">Populares</string>
 	<string name="port">Porta</string>
 	<string name="post_is_not_found">O post não foi encontrado</string>
@@ -442,10 +443,8 @@
 		pode instalar as aplicações quando o download acabar.</string>
 	<string name="updates">Atualizações</string>
 	<string name="updates_available__genitive">Atualizações disponíveis</string>
-	<string name="use_built_in_audio_player">Usar reprodutor de áudio embutido</string>
-	<string name="use_built_in_audio_player__summary">Reproduzir anexos de áudio no app</string>
-	<string name="use_built_in_video_player">Usar reprodutor de vídeo embutido</string>
-	<string name="use_built_in_video_player__summary">Reproduzir anexos Webm</string>
+	<string name="use_built_in_player">Usar reprodutor embutido</string>
+	<string name="use_built_in_player__summary">Reproduzir anexos de mídia no app</string>
 	<string name="user_authorization">Autorização de usuário</string>
 	<string name="user_boards">Boards de usuários</string>
 	<string name="user_is_banned">Usuário foi convidado a visitar os amiguinhosrsrs</string>
@@ -454,7 +453,6 @@
 	<string name="verify_certificate">Verificar certificado</string>
 	<string name="verify_certificate__summary">A conexão será encerrada se o certificado for inválido</string>
 	<string name="version">Versão</string>
-	<string name="video_player">Reprodutor de vídeo</string>
 	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
 	<string name="visible_address">Endereço visível</string>
