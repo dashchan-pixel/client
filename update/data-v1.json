@@ -8,15 +8,15 @@
             "packages": [
                 {
                     "title": "Release",
-                    "version_name": "26.7.9",
-                    "version_code": 1346,
+                    "version_name": "26.8",
+                    "version_code": 1347,
                     "min_api_version": 1,
                     "max_api_version": 1,
                     "min_sdk": 36,
-                    "length": 6625113,
-                    "source": "//github.com/dashchan-redacted/client/releases/download/26.7.9/dashchan-redacted-1346.apk",
+                    "length": 7193119,
+                    "source": "//github.com/dashchan-redacted/client/releases/download/26.8/dashchan-redacted-1347.apk",
                     "fingerprint": "16:F0:D0:D0:89:5B:3F:C5:4D:5E:A1:72:D7:98:CA:5E:1D:B5:15:A2:C4:7B:91:F5:B5:1B:1D:F5:2A:3E:04:C0",
-                    "sha256sum": "66:34:FE:1C:E5:20:72:29:1D:E2:74:85:10:14:62:03:B6:0F:52:AA:14:A2:58:A7:6D:CD:D7:5F:78:F8:58:54"
+                    "sha256sum": "D7:CC:21:0A:E9:85:6A:DF:D8:A5:0C:D9:DB:0B:B4:9F:CD:CE:47:1C:AE:33:51:D7:11:93:2C:34:5C:A4:18:D4"
                 }
             ]
         }
