@@ -85,6 +85,10 @@ class VideoUnit(
     private var pausedByTransientLossOfFocus = false
     private var finishedPlayback = false
     private var trackingNow = false
+
+    // Last duration pushed to the scrubber. Some containers only report their duration a beat after
+    // the player turns ready, so the progress tick re-syncs it; -2 forces the first tick to apply.
+    private var lastKnownDuration = -2L
     private var hideSurfaceOnInit = false
     private var videoCover: View? = null
 
@@ -525,6 +529,7 @@ class VideoUnit(
             // The no-audio / mute state now lives on the side column's mute button.
             configurationView.removeAllViews()
             val duration = player.getDuration()
+            lastKnownDuration = duration
             totalTimeTextView.setText(formatVideoTime(duration))
             seekBar.setMax(duration.toInt())
         }
@@ -554,6 +559,14 @@ class VideoUnit(
             override fun run() {
                 val seekBar = this@VideoUnit.seekBar
                 if (this@VideoUnit.isInitialized) {
+                    // Re-sync the duration: if it was unknown at onReady (scrubber stuck at 00:00,
+                    // seeking disabled) and the player has since resolved it, the bar goes live.
+                    val duration = player!!.getDuration()
+                    if (duration != lastKnownDuration) {
+                        lastKnownDuration = duration
+                        seekBar.setMax(duration.toInt())
+                        totalTimeTextView.setText(formatVideoTime(duration))
+                    }
                     val position: Int
                     if (trackingNow) {
                         position = seekBar.getProgress()

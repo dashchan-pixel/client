@@ -17,11 +17,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.BaseDataSource
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.SeekParameters
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.extractor.DefaultExtractorsFactory
 import com.mishiranu.dashchan.content.MainApplication
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import java.io.EOFException
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -100,11 +104,22 @@ class VideoPlayer(
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                if (isTruncatedTailError(error)) {
+                    // A file whose container index outruns its actual bytes (a "cut" clip: the last
+                    // fragment/samples are missing) decodes fine until the extractor reads past the
+                    // physical end, then throws EOF. We have effectively played the whole clip, so
+                    // report normal completion instead of a failure. The player is left in its error
+                    // state; setPosition re-prepares it on the next replay / loop / seek.
+                    recoverableError = true
+                    listener.onComplete(this@VideoPlayer)
+                    return
+                }
                 listener.onError(this@VideoPlayer, error.message)
             }
         }
     private var ready = false
     private var released = false
+    private var recoverableError = false
 
     // Availability window of the partial file, guarded by rangeLock.
     private val rangeLock = Object()
@@ -139,9 +154,12 @@ class VideoPlayer(
             player.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)))
         } else {
             val factory = DataSource.Factory { PartialFileDataSource() }
+            // The complete-file path goes through the player's DefaultMediaSourceFactory (which
+            // carries EXTRACTORS_FACTORY); the streaming path builds its own source, so it has to
+            // pass the same tuned extractors explicitly to inherit constant-bitrate seeking.
             player.setMediaSource(
                 ProgressiveMediaSource
-                    .Factory(factory)
+                    .Factory(factory, EXTRACTORS_FACTORY)
                     .createMediaSource(MediaItem.fromUri(Uri.fromFile(file))),
             )
         }
@@ -207,7 +225,15 @@ class VideoPlayer(
     fun getPosition(): Long = exoPlayer?.currentPosition ?: 0
 
     fun setPosition(position: Long) {
-        exoPlayer?.seekTo(position)
+        val player = exoPlayer ?: return
+        if (recoverableError && player.playerError != null) {
+            // Recover from a truncated-tail EOF (see onPlayerError): a fresh prepare() clears the
+            // error and re-runs the extractor, so replay / loop / scrubbing works again. It will
+            // play to the same truncated end and complete cleanly once more.
+            recoverableError = false
+            player.prepare()
+        }
+        player.seekTo(position)
     }
 
     fun getMetadata(): Map<String, String> {
@@ -306,6 +332,26 @@ class VideoPlayer(
             // Ignore
         }
         partialFile = null
+    }
+
+    // True when the error is a source-side EOF (the file's bytes ran out mid-parse) that surfaces
+    // after playback has started -- i.e. a truncated file, not a stream that failed to prepare or a
+    // decoder failure. A browser plays whatever was readable and stops; we do the same by reporting
+    // completion. When the container declares a duration we additionally require being near it (so a
+    // clip cut off early still errors); when the duration is unknown -- e.g. a WebM with no Duration
+    // element -- having reached a ready, playing-into-the-stream state is all we can rely on.
+    private fun isTruncatedTailError(error: PlaybackException): Boolean {
+        val isEof = generateSequence<Throwable>(error) { it.cause }.any { it is EOFException }
+        if (!isEof || !ready) {
+            return false
+        }
+        val duration = getDuration()
+        val position = getPosition()
+        return if (duration > 0) {
+            position >= duration - END_OF_STREAM_TOLERANCE_MS
+        } else {
+            position > 0
+        }
     }
 
     // Returns the number of contiguous bytes available at position, 0 if none yet, -1 at end of file.
@@ -443,23 +489,53 @@ class VideoPlayer(
     companion object {
         private const val POOL_SIZE = 4
 
+        // How close to the declared duration playback must be for a source EOF to count as a
+        // benign truncated tail rather than a genuine mid-stream failure.
+        private const val END_OF_STREAM_TOLERANCE_MS = 1000L
+
         // Idle ExoPlayer instances kept for reuse (player + playback thread construction is
         // skipped on the next init()). Main-thread only, like every ExoPlayer interaction here.
         private val playerPool = ArrayDeque<ExoPlayer>()
+
+        // Shared extractor tuning. Applied to the complete-file path via the player's media-source
+        // factory and to the streaming path via ProgressiveMediaSource.Factory. MP3/ADTS(AAC)/AMR
+        // streams carry no seek index, so without constant-bitrate seeking their duration comes back
+        // wrong (or unknown) and a scrub/rewind into the un-indexed region fails; "…Always" extends
+        // that estimate to streams whose total length isn't known yet (a still-downloading partial
+        // file), so the scrubber reads right and rewind works mid-download too. No effect on the
+        // seekable containers (mp4/mkv/webm) that make up most clips.
+        private val EXTRACTORS_FACTORY: DefaultExtractorsFactory =
+            DefaultExtractorsFactory()
+                .setConstantBitrateSeekingEnabled(true)
+                .setConstantBitrateSeekingAlwaysEnabled(true)
+
+        private fun buildPlayer(): ExoPlayer {
+            val context = MainApplication.getInstance()
+            // Enable decoder fallback: if the primary (usually hardware) decoder fails to
+            // initialize or decode — common with the off-spec H.264/HEVC/VP9 profiles that turn up
+            // on imageboards — the renderer retries on the next decoder (typically the platform's
+            // built-in software MediaCodec) instead of surfacing a fatal playback error on the
+            // first frame.
+            val renderersFactory =
+                DefaultRenderersFactory(context)
+                    .setEnableDecoderFallback(true)
+            return ExoPlayer
+                .Builder(context, renderersFactory)
+                .setMediaSourceFactory(DefaultMediaSourceFactory(context, EXTRACTORS_FACTORY))
+                .build()
+        }
 
         /** Pre-create idle players (up to the pool cap) so upcoming [init] calls start warm. */
         @JvmStatic
         fun prewarm(count: Int) {
             ConcurrentUtils.HANDLER.post {
                 while (playerPool.size < minOf(count, POOL_SIZE)) {
-                    playerPool.addLast(ExoPlayer.Builder(MainApplication.getInstance()).build())
+                    playerPool.addLast(buildPlayer())
                 }
             }
         }
 
-        private fun obtainPooledPlayer(): ExoPlayer =
-            playerPool.removeFirstOrNull()
-                ?: ExoPlayer.Builder(MainApplication.getInstance()).build()
+        private fun obtainPooledPlayer(): ExoPlayer = playerPool.removeFirstOrNull() ?: buildPlayer()
 
         private fun recyclePooledPlayer(player: ExoPlayer) {
             // Silence before pausing/stopping: stop() flushes the audio track, and any samples
