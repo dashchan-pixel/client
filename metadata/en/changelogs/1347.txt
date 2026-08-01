@@ -1,0 +1,16 @@
+* Drafts get a place to be looked through: while any saved drafts exist, an entry in the drawer names them, and a tap opens the list — each row names the thread the draft is for, with the subject and comment (or the attachment count) below. Drafts of a removed extension are kept too, and the cache now holds a thousand instead of five.
+* Error reports: About lists every saved crash report — its date and the line that killed the app — to read, share, copy or delete, and the first start after a crash now says so, with a button that opens the report.
+* Popular: a thread-menu view that re-lists the thread showing only the posts that got replies, most replied first. Hidden posts and their replies drop out of the ranking.
+* Gallery: a Filter bar with two dropdowns — narrow the files to a media type (images, GIF, videos) and sort by post order, file name, size, resolution or type. Each dropdown lists only what the gallery in front of you actually holds.
+* Search every setting from the root of Preferences: a lens in the toolbar finds a title or summary across General, User interface, Contents, Media and each installed forum, then opens the owning screen and pulses the row.
+* Commands: libraries — shared snippets or scripts downloaded from an address that run ahead of a command's body, so two commands can share code. A command can now run on a single post, and a thread command can manage a post's attachments.
+* Audio: one "Use built-in player" switch now covers both audio and video (opt-out), the player asks for notification permission so its controls can actually be reached, plays a track once at the speed you pick, and "Action on playback completion" drives it too. The audio dialog shows timestamps.
+* Favorites: a bump-limited favorite can be followed into its continuation ("Notify only" or automatic), and a board can keep its own watcher interval — up to 5 minutes — overriding the global one.
+* Updates: the APK already installed is no longer offered back as an update, and two addresses that serve the same manifest are merged into one source instead of listing every extension twice.
+* Video: recovers from more playback errors — falls back to the software decoder for off-spec streams, seeks constant-bitrate audio correctly, and plays a clip cut off at the tail instead of erroring on the first frame.
+* An invisible reCAPTCHA is now solved without asking for a tap (General → Services → "Solve invisible reCAPTCHA").
+* Extensions can decorate a post — draw their own view in a slot below the comment and add menu entries and actions to it (e.g. post reactions), instead of reaching into the app by reflection.
+* A forum's Connection settings gain a "Visible address" row: the IP and location Cloudflare reports as what that forum sees for you, fetched through the forum's own proxy and HTTPS settings, so you can tell whether a proxy or Tor is really carrying its traffic. The update repositories are named after what they hold.
+* Posting: dropped the confirmation header above the captcha and send block.
+* The Cloudflare/firewall challenge no longer takes over the whole window — it is sized to two-thirds of the screen and pinned to the top, so the page waiting on it stays in view underneath.
+* Spacing polish across the post list, all three thread views, the gallery controls and the drawer popups.
