@@ -17,6 +17,7 @@ import chan.util.CommonUtils
 import chan.util.StringUtils.emptyIfNull
 import chan.util.StringUtils.isEmpty
 import com.mishiranu.dashchan.content.MainApplication
+import com.mishiranu.dashchan.content.database.ChanDatabase.Schema.Bans
 import com.mishiranu.dashchan.content.database.ChanDatabase.Schema.Boards
 import com.mishiranu.dashchan.content.database.ChanDatabase.Schema.Cookies
 import com.mishiranu.dashchan.content.database.Expression.BindBatchInsertArgs
@@ -85,6 +86,28 @@ class ChanDatabase private constructor() {
 
             companion object {
                 const val TABLE_NAME: String = "cookies"
+            }
+        }
+
+        interface Bans {
+            interface Columns {
+                companion object {
+                    const val CHAN_NAME: String = "chan_name"
+                    const val BOARD_NAME: String = "board_name"
+                    const val THREAD_NUMBER: String = "thread_number"
+                    const val BAN_ID: String = "ban_id"
+                    const val MESSAGE: String = "message"
+                    const val START_DATE: String = "start_date"
+                    const val EXPIRE_DATE: String = "expire_date"
+                    const val ADDRESS: String = "address"
+                    const val CREATED: String = "created"
+                    const val UPDATED: String = "updated"
+                    const val ATTEMPTS: String = "attempts"
+                }
+            }
+
+            companion object {
+                const val TABLE_NAME: String = "bans"
             }
         }
 
@@ -231,6 +254,71 @@ class ChanDatabase private constructor() {
         }
     }
 
+    class BanCursor internal constructor(
+        cursor: Cursor,
+    ) : CursorWrapper(cursor) {
+        internal val rowIdIndex: Int = cursor.getColumnIndex("rowid")
+        internal val boardNameIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.BOARD_NAME)
+        internal val threadNumberIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.THREAD_NUMBER)
+        internal val banIdIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.BAN_ID)
+        internal val messageIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.MESSAGE)
+        internal val startDateIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.START_DATE)
+        internal val expireDateIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.EXPIRE_DATE)
+        internal val addressIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.ADDRESS)
+        internal val createdIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.CREATED)
+        internal val updatedIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.UPDATED)
+        internal val attemptsIndex: Int = cursor.getColumnIndex(Bans.Columns.Companion.ATTEMPTS)
+    }
+
+    /**
+     * One ban the forum answered a post with. [expireDate] follows [chan.content.ApiException.BanExtra]:
+     * 0 when the forum didn't say, [Long.MAX_VALUE] when the ban never expires.
+     */
+    class BanItem {
+        var rowId: Long = 0
+        var boardName: String? = null
+        var threadNumber: String? = null
+        var banId: String? = null
+        var message: String? = null
+        var startDate: Long = 0
+        var expireDate: Long = 0
+        var address: String? = null
+        var created: Long = 0
+        var updated: Long = 0
+        var attempts: Int = 0
+
+        fun update(cursor: BanCursor): BanItem {
+            rowId = if (cursor.rowIdIndex >= 0) cursor.getLong(cursor.rowIdIndex) else 0
+            boardName = cursor.getString(cursor.boardNameIndex)
+            threadNumber = cursor.getString(cursor.threadNumberIndex)
+            banId = cursor.getString(cursor.banIdIndex)
+            message = cursor.getString(cursor.messageIndex)
+            startDate = cursor.getLong(cursor.startDateIndex)
+            expireDate = cursor.getLong(cursor.expireDateIndex)
+            address = cursor.getString(cursor.addressIndex)
+            created = cursor.getLong(cursor.createdIndex)
+            updated = cursor.getLong(cursor.updatedIndex)
+            attempts = cursor.getInt(cursor.attemptsIndex)
+            return this
+        }
+
+        fun copy(): BanItem {
+            val banItem = BanItem()
+            banItem.rowId = rowId
+            banItem.boardName = boardName
+            banItem.threadNumber = threadNumber
+            banItem.banId = banId
+            banItem.message = message
+            banItem.startDate = startDate
+            banItem.expireDate = expireDate
+            banItem.address = address
+            banItem.created = created
+            banItem.updated = updated
+            banItem.attempts = attempts
+            return banItem
+        }
+    }
+
     private val helper = Helper()
     private val database: SQLiteDatabase = helper.getWritableDatabase()
     private val supportsCte: Boolean
@@ -269,17 +357,50 @@ class ChanDatabase private constructor() {
                     "PRIMARY KEY (" + Cookies.Columns.Companion.CHAN_NAME + ", " +
                     Cookies.Columns.Companion.NAME + "))",
             )
+            createBans(db)
         }
 
         override fun onUpgrade(
-            db: SQLiteDatabase?,
+            db: SQLiteDatabase,
             oldVersion: Int,
             newVersion: Int,
-        ) {}
+        ) {
+            if (oldVersion < 2) {
+                createBans(db)
+            }
+        }
 
         companion object {
             private const val DATABASE_NAME = "chan.db"
-            private const val DATABASE_VERSION = 1
+            private const val DATABASE_VERSION = 2
+
+            /**
+             * The unique key is what the extension told us about the ban, so the same ban blocking
+             * another post updates its row instead of piling up a duplicate. The thread it was hit
+             * in is context of the first sighting only: a ban is not thread-scoped.
+             */
+            private fun createBans(db: SQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE " + Bans.Companion.TABLE_NAME + " (" +
+                        Bans.Columns.Companion.CHAN_NAME + " TEXT NOT NULL, " +
+                        Bans.Columns.Companion.BOARD_NAME + " TEXT NOT NULL, " +
+                        Bans.Columns.Companion.THREAD_NUMBER + " TEXT NOT NULL, " +
+                        Bans.Columns.Companion.BAN_ID + " TEXT NOT NULL, " +
+                        Bans.Columns.Companion.MESSAGE + " TEXT NOT NULL, " +
+                        Bans.Columns.Companion.START_DATE + " INTEGER NOT NULL DEFAULT 0, " +
+                        Bans.Columns.Companion.EXPIRE_DATE + " INTEGER NOT NULL DEFAULT 0, " +
+                        Bans.Columns.Companion.ADDRESS + " TEXT NOT NULL DEFAULT '', " +
+                        Bans.Columns.Companion.CREATED + " INTEGER NOT NULL DEFAULT 0, " +
+                        Bans.Columns.Companion.UPDATED + " INTEGER NOT NULL DEFAULT 0, " +
+                        Bans.Columns.Companion.ATTEMPTS + " INTEGER NOT NULL DEFAULT 1, " +
+                        "UNIQUE (" + Bans.Columns.Companion.CHAN_NAME + ", " +
+                        Bans.Columns.Companion.BOARD_NAME + ", " +
+                        Bans.Columns.Companion.BAN_ID + ", " +
+                        Bans.Columns.Companion.MESSAGE + ", " +
+                        Bans.Columns.Companion.START_DATE + ", " +
+                        Bans.Columns.Companion.EXPIRE_DATE + "))",
+                )
+            }
         }
     }
 
@@ -984,6 +1105,176 @@ class ChanDatabase private constructor() {
                 null,
             ),
         )
+    }
+
+    /**
+     * Stores a ban the forum answered a post with, or refreshes the row of a ban already known.
+     * Returns its rowid, so the address the forum saw can be filled in later by [setBanAddress]
+     * once it has been resolved.
+     */
+    fun addBan(
+        chanName: String,
+        boardName: String?,
+        threadNumber: String?,
+        banId: String?,
+        message: String?,
+        startDate: Long,
+        expireDate: Long,
+    ): Long {
+        Objects.requireNonNull<String?>(chanName)
+        val time = System.currentTimeMillis()
+        val filter =
+            Expression
+                .filter()
+                .equals(Bans.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Bans.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                .equals(Bans.Columns.Companion.BAN_ID, emptyIfNull(banId))
+                .equals(Bans.Columns.Companion.MESSAGE, emptyIfNull(message))
+                .equals(Bans.Columns.Companion.START_DATE, startDate.toString())
+                .equals(Bans.Columns.Companion.EXPIRE_DATE, expireDate.toString())
+                .build()
+        database.beginTransaction()
+        try {
+            var rowId = findRowId(Bans.Companion.TABLE_NAME, filter)
+            if (rowId >= 0) {
+                database.execSQL(
+                    "UPDATE " + Bans.Companion.TABLE_NAME + " " +
+                        "SET " + Bans.Columns.Companion.UPDATED + " = ?, " +
+                        Bans.Columns.Companion.ATTEMPTS + " = " +
+                        Bans.Columns.Companion.ATTEMPTS + " + 1 " +
+                        "WHERE rowid = ?",
+                    arrayOf<Any>(time, rowId),
+                )
+            } else {
+                val values = ContentValues()
+                values.put(Bans.Columns.Companion.CHAN_NAME, chanName)
+                values.put(Bans.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                values.put(Bans.Columns.Companion.THREAD_NUMBER, emptyIfNull(threadNumber))
+                values.put(Bans.Columns.Companion.BAN_ID, emptyIfNull(banId))
+                values.put(Bans.Columns.Companion.MESSAGE, emptyIfNull(message))
+                values.put(Bans.Columns.Companion.START_DATE, startDate)
+                values.put(Bans.Columns.Companion.EXPIRE_DATE, expireDate)
+                values.put(Bans.Columns.Companion.ADDRESS, "")
+                values.put(Bans.Columns.Companion.CREATED, time)
+                values.put(Bans.Columns.Companion.UPDATED, time)
+                values.put(Bans.Columns.Companion.ATTEMPTS, 1)
+                rowId = database.insert(Bans.Companion.TABLE_NAME, null, values)
+            }
+            database.setTransactionSuccessful()
+            return rowId
+        } finally {
+            database.endTransaction()
+        }
+    }
+
+    /** The rowid of the first row [filter] matches, or -1 when it matches none. */
+    private fun findRowId(
+        tableName: String,
+        filter: Expression.Filter,
+    ): Long {
+        val projection = arrayOf<String?>("rowid")
+        database
+            .query(
+                tableName,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+                "1",
+            ).use { cursor ->
+                return if (cursor.moveToFirst()) cursor.getLong(0) else -1L
+            }
+    }
+
+    /** Only fills an address in: a ban whose address is already known keeps the one it was caught with. */
+    fun setBanAddress(
+        rowId: Long,
+        address: String,
+    ) {
+        if (rowId < 0 || isEmpty(address)) {
+            return
+        }
+        database.execSQL(
+            "UPDATE " + Bans.Companion.TABLE_NAME + " " +
+                "SET " + Bans.Columns.Companion.ADDRESS + " = ? " +
+                "WHERE rowid = ? AND " + Bans.Columns.Companion.ADDRESS + " = ''",
+            arrayOf<Any>(address, rowId),
+        )
+    }
+
+    fun getBans(chanName: String): BanCursor {
+        val projection = arrayOf<String?>("rowid", "*")
+        val filter =
+            Expression
+                .filter()
+                .equals(Bans.Columns.Companion.CHAN_NAME, chanName)
+                .build()
+        return BanCursor(
+            database.query(
+                Bans.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                Bans.Columns.Companion.UPDATED + " DESC",
+            ),
+        )
+    }
+
+    /**
+     * A ban counts as active until its expiration date passes; one the forum gave no date for is
+     * never known to be over.
+     */
+    class BanCounts(
+        val total: Int,
+        val active: Int,
+    )
+
+    fun getBanCounts(chanName: String): BanCounts {
+        var total = 0
+        var active = 0
+        val time = System.currentTimeMillis()
+        val projection = arrayOf<String?>(Bans.Columns.Companion.EXPIRE_DATE)
+        val filter =
+            Expression
+                .filter()
+                .equals(Bans.Columns.Companion.CHAN_NAME, chanName)
+                .build()
+        database
+            .query(
+                Bans.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    total++
+                    val expireDate = cursor.getLong(0)
+                    if (expireDate <= 0 || expireDate > time) {
+                        active++
+                    }
+                }
+            }
+        return BanCounts(total, active)
+    }
+
+    fun deleteBan(rowId: Long) {
+        database.delete(Bans.Companion.TABLE_NAME, "rowid = ?", arrayOf<String?>(rowId.toString()))
+    }
+
+    fun deleteBans(chanName: String) {
+        val filter =
+            Expression
+                .filter()
+                .equals(Bans.Columns.Companion.CHAN_NAME, chanName)
+                .build()
+        database.delete(Bans.Companion.TABLE_NAME, filter.value, filter.args)
     }
 
     companion object {

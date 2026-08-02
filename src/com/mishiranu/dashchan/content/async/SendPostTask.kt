@@ -10,6 +10,7 @@ import chan.content.RedirectException
 import chan.http.HttpException
 import chan.http.HttpHolder
 import chan.http.MultipartEntity
+import com.mishiranu.dashchan.content.BanLog
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.text.HtmlParser
@@ -243,6 +244,9 @@ class SendPostTask<Key>(
             errorItem = e.errorItem
             extra = e.extra as ApiException.Extra?
             val errorType = e.errorType
+            if (errorType == ApiException.SEND_ERROR_BANNED) {
+                BanLog.record(chan, data.boardName, data.threadNumber, extra)
+            }
             captchaError = errorType == ApiException.SEND_ERROR_CAPTCHA
             keepCaptcha = !captchaError && e.checkFlag(ApiException.FLAG_KEEP_CAPTCHA)
             return false

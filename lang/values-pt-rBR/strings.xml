@@ -3,6 +3,7 @@
 
 	<string name="about">Informações</string>
 	<string name="action_on_playback_completion">Quando terminar de reproduzir</string>
+	<string name="active_bans">Banimentos ativos</string>
 	<string name="active_scrollbar">Barra de rolagem ativa</string>
 	<string name="add_thread_on_reply">Adcione o fio ao responder</string>
 	<string name="add_to_favorites">Adcionar ao favoritos</string>
@@ -30,7 +31,11 @@
 	<string name="backup_data__summary">Todas as suas configurações, favoritos, histórico, respostas,
 		regras do autohide e comandos</string>
 	<string name="backups_not_found">Nenhum backup encontrado</string>
+	<string name="ban_active">Ativo</string>
+	<string name="ban_expired">Expirado</string>
 	<string name="ban_id">Ban ID</string>
+	<string name="ban_log">Registro de banimentos</string>
+	<string name="ban_permanent">Permanente</string>
 	<string name="board">Board</string>
 	<string name="board_doesnt_exist">Essa board não existe</string>
 	<string name="board_interval_off__summary">Quando desligado, os favoritos das boards escolhidas não são atualizados</string>
@@ -87,6 +92,7 @@
 	<string name="default_name_cant_be_hidden">Não pode dar hide no nome padrão</string>
 	<string name="default_starting_board">Board inicial</string>
 	<string name="delete">Deletar</string>
+	<string name="delete_all_bans__sentence">Excluir todos os banimentos registrados?</string>
 	<string name="deleted_posts_will_be_deleted__sentence">Posts deletados são deletados permanentemente.</string>
 	<string name="description">Descrição</string>
 	<string name="detailed_file_name">Nome de arquivo detalhado</string>
@@ -224,6 +230,7 @@
 	<string name="no_access">Acesso negado</string>
 	<string name="no_access_to_memory">Sem acesso a memória</string>
 	<string name="no_available_updates">Não há atualizações</string>
+	<string name="no_bans_recorded">Nenhum banimento registrado</string>
 	<string name="no_enough_memory_to_handle_image">Memória insuficiente para relizar esta ação</string>
 	<string name="no_extensions_installed">Não há extensões instaladas</string>
 	<string name="no_icon">Sem ícone</string>
@@ -320,6 +327,7 @@
 	<string name="read_only">Somente leitura</string>
 	<string name="read_timeout_expired">A conexão expirou</string>
 	<string name="reason">Razão</string>
+	<string name="recorded_on">Registrado em</string>
 	<string name="refresh">Atualizar</string>
 	<string name="regular_expression">Expressão regular</string>
 	<string name="rejected_words">Palavras rejeitadas</string>
@@ -435,6 +443,7 @@
 	<string name="uninstall_extension">Remover extensões</string>
 	<string name="unique_hash">Hash único</string>
 	<string name="unique_posters__genitive">Postadores únicos</string>
+	<string name="unknown">Desconhecido</string>
 	<string name="unknown_address">Endereço desconhecido</string>
 	<string name="unknown_error">Erro desconhecido</string>
 	<string name="unsafe_redirect">Redirecionamento não-seguro</string>

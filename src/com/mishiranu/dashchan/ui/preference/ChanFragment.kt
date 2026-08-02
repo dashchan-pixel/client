@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import android.view.View
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
@@ -17,7 +16,6 @@ import chan.content.InvalidResponseException
 import chan.http.HttpClient
 import chan.http.HttpException
 import chan.http.HttpHolder
-import chan.http.HttpRequest
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
@@ -25,11 +23,13 @@ import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
+import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
 import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.ProgressDialog
@@ -40,6 +40,7 @@ class ChanFragment :
     internal var captchaPassPreference: Preference<List<String>>? = null
     internal var userAuthorizationPreference: Preference<List<String>>? = null
     private var cookiePreference: Preference<*>? = null
+    private var banLogPreference: Preference<*>? = null
     private var visibleAddressPreference: Preference<*>? = null
     private var visibleAddressViewModel: VisibleAddressViewModel? = null
 
@@ -324,6 +325,11 @@ class ChanFragment :
         }
 
         addHeader(R.string.additional)
+        val banLogPreference = addButton(getString(R.string.ban_log)) { banLogSummary() }
+        this.banLogPreference = banLogPreference
+        banLogPreference.setOnClickListener {
+            (requireActivity() as FragmentHandler).pushFragment(BanLogFragment(chanName))
+        }
         addButton(R.string.uninstall_extension, 0).setOnClickListener {
             val innerChan = Chan.get(chanName)
             if (innerChan.name != null) {
@@ -343,6 +349,7 @@ class ChanFragment :
         captchaPassPreference = null
         userAuthorizationPreference = null
         cookiePreference = null
+        banLogPreference = null
         visibleAddressPreference = null
         visibleAddressViewModel = null
     }
@@ -355,6 +362,8 @@ class ChanFragment :
         } else {
             // Check every time returned from cookies fragment
             removeCookiePreferenceIfNotNeeded()
+            // The ban log can be cleared from its own fragment, and grows on its own while posting
+            banLogPreference?.invalidate()
         }
     }
 
@@ -380,6 +389,16 @@ class ChanFragment :
                 removePreference(cookiePreference)
                 this.cookiePreference = null
             }
+        }
+    }
+
+    /** How much of the ban log is still to run out, or that there is nothing in it. */
+    private fun banLogSummary(): CharSequence {
+        val counts = ChanDatabase.getInstance().getBanCounts(getChanName())
+        return if (counts.total == 0) {
+            getString(R.string.no_bans_recorded)
+        } else {
+            ResourceUtils.getColonString(resources, R.string.active_bans, counts.active)
         }
     }
 
@@ -560,50 +579,12 @@ class ChanFragment :
 
     class VisibleAddressTask(
         private val viewModel: VisibleAddressViewModel,
-        chan: Chan,
+        private val chan: Chan,
     ) : HttpHolderTask<Unit, String>(chan) {
-        private val uri = chan.locator.buildPath("cdn-cgi", "trace")
-
-        override fun run(holder: HttpHolder): String =
-            try {
-                formatTrace(HttpRequest(uri, holder).perform()?.readString())
-            } catch (e: HttpException) {
-                // Not every forum is behind Cloudflare: /cdn-cgi/trace is a 404 for the rest.
-                Log.w(TAG, "Failed to read the visible address", e)
-                ""
-            }
+        override fun run(holder: HttpHolder): String = VisibleAddress.format(VisibleAddress.resolve(chan, holder))
 
         override fun onComplete(result: String) {
             viewModel.handleResult(result)
-        }
-
-        companion object {
-            private const val TAG = "VisibleAddress"
-
-            /** The response is a couple dozen `key=value` lines; anything longer isn't a trace. */
-            private const val MAX_TRACE_LINES = 64
-
-            private fun formatTrace(text: String?): String {
-                if (text.isNullOrEmpty()) {
-                    return ""
-                }
-                var ip: String? = null
-                var loc: String? = null
-                for (line in text.lineSequence().take(MAX_TRACE_LINES)) {
-                    val separator = line.indexOf('=')
-                    if (separator >= 0) {
-                        when (line.substring(0, separator)) {
-                            "ip" -> ip = line.substring(separator + 1).trim()
-                            "loc" -> loc = line.substring(separator + 1).trim()
-                        }
-                    }
-                }
-                if (ip.isNullOrEmpty()) {
-                    return ""
-                }
-                // Cloudflare answers "XX" when it can't place the address, common behind Tor exits.
-                return if (loc.isNullOrEmpty() || loc == "XX") ip else "$ip · $loc"
-            }
         }
     }
 

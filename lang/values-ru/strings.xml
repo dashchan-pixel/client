@@ -3,7 +3,13 @@
 
 	<string name="about">О программе</string>
 	<string name="action_on_playback_completion">Действие при завершении воспроизведения</string>
+	<string name="active_bans">Активные баны</string>
 	<string name="active_scrollbar">Активная полоса прокрутки</string>
+	<string name="ban_active">Активен</string>
+	<string name="ban_expired">Истёк</string>
+	<string name="ban_log">Журнал банов</string>
+	<string name="ban_permanent">Бессрочный</string>
+	<string name="delete_all_bans__sentence">Удалить все записи о банах?</string>
 	<string name="highlight_user_posts">Подсвечивать мои посты</string>
 	<string name="add_theme">Добавить тему</string>
 	<string name="add_thread_on_reply">Добавлять тред при ответе</string>
@@ -313,6 +319,7 @@
 	<string name="no_access">Нет доступа</string>
 	<string name="no_access_to_memory">Нет доступа к памяти</string>
 	<string name="no_available_updates">Нет доступных обновлений</string>
+	<string name="no_bans_recorded">Нет записей о банах</string>
 	<string name="no_enough_memory_to_handle_image">Недостаточно памяти для обработки изображения</string>
 	<string name="no_extensions_installed">Не установлено ни одного расширения</string>
 	<string name="no_icon">Нет иконки</string>
@@ -445,6 +452,7 @@
 	<string name="read_only">Только чтение</string>
 	<string name="read_timeout_expired">Время ожидания приёма истекло</string>
 	<string name="reason">Причина</string>
+	<string name="recorded_on">Зафиксирован</string>
 	<string name="redacted">[данные удалены]</string>
 	<string name="reduce">Уменьшить</string>
 	<string name="reencode_image">Перекодировать</string>
@@ -599,6 +607,7 @@
 	<string name="uninstall_extension">Удалить расширение</string>
 	<string name="unique_hash">Уникальный хеш</string>
 	<string name="unique_posters__genitive">Уникальных отправителей</string>
+	<string name="unknown">Неизвестно</string>
 	<string name="unknown_address">Неизвестный адрес</string>
 	<string name="unknown_error">Неизвестная ошибка</string>
 	<string name="unsafe_redirect">Небезопасное перенаправление</string>
