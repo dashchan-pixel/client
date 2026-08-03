@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.webkit.ConsoleMessage
+import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -293,6 +294,15 @@ class RecaptchaReader private constructor() {
                 this.webView = webView
                 webView.getSettings().setJavaScriptEnabled(true)
                 webView.getSettings().setBuiltInZoomControls(false)
+                // reCAPTCHA keeps what it knows about a client in local storage, under the
+                // `_grecaptcha` key, and in cookies on its own domain — which are third party to
+                // whatever page it runs inside. A WebView allows neither by default, so without
+                // this every solve presents a client that has never been seen before. Version 2
+                // only weighs that; version 3, which has nothing else to go on, scores it at the
+                // floor and the site refuses the token as if it were invalid.
+                webView.getSettings().setDomStorageEnabled(true)
+                CookieManager.getInstance().setAcceptCookie(true)
+                CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
                 webView.setHorizontalScrollBarEnabled(false)
                 webView.setVerticalScrollBarEnabled(false)
                 webView.addJavascriptInterface(javascriptInterface, "jsi")
@@ -348,6 +358,10 @@ class RecaptchaReader private constructor() {
                 val action = arguments.action
                 val data =
                     if (action != null) {
+                        // The default agent carries a `wv` token that no browser sends, which is
+                        // one more thing marking the client as not one.
+                        val settings = webView.getSettings()
+                        settings.userAgentString = settings.userAgentString.replace("; wv)", ")")
                         readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v3)
                             .replace("__REPLACE_API_KEY__", arguments.apiKey)
                             .replace("__REPLACE_ACTION__", action)
@@ -393,6 +407,9 @@ class RecaptchaReader private constructor() {
                 fun onResponse(response: String?) {
                     ConcurrentUtils.HANDLER.post(
                         Runnable {
+                            // What this solve earned is only worth anything to the next one if it
+                            // outlives the WebView, which is destroyed as soon as it answers.
+                            CookieManager.getInstance().flush()
                             if (webView != null) {
                                 val exception =
                                     if (!isEmpty(response)) {

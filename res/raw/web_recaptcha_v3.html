@@ -13,8 +13,11 @@
 	visibility: hidden;
 }
 
-body {
+/* A document with no extent at all is not a page any browser would be showing. */
+html, body {
 	margin: 0;
+	width: 100%;
+	height: 100%;
 }
 
 </style>
@@ -25,14 +28,19 @@ function onLoad() {
 	// grecaptcha.ready fires once the script has its key set up. Calling execute before that
 	// throws, and the throw would be swallowed as a page that simply never answers.
 	grecaptcha.ready(function () {
-		var action = '__REPLACE_ACTION__'
-		var promise = action ? grecaptcha.execute('__REPLACE_API_KEY__', { action: action })
-			: grecaptcha.execute('__REPLACE_API_KEY__')
-		promise.then(function (response) {
-			jsi.onResponse(response || '')
-		}, function () {
-			jsi.onError()
-		})
+		// Version 3 scores what it saw of the client, and asking the instant the script is
+		// ready gives it almost nothing to have seen. The wait costs a moment of the token's
+		// two-minute life and is the only thing here that buys any observation at all.
+		setTimeout(function () {
+			var action = '__REPLACE_ACTION__'
+			var promise = action ? grecaptcha.execute('__REPLACE_API_KEY__', { action: action })
+				: grecaptcha.execute('__REPLACE_API_KEY__')
+			promise.then(function (response) {
+				jsi.onResponse(response || '')
+			}, function () {
+				jsi.onError()
+			})
+		}, 2500)
 	})
 }
 
