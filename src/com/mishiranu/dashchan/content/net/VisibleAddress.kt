@@ -34,7 +34,18 @@ object VisibleAddress {
     fun resolve(
         chan: Chan,
         holder: HttpHolder,
-    ): Result? = read(chan.locator.buildPath("cdn-cgi", "trace"), holder) ?: read(FALLBACK_URI, holder)
+    ): Result? {
+        // The address worth knowing is the one the forum's posting traffic leaves from, so the
+        // trace takes the proxy even where it is set to carry posting only. The holder is left as
+        // it was found, since the caller may go on to use it for something else.
+        val proxyRequired = holder.proxyRequired
+        holder.proxyRequired = true
+        return try {
+            read(chan.locator.buildPath("cdn-cgi", "trace"), holder) ?: read(FALLBACK_URI, holder)
+        } finally {
+            holder.proxyRequired = proxyRequired
+        }
+    }
 
     private fun read(
         uri: Uri?,

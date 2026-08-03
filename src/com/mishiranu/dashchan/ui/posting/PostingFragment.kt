@@ -1678,7 +1678,7 @@ class PostingFragment :
                     chan,
                     this.boardName,
                     this.threadNumber,
-                )
+                ).apply { forPosting = true }
             task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
             viewModel.attach(task)
         }

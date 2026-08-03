@@ -305,6 +305,11 @@ object PreferenceSearch {
                 it.httpsConfigurable
             },
             ChanEntry(R.string.connection, R.string.proxy, 0) { !it.localMode },
+            ChanEntry(
+                R.string.connection,
+                R.string.proxy_for_posting_only,
+                R.string.proxy_for_posting_only__summary,
+            ) { !it.localMode },
             ChanEntry(R.string.connection, R.string.partial_thread_loading, R.string.partial_thread_loading__summary) {
                 it.readThreadPartially
             },

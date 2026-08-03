@@ -392,6 +392,8 @@
     <string name="proceed">Procedi</string>
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
+    <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
+    <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>
     <string name="rating">Votazione</string>

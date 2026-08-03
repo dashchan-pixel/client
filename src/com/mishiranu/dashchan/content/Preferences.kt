@@ -1308,6 +1308,20 @@ object Preferences {
         return unpackOrCastMultipleValues(value, KEYS_PROXY) as Map<String, String>?
     }
 
+    val KEY_PROXY_POSTING_ONLY: ChanKey = ChanKey("proxy_posting_only")
+    const val DEFAULT_PROXY_POSTING_ONLY: Boolean = false
+
+    /**
+     * Whether the proxy is restricted to posting: browsing goes out directly, and only the requests
+     * that carry a post — plus the checks that exist to verify the proxy itself — are routed
+     * through it. Has no effect when no proxy is configured.
+     */
+    fun isProxyPostingOnly(chan: Chan): Boolean =
+        prefs.getBoolean(
+            KEY_PROXY_POSTING_ONLY.bind(chan.name),
+            DEFAULT_PROXY_POSTING_ONLY,
+        )
+
     const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
     const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true
 

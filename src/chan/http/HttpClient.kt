@@ -108,7 +108,19 @@ class HttpClient private constructor() {
         return proxyData == null || proxyData.proxy != null
     }
 
-    fun getProxyData(chan: Chan): ProxyData? = getProxyData(Preferences.getProxy(chan))
+    /**
+     * The proxy configured for [chan], unless it is set to carry posting only and this traffic is
+     * not posting: [proxyRequired] is what the caller's [HttpHolder] declares.
+     */
+    fun getProxyData(
+        chan: Chan,
+        proxyRequired: Boolean,
+    ): ProxyData? = if (mayUseProxy(chan, proxyRequired)) getProxyData(Preferences.getProxy(chan)) else null
+
+    private fun mayUseProxy(
+        chan: Chan,
+        proxyRequired: Boolean,
+    ): Boolean = proxyRequired || !Preferences.isProxyPostingOnly(chan)
 
     private fun getProxyData(map: Map<String, String>?): ProxyData? {
         if (map != null) {
@@ -130,8 +142,14 @@ class HttpClient private constructor() {
         return null
     }
 
-    fun getProxy(chan: Chan): Proxy? {
-        var proxyData = getProxyData(chan)
+    fun getProxy(
+        chan: Chan,
+        proxyRequired: Boolean,
+    ): Proxy? {
+        if (!mayUseProxy(chan, proxyRequired)) {
+            return null
+        }
+        var proxyData = getProxyData(Preferences.getProxy(chan))
         synchronized(proxies) {
             val lastProxyData = proxies[chan.name]
             if (equals(proxyData, lastProxyData)) {

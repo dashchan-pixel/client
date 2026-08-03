@@ -21,6 +21,13 @@ class HttpHolder(
 
     var mayResolveFirewallBlock: Boolean = true
 
+    /**
+     * Whether the requests of this holder must go through the proxy even when the forum is set to
+     * proxy posting only: set for the posting traffic itself, and for the checks that exist to tell
+     * whether the proxy works.
+     */
+    var proxyRequired: Boolean = false
+
     fun checkThread() {
         synchronized(this) {
             check(thread === Thread.currentThread()) { "This action is allowed from the initial thread only" }

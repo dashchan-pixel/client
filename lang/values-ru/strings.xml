@@ -447,6 +447,8 @@
 	<string name="proceed">Продолжить</string>
 	<string name="processing_data__ellipsis">Обработка данных…</string>
 	<string name="proxy">Прокси</string>
+	<string name="proxy_for_posting_only">Прокси только для отправки</string>
+	<string name="proxy_for_posting_only__summary">Отправлять сообщения через прокси, а всё остальное загружать напрямую; видимый адрес всё равно проверяется через прокси</string>
 	<string name="quality">Качество</string>
 	<string name="quote__verb">Цитировать</string>
 	<string name="rating">Рейтинг</string>

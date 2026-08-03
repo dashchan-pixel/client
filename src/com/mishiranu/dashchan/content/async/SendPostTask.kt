@@ -22,7 +22,7 @@ class SendPostTask<Key>(
     private val chan: Chan,
     private val data: ChanPerformer.SendPostData,
 ) : ExecutorTask<LongArray, Boolean>() {
-    private val chanHolder = HttpHolder(chan)
+    private val chanHolder = HttpHolder(chan).apply { proxyRequired = true }
     private val fallbackHolder = HttpHolder(Chan.getFallback())
 
     private val progressMode = data.attachments != null

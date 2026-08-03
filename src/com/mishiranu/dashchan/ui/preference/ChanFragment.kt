@@ -282,12 +282,23 @@ class ChanFragment :
                 Preferences.ENTRIES_PROXY_TYPE,
                 Preferences.VALUES_PROXY_TYPE,
             )
+            val postingOnlyPreference =
+                addCheck(
+                    true,
+                    Preferences.KEY_PROXY_POSTING_ONLY.bind(chanName),
+                    Preferences.DEFAULT_PROXY_POSTING_ONLY,
+                    R.string.proxy_for_posting_only,
+                    R.string.proxy_for_posting_only__summary,
+                )
+            postingOnlyPreference.setEnabled(hasProxy(chan))
             proxyPreference.setOnAfterChangeListener { p ->
                 val success = HttpClient.getInstance().checkProxyValid(p.value)
                 if (!success) {
                     ClickableToast.show(R.string.enter_valid_data)
                     proxyPreference.performClick()
                 }
+                postingOnlyPreference.setEnabled(hasProxy(Chan.get(chanName)))
+                checkVisibleAddress(force = true)
             }
         }
         if (canReadThreadPartially) {
@@ -402,10 +413,14 @@ class ChanFragment :
         }
     }
 
+    /** Whether a usable proxy is configured at all — the posting-only switch means nothing without one. */
+    private fun hasProxy(chan: Chan): Boolean = HttpClient.getInstance().getProxyData(chan, proxyRequired = true) != null
+
     /**
      * The address the forum sees, from its Cloudflare `/cdn-cgi/trace` endpoint: what matters here
      * is whether it matches the device's own address, i.e. whether the proxy configured above (Tor
-     * and friends) is actually carrying this forum's traffic.
+     * and friends) is actually carrying this forum's traffic. The check goes through the proxy even
+     * when it is set to carry posting only — its whole point is to show what the proxy looks like.
      */
     private fun visibleAddressSummary(): CharSequence {
         val viewModel = visibleAddressViewModel

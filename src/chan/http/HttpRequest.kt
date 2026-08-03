@@ -312,7 +312,7 @@ class HttpRequest {
             holder.createSession(
                 client,
                 uri,
-                client.getProxy(holder.chan),
+                client.getProxy(holder.chan, holder.proxyRequired),
                 verifyCertificate,
                 delay,
                 10,

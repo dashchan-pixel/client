@@ -323,6 +323,8 @@
 	<string name="press_again_to_exit">Pressione novamente para sair</string>
 	<string name="processing_data__ellipsis">Enviando…</string>
 	<string name="proxy">Proxy</string>
+	<string name="proxy_for_posting_only">Proxy somente para envio</string>
+	<string name="proxy_for_posting_only__summary">Envie posts pelo proxy e carregue todo o resto diretamente; o endereço visível continua sendo verificado pelo proxy</string>
 	<string name="quote__verb">Quotar</string>
 	<string name="rating">Classificação</string>
 	<string name="read_only">Somente leitura</string>

@@ -439,7 +439,10 @@ class FirewallResolvers : FirewallResolver.Implementation() {
                 .build()
         val chan: Chan = session.chan!!
         val userAgent = session.getIdentifier()!!.userAgent
-        val proxyData: HttpClient.ProxyData? = HttpClient.getInstance().getProxyData(chan)
+        // The WebView resolves the block for the request that hit it, so it takes the same route:
+        // clearance obtained through the proxy is worthless for traffic that goes out directly.
+        val proxyData: HttpClient.ProxyData? =
+            HttpClient.getInstance().getProxyData(chan, session.getHolder()?.proxyRequired == true)
         val firewallResolutionMethod = firewallResolutionMethod
         var firewallResolutionResult: T? = null
         when (firewallResolutionMethod) {

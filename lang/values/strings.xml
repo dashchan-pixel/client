@@ -458,6 +458,8 @@
 	<string name="process_posts_individually">Process posts individually</string>
 	<string name="processing_data__ellipsis">Processing data…</string>
 	<string name="proxy">Proxy</string>
+	<string name="proxy_for_posting_only">Proxy for posting only</string>
+	<string name="proxy_for_posting_only__summary">Send posts through the proxy and load everything else directly; the visible address is still checked through the proxy</string>
 	<string name="quality">Quality</string>
 	<string name="quote__verb">Quote</string>
 	<string name="rating">Rating</string>
