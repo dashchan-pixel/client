@@ -115,7 +115,17 @@ class CommandsFragment :
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         menu.add(0, R.id.menu_add_command, 0, R.string.add_command)
         menu.add(0, R.id.menu_environment, 0, R.string.environment)
+        menu.add(0, R.id.menu_storage, 0, R.string.storage)
         menu.add(0, R.id.menu_libraries, 0, R.string.libraries)
+    }
+
+    override fun onPrepareOptionsMenu(
+        menu: Menu,
+        primary: Boolean,
+    ) {
+        // Nothing has stored anything yet: a row that opens an empty dialog is one more thing between
+        // the user and the commands.
+        menu.findItem(R.id.menu_storage)?.isVisible = CommandsStorage.getInstance().getStoreSize() > 0
     }
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -132,6 +142,11 @@ class CommandsFragment :
 
             R.id.menu_environment -> {
                 EnvironmentDialog().show(childFragmentManager, EnvironmentDialog::class.java.name)
+                return true
+            }
+
+            R.id.menu_storage -> {
+                StorageDialog().show(childFragmentManager, StorageDialog::class.java.name)
                 return true
             }
 
@@ -525,9 +540,11 @@ class CommandsFragment :
     class CommandDialog :
         DialogFragment,
         ChanMultiChoiceDialog.Callback,
+        GrantMultiChoiceDialog.Callback,
         LibraryMultiChoiceDialog.Callback {
         private val selectedChanNames = HashSet<String>()
         private val selectedLibraries = LinkedHashSet<String>()
+        private val selectedGrants = LinkedHashSet<CommandsStorage.Grant>()
 
         private lateinit var scrollView: ScrollView
         private lateinit var chanNameSelector: TextView
@@ -536,6 +553,7 @@ class CommandsFragment :
         private lateinit var useInView: DropdownView
         private lateinit var autoRunCheckBox: CheckBox
         private lateinit var perPostCheckBox: CheckBox
+        private lateinit var grantsSelector: TextView
         private lateinit var librariesSelector: TextView
         private lateinit var codeEdit: CodeEditText
 
@@ -570,10 +588,13 @@ class CommandsFragment :
             useInView = view.findViewById(R.id.use_in)
             autoRunCheckBox = view.findViewById(R.id.auto_run)
             perPostCheckBox = view.findViewById(R.id.per_post)
+            grantsSelector = view.findViewById(R.id.grants)
             librariesSelector = view.findViewById(R.id.libraries)
             codeEdit = view.findViewById(R.id.code)
             chanNameSelector.setOnClickListener { ChanMultiChoiceDialog(selectedChanNames).show(this) }
             chanNameSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
+            grantsSelector.setOnClickListener { GrantMultiChoiceDialog(selectedGrants).show(this) }
+            grantsSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
             librariesSelector.setOnClickListener { LibraryMultiChoiceDialog(selectedLibraries).show(this) }
             librariesSelector.typeface = ResourceUtils.TYPEFACE_MEDIUM
 
@@ -590,15 +611,22 @@ class CommandsFragment :
             if (CommandsStorage.getInstance().getLibraryItems().isEmpty()) {
                 librariesSelector.visibility = View.GONE
             }
-            var commandItem: CommandsStorage.CommandItem? = null
-            if (savedInstanceState != null) {
-                commandItem = BundleCompat.getParcelable(savedInstanceState, EXTRA_ITEM, CommandsStorage.CommandItem::class.java)
-            }
-            if (commandItem == null) {
-                commandItem = BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, CommandsStorage.CommandItem::class.java)
-            }
-            // The spinner delivers its initial selection on layout, i.e. after the dialog is built, so
-            // each branch applies its own target here rather than waiting for the listener.
+            // What the dialog was showing when it went away, else the command it was opened for.
+            val restored =
+                savedInstanceState?.let {
+                    BundleCompat.getParcelable(it, EXTRA_ITEM, CommandsStorage.CommandItem::class.java)
+                }
+            fillDialogView(
+                restored ?: BundleCompat.getParcelable(requireArguments(), EXTRA_ITEM, CommandsStorage.CommandItem::class.java),
+            )
+        }
+
+        /**
+         * Shows [commandItem], or the defaults a new command starts from. The spinner delivers its
+         * initial selection on layout, i.e. after the dialog is built, so each branch applies its own
+         * target here rather than waiting for the listener.
+         */
+        private fun fillDialogView(commandItem: CommandsStorage.CommandItem?) {
             if (commandItem != null) {
                 editItemId = commandItem.id
                 commandItem.chanNames?.let { selectedChanNames.addAll(it) }
@@ -607,15 +635,18 @@ class CommandsFragment :
                 useInView.setSelection(USE_IN_ORDER.indexOf(commandItem.useIn).coerceAtLeast(0))
                 autoRunCheckBox.isChecked = commandItem.autoRun
                 perPostCheckBox.isChecked = commandItem.perPost
+                selectedGrants.addAll(commandItem.grants)
                 commandItem.libraries?.let { selectedLibraries.addAll(it) }
                 codeEdit.setText(commandItem.code)
                 applyUseIn(commandItem.useIn)
             } else {
                 editItemId = CommandsStorage.CommandItem.generateId()
                 chanNameSelector.setText(R.string.all_forums)
+                selectedGrants.addAll(CommandsStorage.Grant.DEFAULT)
                 applyUseIn(USE_IN_ORDER[0])
             }
             updateSelectedText()
+            updateGrantsText()
             updateLibrariesText()
         }
 
@@ -692,6 +723,31 @@ class CommandsFragment :
             chanNameSelector.text = chanNameText
         }
 
+        /**
+         * Lists what the command is allowed to reach, or says it is allowed nothing. Always shown,
+         * unlike the libraries row: a command that was granted the settings or a forum's cookies is
+         * worth seeing on the way past, and one that was granted nothing is worth being told about
+         * before its script says so.
+         */
+        private fun updateGrantsText() {
+            grantsSelector.text =
+                if (selectedGrants.isEmpty()) {
+                    getString(R.string.nothing_granted)
+                } else {
+                    val titles =
+                        CommandsStorage.Grant.entries
+                            .filter { it in selectedGrants }
+                            .map { getString(it.titleRes) }
+                    getString(R.string.access__format, titles.joinToString(", "))
+                }
+        }
+
+        override fun onGrantsSelected(grants: Collection<CommandsStorage.Grant>) {
+            selectedGrants.clear()
+            selectedGrants.addAll(grants)
+            updateGrantsText()
+        }
+
         /** Lists the selected libraries, or says there are none — the row is hidden when none exist. */
         private fun updateLibrariesText() {
             librariesSelector.text =
@@ -733,6 +789,9 @@ class CommandsFragment :
                 useIn == CommandsStorage.UseIn.THREAD && perPostCheckBox.isChecked,
                 // Kept in load order, so an export reads in the order the libraries run in.
                 LinkedHashSet(orderedLibraries()).ifEmpty { null },
+                // Kept in the enum's order rather than the order they were ticked, so the same set of
+                // grants always saves, and reads back, the same way.
+                CommandsStorage.Grant.entries.filterTo(LinkedHashSet()) { it in selectedGrants },
             )
         }
 
@@ -813,6 +872,40 @@ class CommandsFragment :
             @Suppress("DEPRECATION")
             dialog.window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             return dialog
+        }
+    }
+
+    /**
+     * Shows what the commands have kept in their [store][CommandsStorage.getStore], and lets the user
+     * empty it. Read-only: the values are a script's own state, not something to hand-edit into a
+     * shape its author never expected — but they are the user's to see and to throw away, which is the
+     * difference between this and a setting a script would otherwise have squatted in.
+     *
+     * A long value is shown cut short. The point of the dialog is to say what is being kept and how
+     * much of it, not to be a viewer for a payload a script parked there.
+     */
+    class StorageDialog : DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): AlertDialog =
+            AlertDialog
+                .Builder(requireContext())
+                .setTitle(R.string.storage)
+                .setMessage(
+                    CommandsStorage
+                        .getInstance()
+                        .getStore()
+                        .entries
+                        .joinToString("\n\n") { (key, value) ->
+                            key + " = " + StringUtils.cutIfLongerToLine(value, MAX_VALUE_LENGTH, true)
+                        },
+                ).setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.clear) { _, _ ->
+                    CommandsStorage.getInstance().clearStore()
+                    (parentFragment as CommandsFragment).invalidateOptionsMenu()
+                }.setPositiveButton(android.R.string.ok, null)
+                .create()
+
+        companion object {
+            private const val MAX_VALUE_LENGTH = 120
         }
     }
 }

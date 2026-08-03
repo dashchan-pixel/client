@@ -4,6 +4,8 @@
 	<string name="__colon_format">%1$s: %2$s</string>
 	<string name="__enumeration_format">%1$s, %2$s</string>
 	<string name="about">About</string>
+	<string name="access">Access</string>
+	<string name="access__format">Access: %s</string>
 	<string name="action_on_playback_completion">Action on playback completion</string>
 	<string name="active_bans">Active bans</string>
 	<string name="active_scrollbar">Active scrollbar</string>
@@ -121,6 +123,7 @@
 	<string name="contents">Contents</string>
 	<string name="context_menu">Context menu</string>
 	<string name="context_menu_description__sentence">Use long tap to display context menu.</string>
+	<string name="cookies">Cookies</string>
 	<string name="copied_to_clipboard">Copied to clipboard</string>
 	<string name="copy">Copy</string>
 	<string name="copy_email">Copy email</string>
@@ -357,6 +360,7 @@
 	<string name="no_video_attachments">No video attachments</string>
 	<string name="not_downloaded">Not downloaded</string>
 	<string name="not_found">Not found</string>
+	<string name="nothing_granted">Nothing granted</string>
 	<string name="notify_only">Notify only</string>
 	<string name="notify_when_download_is_completed">Notify when download is completed</string>
 	<string name="notify_when_download_is_completed__summary">Will show \"Heads-Up\" notification</string>
@@ -567,6 +571,7 @@
 	<string name="statistics">Statistics</string>
 	<string name="sticky_thread">Sticky thread</string>
 	<string name="stop">Stop</string>
+	<string name="storage">Storage</string>
 	<string name="stripes">Stripes</string>
 	<string name="subdirectory_pattern">Subdirectory pattern</string>
 	<string name="subject">Subject</string>

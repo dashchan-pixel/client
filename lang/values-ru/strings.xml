@@ -2,6 +2,8 @@
 <resources>
 
 	<string name="about">О программе</string>
+	<string name="access">Доступ</string>
+	<string name="access__format">Доступ: %s</string>
 	<string name="action_on_playback_completion">Действие при завершении воспроизведения</string>
 	<string name="active_bans">Активные баны</string>
 	<string name="active_scrollbar">Активная полоса прокрутки</string>
@@ -115,6 +117,7 @@
 	<string name="context_menu">Контекстное меню</string>
 	<string name="context_menu_description__sentence">Используйте долгое нажатие для отображения
 		контекстного меню.</string>
+	<string name="cookies">Куки</string>
 	<string name="copied_to_clipboard">Скопировано в буфер обмена</string>
 	<string name="copy">Копировать</string>
 	<string name="copy_email">Копировать email</string>
@@ -330,6 +333,7 @@
 	<string name="no_rules_defined">Правила не заданы</string>
 	<string name="not_downloaded">Не загружено</string>
 	<string name="not_found">Не найдено</string>
+	<string name="nothing_granted">Ничего не разрешено</string>
 	<string name="notify_only">Только уведомлять</string>
 	<string name="notify_when_download_is_completed">Уведомлять о завершении загрузки</string>
 	<string name="notify_when_download_is_completed__summary">Будет показано всплывающее уведомление</string>
@@ -552,6 +556,7 @@
 	<string name="statistics">Статистика</string>
 	<string name="sticky_thread">Тред прикреплён</string>
 	<string name="stop">Стоп</string>
+	<string name="storage">Хранилище</string>
 	<string name="stripes">Полосы</string>
 	<string name="subdirectory_pattern">Шаблон подкаталога</string>
 	<string name="subject">Тема</string>

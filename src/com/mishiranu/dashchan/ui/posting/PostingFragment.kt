@@ -2548,6 +2548,7 @@ class PostingFragment :
                 command,
                 commentView.getText().toString(),
                 obtainAttachmentDrafts(),
+                this.chanName,
                 this.threadNumber,
                 this.boardName,
             ) { result ->
@@ -2687,6 +2688,7 @@ class PostingFragment :
                 commands[index],
                 comment,
                 obtainAttachmentDrafts(),
+                this.chanName,
                 this.threadNumber,
                 this.boardName,
             ) { result ->

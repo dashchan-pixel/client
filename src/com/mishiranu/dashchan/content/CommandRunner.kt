@@ -15,14 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean
  * The command's [code][CommandsStorage.CommandItem.code] is treated as the body of an **async**
  * JavaScript function whose arguments and expected return value depend on the command's target:
  *
- * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `attachments`, `thread`, `board`, `env`.
- *   It should `return` the replacement comment; returning `undefined`/`null` leaves the draft
- *   untouched. To manage the attached files too it may instead return an object, whose `comment` and
+ * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `attachments`, `thread`, `board`, `env`,
+ *   `store`, `app`, `chan`. It should `return` the replacement comment; returning `undefined`/`null`
+ *   leaves the draft untouched. To manage the attached files too it may instead return an object, whose `comment` and
  *   `attachments` are each applied only if present — so `return { attachments: [] }` detaches every
  *   file and leaves the text alone. See [CommandAttachments] for what an attachment looks like and
  *   for how a script adds one.
- * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`. `posts` is an
- *   array of `{number, name, email, icon, subject, comment, attachments}`, `comment` being the post's
+ * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`, `store`,
+ *   `app`, `chan`. `posts` is an array of `{number, name, email, icon, subject, comment, attachments}`, `comment` being the post's
  *   HTML as the chan sent it and `attachments` its attached files (see [CommandPostAttachments]). It
  *   should `return` an object mapping a post's `number` to what to show in place of that post's own —
  *   either the replacement comment HTML (e.g. `{ "123": "<b>decrypted…</b>" }`) or an object whose
@@ -46,6 +46,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  * is no such context. Being async, a body may `await` (e.g.
  * `return await fetch(url).then(r => r.text())`).
  *
+ * `store` is the command's own key→value store, `app` the application's settings and `chan` the forum
+ * the run belongs to along with that forum's cookies — so `chan.cookies` needs no argument to work on
+ * the right one. `app` and `chan` answer only to a command the user granted them to, and `store` to
+ * every command. See [CommandApp] for the whole of it.
+ *
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure
  * context), so scripts can encrypt/decrypt or translate posts. A fresh engine is created per run and
@@ -54,7 +59,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * The code also receives an `env` object holding the user's shared key→value store
  * ([CommandsStorage.getEnv]), so a script can read a user-provided value with
  * `env.CUSTOM_NAME_HERE`. It is a read-only snapshot taken at run time — assigning to it does not
- * persist; the store is edited from the Commands screen.
+ * persist; the store is edited from the Commands screen. A command the user took the
+ * [environment grant][CommandsStorage.Grant.ENVIRONMENT] away from is handed an empty `env` instead:
+ * the object stays, so a body that reads `env.NAME` sees `undefined` rather than throwing on a name
+ * that isn't there.
  *
  * A command may also load [libraries][CommandsStorage.LibraryItem] — shared snippets, or scripts
  * downloaded from an address (see [CommandLibraries]). Their sources run once, in an enclosing scope,
@@ -207,6 +215,7 @@ object CommandRunner {
         item: CommandsStorage.CommandItem,
         comment: String,
         attachments: List<AttachmentDraft>,
+        chanName: String?,
         thread: String?,
         board: String?,
         callback: (Result) -> Unit,
@@ -217,16 +226,21 @@ object CommandRunner {
             val script =
                 buildScript(
                     factorySource =
-                        buildFactorySource("comment,attachments,thread,board,env", item.code.orEmpty(), libraries, false),
+                        buildFactorySource(
+                            "comment,attachments,$BODY_PARAMS",
+                            item.code.orEmpty(),
+                            libraries,
+                            false,
+                        ),
                     thread = thread,
                     board = board,
-                    env = CommandsStorage.getInstance().getEnv(),
+                    env = environmentFor(item),
                     resultExpr = COMMENT_RESULT_EXPR,
                 ) {
                     append(jsArg(comment)).append(',')
                     append(attachmentsJson).append(',')
                 }
-            execute(handle, script, ::parseComment, { RawResult.Failure(it) }, callback = { raw ->
+            execute(handle, chanName, item.grants, script, ::parseComment, { RawResult.Failure(it) }, callback = { raw ->
                 when (raw) {
                     is RawResult.Failure -> {
                         callback(Result.Failure(raw.message))
@@ -269,6 +283,7 @@ object CommandRunner {
     fun runThread(
         item: CommandsStorage.CommandItem,
         posts: List<ThreadPost>,
+        chanName: String?,
         thread: String?,
         board: String?,
         callback: (ThreadResult) -> Unit,
@@ -276,13 +291,13 @@ object CommandRunner {
         val handle = Run()
         withLibraries(item, handle, { ThreadResult.Failure(it) }, callback) { libraries ->
             val postsJson = postsToJson(posts)
-            val bodyParams = if (item.perPost) "post,thread,board,env" else "posts,thread,board,env"
+            val bodyParams = if (item.perPost) "post,$BODY_PARAMS" else "posts,$BODY_PARAMS"
             val script =
                 buildScript(
                     factorySource = buildFactorySource(bodyParams, item.code.orEmpty(), libraries, item.perPost),
                     thread = thread,
                     board = board,
-                    env = CommandsStorage.getInstance().getEnv(),
+                    env = environmentFor(item),
                     resultExpr = THREAD_RESULT_EXPR,
                 ) { append(postsJson).append(',') }
             // A per-post body runs n times, so one deadline for the whole thread would fail a body that
@@ -297,7 +312,16 @@ object CommandRunner {
             // The attachments a script asked for are resolved against the posts it was handed, right
             // where the bridged JSON is parsed: unlike a draft's, a post's attachment is an address
             // rather than bytes, so there is nothing to go and fetch first.
-            execute(handle, script, { raw -> parseThread(raw, posts) }, { ThreadResult.Failure(it) }, callback, timeout)
+            execute(
+                handle,
+                chanName,
+                item.grants,
+                script,
+                { raw -> parseThread(raw, posts) },
+                { ThreadResult.Failure(it) },
+                callback,
+                timeout,
+            )
         }
         return handle
     }
@@ -341,9 +365,15 @@ object CommandRunner {
      * The result arrives on the bridge's own thread and the deadline on the main one, so which of them
      * gets to answer — and to tear the engine down — is decided by [handle], which a [Run.cancel] may
      * also have taken first.
+     *
+     * [chanName] is the forum the run belongs to; it is what the script's `chan` works on by default
+     * (see [CommandApp]), and `null` where the command was started outside a forum. [grants] is what
+     * the command may reach through the bridge.
      */
     private fun <R> execute(
         handle: Run,
+        chanName: String?,
+        grants: Set<CommandsStorage.Grant>,
         script: String,
         parse: (String?) -> R,
         failure: (String) -> R,
@@ -366,7 +396,13 @@ object CommandRunner {
                     deliver(parse(json))
                 }
             }
-        val engine = HeadlessJsEngine(mapOf(BRIDGE_NAME to bridge))
+        val engine =
+            HeadlessJsEngine(
+                mapOf(
+                    BRIDGE_NAME to bridge,
+                    CommandApp.BRIDGE_NAME to CommandApp.bridge(chanName, grants),
+                ),
+            )
         handle.start(engine, timeout)
         ConcurrentUtils.HANDLER.postDelayed(timeout, timeoutMs)
         engine.evaluate(script)
@@ -375,8 +411,9 @@ object CommandRunner {
     /**
      * Builds the runnable script around [factorySource] (see [buildFactorySource]). [leadingArg]
      * appends the matching first actual argument(s) of the command (already followed by a comma),
-     * after which `thread`, `board` and the frozen `env` object are passed. [resultExpr] is the JS
-     * expression that maps the resolved `__result` to the value delivered back through the bridge.
+     * after which `thread`, `board`, the frozen `env` object and the `app` object are passed.
+     * [resultExpr] is the JS expression that maps the resolved `__result` to the value delivered back
+     * through the bridge.
      */
     private fun buildScript(
         factorySource: String,
@@ -400,18 +437,27 @@ object CommandRunner {
             append("var __board=").append(jsArg(board)).append(';')
             // The shared env store, injected as a plain object so scripts read `env.NAME`. Frozen so
             // a stray `env.X = …` is dropped (throwing under "use strict") rather than mutating a
-            // value that would never be persisted — this is a per-run snapshot.
+            // value that would never be persisted — this is a per-run snapshot. Empty for a command
+            // the environment grant was taken away from (see environmentFor).
             append("var __env=Object.freeze(").append(JSONObject(env).toString()).append(");")
+            // The store, the settings and the forum, built once here and shared by the libraries and
+            // the body — including a per-post body, which is called n times.
+            append("var __bridged=").append(CommandApp.SOURCE).append(";")
+            append("var __store=__bridged.store;")
+            append("var __app=__bridged.app;")
+            append("var __chan=__bridged.chan;")
             // What is compiled is a factory that runs the libraries and returns the command, rather
             // than the command itself: the libraries then run once (even for a per-post body, which is
             // called n times) and their declarations are simply in scope for it.
-            append("var __factory=new __AsyncFunction(\"thread\",\"board\",\"env\",")
+            append("var __factory=new __AsyncFunction(")
+            append("\"thread\",\"board\",\"env\",\"store\",\"app\",\"chan\",")
             append(JSONObject.quote(factorySource))
             append(");")
-            append("Promise.resolve(__factory(__thread,__board,__env)).then(function(__command){")
+            append("Promise.resolve(__factory(__thread,__board,__env,__store,__app,__chan))")
+            append(".then(function(__command){")
             append("return __command(")
             leadingArg()
-            append("__thread,__board,__env);")
+            append("__thread,__board,__env,__store,__app,__chan);")
             append("}).then(function(__result){")
             append("__deliver({ok:true,result:").append(resultExpr).append("});")
             append("}).catch(function(__err){")
@@ -445,11 +491,11 @@ object CommandRunner {
                 append("var __process=async function(").append(bodyParams).append("){\n")
                 append(code)
                 append("\n};\n")
-                append("return (async function(posts,thread,board,env){\n")
+                append("return (async function(posts,$BODY_PARAMS){\n")
                 append("var __acc={};\n")
                 append("for(var __i=0;__i<posts.length;__i++){\n")
                 append("var __post=posts[__i];\n")
-                append("var __value=await __process(__post,thread,board,env);\n")
+                append("var __value=await __process(__post,$BODY_PARAMS);\n")
                 // Same contract as the whole-thread form, one post at a time: nothing returned means
                 // this post is left as it is, and what is returned may be either the comment or the
                 // {comment?, attachments?} object — the normalizing is the same for both forms.
@@ -481,6 +527,24 @@ object CommandRunner {
     }
 
     private fun jsArg(value: String?): String = if (value == null) "null" else JSONObject.quote(value)
+
+    /**
+     * The environment [item] runs against: the shared one, or nothing at all when the user took the
+     * grant away. Empty rather than absent, so a body written against `env.NAME` reads `undefined`
+     * instead of throwing on an object that isn't there.
+     */
+    private fun environmentFor(item: CommandsStorage.CommandItem): Map<String, String> =
+        if (CommandsStorage.Grant.ENVIRONMENT in item.grants) {
+            CommandsStorage.getInstance().getEnv()
+        } else {
+            emptyMap()
+        }
+
+    /**
+     * The tail every body is compiled against, whatever it takes first: the context of the run, then
+     * the three objects [CommandApp] provides.
+     */
+    private const val BODY_PARAMS = "thread,board,env,store,app,chan"
 
     private const val BRIDGE_NAME = "__commandBridge"
     private const val TIMEOUT_MS = 30000L

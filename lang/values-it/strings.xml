@@ -2,6 +2,8 @@
 <resources>
 
     <string name="about">Informazioni</string>
+    <string name="access">Accesso</string>
+    <string name="access__format">Accesso: %s</string>
     <string name="action_on_playback_completion">Azione a fine riproduzione</string>
     <string name="active_bans">Ban attivi</string>
     <string name="active_scrollbar">Barra di scorrimento veloce</string>
@@ -98,6 +100,7 @@
     <string name="context_menu">Menu contestuale</string>
     <string name="context_menu_description__sentence">Usa pressione prolungata per mostrare il menu
         contestuale.</string>
+    <string name="cookies">Cookie</string>
     <string name="copied_to_clipboard">Copiato negli appunti</string>
     <string name="copy">Copia</string>
     <string name="copy_email">Copia email</string>
@@ -297,6 +300,7 @@
     <string name="no_rules_defined">Nessuna regola definita</string>
     <string name="not_downloaded">Non scaricato</string>
     <string name="not_found">Non trovato</string>
+    <string name="nothing_granted">Nessuna autorizzazione</string>
     <string name="notify_only">Solo notifica</string>
     <string name="notify_when_download_is_completed">Notifica quando il download è completo</string>
     <string name="notify_when_download_is_completed__summary">Mostrerà una notifica al completamento</string>
@@ -485,6 +489,7 @@
     <string name="statistics">Statistiche</string>
     <string name="sticky_thread">Thread fissato</string>
     <string name="stop">Stop</string>
+    <string name="storage">Archiviazione</string>
     <string name="subdirectory_pattern">Pattern sottocartella</string>
     <string name="subject">Oggetto</string>
     <string name="subject_is_too_short">Oggetto troppo corto</string>

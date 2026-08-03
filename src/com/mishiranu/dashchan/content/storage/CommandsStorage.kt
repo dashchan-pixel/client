@@ -19,8 +19,9 @@ import org.json.JSONObject
  * The code itself is executed by [com.mishiranu.dashchan.content.CommandRunner]; this class is only
  * concerned with persistence and scoping.
  *
- * Alongside the commands this file also holds the two things they share: the environment (see
- * [envText]) and the [libraries][LibraryItem] a command can pull into its scope.
+ * Alongside the commands this file also holds the three things they share: the environment (see
+ * [envText]), the [libraries][LibraryItem] a command can pull into its scope, and the [store] a
+ * running script keeps its own state in.
  */
 class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<CommandsStorage.Snapshot>("commands", 1000, 10000) {
     private val commandItems = ArrayList<CommandItem>()
@@ -46,11 +47,57 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
      */
     private var env: Map<String, String> = emptyMap()
 
+    /**
+     * The scripts' own key→value store, reached as `app.store` (see
+     * [com.mishiranu.dashchan.content.CommandApp]) — what a command remembers between runs, as opposed
+     * to [env], which the user maintains and a script only reads.
+     *
+     * A value is the JSON text of what the script stored, kept as text so nothing here has to know or
+     * care what shape it is: the script stringifies on the way in and parses on the way back out. The
+     * writer caps how much may be kept; this class only holds it. Ordered so the Commands screen shows
+     * entries the way they were added.
+     *
+     * Main thread only, like the rest of the storage — a serialize clones from the thread that asks
+     * for it (see [StorageManager]).
+     */
+    private val store = LinkedHashMap<String, String>()
+
     init {
         startRead()
     }
 
     fun getItems(): ArrayList<CommandItem> = commandItems
+
+    /** A copy of the script store, as an ordered key→JSON text map. */
+    fun getStore(): LinkedHashMap<String, String> = LinkedHashMap(store)
+
+    /** The JSON text stored under [key], or `null` for a key nothing has written. */
+    fun getStoreValue(key: String): String? = store[key]
+
+    fun getStoreSize(): Int = store.size
+
+    /**
+     * Stores [json] under [key], or forgets the key when it is `null`. A write that changes nothing
+     * skips the serialize, so a per-post command that stores the same value each time doesn't keep
+     * rewriting the file.
+     */
+    fun setStoreValue(
+        key: String,
+        json: String?,
+    ) {
+        val changed = if (json == null) store.remove(key) != null else store.put(key, json) != json
+        if (changed) {
+            serialize()
+        }
+    }
+
+    /** Forgets everything the scripts stored (the Commands screen's clear). */
+    fun clearStore() {
+        if (store.isNotEmpty()) {
+            store.clear()
+            serialize()
+        }
+    }
 
     /** A copy of the shared environment, as an ordered key→value map. */
     fun getEnv(): LinkedHashMap<String, String> = LinkedHashMap(env)
@@ -66,13 +113,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     }
 
     /**
-     * Snapshot of what gets persisted: the ordered command list, the shared environment text and the
-     * ordered library list.
+     * Snapshot of what gets persisted: the ordered command list, the shared environment text, the
+     * ordered library list and the script store.
      */
     class Snapshot(
         val items: List<CommandItem>,
         val envText: String,
         val libraries: List<LibraryItem>,
+        val store: Map<String, String>,
     )
 
     /**
@@ -109,11 +157,12 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         for (libraryItem in this.libraryItems) {
             libraryItems.add(LibraryItem(libraryItem))
         }
-        return Snapshot(commandItems, envText, libraryItems)
+        return Snapshot(commandItems, envText, libraryItems, LinkedHashMap(store))
     }
 
     override fun onDeserialize(jsonObject: JSONObject) {
         readEnv(jsonObject)
+        readStore(jsonObject)
         // Either list may hold an entry saved before ids existed; both then get one here, and the file
         // is written back once so they stay stable across launches.
         val librariesMigrated = readLibraries(jsonObject)
@@ -141,6 +190,19 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             }
         }
         env = EnvText.parse(envText)
+    }
+
+    /** Reads the script store, whose values are kept as the JSON text a script wrote. */
+    private fun readStore(jsonObject: JSONObject) {
+        val storeObject = jsonObject.optJSONObject(KEY_STORE) ?: return
+        val keys = storeObject.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val value = storeObject.optString(key)
+            if (value.isNotEmpty()) {
+                store[key] = value
+            }
+        }
     }
 
     /** Reads the library list into [libraryItems]. Returns true if any entry had to be given an id. */
@@ -196,7 +258,18 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         CommandItem.generateId()
                     }
                 commandItems.add(
-                    CommandItem(id, chanNames.ifEmpty { null }, boardName, name, code, useIn, autoRun, perPost, libraries),
+                    CommandItem(
+                        id,
+                        chanNames.ifEmpty { null },
+                        boardName,
+                        name,
+                        code,
+                        useIn,
+                        autoRun,
+                        perPost,
+                        libraries,
+                        parseGrants(item),
+                    ),
                 )
             }
         }
@@ -205,7 +278,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
     @Throws(JSONException::class)
     override fun onSerialize(data: Snapshot): JSONObject? {
-        if (data.items.isEmpty() && data.envText.isEmpty() && data.libraries.isEmpty()) {
+        if (data.items.isEmpty() && data.envText.isEmpty() && data.libraries.isEmpty() && data.store.isEmpty()) {
             return null
         }
         val jsonObject = JSONObject()
@@ -225,6 +298,13 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 jsonArray.put(serializeLibrary(libraryItem))
             }
             jsonObject.put(KEY_LIBRARIES, jsonArray)
+        }
+        if (data.store.isNotEmpty()) {
+            val storeObject = JSONObject()
+            for ((key, value) in data.store) {
+                storeObject.put(key, value)
+            }
+            jsonObject.put(KEY_STORE, storeObject)
         }
         return jsonObject
     }
@@ -271,6 +351,13 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             }
             jsonObject.put(KEY_LIBRARIES, librariesArray)
         }
+        // Always written, even when empty: an absent list is what a command stored before grants
+        // existed looks like, and that one means "the environment" rather than "nothing".
+        val grantsArray = JSONArray()
+        for (grant in commandItem.grants) {
+            grantsArray.put(grant.key)
+        }
+        jsonObject.put(KEY_GRANTS, grantsArray)
         return jsonObject
     }
 
@@ -431,6 +518,51 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         }
     }
 
+    /**
+     * What a command is allowed to reach beyond the draft or the posts it was handed — one entry per
+     * object its script gets (see [com.mishiranu.dashchan.content.CommandApp]). A command carries its
+     * own set; what it wasn't granted is still there to call, and says it wasn't granted.
+     *
+     * [ENVIRONMENT] is on for a new command and the others are not: reading values the user typed for
+     * their commands is what the environment is *for*, while the settings and the cookies belong to
+     * the app and to the forum. The script's own scratch store isn't here at all — it holds only what
+     * the same script put in it, so there is nothing to grant.
+     */
+    enum class Grant(
+        val key: String,
+    ) {
+        /** `env`, the user's shared key→value snapshot. */
+        ENVIRONMENT("env"),
+
+        /** `app`, the application's own settings. */
+        SETTINGS("settings"),
+
+        /** `chan`, the forum's name and its cookies. */
+        COOKIES("cookies"),
+        ;
+
+        companion object {
+            /** What a command carries unless the user says otherwise — the environment, nothing else. */
+            val DEFAULT: Set<Grant> = setOf(ENVIRONMENT)
+
+            /**
+             * The grants named by [keys], or [DEFAULT] for `null` — which is a command stored before
+             * grants existed, and which was written when `env` was all there was to reach. An empty
+             * list is an answer of its own (a command granted nothing) and stays empty.
+             */
+            fun fromKeys(keys: Collection<String?>?): Set<Grant> {
+                if (keys == null) {
+                    return DEFAULT
+                }
+                val grants = LinkedHashSet<Grant>()
+                for (key in keys) {
+                    entries.firstOrNull { it.key == key }?.let { grants.add(it) }
+                }
+                return grants
+            }
+        }
+    }
+
     class CommandItem : Parcelable {
         /** Stable unique identity, kept across edits and reorders (used for drag-drop, edit lookup). */
         @JvmField var id: Long = 0
@@ -472,6 +604,13 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          */
         @JvmField var libraries: Set<String>? = null
 
+        /**
+         * What this command's script is allowed to reach beyond its own input (see [Grant]). Held per
+         * command rather than per app: a command that only rewrites text has no business reading
+         * cookies, and the one that does say so is the one the user looked at when they allowed it.
+         */
+        @JvmField var grants: Set<Grant> = Grant.DEFAULT
+
         constructor()
 
         constructor(commandItem: CommandItem) : this(
@@ -484,6 +623,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             commandItem.autoRun,
             commandItem.perPost,
             commandItem.libraries,
+            commandItem.grants,
         )
 
         constructor(
@@ -496,9 +636,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             autoRun: Boolean,
             perPost: Boolean,
             libraries: Set<String>? = null,
+            grants: Set<Grant> = Grant.DEFAULT,
         ) {
             this.id = id
-            update(chanNames, boardName, name, code, useIn, autoRun, perPost, libraries)
+            update(chanNames, boardName, name, code, useIn, autoRun, perPost, libraries, grants)
         }
 
         fun update(
@@ -510,6 +651,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             autoRun: Boolean,
             perPost: Boolean,
             libraries: Set<String>? = null,
+            grants: Set<Grant> = Grant.DEFAULT,
         ) {
             this.chanNames = chanNames
             this.boardName = boardName
@@ -519,6 +661,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             this.autoRun = autoRun
             this.perPost = perPost
             this.libraries = libraries
+            this.grants = grants
         }
 
         /** True if this command should be offered for the given forum/board. */
@@ -552,6 +695,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             dest.writeByte(if (autoRun) 1.toByte() else 0.toByte())
             dest.writeByte(if (perPost) 1.toByte() else 0.toByte())
             dest.writeStringArray(CommonUtils.toArray(libraries, String::class.java))
+            dest.writeStringArray(grants.map { it.key }.toTypedArray())
         }
 
         companion object {
@@ -587,6 +731,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                         if (libraries != null) {
                             commandItem.libraries = LinkedHashSet(libraries.asList())
                         }
+                        commandItem.grants = Grant.fromKeys(source.createStringArray()?.asList())
                         return commandItem
                     }
 
@@ -688,6 +833,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
         /** Legacy key for [KEY_ENV_TEXT] (the environment was stored as a key→value object before). */
         private const val KEY_ENV = "env"
+        private const val KEY_STORE = "store"
         private const val KEY_ID = "id"
         private const val KEY_CHAN_NAMES = "chanNames"
         private const val KEY_BOARD_NAME = "boardName"
@@ -704,6 +850,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * at the top level) or as whole definitions when the command was exported on its own.
          */
         private const val KEY_LIBRARIES = "libraries"
+        private const val KEY_GRANTS = "grants"
 
         /** Legacy key for [KEY_AUTO_RUN] (the flag was named "runOnSend" before). Read-only fallback. */
         private const val KEY_AUTO_RUN_LEGACY = "runOnSend"
@@ -827,6 +974,23 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             return names.ifEmpty { null }
         }
 
+        /**
+         * The grants [item] carries, or the default set when it names none — a command stored before
+         * grants existed asked for nothing beyond the environment and gets exactly that.
+         *
+         * Only the *stored* file is read this way. An imported command is deliberately not (see
+         * [parseCommand]): a grant is something the user gives on this device, and a document that
+         * could bring its own would hand the decision back to whoever wrote it.
+         */
+        private fun parseGrants(item: JSONObject): Set<Grant> {
+            val array = item.optJSONArray(KEY_GRANTS) ?: return Grant.DEFAULT
+            val keys = ArrayList<String?>(array.length())
+            for (i in 0 until array.length()) {
+                keys.add(array.optString(i, null))
+            }
+            return Grant.fromKeys(keys)
+        }
+
         private fun parseCommand(item: JSONObject): CommandItem? {
             val code = item.optString(KEY_CODE)
             if (code.isEmpty()) {
@@ -858,6 +1022,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 autoRun,
                 perPost,
                 parseLibraryNames(item),
+                // Whatever the document asked for, an imported command arrives with the grants a new
+                // one has. The point of a grant is that the user gave it here; a script that needs
+                // more says so when it runs, naming the editor where it can be given.
+                Grant.DEFAULT,
             )
         }
     }

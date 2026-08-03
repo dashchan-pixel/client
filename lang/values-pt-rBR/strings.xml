@@ -2,6 +2,8 @@
 <resources>
 
 	<string name="about">Informações</string>
+	<string name="access">Acesso</string>
+	<string name="access__format">Acesso: %s</string>
 	<string name="action_on_playback_completion">Quando terminar de reproduzir</string>
 	<string name="active_bans">Banimentos ativos</string>
 	<string name="active_scrollbar">Barra de rolagem ativa</string>
@@ -78,6 +80,7 @@
 	<string name="connection">Conexão</string>
 	<string name="connection_was_reset">Conexão foi reiniciada</string>
 	<string name="contents">Conteúdo</string>
+	<string name="cookies">Cookies</string>
 	<string name="copied_to_clipboard">Copiado para a área de transferência</string>
 	<string name="copy">Copiar</string>
 	<string name="copy_email">Copiar email</string>
@@ -239,6 +242,7 @@
 	<string name="no_intervals_defined">Não há intervalos definidos</string>
 	<string name="no_rules_defined">Não há regras definidas</string>
 	<string name="not_found">Não encontrado</string>
+	<string name="nothing_granted">Nada permitido</string>
 	<string name="notify_only">Apenas notificar</string>
 	<string name="notify_when_download_is_completed">Notificar quando o download acabar</string>
 	<string name="notify_when_download_is_completed__summary">Mostrará notificação \"Heads-Up\" quando completar o
@@ -397,6 +401,7 @@
 	<string name="statistics">Estátisticas</string>
 	<string name="sticky_thread">Fio fixo</string>
 	<string name="stop">Parar</string>
+	<string name="storage">Armazenamento</string>
 	<string name="subdirectory_pattern">Padrão de subdiretório</string>
 	<string name="subject">Assunto</string>
 	<string name="subjects_are_disabled">Assuntos estão desabilitados</string>

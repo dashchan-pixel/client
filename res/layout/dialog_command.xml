@@ -76,6 +76,19 @@
 			android:textAppearance="?android:attr/textAppearanceSmall" />
 
 		<TextView
+			android:id="@+id/grants"
+			android:layout_width="match_parent"
+			android:layout_height="40dp"
+			android:gravity="center_vertical"
+			android:background="?android:attr/selectableItemBackground"
+			android:textAppearance="?android:attr/textAppearanceListItem"
+			android:layout_marginLeft="@dimen/dialog_padding_text_half"
+			android:layout_marginRight="@dimen/dialog_padding_text_half"
+			android:layout_marginTop="8dp"
+			android:paddingLeft="@dimen/dialog_padding_text_half"
+			android:paddingRight="@dimen/dialog_padding_text_half" />
+
+		<TextView
 			android:id="@+id/libraries"
 			android:layout_width="match_parent"
 			android:layout_height="40dp"

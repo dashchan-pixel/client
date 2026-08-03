@@ -2257,7 +2257,13 @@ class PostsPage :
         val posts = collectThreadPosts(postItems)
         commandsProgress.start()
         val run =
-            CommandRunner.runThread(command, posts, getPage().threadNumber, getPage().boardName) { result ->
+            CommandRunner.runThread(
+                command,
+                posts,
+                getPage().chanName,
+                getPage().threadNumber,
+                getPage().boardName,
+            ) { result ->
                 // Delivered on the main thread; the page may have been left by the time it arrives. The
                 // indicator is released before that check, since nothing releases it afterwards.
                 commandsProgress.finish()
