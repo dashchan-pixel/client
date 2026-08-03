@@ -763,6 +763,12 @@ open class ChanConfiguration internal constructor(
             captcha.input = Captcha.Input.ALL
             captcha.validity = Captcha.Validity.SHORT_LIFETIME
             return captcha
+        } else if (CAPTCHA_TYPE_RECAPTCHA_3 == captchaType) {
+            val captcha = Captcha()
+            captcha.title = "reCAPTCHA 3"
+            captcha.input = Captcha.Input.ALL
+            captcha.validity = Captcha.Validity.SHORT_LIFETIME
+            return captcha
         } else if (captchaType != null) {
             try {
                 return obtainCustomCaptchaConfiguration(captchaType)
@@ -1150,6 +1156,14 @@ open class ChanConfiguration internal constructor(
 
         @Public
         const val CAPTCHA_TYPE_HCAPTCHA: String = "hcaptcha"
+
+        /**
+         * reCAPTCHA v3, which never shows a challenge: it scores the request and hands back a
+         * token bound to the action that minted it. The action belongs to the site rather than to
+         * the key, so it travels per request in [ChanPerformer.CaptchaData.ACTION].
+         */
+        @Public
+        const val CAPTCHA_TYPE_RECAPTCHA_3: String = "recaptcha_3"
 
         @Public
         @JvmStatic

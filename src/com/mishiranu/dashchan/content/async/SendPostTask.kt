@@ -181,7 +181,8 @@ class SendPostTask<Key>(
                     (
                         ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2 == data.captchaType ||
                             ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE == data.captchaType ||
-                            ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA == data.captchaType
+                            ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA == data.captchaType ||
+                            ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_3 == data.captchaType
                     )
                 ) {
                     data.captchaData.put(

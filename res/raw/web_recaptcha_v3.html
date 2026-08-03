@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<style>
+
+/*
+ * v3 draws nothing but its badge, and nothing here is ever shown to the user: the page exists
+ * only to run the script under the site's own origin.
+ */
+
+.grecaptcha-badge {
+	visibility: hidden;
+}
+
+body {
+	margin: 0;
+}
+
+</style>
+
+<script type="text/javascript">
+
+function onLoad() {
+	// grecaptcha.ready fires once the script has its key set up. Calling execute before that
+	// throws, and the throw would be swallowed as a page that simply never answers.
+	grecaptcha.ready(function () {
+		var action = '__REPLACE_ACTION__'
+		var promise = action ? grecaptcha.execute('__REPLACE_API_KEY__', { action: action })
+			: grecaptcha.execute('__REPLACE_API_KEY__')
+		promise.then(function (response) {
+			jsi.onResponse(response || '')
+		}, function () {
+			jsi.onError()
+		})
+	})
+}
+
+setTimeout(function () {
+	var element = document.createElement('script')
+	element.type = 'text/javascript'
+	element.src = 'https://www.google.com/recaptcha/api.js?onload=onLoad&render=__REPLACE_API_KEY__'
+	element.setAttribute('async', '')
+	element.setAttribute('defer', '')
+	element.onerror = function () {
+		jsi.onError()
+	}
+	document.getElementsByTagName('body')[0].appendChild(element)
+}, 1)
+
+</script>
+
+</head>
+<body>
+</body>
+</html>

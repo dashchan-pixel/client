@@ -173,14 +173,26 @@ class CaptchaSolving private constructor() {
         return false
     }
 
-    enum class CaptchaType { RECAPTCHA_2, RECAPTCHA_2_INVISIBLE, HCAPTCHA }
+    enum class CaptchaType { RECAPTCHA_2, RECAPTCHA_2_INVISIBLE, HCAPTCHA, RECAPTCHA_3 }
+
+    /** What a service needs to be told about the captcha, as opposed to about itself. */
+    private class Challenge(
+        val captchaType: CaptchaType,
+        val apiKey: String?,
+        val referer: String?,
+        /** Only [CaptchaType.RECAPTCHA_3] binds its token to an action. */
+        val action: String?,
+    )
 
     @Throws(HttpException::class)
+    @JvmOverloads
     fun solveCaptcha(
         holder: HttpHolder,
         captchaType: CaptchaType,
         apiKey: String?,
         referer: String?,
+        /** Only [CaptchaType.RECAPTCHA_3] binds its token to an action. */
+        action: String? = null,
     ): String? {
         try {
             val configuration = getConfiguration() ?: return null
@@ -193,6 +205,7 @@ class CaptchaSolving private constructor() {
                 return null
             }
             val endpointUri = createUri(configuration.endpoint)
+            val challenge = Challenge(captchaType, apiKey, referer, action)
             while (true) {
                 try {
                     return service.solveCaptcha(
@@ -200,9 +213,7 @@ class CaptchaSolving private constructor() {
                         endpointUri,
                         configuration.token,
                         configuration.timeout,
-                        captchaType,
-                        apiKey,
-                        referer,
+                        challenge,
                     )
                 } catch (e: TimeoutException) {
                     e.printStackTrace()
@@ -241,9 +252,7 @@ class CaptchaSolving private constructor() {
             endpointUri: Uri,
             token: String,
             timeout: Int,
-            captchaType: CaptchaType,
-            apiKey: String?,
-            referer: String?,
+            challenge: Challenge,
         ): String?
     }
 
@@ -309,13 +318,12 @@ class CaptchaSolving private constructor() {
             endpointUri: Uri,
             token: String,
             timeout: Int,
-            captchaType: CaptchaType,
-            apiKey: String?,
-            referer: String?,
+            challenge: Challenge,
         ): String? {
             val builder = endpointUri.buildUpon().appendPath("in.php")
             builder.appendQueryParameter("key", token)
-            when (captchaType) {
+            val apiKey = challenge.apiKey
+            when (challenge.captchaType) {
                 CaptchaType.RECAPTCHA_2 -> {
                     builder.appendQueryParameter("method", "userrecaptcha")
                     builder.appendQueryParameter("googlekey", apiKey)
@@ -332,8 +340,17 @@ class CaptchaSolving private constructor() {
                     builder.appendQueryParameter("method", "hcaptcha")
                     builder.appendQueryParameter("sitekey", apiKey)
                 }
+
+                CaptchaType.RECAPTCHA_3 -> {
+                    builder.appendQueryParameter("method", "userrecaptcha")
+                    builder.appendQueryParameter("version", "v3")
+                    builder.appendQueryParameter("googlekey", apiKey)
+                    if (!StringUtils.isEmpty(challenge.action)) {
+                        builder.appendQueryParameter("action", challenge.action)
+                    }
+                }
             }
-            builder.appendQueryParameter("pageurl", referer)
+            builder.appendQueryParameter("pageurl", challenge.referer)
             var response = HttpRequest(builder.build(), holder).perform()!!.readString()
             if (response != null && response.startsWith("OK|")) {
                 response = response.substring(3)
@@ -456,19 +473,11 @@ class CaptchaSolving private constructor() {
             }
         }
 
-        @Throws(HttpException::class, TimeoutException::class)
-        override fun solveCaptcha(
-            holder: HttpHolder,
-            endpointUri: Uri,
-            token: String,
-            timeout: Int,
-            captchaType: CaptchaType,
-            apiKey: String?,
-            referer: String?,
-        ): String? {
+        /** Names the challenge the way this protocol's task objects do. */
+        private fun buildTask(challenge: Challenge): JSONObject {
             val task = JSONObject()
             try {
-                when (captchaType) {
+                when (challenge.captchaType) {
                     CaptchaType.RECAPTCHA_2 -> {
                         task.put("type", "NoCaptchaTaskProxyless")
                         task.put("isInvisible", false)
@@ -482,12 +491,31 @@ class CaptchaSolving private constructor() {
                     CaptchaType.HCAPTCHA -> {
                         task.put("type", "HCaptchaTaskProxyless")
                     }
+
+                    CaptchaType.RECAPTCHA_3 -> {
+                        task.put("type", "RecaptchaV3TaskProxyless")
+                        if (!StringUtils.isEmpty(challenge.action)) {
+                            task.put("pageAction", challenge.action)
+                        }
+                    }
                 }
-                task.put("websiteURL", referer)
-                task.put("websiteKey", apiKey)
+                task.put("websiteURL", challenge.referer)
+                task.put("websiteKey", challenge.apiKey)
             } catch (e: JSONException) {
                 throw RuntimeException(e)
             }
+            return task
+        }
+
+        @Throws(HttpException::class, TimeoutException::class)
+        override fun solveCaptcha(
+            holder: HttpHolder,
+            endpointUri: Uri,
+            token: String,
+            timeout: Int,
+            challenge: Challenge,
+        ): String? {
+            val task = buildTask(challenge)
             val response0: JSONObject =
                 try {
                     run(holder, endpointUri, "createTask", token, task, null)

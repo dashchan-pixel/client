@@ -123,7 +123,7 @@ class RecaptchaReader private constructor() {
             }
         synchronized(accessLock) {
             if (solveInBackground) {
-                return BackgroundSolver(solver, refererFinal, apiKey, invisible, false).await()
+                return BackgroundSolver(solver, refererFinal, apiKey, invisible, false, null).await()
             } else {
                 return ChallengeExtra(solver, null, null)
             }
@@ -166,10 +166,45 @@ class RecaptchaReader private constructor() {
             }
         synchronized(accessLock) {
             if (solveInBackground) {
-                return BackgroundSolver(solver, refererFinal, apiKey, false, true).await()
+                return BackgroundSolver(solver, refererFinal, apiKey, false, true, null).await()
             } else {
                 return ChallengeExtra(solver, null, null)
             }
+        }
+    }
+
+    /**
+     * reCAPTCHA v3 asks the user nothing: the script scores the request behind the page and
+     * answers with a token or an error. There is therefore no challenge to hand back and no
+     * dialog to fall back on — the token is minted here or not at all.
+     */
+    @Throws(CancelException::class, HttpException::class)
+    fun getChallenge3(
+        initialHolder: HttpHolder,
+        apiKey: String,
+        action: String,
+        referer: String?,
+        solveAutomatically: Boolean,
+    ): ChallengeExtra? {
+        val refererFinal = referer ?: "https://www.google.com/"
+        if (solveAutomatically) {
+            val autoResponse =
+                CaptchaSolving.getInstance().solveCaptcha(
+                    initialHolder,
+                    CaptchaSolving.CaptchaType.RECAPTCHA_3,
+                    apiKey,
+                    refererFinal,
+                    action,
+                )
+            if (autoResponse != null) {
+                return ChallengeExtra(null, autoResponse, null)
+            }
+        }
+        // Nothing the user could do would produce a v3 token, so a solver that is asked for one
+        // can only report that there is none.
+        val solver = ForegroundSolver { _: HttpHolder, _: ChallengeExtra? -> throw CancelException() }
+        synchronized(accessLock) {
+            return BackgroundSolver(solver, refererFinal, apiKey, false, false, action).await()
         }
     }
 
@@ -181,6 +216,11 @@ class RecaptchaReader private constructor() {
             val apiKey: String,
             val invisible: Boolean,
             val hcaptcha: Boolean,
+            /**
+             * Non-null selects reCAPTCHA v3, which is a different script and a different page
+             * from the widget the other two share. Empty means v3 without a named action.
+             */
+            val action: String?,
         )
 
         fun interface ArgumentsProvider {
@@ -305,11 +345,20 @@ class RecaptchaReader private constructor() {
 
             if (load) {
                 val arguments = argumentsProvider.create()
+                val action = arguments.action
                 val data =
-                    readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v2)
-                        .replace("__REPLACE_API_KEY__", arguments.apiKey)
-                        .replace("__REPLACE_INVISIBLE__", if (arguments.invisible) "true" else "false")
-                        .replace("__REPLACE_HCAPTCHA__", if (arguments.hcaptcha) "true" else "false")
+                    if (action != null) {
+                        readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v3)
+                            .replace("__REPLACE_API_KEY__", arguments.apiKey)
+                            .replace("__REPLACE_ACTION__", action)
+                    } else {
+                        readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v2)
+                            .replace("__REPLACE_API_KEY__", arguments.apiKey)
+                            .replace("__REPLACE_INVISIBLE__", if (arguments.invisible) "true" else "false")
+                            .replace("__REPLACE_HCAPTCHA__", if (arguments.hcaptcha) "true" else "false")
+                    }
+                // The base URL is what the key is registered against, so the page has to claim
+                // the site's own origin rather than the one the data belongs to.
                 webView.loadDataWithBaseURL(arguments.referer, data, "text/html", "UTF-8", null)
             }
             return webView
@@ -506,6 +555,7 @@ class RecaptchaReader private constructor() {
         apiKey: String,
         invisible: Boolean,
         hcaptcha: Boolean,
+        action: String?,
     ) : WebViewHolder.Callback {
         internal val holder: WebViewHolder
 
@@ -528,6 +578,7 @@ class RecaptchaReader private constructor() {
                                     apiKey,
                                     invisible,
                                     hcaptcha,
+                                    action,
                                 )
                             },
                         )
@@ -695,6 +746,8 @@ class RecaptchaReader private constructor() {
                         requireArguments().getBoolean(
                             EXTRA_HCAPTCHA,
                         ),
+                        // This dialog only ever shows a widget, which v3 does not have.
+                        null,
                     )
                 },
             )

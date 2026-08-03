@@ -75,7 +75,7 @@ class ReadCaptchaTask(
         }
     }
 
-    private enum class ForegroundCaptcha { RECAPTCHA_2, RECAPTCHA_2_INVISIBLE, HCAPTCHA }
+    private enum class ForegroundCaptcha { RECAPTCHA_2, RECAPTCHA_2_INVISIBLE, HCAPTCHA, RECAPTCHA_3 }
 
     override fun run(): Pair<ErrorItem?, Result?>? {
         val result: RemoteResult
@@ -141,7 +141,10 @@ class ReadCaptchaTask(
                         // is still being written, which a refused send recovers from anyway. The
                         // setting exists for whoever prefers to mint the token by hand instead.
                         val invisible =
-                            foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE &&
+                            (
+                                foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_2_INVISIBLE ||
+                                    foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_3
+                            ) &&
                                 Preferences.isRecaptchaSolveInvisible
                         if (!mayShowLoadButton || invisible) {
                             val response =
@@ -214,6 +217,7 @@ class ReadCaptchaTask(
                 ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2 -> ForegroundCaptcha.RECAPTCHA_2
                 ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE -> ForegroundCaptcha.RECAPTCHA_2_INVISIBLE
                 ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA -> ForegroundCaptcha.HCAPTCHA
+                ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_3 -> ForegroundCaptcha.RECAPTCHA_3
                 else -> null
             }
 
@@ -259,6 +263,14 @@ class ReadCaptchaTask(
                             apiKey!!,
                             referer,
                             false,
+                            allowSolveAutomatically,
+                        )
+                    } else if (foregroundCaptcha == ForegroundCaptcha.RECAPTCHA_3) {
+                        recaptchaReader.getChallenge3(
+                            holder,
+                            apiKey!!,
+                            StringUtils.emptyIfNull(captchaData.get(ChanPerformer.CaptchaData.ACTION)),
+                            referer,
                             allowSolveAutomatically,
                         )
                     } else {

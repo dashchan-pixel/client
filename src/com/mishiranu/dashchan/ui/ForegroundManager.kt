@@ -1444,7 +1444,8 @@ class ForegroundManager private constructor() : Handler.Callback {
                     (
                         ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2 == workCaptchaType ||
                             ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_2_INVISIBLE == workCaptchaType ||
-                            ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA == workCaptchaType
+                            ChanConfiguration.CAPTCHA_TYPE_HCAPTCHA == workCaptchaType ||
+                            ChanConfiguration.CAPTCHA_TYPE_RECAPTCHA_3 == workCaptchaType
                     )
                 ) {
                     captchaData.put(
