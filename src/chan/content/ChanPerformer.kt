@@ -1185,6 +1185,33 @@ open class ChanPerformer internal constructor(
         }
     }
 
+    /**
+     * Suspends this thread and shows a slide-puzzle captcha: the user drags [slider] over
+     * [background] to the gap. Returns the piece's chosen left offset in [background]'s pixels, or
+     * `null` if the user canceled.
+     */
+    @Public
+    @Throws(HttpException::class)
+    fun requireUserImageSlider(
+        background: Bitmap,
+        slider: Bitmap,
+        sliderY: Int,
+        descriptionText: String?,
+    ): Int? {
+        checkPerformerRequireCall()
+        try {
+            return ForegroundManager.getInstance().requireUserImageSlider(
+                background,
+                slider,
+                sliderY,
+                descriptionText,
+            )
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw HttpException(ErrorItem.Type.UNKNOWN, false, false, e)
+        }
+    }
+
     class Safe internal constructor(
         private val performer: ChanPerformer,
     ) {

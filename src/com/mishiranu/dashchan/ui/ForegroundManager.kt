@@ -6,11 +6,15 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.DialogInterface.OnShowListener
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
@@ -74,7 +78,9 @@ import java.util.UUID
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.indices
+import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class ForegroundManager private constructor() : Handler.Callback {
     private class DelayedMessage(
@@ -1129,6 +1135,183 @@ class ForegroundManager private constructor() : Handler.Callback {
         }
     }
 
+    class SliderDialog :
+        DialogFragment,
+        PendingDataDialog<SliderPendingData>,
+        DialogInterface.OnClickListener {
+        private var sliderView: SliderView? = null
+
+        constructor()
+
+        constructor(
+            pendingDataId: String?,
+            background: Bitmap?,
+            slider: Bitmap?,
+            sliderY: Int,
+            descriptionText: String?,
+        ) {
+            val args = Bundle()
+            fillArguments(args, pendingDataId)
+            args.putParcelable(EXTRA_BACKGROUND, background)
+            args.putParcelable(EXTRA_SLIDER, slider)
+            args.putInt(EXTRA_SLIDER_Y, sliderY)
+            args.putString(EXTRA_DESCRIPTION_TEXT, descriptionText)
+            setArguments(args)
+        }
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val context = requireContext()
+            val background =
+                BundleCompat.getParcelable(requireArguments(), EXTRA_BACKGROUND, Bitmap::class.java)
+            val slider =
+                BundleCompat.getParcelable(requireArguments(), EXTRA_SLIDER, Bitmap::class.java)
+            val sliderY = requireArguments().getInt(EXTRA_SLIDER_Y)
+            val descriptionText = requireArguments().getString(EXTRA_DESCRIPTION_TEXT)
+            val view = SliderView(context, background, slider, sliderY)
+            if (savedInstanceState != null) {
+                view.positionX = savedInstanceState.getInt(EXTRA_POSITION, 0)
+            }
+            sliderView = view
+            val padding = context.resources.getDimensionPixelOffset(R.dimen.dialog_padding_text)
+            val container = FrameLayout(context)
+            container.setPadding(padding, padding, padding, padding)
+            container.addView(
+                view,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+            )
+            return AlertDialog
+                .Builder(context)
+                .setTitle(descriptionText)
+                .setView(container)
+                .setPositiveButton(android.R.string.ok, this)
+                .setNegativeButton(android.R.string.cancel, this)
+                .create()
+        }
+
+        override fun onSaveInstanceState(outState: Bundle) {
+            super.onSaveInstanceState(outState)
+            outState.putInt(EXTRA_POSITION, sliderView?.positionX ?: 0)
+        }
+
+        override fun onClick(
+            dialog: DialogInterface?,
+            which: Int,
+        ) {
+            publishResult(which == AlertDialog.BUTTON_POSITIVE)
+        }
+
+        override fun onCancel(dialog: DialogInterface) {
+            super.onCancel(dialog)
+            publishResult(false)
+        }
+
+        private fun publishResult(success: Boolean) {
+            val position = sliderView?.positionX ?: 0
+            notifyResult(
+                StoreResultCallback { pendingData: SliderPendingData ->
+                    pendingData.result = if (success) position else null
+                },
+            )
+        }
+
+        /**
+         * Draws the background captcha image scaled to the dialog width with the puzzle piece on
+         * top, and drags the piece horizontally with the finger. [positionX] is the piece's left
+         * edge in the background image's own pixels — the coordinate the board scores — so it is
+         * kept in image space and only scaled for drawing.
+         */
+        private class SliderView(
+            context: Context,
+            private val background: Bitmap?,
+            private val slider: Bitmap?,
+            private val sliderY: Int,
+        ) : View(context) {
+            private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+            private val backgroundRect = RectF()
+            private val sliderRect = RectF()
+            private var dragTouchX = 0f
+            private var dragStartX = 0
+
+            var positionX = 0
+                set(value) {
+                    field = value.coerceIn(0, maxPositionX())
+                    invalidate()
+                }
+
+            private fun maxPositionX(): Int {
+                val bg = background ?: return 0
+                val tile = slider ?: return 0
+                return max(0, bg.width - tile.width)
+            }
+
+            private fun scale(): Float {
+                val bg = background ?: return 1f
+                return if (bg.width > 0) width.toFloat() / bg.width else 1f
+            }
+
+            override fun onMeasure(
+                widthMeasureSpec: Int,
+                heightMeasureSpec: Int,
+            ) {
+                val measuredWidth = MeasureSpec.getSize(widthMeasureSpec)
+                val bg = background
+                val height =
+                    if (bg != null && bg.width > 0) measuredWidth * bg.height / bg.width else 0
+                setMeasuredDimension(measuredWidth, height)
+            }
+
+            override fun onDraw(canvas: Canvas) {
+                val bg = background ?: return
+                val tile = slider ?: return
+                val scale = scale()
+                backgroundRect.set(0f, 0f, width.toFloat(), height.toFloat())
+                canvas.drawBitmap(bg, null, backgroundRect, paint)
+                val left = positionX * scale
+                val top = sliderY * scale
+                sliderRect.set(left, top, left + tile.width * scale, top + tile.height * scale)
+                canvas.drawBitmap(tile, null, sliderRect, paint)
+            }
+
+            override fun onTouchEvent(event: MotionEvent): Boolean {
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        dragTouchX = event.x
+                        dragStartX = positionX
+                        return true
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+                        val scale = scale()
+                        if (scale > 0f) {
+                            positionX = dragStartX + ((event.x - dragTouchX) / scale).roundToInt()
+                        }
+                        return true
+                    }
+
+                    MotionEvent.ACTION_UP -> {
+                        performClick()
+                        return true
+                    }
+                }
+                return super.onTouchEvent(event)
+            }
+
+            override fun performClick(): Boolean {
+                super.performClick()
+                return true
+            }
+        }
+
+        companion object {
+            private const val EXTRA_BACKGROUND = "background"
+            private const val EXTRA_SLIDER = "slider"
+            private const val EXTRA_SLIDER_Y = "sliderY"
+            private const val EXTRA_DESCRIPTION_TEXT = "descriptionText"
+            private const val EXTRA_POSITION = "position"
+        }
+    }
+
     class RecaptchaV2Dialog :
         V2Dialog,
         PendingDataDialog<RecaptchaV2PendingData> {
@@ -1197,7 +1380,7 @@ class ForegroundManager private constructor() : Handler.Callback {
                 return true
             }
 
-            MESSAGE_REQUIRE_USER_CAPTCHA, MESSAGE_REQUIRE_USER_CHOICE, MESSAGE_REQUIRE_USER_RECAPTCHA_V2, MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL -> {
+            MESSAGE_REQUIRE_USER_CAPTCHA, MESSAGE_REQUIRE_USER_CHOICE, MESSAGE_REQUIRE_USER_SLIDER, MESSAGE_REQUIRE_USER_RECAPTCHA_V2, MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL -> {
                 val handlerData: HandlerData = msg.obj as HandlerData
                 val activity = getActivity()
                 val pendingData = getPendingData(handlerData.pendingDataId)
@@ -1250,6 +1433,18 @@ class ForegroundManager private constructor() : Handler.Callback {
                                     choiceHandlerData.multiple,
                                 ).show(activity)
                             }
+                        }
+
+                        MESSAGE_REQUIRE_USER_SLIDER -> {
+                            val sliderHandlerData: SliderHandlerData =
+                                handlerData as SliderHandlerData
+                            SliderDialog(
+                                handlerData.pendingDataId,
+                                sliderHandlerData.background,
+                                sliderHandlerData.slider,
+                                sliderHandlerData.sliderY,
+                                sliderHandlerData.descriptionText,
+                            ).show(activity)
                         }
 
                         MESSAGE_REQUIRE_USER_RECAPTCHA_V2 -> {
@@ -1311,6 +1506,14 @@ class ForegroundManager private constructor() : Handler.Callback {
         val multiple: Boolean,
     ) : HandlerData(pendingDataId)
 
+    private class SliderHandlerData(
+        pendingDataId: String?,
+        val background: Bitmap?,
+        val slider: Bitmap?,
+        val sliderY: Int,
+        val descriptionText: String?,
+    ) : HandlerData(pendingDataId)
+
     private class RecaptchaV2HandlerData(
         pendingDataId: String?,
         val referer: String?,
@@ -1356,6 +1559,10 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private class ChoicePendingData : PendingData() {
         var result: BooleanArray? = null
+    }
+
+    private class SliderPendingData : PendingData() {
+        var result: Int? = null
     }
 
     private class RecaptchaV2PendingData : PendingData() {
@@ -1615,6 +1822,25 @@ class ForegroundManager private constructor() : Handler.Callback {
         }
     }
 
+    @Throws(InterruptedException::class)
+    fun requireUserImageSlider(
+        background: Bitmap,
+        slider: Bitmap,
+        sliderY: Int,
+        descriptionText: String?,
+    ): Int? {
+        val pendingData = SliderPendingData()
+        val pendingDataId = putPendingData(pendingData)
+        try {
+            val handlerData =
+                SliderHandlerData(pendingDataId, background, slider, sliderY, descriptionText)
+            handler.obtainMessage(MESSAGE_REQUIRE_USER_SLIDER, handlerData).sendToTarget()
+            return if (pendingData.await(handler, handlerData)) pendingData.result else null
+        } finally {
+            removePendingData(pendingDataId)
+        }
+    }
+
     @Throws(HttpException::class, InterruptedException::class)
     fun requireUserRecaptchaV2(
         referer: String?,
@@ -1696,6 +1922,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         private const val MESSAGE_REQUIRE_USER_RECAPTCHA_V2 = 4
         private const val MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL = 5
         private const val MESSAGE_SHOW_CAPTCHA_INVALID = 6
+        private const val MESSAGE_REQUIRE_USER_SLIDER = 7
 
         private fun appendDescriptionImageView(
             viewGroup: ViewGroup,
