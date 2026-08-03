@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -178,6 +179,9 @@ class RecaptchaReader private constructor() {
      * reCAPTCHA v3 asks the user nothing: the script scores the request behind the page and
      * answers with a token or an error. There is therefore no challenge to hand back and no
      * dialog to fall back on — the token is minted here or not at all.
+     *
+     * [referer] is the page the challenge is run inside, and is required: the score is a judgement
+     * of that page, and no page of ours can stand in for it.
      */
     @Throws(CancelException::class, HttpException::class)
     fun getChallenge3(
@@ -187,7 +191,7 @@ class RecaptchaReader private constructor() {
         referer: String?,
         solveAutomatically: Boolean,
     ): ChallengeExtra? {
-        val refererFinal = referer ?: "https://www.google.com/"
+        val refererFinal = referer ?: throw HttpException(ErrorItem.Type.INVALID_RESPONSE, false, false)
         if (solveAutomatically) {
             val autoResponse =
                 CaptchaSolving.getInstance().solveCaptcha(
@@ -247,6 +251,14 @@ class RecaptchaReader private constructor() {
 
         internal var callback: Callback? = null
         internal var loaded = false
+
+        /**
+         * Set for reCAPTCHA 3, which has no page of its own: the challenge is run by injecting
+         * this into the site's page once that has loaded. [injectHost] is the only host the page
+         * is allowed to navigate to, so the site may redirect to itself and nothing else.
+         */
+        private var injectScript: String? = null
+        private var injectHost: String? = null
         private var cancel = false
         private var response: String? = null
         private var exception: HttpException? = null
@@ -356,24 +368,31 @@ class RecaptchaReader private constructor() {
             if (load) {
                 val arguments = argumentsProvider.create()
                 val action = arguments.action
-                val data =
-                    if (action != null) {
-                        // The default agent carries a `wv` token that no browser sends, which is
-                        // one more thing marking the client as not one.
-                        val settings = webView.getSettings()
-                        settings.userAgentString = settings.userAgentString.replace("; wv)", ")")
+                if (action != null) {
+                    // The default agent carries a `wv` token that no browser sends, which is one
+                    // more thing marking the client as not one.
+                    val settings = webView.getSettings()
+                    settings.userAgentString = settings.userAgentString.replace("; wv)", ")")
+                    // Version 3 is not shown, it is scored, and what it scores is the page it runs
+                    // in. So it is run in the site's own page, which is the one the site scores
+                    // when it does this itself, instead of in a page assembled here that has none
+                    // of its cookies, none of its history and nothing else to be judged on.
+                    injectScript =
                         readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v3)
                             .replace("__REPLACE_API_KEY__", arguments.apiKey)
                             .replace("__REPLACE_ACTION__", action)
-                    } else {
+                    injectHost = Uri.parse(arguments.referer).host
+                    webView.loadUrl(arguments.referer.orEmpty())
+                } else {
+                    val data =
                         readRawResourceString(webView.getResources(), R.raw.web_recaptcha_v2)
                             .replace("__REPLACE_API_KEY__", arguments.apiKey)
                             .replace("__REPLACE_INVISIBLE__", if (arguments.invisible) "true" else "false")
                             .replace("__REPLACE_HCAPTCHA__", if (arguments.hcaptcha) "true" else "false")
-                    }
-                // The base URL is what the key is registered against, so the page has to claim
-                // the site's own origin rather than the one the data belongs to.
-                webView.loadDataWithBaseURL(arguments.referer, data, "text/html", "UTF-8", null)
+                    // The base URL is what the key is registered against, so the page has to claim
+                    // the site's own origin rather than the one the data belongs to.
+                    webView.loadDataWithBaseURL(arguments.referer, data, "text/html", "UTF-8", null)
+                }
             }
             return webView
         }
@@ -515,7 +534,24 @@ class RecaptchaReader private constructor() {
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?,
-                ): Boolean = true
+                ): Boolean {
+                    // The version 3 challenge is the site's own page, which is therefore allowed
+                    // to reach itself. Every other navigation stays blocked, as it always was.
+                    val host = injectHost ?: return true
+                    return !host.equals(request?.url?.host, ignoreCase = true)
+                }
+
+                override fun onPageFinished(
+                    view: WebView?,
+                    url: String?,
+                ) {
+                    super.onPageFinished(view, url)
+                    // Injected on every load rather than only the first: reaching the page can
+                    // take a redirect or an interstitial, and only the page that ends up loaded
+                    // carries the script the challenge needs. A run left over from an earlier one
+                    // can do no harm, since the holder is torn down as soon as one answers.
+                    injectScript?.let { view?.evaluateJavascript(it, null) }
+                }
 
                 override fun shouldInterceptRequest(
                     view: WebView?,
