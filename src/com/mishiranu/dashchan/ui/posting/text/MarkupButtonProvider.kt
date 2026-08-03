@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -151,6 +152,11 @@ open class MarkupButtonProvider private constructor(
             PROVIDERS.add(
                 object : MarkupButtonProvider(ChanMarkup.TAG_QUOTE, 40, 4, ">", null) {
                     override fun getSpan(context: Context): Any? = null
+                },
+            )
+            PROVIDERS.add(
+                object : MarkupButtonProvider(ChanMarkup.TAG_SECRET, 80, 11, "Приват", null) {
+                    override fun getSpan(context: Context): Any = ForegroundColorSpan(ThemeEngine.getTheme(context).capcode)
                 },
             )
         }

@@ -25,6 +25,7 @@ import com.mishiranu.dashchan.text.style.LinkSpan
 import com.mishiranu.dashchan.text.style.LinkSuffixSpan
 import com.mishiranu.dashchan.text.style.MediumSpan
 import com.mishiranu.dashchan.text.style.MonospaceSpan
+import com.mishiranu.dashchan.text.style.NameColorSpan
 import com.mishiranu.dashchan.text.style.NeuroslopSpan
 import com.mishiranu.dashchan.text.style.OverlineSpan
 import com.mishiranu.dashchan.text.style.QuoteSpan
@@ -737,6 +738,10 @@ open class ChanMarkup internal constructor(
                             span = QuoteSpan()
                         }
 
+                        TAG_SECRET -> {
+                            span = NameColorSpan(NameColorSpan.TYPE_CAPCODE)
+                        }
+
                         TAG_SPOILER -> {
                             span = UnderlyingSpoilerSpan()
                         }
@@ -908,6 +913,13 @@ open class ChanMarkup internal constructor(
 
         @Public
         const val TAG_AI: Int = 0x00001600
+
+        /**
+         * Private/secret text. Rendered in the theme's capcode colour (resolved per light/dark
+         * theme); an editor can also map it to a board's secret markup to get a posting-form button.
+         */
+        @Public
+        const val TAG_SECRET: Int = 0x00002000
 
         const val TAG_SPECIAL_UNUSED: Int = 0x01000000
         const val TAG_SPECIAL_LINK: Int = 0x01000001
