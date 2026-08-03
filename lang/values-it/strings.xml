@@ -61,6 +61,7 @@
     <string name="captcha_pass__summary">Consente di saltare i captcha</string>
     <string name="captcha_type">Tipo captcha</string>
     <string name="catalog">Catalogo</string>
+    <string name="change">Cambia</string>
     <string name="change_theme">Cambia tema</string>
     <string name="changelog">Changelog</string>
     <string name="check_for_updates">Controlla aggiornamenti</string>
@@ -562,6 +563,7 @@
     <string name="view__verb">Vedi</string>
     <string name="views">Visualizzazioni</string>
     <string name="visible_address">Indirizzo visibile</string>
+    <string name="visible_address_banned">L\'IP visibile è bannato</string>
     <string name="warning">Avviso</string>
     <string name="watch_initially">Monitora subito</string>
     <string name="watch_initially__summary">Abilita watcher quando aggiungi il thread ai preferiti</string>

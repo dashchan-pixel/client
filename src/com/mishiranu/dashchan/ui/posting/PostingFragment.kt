@@ -44,12 +44,14 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
+import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.ChanConfiguration
 import chan.content.ChanConfiguration.Posting
 import chan.content.ChanMarkup
 import chan.content.ChanPerformer.CaptchaData
 import chan.content.ChanPerformer.SendPostData
+import chan.http.HttpHolder
 import chan.text.CommentEditor
 import chan.util.CommonUtils
 import chan.util.CommonUtils.equals
@@ -74,12 +76,15 @@ import com.mishiranu.dashchan.content.Preferences.isHidePersonalData
 import com.mishiranu.dashchan.content.Preferences.isHugeCaptcha
 import com.mishiranu.dashchan.content.Preferences.isMarkupButtonsAtBottom
 import com.mishiranu.dashchan.content.Preferences.uiCornerRadius
+import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.ReadCaptchaTask
 import com.mishiranu.dashchan.content.async.SendPostTask.ProgressState
 import com.mishiranu.dashchan.content.async.TaskViewModel
+import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
+import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
 import com.mishiranu.dashchan.content.storage.CommandsStorage
@@ -104,7 +109,9 @@ import com.mishiranu.dashchan.ui.posting.text.MarkupButtonProvider.Companion.ite
 import com.mishiranu.dashchan.ui.posting.text.MarkupButtonProvider.Companion.obtainSupportedAndDisplayedTags
 import com.mishiranu.dashchan.ui.posting.text.NameEditWatcher
 import com.mishiranu.dashchan.ui.posting.text.QuoteEditWatcher
+import com.mishiranu.dashchan.ui.preference.ChanFragment
 import com.mishiranu.dashchan.ui.preference.CommandsFragment
+import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.DelayedProgress
 import com.mishiranu.dashchan.util.GraphicsUtils.Reencoding
@@ -896,6 +903,20 @@ class PostingFragment :
 
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         viewModel.observe(getViewLifecycleOwner(), this)
+
+        val banWarningViewModel =
+            ViewModelProvider(this).get(BanWarningViewModel::class.java)
+        banWarningViewModel.observe(getViewLifecycleOwner()) { banned ->
+            if (banned) {
+                // The way out of a ban on this address is the proxy configured for the forum, which
+                // lives on its settings screen -- the button opens it so the fix is one tap away.
+                show(
+                    getString(R.string.visible_address_banned),
+                    null,
+                    ClickableToast.Button(R.string.change, false, Runnable { openForumProxySettings() }),
+                )
+            }
+        }
     }
 
     public override fun onDestroyView() {
@@ -1643,6 +1664,7 @@ class PostingFragment :
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
+            checkVisibleAddressBan(chan)
             val captchaPass = if (forceCaptcha) null else getCaptchaPass(chan)
             val task =
                 ReadCaptchaTask(
@@ -1663,6 +1685,57 @@ class PostingFragment :
     }
 
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
+
+    /**
+     * Resolve the address the forum currently sees and warn, once per posting screen, when the ban
+     * log already holds an active ban against it -- a post from that address would only be refused
+     * again, so it is worth changing before spending a captcha on it. Runs off the UI thread and
+     * only reports a hit, so a miss (or no network) is silent.
+     */
+    private fun checkVisibleAddressBan(chan: Chan) {
+        val viewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
+        // Resolving the address is a network round-trip: do it once per screen, not on every
+        // captcha reload. The flag lives on the view model, so it also survives a rotation.
+        if (viewModel.checked) {
+            return
+        }
+        viewModel.checked = true
+        val task = BanWarningTask(viewModel, chan, this.boardName)
+        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        viewModel.attach(task)
+    }
+
+    /**
+     * Open the forum's settings and reveal the Proxy row, the same scroll-and-pulse a search hit
+     * gets: the [PreferenceFragment.EXTRA_REVEAL_TITLE] argument names the row by its title, so the
+     * screen flashes it once it has built. This is where the visible address gets changed.
+     */
+    private fun openForumProxySettings() {
+        val fragment = ChanFragment(chanName)
+        val arguments = fragment.arguments ?: Bundle().also { fragment.arguments = it }
+        arguments.putString(PreferenceFragment.EXTRA_REVEAL_TITLE, getString(R.string.proxy))
+        (requireActivity() as FragmentHandler).pushFragment(fragment)
+    }
+
+    class BanWarningViewModel : TaskViewModel<BanWarningTask, Boolean>() {
+        var checked = false
+    }
+
+    class BanWarningTask(
+        private val viewModel: BanWarningViewModel,
+        private val chan: Chan,
+        private val boardName: String?,
+    ) : HttpHolderTask<Unit, Boolean>(chan) {
+        override fun run(holder: HttpHolder): Boolean {
+            val chanName = chan.name ?: return false
+            val address = VisibleAddress.resolve(chan, holder)?.address ?: return false
+            return ChanDatabase.getInstance().hasActiveBanForAddress(chanName, boardName, address)
+        }
+
+        override fun onComplete(result: Boolean) {
+            viewModel.handleResult(result)
+        }
+    }
 
     // The captcha block is hidden with a captcha pass or no captcha at all, and showing or hiding it
     // changes the height left for the comment field

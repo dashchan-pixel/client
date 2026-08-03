@@ -51,6 +51,7 @@
 	<string name="captcha_pass__summary">Permite ignorar o captcha</string>
 	<string name="captcha_type">Tipo de captcha</string>
 	<string name="catalog">Catálogo</string>
+	<string name="change">Mudar</string>
 	<string name="change_theme">Mudar tema</string>
 	<string name="check_for_updates">Checar por atualizações</string>
 	<string name="check_on_startup">Checar no startup</string>
@@ -466,6 +467,7 @@
 	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
 	<string name="visible_address">Endereço visível</string>
+	<string name="visible_address_banned">O IP visível está banido</string>
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>
 	<string name="wifi_only">Somente Wi-Fi</string>

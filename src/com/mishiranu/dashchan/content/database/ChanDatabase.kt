@@ -1264,6 +1264,50 @@ class ChanDatabase private constructor() {
         return BanCounts(total, active)
     }
 
+    /**
+     * Whether the board has an active ban on record against [address] -- asked with the address the
+     * forum currently sees, before a post is attempted from it. Bans are per-board (the board is
+     * part of a ban's identity, see [addBan]), so a ban on another board of the same forum does not
+     * count here. Active follows [getBanCounts]. An empty address never matches: a ban whose address
+     * was never resolved is no evidence about one.
+     */
+    fun hasActiveBanForAddress(
+        chanName: String,
+        boardName: String?,
+        address: String,
+    ): Boolean {
+        if (isEmpty(address)) {
+            return false
+        }
+        val time = System.currentTimeMillis()
+        val projection = arrayOf<String?>(Bans.Columns.Companion.EXPIRE_DATE)
+        val filter =
+            Expression
+                .filter()
+                .equals(Bans.Columns.Companion.CHAN_NAME, chanName)
+                .equals(Bans.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
+                .equals(Bans.Columns.Companion.ADDRESS, address)
+                .build()
+        database
+            .query(
+                Bans.Companion.TABLE_NAME,
+                projection,
+                filter.value,
+                filter.args,
+                null,
+                null,
+                null,
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val expireDate = cursor.getLong(0)
+                    if (expireDate <= 0 || expireDate > time) {
+                        return true
+                    }
+                }
+            }
+        return false
+    }
+
     fun deleteBan(rowId: Long) {
         database.delete(Bans.Companion.TABLE_NAME, "rowid = ?", arrayOf<String?>(rowId.toString()))
     }

@@ -77,6 +77,7 @@
 	<string name="captcha_reload_automatically__summary">Automatically reload captcha when timer expires</string>
 	<string name="cards">Cards</string>
 	<string name="catalog">Catalog</string>
+	<string name="change">Change it</string>
 	<string name="change_theme">Change theme</string>
 	<string name="changelog">Changelog</string>
 	<string name="check_for_updates">Check for updates</string>
@@ -651,6 +652,7 @@
 	<string name="view__verb">View</string>
 	<string name="views">Views</string>
 	<string name="visible_address">Visible address</string>
+	<string name="visible_address_banned">Visible IP is banned</string>
 	<string name="warning">Warning</string>
 	<string name="watch_initially">Watch initially</string>
 	<string name="watch_initially__summary">Enable watcher when thread is added to favorites</string>
