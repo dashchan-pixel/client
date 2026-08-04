@@ -51,6 +51,7 @@ import chan.content.ChanConfiguration.Posting
 import chan.content.ChanMarkup
 import chan.content.ChanPerformer.CaptchaData
 import chan.content.ChanPerformer.SendPostData
+import chan.http.HttpException
 import chan.http.HttpHolder
 import chan.text.CommentEditor
 import chan.util.CommonUtils
@@ -84,6 +85,7 @@ import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
+import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
@@ -253,6 +255,9 @@ class PostingFragment :
     private var sendButtonEnabled = true
 
     private var refreshCaptchaWhenLifetimeEnd = false
+
+    /** Shown while the proxy provider is being asked for a new external address. */
+    private var refreshAddressDialog: ProgressDialog? = null
 
     private var postingBinder: PostingService.Binder? = null
     private val postingConnection: ServiceConnection =
@@ -908,13 +913,42 @@ class PostingFragment :
             ViewModelProvider(this).get(BanWarningViewModel::class.java)
         banWarningViewModel.observe(getViewLifecycleOwner()) { banned ->
             if (banned) {
-                // The way out of a ban on this address is the proxy configured for the forum, which
-                // lives on its settings screen -- the button opens it so the fix is one tap away.
+                // The way out of a ban on this address is another address. With a proxy provider set
+                // up the button asks it for one right here; without it the fix is a proxy configured
+                // by hand, on the forum's settings screen, which the button opens instead.
+                val hasProvider = ProxyProvider.hasConfiguration()
                 show(
                     getString(R.string.visible_address_banned),
                     null,
-                    ClickableToast.Button(R.string.change, false, Runnable { openForumProxySettings() }),
+                    ClickableToast.Button(
+                        if (hasProvider) R.string.refresh_external_ip else R.string.change,
+                        false,
+                        Runnable {
+                            if (hasProvider) {
+                                refreshExternalAddress()
+                            } else {
+                                openForumProxySettings()
+                            }
+                        },
+                    ),
                 )
+            }
+        }
+
+        val refreshAddressViewModel = ViewModelProvider(this).get(RefreshAddressViewModel::class.java)
+        refreshAddressViewModel.observe(getViewLifecycleOwner()) { result ->
+            refreshAddressDialog?.dismiss()
+            refreshAddressDialog = null
+            val errorItem = result.first
+            if (errorItem != null) {
+                show(errorItem)
+            } else {
+                ClickableToast.show(R.string.external_ip_refreshed)
+                // The address the forum sees has changed: the ban that prompted this may well not
+                // apply to the new one, so let the check say so again -- or stay silent.
+                val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
+                banViewModel.checked = false
+                checkVisibleAddressBan(get(chanName))
             }
         }
     }
@@ -929,6 +963,8 @@ class PostingFragment :
 
         dismissSendPost()
         saveDraft()
+        refreshAddressDialog?.dismiss()
+        refreshAddressDialog = null
         ViewUtils.removeFromParent(textFormatView!!)
 
         scrollView = null
@@ -1715,6 +1751,53 @@ class PostingFragment :
         val arguments = fragment.arguments ?: Bundle().also { fragment.arguments = it }
         arguments.putString(PreferenceFragment.EXTRA_REVEAL_TITLE, getString(R.string.proxy))
         (requireActivity() as FragmentHandler).pushFragment(fragment)
+    }
+
+    /**
+     * Ask the proxy provider for a new external address. The provider's own endpoint is asked
+     * through the fallback chan, so a forum whose proxy is the very port being rotated cannot get
+     * in the way of the request that fixes it.
+     */
+    private fun refreshExternalAddress() {
+        val viewModel = ViewModelProvider(this).get(RefreshAddressViewModel::class.java)
+        if (viewModel.getTask() != null) {
+            return
+        }
+        val dialog = ProgressDialog(requireContext(), null)
+        refreshAddressDialog = dialog
+        dialog.setMessage(getString(R.string.loading__ellipsis))
+        dialog.setOnCancelListener {
+            refreshAddressDialog = null
+            viewModel.attach(null)
+        }
+        dialog.show()
+        val task = RefreshAddressTask(viewModel)
+        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        viewModel.attach(task)
+    }
+
+    class RefreshAddressViewModel : TaskViewModel<RefreshAddressTask, Pair<ErrorItem, Boolean>>()
+
+    class RefreshAddressTask(
+        private val viewModel: RefreshAddressViewModel,
+    ) : HttpHolderTask<Unit, Pair<ErrorItem, Boolean>>(Chan.getFallback()) {
+        override fun run(holder: HttpHolder): Pair<ErrorItem, Boolean> =
+            try {
+                val success = ProxyProvider.refreshExternalAddress(holder)
+                if (success) {
+                    Pair<ErrorItem, Boolean>(null, true)
+                } else {
+                    Pair<ErrorItem, Boolean>(ErrorItem(ErrorItem.Type.UNKNOWN), false)
+                }
+            } catch (e: HttpException) {
+                Pair<ErrorItem, Boolean>(e.getErrorItemAndHandle(), false)
+            } catch (e: ProxyProvider.ServiceException) {
+                Pair<ErrorItem, Boolean>(e.errorItem, false)
+            }
+
+        override fun onComplete(result: Pair<ErrorItem, Boolean>) {
+            viewModel.handleResult(result)
+        }
     }
 
     class BanWarningViewModel : TaskViewModel<BanWarningTask, Boolean>() {

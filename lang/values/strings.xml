@@ -35,6 +35,7 @@
 	<string name="allow_this_extension__sentence">Allow this extension to manage application?</string>
 	<string name="always">Always</string>
 	<string name="another">Another</string>
+	<string name="api_key">API key</string>
 	<string name="app_icon">App icon</string>
 	<string name="appearance">Appearance</string>
 	<string name="application_crashed">The app crashed</string>
@@ -131,6 +132,7 @@
 	<string name="copy_link">Copy link</string>
 	<string name="copy_markup">Copy markup</string>
 	<string name="copy_text">Copy text</string>
+	<string name="country">Country</string>
 	<string name="crop_thumbnails">Crop thumbnails</string>
 	<string name="crop_thumbnails__summary">Thumbnails will fit square</string>
 	<string name="cyclical_thread">Cyclical thread</string>
@@ -199,6 +201,7 @@
 	<string name="extension_error">Extension error</string>
 	<string name="extension_name__format">Extension %s</string>
 	<string name="extensions">Extensions</string>
+	<string name="external_ip_refreshed">External IP refreshed</string>
 	<string name="favorite_boards">Favorite boards</string>
 	<string name="favorite_threads">Favorite threads</string>
 	<string name="favorite_threads_order">Favorite threads order</string>
@@ -301,6 +304,7 @@
 	<string name="loading__ellipsis">Loading…</string>
 	<string name="local_archive">Local archive</string>
 	<string name="lock_navigation">Lock navigation</string>
+	<string name="login">Login</string>
 	<string name="main_application">Main application</string>
 	<string name="make_home_page">Make home page</string>
 	<string name="make_threadshot">Make threadshot</string>
@@ -445,6 +449,7 @@
 	<string name="player">Player</string>
 	<string name="popular">Popular</string>
 	<string name="port">Port</string>
+	<string name="port_id">Port ID</string>
 	<string name="post_is_not_found">The post isn\'t found</string>
 	<string name="post_order">Post order</string>
 	<string name="post_rejected">Post rejected</string>
@@ -464,6 +469,10 @@
 	<string name="proxy">Proxy</string>
 	<string name="proxy_for_posting_only">Proxy for posting only</string>
 	<string name="proxy_for_posting_only__summary">Send posts through the proxy and load everything else directly; the visible address is still checked through the proxy</string>
+	<string name="proxy_provider">Proxy provider</string>
+	<string name="proxy_provider__summary">Change the address forums see through a proxy service</string>
+	<string name="proxy_provider_info__sentence">The Asocks API is supported. An empty port means the first one of the account, and the country, when set, is applied to the port before its address is refreshed.</string>
+	<string name="proxy_provider_no_ports">No proxy ports in the account</string>
 	<string name="quality">Quality</string>
 	<string name="quote__verb">Quote</string>
 	<string name="rating">Rating</string>
@@ -474,6 +483,7 @@
 	<string name="reduce">Reduce</string>
 	<string name="reencode_image">Re-encode image</string>
 	<string name="refresh">Refresh</string>
+	<string name="refresh_external_ip">Refresh external IP</string>
 	<string name="refresh_favorites">Refresh favorites</string>
 	<string name="refresh_open_thread">Refresh open thread</string>
 	<string name="regular_expression">Regular expression</string>
@@ -632,6 +642,7 @@
 	<string name="unique_hash">Unique hash</string>
 	<string name="unique_posters__genitive">Unique posters</string>
 	<string name="unknown_address">Unknown address</string>
+	<string name="unknown_country">Unknown country</string>
 	<string name="unknown_error">Unknown error</string>
 	<string name="unsafe_redirect">Unsafe redirection</string>
 	<string name="unsorted">Unsorted</string>

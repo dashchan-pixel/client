@@ -370,7 +370,9 @@ class WebViewService : Service() {
             ): Boolean {
                 val proxyData =
                     if (proxyHost != null) {
-                        HttpClient.ProxyData(proxySocks, proxyHost, proxyPort)
+                        // No credentials: WebView is proxied through ProxyController, which takes
+                        // a host and a port and has nowhere to put them
+                        HttpClient.ProxyData(proxySocks, proxyHost, proxyPort, null, null)
                     } else {
                         null
                     }

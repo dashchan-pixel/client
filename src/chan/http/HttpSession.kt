@@ -5,13 +5,12 @@ import chan.http.HttpClient.InterruptedHttpException
 import chan.util.CommonUtils.equals
 import okhttp3.Call
 import okhttp3.Response
-import java.net.Proxy
 
 class HttpSession internal constructor(
     val holder: HttpHolder,
     val client: HttpClient,
     uri: Uri?,
-    val proxy: Proxy?,
+    val proxyData: HttpClient.ProxyData?,
     val verifyCertificate: Boolean,
     val mayCheckFirewallBlock: Boolean,
     val delay: Int,

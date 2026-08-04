@@ -19,6 +19,7 @@ import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.CaptchaSolving
+import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.text.style.MonospaceSpan
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
@@ -36,6 +37,9 @@ class GeneralFragment :
     ChanMultiChoiceDialog.Callback {
     private var captchaSolvingPreference: MultipleEditPreference<Map<String, String>>? = null
     private var captchaSolvingCheckDialog: ProgressDialog? = null
+
+    private var proxyProviderPreference: MultipleEditPreference<Map<String, String>>? = null
+    private var proxyProviderCheckDialog: ProgressDialog? = null
 
     /** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
     private val anotherUriKeys = HashSet<String>()
@@ -117,6 +121,28 @@ class GeneralFragment :
         captchaSolvingPreference.setOnAfterChangeListener { configureCaptchaSolvingSummary(true) }
         captchaSolvingPreference.setDescription(getString(R.string.captcha_solving_info__sentence))
         configureCaptchaSolvingNeutralButton()
+
+        val proxyProviderPreference =
+            addMultipleEdit(
+                Preferences.KEY_PROXY_PROVIDER,
+                R.string.proxy_provider,
+                { configureProxyProviderSummary(false) },
+                listOf<CharSequence>(
+                    getString(R.string.api_key),
+                    getString(R.string.port_id),
+                    getString(R.string.country),
+                ),
+                listOf(
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                    InputType.TYPE_CLASS_NUMBER,
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                ),
+                MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY_PROVIDER),
+            )
+        this.proxyProviderPreference = proxyProviderPreference
+        proxyProviderPreference.setOnAfterChangeListener { configureProxyProviderSummary(true) }
+        proxyProviderPreference.setDescription(getString(R.string.proxy_provider_info__sentence))
+
         addList(
             Preferences.KEY_FIREWALL_RESOLUTION_METHOD,
             enumList(Preferences.FirewallResolutionMethod.values()) { v -> v.value },
@@ -170,6 +196,28 @@ class GeneralFragment :
                 } else {
                     ClickableToast.show(result.first)
                     captchaSolvingPreference.performClick()
+                }
+            }
+        }
+
+        val proxyProviderViewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
+        if (proxyProviderViewModel.showDialog) {
+            displayProxyProviderCheckDialog()
+        }
+        proxyProviderViewModel.observe(viewLifecycleOwner) { result ->
+            result!!
+            proxyProviderViewModel.showDialog = false
+            proxyProviderViewModel.errorItem = result.first
+            proxyProviderViewModel.extraMap = result.second
+            proxyProviderPreference.invalidate()
+            if (proxyProviderCheckDialog != null) {
+                proxyProviderCheckDialog?.dismiss()
+                proxyProviderCheckDialog = null
+                if (result.second != null) {
+                    ClickableToast.show(R.string.validation_completed)
+                } else {
+                    ClickableToast.show(result.first)
+                    proxyProviderPreference.performClick()
                 }
             }
         }
@@ -230,6 +278,11 @@ class GeneralFragment :
             it.dismiss()
             captchaSolvingCheckDialog = null
         }
+        proxyProviderPreference = null
+        proxyProviderCheckDialog?.let {
+            it.dismiss()
+            proxyProviderCheckDialog = null
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -283,45 +336,91 @@ class GeneralFragment :
                 task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                 viewModel.attach(task)
             }
-            val extraMap = viewModel.extraMap
-            val errorItem = viewModel.errorItem
-            return if (extraMap != null) {
-                val builder = SpannableStringBuilder()
-                builder.append(getString(R.string.validation_completed))
-                if (extraMap.isNotEmpty()) {
-                    for (entry in extraMap.entries) {
-                        builder.append('\n')
-                        val start = builder.length
-                        builder.append(entry.key).append(": ").append(entry.value)
-                        val end = builder.length
-                        builder.setSpan(
-                            MonospaceSpan(false),
-                            start,
-                            end,
-                            SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
-                        )
-                    }
-                }
-                builder
-            } else if (errorItem != null) {
-                val builder = SpannableStringBuilder(errorItem.toString())
-                builder.setSpan(
-                    ForegroundColorSpan(
-                        ResourceUtils.getColor(
-                            requireContext(),
-                            R.attr.colorTextError,
-                        ),
-                    ),
-                    0,
-                    builder.length,
-                    SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
-                )
-                builder
-            } else {
-                getString(R.string.loading__ellipsis)
-            }
+            return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
         } else {
             return getString(R.string.captcha_solving__summary)
+        }
+    }
+
+    /** What a checked service reports about itself, or why the check failed. */
+    private fun buildCheckSummary(
+        extraMap: Map<String, String>?,
+        errorItem: ErrorItem?,
+    ): CharSequence =
+        if (extraMap != null) {
+            val builder = SpannableStringBuilder()
+            builder.append(getString(R.string.validation_completed))
+            if (extraMap.isNotEmpty()) {
+                for (entry in extraMap.entries) {
+                    builder.append('\n')
+                    val start = builder.length
+                    builder.append(entry.key).append(": ").append(entry.value)
+                    val end = builder.length
+                    builder.setSpan(
+                        MonospaceSpan(false),
+                        start,
+                        end,
+                        SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
+                }
+            }
+            builder
+        } else if (errorItem != null) {
+            val builder = SpannableStringBuilder(errorItem.toString())
+            builder.setSpan(
+                ForegroundColorSpan(
+                    ResourceUtils.getColor(
+                        requireContext(),
+                        R.attr.colorTextError,
+                    ),
+                ),
+                0,
+                builder.length,
+                SpannableStringBuilder.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            builder
+        } else {
+            getString(R.string.loading__ellipsis)
+        }
+
+    private fun configureProxyProviderSummary(resetAndShowDialog: Boolean): CharSequence {
+        val viewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
+        if (resetAndShowDialog) {
+            viewModel.showDialog = false
+            viewModel.extraMap = null
+            viewModel.errorItem = null
+            viewModel.attach(null)
+            viewModel.handleResult(null)
+        }
+        if (ProxyProvider.hasConfiguration()) {
+            if (resetAndShowDialog) {
+                viewModel.showDialog = true
+                displayProxyProviderCheckDialog()
+            }
+            if (viewModel.extraMap == null && viewModel.errorItem == null && !viewModel.hasTaskOrValue()) {
+                val task = CheckProxyProviderTask(viewModel)
+                task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+                viewModel.attach(task)
+            }
+            return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
+        } else {
+            return getString(R.string.proxy_provider__summary)
+        }
+    }
+
+    private fun displayProxyProviderCheckDialog() {
+        if (proxyProviderCheckDialog == null) {
+            val dialog = ProgressDialog(requireContext(), null)
+            proxyProviderCheckDialog = dialog
+            dialog.setMessage(getString(R.string.loading__ellipsis))
+            dialog.setOnCancelListener {
+                proxyProviderCheckDialog = null
+                val viewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
+                viewModel.showDialog = false
+                viewModel.attach(null)
+                viewModel.handleResult(Pair<ErrorItem, Map<String, String>>(ErrorItem(ErrorItem.Type.UNKNOWN), null))
+            }
+            dialog.show()
         }
     }
 
@@ -360,6 +459,30 @@ class GeneralFragment :
                 Pair<ErrorItem, Map<String, String>>(ErrorItem(ErrorItem.Type.UNSUPPORTED_SERVICE), null)
             } catch (e: CaptchaSolving.InvalidTokenException) {
                 Pair<ErrorItem, Map<String, String>>(ErrorItem(ErrorItem.Type.INVALID_AUTHORIZATION_DATA), null)
+            }
+
+        override fun onComplete(result: Pair<ErrorItem, Map<String, String>>) {
+            viewModel.handleResult(result)
+        }
+    }
+
+    class ProxyProviderCheckViewModel : TaskViewModel<CheckProxyProviderTask, Pair<ErrorItem, Map<String, String>>?>() {
+        internal var showDialog = false
+        internal var extraMap: Map<String, String>? = null
+        internal var errorItem: ErrorItem? = null
+    }
+
+    class CheckProxyProviderTask(
+        private val viewModel: ProxyProviderCheckViewModel,
+    ) : HttpHolderTask<Unit?, Pair<ErrorItem, Map<String, String>>>(Chan.getFallback()) {
+        override fun run(holder: HttpHolder): Pair<ErrorItem, Map<String, String>> =
+            try {
+                val extra = ProxyProvider.checkService(holder)
+                Pair<ErrorItem, Map<String, String>>(null, extra)
+            } catch (e: HttpException) {
+                Pair<ErrorItem, Map<String, String>>(e.getErrorItemAndHandle(), null)
+            } catch (e: ProxyProvider.ServiceException) {
+                Pair<ErrorItem, Map<String, String>>(e.errorItem, null)
             }
 
         override fun onComplete(result: Pair<ErrorItem, Map<String, String>>) {

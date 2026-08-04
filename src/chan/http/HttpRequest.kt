@@ -99,6 +99,7 @@ class HttpRequest {
         HEAD,
         POST,
         PUT,
+        PATCH,
         DELETE,
     }
 
@@ -169,6 +170,9 @@ class HttpRequest {
 
     @Public
     fun setPutMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.PUT, entity)
+
+    /** Not part of the extension API: the app's own services (see `ProxyProvider`) use it. */
+    fun setPatchMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.PATCH, entity)
 
     @Public
     fun setDeleteMethod(entity: RequestEntity?): HttpRequest = setMethod(RequestMethod.DELETE, entity)
@@ -312,7 +316,7 @@ class HttpRequest {
             holder.createSession(
                 client,
                 uri,
-                client.getProxy(holder.chan, holder.proxyRequired),
+                client.getCachedProxyData(holder.chan, holder.proxyRequired),
                 verifyCertificate,
                 delay,
                 10,

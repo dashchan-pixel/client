@@ -269,11 +269,19 @@ class ChanFragment :
                     Preferences.KEY_PROXY.bind(chanName),
                     R.string.proxy,
                     "%s:%s",
-                    listOf<CharSequence?>(getString(R.string.address), getString(R.string.port), null),
+                    listOf<CharSequence?>(
+                        getString(R.string.address),
+                        getString(R.string.port),
+                        null,
+                        getString(R.string.login),
+                        getString(R.string.password),
+                    ),
                     listOf(
                         InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                         InputType.TYPE_CLASS_NUMBER or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                         0,
+                        InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                        InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                     ),
                     MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY),
                 )

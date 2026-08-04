@@ -1291,7 +1291,16 @@ object Preferences {
     const val SUB_KEY_PROXY_HOST: String = "host"
     const val SUB_KEY_PROXY_PORT: String = "port"
     const val SUB_KEY_PROXY_TYPE: String = "type"
-    val KEYS_PROXY: List<String> = listOf(SUB_KEY_PROXY_HOST, SUB_KEY_PROXY_PORT, SUB_KEY_PROXY_TYPE)
+    const val SUB_KEY_PROXY_USERNAME: String = "username"
+    const val SUB_KEY_PROXY_PASSWORD: String = "password"
+    val KEYS_PROXY: List<String> =
+        listOf(
+            SUB_KEY_PROXY_HOST,
+            SUB_KEY_PROXY_PORT,
+            SUB_KEY_PROXY_TYPE,
+            SUB_KEY_PROXY_USERNAME,
+            SUB_KEY_PROXY_PASSWORD,
+        )
     const val VALUE_PROXY_TYPE_HTTP: String = "http"
     const val VALUE_PROXY_TYPE_SOCKS: String = "socks"
     val ENTRIES_PROXY_TYPE: MutableList<CharSequence?> =
@@ -1321,6 +1330,24 @@ object Preferences {
             KEY_PROXY_POSTING_ONLY.bind(chan.name),
             DEFAULT_PROXY_POSTING_ONLY,
         )
+
+    const val KEY_PROXY_PROVIDER: String = "proxy_provider"
+    const val SUB_KEY_PROXY_PROVIDER_TOKEN: String = "token"
+    const val SUB_KEY_PROXY_PROVIDER_PORT: String = "port"
+    const val SUB_KEY_PROXY_PROVIDER_COUNTRY: String = "country"
+    val KEYS_PROXY_PROVIDER: List<String> =
+        listOf(
+            SUB_KEY_PROXY_PROVIDER_TOKEN,
+            SUB_KEY_PROXY_PROVIDER_PORT,
+            SUB_KEY_PROXY_PROVIDER_COUNTRY,
+        )
+
+    val proxyProvider: MutableMap<String?, String?>
+        get() =
+            unpackOrCastMultipleValues(
+                prefs.getString(KEY_PROXY_PROVIDER, null),
+                KEYS_PROXY_PROVIDER,
+            )
 
     const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
     const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true

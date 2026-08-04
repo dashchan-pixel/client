@@ -26,6 +26,7 @@
     <string name="allow_this_extension__sentence">Consentire a questa estensione di gestire l\'applicazione?</string>
     <string name="always">Sempre</string>
     <string name="another">Un altro</string>
+    <string name="api_key">Chiave API</string>
     <string name="appearance">Aspetto</string>
     <string name="application_name_update__format">%s aggiornamento</string>
     <string name="archive">Archivio</string>
@@ -107,6 +108,7 @@
     <string name="copy_link">Copia link</string>
     <string name="copy_markup">Copia markup</string>
     <string name="copy_text">Copia testo</string>
+    <string name="country">Paese</string>
     <string name="crop_thumbnails">Taglia anteprime</string>
     <string name="crop_thumbnails__summary">Le anteprime riempiranno il riquadro</string>
     <string name="cyclical_thread">Thread ciclico</string>
@@ -165,6 +167,7 @@
     <string name="extension_error">Errore estensione</string>
     <string name="extension_name__format">Estensione %s</string>
     <string name="extensions">Estensioni</string>
+    <string name="external_ip_refreshed">IP esterno aggiornato</string>
     <string name="favorite_boards">Board preferite</string>
     <string name="favorite_threads">Thread preferiti</string>
     <string name="favorite_threads_order">Ordine thread preferiti</string>
@@ -255,6 +258,7 @@
     <string name="loading__ellipsis">Caricamento…</string>
     <string name="local_archive">Archivio locale</string>
     <string name="lock_navigation">Blocca navigazione</string>
+    <string name="login">Login</string>
     <string name="main_application">Applicazione principale</string>
     <string name="make_home_page">Imposta come pagina iniziale</string>
     <string name="make_threadshot">Cattura thread</string>
@@ -380,6 +384,7 @@
     <string name="player">Player</string>
     <string name="popular">Popolari</string>
     <string name="port">Porta</string>
+    <string name="port_id">ID porta</string>
     <string name="post_is_not_found">Post non trovato</string>
     <string name="post_order">Ordine dei post</string>
     <string name="post_rejected">Post respinto</string>
@@ -398,6 +403,10 @@
     <string name="proxy">Proxy</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
     <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
+    <string name="proxy_provider">Fornitore proxy</string>
+    <string name="proxy_provider__summary">Cambia l\'indirizzo visto dai forum tramite un servizio proxy</string>
+    <string name="proxy_provider_info__sentence">È supportata l\'API di Asocks. Una porta vuota indica la prima dell\'account e il paese, se impostato, viene applicato alla porta prima di aggiornare l\'indirizzo.</string>
+    <string name="proxy_provider_no_ports">Nessuna porta proxy nell\'account</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>
     <string name="rating">Votazione</string>
@@ -408,6 +417,7 @@
     <string name="reduce">Riduci</string>
     <string name="reencode_image">Ricodifica immagine</string>
     <string name="refresh">Aggiorna</string>
+    <string name="refresh_external_ip">Aggiorna IP esterno</string>
     <string name="regular_expression">Espressione regolare</string>
     <string name="rejected_words">Parole respinte</string>
     <string name="reload">Ricarica</string>
@@ -547,6 +557,7 @@
     <string name="unique_posters__genitive">Poster unici</string>
     <string name="unknown">Sconosciuto</string>
     <string name="unknown_address">Indirizzo sconosciuto</string>
+    <string name="unknown_country">Paese sconosciuto</string>
     <string name="unknown_error">Errore sconosciuto</string>
     <string name="unsafe_redirect">Redirect non sicuro</string>
     <string name="unsorted">Non ordinati</string>

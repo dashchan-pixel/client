@@ -14,6 +14,7 @@ import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.util.IOUtils.close
 import okhttp3.Call
+import okhttp3.Credentials
 import okhttp3.Headers
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -35,10 +36,12 @@ import java.io.InterruptedIOException
 import java.io.OutputStream
 import java.io.SequenceInputStream
 import java.io.UnsupportedEncodingException
+import java.net.Authenticator
 import java.net.HttpURLConnection
 import java.net.IDN
 import java.net.InetSocketAddress
 import java.net.MalformedURLException
+import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.SocketTimeoutException
 import java.net.URL
@@ -64,6 +67,9 @@ class HttpClient private constructor() {
         @JvmField val socks: Boolean,
         @JvmField val host: String?,
         @JvmField val port: Int,
+        /** Credentials of a paid proxy, which authorizes by them rather than by a whitelisted address. */
+        @JvmField val username: String?,
+        @JvmField val password: String?,
     ) {
         var proxy: Proxy? = null
             get() {
@@ -82,6 +88,9 @@ class HttpClient private constructor() {
             }
             private set
 
+        internal val hasCredentials: Boolean
+            get() = !isEmpty(username) && password != null
+
         override fun equals(other: Any?): Boolean {
             if (other === this) {
                 return true
@@ -90,7 +99,9 @@ class HttpClient private constructor() {
                 val proxyData = other
                 return socks == proxyData.socks &&
                     equals(host, proxyData.host) &&
-                    port == proxyData.port
+                    port == proxyData.port &&
+                    equals(username, proxyData.username) &&
+                    equals(password, proxyData.password)
             }
             return false
         }
@@ -99,6 +110,8 @@ class HttpClient private constructor() {
             var result = (if (socks) 1 else 0)
             result = 31 * result + (if (host != null) host.hashCode() else 0)
             result = 31 * result + port
+            result = 31 * result + (if (username != null) username.hashCode() else 0)
+            result = 31 * result + (if (password != null) password.hashCode() else 0)
             return result
         }
     }
@@ -135,17 +148,27 @@ class HttpClient private constructor() {
                 if (port > 0) {
                     val socks =
                         Preferences.VALUE_PROXY_TYPE_SOCKS == map[Preferences.SUB_KEY_PROXY_TYPE]
-                    return ProxyData(socks, host, port)
+                    return ProxyData(
+                        socks,
+                        host,
+                        port,
+                        map[Preferences.SUB_KEY_PROXY_USERNAME],
+                        map[Preferences.SUB_KEY_PROXY_PASSWORD],
+                    )
                 }
             }
         }
         return null
     }
 
-    fun getProxy(
+    /**
+     * The proxy of [chan] as a cached instance, which carries an initialized [ProxyData.proxy] and,
+     * with it, a warm client. [proxyRequired] is what the caller's [HttpHolder] declares.
+     */
+    fun getCachedProxyData(
         chan: Chan,
         proxyRequired: Boolean,
-    ): Proxy? {
+    ): ProxyData? {
         if (!mayUseProxy(chan, proxyRequired)) {
             return null
         }
@@ -159,10 +182,57 @@ class HttpClient private constructor() {
                 proxies[chan.name] = proxyData
             }
         }
-        return if (proxyData != null) proxyData.proxy else null
+        if (proxyData != null && proxyData.socks && proxyData.hasCredentials) {
+            registerSocksCredentials(proxyData)
+        }
+        return proxyData
+    }
+
+    /**
+     * Drop the pooled connections of every client. A proxy that has just been given a new external
+     * address still carries the old one on a connection kept alive through it, so the address the
+     * forum sees would only change once that connection expired on its own.
+     */
+    @Synchronized
+    fun dropCachedConnections() {
+        for (client in clients.values) {
+            client?.connectionPool?.evictAll()
+        }
     }
 
     private val proxies = HashMap<String?, ProxyData?>()
+
+    /**
+     * A SOCKS proxy is opened by the platform socket implementation, which asks the default
+     * [Authenticator] for the credentials -- OkHttp only handles the HTTP ones, through the proxy
+     * authenticator installed on the client. The default is installed with the first SOCKS proxy
+     * that has credentials and reads this map afterwards, so a later change to the settings needs
+     * no second install.
+     */
+    private val socksCredentials = HashMap<String, PasswordAuthentication>()
+    private var socksAuthenticatorInstalled = false
+
+    private fun registerSocksCredentials(proxyData: ProxyData) {
+        synchronized(socksCredentials) {
+            socksCredentials[proxyData.host + ":" + proxyData.port] =
+                PasswordAuthentication(proxyData.username, proxyData.password!!.toCharArray())
+            if (!socksAuthenticatorInstalled) {
+                socksAuthenticatorInstalled = true
+                Authenticator.setDefault(
+                    object : Authenticator() {
+                        override fun getPasswordAuthentication(): PasswordAuthentication? =
+                            if (requestorType == RequestorType.PROXY) {
+                                synchronized(socksCredentials) {
+                                    socksCredentials["$requestingHost:$requestingPort"]
+                                }
+                            } else {
+                                null
+                            }
+                    },
+                )
+            }
+        }
+    }
 
     internal class InterruptedHttpException : IOException() {
         fun toHttp(): HttpException = HttpException(null, false, false, this)
@@ -203,7 +273,7 @@ class HttpClient private constructor() {
     private val clients: HashMap<ClientKey?, OkHttpClient?> = HashMap<ClientKey?, OkHttpClient?>()
 
     private class ClientKey(
-        val proxy: Proxy?,
+        val proxyData: ProxyData?,
         val verifyCertificate: Boolean,
         val connectTimeout: Int,
         val readTimeout: Int,
@@ -215,8 +285,8 @@ class HttpClient private constructor() {
             if (other is ClientKey) {
                 val key: ClientKey = other
                 return equals(
-                    proxy,
-                    key.proxy,
+                    proxyData,
+                    key.proxyData,
                 ) &&
                     verifyCertificate == key.verifyCertificate &&
                     connectTimeout == key.connectTimeout &&
@@ -226,7 +296,7 @@ class HttpClient private constructor() {
         }
 
         override fun hashCode(): Int {
-            var result = if (proxy != null) proxy.hashCode() else 0
+            var result = if (proxyData != null) proxyData.hashCode() else 0
             result = 31 * result + (if (verifyCertificate) 1 else 0)
             result = 31 * result + connectTimeout
             result = 31 * result + readTimeout
@@ -234,9 +304,26 @@ class HttpClient private constructor() {
         }
     }
 
+    /** Answers an HTTP proxy's 407 with the credentials the settings hold for it. */
+    private fun createProxyAuthenticator(proxyData: ProxyData): okhttp3.Authenticator {
+        val credentials = Credentials.basic(proxyData.username!!, proxyData.password!!)
+        return okhttp3.Authenticator { _, response ->
+            // The proxy refused the credentials it has already been given: asking again with the
+            // same ones would only loop
+            if (response.request.header("Proxy-Authorization") != null) {
+                null
+            } else {
+                response.request
+                    .newBuilder()
+                    .header("Proxy-Authorization", credentials)
+                    .build()
+            }
+        }
+    }
+
     @Synchronized
     private fun obtainClient(
-        proxy: Proxy?,
+        proxyData: ProxyData?,
         verifyCertificate: Boolean,
         connectTimeout: Int,
         readTimeout: Int,
@@ -252,9 +339,10 @@ class HttpClient private constructor() {
                     .build()
             this.baseClient = baseClient
         }
-        val key = ClientKey(proxy, verifyCertificate, connectTimeout, readTimeout)
+        val key = ClientKey(proxyData, verifyCertificate, connectTimeout, readTimeout)
         var client = clients[key]
         if (client == null) {
+            val proxy = proxyData?.proxy
             val builder =
                 baseClient
                     .newBuilder()
@@ -262,6 +350,9 @@ class HttpClient private constructor() {
                     .connectTimeout(connectTimeout.toLong(), TimeUnit.MILLISECONDS)
                     .readTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
                     .writeTimeout(readTimeout.toLong(), TimeUnit.MILLISECONDS)
+            if (proxyData != null && !proxyData.socks && proxyData.hasCredentials) {
+                builder.proxyAuthenticator(createProxyAuthenticator(proxyData))
+            }
             if (!verifyCertificate) {
                 if (unsafeSslSocketFactory == null) {
                     try {
@@ -427,7 +518,8 @@ class HttpClient private constructor() {
                         if (forceGet) null else request.outputListener,
                     )
             } else if (requestMethod == RequestMethod.POST ||
-                requestMethod == RequestMethod.PUT
+                requestMethod == RequestMethod.PUT ||
+                requestMethod == RequestMethod.PATCH
             ) {
                 requestBody = ByteArray(0).toRequestBody(null)
             }
@@ -435,7 +527,7 @@ class HttpClient private constructor() {
 
             val client =
                 obtainClient(
-                    session.proxy,
+                    session.proxyData,
                     session.verifyCertificate,
                     request.connectTimeout,
                     request.readTimeout,

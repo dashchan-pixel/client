@@ -5,7 +5,6 @@ import chan.content.Chan
 import chan.http.HttpClient.InterruptedHttpException
 import chan.http.HttpHolder
 import java.io.Closeable
-import java.net.Proxy
 import kotlin.concurrent.Volatile
 
 class HttpHolder(
@@ -58,7 +57,7 @@ class HttpHolder(
     fun createSession(
         client: HttpClient?,
         uri: Uri?,
-        proxy: Proxy?,
+        proxyData: HttpClient.ProxyData?,
         verifyCertificate: Boolean,
         delay: Int,
         maxAttempts: Int,
@@ -71,7 +70,7 @@ class HttpHolder(
                 this,
                 client!!,
                 uri,
-                proxy,
+                proxyData,
                 verifyCertificate,
                 mayCheckFirewallBlock,
                 delay,
