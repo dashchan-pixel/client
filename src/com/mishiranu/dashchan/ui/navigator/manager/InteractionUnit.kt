@@ -73,7 +73,19 @@ class InteractionUnit internal constructor(
                 val threadNumber = chan.locator.safe(false).getThreadNumber(uri)
                 val postNumber = chan.locator.safe(false).getPostNumber(uri)
                 if (threadNumber != null) {
-                    if (sameChan && chan.configuration.getOption(ChanConfiguration.OPTION_READ_SINGLE_POST)) {
+                    val localDeleted =
+                        if (sameChan && postNumber != null) {
+                            configurationSet.postsProvider
+                                ?.findPostItem(postNumber)
+                                ?.takeIf { it.isDeleted() && it.getThreadNumber() == threadNumber }
+                        } else {
+                            null
+                        }
+                    if (localDeleted != null) {
+                        // A deleted post is gone from the server, so the usual single-post fetch would
+                        // fail; the loaded thread still keeps its last-seen copy, so show that instead.
+                        uiManager.dialog().displaySingle(configurationSet, localDeleted)
+                    } else if (sameChan && chan.configuration.getOption(ChanConfiguration.OPTION_READ_SINGLE_POST)) {
                         uiManager.dialog().displayReplyAsync(
                             configurationSet,
                             chan.name,

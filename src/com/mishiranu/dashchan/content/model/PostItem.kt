@@ -19,6 +19,7 @@ import com.mishiranu.dashchan.text.style.NameColorSpan
 import com.mishiranu.dashchan.text.style.SpoilerSpan
 import com.mishiranu.dashchan.util.PostDateFormatter
 import java.util.TreeSet
+import java.util.regex.Pattern
 
 class PostItem private constructor(
     private val post: Post,
@@ -339,6 +340,7 @@ class PostItem private constructor(
                     this,
                 )
             comment = StringUtils.reduceEmptyLines(comment)
+            comment = linkifyBareReferences(comment, chan)
             commentSpans = ColorScheme.getSpans(comment)
             linkSpans = (comment as? Spanned)?.getSpans(0, comment.length, LinkSpan::class.java)
             linkSuffixSpans =
@@ -350,6 +352,71 @@ class PostItem private constructor(
             this.comment = comment
         }
         return comment
+    }
+
+    /**
+     * Turns a bare `>>NNN` reference — one the chan rendered as plain (green)text rather than a real
+     * `<a>` link, which is how makaba and friends emit a reference to a post that no longer exists —
+     * into a clickable [LinkSpan] plus a trailing [LinkSuffixSpan], mirroring how the parser handles a
+     * real link. The suffix flag itself (the "X" marker) is decided at render time from the referenced
+     * post's deleted state, exactly like the "Y" (user post) marker. References already covered by a
+     * real link are left untouched.
+     */
+    private fun linkifyBareReferences(
+        comment: CharSequence,
+        chan: Chan,
+    ): CharSequence {
+        val text = comment.toString()
+        if (text.length < 3 || !text.contains(">>")) {
+            return comment
+        }
+        val spanned = comment as? Spanned
+        val existingLinks = spanned?.getSpans(0, comment.length, LinkSpan::class.java)
+        val matcher = BARE_REFERENCE_PATTERN.matcher(text)
+        val starts = ArrayList<Int>()
+        val ends = ArrayList<Int>()
+        val postNumbers = ArrayList<PostNumber>()
+        while (matcher.find()) {
+            val start = matcher.start()
+            val end = matcher.end()
+            val covered =
+                spanned != null &&
+                    existingLinks != null &&
+                    existingLinks.any { spanned.getSpanStart(it) < end && start < spanned.getSpanEnd(it) }
+            if (covered) {
+                continue
+            }
+            val postNumber = PostNumber.parseNullable(matcher.group(1)) ?: continue
+            starts.add(start)
+            ends.add(end)
+            postNumbers.add(postNumber)
+        }
+        if (starts.isEmpty()) {
+            return comment
+        }
+        val builder = SpannableStringBuilder(comment)
+        // Insert from the last match backwards so the earlier, still-unprocessed offsets stay valid.
+        for (i in starts.indices.reversed()) {
+            val postNumber = postNumbers[i]
+            val uri =
+                chan.locator.safe(false).createPostUri(boardName, threadNumber, postNumber) ?: continue
+            val start = starts[i]
+            val end = ends[i]
+            builder.insert(end, "\u00a0")
+            builder.setSpan(
+                LinkSpan(uri.toString(), postNumber),
+                start,
+                end,
+                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+            builder.setSpan(
+                LinkSuffixSpan(0, postNumber),
+                end,
+                end + 1,
+                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+        }
+        return builder
     }
 
     /**
@@ -616,6 +683,10 @@ class PostItem private constructor(
     companion object {
         const val ORDINAL_INDEX_NONE = -1
         const val ORDINAL_INDEX_DELETED = -2
+
+        // Bare >>NNN references that the chan did not emit as a real <a> link (e.g. a reference to a
+        // deleted post). The leading (?<!>) keeps cross-board >>>/board/ arrows out of the match.
+        private val BARE_REFERENCE_PATTERN = Pattern.compile("(?<!>)>>(\\d+(?:\\.\\d+)?)")
 
         @JvmStatic
         fun createPost(

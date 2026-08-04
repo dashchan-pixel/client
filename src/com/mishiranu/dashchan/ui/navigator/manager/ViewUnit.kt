@@ -492,6 +492,16 @@ class ViewUnit
                     val showReply = showMyPosts && isReply
                     span.setSuffix(LinkSuffixSpan.SUFFIX_USER_POST, showReply)
 
+                    // A same-thread reference whose target the client has flagged deleted gets an "X".
+                    // Restricted to same-thread references (a different-thread link's number could
+                    // collide with a local post) and resolved against the loaded thread, so it also
+                    // lights up an ordinary link whose target was deleted after it was posted.
+                    val referencedDeleted =
+                        !span.isSuffixPresent(LinkSuffixSpan.SUFFIX_DIFFERENT_THREAD) &&
+                            span.postNumber != null &&
+                            configurationSet.postsProvider?.findPostItem(span.postNumber)?.isDeleted() == true
+                    span.setSuffix(LinkSuffixSpan.SUFFIX_DELETED_POST, referencedDeleted)
+
                     val setBorderStyleReply = showPostsBorders && borderStyle == null && isReply
                     if (setBorderStyleReply) {
                         borderStyle = PostBorderView.BorderStyle.REPLY

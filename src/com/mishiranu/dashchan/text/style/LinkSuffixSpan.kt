@@ -27,6 +27,7 @@ class LinkSuffixSpan(
     private val suffixText: String?
         get() =
             when {
+                isSuffixPresent(SUFFIX_DELETED_POST) -> "X"
                 isSuffixPresent(SUFFIX_ORIGINAL_POSTER) -> "OP"
                 isSuffixPresent(SUFFIX_DIFFERENT_THREAD) -> "DT"
                 isSuffixPresent(SUFFIX_USER_POST) -> "Y"
@@ -85,5 +86,6 @@ class LinkSuffixSpan(
         const val SUFFIX_ORIGINAL_POSTER = 0x00000001
         const val SUFFIX_DIFFERENT_THREAD = 0x00000002
         const val SUFFIX_USER_POST = 0x00000004
+        const val SUFFIX_DELETED_POST = 0x00000008
     }
 }
