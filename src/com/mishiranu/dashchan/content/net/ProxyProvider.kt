@@ -64,6 +64,15 @@ object ProxyProvider {
             get() = ErrorItem(R.string.unknown_country)
     }
 
+    /**
+     * A refusal the service explained itself, carried as it reads -- the account has no balance to
+     * buy a port with, a field it wanted was missing. Repeating its words beats the generic
+     * "unknown error" a message it never sent used to come out as.
+     */
+    class RefusedException(
+        override val errorItem: ErrorItem,
+    ) : ServiceException()
+
     private class Configuration(
         val token: String,
         /** The country a forum's address exits from unless it names one of its own, or `null` for any. */
@@ -117,7 +126,31 @@ object ProxyProvider {
         return builder.build()
     }
 
-    @Throws(HttpException::class, InvalidTokenException::class)
+    /**
+     * The service's own words for a refusal: the message it sends with one, else the first of the
+     * per-field errors it sends instead when the request did not validate.
+     */
+    private fun readErrorMessage(jsonObject: JSONObject): String? {
+        StringUtils.nullIfEmpty(jsonObject.optString("message"))?.let { return it }
+        val errors = jsonObject.opt("errors")
+        // A request that did not validate answers with a field to its messages instead of a message
+        if (errors is JSONObject) {
+            return errors
+                .keys()
+                .asSequence()
+                .mapNotNull { firstErrorMessage(errors.opt(it)) }
+                .firstOrNull()
+        }
+        return firstErrorMessage(errors)
+    }
+
+    /** One of the messages a field was refused with, or the refusal itself when it is a bare string. */
+    private fun firstErrorMessage(value: Any?): String? {
+        val message = if (value is JSONArray) value.optString(0) else value?.toString()
+        return StringUtils.nullIfEmpty(message)
+    }
+
+    @Throws(HttpException::class, ServiceException::class)
     private fun request(
         holder: HttpHolder,
         uri: Uri,
@@ -141,21 +174,27 @@ object ProxyProvider {
             } catch (e: JSONException) {
                 throw createInvalidResponse(responseText, e)
             }
-        // A served request answers "success": true, except for the update, which answers "data"
+        // A served request answers "success": true, except for the port creation, which answers "data"
         if (!jsonObject.optBoolean("success") && !jsonObject.has("data")) {
             // A refused request carries its reason in "message"; a served one carries its payload
-            // there, so this is only ever a string on this branch.
-            val message = StringUtils.nullIfEmpty(jsonObject.optString("message"))
-            throw if (responseCode == HttpURLConnection.HTTP_OK) {
-                createInvalidResponse(message)
-            } else {
-                HttpException(responseCode, message)
-            }
+            // there, so it is only ever the reason on this branch.
+            val message =
+                readErrorMessage(jsonObject)
+                    ?: if (responseCode == HttpURLConnection.HTTP_OK) {
+                        // A refusal with nothing said about it and nothing to read it off of
+                        throw createInvalidResponse(responseText)
+                    } else {
+                        null
+                    }
+            // The status is worth showing on its own when the service named no reason, and worth
+            // dropping when there is nothing wrong with it but the answer underneath
+            val code = if (responseCode == HttpURLConnection.HTTP_OK) 0 else responseCode
+            throw RefusedException(ErrorItem(code, message))
         }
         return jsonObject
     }
 
-    @Throws(HttpException::class, InvalidTokenException::class)
+    @Throws(HttpException::class, ServiceException::class)
     private fun readBalance(
         holder: HttpHolder,
         token: String,
@@ -187,7 +226,7 @@ object ProxyProvider {
      * The ports of the account. Reading them all is what lets a forum keep its own port, and with
      * it its own country.
      */
-    @Throws(HttpException::class, InvalidTokenException::class)
+    @Throws(HttpException::class, ServiceException::class)
     private fun readPorts(
         holder: HttpHolder,
         configuration: Configuration,
@@ -213,7 +252,7 @@ object ProxyProvider {
      */
     private var countries: Map<String, String>? = null
 
-    @Throws(HttpException::class, InvalidTokenException::class)
+    @Throws(HttpException::class, ServiceException::class)
     private fun readCountries(
         holder: HttpHolder,
         token: String,
@@ -248,7 +287,7 @@ object ProxyProvider {
     }
 
     /** The two-letter code of a country named by code or by name in the settings. */
-    @Throws(HttpException::class, InvalidTokenException::class, UnknownCountryException::class)
+    @Throws(HttpException::class, ServiceException::class)
     private fun resolveCountryCode(
         holder: HttpHolder,
         token: String,
@@ -272,12 +311,7 @@ object ProxyProvider {
      * The created port is picked out of a fresh listing rather than the creation's own answer: the
      * listing is the shape everything else here reads.
      */
-    @Throws(
-        HttpException::class,
-        InvalidTokenException::class,
-        NoPortsException::class,
-        UnknownCountryException::class,
-    )
+    @Throws(HttpException::class, ServiceException::class)
     private fun createPort(
         holder: HttpHolder,
         configuration: Configuration,
@@ -291,6 +325,10 @@ object ProxyProvider {
             JSONObject()
                 .apply {
                     put("country_code", resolveCountryCode(holder, configuration.token, country))
+                    // The service requires both of these alongside the country and refuses the
+                    // whole request without them
+                    put("type_id", TYPE_ID_KEEP_PROXY)
+                    put("proxy_type_id", PROXY_TYPE_ID_ALL)
                     put("name", PORT_NAME_PREFIX + StringUtils.emptyIfNull(chan.configuration.getTitle()))
                     put("count", 1)
                 }.toString(),
@@ -371,12 +409,7 @@ object ProxyProvider {
      * gets a port bought for it. That spends the account's traffic allowance, which is why it only
      * ever happens for a forum the provider covers and never more than one port per forum.
      */
-    @Throws(
-        HttpException::class,
-        InvalidTokenException::class,
-        NoPortsException::class,
-        UnknownCountryException::class,
-    )
+    @Throws(HttpException::class, ServiceException::class)
     private fun assignPorts(
         holder: HttpHolder,
         configuration: Configuration,
@@ -461,12 +494,7 @@ object ProxyProvider {
      * was given. The check is also what puts those ports into the forums' settings, so validating
      * the service and enabling it are one step.
      */
-    @Throws(
-        HttpException::class,
-        InvalidTokenException::class,
-        NoPortsException::class,
-        UnknownCountryException::class,
-    )
+    @Throws(HttpException::class, ServiceException::class)
     fun checkService(holder: HttpHolder): Map<String, String> {
         val configuration = getConfiguration() ?: throw InvalidTokenException()
         val extra = LinkedHashMap<String, String>()
@@ -500,12 +528,7 @@ object ProxyProvider {
      * connections are dropped along with it: one kept alive through the port would still ride the
      * old address.
      */
-    @Throws(
-        HttpException::class,
-        InvalidTokenException::class,
-        NoPortsException::class,
-        UnknownCountryException::class,
-    )
+    @Throws(HttpException::class, ServiceException::class)
     fun refreshVisibleAddress(
         holder: HttpHolder,
         chan: Chan,
@@ -531,6 +554,19 @@ object ProxyProvider {
 
     /** Ports the app buys are named after the forum they serve, so the account can tell them apart. */
     private const val PORT_NAME_PREFIX = "Dashchan: "
+
+    /**
+     * A bought port keeps its address until the rotation asks for another one. The other two the
+     * service offers -- 2, a new address per connection, and 3, one on a timer -- take the choice
+     * away from the forum, which is the opposite of what a port bound to one is for.
+     */
+    private const val TYPE_ID_KEEP_PROXY = 1
+
+    /**
+     * Any pool the account can draw from, rather than residential (1), mobile (3) or corporate (4)
+     * alone: the port is bought because a country has to be served, so the widest pool serves it.
+     */
+    private const val PROXY_TYPE_ID_ALL = 2
 
     private val COUNTRY_KEYS = listOf("code", "country_code", "iso", "alpha2", "short_name", "name")
 
