@@ -24,8 +24,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.View.OnFocusChangeListener
+import android.view.View.OnLayoutChangeListener
 import android.view.View.OnTouchListener
-import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.WindowManager
 import android.view.WindowManager.BadTokenException
@@ -33,7 +33,6 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.core.view.ViewCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -58,27 +57,40 @@ import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.Callable
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 class ClickableToast private constructor(
     private val activity: ComponentActivity,
 ) : DefaultLifecycleObserver {
     private val windowManager: WindowManager
-    private val container: View
 
-    private val partialClickDrawable: PartialClickDrawable
-    private val message: TextView
-    private val button: TextView
-
-    private var currentContainer: ViewGroup? = null
-    private var onClickListener: Runnable? = null
-    private var showing: String? = null
-    private var clickable = false
-    private var realClickable = false
-    internal var clickableOnlyWhenRoot = false
+    /**
+     * The toasts on screen, oldest first, each in a window of its own. They stack upwards from the
+     * usual toast position: the oldest keeps it, every later one rides above the ones already
+     * there. A toast that arrives while another is still up therefore cannot hide it -- covering
+     * one was how a toast's button became unreachable before it timed out.
+     */
+    private val items = ArrayList<Item>()
 
     private var resumed: Boolean
 
+    // Everything below is measured or derived once and shared by every toast of this activity:
+    // building a toast means laying out the platform toast layout, which is not worth repeating.
+    private val density: Float
+    private val innerPadding: Int
+    private val stackGap: Int
+    private val dividerWidth: Int
+    private val dividerPadding: Int
     private val toastHorizontalPadding: Int
+    private val paddingForElevation: Int
+    private val toastElevation: Float
+    private val cornerRadius: Float
+    private val backgroundColor: Int
+    private val dividerColor: Int
+    private val clickedButtonBackgroundPaint: Paint
+    private val contentPadding: Rect
+    private val horizontalContentPadding: Int
+    private val maxToastWidth: Int
 
     class Button(
         internal val titleResId: Int,
@@ -117,76 +129,143 @@ class ClickableToast private constructor(
     private val windowFocusListener =
         OnFocusChangeListener { v: View?, hasFocus: Boolean -> updateAndApplyLayoutChecked() }
 
+    /**
+     * A toast whose window has just been laid out knows its real height, which is what the ones
+     * above it are stacked on top of. The height predicted when it was shown is usually right, so
+     * this normally changes nothing; the reposition is posted because it happens during a layout.
+     */
+    private val stackLayoutListener =
+        OnLayoutChangeListener { view, _, top, _, bottom, _, _, _, _ ->
+            val item = items.firstOrNull { it.windowContainer === view }
+            if (item != null && item.stackHeight != bottom - top) {
+                item.stackHeight = bottom - top
+                view.post { updateStackPositions() }
+            }
+        }
+
     private fun showInternal(
         message: CharSequence?,
         updateId: String?,
         button: Button?,
     ): String? {
-        val update = updateId != null && updateId == showing
-        if (update) {
-            ConcurrentUtils.HANDLER.removeCallbacks(cancelRunnable)
-        } else {
-            cancelInternal()
-        }
-        clickable = button != null
-        this.message.setText(message)
-        if (button != null) {
-            this.button.setText(button.titleResId)
-        }
-        onClickListener = if (button != null) button.callback else null
-        partialClickDrawable.clicked = false
-        partialClickDrawable.invalidateSelf()
-        clickableOnlyWhenRoot = button == null || button.clickableOnlyWhenRoot
-        updateLayout()
-        if (update) {
-            applyLayout()
-            ConcurrentUtils.HANDLER.postDelayed(cancelRunnable, TIMEOUT.toLong())
+        val updated = if (updateId != null) items.firstOrNull { it.id == updateId } else null
+        if (updated != null) {
+            ConcurrentUtils.HANDLER.removeCallbacks(updated.cancelRunnable)
+            bind(updated, message, button)
+            applyLayout(updated)
+            ConcurrentUtils.HANDLER.postDelayed(updated.cancelRunnable, TIMEOUT.toLong())
             return updateId
-        } else if (addContainerToWindowManager()) {
-            val id = UUID.randomUUID().toString()
-            showing = id
-            ConcurrentUtils.HANDLER.postDelayed(cancelRunnable, TIMEOUT.toLong())
-            return id
-        } else {
+        }
+        // The stack is bounded: past a few toasts the oldest one has been readable for a while
+        // already, and the newest would be climbing towards the action bar.
+        while (items.size >= MAX_STACK_SIZE) {
+            cancelItem(items[0])
+        }
+        val item = Item()
+        bind(item, message, button)
+        item.stackHeight = measureStackHeight(item)
+        if (!addItemToWindowManager(item, stackTopOffset())) {
             return null
+        }
+        items.add(item)
+        val id = UUID.randomUUID().toString()
+        item.id = id
+        ConcurrentUtils.HANDLER.postDelayed(item.cancelRunnable, TIMEOUT.toLong())
+        return id
+    }
+
+    private fun bind(
+        item: Item,
+        message: CharSequence?,
+        button: Button?,
+    ) {
+        item.clickable = button != null
+        item.message.setText(message)
+        if (button != null) {
+            item.button.setText(button.titleResId)
+        }
+        item.onClickListener = if (button != null) button.callback else null
+        item.partialClickDrawable.clicked = false
+        item.partialClickDrawable.invalidateSelf()
+        item.clickableOnlyWhenRoot = button == null || button.clickableOnlyWhenRoot
+        updateLayout(item)
+    }
+
+    /** Where the next toast goes: above everything already stacked. */
+    private fun stackTopOffset(): Int {
+        var offset = Y_OFFSET
+        for (item in items) {
+            offset += item.stackHeight + stackGap
+        }
+        return offset
+    }
+
+    private fun measureStackHeight(item: Item): Int {
+        item.container.measure(
+            MeasureSpec.makeMeasureSpec(maxToastWidth, MeasureSpec.AT_MOST),
+            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
+        )
+        return item.container.getMeasuredHeight() + paddingForElevation
+    }
+
+    private fun updateStackPositions() {
+        var offset = Y_OFFSET
+        for (item in items) {
+            val windowContainer = item.windowContainer
+            if (windowContainer != null && windowContainer.getParent() != null) {
+                val layoutParams = windowContainer.getLayoutParams() as WindowManager.LayoutParams
+                if (layoutParams.y != offset) {
+                    layoutParams.y = offset
+                    windowManager.updateViewLayout(windowContainer, layoutParams)
+                }
+            }
+            offset += item.stackHeight + stackGap
         }
     }
 
-    private fun addContainerToWindowManager(): Boolean {
+    private fun addItemToWindowManager(
+        item: Item,
+        y: Int,
+    ): Boolean {
         var added = false
         // TYPE_APPLICATION_OVERLAY requires SYSTEM_ALERT_WINDOW permission
         if (Settings.canDrawOverlays(activity)) {
-            added = addContainerToWindowManager(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+            added =
+                addItemToWindowManager(item, y, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
         }
 
         if (!added) {
             // TYPE_APPLICATION can't even properly overlay dialogs, used as fallback option
-            added = addContainerToWindowManager(WindowManager.LayoutParams.TYPE_APPLICATION)
+            added = addItemToWindowManager(item, y, WindowManager.LayoutParams.TYPE_APPLICATION)
         }
         return added
     }
 
-    private fun addContainerToWindowManager(type: Int): Boolean {
+    private fun addItemToWindowManager(
+        item: Item,
+        y: Int,
+        type: Int,
+    ): Boolean {
         var success = false
         try {
-            val currentContainer = FrameLayout(activity)
-            this.currentContainer = currentContainer
-            val paddingForElevation = 2 * Math.round(ViewCompat.getElevation(container))
-            currentContainer.setPadding(
+            val windowContainer = FrameLayout(activity)
+            item.windowContainer = windowContainer
+            windowContainer.setPadding(
                 toastHorizontalPadding,
                 0,
                 toastHorizontalPadding,
                 paddingForElevation,
             )
-            currentContainer.setClipToPadding(false)
-            currentContainer.addView(
-                container,
+            windowContainer.setClipToPadding(false)
+            windowContainer.addView(
+                item.container,
                 FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                 ),
             )
-            windowManager.addView(currentContainer, createLayoutParams(type))
+            windowContainer.addOnLayoutChangeListener(stackLayoutListener)
+            windowManager.addView(windowContainer, createLayoutParams(item, type, y))
             success = true
         } catch (e: BadTokenException) {
             val errorMessage = e.message
@@ -200,23 +279,30 @@ class ClickableToast private constructor(
             }
         } finally {
             if (!success) {
-                removeCurrentContainer()
+                removeWindowContainer(item)
             }
         }
         return success
     }
 
-    private fun updateLayoutParams(layoutParams: WindowManager.LayoutParams): WindowManager.LayoutParams {
+    private fun updateLayoutParams(
+        item: Item,
+        layoutParams: WindowManager.LayoutParams,
+    ): WindowManager.LayoutParams {
         layoutParams.flags =
             set(
                 layoutParams.flags,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
-                !realClickable,
+                !item.realClickable,
             )
         return layoutParams
     }
 
-    private fun createLayoutParams(type: Int): WindowManager.LayoutParams {
+    private fun createLayoutParams(
+        item: Item,
+        type: Int,
+        y: Int,
+    ): WindowManager.LayoutParams {
         val layoutParams = WindowManager.LayoutParams()
         layoutParams.type = type
         layoutParams.format = PixelFormat.TRANSLUCENT
@@ -228,7 +314,7 @@ class ClickableToast private constructor(
         layoutParams.setTitle(activity.getPackageName() + "/" + javaClass.getName())
         layoutParams.windowAnimations = android.R.style.Animation_Toast
         layoutParams.gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
-        layoutParams.y = Y_OFFSET
+        layoutParams.y = y
         try {
             val field = WindowManager.LayoutParams::class.java.getField("privateFlags")
             // PRIVATE_FLAG_NO_MOVE_ANIMATION == 0x00000040
@@ -236,62 +322,74 @@ class ClickableToast private constructor(
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return updateLayoutParams(layoutParams)
+        return updateLayoutParams(item, layoutParams)
     }
 
     private fun updateAndApplyLayoutChecked() {
-        if (showing != null && clickable) {
-            updateLayout()
-            applyLayout()
+        for (item in items) {
+            if (item.clickable) {
+                updateLayout(item)
+                applyLayout(item)
+            }
         }
     }
 
-    private fun updateLayout() {
+    private fun updateLayout(item: Item) {
         val focused = activity.getWindow().getDecorView().hasWindowFocus()
-        realClickable = clickable && (focused || !clickableOnlyWhenRoot) && resumed
-        button.setVisibility(if (realClickable) View.VISIBLE else View.GONE)
-        message.setPadding(
-            if (realClickable) button.getPaddingRight() else 0,
+        item.realClickable = item.clickable && (focused || !item.clickableOnlyWhenRoot) && resumed
+        item.button.setVisibility(if (item.realClickable) View.VISIBLE else View.GONE)
+        item.message.setPadding(
+            if (item.realClickable) item.button.getPaddingRight() else 0,
             0,
-            if (realClickable) button.getPaddingLeft() else 0,
+            if (item.realClickable) item.button.getPaddingLeft() else 0,
             0,
         )
     }
 
-    private fun applyLayout() {
-        val currentContainer = this.currentContainer
-        if (currentContainer != null) {
+    private fun applyLayout(item: Item) {
+        val windowContainer = item.windowContainer
+        if (windowContainer != null && windowContainer.getParent() != null) {
             windowManager.updateViewLayout(
-                currentContainer,
-                updateLayoutParams((currentContainer.getLayoutParams() as WindowManager.LayoutParams?)!!),
+                windowContainer,
+                updateLayoutParams(
+                    item,
+                    windowContainer.getLayoutParams() as WindowManager.LayoutParams,
+                ),
             )
         }
     }
 
     private fun cancelInternal() {
-        ConcurrentUtils.HANDLER.removeCallbacks(cancelRunnable)
-        if (showing == null) {
+        while (items.isNotEmpty()) {
+            cancelItem(items[0])
+        }
+    }
+
+    private fun cancelItem(item: Item) {
+        ConcurrentUtils.HANDLER.removeCallbacks(item.cancelRunnable)
+        if (!items.remove(item)) {
             return
         }
-        onClickListener = null
-        showing = null
-        clickable = false
-        realClickable = false
-        removeCurrentContainer()
+        item.onClickListener = null
+        item.id = null
+        item.clickable = false
+        item.realClickable = false
+        removeWindowContainer(item)
+        // The toasts that were riding on this one drop down into the space it leaves
+        updateStackPositions()
     }
 
-    private fun removeCurrentContainer() {
-        val currentContainer = this.currentContainer
-        if (currentContainer != null) {
-            if (currentContainer.getParent() != null) {
-                windowManager.removeViewImmediate(currentContainer)
+    private fun removeWindowContainer(item: Item) {
+        val windowContainer = item.windowContainer
+        if (windowContainer != null) {
+            windowContainer.removeOnLayoutChangeListener(stackLayoutListener)
+            if (windowContainer.getParent() != null) {
+                windowManager.removeViewImmediate(windowContainer)
             }
-            currentContainer.removeView(container)
-            this.currentContainer = null
+            windowContainer.removeView(item.container)
+            item.windowContainer = null
         }
     }
-
-    private val cancelRunnable = Runnable { this.cancelInternal() }
 
     init {
         windowManager = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -303,74 +401,66 @@ class ClickableToast private constructor(
 
         activity.lifecycle.addObserver(this)
         resumed = activity.lifecycle.currentState == Lifecycle.State.RESUMED
-        val density = obtainDensity(activity)
-        val innerPadding = (8f * density).toInt()
+        density = obtainDensity(activity)
+        innerPadding = (8f * density).toInt()
+        stackGap = (8f * density).toInt()
+        dividerWidth = (density + 0.5f).toInt()
+        dividerPadding = (4f * density).toInt()
+        toastElevation = activity.getResources().getDimension(R.dimen.clickable_toast_elevation)
+        paddingForElevation = 2 * toastElevation.roundToInt()
+        cornerRadius = Preferences.uiCornerRadius * density
+        backgroundColor = getColor(activity, R.attr.colorClickableToastBackground)
+
+        // Measure a throwaway copy of the platform toast: the padding its frame leaves around the
+        // text is the padding the replacement layout has to reproduce.
         val inflater = LayoutInflater.from(activity)
-        val toast1: View = inflater.inflate(LAYOUT_ID, null)
-        val toast2: View = inflater.inflate(LAYOUT_ID, null)
-        val message1 = toast1.findViewById<TextView>(android.R.id.message)
-        val message2 = toast2.findViewById<TextView>(android.R.id.message)
-        TextViewCompat.setTextAppearance(message1, R.style.ClickableToastTextAppearance)
-        TextViewCompat.setTextAppearance(message2, R.style.ClickableToastTextAppearance)
-        // Some launchers (e.g. OneUI) add a shadow to toast text and it looks bad so remove it
-        message1.setShadowLayer(0f, 0f, 0f, 0)
-        message2.setShadowLayer(0f, 0f, 0f, 0)
-        var backgroundDrawable = toast1.getBackground()
-        var backgroundView: View? = toast1
-        if (backgroundDrawable == null) {
-            var view: View? = message1
+        val toast: View = inflater.inflate(LAYOUT_ID, null)
+        val message = toast.findViewById<TextView>(android.R.id.message)
+        TextViewCompat.setTextAppearance(message, R.style.ClickableToastTextAppearance)
+        dividerColor = message.getTextColors().getDefaultColor()
+        var backgroundView: View? = toast
+        if (toast.getBackground() == null) {
+            var view: View? = message
             while (view != null) {
-                backgroundDrawable = view.getBackground()
-                if (backgroundDrawable != null) {
+                if (view.getBackground() != null) {
                     backgroundView = view
                     break
                 }
                 view = view.getParent() as View?
             }
         }
-        val clickableToastBackgroundColor =
-            getColor(
-                activity,
-                R.attr.colorClickableToastBackground,
-            )
-        // Round the toast to the app-wide radius: replace the platform toast frame with a rounded
-        // shape of the toast colour. The outline provider + clipToOutline set up below then clip the
-        // whole toast to these corners.
-        val roundedBackground = GradientDrawable()
-        roundedBackground.cornerRadius = Preferences.uiCornerRadius * density
-        roundedBackground.setColor(clickableToastBackgroundColor)
-        backgroundDrawable = roundedBackground
         // Make long text to avoid minimum widths
         val builder = StringBuilder()
         for (i in 0..99) {
             builder.append('W')
         }
-        message1.setText(builder)
+        message.setText(builder)
         val measureSize =
             (activity.getResources().getConfiguration().screenWidthDp * density + 0.5f).toInt()
-        toast1.measure(
+        maxToastWidth = measureSize - 2 * toastHorizontalPadding
+        toast.measure(
             MeasureSpec.makeMeasureSpec(measureSize, MeasureSpec.AT_MOST),
             MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
         )
-        val lineCount = message1.getLayout().getLineCount()
+        val lineCount = message.getLayout().getLineCount()
         if (lineCount >= 2) {
-            builder.setLength(message1.getLayout().getLineEnd(0))
-            message1.setText(builder)
-            toast1.measure(
+            builder.setLength(message.getLayout().getLineEnd(0))
+            message.setText(builder)
+            toast.measure(
                 MeasureSpec.makeMeasureSpec(measureSize, MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
             )
         }
-        toast1.layout(0, 0, toast1.getMeasuredWidth(), toast1.getMeasuredHeight())
+        toast.layout(0, 0, toast.getMeasuredWidth(), toast.getMeasuredHeight())
         val totalPadding =
             Rect(
-                message1.getPaddingLeft(),
-                message1.getPaddingTop(),
-                message1.getPaddingRight(),
-                message1.getPaddingBottom(),
+                message.getPaddingLeft(),
+                message.getPaddingTop(),
+                message.getPaddingRight(),
+                message.getPaddingBottom(),
             )
-        val messageMeasuredHeight = message1.getHeight()
-        var measureView: View? = message1
+        val messageMeasuredHeight = message.getHeight()
+        var measureView: View? = message
         while (true) {
             val parent = measureView!!.getParent() as View?
             if (parent == null || measureView === backgroundView) {
@@ -382,102 +472,150 @@ class ClickableToast private constructor(
             totalPadding.bottom += parent.getHeight() - measureView.getBottom()
             measureView = parent
         }
-        message1.measure(
-            MeasureSpec.makeMeasureSpec(message1.getWidth(), MeasureSpec.EXACTLY),
+        message.measure(
+            MeasureSpec.makeMeasureSpec(message.getWidth(), MeasureSpec.EXACTLY),
             MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
         )
-        val extraHeight = messageMeasuredHeight - message1.getMeasuredHeight()
+        val extraHeight = messageMeasuredHeight - message.getMeasuredHeight()
         totalPadding.top += extraHeight / 2
         totalPadding.bottom += extraHeight / 2
-        val horizontalPadding = max(totalPadding.left, totalPadding.right)
+        contentPadding = totalPadding
+        horizontalContentPadding = max(totalPadding.left, totalPadding.right)
 
-        removeFromParent(message1)
-        removeFromParent(message2)
-        val linearLayout = LinearLayout(activity)
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL)
-        linearLayout.setDividerDrawable(
-            ToastDividerDrawable(
-                message1.getTextColors().getDefaultColor(),
-                (density + 0.5f).toInt(),
-            ),
-        )
-        linearLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE)
-        linearLayout.setDividerPadding((4f * density).toInt())
-        linearLayout.setTag(this)
-        linearLayout.addView(
-            message1,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-        )
-        linearLayout.addView(
-            message2,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-        )
-        (message1.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
-        (message2.getLayoutParams() as LinearLayout.LayoutParams).gravity = Gravity.CENTER_VERTICAL
-        linearLayout.setPadding(
-            horizontalPadding,
-            totalPadding.top,
-            horizontalPadding,
-            totalPadding.bottom,
-        )
-        val finalBackgroundDrawable = backgroundDrawable
-        linearLayout.setOutlineProvider(
-            object : ViewOutlineProvider() {
-                override fun getOutline(
-                    view: View?,
-                    outline: Outline,
-                ) {
-                    finalBackgroundDrawable.getOutline(outline)
-                }
-            },
-        )
-        val toastElevation = activity.getResources().getDimension(R.dimen.clickable_toast_elevation)
-        linearLayout.setElevation(toastElevation)
-        linearLayout.setClipToOutline(true)
+        // The pressed-button tint is derived from the background colour, and getDrawableColor
+        // renders the drawable to do it -- once here rather than once per toast.
+        val color = getDrawableColor(activity, createBackgroundDrawable(), Gravity.CENTER)
+        val isLight = isLight(color)
+        val source = (Color.red(color) + Color.green(color) + Color.blue(color)) / 3f / 0xff
+        val target = source + (if (isLight) -0.15f else 0.2f)
+        val multiplier = target / source
+        val matrix = FloatArray(20)
+        for (i in 0..2) {
+            matrix[6 * i] = multiplier
+        }
+        matrix[18] = 1f
+        val colorFilter: ColorFilter = ColorMatrixColorFilter(matrix)
+        clickedButtonBackgroundPaint = Paint()
+        clickedButtonBackgroundPaint.setColor(color)
+        clickedButtonBackgroundPaint.setColorFilter(colorFilter)
+        clickedButtonBackgroundPaint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_IN))
+    }
 
-        partialClickDrawable = PartialClickDrawable(activity, backgroundDrawable)
-        linearLayout.setBackground(partialClickDrawable)
-        linearLayout.setOnTouchListener(partialClickDrawable)
-        message1.setBackground(null)
-        message2.setBackground(null)
-        message1.setPadding(0, 0, 0, 0)
-        message2.setPaddingRelative(innerPadding, 0, 0, 0)
-        message1.setMaxLines(3)
-        message2.setSingleLine(true)
-        message1.setEllipsize(TextUtils.TruncateAt.END)
-        message2.setEllipsize(TextUtils.TruncateAt.END)
-        container = linearLayout
-        message = message1
-        button = message2
+    /**
+     * Round the toast to the app-wide radius: replace the platform toast frame with a rounded shape
+     * of the toast colour. The outline provider + clipToOutline of [Item] then clip the whole toast
+     * to these corners.
+     */
+    private fun createBackgroundDrawable(): Drawable {
+        val background = GradientDrawable()
+        background.cornerRadius = cornerRadius
+        background.setColor(backgroundColor)
+        return background
+    }
+
+    /**
+     * A text view of the platform toast, detached from the frame it came in: the message and the
+     * button of a toast are two of these side by side.
+     */
+    private fun inflateToastTextView(): TextView {
+        val view =
+            LayoutInflater
+                .from(activity)
+                .inflate(LAYOUT_ID, null)
+                .findViewById<TextView>(android.R.id.message)
+        TextViewCompat.setTextAppearance(view, R.style.ClickableToastTextAppearance)
+        // Some launchers (e.g. OneUI) add a shadow to toast text and it looks bad so remove it
+        view.setShadowLayer(0f, 0f, 0f, 0)
+        removeFromParent(view)
+        view.setBackground(null)
+        view.setEllipsize(TextUtils.TruncateAt.END)
+        return view
+    }
+
+    /** One toast: its views, its window, and the state that decides whether its button works. */
+    private inner class Item {
+        val container: View
+        val message: TextView
+        val button: TextView
+        val partialClickDrawable: PartialClickDrawable
+
+        var windowContainer: FrameLayout? = null
+        var onClickListener: Runnable? = null
+        var id: String? = null
+        var clickable = false
+        var realClickable = false
+        var clickableOnlyWhenRoot = false
+
+        /** Height this toast occupies in the stack: predicted when shown, corrected once laid out. */
+        var stackHeight = 0
+
+        val cancelRunnable = Runnable { cancelItem(this) }
+
+        init {
+            val messageView = inflateToastTextView()
+            val buttonView = inflateToastTextView()
+            val linearLayout = LinearLayout(activity)
+            linearLayout.setOrientation(LinearLayout.HORIZONTAL)
+            linearLayout.setDividerDrawable(ToastDividerDrawable(dividerColor, dividerWidth))
+            linearLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE)
+            linearLayout.setDividerPadding(dividerPadding)
+            linearLayout.setTag(this@ClickableToast)
+            linearLayout.addView(
+                messageView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            linearLayout.addView(
+                buttonView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            (messageView.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
+            (buttonView.getLayoutParams() as LinearLayout.LayoutParams).gravity =
+                Gravity.CENTER_VERTICAL
+            linearLayout.setPadding(
+                horizontalContentPadding,
+                contentPadding.top,
+                horizontalContentPadding,
+                contentPadding.bottom,
+            )
+            val backgroundDrawable = createBackgroundDrawable()
+            linearLayout.setOutlineProvider(
+                object : ViewOutlineProvider() {
+                    override fun getOutline(
+                        view: View?,
+                        outline: Outline,
+                    ) {
+                        backgroundDrawable.getOutline(outline)
+                    }
+                },
+            )
+            linearLayout.setElevation(toastElevation)
+            linearLayout.setClipToOutline(true)
+
+            partialClickDrawable = PartialClickDrawable(this, backgroundDrawable)
+            linearLayout.setBackground(partialClickDrawable)
+            linearLayout.setOnTouchListener(partialClickDrawable)
+            messageView.setPadding(0, 0, 0, 0)
+            buttonView.setPaddingRelative(innerPadding, 0, 0, 0)
+            messageView.setMaxLines(3)
+            buttonView.setSingleLine(true)
+            container = linearLayout
+            message = messageView
+            button = buttonView
+        }
     }
 
     private inner class PartialClickDrawable(
-        context: Context,
+        private val item: Item,
         private val drawable: Drawable,
     ) : BaseDrawable(),
         OnTouchListener,
         Drawable.Callback {
-        private val clickedButtonBackgroundPaint = Paint()
         private val buttonBounds = Rect()
         internal var clicked = false
 
         init {
-            val color = getDrawableColor(context, drawable, Gravity.CENTER)
-            val isLight = isLight(color)
-            val source = (Color.red(color) + Color.green(color) + Color.blue(color)) / 3f / 0xff
-            val target = source + (if (isLight) -0.15f else 0.2f)
-            val multiplier = target / source
-            val matrix = FloatArray(20)
-            for (i in 0..2) {
-                matrix[6 * i] = multiplier
-            }
-            matrix[18] = 1f
-            val colorFilter: ColorFilter = ColorMatrixColorFilter(matrix)
-            clickedButtonBackgroundPaint.setColor(color)
-            clickedButtonBackgroundPaint.setColorFilter(colorFilter)
-            clickedButtonBackgroundPaint.setXfermode(PorterDuffXfermode(PorterDuff.Mode.SRC_IN))
             drawable.setCallback(this)
         }
 
@@ -489,9 +627,10 @@ class ClickableToast private constructor(
             v: View?,
             event: MotionEvent,
         ): Boolean {
-            if (!realClickable) {
+            if (!item.realClickable) {
                 return false
             }
+            val button = item.button
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (event.getX() >= button.getLeft()) {
                     clicked = true
@@ -511,8 +650,9 @@ class ClickableToast private constructor(
                             val x = event.getX()
                             val y = event.getY()
                             if (x >= button.getLeft() && x <= view.getWidth() && y >= 0 && y <= view.getHeight()) {
-                                ConcurrentUtils.HANDLER.removeCallbacks(cancelRunnable)
-                                ConcurrentUtils.HANDLER.post(cancelRunnable)
+                                val onClickListener = item.onClickListener
+                                ConcurrentUtils.HANDLER.removeCallbacks(item.cancelRunnable)
+                                ConcurrentUtils.HANDLER.post(item.cancelRunnable)
                                 onClickListener?.run()
                             }
                         }
@@ -538,6 +678,7 @@ class ClickableToast private constructor(
         public override fun draw(canvas: Canvas) {
             drawable.draw(canvas)
             if (clicked) {
+                val button = item.button
                 val toastBounds = getBounds()
                 if (button.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {
                     val shift = button.getRight()
@@ -603,6 +744,7 @@ class ClickableToast private constructor(
         private val LAYOUT_ID: Int
 
         private const val TIMEOUT = 3500
+        private const val MAX_STACK_SIZE = 3
 
         init {
             val resources = Resources.getSystem()
@@ -680,7 +822,7 @@ class ClickableToast private constructor(
         @JvmStatic
         fun isShowing(id: String?): Boolean {
             val toast: ClickableToast? = currentToast
-            return toast != null && id != null && id == toast.showing
+            return toast != null && id != null && toast.items.any { it.id == id }
         }
 
         @JvmStatic
