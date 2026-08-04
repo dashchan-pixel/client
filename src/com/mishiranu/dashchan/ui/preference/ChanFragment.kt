@@ -23,6 +23,7 @@ import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
+import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
@@ -41,8 +42,12 @@ class ChanFragment :
     internal var userAuthorizationPreference: Preference<List<String>>? = null
     private var cookiePreference: Preference<*>? = null
     private var banLogPreference: Preference<*>? = null
+    private var proxyPreference: Preference<Map<String, String>>? = null
     private var visibleAddressPreference: Preference<*>? = null
     private var visibleAddressViewModel: VisibleAddressViewModel? = null
+
+    /** Shown while the proxy provider is being asked to give this forum a port or a new address. */
+    private var proxyProviderDialog: ProgressDialog? = null
 
     private var anotherDomainMode = false
 
@@ -285,6 +290,7 @@ class ChanFragment :
                     ),
                     MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY),
                 )
+            this.proxyPreference = proxyPreference
             proxyPreference.setValues(
                 Preferences.KEYS_PROXY.indexOf(Preferences.SUB_KEY_PROXY_TYPE),
                 Preferences.ENTRIES_PROXY_TYPE,
@@ -308,6 +314,18 @@ class ChanFragment :
                 postingOnlyPreference.setEnabled(hasProxy(Chan.get(chanName)))
                 checkVisibleAddress(force = true)
             }
+            if (ProxyProvider.hasConfiguration()) {
+                // A provider port serves one country, so a forum that wants to be seen elsewhere is
+                // given a port of its own -- which is bought if the account has none to spare
+                addEdit(
+                    Preferences.KEY_PROXY_PROVIDER_COUNTRY.bind(chanName),
+                    null,
+                    R.string.proxy_country,
+                    R.string.proxy_country__summary,
+                    getString(R.string.country),
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                ).setOnAfterChangeListener { runProxyProviderAction(refresh = false) }
+            }
         }
         if (canReadThreadPartially) {
             addCheck(
@@ -330,6 +348,28 @@ class ChanFragment :
                 visibleAddressPreference.invalidate()
             }
             checkVisibleAddress(force = false)
+            val proxyProviderViewModel = ViewModelProvider(this).get(ProxyProviderViewModel::class.java)
+            proxyProviderViewModel.observe(viewLifecycleOwner) { result ->
+                proxyProviderDialog?.dismiss()
+                proxyProviderDialog = null
+                val errorItem = result.first
+                if (errorItem != null) {
+                    ClickableToast.show(errorItem)
+                } else {
+                    if (result.second) {
+                        ClickableToast.show(R.string.external_ip_refreshed)
+                    }
+                    // The forum's proxy may be another port now, and its address another one either
+                    // way: the row below is where that shows
+                    proxyPreference?.invalidate()
+                    checkVisibleAddress(force = true)
+                }
+            }
+            if (ProxyProvider.coversChan(chan)) {
+                // The provider can hand this forum another address without touching the settings
+                addButton(R.string.refresh_external_ip, R.string.refresh_external_ip__summary)
+                    .setOnClickListener { runProxyProviderAction(refresh = true) }
+            }
         }
 
         if (aiAgentsPostingSupport) {
@@ -367,6 +407,11 @@ class ChanFragment :
 
         captchaPassPreference = null
         userAuthorizationPreference = null
+        proxyPreference = null
+        proxyProviderDialog?.let {
+            it.dismiss()
+            proxyProviderDialog = null
+        }
         cookiePreference = null
         banLogPreference = null
         visibleAddressPreference = null
@@ -438,6 +483,30 @@ class ChanFragment :
             address.isNullOrEmpty() -> getString(R.string.unavailable)
             else -> address
         }
+    }
+
+    /**
+     * Put the provider to work for this forum: [refresh] asks for a new external address on the port
+     * it uses, and otherwise the forum is simply given the port its settings now call for -- a new
+     * one when the country changed. Both end with the visible address read again, which is where
+     * the change shows.
+     */
+    private fun runProxyProviderAction(refresh: Boolean) {
+        val viewModel = ViewModelProvider(this).get(ProxyProviderViewModel::class.java)
+        if (viewModel.getTask() != null) {
+            return
+        }
+        val dialog = ProgressDialog(requireContext(), null)
+        proxyProviderDialog = dialog
+        dialog.setMessage(getString(R.string.loading__ellipsis))
+        dialog.setOnCancelListener {
+            proxyProviderDialog = null
+            viewModel.attach(null)
+        }
+        dialog.show()
+        val task = ProxyProviderTask(viewModel, Chan.get(getChanName()), refresh)
+        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+        viewModel.attach(task)
     }
 
     /** [force] re-checks an address already resolved; otherwise a known one is kept. */
@@ -607,6 +676,42 @@ class ChanFragment :
         override fun run(holder: HttpHolder): String = VisibleAddress.format(VisibleAddress.resolve(chan, holder))
 
         override fun onComplete(result: String) {
+            viewModel.handleResult(result)
+        }
+    }
+
+    class ProxyProviderViewModel : TaskViewModel<ProxyProviderTask, Pair<ErrorItem?, Boolean>>()
+
+    /**
+     * The provider's own endpoint is asked through the fallback chan: a forum proxied by the very
+     * port being worked on cannot get in the way of the request that changes it.
+     */
+    class ProxyProviderTask(
+        private val viewModel: ProxyProviderViewModel,
+        private val chan: Chan,
+        private val refresh: Boolean,
+    ) : HttpHolderTask<Unit, Pair<ErrorItem?, Boolean>>(Chan.getFallback()) {
+        override fun run(holder: HttpHolder): Pair<ErrorItem?, Boolean> =
+            try {
+                val refreshed =
+                    if (refresh) {
+                        ProxyProvider.refreshExternalAddress(holder, chan)
+                    } else {
+                        ProxyProvider.checkService(holder)
+                        false
+                    }
+                if (refresh && !refreshed) {
+                    Pair<ErrorItem?, Boolean>(ErrorItem(ErrorItem.Type.UNKNOWN), false)
+                } else {
+                    Pair<ErrorItem?, Boolean>(null, refreshed)
+                }
+            } catch (e: HttpException) {
+                Pair<ErrorItem?, Boolean>(e.getErrorItemAndHandle(), false)
+            } catch (e: ProxyProvider.ServiceException) {
+                Pair<ErrorItem?, Boolean>(e.errorItem, false)
+            }
+
+        override fun onComplete(result: Pair<ErrorItem?, Boolean>) {
             viewModel.handleResult(result)
         }
     }

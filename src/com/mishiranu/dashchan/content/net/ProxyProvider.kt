@@ -1,6 +1,8 @@
 package com.mishiranu.dashchan.content.net
 
 import android.net.Uri
+import chan.content.Chan
+import chan.content.ChanManager
 import chan.http.HttpClient
 import chan.http.HttpException
 import chan.http.HttpHolder
@@ -8,6 +10,7 @@ import chan.http.HttpRequest
 import chan.http.SimpleEntity
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.MainApplication
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
 import org.json.JSONArray
@@ -19,13 +22,18 @@ import java.util.Locale
 
 /**
  * The Asocks proxy service (https://docs.asocks.com), configured once for the whole app the way
- * [CaptchaSolving] is.
+ * [CaptchaSolving] is, and applied to the forums the same way: the ones picked in the settings, or
+ * all of them when none is picked.
  *
- * The app neither buys nor deletes ports: it works with the port already bought, the one the
- * forums' proxy settings point at. What it does ask the service for is a new external address for
- * that port -- the endpoint the forums connect to stays the same, only the address they see
- * changes, which is exactly the way out of a ban on the visible address. When the settings name a
- * country, the port is moved there first, so the new address exits from where it was asked to.
+ * A covered forum is bound to a port of the account, which is written into its proxy settings --
+ * that is what turns a valid API key into a working proxy without another step. The binding is one
+ * port per forum, because a port serves a single country and a forum may name its own; a forum
+ * wanting a country the account has no spare port in gets a port bought for it, which is the only
+ * thing here that spends the account's balance. Ports are never deleted.
+ *
+ * The other half is rotation: asking the service for a new external address on a forum's port. The
+ * endpoint the forum connects to stays the same, only the address it is seen at changes, which is
+ * the way out of a ban on the visible address.
  */
 object ProxyProvider {
     private const val ENDPOINT = "https://api.asocks.com/v2"
@@ -58,10 +66,10 @@ object ProxyProvider {
 
     private class Configuration(
         val token: String,
-        /** The port to rotate, or `null` to take the first one the account has. */
-        val portId: Int?,
-        /** The country the address should exit from, as a code or a name, or `null` for any. */
+        /** The country a forum's address exits from unless it names one of its own, or `null` for any. */
         val country: String?,
+        /** The protocol the port was bought with -- a port serves one, and the service names neither. */
+        val proxyType: String,
     )
 
     /** A proxy port of the account. [id] is what rotation is asked for. */
@@ -72,6 +80,11 @@ object ProxyProvider {
         val address: String?,
         /** The two-letter code of the country the port exits from. */
         val location: String?,
+        /** Where the forums connect. Rotating the external address leaves this endpoint untouched. */
+        val host: String?,
+        val port: Int,
+        val login: String?,
+        val password: String?,
     )
 
     private fun getConfiguration(): Configuration? {
@@ -80,9 +93,11 @@ object ProxyProvider {
         if (StringUtils.isEmpty(token)) {
             return null
         }
-        val portId = map[Preferences.SUB_KEY_PROXY_PROVIDER_PORT]?.trim()?.toIntOrNull()
         val country = StringUtils.nullIfEmpty(map[Preferences.SUB_KEY_PROXY_PROVIDER_COUNTRY]?.trim())
-        return Configuration(token!!, if (portId != null && portId > 0) portId else null, country)
+        val proxyType =
+            map[Preferences.SUB_KEY_PROXY_PROVIDER_TYPE].takeIf { it in Preferences.VALUES_PROXY_TYPE }
+                ?: Preferences.VALUE_PROXY_TYPE_HTTP
+        return Configuration(token!!, country, proxyType)
     }
 
     fun hasConfiguration(): Boolean = getConfiguration() != null
@@ -110,7 +125,7 @@ object ProxyProvider {
     ): JSONObject {
         val request = HttpRequest(uri, holder).setSuccessOnly(false)
         if (entity != null) {
-            request.setPatchMethod(entity)
+            request.setPostMethod(entity)
         }
         val response = request.perform() ?: throw createInvalidResponse(null)
         val responseCode = response.getResponseCode()
@@ -148,49 +163,47 @@ object ProxyProvider {
 
     private fun parsePort(jsonObject: JSONObject): Port? {
         val id = jsonObject.optInt("id")
-        return if (id > 0) {
-            Port(
-                id,
-                StringUtils.nullIfEmpty(jsonObject.optString("name")),
-                StringUtils.nullIfEmpty(jsonObject.optString("externalIp")),
-                StringUtils.nullIfEmpty(jsonObject.optString("countryCode")),
-            )
-        } else {
-            null
+        if (id <= 0) {
+            return null
         }
+        // The endpoint comes as a single "host:port" string
+        val endpoint = StringUtils.nullIfEmpty(jsonObject.optString("proxy"))
+        val separator = endpoint?.lastIndexOf(':') ?: -1
+        val host = if (separator > 0) endpoint!!.substring(0, separator) else null
+        val port = if (separator > 0) endpoint!!.substring(separator + 1).toIntOrNull() ?: -1 else -1
+        return Port(
+            id,
+            StringUtils.nullIfEmpty(jsonObject.optString("name")),
+            StringUtils.nullIfEmpty(jsonObject.optString("externalIp")),
+            StringUtils.nullIfEmpty(jsonObject.optString("countryCode")),
+            host,
+            port,
+            StringUtils.nullIfEmpty(jsonObject.optString("login")),
+            StringUtils.nullIfEmpty(jsonObject.optString("password")),
+        )
     }
 
     /**
-     * The port the rotation applies to: the configured one, or -- when the settings name no port --
-     * one already exiting from the wanted country, so that an account holding a port per country
-     * needs no further setup. Falls back to the first port the account holds, which the country is
-     * then moved to.
+     * The ports of the account. Reading them all is what lets a forum keep its own port, and with
+     * it its own country.
      */
-    @Throws(HttpException::class, InvalidTokenException::class, NoPortsException::class)
-    private fun readPort(
+    @Throws(HttpException::class, InvalidTokenException::class)
+    private fun readPorts(
         holder: HttpHolder,
         configuration: Configuration,
-    ): Port {
+    ): List<Port> {
         val builder = createUri(configuration.token, "proxy", "ports").buildUpon()
-        if (configuration.portId != null) {
-            builder.appendQueryParameter("id", configuration.portId.toString())
-        }
+        builder.appendQueryParameter("per_page", PORTS_PER_PAGE.toString())
         val proxies =
             request(holder, builder.build())
                 .optJSONObject("message")
                 ?.optJSONArray("proxies")
-                ?: throw NoPortsException()
+                ?: return emptyList()
         val ports = ArrayList<Port>(proxies.length())
         for (i in 0..<proxies.length()) {
             proxies.optJSONObject(i)?.let { parsePort(it) }?.let { ports.add(it) }
         }
-        if (ports.isEmpty()) {
-            throw NoPortsException()
-        }
-        if (configuration.portId == null && configuration.country != null) {
-            ports.firstOrNull { configuration.country.equals(it.location, ignoreCase = true) }?.let { return it }
-        }
-        return ports[0]
+        return ports
     }
 
     /**
@@ -198,13 +211,13 @@ object ProxyProvider {
      * report and the name the directory lists -- against the identifier the port update takes. The
      * directory is the same for every account, so it is read once.
      */
-    private var countries: Map<String, Int>? = null
+    private var countries: Map<String, String>? = null
 
     @Throws(HttpException::class, InvalidTokenException::class)
     private fun readCountries(
         holder: HttpHolder,
         token: String,
-    ): Map<String, Int> {
+    ): Map<String, String> {
         synchronized(this) {
             countries?.let { return it }
         }
@@ -213,20 +226,16 @@ object ProxyProvider {
             jsonObject.optJSONArray("countries")
                 ?: jsonObject.optJSONObject("countries")?.optJSONArray("countries")
                 ?: throw createInvalidResponse(jsonObject.toString())
-        val map = HashMap<String, Int>()
+        val map = HashMap<String, String>()
         for (i in 0..<list.length()) {
             val country = list.optJSONObject(i) ?: continue
-            val id = country.optInt("id")
-            if (id <= 0) {
-                continue
-            }
-            // The directory is not documented field by field: take the code under any of the names
-            // it may go by, and the name as a second way to spell the same country
-            for (key in COUNTRY_KEYS) {
-                val value = StringUtils.nullIfEmpty(country.optString(key))
-                if (value != null) {
-                    map[value.uppercase(Locale.US)] = id
-                }
+            // The directory is not documented field by field: read every name a country may go by,
+            // and take the two-letter one among them as the code a port is created with
+            val names =
+                COUNTRY_KEYS.mapNotNull { StringUtils.nullIfEmpty(country.optString(it))?.uppercase(Locale.US) }
+            val code = names.firstOrNull { it.length == 2 } ?: continue
+            for (name in names) {
+                map[name] = code
             }
         }
         if (map.isEmpty()) {
@@ -238,40 +247,220 @@ object ProxyProvider {
         return map
     }
 
+    /** The two-letter code of a country named by code or by name in the settings. */
     @Throws(HttpException::class, InvalidTokenException::class, UnknownCountryException::class)
-    private fun readCountryId(
+    private fun resolveCountryCode(
         holder: HttpHolder,
         token: String,
         country: String,
-    ): Int = readCountries(holder, token)[country.uppercase(Locale.US)] ?: throw UnknownCountryException()
+    ): String {
+        val name = country.uppercase(Locale.US)
+        readCountries(holder, token)[name]?.let { return it }
+        // A directory that answered in a shape this does not read must not stand in the way of a
+        // code that is already a code
+        if (name.length == 2) {
+            return name
+        }
+        throw UnknownCountryException()
+    }
 
     /**
-     * Move the port to another country. The service picks the new address out of that country the
-     * next time the port is refreshed, so this is only ever half of the change.
+     * Buy a port in [country] for [chan]. A port serves one country, so a forum that wants an
+     * address elsewhere needs a port of its own -- this is where it comes from. The service names
+     * the port after the forum, which is how it reads on the account's dashboard afterwards.
+     *
+     * The created port is picked out of a fresh listing rather than the creation's own answer: the
+     * listing is the shape everything else here reads.
      */
-    @Throws(HttpException::class, InvalidTokenException::class, UnknownCountryException::class)
-    private fun applyCountry(
+    @Throws(
+        HttpException::class,
+        InvalidTokenException::class,
+        NoPortsException::class,
+        UnknownCountryException::class,
+    )
+    private fun createPort(
         holder: HttpHolder,
         configuration: Configuration,
-        port: Port,
+        chan: Chan,
         country: String,
-    ) {
-        val countryId = readCountryId(holder, configuration.token, country)
+        known: List<Port>,
+    ): Port {
         val entity = SimpleEntity()
         entity.setContentType("application/json")
         entity.setData(
             JSONObject()
-                .apply { put("geo_country_ids", JSONArray().put(countryId)) }
-                .toString(),
+                .apply {
+                    put("country_code", resolveCountryCode(holder, configuration.token, country))
+                    put("name", PORT_NAME_PREFIX + StringUtils.emptyIfNull(chan.configuration.getTitle()))
+                    put("count", 1)
+                }.toString(),
         )
-        request(
-            holder,
-            createUri(configuration.token, "proxy", "update-port", port.id.toString()),
-            entity,
-        )
+        request(holder, createUri(configuration.token, "proxy", "create-port"), entity)
+        val knownIds = known.mapTo(HashSet()) { it.id }
+        return readPorts(holder, configuration).firstOrNull { it.id !in knownIds } ?: throw NoPortsException()
     }
 
-    /** What the settings screen shows about the account: its balance and the port rotation will act on. */
+    /** The port as the forums' proxy settings spell it, or `null` for a port with no endpoint yet. */
+    private fun buildProxy(
+        configuration: Configuration,
+        port: Port,
+    ): Map<String, String>? {
+        if (StringUtils.isEmpty(port.host) || port.port <= 0) {
+            return null
+        }
+        val proxy = LinkedHashMap<String, String>()
+        proxy[Preferences.SUB_KEY_PROXY_HOST] = port.host!!
+        proxy[Preferences.SUB_KEY_PROXY_PORT] = port.port.toString()
+        proxy[Preferences.SUB_KEY_PROXY_TYPE] = configuration.proxyType
+        port.login?.let { proxy[Preferences.SUB_KEY_PROXY_USERNAME] = it }
+        port.password?.let { proxy[Preferences.SUB_KEY_PROXY_PASSWORD] = it }
+        return proxy
+    }
+
+    /** The forums the provider writes to. An empty selection means all of them, as it does for solving. */
+    private fun coveredChans(): List<Chan> {
+        val chanNames = Preferences.proxyProviderChans
+        return ChanManager
+            .getInstance()
+            .availableChans
+            .filter { it.name != null && (chanNames.isEmpty() || chanNames.contains(it.name)) }
+    }
+
+    fun coversChan(chan: Chan): Boolean {
+        if (!hasConfiguration() || chan.name == null) {
+            return false
+        }
+        val chanNames = Preferences.proxyProviderChans
+        return chanNames.isEmpty() || chanNames.contains(chan.name)
+    }
+
+    /** The country the forum's address should exit from: its own setting, or the provider's default. */
+    private fun countryFor(
+        configuration: Configuration,
+        chan: Chan,
+    ): String? = Preferences.getProxyProviderCountry(chan) ?: configuration.country
+
+    private fun matchesCountry(
+        port: Port,
+        country: String?,
+    ): Boolean = country == null || country.equals(port.location, ignoreCase = true)
+
+    /** The port a forum is already bound to: its proxy is the binding, as long as this class wrote it. */
+    private fun boundPort(
+        ports: List<Port>,
+        chan: Chan,
+    ): Port? {
+        val applied = Preferences.getProxyProviderApplied(chan) ?: return null
+        if (applied != Preferences.getPackedProxy(chan)) {
+            // The user has since set a proxy of their own, and it is not ours to move
+            return null
+        }
+        val proxy = Preferences.getProxy(chan) ?: return null
+        val host = proxy[Preferences.SUB_KEY_PROXY_HOST]
+        val port = proxy[Preferences.SUB_KEY_PROXY_PORT]?.toIntOrNull()
+        return ports.firstOrNull { it.host == host && it.port == port }
+    }
+
+    /**
+     * Give every covered forum a port in the country it asks for. A forum keeps the port it already
+     * holds while that port still fits, so the binding -- and with it the address a forum has built
+     * a session on -- survives a re-check. Otherwise it takes a port of the account that no other
+     * forum has taken and that sits in the right country.
+     *
+     * A port serves one country, so a forum wanting an address the account has no spare port for
+     * gets a port bought for it. That spends the account's traffic allowance, which is why it only
+     * ever happens for a forum the provider covers and never more than one port per forum.
+     */
+    @Throws(
+        HttpException::class,
+        InvalidTokenException::class,
+        NoPortsException::class,
+        UnknownCountryException::class,
+    )
+    private fun assignPorts(
+        holder: HttpHolder,
+        configuration: Configuration,
+        ports: List<Port>,
+    ): Map<Chan, Port> {
+        val known = ArrayList(ports)
+        val assigned = LinkedHashMap<Chan, Port>()
+        val claimed = HashSet<Int>()
+        val chans = coveredChans()
+        for (chan in chans) {
+            val port = boundPort(known, chan)
+            if (port != null && !claimed.contains(port.id) && matchesCountry(port, countryFor(configuration, chan))) {
+                assigned[chan] = port
+                claimed.add(port.id)
+            }
+        }
+        for (chan in chans) {
+            if (assigned.containsKey(chan)) {
+                continue
+            }
+            val country = countryFor(configuration, chan)
+            val port =
+                known.firstOrNull { !claimed.contains(it.id) && matchesCountry(it, country) }
+                    ?: if (country != null) {
+                        createPort(holder, configuration, chan, country, known).also { known.add(it) }
+                    } else {
+                        // No country was asked for, so nothing is worth buying: take a port the
+                        // account already has, sharing the first one when they have all been handed
+                        // out rather than leaving the forum unproxied
+                        known.firstOrNull { !claimed.contains(it.id) }
+                            ?: known.firstOrNull()
+                            ?: throw NoPortsException()
+                    }
+            assigned[chan] = port
+            claimed.add(port.id)
+        }
+        return assigned
+    }
+
+    /**
+     * Write each forum's port into its proxy settings, and take the proxy back off the forums the
+     * provider no longer covers. Only a proxy this class wrote is ever overwritten or removed: one
+     * set by hand does not match what was written for that forum last time, and is left alone.
+     *
+     * A port keeps its endpoint when its external address is rotated, so this runs on a check, not
+     * on every request.
+     */
+    private fun applyToChans(
+        configuration: Configuration?,
+        assigned: Map<Chan, Port>,
+    ) {
+        for (chan in ChanManager.getInstance().availableChans) {
+            if (chan.name == null) {
+                continue
+            }
+            val port = assigned[chan]
+            val packed = if (configuration != null && port != null) buildProxy(configuration, port)?.let { Preferences.packProxy(it) } else null
+            val stored = Preferences.getPackedProxy(chan)
+            val applied = Preferences.getProxyProviderApplied(chan)
+            if (packed != null) {
+                if (stored != packed) {
+                    Preferences.setPackedProxy(chan, packed)
+                }
+                Preferences.setProxyProviderApplied(chan, packed)
+            } else if (applied != null) {
+                if (stored == applied) {
+                    Preferences.setPackedProxy(chan, null)
+                }
+                Preferences.setProxyProviderApplied(chan, null)
+            }
+        }
+    }
+
+    /**
+     * Take the provider's proxy back off the forums, for when the settings that put it there are
+     * gone. A proxy set by hand stays.
+     */
+    fun clearFromChans() = applyToChans(null, emptyMap())
+
+    /**
+     * What the settings screen shows about the account: its balance and the port each covered forum
+     * was given. The check is also what puts those ports into the forums' settings, so validating
+     * the service and enabling it are one step.
+     */
     @Throws(
         HttpException::class,
         InvalidTokenException::class,
@@ -282,22 +471,34 @@ object ProxyProvider {
         val configuration = getConfiguration() ?: throw InvalidTokenException()
         val extra = LinkedHashMap<String, String>()
         readBalance(holder, configuration.token)?.let { extra["balance"] = it }
-        val port = readPort(holder, configuration)
-        extra["port"] = if (port.name != null) "${port.id} (${port.name})" else port.id.toString()
-        port.address?.let { extra["address"] = VisibleAddress.format(VisibleAddress.Result(it, port.location)) }
-        if (configuration.country != null) {
-            // Fails loudly on a country the service does not know, rather than at the rotation the
-            // ban warning offers
-            readCountryId(holder, configuration.token, configuration.country)
-            extra["country"] = configuration.country.uppercase(Locale.US)
+        val ports = readPorts(holder, configuration)
+        // Fails loudly on a country the service does not know, rather than at the rotation the ban
+        // warning offers
+        for (chan in coveredChans()) {
+            countryFor(configuration, chan)?.let { resolveCountryCode(holder, configuration.token, it) }
+        }
+        val assigned = assignPorts(holder, configuration, ports)
+        applyToChans(configuration, assigned)
+        for ((chan, port) in assigned) {
+            extra[StringUtils.emptyIfNull(chan.configuration.getTitle())] = describePort(port)
+        }
+        if (assigned.isEmpty()) {
+            extra["forums"] = MainApplication.getInstance().localizedContext.getString(R.string.unavailable)
         }
         return extra
     }
 
+    /** A port as the settings summary names it: which one it is and where it currently exits. */
+    private fun describePort(port: Port): String {
+        val address = port.address?.let { VisibleAddress.format(VisibleAddress.Result(it, port.location)) }
+        return if (address != null) "${port.id} · $address" else port.id.toString()
+    }
+
     /**
-     * Ask the service for a new external address on the configured port, out of the configured
-     * country. The pooled connections are dropped along with it: one kept alive through the port
-     * would still ride the old address.
+     * Ask the service for a new external address on the port [chan] uses -- or on the port the
+     * settings would give it, when it has none yet -- out of the country that forum asks for. The
+     * pooled connections are dropped along with it: one kept alive through the port would still ride
+     * the old address.
      */
     @Throws(
         HttpException::class,
@@ -305,20 +506,31 @@ object ProxyProvider {
         NoPortsException::class,
         UnknownCountryException::class,
     )
-    fun refreshExternalAddress(holder: HttpHolder): Boolean {
+    fun refreshExternalAddress(
+        holder: HttpHolder,
+        chan: Chan,
+    ): Boolean {
         val configuration = getConfiguration() ?: throw InvalidTokenException()
-        val port = readPort(holder, configuration)
-        val country = configuration.country
-        if (country != null && !country.equals(port.location, ignoreCase = true)) {
-            applyCountry(holder, configuration, port, country)
-        }
+        val ports = readPorts(holder, configuration)
+        val assigned = assignPorts(holder, configuration, ports)
+        // The forum is covered by the provider, or the caller would not offer the rotation
+        // A country of its own has already put the forum on a port of its own
+        val port = assigned[chan] ?: assigned.values.firstOrNull() ?: throw NoPortsException()
         val uri = createUri(configuration.token, "proxy", "refresh", port.id.toString())
         val success = request(holder, uri).optBoolean("success")
         if (success) {
+            // The endpoint is unchanged, but the credentials behind it may not be
+            applyToChans(configuration, assigned)
             HttpClient.getInstance().dropCachedConnections()
         }
         return success
     }
+
+    /** One page is plenty: the forums are counted in units, not hundreds. */
+    private const val PORTS_PER_PAGE = 100
+
+    /** Ports the app buys are named after the forum they serve, so the account can tell them apart. */
+    private const val PORT_NAME_PREFIX = "Dashchan: "
 
     private val COUNTRY_KEYS = listOf("code", "country_code", "iso", "alpha2", "short_name", "name")
 

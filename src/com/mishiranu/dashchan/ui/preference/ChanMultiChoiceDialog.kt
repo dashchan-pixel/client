@@ -14,14 +14,19 @@ class ChanMultiChoiceDialog :
     DialogFragment,
     DialogInterface.OnMultiChoiceClickListener {
     interface Callback {
-        fun onChansSelected(chanNames: Collection<String>)
+        /** [target] tells apart the screens that open the dialog for more than one setting. */
+        fun onChansSelected(
+            chanNames: Collection<String>,
+            target: String?,
+        )
     }
 
     constructor()
 
-    constructor(selected: Collection<String>) {
+    constructor(selected: Collection<String>, target: String? = null) {
         val args = Bundle()
         args.putStringArrayList(EXTRA_SELECTED, ArrayList(selected))
+        args.putString(EXTRA_TARGET, target)
         arguments = args
     }
 
@@ -63,7 +68,8 @@ class ChanMultiChoiceDialog :
                 .setMultiChoiceItems(items, checkedItems, this)
                 .setNegativeButton(android.R.string.cancel, null)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    (parentFragment as Callback).onChansSelected(collectSelected())
+                    (parentFragment as Callback)
+                        .onChansSelected(collectSelected(), requireArguments().getString(EXTRA_TARGET))
                 }.create()
         updateTitle(dialog)
         return dialog
@@ -124,6 +130,7 @@ class ChanMultiChoiceDialog :
 
     companion object {
         private const val EXTRA_SELECTED = "selected"
+        private const val EXTRA_TARGET = "target"
         private const val EXTRA_CHECKED = "checked"
     }
 }

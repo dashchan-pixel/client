@@ -1771,7 +1771,7 @@ class PostingFragment :
             viewModel.attach(null)
         }
         dialog.show()
-        val task = RefreshAddressTask(viewModel)
+        val task = RefreshAddressTask(viewModel, get(chanName))
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         viewModel.attach(task)
     }
@@ -1780,10 +1780,11 @@ class PostingFragment :
 
     class RefreshAddressTask(
         private val viewModel: RefreshAddressViewModel,
+        private val chan: Chan,
     ) : HttpHolderTask<Unit, Pair<ErrorItem, Boolean>>(Chan.getFallback()) {
         override fun run(holder: HttpHolder): Pair<ErrorItem, Boolean> =
             try {
-                val success = ProxyProvider.refreshExternalAddress(holder)
+                val success = ProxyProvider.refreshExternalAddress(holder, chan)
                 if (success) {
                     Pair<ErrorItem, Boolean>(null, true)
                 } else {

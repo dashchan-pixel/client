@@ -384,7 +384,6 @@
     <string name="player">Player</string>
     <string name="popular">Popolari</string>
     <string name="port">Porta</string>
-    <string name="port_id">ID porta</string>
     <string name="post_is_not_found">Post non trovato</string>
     <string name="post_order">Ordine dei post</string>
     <string name="post_rejected">Post respinto</string>
@@ -401,11 +400,13 @@
     <string name="proceed">Procedi</string>
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
+    <string name="proxy_country">Paese del proxy</string>
+    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum; se l\'account non ha una porta libera lì, ne viene acquistata una</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
     <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
     <string name="proxy_provider">Fornitore proxy</string>
     <string name="proxy_provider__summary">Cambia l\'indirizzo visto dai forum tramite un servizio proxy</string>
-    <string name="proxy_provider_info__sentence">È supportata l\'API di Asocks. Una porta vuota indica la prima dell\'account e il paese, se impostato, viene applicato alla porta prima di aggiornare l\'indirizzo.</string>
+    <string name="proxy_provider_info__sentence">È supportata l\'API di Asocks. A ogni forum scelto — a tutti se non ne viene scelto nessuno — viene assegnata una porta dell\'account, scritta nelle sue impostazioni proxy; se per il paese richiesto non c\'è una porta libera, ne viene acquistata una.</string>
     <string name="proxy_provider_no_ports">Nessuna porta proxy nell\'account</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>
@@ -418,6 +419,7 @@
     <string name="reencode_image">Ricodifica immagine</string>
     <string name="refresh">Aggiorna</string>
     <string name="refresh_external_ip">Aggiorna IP esterno</string>
+    <string name="refresh_external_ip__summary">Chiedi al fornitore proxy un altro indirizzo per questo forum</string>
     <string name="regular_expression">Espressione regolare</string>
     <string name="rejected_words">Parole respinte</string>
     <string name="reload">Ricarica</string>

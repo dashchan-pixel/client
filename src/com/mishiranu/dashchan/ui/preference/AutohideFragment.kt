@@ -520,7 +520,10 @@ class AutohideFragment : BaseListFragment() {
             )
         }
 
-        override fun onChansSelected(chanNames: Collection<String>) {
+        override fun onChansSelected(
+            chanNames: Collection<String>,
+            target: String?,
+        ) {
             selectedChanNames.clear()
             selectedChanNames.addAll(chanNames)
             updateSelectedText()

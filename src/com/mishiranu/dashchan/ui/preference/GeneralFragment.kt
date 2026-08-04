@@ -127,21 +127,27 @@ class GeneralFragment :
                 Preferences.KEY_PROXY_PROVIDER,
                 R.string.proxy_provider,
                 { configureProxyProviderSummary(false) },
-                listOf<CharSequence>(
+                listOf<CharSequence?>(
                     getString(R.string.api_key),
-                    getString(R.string.port_id),
                     getString(R.string.country),
+                    null,
                 ),
                 listOf(
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-                    InputType.TYPE_CLASS_NUMBER,
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                    0,
                 ),
                 MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY_PROVIDER),
             )
         this.proxyProviderPreference = proxyProviderPreference
+        proxyProviderPreference.setValues(
+            Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_TYPE),
+            Preferences.ENTRIES_PROXY_TYPE,
+            Preferences.VALUES_PROXY_TYPE,
+        )
         proxyProviderPreference.setOnAfterChangeListener { configureProxyProviderSummary(true) }
         proxyProviderPreference.setDescription(getString(R.string.proxy_provider_info__sentence))
+        configureProxyProviderNeutralButton()
 
         addList(
             Preferences.KEY_FIREWALL_RESOLUTION_METHOD,
@@ -295,27 +301,56 @@ class GeneralFragment :
         removed: Collection<String>,
     ) {
         configureCaptchaSolvingNeutralButton()
+        configureProxyProviderNeutralButton()
     }
 
-    override fun onChansSelected(chanNames: Collection<String>) {
-        Preferences.captchaSolvingChans = HashSet(chanNames)
+    override fun onChansSelected(
+        chanNames: Collection<String>,
+        target: String?,
+    ) {
+        when (target) {
+            TARGET_PROXY_PROVIDER -> {
+                Preferences.proxyProviderChans = HashSet(chanNames)
+                // The selection only means anything once the port has been written to the forums it
+                // now covers -- and taken off the ones it no longer does, which the check does too
+                configureProxyProviderSummary(true)
+                proxyProviderPreference?.invalidate()
+            }
+
+            else -> {
+                Preferences.captchaSolvingChans = HashSet(chanNames)
+            }
+        }
     }
 
     private fun configureCaptchaSolvingNeutralButton() {
         val captchaSolvingPreference = captchaSolvingPreference!!
-        if (ChanManager
-                .getInstance()
-                .availableChans
-                .iterator()
-                .hasNext()
-        ) {
+        if (hasAvailableChans()) {
             captchaSolvingPreference.setNeutralButton(getString(R.string.forums)) {
-                ChanMultiChoiceDialog(Preferences.captchaSolvingChans).show(this)
+                ChanMultiChoiceDialog(Preferences.captchaSolvingChans, TARGET_CAPTCHA_SOLVING).show(this)
             }
         } else {
             captchaSolvingPreference.setNeutralButton(null, null)
         }
     }
+
+    private fun configureProxyProviderNeutralButton() {
+        val proxyProviderPreference = proxyProviderPreference!!
+        if (hasAvailableChans()) {
+            proxyProviderPreference.setNeutralButton(getString(R.string.forums)) {
+                ChanMultiChoiceDialog(Preferences.proxyProviderChans, TARGET_PROXY_PROVIDER).show(this)
+            }
+        } else {
+            proxyProviderPreference.setNeutralButton(null, null)
+        }
+    }
+
+    private fun hasAvailableChans(): Boolean =
+        ChanManager
+            .getInstance()
+            .availableChans
+            .iterator()
+            .hasNext()
 
     private fun configureCaptchaSolvingSummary(resetAndShowDialog: Boolean): CharSequence {
         val viewModel = ViewModelProvider(this).get(CheckViewModel::class.java)
@@ -404,6 +439,10 @@ class GeneralFragment :
             }
             return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
         } else {
+            if (resetAndShowDialog) {
+                // The settings that put the provider's proxy into the forums are gone: take it back
+                ProxyProvider.clearFromChans()
+            }
             return getString(R.string.proxy_provider__summary)
         }
     }
@@ -493,5 +532,9 @@ class GeneralFragment :
     companion object {
         private const val VALUE_CUSTOM_URI = "custom_uri\n"
         private const val EXTRA_ANOTHER_URI_KEYS = "anotherUriKeys"
+
+        /** Both service rows open the forum selection; this is how their answers are told apart. */
+        private const val TARGET_CAPTCHA_SOLVING = "captchaSolving"
+        private const val TARGET_PROXY_PROVIDER = "proxyProvider"
     }
 }

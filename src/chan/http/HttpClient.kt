@@ -518,8 +518,7 @@ class HttpClient private constructor() {
                         if (forceGet) null else request.outputListener,
                     )
             } else if (requestMethod == RequestMethod.POST ||
-                requestMethod == RequestMethod.PUT ||
-                requestMethod == RequestMethod.PATCH
+                requestMethod == RequestMethod.PUT
             ) {
                 requestBody = ByteArray(0).toRequestBody(null)
             }

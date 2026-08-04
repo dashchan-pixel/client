@@ -320,7 +320,6 @@
 	<string name="player">Reprodutor</string>
 	<string name="popular">Populares</string>
 	<string name="port">Porta</string>
-	<string name="port_id">ID da porta</string>
 	<string name="post_is_not_found">O post não foi encontrado</string>
 	<string name="post_order">Ordem dos posts</string>
 	<string name="post_rejected">Mensagem rejeitada</string>
@@ -332,11 +331,13 @@
 	<string name="press_again_to_exit">Pressione novamente para sair</string>
 	<string name="processing_data__ellipsis">Enviando…</string>
 	<string name="proxy">Proxy</string>
+	<string name="proxy_country">País do proxy</string>
+	<string name="proxy_country__summary">O país de onde sai o endereço deste fórum; se a conta não tiver uma porta livre nele, uma é comprada</string>
 	<string name="proxy_for_posting_only">Proxy somente para envio</string>
 	<string name="proxy_for_posting_only__summary">Envie posts pelo proxy e carregue todo o resto diretamente; o endereço visível continua sendo verificado pelo proxy</string>
 	<string name="proxy_provider">Provedor de proxy</string>
 	<string name="proxy_provider__summary">Mudar o endereço que os fóruns veem por meio de um serviço de proxy</string>
-	<string name="proxy_provider_info__sentence">A API da Asocks é suportada. Uma porta vazia indica a primeira da conta, e o país, quando definido, é aplicado à porta antes de atualizar o endereço.</string>
+	<string name="proxy_provider_info__sentence">A API da Asocks é suportada. Cada fórum escolhido — ou todos, quando nenhum é escolhido — recebe uma porta da conta, gravada nas suas configurações de proxy; se não houver porta livre no país pedido, uma é comprada.</string>
 	<string name="proxy_provider_no_ports">Nenhuma porta de proxy na conta</string>
 	<string name="quote__verb">Quotar</string>
 	<string name="rating">Classificação</string>
@@ -346,6 +347,7 @@
 	<string name="recorded_on">Registrado em</string>
 	<string name="refresh">Atualizar</string>
 	<string name="refresh_external_ip">Atualizar IP externo</string>
+	<string name="refresh_external_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
 	<string name="regular_expression">Expressão regular</string>
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>

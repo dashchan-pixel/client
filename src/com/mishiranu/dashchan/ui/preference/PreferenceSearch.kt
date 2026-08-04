@@ -7,6 +7,7 @@ import chan.content.ChanConfiguration
 import chan.content.ChanManager
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.ChanDatabase
+import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import java.util.Locale
 
@@ -125,6 +126,9 @@ object PreferenceSearch {
             val chanName = chan.name
             chanName != null && ChanDatabase.getInstance().hasCookies(chanName)
         }
+
+        /** Not an extension capability: the rows exist only while a proxy provider covers the forum. */
+        val proxyProvider: Boolean by lazy { ProxyProvider.coversChan(chan) }
 
         /** The rows the extension itself contributes, which no table here could know about. */
         val customPreferences: List<Row> by lazy {
@@ -311,10 +315,20 @@ object PreferenceSearch {
                 R.string.proxy_for_posting_only,
                 R.string.proxy_for_posting_only__summary,
             ) { !it.localMode },
+            ChanEntry(
+                R.string.connection,
+                R.string.proxy_country,
+                R.string.proxy_country__summary,
+            ) { !it.localMode && ProxyProvider.hasConfiguration() },
             ChanEntry(R.string.connection, R.string.partial_thread_loading, R.string.partial_thread_loading__summary) {
                 it.readThreadPartially
             },
             ChanEntry(R.string.connection, R.string.visible_address, 0) { !it.localMode },
+            ChanEntry(
+                R.string.connection,
+                R.string.refresh_external_ip,
+                R.string.refresh_external_ip__summary,
+            ) { !it.localMode && it.proxyProvider },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.ban_log, 0) { true },
             ChanEntry(R.string.additional, R.string.uninstall_extension, 0) { true },

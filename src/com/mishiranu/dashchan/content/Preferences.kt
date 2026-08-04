@@ -427,48 +427,44 @@ object Preferences {
     const val KEY_CAPTCHA_SOLVING_CHANS: String = "captcha_solving_chans"
 
     var captchaSolvingChans: MutableCollection<String>
-        get() {
-            val value =
-                prefs.getString(
-                    KEY_CAPTCHA_SOLVING_CHANS,
-                    null,
-                )
-            if (isEmpty(value)) {
-                return mutableSetOf()
-            }
-            try {
-                val jsonArray = JSONArray(value)
-                val chanNames = HashSet<String>(jsonArray.length())
-                for (i in 0..<jsonArray.length()) {
-                    val chanName = jsonArray.optString(i)
-                    if (!isEmpty(chanName)) {
-                        chanNames.add(chanName)
-                    }
-                }
-                return chanNames
-            } catch (e: JSONException) {
-                return mutableSetOf()
-            }
+        get() = getChanNames(KEY_CAPTCHA_SOLVING_CHANS)
+        set(chanNames) = setChanNames(KEY_CAPTCHA_SOLVING_CHANS, chanNames)
+
+    /** A set of forums picked in a [ChanMultiChoiceDialog], stored as a JSON array of names. */
+    private fun getChanNames(key: String): MutableCollection<String> {
+        val value = prefs.getString(key, null)
+        if (isEmpty(value)) {
+            return mutableSetOf()
         }
-        set(chanNames) {
-            if (chanNames.isEmpty()) {
-                prefs
-                    .edit()
-                    .remove(KEY_CAPTCHA_SOLVING_CHANS)
-                    .close()
-            } else {
-                val jsonArray = JSONArray()
-                for (chanName in chanNames) {
-                    jsonArray.put(chanName)
+        try {
+            val jsonArray = JSONArray(value)
+            val chanNames = HashSet<String>(jsonArray.length())
+            for (i in 0..<jsonArray.length()) {
+                val chanName = jsonArray.optString(i)
+                if (!isEmpty(chanName)) {
+                    chanNames.add(chanName)
                 }
-                prefs
-                    .edit()
-                    .put(
-                        KEY_CAPTCHA_SOLVING_CHANS,
-                        jsonArray.toString(),
-                    ).close()
             }
+            return chanNames
+        } catch (e: JSONException) {
+            return mutableSetOf()
         }
+    }
+
+    private fun setChanNames(
+        key: String,
+        chanNames: Collection<String>,
+    ) {
+        if (chanNames.isEmpty()) {
+            prefs.edit().remove(key).close()
+        } else {
+            val jsonArray = JSONArray()
+            for (chanName in chanNames) {
+                jsonArray.put(chanName)
+            }
+            prefs.edit().put(key, jsonArray.toString()).close()
+        }
+    }
 
     const val KEY_CATALOG_SORT: String = "catalog_sort"
     val DEFAULT_CATALOG_SORT: CatalogSort = CatalogSort.UNSORTED
@@ -1317,6 +1313,37 @@ object Preferences {
         return unpackOrCastMultipleValues(value, KEYS_PROXY) as Map<String, String>?
     }
 
+    /**
+     * The forum's proxy as it is stored, for a writer that has to recognize its own work later: the
+     * packed form is what [ProxyProvider] compares against to tell a proxy it wrote from one the
+     * user set by hand.
+     */
+    fun getPackedProxy(chan: Chan): String? = prefs.getString(KEY_PROXY.bind(chan.name), null)
+
+    fun setPackedProxy(
+        chan: Chan,
+        value: String?,
+    ) {
+        val key = KEY_PROXY.bind(chan.name)
+        if (value != null) {
+            prefs.edit().put(key, value).close()
+        } else {
+            prefs.edit().remove(key).close()
+        }
+    }
+
+    /** The packing [getProxy] reads back, in the order the settings dialog shows the fields. */
+    fun packProxy(proxy: Map<String, String>): String {
+        val jsonObject = JSONObject()
+        for (key in KEYS_PROXY) {
+            val value = proxy[key]
+            if (!isEmpty(value)) {
+                jsonObject.put(key, value)
+            }
+        }
+        return jsonObject.toString()
+    }
+
     val KEY_PROXY_POSTING_ONLY: ChanKey = ChanKey("proxy_posting_only")
     const val DEFAULT_PROXY_POSTING_ONLY: Boolean = false
 
@@ -1333,13 +1360,13 @@ object Preferences {
 
     const val KEY_PROXY_PROVIDER: String = "proxy_provider"
     const val SUB_KEY_PROXY_PROVIDER_TOKEN: String = "token"
-    const val SUB_KEY_PROXY_PROVIDER_PORT: String = "port"
     const val SUB_KEY_PROXY_PROVIDER_COUNTRY: String = "country"
+    const val SUB_KEY_PROXY_PROVIDER_TYPE: String = "type"
     val KEYS_PROXY_PROVIDER: List<String> =
         listOf(
             SUB_KEY_PROXY_PROVIDER_TOKEN,
-            SUB_KEY_PROXY_PROVIDER_PORT,
             SUB_KEY_PROXY_PROVIDER_COUNTRY,
+            SUB_KEY_PROXY_PROVIDER_TYPE,
         )
 
     val proxyProvider: MutableMap<String?, String?>
@@ -1348,6 +1375,42 @@ object Preferences {
                 prefs.getString(KEY_PROXY_PROVIDER, null),
                 KEYS_PROXY_PROVIDER,
             )
+
+    const val KEY_PROXY_PROVIDER_CHANS: String = "proxy_provider_chans"
+
+    /** The forums the provider's port is written to. Empty means every forum, as it does for solving. */
+    var proxyProviderChans: MutableCollection<String>
+        get() = getChanNames(KEY_PROXY_PROVIDER_CHANS)
+        set(chanNames) = setChanNames(KEY_PROXY_PROVIDER_CHANS, chanNames)
+
+    val KEY_PROXY_PROVIDER_COUNTRY: ChanKey = ChanKey("proxy_provider_country")
+
+    /**
+     * The country this forum's address should exit from, overriding the provider's own setting: a
+     * port serves one country, so a forum that names its own gets a port of its own.
+     */
+    fun getProxyProviderCountry(chan: Chan): String? = nullIfEmpty(prefs.getString(KEY_PROXY_PROVIDER_COUNTRY.bind(chan.name), null)?.trim())
+
+    val KEY_PROXY_PROVIDER_APPLIED: ChanKey = ChanKey("proxy_provider_applied")
+
+    /**
+     * The proxy [ProxyProvider] last wrote into this forum's settings, verbatim. A forum still
+     * holding it is one the provider filled in and may take back; anything else was set by hand and
+     * is left alone.
+     */
+    fun getProxyProviderApplied(chan: Chan): String? = prefs.getString(KEY_PROXY_PROVIDER_APPLIED.bind(chan.name), null)
+
+    fun setProxyProviderApplied(
+        chan: Chan,
+        value: String?,
+    ) {
+        val key = KEY_PROXY_PROVIDER_APPLIED.bind(chan.name)
+        if (value != null) {
+            prefs.edit().put(key, value).close()
+        } else {
+            prefs.edit().remove(key).close()
+        }
+    }
 
     const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
     const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true
