@@ -642,6 +642,7 @@
 	<string name="use_built_in_player">Использовать встроенный плеер</string>
 	<string name="use_built_in_player__summary">Воспроизводить медиавложения в приложении</string>
 	<string name="use_forum_settings">Использовать настройки форума</string>
+	<string name="user_agent">Юзер-агент</string>
 	<string name="user_authorization">Авторизация пользователя</string>
 	<string name="user_boards">Пользовательские разделы</string>
 	<string name="user_interface">Интерфейс</string>

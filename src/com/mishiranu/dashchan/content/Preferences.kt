@@ -637,6 +637,12 @@ object Preferences {
         prefs.edit().put(KEY_DOMAIN.bind(chan.name), domain).close()
     }
 
+    val KEY_USER_AGENT: ChanKey = ChanKey("user_agent")
+
+    /** The per-forum User-Agent override the user typed, or `null` when the field is left empty. */
+    @JvmStatic
+    fun getUserAgentOverride(chanName: String?): String? = prefs.getString(KEY_USER_AGENT.bind(chanName), null)?.takeIf { it.isNotEmpty() }
+
     const val KEY_DOWNLOAD_DETAIL_NAME: String = "download_detail_name"
     const val DEFAULT_DOWNLOAD_DETAIL_NAME: Boolean = false
 

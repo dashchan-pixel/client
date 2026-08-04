@@ -312,6 +312,7 @@ object PreferenceSearch {
             ChanEntry(0, R.string.user_authorization, 0) { it.userAuthorization },
             ChanEntry(0, R.string.manage_cookies, 0) { it.cookies },
             ChanEntry(R.string.connection, R.string.domain_name, 0) { !it.localMode },
+            ChanEntry(R.string.connection, R.string.user_agent, 0) { !it.localMode },
             ChanEntry(R.string.connection, R.string.secure_connection, R.string.secure_connection__summary) {
                 it.httpsConfigurable
             },

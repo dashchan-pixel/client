@@ -24,6 +24,7 @@ import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.ProxyProvider
+import com.mishiranu.dashchan.content.net.UserAgentProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
@@ -267,6 +268,15 @@ class ChanFragment :
                     }
                 }
             }
+            // Lets a forum be visited under a User-Agent of the user's choosing; empty keeps the
+            // WebView default (shown as the hint), matching AdvancedPreferences.getUserAgent order.
+            addEdit(
+                Preferences.KEY_USER_AGENT.bind(chanName),
+                "",
+                R.string.user_agent,
+                UserAgentProvider.getInstance().getUserAgent(),
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS,
+            )
         }
         if (httpsConfigurable) {
             addCheck(

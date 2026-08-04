@@ -477,6 +477,7 @@
 	<string name="updates_available__genitive">Atualizações disponíveis</string>
 	<string name="use_built_in_player">Usar reprodutor embutido</string>
 	<string name="use_built_in_player__summary">Reproduzir anexos de mídia no app</string>
+	<string name="user_agent">User agent</string>
 	<string name="user_authorization">Autorização de usuário</string>
 	<string name="user_boards">Boards de usuários</string>
 	<string name="user_is_banned">Usuário foi convidado a visitar os amiguinhosrsrs</string>

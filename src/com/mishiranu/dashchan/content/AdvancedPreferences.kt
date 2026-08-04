@@ -98,7 +98,8 @@ object AdvancedPreferences {
 
     @JvmStatic
     fun getUserAgent(chanName: String?): String =
-        chanName?.let { USER_AGENTS[it] }
+        Preferences.getUserAgentOverride(chanName)
+            ?: chanName?.let { USER_AGENTS[it] }
             ?: USER_AGENTS[ChanManager.EXTENSION_NAME_CLIENT]
             ?: UserAgentProvider.getInstance().getUserAgent()!!
 

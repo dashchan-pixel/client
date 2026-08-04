@@ -571,6 +571,7 @@
     <string name="updates_available__genitive">Aggiornamenti disponibili</string>
     <string name="use_built_in_player">Usa il player interno</string>
     <string name="use_built_in_player__summary">Riproduci gli allegati multimediali nell\'app</string>
+    <string name="user_agent">User agent</string>
     <string name="user_authorization">Autorizzazione utente</string>
     <string name="user_boards">Board utenti</string>
     <string name="user_interface">Interfaccia utente</string>
