@@ -22,6 +22,7 @@ import com.mishiranu.dashchan.content.MainApplication.Companion.getInstance
 import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.storage.AutohideStorage.Companion.getInstance
+import com.mishiranu.dashchan.graphics.SoftwareSafeBitmapDrawable
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.ConcurrentUtils.isMain
 import com.mishiranu.dashchan.util.ConcurrentUtils.mainGet
@@ -429,10 +430,13 @@ class ImageLoader private constructor() {
 
         private val WRAPPER_CALLBACK_IMAGE_VIEW =
             WrapperCallback { target: ImageView?, key: String?, bitmap: Bitmap?, error: Boolean, instantly: Boolean ->
+                val imageView = target!!
                 if (bitmap != null) {
-                    target!!.setImageBitmap(bitmap)
+                    // Not setImageBitmap: the bitmap is in GPU memory and the view may be drawn
+                    // into a software canvas, which cannot draw one (see SoftwareSafeBitmapDrawable)
+                    imageView.setImageDrawable(SoftwareSafeBitmapDrawable(imageView.resources, bitmap))
                 } else {
-                    target!!.setImageDrawable(null)
+                    imageView.setImageDrawable(null)
                 }
             }
 

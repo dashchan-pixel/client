@@ -10,6 +10,8 @@ import android.graphics.Color
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.util.Base64
@@ -543,6 +545,63 @@ object GraphicsUtils {
         bitmap.recycle()
         return hardwareBitmap
     }
+
+    /**
+     * Draws [bitmap] as [Canvas.drawBitmap] would, and survives the one case where that throws: a
+     * bitmap in GPU memory (see [toHardware]) on a software canvas, which cannot draw one at all.
+     * The two do meet -- thumbnails and icons are moved to GPU memory for display, while a
+     * threadshot renders post views into a bitmap-backed canvas -- so anything drawing a loaded
+     * bitmap by hand comes through here instead of calling the canvas directly.
+     *
+     * The software copy it falls back to lives only as long as the draw. That is a copy per draw of
+     * a view that is being rendered offscreen once, which is why it is not worth caching; a bitmap
+     * the copy fails for is skipped rather than drawn.
+     */
+    @JvmStatic
+    fun drawBitmap(
+        canvas: Canvas,
+        bitmap: Bitmap,
+        source: Rect?,
+        destination: Rect,
+        paint: Paint?,
+    ) {
+        val drawBitmap = drawableOn(canvas, bitmap) ?: return
+        canvas.drawBitmap(drawBitmap, source, destination, paint)
+        if (drawBitmap !== bitmap) {
+            drawBitmap.recycle()
+        }
+    }
+
+    /** [drawBitmap] with the destination the caller measured in floats. */
+    @JvmStatic
+    fun drawBitmap(
+        canvas: Canvas,
+        bitmap: Bitmap,
+        source: Rect?,
+        destination: RectF,
+        paint: Paint?,
+    ) {
+        val drawBitmap = drawableOn(canvas, bitmap) ?: return
+        canvas.drawBitmap(drawBitmap, source, destination, paint)
+        if (drawBitmap !== bitmap) {
+            drawBitmap.recycle()
+        }
+    }
+
+    /**
+     * [bitmap] itself where [canvas] can draw it, a software copy of it where it cannot, or `null`
+     * where the copy failed and there is nothing to draw. A copy is the caller's to recycle, which
+     * it tells by the result not being the bitmap it passed in.
+     */
+    private fun drawableOn(
+        canvas: Canvas,
+        bitmap: Bitmap,
+    ): Bitmap? =
+        if (!canvas.isHardwareAccelerated && bitmap.config == Bitmap.Config.HARDWARE) {
+            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        } else {
+            bitmap
+        }
 
     @JvmStatic
     fun mutateBitmap(bitmap: Bitmap): Bitmap {

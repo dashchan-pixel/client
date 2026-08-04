@@ -21,6 +21,7 @@ import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.graphics.RoundedCornersDrawable
 import com.mishiranu.dashchan.graphics.TransparentTileDrawable
 import com.mishiranu.dashchan.util.AnimationUtils
+import com.mishiranu.dashchan.util.GraphicsUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ViewUtils
 
@@ -282,17 +283,9 @@ class AttachmentView(
             }
             invalidate = saturation < 1f
 
-            if (!canvas.isHardwareAccelerated && bitmap.config == Bitmap.Config.HARDWARE) {
-                // Threadshots render post views into a software canvas, which cannot
-                // draw hardware bitmaps - draw a transient software copy instead.
-                val softwareBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
-                if (softwareBitmap != null) {
-                    canvas.drawBitmap(softwareBitmap, source, destination, bitmapPaint)
-                    softwareBitmap.recycle()
-                }
-            } else {
-                canvas.drawBitmap(bitmap, source, destination, bitmapPaint)
-            }
+            // Not canvas.drawBitmap: a threadshot draws this view into a software canvas, which
+            // cannot draw the hardware bitmap the loader hands out (see GraphicsUtils.drawBitmap).
+            GraphicsUtils.drawBitmap(canvas, bitmap, source, destination, bitmapPaint)
         }
         if (sfwMode) {
             canvas.drawColor(backgroundColor and 0x00ffffff or 0xe0000000.toInt())
