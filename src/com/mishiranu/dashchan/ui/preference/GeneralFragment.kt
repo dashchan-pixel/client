@@ -1,5 +1,6 @@
 package com.mishiranu.dashchan.ui.preference
 
+import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.text.SpannableStringBuilder
@@ -26,6 +27,7 @@ import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
 import com.mishiranu.dashchan.ui.preference.core.Preference
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import com.mishiranu.dashchan.util.ConcurrentUtils
+import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import com.mishiranu.dashchan.widget.ClickableToast
@@ -40,6 +42,7 @@ class GeneralFragment :
 
     private var proxyProviderPreference: MultipleEditPreference<Map<String, String>>? = null
     private var proxyProviderCheckDialog: ProgressDialog? = null
+    private var buyProxiesPreference: Preference<*>? = null
 
     /** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
     private val anotherUriKeys = HashSet<String>()
@@ -148,6 +151,7 @@ class GeneralFragment :
         proxyProviderPreference.setOnAfterChangeListener { configureProxyProviderSummary(true) }
         proxyProviderPreference.setDescription(getString(R.string.proxy_provider_info__sentence))
         configureProxyProviderNeutralButton()
+        configureBuyProxiesButton()
 
         addList(
             Preferences.KEY_FIREWALL_RESOLUTION_METHOD,
@@ -285,6 +289,7 @@ class GeneralFragment :
             captchaSolvingCheckDialog = null
         }
         proxyProviderPreference = null
+        buyProxiesPreference = null
         proxyProviderCheckDialog?.let {
             it.dismiss()
             proxyProviderCheckDialog = null
@@ -331,6 +336,39 @@ class GeneralFragment :
             }
         } else {
             captchaSolvingPreference.setNeutralButton(null, null)
+        }
+    }
+
+    /**
+     * The row that sends a user with no account to the service to get one. It sits under the
+     * provider row while there is nothing to configure it with, and goes away once there is.
+     */
+    private fun configureBuyProxiesButton() {
+        val proxyProviderPreference = proxyProviderPreference ?: return
+        val configured = ProxyProvider.hasConfiguration()
+        val buyProxiesPreference = this.buyProxiesPreference
+        if (configured) {
+            if (buyProxiesPreference != null) {
+                removePreference(buyProxiesPreference)
+                this.buyProxiesPreference = null
+            }
+        } else if (buyProxiesPreference == null) {
+            val preference = addButton(R.string.buy_proxies, R.string.buy_proxies__summary)
+            this.buyProxiesPreference = preference
+            movePreference(preference, proxyProviderPreference)
+            preference.setOnClickListener {
+                try {
+                    NavigationUtils.handleUri(
+                        requireContext(),
+                        null,
+                        Uri.parse(BuildConfig.URI_PROXIES),
+                        NavigationUtils.BrowserType.AUTO,
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ClickableToast.show(R.string.unknown_error)
+                }
+            }
         }
     }
 
@@ -431,6 +469,7 @@ class GeneralFragment :
             if (resetAndShowDialog) {
                 viewModel.showDialog = true
                 displayProxyProviderCheckDialog()
+                configureBuyProxiesButton()
             }
             if (viewModel.extraMap == null && viewModel.errorItem == null && !viewModel.hasTaskOrValue()) {
                 val task = CheckProxyProviderTask(viewModel)
@@ -442,6 +481,7 @@ class GeneralFragment :
             if (resetAndShowDialog) {
                 // The settings that put the provider's proxy into the forums are gone: take it back
                 ProxyProvider.clearFromChans()
+                configureBuyProxiesButton()
             }
             return getString(R.string.proxy_provider__summary)
         }

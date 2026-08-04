@@ -918,10 +918,10 @@ class PostingFragment :
                 // by hand, on the forum's settings screen, which the button opens instead.
                 val hasProvider = ProxyProvider.hasConfiguration()
                 show(
-                    getString(R.string.visible_address_banned),
+                    getString(R.string.visible_ip_banned),
                     null,
                     ClickableToast.Button(
-                        if (hasProvider) R.string.refresh_visible_address else R.string.change,
+                        if (hasProvider) R.string.refresh_visible_ip else R.string.change,
                         false,
                         Runnable {
                             if (hasProvider) {
@@ -943,7 +943,7 @@ class PostingFragment :
             if (errorItem != null) {
                 show(errorItem)
             } else {
-                ClickableToast.show(R.string.visible_address_refreshed)
+                ClickableToast.show(R.string.visible_ip_refreshed)
                 // The address the forum sees has changed: the ban that prompted this may well not
                 // apply to the new one, so let the check say so again -- or stay silent.
                 val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)

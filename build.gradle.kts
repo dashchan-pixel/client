@@ -75,6 +75,8 @@ android {
             "\"//raw.githubusercontent.com/" +
                 "dashchan-redacted/client/rework/update/themes.json\"",
         )
+        // Where the proxy provider row sends a user who has no account with the service yet
+        buildConfigField("String", "URI_PROXIES", "\"https://asocks.com/c/redacted\"")
         buildConfigField("String", "GITHUB_URI_METADATA", "\"//github.com/dashchan-redacted/client\"")
         buildConfigField("String", "GITHUB_PATH_METADATA", "\"metadata\"")
     }

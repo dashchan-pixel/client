@@ -152,6 +152,9 @@ object PreferenceSearch {
             Entry(Screen.GENERAL, R.string.navigation, R.string.ephemeral_browsing, R.string.ephemeral_browsing__summary),
             Entry(Screen.GENERAL, R.string.services, R.string.captcha_solving, R.string.captcha_solving__summary),
             Entry(Screen.GENERAL, R.string.services, R.string.proxy_provider, R.string.proxy_provider__summary),
+            Entry(Screen.GENERAL, R.string.services, R.string.buy_proxies, R.string.buy_proxies__summary) {
+                !ProxyProvider.hasConfiguration()
+            },
             Entry(Screen.GENERAL, R.string.services, R.string.firewall_resolution_method, 0),
             Entry(Screen.GENERAL, R.string.connection, R.string.secure_connection, R.string.secure_connection__summary),
             Entry(Screen.GENERAL, R.string.connection, R.string.verify_certificate, R.string.verify_certificate__summary),
@@ -300,6 +303,9 @@ object PreferenceSearch {
         listOf(
             ChanEntry(0, R.string.default_starting_board, 0) { !it.singleBoardMode },
             ChanEntry(0, R.string.load_catalog, R.string.load_catalog__summary) { it.board.allowCatalog },
+            ChanEntry(0, R.string.partial_thread_loading, R.string.partial_thread_loading__summary) {
+                it.readThreadPartially
+            },
             ChanEntry(0, R.string.password_for_removal, R.string.password_for_removal__summary) { it.deletingPassword },
             ChanEntry(0, R.string.captcha_type, 0) { it.multipleCaptchaTypes },
             ChanEntry(0, R.string.captcha_pass, R.string.captcha_pass__summary) { it.captchaPass },
@@ -320,14 +326,11 @@ object PreferenceSearch {
                 R.string.proxy_country,
                 R.string.proxy_country__summary,
             ) { !it.localMode && ProxyProvider.hasConfiguration() },
-            ChanEntry(R.string.connection, R.string.partial_thread_loading, R.string.partial_thread_loading__summary) {
-                it.readThreadPartially
-            },
-            ChanEntry(R.string.connection, R.string.visible_address, 0) { !it.localMode },
+            ChanEntry(R.string.connection, R.string.visible_ip, 0) { !it.localMode },
             ChanEntry(
                 R.string.connection,
-                R.string.refresh_visible_address,
-                R.string.refresh_visible_address__summary,
+                R.string.refresh_visible_ip,
+                R.string.refresh_visible_ip__summary,
             ) { !it.localMode && it.proxyProvider },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.ban_log, 0) { true },

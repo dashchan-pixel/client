@@ -58,6 +58,8 @@
 	<string name="board_intervals__summary">Обновление избранного в выбранных разделах со своим интервалом</string>
 	<string name="boards">Разделы</string>
 	<string name="bump_limit">Бамплимит</string>
+	<string name="buy_proxies">Купить прокси</string>
+	<string name="buy_proxies__summary">Открыть прокси-сервис в браузере, чтобы завести аккаунт и получить API-ключ</string>
 	<string name="cache_is_unavailable">Кэш недоступен</string>
 	<string name="cache_size">Размер кэша</string>
 	<string name="cached_files">Кэшированные файлы</string>
@@ -475,8 +477,8 @@
 	<string name="refresh">Обновить</string>
 	<string name="refresh_favorites">Обновление избранного</string>
 	<string name="refresh_open_thread">Обновление открытого треда</string>
-	<string name="refresh_visible_address">Обновить видимый адрес</string>
-	<string name="refresh_visible_address__summary">Запросить у провайдера прокси другой адрес для этого форума</string>
+	<string name="refresh_visible_ip">Обновить видимый IP</string>
+	<string name="refresh_visible_ip__summary">Запросить у провайдера прокси другой адрес для этого форума</string>
 	<string name="regular_expression">Регулярное выражение</string>
 	<string name="rejected_words">Отклонённые слова</string>
 	<string name="reload">Перезагрузить</string>
@@ -653,9 +655,6 @@
 	<string name="videos">Видео</string>
 	<string name="view__verb">Просмотреть</string>
 	<string name="views">Просмотры</string>
-	<string name="visible_address">Видимый адрес</string>
-	<string name="visible_address_banned">Видимый адрес забанен</string>
-	<string name="visible_address_refreshed">Видимый адрес обновлён</string>
 	<string name="warning">Предупреждение</string>
 	<string name="watch_initially">Отслеживать изначально</string>
 	<string name="watch_initially__summary">Включать отслеживание при добавлении в избранное</string>
@@ -721,4 +720,7 @@
 	<string name="delete_all_error_reports__sentence">Удалить все отчёты об ошибках?</string>
 	<string name="application_crashed">В приложении произошёл сбой</string>
 	<string name="unknown_country">Неизвестная страна</string>
+	<string name="visible_ip">Видимый IP</string>
+	<string name="visible_ip_banned">Видимый IP забанен</string>
+	<string name="visible_ip_refreshed">Видимый IP обновлён</string>
 </resources>

@@ -45,6 +45,8 @@
 	<string name="board_intervals">Intervalos das boards</string>
 	<string name="board_intervals__summary">Atualizar os favoritos das boards escolhidas com um intervalo próprio</string>
 	<string name="boards">Boards</string>
+	<string name="buy_proxies">Comprar proxies</string>
+	<string name="buy_proxies__summary">Abrir o serviço de proxy no navegador para criar uma conta e obter uma chave da API</string>
 	<string name="cache_is_unavailable">Cache não disponível</string>
 	<string name="cached_files">Arquivos em cache</string>
 	<string name="captcha">Captcha</string>
@@ -345,8 +347,8 @@
 	<string name="reason">Razão</string>
 	<string name="recorded_on">Registrado em</string>
 	<string name="refresh">Atualizar</string>
-	<string name="refresh_visible_address">Atualizar endereço visível</string>
-	<string name="refresh_visible_address__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
+	<string name="refresh_visible_ip">Atualizar IP visível</string>
+	<string name="refresh_visible_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
 	<string name="regular_expression">Expressão regular</string>
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>
@@ -485,9 +487,6 @@
 	<string name="version">Versão</string>
 	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
-	<string name="visible_address">Endereço visível</string>
-	<string name="visible_address_banned">O endereço visível está banido</string>
-	<string name="visible_address_refreshed">Endereço visível atualizado</string>
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>
 	<string name="wifi_only">Somente Wi-Fi</string>
@@ -529,4 +528,7 @@
 	<string name="no_error_reports">Nenhum relatório de erro</string>
 	<string name="delete_all_error_reports__sentence">Excluir todos os relatórios de erro?</string>
 	<string name="application_crashed">O aplicativo travou</string>
+	<string name="visible_ip">IP visível</string>
+	<string name="visible_ip_banned">O IP visível está banido</string>
+	<string name="visible_ip_refreshed">IP visível atualizado</string>
 </resources>

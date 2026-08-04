@@ -61,6 +61,8 @@
 	<string name="board_intervals__summary">Refresh the favorites of chosen boards at their own interval</string>
 	<string name="boards">Boards</string>
 	<string name="bump_limit">Bump limit</string>
+	<string name="buy_proxies">Buy proxies</string>
+	<string name="buy_proxies__summary">Open the proxy service in a browser to get an account and an API key</string>
 	<string name="cache_is_unavailable">Cache is unavailable</string>
 	<string name="cache_size">Cache size</string>
 	<string name="cached_files">Cached files</string>
@@ -485,8 +487,8 @@
 	<string name="refresh">Refresh</string>
 	<string name="refresh_favorites">Refresh favorites</string>
 	<string name="refresh_open_thread">Refresh open thread</string>
-	<string name="refresh_visible_address">Refresh visible address</string>
-	<string name="refresh_visible_address__summary">Ask the proxy provider for another address for this forum</string>
+	<string name="refresh_visible_ip">Refresh visible IP</string>
+	<string name="refresh_visible_ip__summary">Ask the proxy provider for another address for this forum</string>
 	<string name="regular_expression">Regular expression</string>
 	<string name="rejected_words">Rejected words</string>
 	<string name="reload">Reload</string>
@@ -670,9 +672,6 @@
 	<string name="videos">Videos</string>
 	<string name="view__verb">View</string>
 	<string name="views">Views</string>
-	<string name="visible_address">Visible address</string>
-	<string name="visible_address_banned">Visible address is banned</string>
-	<string name="visible_address_refreshed">Visible address refreshed</string>
 	<string name="warning">Warning</string>
 	<string name="watch_initially">Watch initially</string>
 	<string name="watch_initially__summary">Enable watcher when thread is added to favorites</string>
@@ -708,4 +707,7 @@
 	<string name="rename_to_jpg">Rename to .jpg</string>
 	<string name="standard_action_when_loading_media">Standard action when loading media</string>
 	<string name="manually">Manually</string>
+	<string name="visible_ip">Visible IP</string>
+	<string name="visible_ip_banned">Visible IP is banned</string>
+	<string name="visible_ip_refreshed">Visible IP refreshed</string>
 </resources>

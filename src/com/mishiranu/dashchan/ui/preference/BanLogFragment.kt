@@ -242,7 +242,7 @@ class BanLogFragment :
             layout.add(getString(R.string.recorded_on), formatter.formatDateTime(banItem.created))
             val address = banItem.address
             layout.add(
-                getString(R.string.visible_address),
+                getString(R.string.visible_ip),
                 if (address.isNullOrEmpty()) getString(R.string.unavailable) else address,
             )
             val message = banItem.message
@@ -416,7 +416,7 @@ class BanLogFragment :
             val address = banItem.address
             if (!address.isNullOrEmpty()) {
                 builder
-                    .append(ResourceUtils.getColonString(resources, R.string.visible_address, address))
+                    .append(ResourceUtils.getColonString(resources, R.string.visible_ip, address))
                     .append('\n')
             }
             val message = banItem.message

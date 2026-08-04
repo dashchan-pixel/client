@@ -73,6 +73,7 @@ class ChanFragment :
         val chan = Chan.get(chanName)
         val board = chan.configuration.safe().obtainBoard(null)
         val deleting = if (board.allowDeleting) chan.configuration.safe().obtainDeleting(null) else null
+        val canReadThreadPartially = chan.configuration.getOption(ChanConfiguration.OPTION_READ_THREAD_PARTIALLY)
 
         if (!chan.configuration.getOption(ChanConfiguration.OPTION_SINGLE_BOARD_MODE)) {
             addEdit(
@@ -107,6 +108,15 @@ class ChanFragment :
                 Preferences.DEFAULT_LOAD_CATALOG,
                 R.string.load_catalog,
                 R.string.load_catalog__summary,
+            )
+        }
+        if (canReadThreadPartially) {
+            addCheck(
+                true,
+                Preferences.KEY_PARTIAL_THREAD_LOADING.bind(chanName),
+                Preferences.DEFAULT_PARTIAL_THREAD_LOADING,
+                R.string.partial_thread_loading,
+                R.string.partial_thread_loading__summary,
             )
         }
         if (deleting != null && deleting.password) {
@@ -220,9 +230,8 @@ class ChanFragment :
         val domains = chan.locator.getChanHosts(true)
         val localMode = chan.configuration.getOption(ChanConfiguration.OPTION_LOCAL_MODE) || domains.isEmpty()
         val httpsConfigurable = chan.locator.isHttpsConfigurable
-        val canReadThreadPartially = chan.configuration.getOption(ChanConfiguration.OPTION_READ_THREAD_PARTIALLY)
         val aiAgentsPostingSupport = chan.configuration.getOption(ChanConfiguration.OPTION_AI_POSTING)
-        if (!localMode || httpsConfigurable || canReadThreadPartially) {
+        if (!localMode || httpsConfigurable) {
             addHeader(R.string.connection)
         }
         if (!localMode) {
@@ -327,18 +336,9 @@ class ChanFragment :
                 ).setOnAfterChangeListener { runProxyProviderAction(refresh = false) }
             }
         }
-        if (canReadThreadPartially) {
-            addCheck(
-                true,
-                Preferences.KEY_PARTIAL_THREAD_LOADING.bind(chanName),
-                Preferences.DEFAULT_PARTIAL_THREAD_LOADING,
-                R.string.partial_thread_loading,
-                R.string.partial_thread_loading__summary,
-            )
-        }
         if (!localMode) {
             val visibleAddressPreference =
-                addButton(getString(R.string.visible_address)) { visibleAddressSummary() }
+                addButton(getString(R.string.visible_ip)) { visibleAddressSummary() }
             this.visibleAddressPreference = visibleAddressPreference
             visibleAddressPreference.setOnClickListener { checkVisibleAddress(force = true) }
             val viewModel = ViewModelProvider(this).get(VisibleAddressViewModel::class.java)
@@ -357,7 +357,7 @@ class ChanFragment :
                     ClickableToast.show(errorItem)
                 } else {
                     if (result.second) {
-                        ClickableToast.show(R.string.visible_address_refreshed)
+                        ClickableToast.show(R.string.visible_ip_refreshed)
                     }
                     // The forum's proxy may be another port now, and its address another one either
                     // way: the row below is where that shows
@@ -367,7 +367,7 @@ class ChanFragment :
             }
             if (ProxyProvider.coversChan(chan)) {
                 // The provider can hand this forum another address without touching the settings
-                addButton(R.string.refresh_visible_address, R.string.refresh_visible_address__summary)
+                addButton(R.string.refresh_visible_ip, R.string.refresh_visible_ip__summary)
                     .setOnClickListener { runProxyProviderAction(refresh = true) }
             }
         }
