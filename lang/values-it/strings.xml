@@ -402,7 +402,7 @@
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_country">Paese del proxy</string>
-    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum; se l\'account non ha una porta libera lì, ne viene acquistata una</string>
+    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum; una porta viene acquistata solo se l\'account non ne ha nessuna lì</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
     <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
     <string name="proxy_provider">Fornitore proxy</string>

@@ -334,8 +334,8 @@ class ChanFragment :
                 checkVisibleAddress(force = true)
             }
             if (ProxyProvider.hasConfiguration()) {
-                // A provider port serves one country, so a forum that wants to be seen elsewhere is
-                // given a port of its own -- which is bought if the account has none to spare
+                // A provider port serves one country, so a forum that wants to be seen elsewhere
+                // takes a port of the account in that country -- or is bought one, if it has none
                 addEdit(
                     Preferences.KEY_PROXY_PROVIDER_COUNTRY.bind(chanName),
                     null,

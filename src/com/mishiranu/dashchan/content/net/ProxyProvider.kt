@@ -26,10 +26,11 @@ import java.util.Locale
  * all of them when none is picked.
  *
  * A covered forum is bound to a port of the account, which is written into its proxy settings --
- * that is what turns a valid API key into a working proxy without another step. The binding is one
- * port per forum, because a port serves a single country and a forum may name its own; a forum
- * wanting a country the account has no spare port in gets a port bought for it, which is the only
- * thing here that spends the account's balance. Ports are never deleted.
+ * that is what turns a valid API key into a working proxy without another step. A forum gets a port
+ * of its own while the account has one to spare, because a port serves a single country and a forum
+ * may name its own; past that the forums double up on the ports there are. Only a country the
+ * account holds no port in at all is worth buying one for, which is the only thing here that spends
+ * the account's balance. Ports are never deleted.
  *
  * The other half is rotation -- "refresh external ip" in the service's own words: asking for a new
  * address on a forum's port. The endpoint the forum connects to stays the same, only the address it
@@ -304,9 +305,10 @@ object ProxyProvider {
     }
 
     /**
-     * Buy a port in [country] for [chan]. A port serves one country, so a forum that wants an
-     * address elsewhere needs a port of its own -- this is where it comes from. The service names
-     * the port after the forum, which is how it reads on the account's dashboard afterwards.
+     * Buy a port in [country] for [chan], the last resort of a forum whose country the account
+     * holds no port in -- a port serves one country, and none of the ones there are serve this one.
+     * The service names the port after the forum, which is how it reads on the account's dashboard
+     * afterwards.
      *
      * The created port is picked out of a fresh listing rather than the creation's own answer: the
      * listing is the shape everything else here reads.
@@ -405,9 +407,10 @@ object ProxyProvider {
      * a session on -- survives a re-check. Otherwise it takes a port of the account that no other
      * forum has taken and that sits in the right country.
      *
-     * A port serves one country, so a forum wanting an address the account has no spare port for
-     * gets a port bought for it. That spends the account's traffic allowance, which is why it only
-     * ever happens for a forum the provider covers and never more than one port per forum.
+     * Forums double up on a port before anything is bought. A port of the account already in the
+     * right country serves a second forum as well as it serves the first, so nothing but the
+     * independence of their rotations is spent by sharing it -- and buying is only worth that when
+     * the account holds no port in the country at all.
      */
     @Throws(HttpException::class, ServiceException::class)
     private fun assignPorts(
@@ -433,16 +436,16 @@ object ProxyProvider {
             val country = countryFor(configuration, chan)
             val port =
                 known.firstOrNull { !claimed.contains(it.id) && matchesCountry(it, country) }
-                    ?: if (country != null) {
-                        createPort(holder, configuration, chan, country, known).also { known.add(it) }
-                    } else {
-                        // No country was asked for, so nothing is worth buying: take a port the
-                        // account already has, sharing the first one when they have all been handed
-                        // out rather than leaving the forum unproxied
-                        known.firstOrNull { !claimed.contains(it.id) }
-                            ?: known.firstOrNull()
-                            ?: throw NoPortsException()
-                    }
+                    // Every port has been handed out: share one that already exits from the country
+                    // this forum wants rather than buy the account a second port just like it
+                    ?: known.firstOrNull { matchesCountry(it, country) }
+                    // Nothing in the country, so it has to be bought -- unless no country was named,
+                    // in which case any port would have done and the account simply has none
+                    ?: (
+                        country?.let {
+                            createPort(holder, configuration, chan, it, known).also { port -> known.add(port) }
+                        } ?: throw NoPortsException()
+                    )
             assigned[chan] = port
             claimed.add(port.id)
         }

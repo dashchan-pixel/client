@@ -333,7 +333,7 @@
 	<string name="processing_data__ellipsis">Enviando…</string>
 	<string name="proxy">Proxy</string>
 	<string name="proxy_country">País do proxy</string>
-	<string name="proxy_country__summary">O país de onde sai o endereço deste fórum; se a conta não tiver uma porta livre nele, uma é comprada</string>
+	<string name="proxy_country__summary">O país de onde sai o endereço deste fórum; uma porta só é comprada se a conta não tiver nenhuma nele</string>
 	<string name="proxy_for_posting_only">Proxy somente para envio</string>
 	<string name="proxy_for_posting_only__summary">Envie posts pelo proxy e carregue todo o resto diretamente; o endereço visível continua sendo verificado pelo proxy</string>
 	<string name="proxy_provider">Provedor de proxy</string>

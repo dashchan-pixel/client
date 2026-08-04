@@ -468,7 +468,7 @@
 	<string name="processing_data__ellipsis">Processing data…</string>
 	<string name="proxy">Proxy</string>
 	<string name="proxy_country">Proxy country</string>
-	<string name="proxy_country__summary">The country this forum\'s address exits from; a port in it is bought when the account has none to spare</string>
+	<string name="proxy_country__summary">The country this forum\'s address exits from; a port in it is bought only when the account has none at all</string>
 	<string name="proxy_for_posting_only">Proxy for posting only</string>
 	<string name="proxy_for_posting_only__summary">Send posts through the proxy and load everything else directly; the visible address is still checked through the proxy</string>
 	<string name="proxy_provider">Proxy provider</string>
