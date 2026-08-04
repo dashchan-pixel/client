@@ -31,9 +31,9 @@ import java.util.Locale
  * wanting a country the account has no spare port in gets a port bought for it, which is the only
  * thing here that spends the account's balance. Ports are never deleted.
  *
- * The other half is rotation: asking the service for a new external address on a forum's port. The
- * endpoint the forum connects to stays the same, only the address it is seen at changes, which is
- * the way out of a ban on the visible address.
+ * The other half is rotation -- "refresh external ip" in the service's own words: asking for a new
+ * address on a forum's port. The endpoint the forum connects to stays the same, only the address it
+ * is seen at changes, which is the way out of a ban on the visible address.
  */
 object ProxyProvider {
     private const val ENDPOINT = "https://api.asocks.com/v2"
@@ -80,7 +80,7 @@ object ProxyProvider {
         val address: String?,
         /** The two-letter code of the country the port exits from. */
         val location: String?,
-        /** Where the forums connect. Rotating the external address leaves this endpoint untouched. */
+        /** Where the forums connect. Refreshing the visible address leaves this endpoint untouched. */
         val host: String?,
         val port: Int,
         val login: String?,
@@ -421,7 +421,7 @@ object ProxyProvider {
      * provider no longer covers. Only a proxy this class wrote is ever overwritten or removed: one
      * set by hand does not match what was written for that forum last time, and is left alone.
      *
-     * A port keeps its endpoint when its external address is rotated, so this runs on a check, not
+     * A port keeps its endpoint when its visible address is refreshed, so this runs on a check, not
      * on every request.
      */
     private fun applyToChans(
@@ -495,10 +495,10 @@ object ProxyProvider {
     }
 
     /**
-     * Ask the service for a new external address on the port [chan] uses -- or on the port the
-     * settings would give it, when it has none yet -- out of the country that forum asks for. The
-     * pooled connections are dropped along with it: one kept alive through the port would still ride
-     * the old address.
+     * Ask the service for a new address on the port [chan] uses -- or on the port the settings
+     * would give it, when it has none yet -- out of the country that forum asks for. The pooled
+     * connections are dropped along with it: one kept alive through the port would still ride the
+     * old address.
      */
     @Throws(
         HttpException::class,
@@ -506,7 +506,7 @@ object ProxyProvider {
         NoPortsException::class,
         UnknownCountryException::class,
     )
-    fun refreshExternalAddress(
+    fun refreshVisibleAddress(
         holder: HttpHolder,
         chan: Chan,
     ): Boolean {

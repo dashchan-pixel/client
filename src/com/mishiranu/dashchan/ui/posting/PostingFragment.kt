@@ -256,7 +256,7 @@ class PostingFragment :
 
     private var refreshCaptchaWhenLifetimeEnd = false
 
-    /** Shown while the proxy provider is being asked for a new external address. */
+    /** Shown while the proxy provider is being asked for a new visible address. */
     private var refreshAddressDialog: ProgressDialog? = null
 
     private var postingBinder: PostingService.Binder? = null
@@ -921,11 +921,11 @@ class PostingFragment :
                     getString(R.string.visible_address_banned),
                     null,
                     ClickableToast.Button(
-                        if (hasProvider) R.string.refresh_external_ip else R.string.change,
+                        if (hasProvider) R.string.refresh_visible_address else R.string.change,
                         false,
                         Runnable {
                             if (hasProvider) {
-                                refreshExternalAddress()
+                                refreshVisibleAddress()
                             } else {
                                 openForumProxySettings()
                             }
@@ -943,7 +943,7 @@ class PostingFragment :
             if (errorItem != null) {
                 show(errorItem)
             } else {
-                ClickableToast.show(R.string.external_ip_refreshed)
+                ClickableToast.show(R.string.visible_address_refreshed)
                 // The address the forum sees has changed: the ban that prompted this may well not
                 // apply to the new one, so let the check say so again -- or stay silent.
                 val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
@@ -1754,11 +1754,11 @@ class PostingFragment :
     }
 
     /**
-     * Ask the proxy provider for a new external address. The provider's own endpoint is asked
+     * Ask the proxy provider for a new visible address. The provider's own endpoint is asked
      * through the fallback chan, so a forum whose proxy is the very port being rotated cannot get
      * in the way of the request that fixes it.
      */
-    private fun refreshExternalAddress() {
+    private fun refreshVisibleAddress() {
         val viewModel = ViewModelProvider(this).get(RefreshAddressViewModel::class.java)
         if (viewModel.getTask() != null) {
             return
@@ -1784,7 +1784,7 @@ class PostingFragment :
     ) : HttpHolderTask<Unit, Pair<ErrorItem, Boolean>>(Chan.getFallback()) {
         override fun run(holder: HttpHolder): Pair<ErrorItem, Boolean> =
             try {
-                val success = ProxyProvider.refreshExternalAddress(holder, chan)
+                val success = ProxyProvider.refreshVisibleAddress(holder, chan)
                 if (success) {
                     Pair<ErrorItem, Boolean>(null, true)
                 } else {

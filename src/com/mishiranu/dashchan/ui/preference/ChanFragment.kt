@@ -357,7 +357,7 @@ class ChanFragment :
                     ClickableToast.show(errorItem)
                 } else {
                     if (result.second) {
-                        ClickableToast.show(R.string.external_ip_refreshed)
+                        ClickableToast.show(R.string.visible_address_refreshed)
                     }
                     // The forum's proxy may be another port now, and its address another one either
                     // way: the row below is where that shows
@@ -367,7 +367,7 @@ class ChanFragment :
             }
             if (ProxyProvider.coversChan(chan)) {
                 // The provider can hand this forum another address without touching the settings
-                addButton(R.string.refresh_external_ip, R.string.refresh_external_ip__summary)
+                addButton(R.string.refresh_visible_address, R.string.refresh_visible_address__summary)
                     .setOnClickListener { runProxyProviderAction(refresh = true) }
             }
         }
@@ -486,7 +486,7 @@ class ChanFragment :
     }
 
     /**
-     * Put the provider to work for this forum: [refresh] asks for a new external address on the port
+     * Put the provider to work for this forum: [refresh] asks for a new visible address on the port
      * it uses, and otherwise the forum is simply given the port its settings now call for -- a new
      * one when the country changed. Both end with the visible address read again, which is where
      * the change shows.
@@ -695,7 +695,7 @@ class ChanFragment :
             try {
                 val refreshed =
                     if (refresh) {
-                        ProxyProvider.refreshExternalAddress(holder, chan)
+                        ProxyProvider.refreshVisibleAddress(holder, chan)
                     } else {
                         ProxyProvider.checkService(holder)
                         false

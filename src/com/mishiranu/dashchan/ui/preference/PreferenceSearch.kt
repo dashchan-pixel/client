@@ -326,8 +326,8 @@ object PreferenceSearch {
             ChanEntry(R.string.connection, R.string.visible_address, 0) { !it.localMode },
             ChanEntry(
                 R.string.connection,
-                R.string.refresh_external_ip,
-                R.string.refresh_external_ip__summary,
+                R.string.refresh_visible_address,
+                R.string.refresh_visible_address__summary,
             ) { !it.localMode && it.proxyProvider },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.ban_log, 0) { true },

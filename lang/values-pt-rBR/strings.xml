@@ -136,7 +136,6 @@
 	<string name="expires">Até</string>
 	<string name="extension_error">Erro de extensão</string>
 	<string name="extensions">Extensões</string>
-	<string name="external_ip_refreshed">IP externo atualizado</string>
 	<string name="favorite_boards">Boards favoritas</string>
 	<string name="favorite_threads">Fios favoritos</string>
 	<string name="favorite_threads_order">Ordem de favoritos</string>
@@ -346,8 +345,8 @@
 	<string name="reason">Razão</string>
 	<string name="recorded_on">Registrado em</string>
 	<string name="refresh">Atualizar</string>
-	<string name="refresh_external_ip">Atualizar IP externo</string>
-	<string name="refresh_external_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
+	<string name="refresh_visible_address">Atualizar endereço visível</string>
+	<string name="refresh_visible_address__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
 	<string name="regular_expression">Expressão regular</string>
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>
@@ -487,7 +486,8 @@
 	<string name="videos">Vídeos</string>
 	<string name="view__verb">Ver</string>
 	<string name="visible_address">Endereço visível</string>
-	<string name="visible_address_banned">O IP visível está banido</string>
+	<string name="visible_address_banned">O endereço visível está banido</string>
+	<string name="visible_address_refreshed">Endereço visível atualizado</string>
 	<string name="watch_initially">Iniciar o watcher</string>
 	<string name="watch_initially__summary">Ativa o watcher assim que um fio é adcionado aos favoritos</string>
 	<string name="wifi_only">Somente Wi-Fi</string>

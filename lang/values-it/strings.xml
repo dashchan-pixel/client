@@ -167,7 +167,6 @@
     <string name="extension_error">Errore estensione</string>
     <string name="extension_name__format">Estensione %s</string>
     <string name="extensions">Estensioni</string>
-    <string name="external_ip_refreshed">IP esterno aggiornato</string>
     <string name="favorite_boards">Board preferite</string>
     <string name="favorite_threads">Thread preferiti</string>
     <string name="favorite_threads_order">Ordine thread preferiti</string>
@@ -418,8 +417,8 @@
     <string name="reduce">Riduci</string>
     <string name="reencode_image">Ricodifica immagine</string>
     <string name="refresh">Aggiorna</string>
-    <string name="refresh_external_ip">Aggiorna IP esterno</string>
-    <string name="refresh_external_ip__summary">Chiedi al fornitore proxy un altro indirizzo per questo forum</string>
+    <string name="refresh_visible_address">Aggiorna indirizzo visibile</string>
+    <string name="refresh_visible_address__summary">Chiedi al fornitore proxy un altro indirizzo per questo forum</string>
     <string name="regular_expression">Espressione regolare</string>
     <string name="rejected_words">Parole respinte</string>
     <string name="reload">Ricarica</string>
@@ -583,7 +582,8 @@
     <string name="view__verb">Vedi</string>
     <string name="views">Visualizzazioni</string>
     <string name="visible_address">Indirizzo visibile</string>
-    <string name="visible_address_banned">L\'IP visibile è bannato</string>
+    <string name="visible_address_banned">L\'indirizzo visibile è bannato</string>
+    <string name="visible_address_refreshed">Indirizzo visibile aggiornato</string>
     <string name="warning">Avviso</string>
     <string name="watch_initially">Monitora subito</string>
     <string name="watch_initially__summary">Abilita watcher quando aggiungi il thread ai preferiti</string>

@@ -189,7 +189,6 @@
 	<string name="extension_error">Ошибка расширения</string>
 	<string name="extension_name__format">Расширение %s</string>
 	<string name="extensions">Расширения</string>
-	<string name="external_ip_refreshed">Внешний IP обновлён</string>
 	<string name="favorite_boards">Избранные разделы</string>
 	<string name="favorite_threads">Избранные треды</string>
 	<string name="favorite_threads_order">Сортировка избранных тредов</string>
@@ -474,10 +473,10 @@
 	<string name="reduce">Уменьшить</string>
 	<string name="reencode_image">Перекодировать</string>
 	<string name="refresh">Обновить</string>
-	<string name="refresh_external_ip">Обновить внешний IP</string>
-	<string name="refresh_external_ip__summary">Запросить у провайдера прокси другой адрес для этого форума</string>
 	<string name="refresh_favorites">Обновление избранного</string>
 	<string name="refresh_open_thread">Обновление открытого треда</string>
+	<string name="refresh_visible_address">Обновить видимый адрес</string>
+	<string name="refresh_visible_address__summary">Запросить у провайдера прокси другой адрес для этого форума</string>
 	<string name="regular_expression">Регулярное выражение</string>
 	<string name="rejected_words">Отклонённые слова</string>
 	<string name="reload">Перезагрузить</string>
@@ -655,7 +654,8 @@
 	<string name="view__verb">Просмотреть</string>
 	<string name="views">Просмотры</string>
 	<string name="visible_address">Видимый адрес</string>
-	<string name="visible_address_banned">Видимый IP забанен</string>
+	<string name="visible_address_banned">Видимый адрес забанен</string>
+	<string name="visible_address_refreshed">Видимый адрес обновлён</string>
 	<string name="warning">Предупреждение</string>
 	<string name="watch_initially">Отслеживать изначально</string>
 	<string name="watch_initially__summary">Включать отслеживание при добавлении в избранное</string>
