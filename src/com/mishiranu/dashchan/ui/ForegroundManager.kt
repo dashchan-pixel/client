@@ -95,6 +95,16 @@ class ForegroundManager private constructor() : Handler.Callback {
     private var activity: WeakReference<FragmentActivity?>? = null
     private var viewModel: WeakReference<InstanceViewModel?>? = null
 
+    /**
+     * The activity in the foreground, or `null` when none is alive. Main thread.
+     *
+     * Exposed for the few things that have to act on the screen the user is looking at without being
+     * part of it — a command changing a setting the app only reads while an activity is being built
+     * (see [com.mishiranu.dashchan.content.CommandApp]).
+     */
+    val currentActivity: FragmentActivity?
+        get() = getActivity()
+
     private fun getActivity(): FragmentActivity? {
         val activity = this.activity?.get()
         return if (activity == null ||

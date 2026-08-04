@@ -380,11 +380,15 @@ object CommandRunner {
         callback: (R) -> Unit,
         timeoutMs: Long = TIMEOUT_MS,
     ) {
+        val appBridge = CommandApp.bridge(chanName, grants)
         val deliver: (R) -> Unit = { result ->
             if (handle.settle()) {
                 ConcurrentUtils.HANDLER.post {
                     handle.release()
                     callback(result)
+                    // Last, so a setting that needs the screen rebuilt is applied only once what the
+                    // command produced has been put where it belongs.
+                    appBridge.applyIfNeeded()
                 }
             }
         }
@@ -400,7 +404,7 @@ object CommandRunner {
             HeadlessJsEngine(
                 mapOf(
                     BRIDGE_NAME to bridge,
-                    CommandApp.BRIDGE_NAME to CommandApp.bridge(chanName, grants),
+                    CommandApp.BRIDGE_NAME to appBridge,
                 ),
             )
         handle.start(engine, timeout)

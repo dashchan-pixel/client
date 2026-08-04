@@ -4,6 +4,7 @@ import android.webkit.JavascriptInterface
 import chan.content.ChanManager
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.storage.CommandsStorage
+import com.mishiranu.dashchan.ui.ForegroundManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import org.json.JSONArray
@@ -64,8 +65,13 @@ import org.json.JSONObject
  * per-forum ones are `<forum>_<key>`, e.g. `4chan_captcha`) and holds the kind of value the app reads
  * it back as. A *string* written where a *boolean* is read would make the setting throw at every
  * reader, so a write whose kind disagrees with what is stored is refused instead; a key with nothing
- * stored yet takes the kind of the value it is given. Nothing is *applied* by the write — whatever
- * reads the setting picks it up the next time it looks, as it does for one the user changed.
+ * stored yet takes the kind of the value it is given.
+ *
+ * Most settings are read where they are used, so a write is picked up by the next list bound or the
+ * next request made, exactly as one the user changed would be. The handful the app reads only while
+ * an activity is being built — the theme above all — would otherwise wait for a rebuild that a
+ * preserved app never does: those are listed in [APPLIED_ON_CREATE], and writing one rebuilds the
+ * screen once the run is over (see [Bridge.applyIfNeeded]).
  *
  * A cookie belongs to a forum: the one the command is running in, unless the call names another.
  * `get` answers with the value the app would actually send, so a cookie the user blocked reads as
@@ -114,6 +120,28 @@ object CommandApp {
     private const val KEY_CHAN = "chan"
     private const val KEY_BLOCKED = "blocked"
     private const val KEY_DELETE_ON_EXIT = "deleteOnExit"
+
+    /**
+     * The settings the app reads only while an activity is being built, so a write to one shows
+     * nothing until the screen is built again. Each is a key some settings screen pairs with a
+     * `recreate()` of its own — the themes (`ThemesFragment`, `ThemeEditorFragment`), the three scales
+     * (`InterfaceFragment`), the language (`GeneralFragment`) and the expanded screen (`MainActivity`)
+     * — and a command that writes one gets the same treatment at the end of its run.
+     *
+     * Everything else is read where it is used: the next list bound, the next request made, the next
+     * notification posted. Those need nothing here; they follow on their own.
+     */
+    private val APPLIED_ON_CREATE =
+        setOf(
+            Preferences.KEY_THEME,
+            Preferences.KEY_THEME_NIGHT,
+            Preferences.KEY_THEME_FOLLOW_SYSTEM,
+            Preferences.KEY_TEXT_SCALE,
+            Preferences.KEY_THUMBNAILS_SCALE,
+            Preferences.KEY_UI_CORNER_RADIUS,
+            Preferences.KEY_LOCALE,
+            Preferences.KEY_EXPANDED_SCREEN,
+        )
 
     /** Longest JSON text [Bridge] will keep under one store key. */
     const val MAX_STORE_VALUE_LENGTH: Int = 64 * 1024
@@ -237,6 +265,31 @@ object CommandApp {
             }
 
         /**
+         * Set by a write to a setting the app only reads while an activity is being built, and acted
+         * on by [applyIfNeeded] once the run is over. Written from the bridge thread, read from the
+         * main one.
+         */
+        @Volatile private var applyPending = false
+
+        /**
+         * Rebuilds the screen if the run changed a setting that needs it — the same `recreate()` each
+         * settings screen does after changing the same key (see [APPLIED_ON_CREATE]).
+         *
+         * Deferred to the end of the run rather than done at the write, because a recreate tears down
+         * the screen the command was started from: doing it mid-run would cut the script off part way
+         * and throw away what it had produced. Several writes in one run still cost one recreate.
+         *
+         * A run that was given up on never gets here, so a setting it wrote applies whenever the app
+         * is next built, as one written outside a command would.
+         */
+        internal fun applyIfNeeded() {
+            if (applyPending) {
+                applyPending = false
+                ConcurrentUtils.HANDLER.post { ForegroundManager.getInstance().currentActivity?.recreate() }
+            }
+        }
+
+        /**
          * Refuses a call the command wasn't granted. Only what belongs to the user is behind one: the
          * store holds what a script put there itself, and the forum name is where the script is
          * already running, so neither waits on a grant.
@@ -273,7 +326,7 @@ object CommandApp {
 
                 METHOD_SETTINGS_SET -> {
                     requireGrant(CommandsStorage.Grant.SETTINGS)
-                    setSetting(required(args, KEY_KEY), args.opt(KEY_VALUE))
+                    writeSetting(args)
                 }
 
                 METHOD_STORE_GET -> {
@@ -320,6 +373,20 @@ object CommandApp {
                     throw IllegalArgumentException("Unknown app method \"$method\"")
                 }
             }
+
+        /**
+         * Writes the setting and remembers whether the screen has to be rebuilt for it to show (see
+         * [applyIfNeeded]). The note is taken here rather than at the write itself, because only a
+         * call that came from a script should move the user's screen.
+         */
+        private fun writeSetting(args: JSONObject): Any? {
+            val key = required(args, KEY_KEY)
+            setSetting(key, args.opt(KEY_VALUE))
+            if (key in APPLIED_ON_CREATE) {
+                applyPending = true
+            }
+            return null
+        }
 
         /**
          * The forum a cookie call is about: the one it named, or the one the run belongs to. A name no
