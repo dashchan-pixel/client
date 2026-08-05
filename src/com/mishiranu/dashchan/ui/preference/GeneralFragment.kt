@@ -151,8 +151,8 @@ class GeneralFragment :
         this.proxyProviderPreference = proxyProviderPreference
         proxyProviderPreference.setValues(
             Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_SERVICE),
-            Preferences.ENTRIES_PROXY_PROVIDER_SERVICE,
-            Preferences.VALUES_PROXY_PROVIDER_SERVICE,
+            ProxyProvider.serviceEntries,
+            ProxyProvider.serviceValues,
         )
         proxyProviderPreference.setValues(
             Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_TYPE),

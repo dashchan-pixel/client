@@ -1382,19 +1382,6 @@ object Preferences {
             SUB_KEY_PROXY_PROVIDER_COUNTRY,
             SUB_KEY_PROXY_PROVIDER_TYPE,
         )
-    const val VALUE_PROXY_PROVIDER_SERVICE_ASOCKS: String = "asocks"
-    const val VALUE_PROXY_PROVIDER_SERVICE_DATAIMPULSE: String = "dataimpulse"
-
-    /** The services are named as they name themselves, so neither list is translated. */
-    val ENTRIES_PROXY_PROVIDER_SERVICE: MutableList<CharSequence?> =
-        mutableListOf<CharSequence?>("Asocks", "DataImpulse")
-
-    /** The first is what a configuration written before the choice existed is read as. */
-    val VALUES_PROXY_PROVIDER_SERVICE: List<String> =
-        listOf(
-            VALUE_PROXY_PROVIDER_SERVICE_ASOCKS,
-            VALUE_PROXY_PROVIDER_SERVICE_DATAIMPULSE,
-        )
 
     val proxyProvider: MutableMap<String?, String?>
         get() =
