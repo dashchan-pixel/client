@@ -1,7 +1,6 @@
 package com.mishiranu.dashchan.content.net
 
 import chan.content.Chan
-import chan.http.HttpClient
 import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 
@@ -37,6 +36,11 @@ object VisibleAddressCommand {
      * through it would go on being seen at the old address -- which is the one thing the caller cannot
      * be expected to know to do. A script that changed the proxy itself has had them dropped already
      * (see [ProxyConnection.set]); dropping them twice costs a pool that was empty anyway.
+     *
+     * The drop happens off this thread and [callback] waits for it (see
+     * [ProxyConnection.dropPooledConnections]) -- a command's result is delivered on the main thread,
+     * where closing a TLS connection is network I/O StrictMode kills the app for, and where the first
+     * thing a caller does with the result is ask for the address again.
      */
     fun run(
         chan: Chan,
@@ -45,9 +49,10 @@ object VisibleAddressCommand {
         val item = forChan(chan) ?: return null
         return CommandRunner.runApp(item, chan.name) { result ->
             if (result is CommandRunner.AppResult.Success) {
-                HttpClient.getInstance().dropCachedConnections()
+                ProxyConnection.dropPooledConnections { callback(result) }
+            } else {
+                callback(result)
             }
-            callback(result)
         }
     }
 }

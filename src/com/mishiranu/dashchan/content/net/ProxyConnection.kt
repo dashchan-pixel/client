@@ -3,6 +3,7 @@ package com.mishiranu.dashchan.content.net
 import chan.content.Chan
 import chan.http.HttpClient
 import com.mishiranu.dashchan.content.Preferences
+import com.mishiranu.dashchan.util.ConcurrentUtils
 import java.io.ByteArrayOutputStream
 import java.util.LinkedHashMap
 
@@ -137,7 +138,32 @@ object ProxyConnection {
     ) {
         val proxy = value?.let { parse(it) }
         Preferences.setPackedProxy(chan, proxy?.let { Preferences.packProxy(it) })
-        HttpClient.getInstance().dropCachedConnections()
+        dropPooledConnections()
+    }
+
+    /**
+     * Empty the connection pool, and never on the main thread: closing a pooled TLS connection *writes*
+     * to it -- the `close_notify` the protocol ends on -- which StrictMode kills the app for on the main
+     * thread. The provider this replaced only ever dropped them from a background task, so nothing here
+     * had met that before.
+     *
+     * [onDone] runs on the main thread once the pool is actually empty. A caller that goes on to make a
+     * request needs that order: handed the callback first, its request could take the very connection
+     * this was called to be rid of, and be seen at the address the change was meant to leave behind.
+     */
+    fun dropPooledConnections(onDone: (() -> Unit)? = null) {
+        val drop =
+            Runnable {
+                HttpClient.getInstance().dropCachedConnections()
+                onDone?.let { ConcurrentUtils.HANDLER.post(it) }
+            }
+        if (ConcurrentUtils.isMain()) {
+            ConcurrentUtils.PARALLEL_EXECUTOR.execute(drop)
+        } else {
+            // A script's own write arrives on the engine's bridge thread, where the drop is this
+            // thread's business and finishing it before the call returns is the whole point
+            drop.run()
+        }
     }
 
     /** `%XX` only -- `+` is a literal here, unlike in a query string (see [java.net.URLDecoder]). */
