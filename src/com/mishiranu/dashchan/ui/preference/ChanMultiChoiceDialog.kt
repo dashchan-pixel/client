@@ -23,10 +23,20 @@ class ChanMultiChoiceDialog :
 
     constructor()
 
-    constructor(selected: Collection<String>, target: String? = null) {
+    /**
+     * [noneTitleResId] titles the dialog while nothing is checked. It says every forum on the screens
+     * where an empty selection means that; a screen where it means something else -- the proxy
+     * provider, where it is the off switch -- says so itself.
+     */
+    constructor(
+        selected: Collection<String>,
+        target: String? = null,
+        noneTitleResId: Int = R.string.all_forums,
+    ) {
         val args = Bundle()
         args.putStringArrayList(EXTRA_SELECTED, ArrayList(selected))
         args.putString(EXTRA_TARGET, target)
+        args.putInt(EXTRA_NONE_TITLE, noneTitleResId)
         arguments = args
     }
 
@@ -112,7 +122,7 @@ class ChanMultiChoiceDialog :
                 }
 
                 else -> {
-                    getString(R.string.all_forums)
+                    getString(requireArguments().getInt(EXTRA_NONE_TITLE))
                 }
             },
         )
@@ -131,6 +141,7 @@ class ChanMultiChoiceDialog :
     companion object {
         private const val EXTRA_SELECTED = "selected"
         private const val EXTRA_TARGET = "target"
+        private const val EXTRA_NONE_TITLE = "noneTitle"
         private const val EXTRA_CHECKED = "checked"
     }
 }

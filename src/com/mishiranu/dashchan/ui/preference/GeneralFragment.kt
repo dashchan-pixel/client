@@ -379,7 +379,12 @@ class GeneralFragment :
         val proxyProviderPreference = proxyProviderPreference!!
         if (hasAvailableChans()) {
             proxyProviderPreference.setNeutralButton(getString(R.string.forums)) {
-                ChanMultiChoiceDialog(Preferences.proxyProviderChans, TARGET_PROXY_PROVIDER).show(this)
+                // Choosing no forum is the off switch here, not every forum, and the title says so
+                ChanMultiChoiceDialog(
+                    Preferences.proxyProviderChans,
+                    TARGET_PROXY_PROVIDER,
+                    R.string.disabled,
+                ).show(this)
             }
         } else {
             proxyProviderPreference.setNeutralButton(null, null)
