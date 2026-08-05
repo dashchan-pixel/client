@@ -1768,6 +1768,11 @@ class PostingFragment :
                 addressCommandRun = null
                 rotateAddressDialog?.dismiss()
                 rotateAddressDialog = null
+                // The result waits on the pooled connections being dropped, so the screen may have gone
+                // in between -- and a view model asked for by a fragment that far gone throws
+                if (commentView == null) {
+                    return@run
+                }
                 when (result) {
                     is CommandRunner.AppResult.Success -> {
                         ClickableToast.show(result.message ?: getString(R.string.visible_ip_changed))
