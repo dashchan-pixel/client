@@ -18,7 +18,7 @@ service in question asks for (see `content/net/VisibleAddressCommand.kt`).
 ## Installing one
 
 1. Save the `.json` to the device, then **Settings → Commands → ⋮ → Add command** and pick it.
-2. Open the imported command and give it the **Visible IP** grant. An imported command arrives with
+2. Open the imported command and give it the **Proxy** grant. An imported command arrives with
    none of them on purpose — a grant is something you give here, not something a document brings with
    it — and the script fails naming the switch until it has this one.
 3. Put the credentials in **Settings → Commands → ⋮ → Environment**, one `NAME=value` per line. They

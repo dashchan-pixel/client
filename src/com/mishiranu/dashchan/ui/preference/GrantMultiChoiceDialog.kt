@@ -84,9 +84,13 @@ class GrantMultiChoiceDialog :
 
 /**
  * What each grant is called on screen, in the words the app already uses for the same thing — the
- * environment editor's title, the settings screens', the cookies a forum keeps and the row a forum's
- * own screen shows its visible address on. Kept at file level so the command editor, which lists the
- * same grants on a row, names them the same way.
+ * environment editor's title, the settings screens', the cookies a forum keeps and the proxy row of a
+ * forum's own screen. Kept at file level so the command editor, which lists the same grants on a row,
+ * names them the same way.
+ *
+ * The last one is named after the proxy rather than after the address it changes: reading the address
+ * is the smaller half of what it allows, and writing the proxy a forum goes through is the half worth
+ * being asked about.
  */
 val CommandsStorage.Grant.titleRes: Int
     get() =
@@ -94,5 +98,5 @@ val CommandsStorage.Grant.titleRes: Int
             CommandsStorage.Grant.ENVIRONMENT -> R.string.environment
             CommandsStorage.Grant.SETTINGS -> R.string.preferences
             CommandsStorage.Grant.COOKIES -> R.string.cookies
-            CommandsStorage.Grant.PROXY -> R.string.visible_ip
+            CommandsStorage.Grant.PROXY -> R.string.proxy
         }
