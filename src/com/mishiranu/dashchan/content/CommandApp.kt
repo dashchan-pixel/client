@@ -6,6 +6,7 @@ import chan.content.ChanManager
 import chan.http.HttpException
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
+import com.mishiranu.dashchan.content.net.ProxyConnection
 import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.storage.CommandsStorage
@@ -17,9 +18,9 @@ import org.json.JSONObject
 
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
- * the application's own **settings**; `chan`, the forum it is running in, that forum's **cookies** and
- * the **address** that forum sees this device at; and `store`, a place of its own to keep what it wants
- * to remember between runs.
+ * the application's own **settings**; `chan`, the forum it is running in, that forum's **cookies**, the
+ * **address** that forum sees this device at and the **proxy** it goes through; and `store`, a place of
+ * its own to keep what it wants to remember between runs.
  *
  * They are kept apart because they are granted apart. `app` and `chan` reach what belongs to the user
  * — the same things the settings screens and "Manage cookies" edit by hand — and a command gets
@@ -57,6 +58,8 @@ import org.json.JSONObject
  *
  * chan.visibleAddress()                      // {address, location}, or null when it can't be read
  * chan.rotateVisibleAddress()                // another address on this forum's port; true when done
+ * chan.proxy()                               // "socks5://user:pw@host:1080", or null for no proxy
+ * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
  * ```
  *
  * A command without a grant still gets the object — every call to it throws saying it wasn't granted,
@@ -100,6 +103,14 @@ import org.json.JSONObject
  * must not spend the account's balance by itself. Both calls reach the network, so both take as long as
  * a request does where every other call here answers at once.
  *
+ * The proxy a forum goes through is read and written as one connection string (see [ProxyConnection]),
+ * which is the form a service hands its endpoint out on -- so a script that got a proxy from anywhere
+ * can hand it straight over, and one that rotates an address by rewriting part of its own credentials
+ * can read what is there, change it and write it back. Writing also drops the pooled connections, or
+ * a connection kept alive through the old proxy would carry the very request the change was made for.
+ * A script may write the settings directly instead, both being the user's to edit, but nothing there
+ * knows to drop those connections.
+ *
  * The store takes any value `JSON.stringify` can carry, and hands it back parsed. It is one namespace
  * for every command, so a key is worth prefixing; it is not a cache to pour things into either, and a
  * value over [MAX_STORE_VALUE_LENGTH] characters or a key beyond [MAX_STORE_KEYS] is refused rather
@@ -133,6 +144,8 @@ object CommandApp {
     private const val METHOD_COOKIES_STATE = "cookies.setState"
     private const val METHOD_ADDRESS_GET = "address.get"
     private const val METHOD_ADDRESS_ROTATE = "address.rotate"
+    private const val METHOD_PROXY_GET = "proxy.get"
+    private const val METHOD_PROXY_SET = "proxy.set"
 
     private const val KEY_OK = "ok"
     private const val KEY_RESULT = "result"
@@ -242,7 +255,11 @@ object CommandApp {
             "}" +
             "})," +
             "visibleAddress:function(chan){return __call('$METHOD_ADDRESS_GET',{chan:chan});}," +
-            "rotateVisibleAddress:function(chan){return __call('$METHOD_ADDRESS_ROTATE',{chan:chan});}" +
+            "rotateVisibleAddress:function(chan){return __call('$METHOD_ADDRESS_ROTATE',{chan:chan});}," +
+            "proxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
+            "setProxy:function(value,chan){" +
+            "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
+            "}" +
             "})" +
             "});" +
             "})(window.$BRIDGE_NAME)"
@@ -421,6 +438,17 @@ object CommandApp {
                 METHOD_ADDRESS_ROTATE -> {
                     requireGrant(CommandsStorage.Grant.PROXY)
                     rotateVisibleAddress(chan(args))
+                }
+
+                METHOD_PROXY_GET -> {
+                    requireGrant(CommandsStorage.Grant.PROXY)
+                    ProxyConnection.get(Chan.get(chan(args)))
+                }
+
+                METHOD_PROXY_SET -> {
+                    requireGrant(CommandsStorage.Grant.PROXY)
+                    ProxyConnection.set(Chan.get(chan(args)), optional(args, KEY_VALUE))
+                    null
                 }
 
                 else -> {

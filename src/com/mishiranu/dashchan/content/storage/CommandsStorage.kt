@@ -545,7 +545,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         /** `chan`, the forum's name and its cookies. */
         COOKIES("cookies"),
 
-        /** `chan.visibleAddress` and `chan.rotateVisibleAddress`, the address a forum sees. */
+        /** The address a forum sees and the proxy it goes through -- `chan.visibleAddress` and friends. */
         PROXY("proxy"),
         ;
 
