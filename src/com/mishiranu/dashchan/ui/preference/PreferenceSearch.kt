@@ -7,7 +7,6 @@ import chan.content.ChanConfiguration
 import chan.content.ChanManager
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.ChanDatabase
-import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddressCommand
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import java.util.Locale
@@ -128,10 +127,10 @@ object PreferenceSearch {
             chanName != null && ChanDatabase.getInstance().hasCookies(chanName)
         }
 
-        /** Not an extension capability: the rows exist only while a proxy provider covers the forum. */
-        val proxyProvider: Boolean by lazy { ProxyProvider.coversChan(chan) }
-
-        /** Likewise: the row exists only while the user has a command for changing the forum's address. */
+        /**
+         * Not an extension capability: the row exists only while the user has written the command that
+         * changes this forum's visible address.
+         */
         val addressCommand: Boolean by lazy { VisibleAddressCommand.forChan(chan) != null }
 
         /** The rows the extension itself contributes, which no table here could know about. */
@@ -155,10 +154,6 @@ object PreferenceSearch {
             Entry(Screen.GENERAL, R.string.navigation, R.string.internal_browser, R.string.internal_browser__sumamry),
             Entry(Screen.GENERAL, R.string.navigation, R.string.ephemeral_browsing, R.string.ephemeral_browsing__summary),
             Entry(Screen.GENERAL, R.string.services, R.string.captcha_solving, R.string.captcha_solving__summary),
-            Entry(Screen.GENERAL, R.string.services, R.string.proxy_provider, R.string.proxy_provider__summary),
-            Entry(Screen.GENERAL, R.string.services, R.string.buy_proxies, R.string.buy_proxies__summary) {
-                !ProxyProvider.hasConfiguration()
-            },
             Entry(Screen.GENERAL, R.string.services, R.string.firewall_resolution_method, 0),
             Entry(Screen.GENERAL, R.string.connection, R.string.secure_connection, R.string.secure_connection__summary),
             Entry(Screen.GENERAL, R.string.connection, R.string.verify_certificate, R.string.verify_certificate__summary),
@@ -326,11 +321,6 @@ object PreferenceSearch {
                 R.string.proxy_for_posting_only,
                 R.string.proxy_for_posting_only__summary,
             ) { !it.localMode },
-            ChanEntry(
-                R.string.connection,
-                R.string.proxy_country,
-                R.string.proxy_country__summary,
-            ) { !it.localMode && it.proxyProvider },
             ChanEntry(R.string.connection, R.string.visible_ip, 0) { !it.localMode },
             ChanEntry(
                 R.string.connection,

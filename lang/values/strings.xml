@@ -35,7 +35,6 @@
 	<string name="allow_this_extension__sentence">Allow this extension to manage application?</string>
 	<string name="always">Always</string>
 	<string name="another">Another</string>
-	<string name="api_key_or_login">API key or login</string>
 	<string name="app">App</string>
 	<string name="app_icon">App icon</string>
 	<string name="appearance">Appearance</string>
@@ -62,8 +61,6 @@
 	<string name="board_intervals__summary">Refresh the favorites of chosen boards at their own interval</string>
 	<string name="boards">Boards</string>
 	<string name="bump_limit">Bump limit</string>
-	<string name="buy_proxies">Buy proxies</string>
-	<string name="buy_proxies__summary">Choose a service to open in a browser and get an account with</string>
 	<string name="cache_is_unavailable">Cache is unavailable</string>
 	<string name="cache_size">Cache size</string>
 	<string name="cached_files">Cached files</string>
@@ -137,7 +134,6 @@
 	<string name="copy_link">Copy link</string>
 	<string name="copy_markup">Copy markup</string>
 	<string name="copy_text">Copy text</string>
-	<string name="country">Country</string>
 	<string name="crop_thumbnails">Crop thumbnails</string>
 	<string name="crop_thumbnails__summary">Thumbnails will fit square</string>
 	<string name="cyclical_thread">Cyclical thread</string>
@@ -470,14 +466,8 @@
 	<string name="process_posts_individually">Process posts individually</string>
 	<string name="processing_data__ellipsis">Processing data…</string>
 	<string name="proxy">Proxy</string>
-	<string name="proxy_country">Proxy country</string>
-	<string name="proxy_country__summary">The country this forum\'s address exits from, instead of the one the provider is set to</string>
 	<string name="proxy_for_posting_only">Proxy for sending only</string>
 	<string name="proxy_for_posting_only__summary">Posts and reports go through the proxy, everything else loads directly</string>
-	<string name="proxy_provider">Proxy provider</string>
-	<string name="proxy_provider__summary">Change the address forums see through a proxy service</string>
-	<string name="proxy_provider_info__sentence">Asocks and DataImpulse are supported. Each chosen forum is given a port of the account, written into its proxy settings; choosing no forum switches the provider off and gives every forum its proxy settings back. An Asocks port is bought only for a country the account holds none in; a DataImpulse plan comes with its sticky ports, and the country costs nothing.</string>
-	<string name="proxy_provider_no_ports">No proxy ports in the account</string>
 	<string name="quality">Quality</string>
 	<string name="quote__verb">Quote</string>
 	<string name="rating">Rating</string>
@@ -648,7 +638,6 @@
 	<string name="unique_hash">Unique hash</string>
 	<string name="unique_posters__genitive">Unique posters</string>
 	<string name="unknown_address">Unknown address</string>
-	<string name="unknown_country">Unknown country</string>
 	<string name="unknown_error">Unknown error</string>
 	<string name="unsafe_redirect">Unsafe redirection</string>
 	<string name="unsorted">Unsorted</string>

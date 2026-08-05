@@ -3,11 +3,9 @@ package com.mishiranu.dashchan.content
 import android.webkit.JavascriptInterface
 import chan.content.Chan
 import chan.content.ChanManager
-import chan.http.HttpException
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.net.ProxyConnection
-import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ForegroundManager
@@ -57,7 +55,6 @@ import org.json.JSONObject
  * chan.cookies.setState("cf_clearance", { blocked: false, deleteOnExit: true })
  *
  * chan.visibleAddress()                      // {address, location}, or null when it can't be read
- * chan.rotateVisibleAddress()                // another address on this forum's port; true when done
  * chan.proxy()                               // "socks5://user:pw@host:1080", or null for no proxy
  * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
  * ```
@@ -96,12 +93,8 @@ import org.json.JSONObject
  *
  * The visible address is the one the *forum* sees, so it is read through that forum's proxy (see
  * [VisibleAddress]) — a `fetch` leaves the WebView on its own and would answer with the device's
- * address instead, which is the whole reason for asking here. Rotating it asks the proxy provider for
- * another address on the port the forum uses (see [ProxyProvider]) and drops the connections that
- * would otherwise still ride the old one. Nothing is bought: a forum the provider covers but has given
- * no port yet is refused, where the button on the forum's own screen would buy it one, because a script
- * must not spend the account's balance by itself. Both calls reach the network, so both take as long as
- * a request does where every other call here answers at once.
+ * address instead, which is the whole reason for asking here. It reaches the network, so it takes as
+ * long as a request does where every other call here answers at once.
  *
  * The proxy a forum goes through is read and written as one connection string (see [ProxyConnection]),
  * which is the form a service hands its endpoint out on -- so a script that got a proxy from anywhere
@@ -143,7 +136,6 @@ object CommandApp {
     private const val METHOD_COOKIES_SET = "cookies.set"
     private const val METHOD_COOKIES_STATE = "cookies.setState"
     private const val METHOD_ADDRESS_GET = "address.get"
-    private const val METHOD_ADDRESS_ROTATE = "address.rotate"
     private const val METHOD_PROXY_GET = "proxy.get"
     private const val METHOD_PROXY_SET = "proxy.set"
 
@@ -255,7 +247,6 @@ object CommandApp {
             "}" +
             "})," +
             "visibleAddress:function(chan){return __call('$METHOD_ADDRESS_GET',{chan:chan});}," +
-            "rotateVisibleAddress:function(chan){return __call('$METHOD_ADDRESS_ROTATE',{chan:chan});}," +
             "proxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
             "setProxy:function(value,chan){" +
             "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
@@ -435,11 +426,6 @@ object CommandApp {
                     visibleAddress(chan(args))
                 }
 
-                METHOD_ADDRESS_ROTATE -> {
-                    requireGrant(CommandsStorage.Grant.PROXY)
-                    rotateVisibleAddress(chan(args))
-                }
-
                 METHOD_PROXY_GET -> {
                     requireGrant(CommandsStorage.Grant.PROXY)
                     ProxyConnection.get(Chan.get(chan(args)))
@@ -542,39 +528,6 @@ object CommandApp {
         return JSONObject()
             .put(KEY_ADDRESS, result.address)
             .put(KEY_LOCATION, result.location ?: JSONObject.NULL)
-    }
-
-    /**
-     * Ask the provider for another address on the port [chanName] uses, and answer whether it gave one.
-     * Nothing is bought (see [ProxyProvider.rotateVisibleAddress]), so a forum the provider covers but
-     * has given no port yet is refused here rather than given one at the account's expense.
-     *
-     * The provider's own endpoint is asked through the fallback chan, the way the settings screen asks
-     * it: a forum proxied by the very port being rotated cannot get in the way of the request that
-     * changes it.
-     *
-     * Each failure is turned into a message of its own, because what the provider throws carries an
-     * error item for the UI to show rather than something a script could read.
-     */
-    private fun rotateVisibleAddress(chanName: String): Any {
-        val chan = Chan.get(chanName)
-        require(ProxyProvider.coversChan(chan)) {
-            "The proxy provider does not cover \"$chanName\": choose that forum in its settings"
-        }
-        val holder = HttpHolder(Chan.getFallback())
-        return try {
-            holder.use().use { ProxyProvider.rotateVisibleAddress(holder, chan, buyPorts = false) }
-        } catch (e: ProxyProvider.NoPortsException) {
-            throw IllegalStateException(
-                "The provider has given \"$chanName\" no port yet, and a command may not buy one: " +
-                    "check the provider on that forum's settings screen first",
-                e,
-            )
-        } catch (e: ProxyProvider.ServiceException) {
-            throw IllegalStateException(e.errorItem.toString(), e)
-        } catch (e: HttpException) {
-            throw IllegalStateException(e.getErrorItemAndHandle().toString(), e)
-        }
     }
 
     /**

@@ -1319,11 +1319,7 @@ object Preferences {
         return unpackOrCastMultipleValues(value, KEYS_PROXY) as Map<String, String>?
     }
 
-    /**
-     * The forum's proxy as it is stored, for a writer that has to recognize its own work later: the
-     * packed form is what [ProxyProvider] compares against to tell a proxy it wrote from one the
-     * user set by hand.
-     */
+    /** The forum's proxy as it is stored, for a writer that hands one over whole. */
     fun getPackedProxy(chan: Chan): String? = prefs.getString(KEY_PROXY.bind(chan.name), null)
 
     fun setPackedProxy(
@@ -1363,68 +1359,6 @@ object Preferences {
             KEY_PROXY_POSTING_ONLY.bind(chan.name),
             DEFAULT_PROXY_POSTING_ONLY,
         )
-
-    const val KEY_PROXY_PROVIDER: String = "proxy_provider"
-    const val SUB_KEY_PROXY_PROVIDER_SERVICE: String = "service"
-
-    /** The API key of the account, or its proxy login for a service that authorizes by those. */
-    const val SUB_KEY_PROXY_PROVIDER_TOKEN: String = "token"
-
-    /** Only a service that authorizes by proxy credentials rather than by an API key asks for one. */
-    const val SUB_KEY_PROXY_PROVIDER_PASSWORD: String = "password"
-    const val SUB_KEY_PROXY_PROVIDER_COUNTRY: String = "country"
-    const val SUB_KEY_PROXY_PROVIDER_TYPE: String = "type"
-    val KEYS_PROXY_PROVIDER: List<String> =
-        listOf(
-            SUB_KEY_PROXY_PROVIDER_SERVICE,
-            SUB_KEY_PROXY_PROVIDER_TOKEN,
-            SUB_KEY_PROXY_PROVIDER_PASSWORD,
-            SUB_KEY_PROXY_PROVIDER_COUNTRY,
-            SUB_KEY_PROXY_PROVIDER_TYPE,
-        )
-
-    val proxyProvider: MutableMap<String?, String?>
-        get() =
-            unpackOrCastMultipleValues(
-                prefs.getString(KEY_PROXY_PROVIDER, null),
-                KEYS_PROXY_PROVIDER,
-            )
-
-    const val KEY_PROXY_PROVIDER_CHANS: String = "proxy_provider_chans"
-
-    /** The forums the provider's endpoint is written to. Empty is the off switch, not every forum. */
-    var proxyProviderChans: MutableCollection<String>
-        get() = getChanNames(KEY_PROXY_PROVIDER_CHANS)
-        set(chanNames) = setChanNames(KEY_PROXY_PROVIDER_CHANS, chanNames)
-
-    val KEY_PROXY_PROVIDER_COUNTRY: ChanKey = ChanKey("proxy_provider_country")
-
-    /**
-     * The country this forum's address should exit from, overriding the provider's own setting: a
-     * port serves one country, so a forum that names its own gets a port of its own.
-     */
-    fun getProxyProviderCountry(chan: Chan): String? = nullIfEmpty(prefs.getString(KEY_PROXY_PROVIDER_COUNTRY.bind(chan.name), null)?.trim())
-
-    val KEY_PROXY_PROVIDER_APPLIED: ChanKey = ChanKey("proxy_provider_applied")
-
-    /**
-     * The proxy [ProxyProvider] last wrote into this forum's settings, verbatim. A forum still
-     * holding it is one the provider filled in and may take back; anything else was set by hand and
-     * is left alone.
-     */
-    fun getProxyProviderApplied(chan: Chan): String? = prefs.getString(KEY_PROXY_PROVIDER_APPLIED.bind(chan.name), null)
-
-    fun setProxyProviderApplied(
-        chan: Chan,
-        value: String?,
-    ) {
-        val key = KEY_PROXY_PROVIDER_APPLIED.bind(chan.name)
-        if (value != null) {
-            prefs.edit().put(key, value).close()
-        } else {
-            prefs.edit().remove(key).close()
-        }
-    }
 
     const val KEY_RECAPTCHA_SOLVE_INVISIBLE: String = "recaptcha_solve_invisible"
     const val DEFAULT_RECAPTCHA_SOLVE_INVISIBLE: Boolean = true

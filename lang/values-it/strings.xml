@@ -26,7 +26,6 @@
     <string name="allow_this_extension__sentence">Consentire a questa estensione di gestire l\'applicazione?</string>
     <string name="always">Sempre</string>
     <string name="another">Un altro</string>
-    <string name="api_key_or_login">Chiave API o login</string>
     <string name="app">App</string>
     <string name="appearance">Aspetto</string>
     <string name="application_name_update__format">%s aggiornamento</string>
@@ -54,8 +53,6 @@
     <string name="board_intervals">Intervalli delle board</string>
     <string name="board_intervals__summary">Aggiorna i preferiti delle board scelte con un intervallo proprio</string>
     <string name="boards">Board</string>
-    <string name="buy_proxies">Acquista proxy</string>
-    <string name="buy_proxies__summary">Scegli un servizio da aprire in un browser per creare un account</string>
     <string name="cache_is_unavailable">Cache non disponibile</string>
     <string name="cache_size">Dimensione cache</string>
     <string name="cached_files">File in cache</string>
@@ -113,7 +110,6 @@
     <string name="copy_link">Copia link</string>
     <string name="copy_markup">Copia markup</string>
     <string name="copy_text">Copia testo</string>
-    <string name="country">Paese</string>
     <string name="crop_thumbnails">Taglia anteprime</string>
     <string name="crop_thumbnails__summary">Le anteprime riempiranno il riquadro</string>
     <string name="cyclical_thread">Thread ciclico</string>
@@ -404,14 +400,8 @@
     <string name="proceed">Procedi</string>
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
-    <string name="proxy_country">Paese del proxy</string>
-    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum, invece di quello impostato nel fornitore</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
     <string name="proxy_for_posting_only__summary">Post e segnalazioni passano dal proxy, tutto il resto si carica direttamente</string>
-    <string name="proxy_provider">Fornitore proxy</string>
-    <string name="proxy_provider__summary">Cambia l\'indirizzo visto dai forum tramite un servizio proxy</string>
-    <string name="proxy_provider_info__sentence">Sono supportati Asocks e DataImpulse. A ogni forum scelto viene assegnata una porta dell\'account, scritta nelle sue impostazioni proxy; se non ne viene scelto nessuno il fornitore viene disattivato e ogni forum riprende le proprie impostazioni proxy. Una porta Asocks viene acquistata solo se l\'account non ne ha nessuna nel paese richiesto; un piano DataImpulse include le sue porte sticky, e il paese non costa nulla.</string>
-    <string name="proxy_provider_no_ports">Nessuna porta proxy nell\'account</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>
     <string name="rating">Votazione</string>
@@ -561,7 +551,6 @@
     <string name="unique_posters__genitive">Poster unici</string>
     <string name="unknown">Sconosciuto</string>
     <string name="unknown_address">Indirizzo sconosciuto</string>
-    <string name="unknown_country">Paese sconosciuto</string>
     <string name="unknown_error">Errore sconosciuto</string>
     <string name="unsafe_redirect">Redirect non sicuro</string>
     <string name="unsorted">Non ordinati</string>

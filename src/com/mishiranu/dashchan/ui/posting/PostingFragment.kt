@@ -85,7 +85,6 @@ import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
-import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.net.VisibleAddressCommand
 import com.mishiranu.dashchan.content.service.PostingService

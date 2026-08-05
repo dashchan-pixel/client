@@ -25,8 +25,7 @@ class ChanMultiChoiceDialog :
 
     /**
      * [noneTitleResId] titles the dialog while nothing is checked. It says every forum on the screens
-     * where an empty selection means that; a screen where it means something else -- the proxy
-     * provider, where it is the off switch -- says so itself.
+     * where an empty selection means that; a screen where it means something else says so itself.
      */
     constructor(
         selected: Collection<String>,

@@ -24,7 +24,6 @@ import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.CaptchaSolving
-import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.text.style.MonospaceSpan
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
@@ -43,10 +42,6 @@ class GeneralFragment :
     ChanMultiChoiceDialog.Callback {
     private var captchaSolvingPreference: MultipleEditPreference<Map<String, String>>? = null
     private var captchaSolvingCheckDialog: ProgressDialog? = null
-
-    private var proxyProviderPreference: MultipleEditPreference<Map<String, String>>? = null
-    private var proxyProviderCheckDialog: ProgressDialog? = null
-    private var buyProxiesPreference: Preference<*>? = null
 
     /** Repository-URI keys currently showing a custom-value edit field rather than the [Default, Another] list. */
     private val anotherUriKeys = HashSet<String>()
@@ -129,45 +124,6 @@ class GeneralFragment :
         captchaSolvingPreference.setDescription(getString(R.string.captcha_solving_info__sentence))
         configureCaptchaSolvingNeutralButton()
 
-        val proxyProviderPreference =
-            addMultipleEdit(
-                Preferences.KEY_PROXY_PROVIDER,
-                R.string.proxy_provider,
-                { configureProxyProviderSummary(false) },
-                // The service is picked from a list, so that row carries no hint of its own; the
-                // credentials are named for both services, since the labels cannot follow the choice
-                listOf<CharSequence?>(
-                    null,
-                    getString(R.string.api_key_or_login),
-                    getString(R.string.password),
-                    getString(R.string.country),
-                    null,
-                ),
-                listOf(
-                    0,
-                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-                    0,
-                ),
-                MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY_PROVIDER),
-            )
-        this.proxyProviderPreference = proxyProviderPreference
-        proxyProviderPreference.setValues(
-            Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_SERVICE),
-            ProxyProvider.serviceEntries,
-            ProxyProvider.serviceValues,
-        )
-        proxyProviderPreference.setValues(
-            Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_TYPE),
-            Preferences.ENTRIES_PROXY_TYPE,
-            Preferences.VALUES_PROXY_TYPE,
-        )
-        proxyProviderPreference.setOnAfterChangeListener { configureProxyProviderSummary(true) }
-        proxyProviderPreference.setDescription(getString(R.string.proxy_provider_info__sentence))
-        configureProxyProviderNeutralButton()
-        configureBuyProxiesButton()
-
         addList(
             Preferences.KEY_FIREWALL_RESOLUTION_METHOD,
             enumList(Preferences.FirewallResolutionMethod.values()) { v -> v.value },
@@ -221,28 +177,6 @@ class GeneralFragment :
                 } else {
                     ClickableToast.show(result.first)
                     captchaSolvingPreference.performClick()
-                }
-            }
-        }
-
-        val proxyProviderViewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
-        if (proxyProviderViewModel.showDialog) {
-            displayProxyProviderCheckDialog()
-        }
-        proxyProviderViewModel.observe(viewLifecycleOwner) { result ->
-            result!!
-            proxyProviderViewModel.showDialog = false
-            proxyProviderViewModel.errorItem = result.first
-            proxyProviderViewModel.extraMap = result.second
-            proxyProviderPreference.invalidate()
-            if (proxyProviderCheckDialog != null) {
-                proxyProviderCheckDialog?.dismiss()
-                proxyProviderCheckDialog = null
-                if (result.second != null) {
-                    ClickableToast.show(R.string.validation_completed)
-                } else {
-                    ClickableToast.show(result.first)
-                    proxyProviderPreference.performClick()
                 }
             }
         }
@@ -303,12 +237,6 @@ class GeneralFragment :
             it.dismiss()
             captchaSolvingCheckDialog = null
         }
-        proxyProviderPreference = null
-        buyProxiesPreference = null
-        proxyProviderCheckDialog?.let {
-            it.dismiss()
-            proxyProviderCheckDialog = null
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -321,73 +249,23 @@ class GeneralFragment :
         removed: Collection<String>,
     ) {
         configureCaptchaSolvingNeutralButton()
-        configureProxyProviderNeutralButton()
     }
 
     override fun onChansSelected(
         chanNames: Collection<String>,
         target: String?,
     ) {
-        when (target) {
-            TARGET_PROXY_PROVIDER -> {
-                Preferences.proxyProviderChans = HashSet(chanNames)
-                // The selection only means anything once the port has been written to the forums it
-                // now covers -- and taken off the ones it no longer does, which the check does too
-                configureProxyProviderSummary(true)
-                proxyProviderPreference?.invalidate()
-            }
-
-            else -> {
-                Preferences.captchaSolvingChans = HashSet(chanNames)
-            }
-        }
+        Preferences.captchaSolvingChans = HashSet(chanNames)
     }
 
     private fun configureCaptchaSolvingNeutralButton() {
         val captchaSolvingPreference = captchaSolvingPreference!!
         if (hasAvailableChans()) {
             captchaSolvingPreference.setNeutralButton(getString(R.string.forums)) {
-                ChanMultiChoiceDialog(Preferences.captchaSolvingChans, TARGET_CAPTCHA_SOLVING).show(this)
+                ChanMultiChoiceDialog(Preferences.captchaSolvingChans).show(this)
             }
         } else {
             captchaSolvingPreference.setNeutralButton(null, null)
-        }
-    }
-
-    /**
-     * The row that sends a user with no account to the service to get one. It sits under the
-     * provider row while there is nothing to configure it with, and goes away once there is.
-     */
-    private fun configureBuyProxiesButton() {
-        val proxyProviderPreference = proxyProviderPreference ?: return
-        val configured = ProxyProvider.hasConfiguration()
-        val buyProxiesPreference = this.buyProxiesPreference
-        if (configured) {
-            if (buyProxiesPreference != null) {
-                removePreference(buyProxiesPreference)
-                this.buyProxiesPreference = null
-            }
-        } else if (buyProxiesPreference == null) {
-            val preference = addButton(R.string.buy_proxies, R.string.buy_proxies__summary)
-            this.buyProxiesPreference = preference
-            movePreference(preference, proxyProviderPreference)
-            preference.setOnClickListener { SignUpDialog().show(this) }
-        }
-    }
-
-    private fun configureProxyProviderNeutralButton() {
-        val proxyProviderPreference = proxyProviderPreference!!
-        if (hasAvailableChans()) {
-            proxyProviderPreference.setNeutralButton(getString(R.string.forums)) {
-                // Choosing no forum is the off switch here, not every forum, and the title says so
-                ChanMultiChoiceDialog(
-                    Preferences.proxyProviderChans,
-                    TARGET_PROXY_PROVIDER,
-                    R.string.disabled,
-                ).show(this)
-            }
-        } else {
-            proxyProviderPreference.setNeutralButton(null, null)
         }
     }
 
@@ -464,87 +342,6 @@ class GeneralFragment :
             getString(R.string.loading__ellipsis)
         }
 
-    private fun configureProxyProviderSummary(resetAndShowDialog: Boolean): CharSequence {
-        val viewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
-        if (resetAndShowDialog) {
-            viewModel.showDialog = false
-            viewModel.extraMap = null
-            viewModel.errorItem = null
-            viewModel.attach(null)
-            viewModel.handleResult(null)
-        }
-        if (!ProxyProvider.isEnabled()) {
-            if (resetAndShowDialog) {
-                // Either the credentials are gone or no forum is left for them to be used on: the
-                // provider's proxy comes back off the forums, and their own settings are theirs again
-                ProxyProvider.clearFromChans()
-                configureBuyProxiesButton()
-            }
-            return if (ProxyProvider.hasConfiguration()) {
-                // Configured but covering nothing, which is the off switch rather than a mistake
-                getString(R.string.disabled)
-            } else {
-                getString(R.string.proxy_provider__summary)
-            }
-        }
-        if (resetAndShowDialog) {
-            viewModel.showDialog = true
-            displayProxyProviderCheckDialog()
-            configureBuyProxiesButton()
-        }
-        if (viewModel.extraMap == null && viewModel.errorItem == null && !viewModel.hasTaskOrValue()) {
-            val task = CheckProxyProviderTask(viewModel)
-            task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
-            viewModel.attach(task)
-        }
-        return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
-    }
-
-    /**
-     * Where an account is opened, one row per service. The links are referral ones, which is why the
-     * choice is offered rather than the first service simply opened.
-     */
-    class SignUpDialog : DialogFragment() {
-        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val signUps = ProxyProvider.serviceSignUps.toList()
-            return AlertDialog
-                .Builder(requireContext())
-                .setTitle(R.string.buy_proxies)
-                .setItems(signUps.map { it.first }.toTypedArray()) { _, which ->
-                    try {
-                        NavigationUtils.handleUri(
-                            requireContext(),
-                            null,
-                            Uri.parse(signUps[which].second),
-                            NavigationUtils.BrowserType.AUTO,
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        ClickableToast.show(R.string.unknown_error)
-                    }
-                }.setNegativeButton(android.R.string.cancel, null)
-                .create()
-        }
-
-        fun show(fragment: Fragment) = show(fragment.childFragmentManager, SignUpDialog::class.java.name)
-    }
-
-    private fun displayProxyProviderCheckDialog() {
-        if (proxyProviderCheckDialog == null) {
-            val dialog = ProgressDialog(requireContext(), null)
-            proxyProviderCheckDialog = dialog
-            dialog.setMessage(getString(R.string.loading__ellipsis))
-            dialog.setOnCancelListener {
-                proxyProviderCheckDialog = null
-                val viewModel = ViewModelProvider(this).get(ProxyProviderCheckViewModel::class.java)
-                viewModel.showDialog = false
-                viewModel.attach(null)
-                viewModel.handleResult(Pair<ErrorItem, Map<String, String>>(ErrorItem(ErrorItem.Type.UNKNOWN), null))
-            }
-            dialog.show()
-        }
-    }
-
     private fun displayCaptchaSolvingCheckDialog() {
         if (captchaSolvingCheckDialog == null) {
             val dialog = ProgressDialog(requireContext(), null)
@@ -587,36 +384,8 @@ class GeneralFragment :
         }
     }
 
-    class ProxyProviderCheckViewModel : TaskViewModel<CheckProxyProviderTask, Pair<ErrorItem, Map<String, String>>?>() {
-        internal var showDialog = false
-        internal var extraMap: Map<String, String>? = null
-        internal var errorItem: ErrorItem? = null
-    }
-
-    class CheckProxyProviderTask(
-        private val viewModel: ProxyProviderCheckViewModel,
-    ) : HttpHolderTask<Unit?, Pair<ErrorItem, Map<String, String>>>(Chan.getFallback()) {
-        override fun run(holder: HttpHolder): Pair<ErrorItem, Map<String, String>> =
-            try {
-                val extra = ProxyProvider.checkService(holder)
-                Pair<ErrorItem, Map<String, String>>(null, extra)
-            } catch (e: HttpException) {
-                Pair<ErrorItem, Map<String, String>>(e.getErrorItemAndHandle(), null)
-            } catch (e: ProxyProvider.ServiceException) {
-                Pair<ErrorItem, Map<String, String>>(e.errorItem, null)
-            }
-
-        override fun onComplete(result: Pair<ErrorItem, Map<String, String>>) {
-            viewModel.handleResult(result)
-        }
-    }
-
     companion object {
         private const val VALUE_CUSTOM_URI = "custom_uri\n"
         private const val EXTRA_ANOTHER_URI_KEYS = "anotherUriKeys"
-
-        /** Both service rows open the forum selection; this is how their answers are told apart. */
-        private const val TARGET_CAPTCHA_SOLVING = "captchaSolving"
-        private const val TARGET_PROXY_PROVIDER = "proxyProvider"
     }
 }
