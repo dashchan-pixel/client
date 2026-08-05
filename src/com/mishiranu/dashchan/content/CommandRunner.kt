@@ -42,6 +42,11 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   post. Such a command may also be run over a single post, from that post's context menu — the same
  *   call with a `posts` of one.
  *
+ * - [CommandsStorage.UseIn.APP] (see [runApp]): `thread`, `board`, `env`, `store`, `app`, `chan`, and no
+ *   input of its own. What it returns is shown to the user as a message rather than applied to anything;
+ *   what such a command *does* it does through the objects it was granted — writing a setting, storing a
+ *   cookie, giving a forum another proxy.
+ *
  * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
  * is no such context. Being async, a body may `await` (e.g.
  * `return await fetch(url).then(r => r.text())`).
@@ -205,6 +210,55 @@ object CommandRunner {
         data class Failure(
             val message: String,
         ) : ThreadResult
+    }
+
+    /** Outcome of a [CommandsStorage.UseIn.APP] command. */
+    sealed interface AppResult {
+        /**
+         * The command ran successfully. [message] is what it returned, for showing back to the user, or
+         * `null` when it returned nothing — a command that acts through the objects it was granted has
+         * nothing it has to say.
+         */
+        data class Success(
+            val message: String?,
+        ) : AppResult
+
+        /** The command threw or could not be evaluated; [message] describes what went wrong. */
+        data class Failure(
+            val message: String,
+        ) : AppResult
+    }
+
+    /**
+     * Evaluates a [CommandsStorage.UseIn.APP] [item] — one that is handed no input and replaces nothing
+     * — and delivers the outcome to [callback] on the main thread. Safe to call from the main thread.
+     * The returned [Run] lets the caller drop the run when the screen it belongs to goes away.
+     *
+     * [chanName], [thread] and [board] are the context the run belongs to, as far as the caller has one:
+     * [chanName] is what the script's `chan` works on without naming a forum, so a command run for a
+     * forum gets it and one run from a screen that is about no forum passes `null` and leaves the script
+     * to name the forum it means.
+     */
+    fun runApp(
+        item: CommandsStorage.CommandItem,
+        chanName: String?,
+        thread: String? = null,
+        board: String? = null,
+        callback: (AppResult) -> Unit,
+    ): Run {
+        val handle = Run()
+        withLibraries(item, handle, { AppResult.Failure(it) }, callback) { libraries ->
+            val script =
+                buildScript(
+                    factorySource = buildFactorySource(BODY_PARAMS, item.code.orEmpty(), libraries, false),
+                    thread = thread,
+                    board = board,
+                    env = environmentFor(item),
+                    resultExpr = APP_RESULT_EXPR,
+                ) { }
+            execute(handle, chanName, item.grants, script, ::parseApp, { AppResult.Failure(it) }, callback)
+        }
+        return handle
     }
 
     /**
@@ -573,6 +627,29 @@ object CommandRunner {
             "if(Array.isArray(__r.attachments)){__o.attachments=__r.attachments;}" +
             "return __o;" +
             "})(__result)"
+
+    /**
+     * What an App command returned, as the message to show for it: anything but nothing at all becomes
+     * text, since it is going to be read rather than applied — a number or an object a script hands back
+     * is still something it meant to say.
+     */
+    private const val APP_RESULT_EXPR = "((__result===undefined||__result===null)?null:String(__result))"
+
+    private fun parseApp(raw: String?): AppResult {
+        if (raw == null) {
+            return AppResult.Failure("No result (script did not evaluate)")
+        }
+        return try {
+            val json = JSONObject(raw)
+            if (json.optBoolean("ok")) {
+                AppResult.Success(if (json.isNull("result")) null else json.optString("result"))
+            } else {
+                AppResult.Failure(json.optString("error", "Unknown error"))
+            }
+        } catch (e: Exception) {
+            AppResult.Failure(e.message ?: raw)
+        }
+    }
 
     private fun parseComment(raw: String?): RawResult {
         if (raw == null) {

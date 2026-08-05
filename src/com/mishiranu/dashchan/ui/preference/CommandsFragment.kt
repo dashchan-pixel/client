@@ -42,6 +42,8 @@ import chan.content.Chan
 import chan.content.ChanManager
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.CommandApp
+import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.DialogMenu
@@ -52,6 +54,7 @@ import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.CodeEditText
 import com.mishiranu.dashchan.widget.DropdownView
+import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.SortableHelper
 import com.mishiranu.dashchan.widget.ThemeEngine
 import com.mishiranu.dashchan.widget.ViewFactory
@@ -71,6 +74,11 @@ class CommandsFragment :
     // arms on a long press held with a second finger down, then ItemTouchHelper drives the drag.
     private var sortableHelper: SortableHelper<CommandViewHolder>? = null
     private val dragState = SortableHelper.DragState()
+
+    // The App command being run from the context menu, tracked so leaving the screen drops the run
+    // rather than leaving an engine reaching the network for a result nothing is waiting for.
+    private var appCommandRun: CommandRunner.Run? = null
+    private var appCommandDialog: ProgressDialog? = null
 
     constructor() : super()
 
@@ -251,8 +259,14 @@ class CommandsFragment :
 
     private fun showCommandContextMenu(command: CommandsStorage.CommandItem) {
         val title = if (command.name.isNullOrEmpty()) getString(R.string.command) else command.name
-        DialogMenu(requireContext())
-            .setTitle(title)
+        val dialogMenu = DialogMenu(requireContext()).setTitle(title)
+        // An App command is handed nothing, so here is as good a place to run it from as any. The other
+        // targets are run from the screen holding what they operate on -- a draft, a thread -- because
+        // that is where their input is.
+        if (command.useIn == CommandsStorage.UseIn.APP) {
+            dialogMenu.add(R.string.run__verb) { runAppCommand(command) }
+        }
+        dialogMenu
             .add(R.string.duplicate) { duplicateCommand(command) }
             .add(R.string.save) {
                 pendingSaveCommand = command
@@ -261,6 +275,55 @@ class CommandsFragment :
             }.add(R.string.copy) { copyCommandJson(command) }
             .create()
             .show()
+    }
+
+    /**
+     * Runs an App command from here, which is where every one of them can be reached: what the app runs
+     * one for by itself belongs to a forum, and this screen is about no forum. So the run is given none
+     * either, and a script that means one has to name it (see [CommandApp]).
+     *
+     * Whatever the command returns is shown as a message, that being all an App command hands back.
+     */
+    private fun runAppCommand(command: CommandsStorage.CommandItem) {
+        if (appCommandRun?.isFinished == false) {
+            return
+        }
+        val dialog = ProgressDialog(requireContext(), null)
+        appCommandDialog = dialog
+        dialog.setMessage(getString(R.string.loading__ellipsis))
+        dialog.setOnCancelListener {
+            appCommandDialog = null
+            cancelAppCommand()
+        }
+        dialog.show()
+        appCommandRun =
+            CommandRunner.runApp(command, chanName = null) { result ->
+                appCommandRun = null
+                appCommandDialog?.dismiss()
+                appCommandDialog = null
+                when (result) {
+                    is CommandRunner.AppResult.Success -> {
+                        ClickableToast.show(result.message ?: getString(R.string.completed))
+                    }
+
+                    is CommandRunner.AppResult.Failure -> {
+                        ClickableToast.show(getString(R.string.command_failed__format, result.message))
+                    }
+                }
+            }
+    }
+
+    private fun cancelAppCommand() {
+        appCommandRun?.cancel()
+        appCommandRun = null
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        appCommandDialog?.dismiss()
+        appCommandDialog = null
+        cancelAppCommand()
     }
 
     /**
@@ -446,13 +509,18 @@ class CommandsFragment :
                 when (commandItem.useIn) {
                     CommandsStorage.UseIn.COMMENT -> R.string.draft
                     CommandsStorage.UseIn.THREAD -> R.string.thread
+                    CommandsStorage.UseIn.APP -> R.string.app
                 }
             builder.append(" · ").append(getString(useInRes))
             if (commandItem.perPost && commandItem.useIn == CommandsStorage.UseIn.THREAD) {
                 builder.append(" · ").append(getString(R.string.per_post))
             }
             if (commandItem.autoRun) {
-                builder.append(" · ").append(getString(R.string.auto_run))
+                // For an App command the flag is a role rather than a moment -- it is the command the
+                // app runs when it needs another visible address -- so the row names that instead.
+                val autoRunRes =
+                    if (commandItem.useIn == CommandsStorage.UseIn.APP) R.string.visible_ip else R.string.auto_run
+                builder.append(" · ").append(getString(autoRunRes))
             }
             return builder
         }
@@ -672,6 +740,7 @@ class CommandsFragment :
             codeEdit.hint =
                 when {
                     selectedUseIn == CommandsStorage.UseIn.COMMENT -> SAMPLE_DRAFT
+                    selectedUseIn == CommandsStorage.UseIn.APP -> SAMPLE_APP
                     perPostCheckBox.isChecked -> SAMPLE_PER_POST
                     else -> SAMPLE_THREAD
                 }
@@ -809,7 +878,8 @@ class CommandsFragment :
             private const val EXTRA_INDEX = "index"
 
             // The dropdown's fixed order; the selected index maps back to a UseIn on save.
-            private val USE_IN_ORDER = listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD)
+            private val USE_IN_ORDER =
+                listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD, CommandsStorage.UseIn.APP)
 
             // Placeholders for the code field: the do-nothing command for each target, i.e. the least
             // code that returns the input unchanged. Not translated — it's JavaScript.
@@ -824,11 +894,18 @@ class CommandsFragment :
 
             private const val SAMPLE_PER_POST = "return { comment: post.comment, attachments: post.attachments };"
 
+            // An App command is handed nothing, so there is no identity command to show: what it takes
+            // instead is the shortest one that does something and says so.
+            private const val SAMPLE_APP =
+                "chan.setProxy(env.PROXY_URL);\n" +
+                    "return \"changed\";"
+
             private val CommandsStorage.UseIn.titleRes: Int
                 get() =
                     when (this) {
                         CommandsStorage.UseIn.COMMENT -> R.string.draft
                         CommandsStorage.UseIn.THREAD -> R.string.thread
+                        CommandsStorage.UseIn.APP -> R.string.app
                     }
 
             private val CommandsStorage.UseIn.autoRunRes: Int
@@ -836,6 +913,7 @@ class CommandsFragment :
                     when (this) {
                         CommandsStorage.UseIn.COMMENT -> R.string.run_before_sending
                         CommandsStorage.UseIn.THREAD -> R.string.run_when_thread_opens
+                        CommandsStorage.UseIn.APP -> R.string.run_when_address_needed
                     }
         }
     }

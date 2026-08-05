@@ -11,8 +11,9 @@ import org.json.JSONObject
 /**
  * User-defined scripts ("Commands"). A command carries a name, a body of JavaScript [code] and a
  * target ([useIn]) that decides what it operates on: [UseIn.COMMENT] rewrites a posting form's draft —
- * its text and the files attached to it — before it is sent, while [UseIn.THREAD] reads the posts of a
- * thread being viewed and produces the comment and the files to show back for each of them. Like
+ * its text and the files attached to it — before it is sent, [UseIn.THREAD] reads the posts of a thread
+ * being viewed and produces the comment and the files to show back for each of them, and [UseIn.APP]
+ * operates on nothing of its own — it runs for what it does to the app around it. Like
  * Autohide rules a command can be scoped to specific forums ([chanNames], `null`/empty means every
  * forum) and optionally to a single board ([boardName]).
  *
@@ -511,6 +512,19 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * showing what the command hands back for it until the thread is left or read again.
          */
         THREAD("thread"),
+
+        /**
+         * Nothing of its own: an [APP] command is handed no input and its return value replaces nothing.
+         * It runs for what it does through the objects every command gets — the settings, a forum's
+         * cookies, the proxy a forum goes through — and what it returns is shown as a message, which is
+         * how a script says what it did or what it found.
+         *
+         * With [CommandItem.autoRun] it is also what the app runs when it needs another visible address
+         * for a forum (see [com.mishiranu.dashchan.content.net.VisibleAddressCommand]). That is the one
+         * moment the app has to ask for something only a script knows how to do, every proxy service
+         * changing an address its own way.
+         */
+        APP("app"),
         ;
 
         companion object {
@@ -588,7 +602,8 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         /**
          * When true the command runs automatically rather than on demand from a menu: a
          * [UseIn.COMMENT] command runs before sending, a [UseIn.THREAD] command runs when the thread
-         * is opened.
+         * is opened, and a [UseIn.APP] command is the one the app runs when it needs another visible
+         * address for a forum this command is scoped to.
          */
         @JvmField var autoRun = false
 

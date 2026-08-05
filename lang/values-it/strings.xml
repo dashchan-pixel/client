@@ -27,6 +27,7 @@
     <string name="always">Sempre</string>
     <string name="another">Un altro</string>
     <string name="api_key_or_login">Chiave API o login</string>
+    <string name="app">App</string>
     <string name="appearance">Aspetto</string>
     <string name="application_name_update__format">%s aggiornamento</string>
     <string name="archive">Archivio</string>
@@ -605,8 +606,10 @@
     <string name="add_command">Aggiungi comando</string>
     <string name="no_commands_defined">Nessun comando definito</string>
     <string name="use_in">Usa in</string>
+    <string name="run__verb">Esegui</string>
     <string name="run_before_sending">Esegui automaticamente prima dell\'invio</string>
     <string name="run_when_thread_opens">Esegui automaticamente all\'apertura del thread</string>
+    <string name="run_when_address_needed">Esegui quando serve un altro IP visibile</string>
     <string name="auto_run">Automatico</string>
     <string name="process_posts_individually">Elabora i post singolarmente</string>
     <string name="per_post">Per post</string>
