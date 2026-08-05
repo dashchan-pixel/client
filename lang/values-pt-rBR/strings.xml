@@ -19,7 +19,7 @@
 	<string name="all_threads">Todos of fios</string>
 	<string name="always">Sempre</string>
 	<string name="another">Outro</string>
-	<string name="api_key">Chave da API</string>
+	<string name="api_key_or_login">Chave da API ou login</string>
 	<string name="appearance">Aparência</string>
 	<string name="application_name_update__format">%s atualizações</string>
 	<string name="archive">Arquivo</string>
@@ -333,12 +333,12 @@
 	<string name="processing_data__ellipsis">Enviando…</string>
 	<string name="proxy">Proxy</string>
 	<string name="proxy_country">País do proxy</string>
-	<string name="proxy_country__summary">O país de onde sai o endereço deste fórum; uma porta só é comprada se a conta não tiver nenhuma nele</string>
+	<string name="proxy_country__summary">O país de onde sai o endereço deste fórum, em vez do escolhido no provedor</string>
 	<string name="proxy_for_posting_only">Proxy somente para envio</string>
 	<string name="proxy_for_posting_only__summary">Envie posts pelo proxy e carregue todo o resto diretamente; o endereço visível continua sendo verificado pelo proxy</string>
 	<string name="proxy_provider">Provedor de proxy</string>
 	<string name="proxy_provider__summary">Mudar o endereço que os fóruns veem por meio de um serviço de proxy</string>
-	<string name="proxy_provider_info__sentence">A API da Asocks é suportada. Cada fórum escolhido — ou todos, quando nenhum é escolhido — recebe uma porta da conta, gravada nas suas configurações de proxy; se não houver porta livre no país pedido, uma é comprada.</string>
+	<string name="proxy_provider_info__sentence">Asocks e DataImpulse são suportados. Cada fórum escolhido — ou todos, quando nenhum é escolhido — recebe uma porta da conta, gravada nas suas configurações de proxy. Uma porta da Asocks só é comprada se a conta não tiver nenhuma no país pedido; um plano da DataImpulse já vem com as suas portas fixas, e o país não custa nada.</string>
 	<string name="proxy_provider_no_ports">Nenhuma porta de proxy na conta</string>
 	<string name="quote__verb">Quotar</string>
 	<string name="rating">Classificação</string>

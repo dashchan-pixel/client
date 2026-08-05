@@ -1365,14 +1365,35 @@ object Preferences {
         )
 
     const val KEY_PROXY_PROVIDER: String = "proxy_provider"
+    const val SUB_KEY_PROXY_PROVIDER_SERVICE: String = "service"
+
+    /** The API key of the account, or its proxy login for a service that authorizes by those. */
     const val SUB_KEY_PROXY_PROVIDER_TOKEN: String = "token"
+
+    /** Only a service that authorizes by proxy credentials rather than by an API key asks for one. */
+    const val SUB_KEY_PROXY_PROVIDER_PASSWORD: String = "password"
     const val SUB_KEY_PROXY_PROVIDER_COUNTRY: String = "country"
     const val SUB_KEY_PROXY_PROVIDER_TYPE: String = "type"
     val KEYS_PROXY_PROVIDER: List<String> =
         listOf(
+            SUB_KEY_PROXY_PROVIDER_SERVICE,
             SUB_KEY_PROXY_PROVIDER_TOKEN,
+            SUB_KEY_PROXY_PROVIDER_PASSWORD,
             SUB_KEY_PROXY_PROVIDER_COUNTRY,
             SUB_KEY_PROXY_PROVIDER_TYPE,
+        )
+    const val VALUE_PROXY_PROVIDER_SERVICE_ASOCKS: String = "asocks"
+    const val VALUE_PROXY_PROVIDER_SERVICE_DATAIMPULSE: String = "dataimpulse"
+
+    /** The services are named as they name themselves, so neither list is translated. */
+    val ENTRIES_PROXY_PROVIDER_SERVICE: MutableList<CharSequence?> =
+        mutableListOf<CharSequence?>("Asocks", "DataImpulse")
+
+    /** The first is what a configuration written before the choice existed is read as. */
+    val VALUES_PROXY_PROVIDER_SERVICE: List<String> =
+        listOf(
+            VALUE_PROXY_PROVIDER_SERVICE_ASOCKS,
+            VALUE_PROXY_PROVIDER_SERVICE_DATAIMPULSE,
         )
 
     val proxyProvider: MutableMap<String?, String?>

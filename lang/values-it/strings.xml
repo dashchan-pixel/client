@@ -26,7 +26,7 @@
     <string name="allow_this_extension__sentence">Consentire a questa estensione di gestire l\'applicazione?</string>
     <string name="always">Sempre</string>
     <string name="another">Un altro</string>
-    <string name="api_key">Chiave API</string>
+    <string name="api_key_or_login">Chiave API o login</string>
     <string name="appearance">Aspetto</string>
     <string name="application_name_update__format">%s aggiornamento</string>
     <string name="archive">Archivio</string>
@@ -402,12 +402,12 @@
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_country">Paese del proxy</string>
-    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum; una porta viene acquistata solo se l\'account non ne ha nessuna lì</string>
+    <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum, invece di quello impostato nel fornitore</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
     <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
     <string name="proxy_provider">Fornitore proxy</string>
     <string name="proxy_provider__summary">Cambia l\'indirizzo visto dai forum tramite un servizio proxy</string>
-    <string name="proxy_provider_info__sentence">È supportata l\'API di Asocks. A ogni forum scelto — a tutti se non ne viene scelto nessuno — viene assegnata una porta dell\'account, scritta nelle sue impostazioni proxy; se per il paese richiesto non c\'è una porta libera, ne viene acquistata una.</string>
+    <string name="proxy_provider_info__sentence">Sono supportati Asocks e DataImpulse. A ogni forum scelto — a tutti se non ne viene scelto nessuno — viene assegnata una porta dell\'account, scritta nelle sue impostazioni proxy. Una porta Asocks viene acquistata solo se l\'account non ne ha nessuna nel paese richiesto; un piano DataImpulse include le sue porte sticky, e il paese non costa nulla.</string>
     <string name="proxy_provider_no_ports">Nessuna porta proxy nell\'account</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>

@@ -33,7 +33,7 @@
 	<string name="allow_this_extension__sentence">Разрешить этому расширению управление приложением?</string>
 	<string name="always">Всегда</string>
 	<string name="another">Другой</string>
-	<string name="api_key">API-ключ</string>
+	<string name="api_key_or_login">API-ключ или логин</string>
 	<string name="app_icon">Иконка приложения</string>
 	<string name="appearance">Внешний вид</string>
 	<string name="application_name_update__format">Обновление %s</string>
@@ -457,12 +457,12 @@
 	<string name="processing_data__ellipsis">Обработка данных…</string>
 	<string name="proxy">Прокси</string>
 	<string name="proxy_country">Страна прокси</string>
-	<string name="proxy_country__summary">Страна, из которой виден адрес этого форума; порт будет куплен, только если у аккаунта нет ни одного порта в ней</string>
+	<string name="proxy_country__summary">Страна, из которой виден адрес этого форума, вместо выбранной у провайдера</string>
 	<string name="proxy_for_posting_only">Прокси только для отправки</string>
 	<string name="proxy_for_posting_only__summary">Отправлять сообщения через прокси, а всё остальное загружать напрямую; видимый адрес всё равно проверяется через прокси</string>
 	<string name="proxy_provider">Провайдер прокси</string>
 	<string name="proxy_provider__summary">Смена видимого форумам адреса через прокси-сервис</string>
-	<string name="proxy_provider_info__sentence">Поддерживается API Asocks. Каждому выбранному форуму — или всем, если не выбран ни один — выдаётся порт аккаунта и записывается в его настройки прокси; если для нужной форуму страны свободного порта нет, порт будет куплен.</string>
+	<string name="proxy_provider_info__sentence">Поддерживаются Asocks и DataImpulse. Каждому выбранному форуму — или всем, если не выбран ни один — выдаётся порт аккаунта и записывается в его настройки прокси. Порт Asocks покупается, только если у аккаунта нет ни одного порта в нужной стране; у тарифа DataImpulse свои постоянные порты, и страна ничего не стоит.</string>
 	<string name="proxy_provider_no_ports">В аккаунте нет прокси-портов</string>
 	<string name="quality">Качество</string>
 	<string name="quote__verb">Цитировать</string>

@@ -130,12 +130,18 @@ class GeneralFragment :
                 Preferences.KEY_PROXY_PROVIDER,
                 R.string.proxy_provider,
                 { configureProxyProviderSummary(false) },
+                // The service is picked from a list, so that row carries no hint of its own; the
+                // credentials are named for both services, since the labels cannot follow the choice
                 listOf<CharSequence?>(
-                    getString(R.string.api_key),
+                    null,
+                    getString(R.string.api_key_or_login),
+                    getString(R.string.password),
                     getString(R.string.country),
                     null,
                 ),
                 listOf(
+                    0,
+                    InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
                     0,
@@ -143,6 +149,11 @@ class GeneralFragment :
                 MultipleEditPreference.MapValueCodec(Preferences.KEYS_PROXY_PROVIDER),
             )
         this.proxyProviderPreference = proxyProviderPreference
+        proxyProviderPreference.setValues(
+            Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_SERVICE),
+            Preferences.ENTRIES_PROXY_PROVIDER_SERVICE,
+            Preferences.VALUES_PROXY_PROVIDER_SERVICE,
+        )
         proxyProviderPreference.setValues(
             Preferences.KEYS_PROXY_PROVIDER.indexOf(Preferences.SUB_KEY_PROXY_PROVIDER_TYPE),
             Preferences.ENTRIES_PROXY_TYPE,
