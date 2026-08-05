@@ -86,7 +86,7 @@
 	<string name="change">Change it</string>
 	<string name="change_theme">Change theme</string>
 	<string name="change_visible_ip">Change visible IP</string>
-	<string name="change_visible_ip__summary">Ask the proxy provider for another address for this forum</string>
+	<string name="change_visible_ip__summary">Run the command that gives this forum another address</string>
 	<string name="changelog">Changelog</string>
 	<string name="check_for_updates">Check for updates</string>
 	<string name="check_on_startup">Check on startup</string>

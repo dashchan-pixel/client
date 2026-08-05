@@ -149,6 +149,17 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         boardName: String?,
     ): List<CommandItem> = commandItems.filter { it.useIn == useIn && it.matches(chanName, boardName) }
 
+    /**
+     * The command the app runs when it needs another visible address for [chanName] (see
+     * [com.mishiranu.dashchan.content.net.VisibleAddressCommand]): the first [UseIn.APP] command flagged
+     * [CommandItem.autoRun] that this forum is in the scope of. List order decides between two of them,
+     * which is an order the user drags into place.
+     *
+     * A board scope is ignored, unlike everywhere else: an address belongs to the forum, and it is asked
+     * for from screens where no board is in view.
+     */
+    fun getAddressCommand(chanName: String?): CommandItem? = commandItems.firstOrNull { it.useIn == UseIn.APP && it.autoRun && it.matchesChan(chanName) }
+
     override fun onClone(): Snapshot {
         val commandItems = ArrayList<CommandItem>(this.commandItems.size)
         for (commandItem in this.commandItems) {
@@ -692,8 +703,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
             chanName: String?,
             boardName: String?,
         ): Boolean {
-            val chanNames = this.chanNames
-            if (!chanNames.isNullOrEmpty() && (chanName == null || chanName !in chanNames)) {
+            if (!matchesChan(chanName)) {
                 return false
             }
             val requiredBoard = this.boardName
@@ -701,6 +711,12 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
                 return false
             }
             return true
+        }
+
+        /** The forum half of [matches], for a caller that has a forum and no board. */
+        fun matchesChan(chanName: String?): Boolean {
+            val chanNames = this.chanNames
+            return chanNames.isNullOrEmpty() || (chanName != null && chanName in chanNames)
         }
 
         override fun describeContents(): Int = 0

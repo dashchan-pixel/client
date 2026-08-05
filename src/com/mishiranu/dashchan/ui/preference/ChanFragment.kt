@@ -18,6 +18,7 @@ import chan.http.HttpException
 import chan.http.HttpHolder
 import chan.util.StringUtils
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.async.HttpHolderTask
 import com.mishiranu.dashchan.content.async.TaskViewModel
@@ -26,6 +27,7 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.UserAgentProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
+import com.mishiranu.dashchan.content.net.VisibleAddressCommand
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
 import com.mishiranu.dashchan.ui.preference.core.Preference
@@ -49,6 +51,11 @@ class ChanFragment :
 
     /** Shown while the proxy provider is being asked to give this forum a port or a new address. */
     private var proxyProviderDialog: ProgressDialog? = null
+
+    // The run of the command that changes the address this forum is seen at, tracked so leaving the
+    // screen drops it rather than leaving an engine reaching the network for nobody.
+    private var addressCommandRun: CommandRunner.Run? = null
+    private var addressCommandDialog: ProgressDialog? = null
 
     private var anotherDomainMode = false
 
@@ -375,10 +382,11 @@ class ChanFragment :
                     checkVisibleAddress(force = true)
                 }
             }
-            if (ProxyProvider.coversChan(chan)) {
-                // The provider can hand this forum another address without touching the settings
-                addButton(R.string.change_visible_ip, R.string.change_visible_ip__summary)
-                    .setOnClickListener { runProxyProviderAction(rotate = true) }
+            if (VisibleAddressCommand.forChan(chan) != null) {
+                // Named rather than described: which command the button runs is the thing worth knowing
+                // about it, and the user is who wired the two together
+                addButton(getString(R.string.change_visible_ip)) { addressCommandSummary() }
+                    .setOnClickListener { runAddressCommand() }
             }
         }
 
@@ -422,6 +430,9 @@ class ChanFragment :
             it.dismiss()
             proxyProviderDialog = null
         }
+        addressCommandDialog?.dismiss()
+        addressCommandDialog = null
+        cancelAddressCommand()
         cookiePreference = null
         banLogPreference = null
         visibleAddressPreference = null
@@ -493,6 +504,61 @@ class ChanFragment :
             address.isNullOrEmpty() -> getString(R.string.unavailable)
             else -> address
         }
+    }
+
+    /** The command the button would run, which is what the user has to see to know it is the right one. */
+    private fun addressCommandSummary(): CharSequence {
+        val item = VisibleAddressCommand.forChan(Chan.get(getChanName()))
+        val name = item?.name
+        return if (name.isNullOrEmpty()) getString(R.string.command) else name
+    }
+
+    /**
+     * Ask the command the user flagged for it to have this forum seen at another address, and read the
+     * address again afterwards -- that row is where the change shows. What the script returned is shown
+     * in place of the bare "changed", a script being better placed to say what it did.
+     */
+    private fun runAddressCommand() {
+        if (addressCommandRun?.isFinished == false) {
+            return
+        }
+        val dialog = ProgressDialog(requireContext(), null)
+        addressCommandDialog = dialog
+        dialog.setMessage(getString(R.string.loading__ellipsis))
+        dialog.setOnCancelListener {
+            addressCommandDialog = null
+            cancelAddressCommand()
+        }
+        dialog.show()
+        addressCommandRun =
+            VisibleAddressCommand.run(Chan.get(getChanName())) { result ->
+                addressCommandRun = null
+                addressCommandDialog?.dismiss()
+                addressCommandDialog = null
+                when (result) {
+                    is CommandRunner.AppResult.Success -> {
+                        ClickableToast.show(result.message ?: getString(R.string.visible_ip_changed))
+                        // The proxy may be another one now, and the address another one either way
+                        proxyPreference?.invalidate()
+                        checkVisibleAddress(force = true)
+                    }
+
+                    is CommandRunner.AppResult.Failure -> {
+                        ClickableToast.show(getString(R.string.command_failed__format, result.message))
+                    }
+                }
+            }
+        if (addressCommandRun == null) {
+            // Deleted or unflagged while this screen was open, so the row it built is stale
+            dialog.dismiss()
+            addressCommandDialog = null
+            ClickableToast.show(R.string.no_commands_defined)
+        }
+    }
+
+    private fun cancelAddressCommand() {
+        addressCommandRun?.cancel()
+        addressCommandRun = null
     }
 
     /**

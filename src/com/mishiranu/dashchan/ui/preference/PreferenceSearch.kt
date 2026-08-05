@@ -8,6 +8,7 @@ import chan.content.ChanManager
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.net.ProxyProvider
+import com.mishiranu.dashchan.content.net.VisibleAddressCommand
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import java.util.Locale
 
@@ -129,6 +130,9 @@ object PreferenceSearch {
 
         /** Not an extension capability: the rows exist only while a proxy provider covers the forum. */
         val proxyProvider: Boolean by lazy { ProxyProvider.coversChan(chan) }
+
+        /** Likewise: the row exists only while the user has a command for changing the forum's address. */
+        val addressCommand: Boolean by lazy { VisibleAddressCommand.forChan(chan) != null }
 
         /** The rows the extension itself contributes, which no table here could know about. */
         val customPreferences: List<Row> by lazy {
@@ -332,7 +336,7 @@ object PreferenceSearch {
                 R.string.connection,
                 R.string.change_visible_ip,
                 R.string.change_visible_ip__summary,
-            ) { !it.localMode && it.proxyProvider },
+            ) { !it.localMode && it.addressCommand },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.ban_log, 0) { true },
             ChanEntry(R.string.additional, R.string.uninstall_extension, 0) { true },

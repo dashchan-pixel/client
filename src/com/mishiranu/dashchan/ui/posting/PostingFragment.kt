@@ -87,6 +87,7 @@ import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
 import com.mishiranu.dashchan.content.net.ProxyProvider
 import com.mishiranu.dashchan.content.net.VisibleAddress
+import com.mishiranu.dashchan.content.net.VisibleAddressCommand
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
 import com.mishiranu.dashchan.content.storage.CommandsStorage
@@ -258,6 +259,9 @@ class PostingFragment :
 
     /** Shown while the proxy provider is being asked for a new visible address. */
     private var rotateAddressDialog: ProgressDialog? = null
+
+    /** The run of the command that changes the address this forum sees, while one is in flight. */
+    private var addressCommandRun: CommandRunner.Run? = null
 
     private var postingBinder: PostingService.Binder? = null
     private val postingConnection: ServiceConnection =
@@ -913,11 +917,11 @@ class PostingFragment :
             ViewModelProvider(this).get(BanWarningViewModel::class.java)
         banWarningViewModel.observe(getViewLifecycleOwner()) { banned ->
             if (banned) {
-                // The way out of a ban on this address is another address. With a proxy provider set
-                // up the button asks it for one right here; without it the fix is a proxy configured
-                // by hand, on the forum's settings screen, which the button opens instead. Either
-                // way the message has already said what is wrong, so the button stays a bare verb.
-                val hasProvider = ProxyProvider.coversChan(get(chanName))
+                // The way out of a ban on this address is another address. Where the user has written
+                // the command for it the button runs that right here; without one the fix is a proxy
+                // configured by hand, on the forum's settings screen, which the button opens instead.
+                // Either way the message has already said what is wrong, so the button stays a bare verb.
+                val hasCommand = VisibleAddressCommand.forChan(get(chanName)) != null
                 show(
                     getString(R.string.visible_ip_banned),
                     null,
@@ -925,31 +929,14 @@ class PostingFragment :
                         R.string.change,
                         false,
                         Runnable {
-                            if (hasProvider) {
-                                rotateVisibleAddress()
+                            if (hasCommand) {
+                                changeVisibleAddress()
                             } else {
                                 openForumProxySettings()
                             }
                         },
                     ),
                 )
-            }
-        }
-
-        val rotateAddressViewModel = ViewModelProvider(this).get(RotateAddressViewModel::class.java)
-        rotateAddressViewModel.observe(getViewLifecycleOwner()) { result ->
-            rotateAddressDialog?.dismiss()
-            rotateAddressDialog = null
-            val errorItem = result.first
-            if (errorItem != null) {
-                show(errorItem)
-            } else {
-                ClickableToast.show(R.string.visible_ip_changed)
-                // The address the forum sees has changed: the ban that prompted this may well not
-                // apply to the new one, so let the check say so again -- or stay silent.
-                val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
-                banViewModel.checked = false
-                checkVisibleAddressBan(get(chanName))
             }
         }
     }
@@ -1755,13 +1742,17 @@ class PostingFragment :
     }
 
     /**
-     * Ask the proxy provider for a new visible address. The provider's own endpoint is asked
-     * through the fallback chan, so a forum whose proxy is the very port being rotated cannot get
-     * in the way of the request that fixes it.
+     * Run the command the user flagged to have this forum seen at another address (see
+     * [VisibleAddressCommand]), and let the ban check say its piece again afterwards: the ban that
+     * prompted this may well not apply to the new address.
+     *
+     * Tracked with the draft commands, so leaving the screen drops it -- unlike the provider request
+     * this replaced, which was held in a view model and survived a rotation. A command run belongs to
+     * the screen that started it here as everywhere else, and the toast that offers this comes back on
+     * the next check anyway.
      */
-    private fun rotateVisibleAddress() {
-        val viewModel = ViewModelProvider(this).get(RotateAddressViewModel::class.java)
-        if (viewModel.getTask() != null) {
+    private fun changeVisibleAddress() {
+        if (addressCommandRun?.isFinished == false) {
             return
         }
         val dialog = ProgressDialog(requireContext(), null)
@@ -1769,36 +1760,36 @@ class PostingFragment :
         dialog.setMessage(getString(R.string.loading__ellipsis))
         dialog.setOnCancelListener {
             rotateAddressDialog = null
-            viewModel.attach(null)
+            addressCommandRun?.cancel()
+            addressCommandRun = null
         }
         dialog.show()
-        val task = RotateAddressTask(viewModel, get(chanName))
-        task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
-        viewModel.attach(task)
-    }
+        val run =
+            VisibleAddressCommand.run(get(chanName)) { result ->
+                addressCommandRun = null
+                rotateAddressDialog?.dismiss()
+                rotateAddressDialog = null
+                when (result) {
+                    is CommandRunner.AppResult.Success -> {
+                        ClickableToast.show(result.message ?: getString(R.string.visible_ip_changed))
+                        val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
+                        banViewModel.checked = false
+                        checkVisibleAddressBan(get(chanName))
+                    }
 
-    class RotateAddressViewModel : TaskViewModel<RotateAddressTask, Pair<ErrorItem, Boolean>>()
-
-    class RotateAddressTask(
-        private val viewModel: RotateAddressViewModel,
-        private val chan: Chan,
-    ) : HttpHolderTask<Unit, Pair<ErrorItem, Boolean>>(Chan.getFallback()) {
-        override fun run(holder: HttpHolder): Pair<ErrorItem, Boolean> =
-            try {
-                val success = ProxyProvider.rotateVisibleAddress(holder, chan)
-                if (success) {
-                    Pair<ErrorItem, Boolean>(null, true)
-                } else {
-                    Pair<ErrorItem, Boolean>(ErrorItem(ErrorItem.Type.UNKNOWN), false)
+                    is CommandRunner.AppResult.Failure -> {
+                        show(getString(R.string.command_failed__format, result.message))
+                    }
                 }
-            } catch (e: HttpException) {
-                Pair<ErrorItem, Boolean>(e.getErrorItemAndHandle(), false)
-            } catch (e: ProxyProvider.ServiceException) {
-                Pair<ErrorItem, Boolean>(e.errorItem, false)
             }
-
-        override fun onComplete(result: Pair<ErrorItem, Boolean>) {
-            viewModel.handleResult(result)
+        addressCommandRun = run
+        if (run == null) {
+            // Deleted or unflagged since the toast offered this
+            dialog.dismiss()
+            rotateAddressDialog = null
+            openForumProxySettings()
+        } else {
+            trackCommandRun(run)
         }
     }
 

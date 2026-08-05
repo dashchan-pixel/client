@@ -84,7 +84,7 @@
 	<string name="change">Сменить</string>
 	<string name="change_theme">Сменить тему</string>
 	<string name="change_visible_ip">Сменить видимый IP</string>
-	<string name="change_visible_ip__summary">Запросить у провайдера прокси другой адрес для этого форума</string>
+	<string name="change_visible_ip__summary">Выполнить команду, которая даёт этому форуму другой адрес</string>
 	<string name="changelog">Список изменений</string>
 	<string name="check_for_updates">Проверить наличие обновлений</string>
 	<string name="check_on_startup">Проверять при запуске</string>

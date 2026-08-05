@@ -70,7 +70,7 @@
     <string name="change">Cambia</string>
     <string name="change_theme">Cambia tema</string>
     <string name="change_visible_ip">Cambia IP visibile</string>
-    <string name="change_visible_ip__summary">Chiedi al fornitore proxy un altro indirizzo per questo forum</string>
+    <string name="change_visible_ip__summary">Esegui il comando che dà a questo forum un altro indirizzo</string>
     <string name="changelog">Changelog</string>
     <string name="check_for_updates">Controlla aggiornamenti</string>
     <string name="check_on_startup">Controlla all\'avvio</string>

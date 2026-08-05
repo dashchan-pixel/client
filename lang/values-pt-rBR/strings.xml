@@ -60,7 +60,7 @@
 	<string name="change">Mudar</string>
 	<string name="change_theme">Mudar tema</string>
 	<string name="change_visible_ip">Mudar IP visível</string>
-	<string name="change_visible_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
+	<string name="change_visible_ip__summary">Executar o comando que dá a este fórum outro endereço</string>
 	<string name="check_for_updates">Checar por atualizações</string>
 	<string name="check_on_startup">Checar no startup</string>
 	<string name="choose">Escolher</string>
