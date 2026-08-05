@@ -461,7 +461,7 @@
 	<string name="proxy_country">Страна прокси</string>
 	<string name="proxy_country__summary">Страна, из которой виден адрес этого форума, вместо выбранной у провайдера</string>
 	<string name="proxy_for_posting_only">Прокси только для отправки</string>
-	<string name="proxy_for_posting_only__summary">Отправлять сообщения через прокси, а всё остальное загружать напрямую; видимый адрес всё равно проверяется через прокси</string>
+	<string name="proxy_for_posting_only__summary">Сообщения и жалобы отправляются через прокси, всё остальное загружается напрямую</string>
 	<string name="proxy_provider">Провайдер прокси</string>
 	<string name="proxy_provider__summary">Смена видимого форумам адреса через прокси-сервис</string>
 	<string name="proxy_provider_info__sentence">Поддерживаются Asocks и DataImpulse. Каждому выбранному форуму выдаётся порт аккаунта и записывается в его настройки прокси; если не выбран ни один форум, провайдер отключается и форумы получают свои настройки прокси обратно. Порт Asocks покупается, только если у аккаунта нет ни одного порта в нужной стране; у тарифа DataImpulse свои постоянные порты, и страна ничего не стоит.</string>

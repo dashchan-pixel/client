@@ -1354,9 +1354,9 @@ object Preferences {
     const val DEFAULT_PROXY_POSTING_ONLY: Boolean = false
 
     /**
-     * Whether the proxy is restricted to posting: browsing goes out directly, and only the requests
-     * that carry a post — plus the checks that exist to verify the proxy itself — are routed
-     * through it. Has no effect when no proxy is configured.
+     * Whether the proxy is restricted to what the user sends: browsing goes out directly, and only
+     * the requests that carry a post or a report — plus the checks that exist to verify the proxy
+     * itself — are routed through it. Has no effect when no proxy is configured.
      */
     fun isProxyPostingOnly(chan: Chan): Boolean =
         prefs.getBoolean(

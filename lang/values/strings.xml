@@ -471,8 +471,8 @@
 	<string name="proxy">Proxy</string>
 	<string name="proxy_country">Proxy country</string>
 	<string name="proxy_country__summary">The country this forum\'s address exits from, instead of the one the provider is set to</string>
-	<string name="proxy_for_posting_only">Proxy for posting only</string>
-	<string name="proxy_for_posting_only__summary">Send posts through the proxy and load everything else directly; the visible address is still checked through the proxy</string>
+	<string name="proxy_for_posting_only">Proxy for sending only</string>
+	<string name="proxy_for_posting_only__summary">Posts and reports go through the proxy, everything else loads directly</string>
 	<string name="proxy_provider">Proxy provider</string>
 	<string name="proxy_provider__summary">Change the address forums see through a proxy service</string>
 	<string name="proxy_provider_info__sentence">Asocks and DataImpulse are supported. Each chosen forum is given a port of the account, written into its proxy settings; choosing no forum switches the provider off and gives every forum its proxy settings back. An Asocks port is bought only for a country the account holds none in; a DataImpulse plan comes with its sticky ports, and the country costs nothing.</string>

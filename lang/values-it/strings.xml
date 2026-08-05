@@ -406,7 +406,7 @@
     <string name="proxy_country">Paese del proxy</string>
     <string name="proxy_country__summary">Il paese da cui esce l\'indirizzo di questo forum, invece di quello impostato nel fornitore</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
-    <string name="proxy_for_posting_only__summary">Invia i post tramite il proxy e carica tutto il resto direttamente; l\'indirizzo visibile viene comunque controllato tramite il proxy</string>
+    <string name="proxy_for_posting_only__summary">Post e segnalazioni passano dal proxy, tutto il resto si carica direttamente</string>
     <string name="proxy_provider">Fornitore proxy</string>
     <string name="proxy_provider__summary">Cambia l\'indirizzo visto dai forum tramite un servizio proxy</string>
     <string name="proxy_provider_info__sentence">Sono supportati Asocks e DataImpulse. A ogni forum scelto viene assegnata una porta dell\'account, scritta nelle sue impostazioni proxy; se non ne viene scelto nessuno il fornitore viene disattivato e ogni forum riprende le proprie impostazioni proxy. Una porta Asocks viene acquistata solo se l\'account non ne ha nessuna nel paese richiesto; un piano DataImpulse include le sue porte sticky, e il paese non costa nulla.</string>

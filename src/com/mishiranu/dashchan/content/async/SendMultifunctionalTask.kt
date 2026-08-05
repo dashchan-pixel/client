@@ -66,6 +66,11 @@ class SendMultifunctionalTask(
 
     override fun run(holder: HttpHolder): Boolean {
         var chan = this.chan
+        // A report is sent as the user, the way a post is, so it takes the proxy even where the
+        // forum is set to carry posting only -- and so does the captcha a forum may ask for it,
+        // which the extension reads through this same holder. A report leaving from the device's own
+        // address next to posts leaving from the proxy's is what the setting exists to avoid.
+        holder.proxyRequired = state.operation == Operation.REPORT
         try {
             when (state.operation) {
                 Operation.DELETE -> {
