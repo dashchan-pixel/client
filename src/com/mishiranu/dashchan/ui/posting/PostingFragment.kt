@@ -140,6 +140,7 @@ import com.mishiranu.dashchan.widget.CommandsPopup
 import com.mishiranu.dashchan.widget.DropdownView
 import com.mishiranu.dashchan.widget.ExpandedLayout
 import com.mishiranu.dashchan.widget.MaterialContext
+import com.mishiranu.dashchan.widget.PostingSheetLayout
 import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.ThemeEngine.Companion.getTheme
 import com.mishiranu.dashchan.widget.UriPasteEditText
@@ -211,6 +212,23 @@ class PostingFragment :
     private var captchaLarge = false
     private var captchaBlackAndWhite = false
     private var captchaLifetimeSeconds = 0
+
+    /**
+     * Whether the form is hosted as a sheet floating over a page, which only the activity hosting it
+     * can know — see `MainActivity.navigatePostingSheet`. Kept in the arguments, so that a rotation,
+     * which rebuilds the fragment out of them, keeps the same host.
+     */
+    var sheet: Boolean
+        get() = requireArguments().getBoolean(EXTRA_SHEET)
+        set(sheet) {
+            requireArguments().putBoolean(EXTRA_SHEET, sheet)
+        }
+
+    /** The sheet hosting the form, or null when the form is the root view itself. */
+    private var sheetLayout: PostingSheetLayout? = null
+
+    /** The sheet's stand-in for the toolbar's attach item; see [invalidateAttach]. */
+    private var attachButton: ImageView? = null
 
     private var scrollView: ScrollView? = null
     private var commentView: UriPasteEditText? = null
@@ -290,15 +308,93 @@ class PostingFragment :
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        val rootView = ExpandedLayout(container!!.getContext(), true)
-        rootView.setLayoutParams(
+        val formLayout = ExpandedLayout(container!!.getContext(), true)
+        formLayout.setLayoutParams(
             ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             ),
         )
-        inflater.inflate(R.layout.activity_posting, rootView)
-        return rootView
+        inflater.inflate(R.layout.activity_posting, formLayout)
+        if (!sheet) {
+            return formLayout
+        }
+        // The same form, floating over the page it was opened from. Swiping the sheet away is a back
+        // press by another name, so it leaves through the same door.
+        val sheetLayout =
+            PostingSheetLayout(container.getContext(), formLayout) {
+                if (isAdded()) {
+                    (requireActivity() as FragmentHandler).removeFragment()
+                }
+            }
+        this.sheetLayout = sheetLayout
+        return sheetLayout
+    }
+
+    /** A sheet answers a back press by sliding off screen, and dismisses itself once it is gone. */
+    override val isBackHandled: Boolean
+        get() = sheetLayout?.isOpen == true
+
+    override fun onBackPressed(): Boolean {
+        val sheetLayout = this.sheetLayout
+        if (sheetLayout == null || !sheetLayout.isOpen) {
+            return false
+        }
+        sheetLayout.hide()
+        return true
+    }
+
+    /**
+     * Leaves the form. A sheet slides off the page first and dismisses itself once it is gone, so that
+     * every way out of it looks like the swipe it is named after.
+     */
+    private fun leave() {
+        val sheetLayout = this.sheetLayout
+        if (sheetLayout != null && sheetLayout.isOpen) {
+            sheetLayout.hide()
+        } else {
+            (requireActivity() as FragmentHandler).removeFragment()
+        }
+    }
+
+    /**
+     * The attach action, which is a toolbar item for a form that owns the toolbar and a button in the
+     * sheet's own header for one that does not.
+     */
+    private fun invalidateAttach() {
+        invalidateOptionsMenu()
+        attachButton?.setVisibility(
+            if (attachments.size < postingConfiguration.attachmentCount) View.VISIBLE else View.GONE,
+        )
+    }
+
+    /**
+     * The attach button the sheet carries in place of the toolbar item, built to match the ⌘ button
+     * over the comment field — the same box, padding and secondary tint.
+     */
+    private fun buildAttachButton(
+        header: FrameLayout,
+        density: Float,
+    ): ImageView {
+        val context = header.context
+        val button = ImageView(context)
+        button.setImageDrawable((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAttach))
+        button.imageTintList = ColorStateList.valueOf(getColor(context, android.R.attr.textColorSecondary))
+        button.setBackgroundResource(
+            getResourceId(context, android.R.attr.selectableItemBackgroundBorderless, 0),
+        )
+        button.contentDescription = getString(R.string.attach)
+        val padding = (8f * density).toInt()
+        button.setPadding(padding, padding, padding, padding)
+        val size = (40f * density).toInt()
+        button.setOnClickListener { startAttachmentPick() }
+        header.addView(
+            button,
+            FrameLayout.LayoutParams(size, size, Gravity.CENTER_VERTICAL or Gravity.END).apply {
+                setMarginEnd((4f * density).toInt())
+            },
+        )
+        return button
     }
 
     public override fun onViewCreated(
@@ -330,6 +426,16 @@ class PostingFragment :
 
         val scrollView = view.findViewById<ScrollView>(R.id.scroll_view)
         this.scrollView = scrollView
+        val sheetLayout = this.sheetLayout
+        if (sheetLayout != null) {
+            // A sheet only hands the drag over to a nested scrolling child, and a plain ScrollView
+            // does not opt into that on its own
+            scrollView.setNestedScrollingEnabled(true)
+            attachButton = buildAttachButton(sheetLayout.header, density)
+            // The sheet's top edge is where the toolbar ends, so a toolbar that hides itself as the
+            // page behind is scrolled would leave the sheet floating below a gap
+            (requireActivity() as FragmentHandler).setActionBarLocked(LOCKER_SHEET, true)
+        }
         val postingLayout = view.findViewById<ViewGroup>(R.id.posting_layout)
         val commentParent = view.findViewById<LinearLayout>(R.id.comment_parent)
         val commentFormat = view.findViewById<LinearLayout?>(R.id.comment_format)
@@ -439,7 +545,9 @@ class PostingFragment :
             getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
         // When enabled, the markup bar lives inline below the comment field (added further down)
         // instead of pinned under the toolbar. postingLayout already supplies horizontal padding.
-        val markupAtBottom = isMarkupButtonsAtBottom
+        // A sheet has no claim on the toolbar -- that belongs to the page it floats over -- so its
+        // markup bar goes inline whatever the setting says.
+        val markupAtBottom = isMarkupButtonsAtBottom || sheet
         val extra =
             if (markupAtBottom) {
                 postingLayout
@@ -890,19 +998,23 @@ class PostingFragment :
             refreshCaptcha(false, true, false)
         }
 
-        (requireActivity() as FragmentHandler).setTitleSubtitle(
-            getString(
-                if (StringUtils.isEmpty(
-                        this.threadNumber,
-                    )
-                ) {
-                    R.string.new_thread
-                } else {
-                    R.string.new_post
-                },
-            ),
-            null,
-        )
+        if (!sheet) {
+            // A sheet says what it is by covering the thread it replies to, and the toolbar behind it
+            // goes on naming that thread
+            (requireActivity() as FragmentHandler).setTitleSubtitle(
+                getString(
+                    if (StringUtils.isEmpty(
+                            this.threadNumber,
+                        )
+                    ) {
+                        R.string.new_thread
+                    } else {
+                        R.string.new_post
+                    },
+                ),
+                null,
+            )
+        }
         requireActivity().bindService(
             Intent(requireContext(), PostingService::class.java),
             postingConnection,
@@ -953,7 +1065,13 @@ class PostingFragment :
         visibleIpCommandDialog?.dismiss()
         visibleIpCommandDialog = null
         ViewUtils.removeFromParent(textFormatView!!)
+        if (sheetLayout != null) {
+            // The toolbar goes back to hiding itself with the page it belongs to
+            (requireActivity() as FragmentHandler).setActionBarLocked(LOCKER_SHEET, false)
+        }
 
+        sheetLayout = null
+        attachButton = null
         scrollView = null
         commentView = null
         sageCheckBox = null
@@ -1093,7 +1211,7 @@ class PostingFragment :
         }
         draftSaved = false
         if (!allowPosting || sendSuccess) {
-            (requireActivity() as FragmentHandler).removeFragment()
+            leave()
         }
     }
 
@@ -1104,7 +1222,7 @@ class PostingFragment :
         if (changed.contains(this.chanName) || removed.contains(this.chanName)) {
             updatePostingConfigurationIfNeeded()
             if (!allowPosting) {
-                (requireActivity() as FragmentHandler).removeFragment()
+                leave()
             }
         }
     }
@@ -1251,7 +1369,7 @@ class PostingFragment :
             }
             invalidateAttachments(attachmentCount)
             if (attachmentCount) {
-                invalidateOptionsMenu()
+                invalidateAttach()
             }
         }
     }
@@ -1329,6 +1447,10 @@ class PostingFragment :
         menu: Menu,
         primary: Boolean,
     ) {
+        // The toolbar over a sheet is the page's, so the form adds nothing to it; see buildAttachButton
+        if (sheet) {
+            return
+        }
         menu
             .add(0, R.id.menu_attach, 0, R.string.attach)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAttach))
@@ -1341,7 +1463,7 @@ class PostingFragment :
     ) {
         menu
             .findItem(R.id.menu_attach)
-            .setVisible(attachments.size < postingConfiguration.attachmentCount)
+            ?.setVisible(attachments.size < postingConfiguration.attachmentCount)
     }
 
     private fun handleMimeTypeGroup(
@@ -1376,31 +1498,35 @@ class PostingFragment :
     public override fun onMenuItemSelected(item: MenuItem): Boolean {
         val switchItemId0 = item.getItemId()
         if (switchItemId0 == R.id.menu_attach) {
-            // SHOW_ADVANCED to show folder navigation
-
-            val intent =
-                Intent(Intent.ACTION_GET_CONTENT)
-                    .addCategory(Intent.CATEGORY_OPENABLE)
-                    .putExtra("android.content.extra.SHOW_ADVANCED", true)
-            val mimeTypes = buildMimeTypeList(postingConfiguration.attachmentMimeTypes)
-            if (mimeTypes.size >= 2) {
-                intent.setType("*/*")
-                intent.putExtra(
-                    Intent.EXTRA_MIME_TYPES,
-                    CommonUtils.toArray(mimeTypes, String::class.java),
-                )
-            } else if (mimeTypes.size == 1) {
-                intent.setType(mimeTypes.get(0))
-            }
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-
-            try {
-                attachLauncher.launch(intent)
-            } catch (e: ActivityNotFoundException) {
-                show(R.string.unknown_address)
-            }
+            startAttachmentPick()
         }
         return true
+    }
+
+    private fun startAttachmentPick() {
+        // SHOW_ADVANCED to show folder navigation
+
+        val intent =
+            Intent(Intent.ACTION_GET_CONTENT)
+                .addCategory(Intent.CATEGORY_OPENABLE)
+                .putExtra("android.content.extra.SHOW_ADVANCED", true)
+        val mimeTypes = buildMimeTypeList(postingConfiguration.attachmentMimeTypes)
+        if (mimeTypes.size >= 2) {
+            intent.setType("*/*")
+            intent.putExtra(
+                Intent.EXTRA_MIME_TYPES,
+                CommonUtils.toArray(mimeTypes, String::class.java),
+            )
+        } else if (mimeTypes.size == 1) {
+            intent.setType(mimeTypes.get(0))
+        }
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+        try {
+            attachLauncher.launch(intent)
+        } catch (e: ActivityNotFoundException) {
+            show(R.string.unknown_address)
+        }
     }
 
     private fun updateFocusButtons(commentFocused: Boolean) {
@@ -1556,7 +1682,7 @@ class PostingFragment :
 
     private fun onSendPostMinimize() {
         progressDialog = null
-        (requireActivity() as FragmentHandler).removeFragment()
+        leave()
     }
 
     private fun dismissSendPost() {
@@ -1637,7 +1763,7 @@ class PostingFragment :
                 if (success) {
                     sendSuccess = true
                     if (isResumed()) {
-                        (requireActivity() as FragmentHandler).removeFragment()
+                        leave()
                     }
                 }
             }
@@ -2006,20 +2132,18 @@ class PostingFragment :
             )
         }
 
-    private val attachmentRemoveListener: View.OnClickListener =
-        object : View.OnClickListener {
-            override fun onClick(v: View) {
-                val holder = v.getTag() as AttachmentHolder
-                if (attachments.remove(holder)) {
-                    if (attachmentColumnCount == 1) {
-                        attachmentContainer!!.removeView(holder.view)
-                    } else {
-                        invalidateAttachments(true)
-                    }
-                    invalidateOptionsMenu()
-                    resizeComment(true)
-                    getInstance().store(obtainPostDraft())
+    private val attachmentRemoveListener =
+        View.OnClickListener { v: View ->
+            val holder = v.getTag() as AttachmentHolder
+            if (attachments.remove(holder)) {
+                if (attachmentColumnCount == 1) {
+                    attachmentContainer!!.removeView(holder.view)
+                } else {
+                    invalidateAttachments(true)
                 }
+                invalidateAttach()
+                resizeComment(true)
+                getInstance().store(obtainPostDraft())
             }
         }
 
@@ -2288,7 +2412,7 @@ class PostingFragment :
         removeButton.setTag(holder)
         options.setTag(holder)
         attachments.add(holder)
-        invalidateOptionsMenu()
+        invalidateAttach()
         resizeComment(true)
         return holder
     }
@@ -2684,7 +2808,7 @@ class PostingFragment :
                 attachmentDraft.optionCustomName,
             )
         }
-        invalidateOptionsMenu()
+        invalidateAttach()
         resizeComment(true)
         val droppedCount = attachmentDrafts.size - allowed.size
         if (droppedCount > 0) {
@@ -2906,6 +3030,8 @@ class PostingFragment :
                 } else {
                     padding = 0
                 }
+                // Only reached with the markup bar under the toolbar, which is to say never for a
+                // sheet: that one carries its bar inline, so the root here is always the form itself
                 (getView() as ExpandedLayout).setExtraTop(padding)
             }
         }
@@ -2917,7 +3043,12 @@ class PostingFragment :
         private const val EXTRA_THREAD_NUMBER = "threadNumber"
         private const val EXTRA_REPLY_DATA_LIST = "replyDataList"
 
+        private const val EXTRA_SHEET = "sheet"
+
         private const val EXTRA_CAPTCHA_DRAFT = "captchaDraft"
+
+        /** Keeps the toolbar from hiding itself out from under a sheet's top edge. */
+        private const val LOCKER_SHEET = "postingSheet"
 
         /**
          * Fills the attachment down to the top of the controls strip. An attachment with no preview is

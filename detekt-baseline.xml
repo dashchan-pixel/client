@@ -495,7 +495,6 @@
     <ID>NullableToStringCall:SendLocalArchiveTask.kt$SendLocalArchiveTask$uri.toString()</ID>
     <ID>NullableToStringCall:ThreadsPage.kt$ThreadsPage.Companion$uri.toString()</ID>
     <ID>NullableToStringCall:ViewUnit.kt$ViewUnit$text.toString()</ID>
-    <ID>ObjectLiteralToLambda:PostingFragment.kt$PostingFragment$object : View.OnClickListener { override fun onClick(v: View) { val holder = v.getTag() as AttachmentHolder if (attachments.remove(holder)) { if (attachmentColumnCount == 1) { attachmentContainer!!.removeView(holder.view) } else { invalidateAttachments(true) } invalidateOptionsMenu() resizeComment(true) getInstance().store(obtainPostDraft()) } } }</ID>
     <ID>ObjectLiteralToLambda:PostingFragment.kt$PostingFragment$object : View.OnClickListener { override fun onClick(v: View) { val what = v.getTag() as Int when (what) { ChanMarkup.TAG_QUOTE -&gt; { formatQuote() } else -&gt; { commentEditor!!.formatSelectedText(commentView!!, what) } } val inputMethodManager = requireContext() .getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager? if (inputMethodManager != null) { inputMethodManager.showSoftInput(commentView, 0) } } }</ID>
     <ID>SafeCast:CommentTextView.kt$CommentTextView$if (text is Spannable) text else null</ID>
     <ID>SafeCast:CommentTextView.kt$CommentTextView$if (text is Spanned) text else null</ID>

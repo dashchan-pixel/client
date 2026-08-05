@@ -499,6 +499,8 @@
     <string name="subject_is_too_short">Oggetto troppo corto</string>
     <string name="subjects_are_disabled">Oggetto disabilitato</string>
     <string name="submission_form">Form di invio</string>
+    <string name="submission_form_sheet">Form di invio come pannello</string>
+    <string name="submission_form_sheet__summary">Apri il form di invio come pannello inferiore, che può essere trascinato tra altezza piena e metà e scartato con uno swipe</string>
     <string name="success_number_not_loaded_number__format">Con successo: %1$d, non caricati: %2$d</string>
     <string name="summary">Indice</string>
     <string name="test_string">Stringa di test</string>

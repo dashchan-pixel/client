@@ -214,6 +214,13 @@ class InterfaceFragment : PreferenceFragment() {
         addHeader(R.string.submission_form)
         addCheck(
             true,
+            Preferences.KEY_POSTING_SHEET,
+            Preferences.DEFAULT_POSTING_SHEET,
+            R.string.submission_form_sheet,
+            R.string.submission_form_sheet__summary,
+        )
+        addCheck(
+            true,
             Preferences.KEY_HIDE_PERSONAL_DATA,
             Preferences.DEFAULT_HIDE_PERSONAL_DATA,
             R.string.hide_personal_data_block,

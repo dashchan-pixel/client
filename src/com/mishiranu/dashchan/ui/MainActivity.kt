@@ -43,6 +43,7 @@ import androidx.core.os.BundleCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.drawerlayout.widget.DrawerLayout.SimpleDrawerListener
+import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
@@ -654,7 +655,7 @@ class MainActivity :
             handleStorageRequestResult(cancel)
         }
 
-    private val currentFragment: ContentFragment?
+    private val settledFragmentManager: FragmentManager
         get() {
             val fragmentManager = getSupportFragmentManager()
             try {
@@ -662,7 +663,33 @@ class MainActivity :
             } catch (e: IllegalStateException) {
                 // Ignore
             }
-            return fragmentManager.findFragmentById(R.id.content_fragment) as ContentFragment?
+            return fragmentManager
+        }
+
+    /**
+     * Whatever is on top, which is the posting sheet while one is up: a sheet is added over the page
+     * rather than replacing it, and [FragmentManager.findFragmentById] answers with the last fragment
+     * added to the container.
+     */
+    private val currentFragment: ContentFragment?
+        get() = settledFragmentManager.findFragmentById(R.id.content_fragment) as ContentFragment?
+
+    /** The posting sheet floating over a page, while there is one. */
+    private val sheetFragment: PostingFragment?
+        get() = settledFragmentManager.findFragmentByTag(TAG_POSTING_SHEET) as PostingFragment?
+
+    /**
+     * The fragment the screen belongs to: the page a posting sheet is floating over, not the sheet
+     * itself. Everything a page publishes to the activity — its title, its redirects, the drawer and
+     * watcher configuration, the actions of the toolbar it keeps — comes from here, so that being
+     * covered by a sheet leaves a page behaving like the page it still is.
+     */
+    private val screenFragment: ContentFragment?
+        get() {
+            val sheetFragment = this.sheetFragment ?: return currentFragment
+            return getSupportFragmentManager()
+                .fragments
+                .lastOrNull { it is ContentFragment && it !== sheetFragment } as ContentFragment?
         }
 
     override fun setTitleSubtitle(
@@ -851,17 +878,50 @@ class MainActivity :
         threadNumber: String?,
         vararg data: ReplyData?,
     ) {
-        fragments.clear()
-        navigateFragment(
+        val fragment =
             PostingFragment(
                 chanName,
                 boardName,
                 threadNumber,
                 Arrays.asList<ReplyData?>(*data),
-            ),
-            null,
-            true,
-        )
+            )
+        // A sheet is only a sheet if there is a page for it to float over -- being able to read the
+        // thread behind the form is the whole of it. Opened from anywhere else, the form takes the
+        // screen the way it always has. screenFragment, not currentFragment: replying twice over means
+        // the page under the sheet that is already up.
+        if (Preferences.isPostingSheet && screenFragment is PageFragment) {
+            navigatePostingSheet(fragment)
+        } else {
+            fragments.clear()
+            navigateFragment(fragment, null, true)
+        }
+    }
+
+    /**
+     * Adds the form over the page instead of replacing it, which is what leaves the thread on screen
+     * behind the sheet. Nothing is stacked: the page never left, so there is nothing to come back to.
+     */
+    private fun navigatePostingSheet(fragment: PostingFragment) {
+        closeOverlaysForNavigation()
+        val sheetFragment = this.sheetFragment
+        if (sheetFragment != null) {
+            // One form at a time: the draft of the one being replaced is stored as its view goes away,
+            // and the new one reads that draft back, so the two must not overlap
+            getSupportFragmentManager().beginTransaction().remove(sheetFragment).commitNow()
+        }
+        fragment.sheet = true
+        getSupportFragmentManager()
+            .beginTransaction()
+            .add(R.id.content_fragment, fragment, TAG_POSTING_SHEET)
+            .commit()
+        updateBackHandling()
+    }
+
+    /** Takes the sheet off the page it was floating over, which is all there is to leaving the form. */
+    private fun removePostingSheet(fragment: PostingFragment) {
+        fragment.onTerminate()
+        getSupportFragmentManager().beginTransaction().remove(fragment).commit()
+        updateBackHandling()
     }
 
     override fun navigateGallery(
@@ -1005,17 +1065,9 @@ class MainActivity :
                 replace = false
             }
             if (replace) {
-                fragments.clear()
-                navigateFragment(
-                    PostingFragment(
-                        chanName,
-                        boardName,
-                        threadNumber,
-                        mutableListOf<ReplyData?>(),
-                    ),
-                    null,
-                    true,
-                )
+                // Through navigatePosting, so that a form reopened from its notification is hosted the
+                // same way as one opened from the thread
+                navigatePosting(chanName, boardName, threadNumber)
                 currentFragment = this.currentFragment
             }
             if (failResult != null) {
@@ -1149,10 +1201,10 @@ class MainActivity :
     private fun getPagesStackSize(chanName: String?): Int {
         val mergeChans = isMergeChans
         var size = 0
-        val currentFragment = this.currentFragment
-        if (currentFragment is PageFragment &&
+        val screenFragment = this.screenFragment
+        if (screenFragment is PageFragment &&
             currentPageItem != null &&
-            (mergeChans || (currentFragment.page.chanName == chanName))
+            (mergeChans || (screenFragment.page.chanName == chanName))
         ) {
             size++
         }
@@ -1168,8 +1220,8 @@ class MainActivity :
         if (allowForeignChan && currentPageItem!!.allowReturn && !stackPageItems.isEmpty()) {
             return stackPageItems.removeAt(stackPageItems.size - 1)
         }
-        val currentFragment = this.currentFragment
-        val chanName = (currentFragment as PageFragment).page.chanName
+        val screenFragment = this.screenFragment
+        val chanName = (screenFragment as PageFragment).page.chanName
         val mergeChans = isMergeChans
         for (i in stackPageItems.indices.reversed()) {
             val savedPageItem = stackPageItems[i]
@@ -1182,10 +1234,10 @@ class MainActivity :
     }
 
     private fun clearStackAndCurrent() {
-        val currentFragment = this.currentFragment
+        val screenFragment = this.screenFragment
         val mergeChans = isMergeChans
         val closeOnBack = isCloseOnBack
-        val chanName = (currentFragment as PageFragment).page.chanName
+        val chanName = (screenFragment as PageFragment).page.chanName
         val iterator = stackPageItems.iterator()
         while (iterator.hasNext()) {
             val savedPageItem = iterator.next()
@@ -1197,13 +1249,13 @@ class MainActivity :
                 }
             }
         }
-        val page = currentFragment.page
+        val page = screenFragment.page
         if (mergeChans || page.chanName == chanName) {
             if (!(page.canDestroyIfNotInStack() || (closeOnBack && page.isThreadsOrPosts))) {
                 preservedPageItems.add(
                     currentPageItem!!.toSaved(
                         getSupportFragmentManager(),
-                        currentFragment,
+                        screenFragment,
                     ),
                 )
             }
@@ -1292,9 +1344,9 @@ class MainActivity :
             )
         } else {
             var currentChanName: String? = null
-            val currentFragment = this.currentFragment
-            if (currentFragment is PageFragment) {
-                currentChanName = currentFragment.page.chanName
+            val screenFragment = this.screenFragment
+            if (screenFragment is PageFragment) {
+                currentChanName = screenFragment.page.chanName
             }
             if (getPagesStackSize(chan.name) == 0 || chan.name != currentChanName) {
                 navigatePage(
@@ -1377,10 +1429,10 @@ class MainActivity :
         searchQuery: String?,
         pageFlags: Int,
     ) {
-        val currentFragment = this.currentFragment
+        val screenFragment = this.screenFragment
         val currentPage =
-            if (currentFragment is PageFragment) {
-                currentFragment.page
+            if (screenFragment is PageFragment) {
+                screenFragment.page
             } else {
                 null
             }
@@ -1414,7 +1466,7 @@ class MainActivity :
                 }
                 currentPageItem.allowReturn =
                     currentPageItem.allowReturn and get(pageFlags, FLAG_PAGE_ALLOW_RETURN)
-                (currentFragment as PageFragment).updatePageConfiguration(postNumber)
+                (screenFragment as PageFragment).updatePageConfiguration(postNumber)
                 invalidateHomeUpState()
                 return
             }
@@ -1492,6 +1544,17 @@ class MainActivity :
     ) {
         if (closeOverlays) {
             closeOverlaysForNavigation()
+        }
+        // A sheet belongs to the page it floats over, so anything replacing the content takes it along
+        // first -- and then it is that page, uncovered again, which is the fragment being navigated
+        // away from and stacked. A form restored from the stack later is hosted like any other
+        // fragment, so it is no longer a sheet.
+        val sheetFragment = this.sheetFragment
+        if (sheetFragment != null && sheetFragment !== fragment) {
+            removePostingSheet(sheetFragment)
+        }
+        if (fragment is PostingFragment) {
+            fragment.sheet = false
         }
         val fragmentManager = getSupportFragmentManager()
         val currentFragment = this.currentFragment
@@ -1610,17 +1673,17 @@ class MainActivity :
     }
 
     private fun updatePostFragmentConfiguration() {
-        val currentFragment = this.currentFragment
+        val screenFragment = this.screenFragment
         val chanName: String?
-        if (currentFragment is PageFragment) {
-            chanName = currentFragment.page.chanName
+        if (screenFragment is PageFragment) {
+            chanName = screenFragment.page.chanName
         } else if (!stackPageItems.isEmpty()) {
             chanName = getSavedPage(stackPageItems[stackPageItems.size - 1]).chanName
         } else {
             val chan = ChanManager.getInstance().defaultChan
             chanName = if (chan != null) chan.name else null
         }
-        if (currentFragment is PageFragment) {
+        if (screenFragment is PageFragment) {
             expandedScreen.removeLocker(LOCKER_NON_PAGE)
         } else {
             expandedScreen.addLocker(LOCKER_NON_PAGE)
@@ -1655,13 +1718,13 @@ class MainActivity :
     }
 
     override fun invalidateHomeUpState() {
-        val currentFragment = this.currentFragment
-        if (currentFragment != null && currentFragment.isSearchMode) {
+        val screenFragment = this.screenFragment
+        if (screenFragment != null && screenFragment.isSearchMode) {
             drawerToggle.setDrawerIndicatorMode(DrawerToggle.Mode.UP)
         } else {
             val displayUp: Boolean
-            if (currentFragment is PageFragment) {
-                val page = currentFragment.page
+            if (screenFragment is PageFragment) {
+                val page = screenFragment.page
                 displayUp =
                     when (page.content) {
                         Page.Content.THREADS -> {
@@ -1858,6 +1921,11 @@ class MainActivity :
             if (currentFragment.isBackHandled) {
                 return BackKind.INTERNAL
             }
+            // Taking the sheet off the page it covers changes no content, so it is not a NAVIGATE:
+            // shrinking the page away under it would promise a page change that isn't coming
+            if (sheetFragment != null) {
+                return BackKind.INTERNAL
+            }
             if (currentFragment is PageFragment) {
                 return if (hasTargetPreviousPage()) BackKind.NAVIGATE else BackKind.NONE
             }
@@ -1936,6 +2004,14 @@ class MainActivity :
             val currentFragment = this.currentFragment
             if (!homeHandled && currentFragment!!.onBackPressed()) {
                 updateBackHandling()
+                return
+            }
+            // Closing the sheet is the whole back press: the page it was floating over is already
+            // there, so there is nothing to navigate to. This is also how the sheet dismisses itself
+            // once it has been swiped off screen.
+            val sheetFragment = this.sheetFragment
+            if (sheetFragment != null) {
+                removePostingSheet(sheetFragment)
                 return
             }
             var handled = false
@@ -2149,8 +2225,10 @@ class MainActivity :
                     return true
                 }
             } finally {
-                if (currentFragment is PageFragment) {
-                    currentFragment.onAppearanceOptionChanged(item.getItemId())
+                // The toolbar over a sheet is still the page's, so what it switches is the page's too
+                val screenFragment = this.screenFragment
+                if (screenFragment is PageFragment) {
+                    screenFragment.onAppearanceOptionChanged(item.getItemId())
                 }
             }
         }
@@ -2179,8 +2257,8 @@ class MainActivity :
         SharedPreferences.Listener { key: String? -> drawerForm.updatePreferences() }
 
     override fun onSelectChan(chanName: String?) {
-        val currentFragment = this.currentFragment
-        val page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        val page = if (screenFragment is PageFragment) screenFragment.page else null
         if (page == null || page.chanName != chanName) {
             val chan = get(chanName)
             if (!isMergeChans) {
@@ -2199,7 +2277,7 @@ class MainActivity :
                         stackPageItems.add(
                             currentPageItem!!.toSaved(
                                 getSupportFragmentManager(),
-                                currentFragment as PageFragment,
+                                screenFragment as PageFragment,
                             ),
                         )
                         currentPageItem = null
@@ -2241,8 +2319,8 @@ class MainActivity :
         fromCache: Boolean,
     ) {
         var targetBoardName = boardName
-        val currentFragment = this.currentFragment
-        val page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        val page = if (screenFragment is PageFragment) screenFragment.page else null
         val chan = get(chanName)
         if (isSingleBoardMode(chan)) {
             targetBoardName = getSingleBoardName(chan)
@@ -2263,8 +2341,8 @@ class MainActivity :
         fromCache: Boolean,
     ): Boolean {
         var targetBoardName = boardName
-        val currentFragment = this.currentFragment
-        val page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        val page = if (screenFragment is PageFragment) screenFragment.page else null
         val chan = get(chanName)
         if (isSingleBoardMode(chan)) {
             targetBoardName = getSingleBoardName(chan)
@@ -2305,8 +2383,8 @@ class MainActivity :
         boardName: String?,
         threadNumber: String?,
     ) {
-        val currentFragment = this.currentFragment
-        val page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        val page = if (screenFragment is PageFragment) screenFragment.page else null
         if (page != null && page.isThreadsOrPosts(chanName, boardName, threadNumber)) {
             val savedPageItem = prepareTargetPreviousPage(false)
             currentPageItem = null
@@ -2385,8 +2463,8 @@ class MainActivity :
     }
 
     override fun onCloseAllPages() {
-        val currentFragment = this.currentFragment
-        val page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        val page = if (screenFragment is PageFragment) screenFragment.page else null
         var chanName = if (page != null) page.chanName else null
         if (chanName == null && !stackPageItems.isEmpty()) {
             chanName = getSavedPage(stackPageItems[stackPageItems.size - 1]).chanName
@@ -2433,7 +2511,7 @@ class MainActivity :
                     preservedPageItems.add(
                         currentPageItem!!.toSaved(
                             getSupportFragmentManager(),
-                            currentFragment as PageFragment,
+                            screenFragment as PageFragment,
                         ),
                     )
                 }
@@ -2468,9 +2546,9 @@ class MainActivity :
 
     override fun onEnterNumber(number: Int): Int {
         var result = 0
-        val currentFragment = this.currentFragment
-        if (currentFragment is PageFragment) {
-            result = currentFragment.onDrawerNumberEntered(number)
+        val screenFragment = this.screenFragment
+        if (screenFragment is PageFragment) {
+            result = screenFragment.onDrawerNumberEntered(number)
         }
         if (!wideMode && get(result, DrawerForm.Companion.RESULT_SUCCESS)) {
             drawerLayout.closeDrawers()
@@ -2522,8 +2600,8 @@ class MainActivity :
      * Returns false when there is nowhere to go, the page being open already among the reasons.
      */
     private fun navigateDrawerPage(content: Page.Content): Boolean {
-        val currentFragment = this.currentFragment
-        var page = if (currentFragment is PageFragment) currentFragment.page else null
+        val screenFragment = this.screenFragment
+        var page = if (screenFragment is PageFragment) screenFragment.page else null
         if (page != null && page.content == content) {
             return false
         }
@@ -2585,9 +2663,9 @@ class MainActivity :
                 )
             }
         }
-        val currentFragment = this.currentFragment
-        if (currentFragment is PageFragment) {
-            val page = currentFragment.page
+        val screenFragment = this.screenFragment
+        if (screenFragment is PageFragment) {
+            val page = screenFragment.page
             if (page.isThreadsOrPosts) {
                 drawerPages.add(
                     DrawerForm.Page(
@@ -2626,9 +2704,11 @@ class MainActivity :
                     iterator.remove()
                 }
             }
-            val currentFragment = this.currentFragment
-            if (currentFragment is PageFragment &&
-                removedChanNames.contains(currentFragment.page.chanName)
+            // The page whose forum went away is navigated off, while the news itself goes to whatever
+            // is on top -- a posting sheet leaves by itself once its forum can no longer be posted to
+            val screenFragment = this.screenFragment
+            if (screenFragment is PageFragment &&
+                removedChanNames.contains(screenFragment.page.chanName)
             ) {
                 if (!stackPageItems.isEmpty()) {
                     currentPageItem = null
@@ -2636,12 +2716,15 @@ class MainActivity :
                 } else {
                     navigateInitial(true)
                 }
-            } else if (currentFragment is FragmentHandler.Callback) {
-                (currentFragment as FragmentHandler.Callback)
-                    .onChansChanged(
-                        Collections.unmodifiableSet<String>(changedChanNames),
-                        Collections.unmodifiableSet<String>(removedChanNames),
-                    )
+            } else {
+                val currentFragment = this.currentFragment
+                if (currentFragment is FragmentHandler.Callback) {
+                    (currentFragment as FragmentHandler.Callback)
+                        .onChansChanged(
+                            Collections.unmodifiableSet<String>(changedChanNames),
+                            Collections.unmodifiableSet<String>(removedChanNames),
+                        )
+                }
             }
             val galleryTag = GalleryOverlay::class.java.getName()
             val currentGalleryOverlay =
@@ -2694,8 +2777,8 @@ class MainActivity :
      */
     private fun writeSavedPagesFile(): Boolean {
         val file = this.savedPagesFile ?: return false
-        val currentFragment = this.currentFragment
-        if (currentFragment == null) {
+        val screenFragment = this.screenFragment
+        if (screenFragment == null) {
             file.delete()
             return false
         }
@@ -2703,7 +2786,7 @@ class MainActivity :
         writePagesState(outState)
         outState.putParcelable(
             EXTRA_CURRENT_FRAGMENT,
-            StackItem(getSupportFragmentManager(), currentFragment, null),
+            StackItem(getSupportFragmentManager(), screenFragment, null),
         )
         val parcel = Parcel.obtain()
         try {
@@ -2741,9 +2824,9 @@ class MainActivity :
 
     private val postingGlobalCallback: GlobalCallback =
         GlobalCallback {
-            val currentFragment = this.currentFragment
-            if (currentFragment is PageFragment) {
-                currentFragment.handleNewPostDataListNow()
+            val screenFragment = this.screenFragment
+            if (screenFragment is PageFragment) {
+                screenFragment.handleNewPostDataListNow()
             }
         }
 
@@ -2983,7 +3066,7 @@ class MainActivity :
         title: String?,
         subtitle: String?,
     ) {
-        val page = (this.currentFragment as PageFragment).page
+        val page = (this.screenFragment as PageFragment).page
         setTitleSubtitle(title, subtitle, page.isThreadsOrPosts)
         if (page.content == Page.Content.POSTS) {
             currentPageItem!!.threadTitle = title
@@ -2997,7 +3080,7 @@ class MainActivity :
         threadNumber: String?,
         postNumber: PostNumber?,
     ) {
-        val page = (this.currentFragment as PageFragment).page
+        val page = (this.screenFragment as PageFragment).page
         if (page.isThreadsOrPosts) {
             currentPageItem = null
             if (threadNumber == null) {
@@ -3009,7 +3092,7 @@ class MainActivity :
     }
 
     override fun closeCurrentPage() {
-        val page = (this.currentFragment as PageFragment).page
+        val page = (this.screenFragment as PageFragment).page
         val savedPageItem = prepareTargetPreviousPage(true)
         currentPageItem = null
         if (savedPageItem != null) {
@@ -3106,6 +3189,9 @@ class MainActivity :
         private const val EXTRA_STORAGE_REQUEST_STATE = "storageRequestState"
 
         private val REFERENCE_FRAGMENT = PageFragment()
+
+        /** The tag the posting sheet is added under, which is how it is told from the page it covers. */
+        private const val TAG_POSTING_SHEET = "postingSheet"
 
         private const val LOCKER_DRAWER = "drawer"
         private const val LOCKER_NON_PAGE = "nonPage"

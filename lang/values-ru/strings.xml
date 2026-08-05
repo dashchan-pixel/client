@@ -567,6 +567,8 @@
 	<string name="subject_is_too_short">Тема слишком короткая</string>
 	<string name="subjects_are_disabled">Темы отключены</string>
 	<string name="submission_form">Форма отправки</string>
+	<string name="submission_form_sheet">Форма отправки как панель</string>
+	<string name="submission_form_sheet__summary">Открывать форму отправки нижней панелью, которую можно тянуть между полной и половинной высотой и смахнуть</string>
 	<string name="success_number_not_loaded_number__format">Успешно: %1$d, не загружено: %2$d</string>
 	<string name="summary">Информация</string>
 	<string name="test_string">Тестовая строка</string>
