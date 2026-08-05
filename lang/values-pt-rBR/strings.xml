@@ -46,7 +46,7 @@
 	<string name="board_intervals__summary">Atualizar os favoritos das boards escolhidas com um intervalo próprio</string>
 	<string name="boards">Boards</string>
 	<string name="buy_proxies">Comprar proxies</string>
-	<string name="buy_proxies__summary">Abrir o serviço de proxy no navegador para criar uma conta e obter uma chave da API</string>
+	<string name="buy_proxies__summary">Escolher um serviço para abrir no navegador e criar uma conta</string>
 	<string name="cache_is_unavailable">Cache não disponível</string>
 	<string name="cached_files">Arquivos em cache</string>
 	<string name="captcha">Captcha</string>
@@ -338,7 +338,7 @@
 	<string name="proxy_for_posting_only__summary">Envie posts pelo proxy e carregue todo o resto diretamente; o endereço visível continua sendo verificado pelo proxy</string>
 	<string name="proxy_provider">Provedor de proxy</string>
 	<string name="proxy_provider__summary">Mudar o endereço que os fóruns veem por meio de um serviço de proxy</string>
-	<string name="proxy_provider_info__sentence">Asocks e DataImpulse são suportados. Cada fórum escolhido — ou todos, quando nenhum é escolhido — recebe uma porta da conta, gravada nas suas configurações de proxy. Uma porta da Asocks só é comprada se a conta não tiver nenhuma no país pedido; um plano da DataImpulse já vem com as suas portas fixas, e o país não custa nada.</string>
+	<string name="proxy_provider_info__sentence">Asocks e DataImpulse são suportados. Cada fórum escolhido recebe uma porta da conta, gravada nas suas configurações de proxy; se nenhum for escolhido, o provedor é desativado e cada fórum recupera as suas próprias configurações de proxy. Uma porta da Asocks só é comprada se a conta não tiver nenhuma no país pedido; um plano da DataImpulse já vem com as suas portas fixas, e o país não custa nada.</string>
 	<string name="proxy_provider_no_ports">Nenhuma porta de proxy na conta</string>
 	<string name="quote__verb">Quotar</string>
 	<string name="rating">Classificação</string>

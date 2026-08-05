@@ -333,7 +333,7 @@ class ChanFragment :
                 postingOnlyPreference.setEnabled(hasProxy(Chan.get(chanName)))
                 checkVisibleAddress(force = true)
             }
-            if (ProxyProvider.hasConfiguration()) {
+            if (ProxyProvider.coversChan(chan)) {
                 // A provider port serves one country, so a forum that wants to be seen elsewhere
                 // takes a port of the account in that country -- or is bought one, if it has none
                 addEdit(

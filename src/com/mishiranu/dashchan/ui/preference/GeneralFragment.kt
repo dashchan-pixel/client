@@ -1,5 +1,7 @@
 package com.mishiranu.dashchan.ui.preference
 
+import android.app.AlertDialog
+import android.app.Dialog
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -7,6 +9,8 @@ import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.util.Pair
 import android.view.View
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import chan.content.Chan
 import chan.content.ChanManager
@@ -367,19 +371,7 @@ class GeneralFragment :
             val preference = addButton(R.string.buy_proxies, R.string.buy_proxies__summary)
             this.buyProxiesPreference = preference
             movePreference(preference, proxyProviderPreference)
-            preference.setOnClickListener {
-                try {
-                    NavigationUtils.handleUri(
-                        requireContext(),
-                        null,
-                        Uri.parse(BuildConfig.URI_PROXIES),
-                        NavigationUtils.BrowserType.AUTO,
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    ClickableToast.show(R.string.unknown_error)
-                }
-            }
+            preference.setOnClickListener { SignUpDialog().show(this) }
         }
     }
 
@@ -476,26 +468,60 @@ class GeneralFragment :
             viewModel.attach(null)
             viewModel.handleResult(null)
         }
-        if (ProxyProvider.hasConfiguration()) {
+        if (!ProxyProvider.isEnabled()) {
             if (resetAndShowDialog) {
-                viewModel.showDialog = true
-                displayProxyProviderCheckDialog()
-                configureBuyProxiesButton()
-            }
-            if (viewModel.extraMap == null && viewModel.errorItem == null && !viewModel.hasTaskOrValue()) {
-                val task = CheckProxyProviderTask(viewModel)
-                task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
-                viewModel.attach(task)
-            }
-            return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
-        } else {
-            if (resetAndShowDialog) {
-                // The settings that put the provider's proxy into the forums are gone: take it back
+                // Either the credentials are gone or no forum is left for them to be used on: the
+                // provider's proxy comes back off the forums, and their own settings are theirs again
                 ProxyProvider.clearFromChans()
                 configureBuyProxiesButton()
             }
-            return getString(R.string.proxy_provider__summary)
+            return if (ProxyProvider.hasConfiguration()) {
+                // Configured but covering nothing, which is the off switch rather than a mistake
+                getString(R.string.disabled)
+            } else {
+                getString(R.string.proxy_provider__summary)
+            }
         }
+        if (resetAndShowDialog) {
+            viewModel.showDialog = true
+            displayProxyProviderCheckDialog()
+            configureBuyProxiesButton()
+        }
+        if (viewModel.extraMap == null && viewModel.errorItem == null && !viewModel.hasTaskOrValue()) {
+            val task = CheckProxyProviderTask(viewModel)
+            task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
+            viewModel.attach(task)
+        }
+        return buildCheckSummary(viewModel.extraMap, viewModel.errorItem)
+    }
+
+    /**
+     * Where an account is opened, one row per service. The links are referral ones, which is why the
+     * choice is offered rather than the first service simply opened.
+     */
+    class SignUpDialog : DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val signUps = ProxyProvider.serviceSignUps.toList()
+            return AlertDialog
+                .Builder(requireContext())
+                .setTitle(R.string.buy_proxies)
+                .setItems(signUps.map { it.first }.toTypedArray()) { _, which ->
+                    try {
+                        NavigationUtils.handleUri(
+                            requireContext(),
+                            null,
+                            Uri.parse(signUps[which].second),
+                            NavigationUtils.BrowserType.AUTO,
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        ClickableToast.show(R.string.unknown_error)
+                    }
+                }.setNegativeButton(android.R.string.cancel, null)
+                .create()
+        }
+
+        fun show(fragment: Fragment) = show(fragment.childFragmentManager, SignUpDialog::class.java.name)
     }
 
     private fun displayProxyProviderCheckDialog() {

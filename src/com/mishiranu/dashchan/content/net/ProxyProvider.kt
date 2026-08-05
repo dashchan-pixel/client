@@ -16,7 +16,8 @@ import java.util.LinkedHashMap
 
 /**
  * A proxy service, configured once for the whole app the way [CaptchaSolving] is, and applied to the
- * forums the same way: the ones picked in the settings, or all of them when none is picked.
+ * forums picked in the settings. Picking none switches it off, which is the way to get it out of the
+ * way of a proxy set by hand -- unlike solving, it writes to settings the user has of their own.
  *
  * A covered forum is bound to an endpoint of the account, which is written into its proxy settings --
  * that is what turns valid credentials into a working proxy without another step. A forum gets an
@@ -45,6 +46,10 @@ object ProxyProvider {
 
     val serviceValues: List<String>
         get() = SERVICES.map { it.id }
+
+    /** What the sign-up row offers: each service by name, against where an account is opened. */
+    val serviceSignUps: Map<String, String>
+        get() = SERVICES.associate { it.title to it.signUpUri }
 
     /**
      * A refusal the settings or the account are to blame for, as opposed to an [HttpException]: each
@@ -130,22 +135,30 @@ object ProxyProvider {
 
     fun hasConfiguration(): Boolean = getConfiguration() != null
 
-    /** The forums the provider writes to. An empty selection means all of them, as it does for solving. */
+    /**
+     * Whether the provider is switched on: an account to ask, and a forum to write the answer to.
+     * Credentials alone are not enough, or a provider set up once could never be got out of the way.
+     */
+    fun isEnabled(): Boolean = hasConfiguration() && coveredChans().isNotEmpty()
+
+    /**
+     * The forums the provider writes to -- the ones picked in the settings, and only those. Picking
+     * none is the off switch rather than a shorthand for all of them: a provider that cannot be
+     * switched off holds every forum's proxy settings, and a proxy set by hand has nowhere to go.
+     */
     private fun coveredChans(): List<Chan> {
         val chanNames = Preferences.proxyProviderChans
-        return ChanManager
-            .getInstance()
-            .availableChans
-            .filter { it.name != null && (chanNames.isEmpty() || chanNames.contains(it.name)) }
+        return if (chanNames.isEmpty()) {
+            emptyList()
+        } else {
+            ChanManager
+                .getInstance()
+                .availableChans
+                .filter { it.name != null && chanNames.contains(it.name) }
+        }
     }
 
-    fun coversChan(chan: Chan): Boolean {
-        if (!hasConfiguration() || chan.name == null) {
-            return false
-        }
-        val chanNames = Preferences.proxyProviderChans
-        return chanNames.isEmpty() || chanNames.contains(chan.name)
-    }
+    fun coversChan(chan: Chan): Boolean = hasConfiguration() && chan.name != null && Preferences.proxyProviderChans.contains(chan.name)
 
     /** The country the forum's address should exit from: its own setting, or the provider's default. */
     internal fun countryFor(
@@ -250,8 +263,9 @@ object ProxyProvider {
     @Throws(HttpException::class, ServiceException::class)
     fun checkService(holder: HttpHolder): Map<String, String> {
         val configuration = getConfiguration() ?: throw InvalidTokenException()
+        val chans = coveredChans()
         val extra = LinkedHashMap<String, String>()
-        val assigned = configuration.service.assign(holder, configuration, coveredChans(), extra)
+        val assigned = configuration.service.assign(holder, configuration, chans, extra)
         applyToChans(assigned)
         for ((chan, binding) in assigned) {
             extra[StringUtils.emptyIfNull(chan.configuration.getTitle())] = binding.description

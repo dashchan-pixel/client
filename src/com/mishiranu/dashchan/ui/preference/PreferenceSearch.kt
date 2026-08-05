@@ -326,7 +326,7 @@ object PreferenceSearch {
                 R.string.connection,
                 R.string.proxy_country,
                 R.string.proxy_country__summary,
-            ) { !it.localMode && ProxyProvider.hasConfiguration() },
+            ) { !it.localMode && it.proxyProvider },
             ChanEntry(R.string.connection, R.string.visible_ip, 0) { !it.localMode },
             ChanEntry(
                 R.string.connection,

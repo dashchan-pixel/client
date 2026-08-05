@@ -54,6 +54,12 @@ internal interface ProxyService {
     /** The service as it calls itself, which is how the settings list it. Not translated. */
     val title: String
 
+    /**
+     * Where an account is opened, as the row for users who have none offers it. A referral link
+     * where the service has one -- the app is given away, and this is what pays for it.
+     */
+    val signUpUri: String
+
     /** Whether the settings hold everything this service needs -- a password, say, if it takes one. */
     fun isConfigured(configuration: ProxyProvider.Configuration): Boolean
 

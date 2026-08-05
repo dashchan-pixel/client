@@ -7,6 +7,7 @@ import chan.http.HttpHolder
 import chan.http.HttpRequest
 import chan.http.SimpleEntity
 import chan.util.StringUtils
+import com.mishiranu.dashchan.BuildConfig
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.ProxyProvider.Binding
@@ -29,6 +30,9 @@ import java.util.Locale
 internal object AsocksService : ProxyService {
     override val id = "asocks"
     override val title = "Asocks"
+
+    // The referral link is a build config field because the build that ships it is not this repo
+    override val signUpUri = BuildConfig.URI_PROXIES
 
     private const val ENDPOINT = "https://api.asocks.com/v2"
 

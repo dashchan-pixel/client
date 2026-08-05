@@ -62,7 +62,7 @@
 	<string name="boards">Boards</string>
 	<string name="bump_limit">Bump limit</string>
 	<string name="buy_proxies">Buy proxies</string>
-	<string name="buy_proxies__summary">Open the proxy service in a browser to get an account and an API key</string>
+	<string name="buy_proxies__summary">Choose a service to open in a browser and get an account with</string>
 	<string name="cache_is_unavailable">Cache is unavailable</string>
 	<string name="cache_size">Cache size</string>
 	<string name="cached_files">Cached files</string>
@@ -473,7 +473,7 @@
 	<string name="proxy_for_posting_only__summary">Send posts through the proxy and load everything else directly; the visible address is still checked through the proxy</string>
 	<string name="proxy_provider">Proxy provider</string>
 	<string name="proxy_provider__summary">Change the address forums see through a proxy service</string>
-	<string name="proxy_provider_info__sentence">Asocks and DataImpulse are supported. Each chosen forum -- all of them when none is chosen -- is given a port of the account, written into its proxy settings. An Asocks port is bought only for a country the account holds none in; a DataImpulse plan comes with its sticky ports, and the country costs nothing.</string>
+	<string name="proxy_provider_info__sentence">Asocks and DataImpulse are supported. Each chosen forum is given a port of the account, written into its proxy settings; choosing no forum switches the provider off and gives every forum its proxy settings back. An Asocks port is bought only for a country the account holds none in; a DataImpulse plan comes with its sticky ports, and the country costs nothing.</string>
 	<string name="proxy_provider_no_ports">No proxy ports in the account</string>
 	<string name="quality">Quality</string>
 	<string name="quote__verb">Quote</string>

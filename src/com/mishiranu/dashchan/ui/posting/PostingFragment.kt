@@ -917,7 +917,7 @@ class PostingFragment :
                 // up the button asks it for one right here; without it the fix is a proxy configured
                 // by hand, on the forum's settings screen, which the button opens instead. Either
                 // way the message has already said what is wrong, so the button stays a bare verb.
-                val hasProvider = ProxyProvider.hasConfiguration()
+                val hasProvider = ProxyProvider.coversChan(get(chanName))
                 show(
                     getString(R.string.visible_ip_banned),
                     null,

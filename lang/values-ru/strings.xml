@@ -59,7 +59,7 @@
 	<string name="boards">Разделы</string>
 	<string name="bump_limit">Бамплимит</string>
 	<string name="buy_proxies">Купить прокси</string>
-	<string name="buy_proxies__summary">Открыть прокси-сервис в браузере, чтобы завести аккаунт и получить API-ключ</string>
+	<string name="buy_proxies__summary">Выбрать сервис, чтобы открыть его в браузере и завести аккаунт</string>
 	<string name="cache_is_unavailable">Кэш недоступен</string>
 	<string name="cache_size">Размер кэша</string>
 	<string name="cached_files">Кэшированные файлы</string>
@@ -462,7 +462,7 @@
 	<string name="proxy_for_posting_only__summary">Отправлять сообщения через прокси, а всё остальное загружать напрямую; видимый адрес всё равно проверяется через прокси</string>
 	<string name="proxy_provider">Провайдер прокси</string>
 	<string name="proxy_provider__summary">Смена видимого форумам адреса через прокси-сервис</string>
-	<string name="proxy_provider_info__sentence">Поддерживаются Asocks и DataImpulse. Каждому выбранному форуму — или всем, если не выбран ни один — выдаётся порт аккаунта и записывается в его настройки прокси. Порт Asocks покупается, только если у аккаунта нет ни одного порта в нужной стране; у тарифа DataImpulse свои постоянные порты, и страна ничего не стоит.</string>
+	<string name="proxy_provider_info__sentence">Поддерживаются Asocks и DataImpulse. Каждому выбранному форуму выдаётся порт аккаунта и записывается в его настройки прокси; если не выбран ни один форум, провайдер отключается и форумы получают свои настройки прокси обратно. Порт Asocks покупается, только если у аккаунта нет ни одного порта в нужной стране; у тарифа DataImpulse свои постоянные порты, и страна ничего не стоит.</string>
 	<string name="proxy_provider_no_ports">В аккаунте нет прокси-портов</string>
 	<string name="quality">Качество</string>
 	<string name="quote__verb">Цитировать</string>

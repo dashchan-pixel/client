@@ -1392,7 +1392,7 @@ object Preferences {
 
     const val KEY_PROXY_PROVIDER_CHANS: String = "proxy_provider_chans"
 
-    /** The forums the provider's port is written to. Empty means every forum, as it does for solving. */
+    /** The forums the provider's endpoint is written to. Empty is the off switch, not every forum. */
     var proxyProviderChans: MutableCollection<String>
         get() = getChanNames(KEY_PROXY_PROVIDER_CHANS)
         set(chanNames) = setChanNames(KEY_PROXY_PROVIDER_CHANS, chanNames)

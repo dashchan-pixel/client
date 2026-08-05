@@ -38,6 +38,7 @@ import kotlin.math.max
 internal object DataImpulseService : ProxyService {
     override val id = "dataimpulse"
     override val title = "DataImpulse"
+    override val signUpUri = "https://dataimpulse.com/?aff=692183e5-8fff-4fe6-86e6-26514220f9bd"
 
     private const val TAG = "DataImpulseService"
 
