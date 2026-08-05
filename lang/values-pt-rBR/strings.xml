@@ -58,6 +58,8 @@
 	<string name="catalog">Catálogo</string>
 	<string name="change">Mudar</string>
 	<string name="change_theme">Mudar tema</string>
+	<string name="change_visible_ip">Mudar IP visível</string>
+	<string name="change_visible_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
 	<string name="check_for_updates">Checar por atualizações</string>
 	<string name="check_on_startup">Checar no startup</string>
 	<string name="choose">Escolher</string>
@@ -347,8 +349,6 @@
 	<string name="reason">Razão</string>
 	<string name="recorded_on">Registrado em</string>
 	<string name="refresh">Atualizar</string>
-	<string name="refresh_visible_ip">Atualizar IP visível</string>
-	<string name="refresh_visible_ip__summary">Pedir ao provedor de proxy outro endereço para este fórum</string>
 	<string name="regular_expression">Expressão regular</string>
 	<string name="rejected_words">Palavras rejeitadas</string>
 	<string name="reload">Recarregar</string>
@@ -531,5 +531,5 @@
 	<string name="application_crashed">O aplicativo travou</string>
 	<string name="visible_ip">IP visível</string>
 	<string name="visible_ip_banned">O IP visível está banido</string>
-	<string name="visible_ip_refreshed">IP visível atualizado</string>
+	<string name="visible_ip_changed">IP visível alterado</string>
 </resources>

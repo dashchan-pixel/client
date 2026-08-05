@@ -60,11 +60,13 @@ internal object DataImpulseService : ProxyService {
     /** Both halves of the service take the proxy credentials, so both are needed. */
     override fun isConfigured(configuration: Configuration): Boolean = !StringUtils.isEmpty(configuration.password)
 
+    /** The sticky ports come with the plan, so [buyPorts] has nothing to forbid here. */
     override fun assign(
         holder: HttpHolder,
         configuration: Configuration,
         chans: List<Chan>,
         outExtra: MutableMap<String, String>?,
+        buyPorts: Boolean,
     ): Map<Chan, Binding> {
         // Reading the plan is also what proves the credentials: there is nothing else here that a
         // wrong password would fail on until a forum's traffic quietly stopped leaving the gateway

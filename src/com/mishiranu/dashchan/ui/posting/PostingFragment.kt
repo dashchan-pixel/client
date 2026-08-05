@@ -257,7 +257,7 @@ class PostingFragment :
     private var refreshCaptchaWhenLifetimeEnd = false
 
     /** Shown while the proxy provider is being asked for a new visible address. */
-    private var refreshAddressDialog: ProgressDialog? = null
+    private var rotateAddressDialog: ProgressDialog? = null
 
     private var postingBinder: PostingService.Binder? = null
     private val postingConnection: ServiceConnection =
@@ -926,7 +926,7 @@ class PostingFragment :
                         false,
                         Runnable {
                             if (hasProvider) {
-                                refreshVisibleAddress()
+                                rotateVisibleAddress()
                             } else {
                                 openForumProxySettings()
                             }
@@ -936,15 +936,15 @@ class PostingFragment :
             }
         }
 
-        val refreshAddressViewModel = ViewModelProvider(this).get(RefreshAddressViewModel::class.java)
-        refreshAddressViewModel.observe(getViewLifecycleOwner()) { result ->
-            refreshAddressDialog?.dismiss()
-            refreshAddressDialog = null
+        val rotateAddressViewModel = ViewModelProvider(this).get(RotateAddressViewModel::class.java)
+        rotateAddressViewModel.observe(getViewLifecycleOwner()) { result ->
+            rotateAddressDialog?.dismiss()
+            rotateAddressDialog = null
             val errorItem = result.first
             if (errorItem != null) {
                 show(errorItem)
             } else {
-                ClickableToast.show(R.string.visible_ip_refreshed)
+                ClickableToast.show(R.string.visible_ip_changed)
                 // The address the forum sees has changed: the ban that prompted this may well not
                 // apply to the new one, so let the check say so again -- or stay silent.
                 val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
@@ -964,8 +964,8 @@ class PostingFragment :
 
         dismissSendPost()
         saveDraft()
-        refreshAddressDialog?.dismiss()
-        refreshAddressDialog = null
+        rotateAddressDialog?.dismiss()
+        rotateAddressDialog = null
         ViewUtils.removeFromParent(textFormatView!!)
 
         scrollView = null
@@ -1759,33 +1759,33 @@ class PostingFragment :
      * through the fallback chan, so a forum whose proxy is the very port being rotated cannot get
      * in the way of the request that fixes it.
      */
-    private fun refreshVisibleAddress() {
-        val viewModel = ViewModelProvider(this).get(RefreshAddressViewModel::class.java)
+    private fun rotateVisibleAddress() {
+        val viewModel = ViewModelProvider(this).get(RotateAddressViewModel::class.java)
         if (viewModel.getTask() != null) {
             return
         }
         val dialog = ProgressDialog(requireContext(), null)
-        refreshAddressDialog = dialog
+        rotateAddressDialog = dialog
         dialog.setMessage(getString(R.string.loading__ellipsis))
         dialog.setOnCancelListener {
-            refreshAddressDialog = null
+            rotateAddressDialog = null
             viewModel.attach(null)
         }
         dialog.show()
-        val task = RefreshAddressTask(viewModel, get(chanName))
+        val task = RotateAddressTask(viewModel, get(chanName))
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         viewModel.attach(task)
     }
 
-    class RefreshAddressViewModel : TaskViewModel<RefreshAddressTask, Pair<ErrorItem, Boolean>>()
+    class RotateAddressViewModel : TaskViewModel<RotateAddressTask, Pair<ErrorItem, Boolean>>()
 
-    class RefreshAddressTask(
-        private val viewModel: RefreshAddressViewModel,
+    class RotateAddressTask(
+        private val viewModel: RotateAddressViewModel,
         private val chan: Chan,
     ) : HttpHolderTask<Unit, Pair<ErrorItem, Boolean>>(Chan.getFallback()) {
         override fun run(holder: HttpHolder): Pair<ErrorItem, Boolean> =
             try {
-                val success = ProxyProvider.refreshVisibleAddress(holder, chan)
+                val success = ProxyProvider.rotateVisibleAddress(holder, chan)
                 if (success) {
                     Pair<ErrorItem, Boolean>(null, true)
                 } else {

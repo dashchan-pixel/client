@@ -64,7 +64,7 @@ internal object AsocksService : ProxyService {
         val address: String?,
         /** The two-letter code of the country the port exits from. */
         val location: String?,
-        /** Where the forums connect. Refreshing the visible address leaves this endpoint untouched. */
+        /** Where the forums connect. Rotating the visible address leaves this endpoint untouched. */
         val host: String?,
         val port: Int,
         val login: String?,
@@ -79,6 +79,7 @@ internal object AsocksService : ProxyService {
         configuration: Configuration,
         chans: List<Chan>,
         outExtra: MutableMap<String, String>?,
+        buyPorts: Boolean,
     ): Map<Chan, Binding> {
         readBalance(holder, configuration)?.let { outExtra?.put("balance", it) }
         val ports = readPorts(holder, configuration)
@@ -88,7 +89,7 @@ internal object AsocksService : ProxyService {
             ProxyProvider.countryFor(configuration, chan)?.let { countries.resolve(holder, configuration, it) }
         }
         val assigned = LinkedHashMap<Chan, Binding>()
-        for ((chan, port) in assignPorts(holder, configuration, chans, ports)) {
+        for ((chan, port) in assignPorts(holder, configuration, chans, ports, buyPorts)) {
             // A port the service has not given an endpoint yet binds nothing, and the forum is
             // left to go out unproxied rather than through a half-written proxy
             bind(configuration, port)?.let { assigned[chan] = it }
@@ -353,6 +354,7 @@ internal object AsocksService : ProxyService {
         configuration: Configuration,
         chans: List<Chan>,
         ports: List<Port>,
+        buyPorts: Boolean,
     ): Map<Chan, Port> {
         val known = ArrayList(ports)
         val assigned = LinkedHashMap<Chan, Port>()
@@ -375,10 +377,11 @@ internal object AsocksService : ProxyService {
                     // Every port has been handed out: share one that already exits from the country
                     // this forum wants rather than buy the account a second port just like it
                     ?: known.firstOrNull { matchesCountry(it, country) }
-                    // Nothing in the country, so it has to be bought -- unless no country was named,
-                    // in which case any port would have done and the account simply has none
+                    // Nothing in the country, so it has to be bought -- unless no country was
+                    // named, in which case any port would have done and the account simply has none,
+                    // or the caller may not spend the balance on one
                     ?: (
-                        country?.let {
+                        country?.takeIf { buyPorts }?.let {
                             createPort(holder, configuration, chan, it, known).also { port -> known.add(port) }
                         } ?: throw NoPortsException()
                     )

@@ -1,8 +1,13 @@
 package com.mishiranu.dashchan.content
 
 import android.webkit.JavascriptInterface
+import chan.content.Chan
 import chan.content.ChanManager
+import chan.http.HttpException
+import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
+import com.mishiranu.dashchan.content.net.ProxyProvider
+import com.mishiranu.dashchan.content.net.VisibleAddress
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ForegroundManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -12,13 +17,16 @@ import org.json.JSONObject
 
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
- * the application's own **settings**; `chan`, the forum it is running in and that forum's **cookies**;
- * and `store`, a place of its own to keep what it wants to remember between runs.
+ * the application's own **settings**; `chan`, the forum it is running in, that forum's **cookies** and
+ * the **address** that forum sees this device at; and `store`, a place of its own to keep what it wants
+ * to remember between runs.
  *
  * They are kept apart because they are granted apart. `app` and `chan` reach what belongs to the user
  * — the same things the settings screens and "Manage cookies" edit by hand — and a command gets
- * neither until the user grants it (see [CommandsStorage.Grant]); `env` is granted by default and can
- * be taken away; `store` needs no grant at all, holding only what the same script put there. A grant
+ * neither until the user grants it (see [CommandsStorage.Grant]); the address is a grant of its own
+ * even so, being the one thing here that spends anything of the user's outside the device; `env` is
+ * granted by default and can be taken away; `store` needs no grant at all, holding only what the same
+ * script put there. A grant
  * belongs to one command, is given in that command's editor, and is never carried in by an imported
  * document.
  *
@@ -46,12 +54,17 @@ import org.json.JSONObject
  * chan.cookies.set("cf_clearance", value, { title: "Cloudflare" })
  * chan.cookies.remove("cf_clearance")        // same as set(name, null)
  * chan.cookies.setState("cf_clearance", { blocked: false, deleteOnExit: true })
+ *
+ * chan.visibleAddress()                      // {address, location}, or null when it can't be read
+ * chan.rotateVisibleAddress()                // another address on this forum's port; true when done
  * ```
  *
  * A command without a grant still gets the object — every call to it throws saying it wasn't granted,
  * which is a message that points at the switch, where an undefined `app` would send the user looking
  * at their own script instead. `chan.name` is the one member a missing grant leaves readable as
  * `null`, since a script may reasonably ask which forum it is in before deciding it needs anything.
+ * The cookies and the address are granted separately from each other, so a script that has one may
+ * still be refused the other.
  *
  * A grant is checked in [Bridge.dispatch] rather than in the JavaScript, because the bridge object is
  * bound to a global the script can reach directly: a wrapper that refused would be walked around by
@@ -76,6 +89,16 @@ import org.json.JSONObject
  * A cookie belongs to a forum: the one the command is running in, unless the call names another.
  * `get` answers with the value the app would actually send, so a cookie the user blocked reads as
  * `null`; `list` is the management view and shows every cookie with its flags, blocked ones included.
+ * The address calls take the same optional forum name for the same reason.
+ *
+ * The visible address is the one the *forum* sees, so it is read through that forum's proxy (see
+ * [VisibleAddress]) — a `fetch` leaves the WebView on its own and would answer with the device's
+ * address instead, which is the whole reason for asking here. Rotating it asks the proxy provider for
+ * another address on the port the forum uses (see [ProxyProvider]) and drops the connections that
+ * would otherwise still ride the old one. Nothing is bought: a forum the provider covers but has given
+ * no port yet is refused, where the button on the forum's own screen would buy it one, because a script
+ * must not spend the account's balance by itself. Both calls reach the network, so both take as long as
+ * a request does where every other call here answers at once.
  *
  * The store takes any value `JSON.stringify` can carry, and hands it back parsed. It is one namespace
  * for every command, so a key is worth prefixing; it is not a cache to pour things into either, and a
@@ -108,6 +131,8 @@ object CommandApp {
     private const val METHOD_COOKIES_GET = "cookies.get"
     private const val METHOD_COOKIES_SET = "cookies.set"
     private const val METHOD_COOKIES_STATE = "cookies.setState"
+    private const val METHOD_ADDRESS_GET = "address.get"
+    private const val METHOD_ADDRESS_ROTATE = "address.rotate"
 
     private const val KEY_OK = "ok"
     private const val KEY_RESULT = "result"
@@ -120,6 +145,8 @@ object CommandApp {
     private const val KEY_CHAN = "chan"
     private const val KEY_BLOCKED = "blocked"
     private const val KEY_DELETE_ON_EXIT = "deleteOnExit"
+    private const val KEY_ADDRESS = "address"
+    private const val KEY_LOCATION = "location"
 
     /**
      * The settings the app reads only while an activity is being built, so a write to one shows
@@ -213,7 +240,9 @@ object CommandApp {
             "return __call('$METHOD_COOKIES_STATE'," +
             "{name:name,blocked:__s.blocked,deleteOnExit:__s.deleteOnExit,chan:chan});" +
             "}" +
-            "})" +
+            "})," +
+            "visibleAddress:function(chan){return __call('$METHOD_ADDRESS_GET',{chan:chan});}," +
+            "rotateVisibleAddress:function(chan){return __call('$METHOD_ADDRESS_ROTATE',{chan:chan});}" +
             "})" +
             "});" +
             "})(window.$BRIDGE_NAME)"
@@ -349,6 +378,21 @@ object CommandApp {
                     )
                 }
 
+                else -> {
+                    dispatchChan(method, args)
+                }
+            }
+
+        /**
+         * The calls that are about a forum rather than about the app: its cookies and the address it
+         * sees, each behind its own grant. Split off because [dispatch] and this together are one
+         * `when` too long for one function, and this is where the seam falls.
+         */
+        private fun dispatchChan(
+            method: String,
+            args: JSONObject,
+        ): Any? =
+            when (method) {
                 METHOD_COOKIES_LIST -> {
                     requireGrant(CommandsStorage.Grant.COOKIES)
                     cookies(chan(args))
@@ -367,6 +411,16 @@ object CommandApp {
                 METHOD_COOKIES_STATE -> {
                     requireGrant(CommandsStorage.Grant.COOKIES)
                     setCookieState(args)
+                }
+
+                METHOD_ADDRESS_GET -> {
+                    requireGrant(CommandsStorage.Grant.PROXY)
+                    visibleAddress(chan(args))
+                }
+
+                METHOD_ADDRESS_ROTATE -> {
+                    requireGrant(CommandsStorage.Grant.PROXY)
+                    rotateVisibleAddress(chan(args))
                 }
 
                 else -> {
@@ -389,14 +443,14 @@ object CommandApp {
         }
 
         /**
-         * The forum a cookie call is about: the one it named, or the one the run belongs to. A name no
-         * extension answers to is refused — a cookie written under it would be read by nobody, and a
-         * typo is the only way to get there.
+         * The forum a call is about: the one it named, or the one the run belongs to. A name no
+         * extension answers to is refused — a cookie written under it would be read by nobody, an
+         * address asked for under it belongs to no forum, and a typo is the only way to get there.
          */
         private fun chan(args: JSONObject): String {
             val name =
                 requireNotNull(optional(args, KEY_CHAN) ?: chanName) {
-                    "This command is not running in a forum, so a cookie call has to name one"
+                    "This command is not running in a forum, so a call about one has to name it"
                 }
             require(ChanManager.getInstance().isExistingChanName(name)) { "Unknown forum \"$name\"" }
             return name
@@ -446,6 +500,53 @@ object CommandApp {
             }
         }
         return array
+    }
+
+    /**
+     * The address [chanName] is seen at, as `{address, location}`, or `null` where it could not be read
+     * at all. It is asked through that forum's own holder, so what comes back is the address that
+     * forum's traffic is seen leaving from -- see [VisibleAddress].
+     */
+    private fun visibleAddress(chanName: String): Any? {
+        val chan = Chan.get(chanName)
+        val holder = HttpHolder(chan)
+        val result = holder.use().use { VisibleAddress.resolve(chan, holder) } ?: return null
+        return JSONObject()
+            .put(KEY_ADDRESS, result.address)
+            .put(KEY_LOCATION, result.location ?: JSONObject.NULL)
+    }
+
+    /**
+     * Ask the provider for another address on the port [chanName] uses, and answer whether it gave one.
+     * Nothing is bought (see [ProxyProvider.rotateVisibleAddress]), so a forum the provider covers but
+     * has given no port yet is refused here rather than given one at the account's expense.
+     *
+     * The provider's own endpoint is asked through the fallback chan, the way the settings screen asks
+     * it: a forum proxied by the very port being rotated cannot get in the way of the request that
+     * changes it.
+     *
+     * Each failure is turned into a message of its own, because what the provider throws carries an
+     * error item for the UI to show rather than something a script could read.
+     */
+    private fun rotateVisibleAddress(chanName: String): Any {
+        val chan = Chan.get(chanName)
+        require(ProxyProvider.coversChan(chan)) {
+            "The proxy provider does not cover \"$chanName\": choose that forum in its settings"
+        }
+        val holder = HttpHolder(Chan.getFallback())
+        return try {
+            holder.use().use { ProxyProvider.rotateVisibleAddress(holder, chan, buyPorts = false) }
+        } catch (e: ProxyProvider.NoPortsException) {
+            throw IllegalStateException(
+                "The provider has given \"$chanName\" no port yet, and a command may not buy one: " +
+                    "check the provider on that forum's settings screen first",
+                e,
+            )
+        } catch (e: ProxyProvider.ServiceException) {
+            throw IllegalStateException(e.errorItem.toString(), e)
+        } catch (e: HttpException) {
+            throw IllegalStateException(e.getErrorItemAndHandle().toString(), e)
+        }
     }
 
     /**

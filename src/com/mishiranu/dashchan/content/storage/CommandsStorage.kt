@@ -519,9 +519,14 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     }
 
     /**
-     * What a command is allowed to reach beyond the draft or the posts it was handed — one entry per
-     * object its script gets (see [com.mishiranu.dashchan.content.CommandApp]). A command carries its
-     * own set; what it wasn't granted is still there to call, and says it wasn't granted.
+     * What a command is allowed to reach beyond the draft or the posts it was handed — largely one
+     * entry per object its script gets (see [com.mishiranu.dashchan.content.CommandApp]). A command
+     * carries its own set; what it wasn't granted is still there to call, and says it wasn't granted.
+     *
+     * [PROXY] is the one entry that isn't an object of its own: it sits on `chan` beside the cookies,
+     * the address a forum sees being that forum's as much as its cookies are, but it is granted apart
+     * because it is the only thing here that reaches out of the device — asking the proxy provider,
+     * on the user's account, for another address.
      *
      * [ENVIRONMENT] is on for a new command and the others are not: reading values the user typed for
      * their commands is what the environment is *for*, while the settings and the cookies belong to
@@ -539,6 +544,9 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
 
         /** `chan`, the forum's name and its cookies. */
         COOKIES("cookies"),
+
+        /** `chan.visibleAddress` and `chan.rotateVisibleAddress`, the address a forum sees. */
+        PROXY("proxy"),
         ;
 
         companion object {

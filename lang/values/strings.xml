@@ -84,6 +84,8 @@
 	<string name="catalog">Catalog</string>
 	<string name="change">Change it</string>
 	<string name="change_theme">Change theme</string>
+	<string name="change_visible_ip">Change visible IP</string>
+	<string name="change_visible_ip__summary">Ask the proxy provider for another address for this forum</string>
 	<string name="changelog">Changelog</string>
 	<string name="check_for_updates">Check for updates</string>
 	<string name="check_on_startup">Check on startup</string>
@@ -487,8 +489,6 @@
 	<string name="refresh">Refresh</string>
 	<string name="refresh_favorites">Refresh favorites</string>
 	<string name="refresh_open_thread">Refresh open thread</string>
-	<string name="refresh_visible_ip">Refresh visible IP</string>
-	<string name="refresh_visible_ip__summary">Ask the proxy provider for another address for this forum</string>
 	<string name="regular_expression">Regular expression</string>
 	<string name="rejected_words">Rejected words</string>
 	<string name="reload">Reload</string>
@@ -710,5 +710,5 @@
 	<string name="manually">Manually</string>
 	<string name="visible_ip">Visible IP</string>
 	<string name="visible_ip_banned">Visible IP is banned</string>
-	<string name="visible_ip_refreshed">Visible IP refreshed</string>
+	<string name="visible_ip_changed">Visible IP changed</string>
 </resources>

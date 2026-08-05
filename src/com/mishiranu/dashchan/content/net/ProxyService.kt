@@ -69,6 +69,10 @@ internal interface ProxyService {
      * nothing is going to be shown, which is the rotation asking for the bindings on its way through.
      *
      * A forum left out of the answer is left unproxied: [ProxyProvider] takes its proxy back off.
+     *
+     * [buyPorts] `false` forbids spending anything of the user's: a forum the account holds no
+     * endpoint for is refused with [ProxyProvider.NoPortsException] rather than given one that has to
+     * be bought. A service whose endpoints come with the plan has nothing to forbid.
      */
     @Throws(HttpException::class, ProxyProvider.ServiceException::class)
     fun assign(
@@ -76,6 +80,7 @@ internal interface ProxyService {
         configuration: ProxyProvider.Configuration,
         chans: List<Chan>,
         outExtra: MutableMap<String, String>?,
+        buyPorts: Boolean = true,
     ): Map<Chan, ProxyProvider.Binding>
 
     /**

@@ -47,9 +47,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * `return await fetch(url).then(r => r.text())`).
  *
  * `store` is the command's own key→value store, `app` the application's settings and `chan` the forum
- * the run belongs to along with that forum's cookies — so `chan.cookies` needs no argument to work on
- * the right one. `app` and `chan` answer only to a command the user granted them to, and `store` to
- * every command. See [CommandApp] for the whole of it.
+ * the run belongs to along with that forum's cookies and the address it sees this device at — so
+ * `chan.cookies` and `chan.visibleAddress()` need no argument to work on the right one. `app` and `chan`
+ * answer only to a command the user granted them to, and `store` to every command. See [CommandApp] for
+ * the whole of it.
  *
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure

@@ -343,7 +343,7 @@ class ChanFragment :
                     R.string.proxy_country__summary,
                     getString(R.string.country),
                     InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
-                ).setOnAfterChangeListener { runProxyProviderAction(refresh = false) }
+                ).setOnAfterChangeListener { runProxyProviderAction(rotate = false) }
             }
         }
         if (!localMode) {
@@ -367,7 +367,7 @@ class ChanFragment :
                     ClickableToast.show(errorItem)
                 } else {
                     if (result.second) {
-                        ClickableToast.show(R.string.visible_ip_refreshed)
+                        ClickableToast.show(R.string.visible_ip_changed)
                     }
                     // The forum's proxy may be another port now, and its address another one either
                     // way: the row below is where that shows
@@ -377,8 +377,8 @@ class ChanFragment :
             }
             if (ProxyProvider.coversChan(chan)) {
                 // The provider can hand this forum another address without touching the settings
-                addButton(R.string.refresh_visible_ip, R.string.refresh_visible_ip__summary)
-                    .setOnClickListener { runProxyProviderAction(refresh = true) }
+                addButton(R.string.change_visible_ip, R.string.change_visible_ip__summary)
+                    .setOnClickListener { runProxyProviderAction(rotate = true) }
             }
         }
 
@@ -496,12 +496,12 @@ class ChanFragment :
     }
 
     /**
-     * Put the provider to work for this forum: [refresh] asks for a new visible address on the port
+     * Put the provider to work for this forum: [rotate] asks for a new visible address on the port
      * it uses, and otherwise the forum is simply given the port its settings now call for -- a new
      * one when the country changed. Both end with the visible address read again, which is where
      * the change shows.
      */
-    private fun runProxyProviderAction(refresh: Boolean) {
+    private fun runProxyProviderAction(rotate: Boolean) {
         val viewModel = ViewModelProvider(this).get(ProxyProviderViewModel::class.java)
         if (viewModel.getTask() != null) {
             return
@@ -514,7 +514,7 @@ class ChanFragment :
             viewModel.attach(null)
         }
         dialog.show()
-        val task = ProxyProviderTask(viewModel, Chan.get(getChanName()), refresh)
+        val task = ProxyProviderTask(viewModel, Chan.get(getChanName()), rotate)
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         viewModel.attach(task)
     }
@@ -699,21 +699,21 @@ class ChanFragment :
     class ProxyProviderTask(
         private val viewModel: ProxyProviderViewModel,
         private val chan: Chan,
-        private val refresh: Boolean,
+        private val rotate: Boolean,
     ) : HttpHolderTask<Unit, Pair<ErrorItem?, Boolean>>(Chan.getFallback()) {
         override fun run(holder: HttpHolder): Pair<ErrorItem?, Boolean> =
             try {
-                val refreshed =
-                    if (refresh) {
-                        ProxyProvider.refreshVisibleAddress(holder, chan)
+                val rotated =
+                    if (rotate) {
+                        ProxyProvider.rotateVisibleAddress(holder, chan)
                     } else {
                         ProxyProvider.checkService(holder)
                         false
                     }
-                if (refresh && !refreshed) {
+                if (rotate && !rotated) {
                     Pair<ErrorItem?, Boolean>(ErrorItem(ErrorItem.Type.UNKNOWN), false)
                 } else {
-                    Pair<ErrorItem?, Boolean>(null, refreshed)
+                    Pair<ErrorItem?, Boolean>(null, rotated)
                 }
             } catch (e: HttpException) {
                 Pair<ErrorItem?, Boolean>(e.getErrorItemAndHandle(), false)

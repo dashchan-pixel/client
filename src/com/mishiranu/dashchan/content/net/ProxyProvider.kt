@@ -280,14 +280,19 @@ object ProxyProvider {
      * Ask the service for a new address on the endpoint [chan] uses -- or on the one the settings
      * would give it, when it has none yet. The pooled connections are dropped along with it: one kept
      * alive through the endpoint would still ride the old address.
+     *
+     * [buyPorts] `false` refuses a forum the account holds no endpoint for instead of buying it one,
+     * for a rotation the user did not ask for by hand -- a command's, say: only the tap on the
+     * forum's own screen may spend the account's balance.
      */
     @Throws(HttpException::class, ServiceException::class)
-    fun refreshVisibleAddress(
+    fun rotateVisibleAddress(
         holder: HttpHolder,
         chan: Chan,
+        buyPorts: Boolean = true,
     ): Boolean {
         val configuration = getConfiguration() ?: throw InvalidTokenException()
-        val assigned = configuration.service.assign(holder, configuration, coveredChans(), null)
+        val assigned = configuration.service.assign(holder, configuration, coveredChans(), null, buyPorts)
         val success = configuration.service.rotate(holder, configuration, chan, assigned)
         if (success) {
             // The endpoint is unchanged, but the credentials behind it may not be
