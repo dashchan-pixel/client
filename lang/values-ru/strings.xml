@@ -693,7 +693,7 @@
 	<string name="run__verb">Выполнить</string>
 	<string name="run_before_sending">Выполнять автоматически перед отправкой</string>
 	<string name="run_when_thread_opens">Выполнять автоматически при открытии треда</string>
-	<string name="run_when_address_needed">Выполнять, когда нужен другой видимый IP</string>
+	<string name="run_to_change_visible_ip">Выполнять для смены видимого IP</string>
 	<string name="auto_run">Автозапуск</string>
 	<string name="process_posts_individually">Обрабатывать сообщения по отдельности</string>
 	<string name="per_post">По сообщению</string>

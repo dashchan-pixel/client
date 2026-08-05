@@ -516,10 +516,10 @@ class CommandsFragment :
                 builder.append(" · ").append(getString(R.string.per_post))
             }
             if (commandItem.autoRun) {
-                // For an App command the flag is a role rather than a moment -- it is the command the
-                // app runs when it needs another visible address -- so the row names that instead.
+                // For an App command the flag is a role rather than a moment, so the row names the role
+                // -- in the same words as the checkbox that sets it and the button that runs it
                 val autoRunRes =
-                    if (commandItem.useIn == CommandsStorage.UseIn.APP) R.string.visible_ip else R.string.auto_run
+                    if (commandItem.useIn == CommandsStorage.UseIn.APP) R.string.change_visible_ip else R.string.auto_run
                 builder.append(" · ").append(getString(autoRunRes))
             }
             return builder
@@ -913,7 +913,7 @@ class CommandsFragment :
                     when (this) {
                         CommandsStorage.UseIn.COMMENT -> R.string.run_before_sending
                         CommandsStorage.UseIn.THREAD -> R.string.run_when_thread_opens
-                        CommandsStorage.UseIn.APP -> R.string.run_when_address_needed
+                        CommandsStorage.UseIn.APP -> R.string.run_to_change_visible_ip
                     }
         }
     }

@@ -598,7 +598,7 @@
     <string name="run__verb">Esegui</string>
     <string name="run_before_sending">Esegui automaticamente prima dell\'invio</string>
     <string name="run_when_thread_opens">Esegui automaticamente all\'apertura del thread</string>
-    <string name="run_when_address_needed">Esegui quando serve un altro IP visibile</string>
+    <string name="run_to_change_visible_ip">Esegui per cambiare l\'IP visibile</string>
     <string name="auto_run">Automatico</string>
     <string name="process_posts_individually">Elabora i post singolarmente</string>
     <string name="per_post">Per post</string>

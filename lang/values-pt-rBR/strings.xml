@@ -501,7 +501,7 @@
 	<string name="run__verb">Executar</string>
 	<string name="run_before_sending">Executar automaticamente antes de enviar</string>
 	<string name="run_when_thread_opens">Executar automaticamente ao abrir o fio</string>
-	<string name="run_when_address_needed">Executar quando outro IP visível for necessário</string>
+	<string name="run_to_change_visible_ip">Executar para mudar o IP visível</string>
 	<string name="auto_run">Automático</string>
 	<string name="process_posts_individually">Processar posts individualmente</string>
 	<string name="per_post">Por post</string>

@@ -514,7 +514,7 @@
 	<string name="run__verb">Run</string>
 	<string name="run_before_sending">Run automatically before sending</string>
 	<string name="run_when_thread_opens">Run automatically when the thread opens</string>
-	<string name="run_when_address_needed">Run when another visible IP is needed</string>
+	<string name="run_to_change_visible_ip">Run to change visible IP</string>
 	<string name="auto_run">Auto-run</string>
 	<string name="saf_instructions__sentence">You will be directed to the system directory picker where you should pick
 		a directory for downloads.\n\n<b>Don\'t select any directories under default \"Downloads\" section!</b>\n
