@@ -42,6 +42,7 @@ import com.mishiranu.dashchan.util.NavigationUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.DividerItemDecoration
+import com.mishiranu.dashchan.widget.FloatingToolbar
 import com.mishiranu.dashchan.widget.PullableWrapper
 import com.mishiranu.dashchan.widget.SummaryLayout
 import kotlin.math.abs
@@ -471,6 +472,18 @@ class ThreadsPage :
             .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         menu.add(0, R.id.menu_make_home_page, 0, R.string.make_home_page)
     }
+
+    /**
+     * A board's two floating buttons: the pencil that starts a new thread on it, and the button that
+     * refreshes the page. The pencil is the same slot a thread's *Reply* takes, so the button under the
+     * thumb stays where it is when a board is opened into one of its threads.
+     */
+    override val floatingActions: List<FloatingAction>
+        get() =
+            listOf(
+                FloatingAction(FloatingToolbar.Slot.COMPOSE, R.id.menu_new_thread, R.attr.iconActionAddPost),
+                FloatingAction(FloatingToolbar.Slot.CONTENTS, R.id.menu_refresh, R.attr.iconActionRefresh),
+            )
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         val page = getPage()

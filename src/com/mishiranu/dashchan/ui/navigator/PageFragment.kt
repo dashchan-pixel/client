@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.ui.navigator
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.ActionMode
@@ -9,11 +10,15 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.os.BundleCompat
+import androidx.core.view.children
 import com.mishiranu.dashchan.R
+import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences.isActiveScrollbar
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.PostNumber
+import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ContentFragment
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.navigator.manager.UiManager
@@ -21,12 +26,20 @@ import com.mishiranu.dashchan.ui.navigator.page.ListPage
 import com.mishiranu.dashchan.ui.navigator.page.ListPage.InitRequest
 import com.mishiranu.dashchan.ui.navigator.page.ListPage.InitSearch
 import com.mishiranu.dashchan.ui.navigator.page.ListPage.Retainable
+import com.mishiranu.dashchan.ui.preference.CommandsFragment
+import com.mishiranu.dashchan.util.ResourceUtils
+import com.mishiranu.dashchan.util.ResourceUtils.getActionBarIcon
+import com.mishiranu.dashchan.widget.ClickableToast
+import com.mishiranu.dashchan.widget.CommandsPopup
 import com.mishiranu.dashchan.widget.CustomSearchView
 import com.mishiranu.dashchan.widget.CustomSearchView.OnSubmitListener
+import com.mishiranu.dashchan.widget.DropdownPopup
 import com.mishiranu.dashchan.widget.ExpandedLayout
+import com.mishiranu.dashchan.widget.FloatingToolbar
 import com.mishiranu.dashchan.widget.ListPosition
 import com.mishiranu.dashchan.widget.MenuExpandListener
 import com.mishiranu.dashchan.widget.PaddedRecyclerView
+import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.PullableWrapper
 import com.mishiranu.dashchan.widget.PullableWrapper.PullStateListener
 import com.mishiranu.dashchan.widget.ViewFactory.ErrorHolder
@@ -97,6 +110,10 @@ class PageFragment :
 
     private var searchView: CustomSearchView? = null
     private var searchMenuItem: MenuItem? = null
+    private var floatingToolbar: FloatingToolbar? = null
+    private var primaryMenu: Menu? = null
+    private var appCommandRun: CommandRunner.Run? = null
+    private var appCommandDialog: ProgressDialog? = null
 
     private lateinit var actionBarLockerPull: String
     private lateinit var actionBarLockerSearch: String
@@ -201,6 +218,13 @@ class PageFragment :
         layout.addView(errorHolder.layout)
 
         allowShowScale = true
+        val floatingToolbar = FloatingToolbar(layout.context, this.toolbarContext)
+        this.floatingToolbar = floatingToolbar
+        layout.addView(
+            floatingToolbar,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        )
         val listPage = this.page.content.newPage()
         this.listPage = listPage
         recyclerView.pullable.setOnPullListener(listPage)
@@ -220,6 +244,11 @@ class PageFragment :
         fragmentHandler.setActionBarLocked(actionBarLockerPull, false)
         fragmentHandler.setActionBarLocked(actionBarLockerSearch, false)
 
+        appCommandDialog?.dismiss()
+        appCommandDialog = null
+        appCommandRun?.cancel()
+        appCommandRun = null
+
         listPage?.destroy()
         listPage = null
         progressView = null
@@ -227,6 +256,8 @@ class PageFragment :
         recyclerView = null
         searchView = null
         searchMenuItem = null
+        floatingToolbar = null
+        primaryMenu = null
     }
 
     public override fun onViewCreated(
@@ -476,6 +507,140 @@ class PageFragment :
                 menuItem.setVisible(false)
             }
         }
+        if (primary) {
+            primaryMenu = menu
+            updateFloatingToolbar(menu)
+        }
+    }
+
+    /**
+     * Fills the floating toolbar from the menu the page has just prepared, taking every item the page
+     * gave to it ([ListPage.floatingActions]) out of the toolbar as it goes. Reading the prepared menu
+     * rather than asking the page again is what keeps one visibility rule for both places: an item the
+     * page hid is not in the bar either, and a page that offers nothing leaves the bar off screen.
+     *
+     * Search takes the toolbar over entirely, and the bar goes with it — its actions are about the page
+     * the search is covering, and every one of them is hidden from the menu while it is up.
+     */
+    private fun updateFloatingToolbar(menu: Menu) {
+        val floatingToolbar = this.floatingToolbar ?: return
+        val listPage = this.listPage
+        val actions = ArrayList<FloatingToolbar.Action>()
+        if (listPage != null && !this.isBackHandled) {
+            for (floatingAction in listPage.floatingActions) {
+                val menuItem = menu.findItem(floatingAction.menuItemId)
+                if (menuItem == null || !menuItem.isVisible()) {
+                    continue
+                }
+                menuItem.setVisible(false)
+                val itemId = floatingAction.menuItemId
+                actions.add(
+                    FloatingToolbar.Action(
+                        floatingAction.slot,
+                        getActionBarIcon(this.toolbarContext, floatingAction.iconAttr),
+                        menuItem.getTitle(),
+                    ) { anchor -> onFloatingActionClick(itemId, anchor) },
+                )
+            }
+            val commands = appCommands()
+            if (actions.isNotEmpty() && commands.isNotEmpty()) {
+                actions.add(
+                    FloatingToolbar.Action(
+                        FloatingToolbar.Slot.COMMANDS,
+                        commandsIcon(),
+                        getString(R.string.commands),
+                    ) { anchor -> CommandsPopup.show(anchor, commands, ::runAppCommand, ::editCommand) },
+                )
+            }
+        }
+        floatingToolbar.setActions(actions)
+    }
+
+    /**
+     * Runs a floating button's menu item, or drops its dropdown when the item is one — *Contents* is a
+     * submenu in the toolbar and stays one here, listing what it holds anchored to the button instead of
+     * under the toolbar. The item is looked up again rather than held onto, because a menu can be built
+     * afresh between the bar being filled and a button being tapped.
+     */
+    private fun onFloatingActionClick(
+        menuItemId: Int,
+        anchor: View,
+    ) {
+        val menuItem = primaryMenu?.findItem(menuItemId) ?: return
+        val subMenu = menuItem.getSubMenu()
+        if (subMenu == null) {
+            onMenuItemSelected(menuItem)
+            return
+        }
+        val subItems = subMenu.children.filter { it.isVisible() }.toList()
+        if (subItems.isEmpty()) {
+            return
+        }
+        DropdownPopup.show(
+            anchor,
+            this.toolbarContext,
+            subItems.map { it.getTitle() ?: "" },
+            -1,
+            false,
+        ) { index -> onMenuItemSelected(subItems[index]) }
+    }
+
+    /** The [CommandsStorage.UseIn.APP] commands the forum and board this page is about are in scope of. */
+    private fun appCommands(): List<CommandsStorage.CommandItem> =
+        CommandsStorage
+            .getInstance()
+            .getAvailable(CommandsStorage.UseIn.APP, this.page.chanName, this.page.boardName)
+
+    private fun commandsIcon(): Drawable? {
+        val context = this.toolbarContext
+        val drawable = AppCompatResources.getDrawable(context, R.drawable.ic_command) ?: return null
+        drawable.mutate()
+        drawable.setTint(ResourceUtils.getColor(context, android.R.attr.textColorPrimary))
+        return drawable
+    }
+
+    private fun editCommand(command: CommandsStorage.CommandItem) {
+        (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(command.id))
+    }
+
+    /**
+     * Runs an App command from the page the bar is on, which is a forum and a board — so unlike the run
+     * the Commands screen offers, this one hands the script the forum it is looking at. Whatever the
+     * command returns is shown as a message, that being all an App command hands back.
+     */
+    private fun runAppCommand(command: CommandsStorage.CommandItem) {
+        if (appCommandRun?.isFinished == false) {
+            return
+        }
+        val dialog = ProgressDialog(requireContext(), null)
+        appCommandDialog = dialog
+        dialog.setMessage(getString(R.string.loading__ellipsis))
+        dialog.setOnCancelListener {
+            appCommandDialog = null
+            appCommandRun?.cancel()
+            appCommandRun = null
+        }
+        dialog.show()
+        appCommandRun =
+            CommandRunner.runApp(
+                command,
+                this.page.chanName,
+                this.page.threadNumber,
+                this.page.boardName,
+            ) { result ->
+                appCommandRun = null
+                appCommandDialog?.dismiss()
+                appCommandDialog = null
+                when (result) {
+                    is CommandRunner.AppResult.Success -> {
+                        ClickableToast.show(result.message ?: getString(R.string.completed))
+                    }
+
+                    is CommandRunner.AppResult.Failure -> {
+                        ClickableToast.show(getString(R.string.command_failed__format, result.message))
+                    }
+                }
+            }
     }
 
     public override fun onMenuItemSelected(item: MenuItem): Boolean {

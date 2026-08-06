@@ -24,6 +24,7 @@ import com.mishiranu.dashchan.ui.InstanceDialog
 import com.mishiranu.dashchan.ui.navigator.Page
 import com.mishiranu.dashchan.ui.navigator.manager.UiManager
 import com.mishiranu.dashchan.util.ResourceUtils.getActionBarIcon
+import com.mishiranu.dashchan.widget.FloatingToolbar
 import com.mishiranu.dashchan.widget.ListPosition
 import com.mishiranu.dashchan.widget.PaddedRecyclerView
 import com.mishiranu.dashchan.widget.PullableWrapper
@@ -275,6 +276,29 @@ abstract class ListPage :
     open fun onPrepareOptionsMenu(menu: Menu) {}
 
     open fun onOptionsItemSelected(item: MenuItem): Boolean = false
+
+    /**
+     * One of the page's menu items, taken out of the toolbar and given to the
+     * [floating toolbar][com.mishiranu.dashchan.widget.FloatingToolbar] instead. The item keeps its
+     * place in [onCreateOptionsMenu] and its visibility rule in [onPrepareOptionsMenu] — this only says
+     * where a visible one is shown, and an item the page has hidden is no more here than it is there.
+     *
+     * [iconAttr] is named rather than taken from the item because a page is free to leave an overflow
+     * item without one (a board's *New thread* has never needed an icon), and a button has to have one.
+     */
+    class FloatingAction(
+        val slot: FloatingToolbar.Slot,
+        val menuItemId: Int,
+        val iconAttr: Int,
+    )
+
+    /**
+     * What this page puts in the floating toolbar, or nothing at all for a page that keeps its actions
+     * in the toolbar. The order here is not the order they are shown in — that is the user's, dragged
+     * into place and kept per [slot][FloatingToolbar.Slot] for every page at once.
+     */
+    open val floatingActions: List<FloatingAction>
+        get() = emptyList()
 
     open fun onAppearanceOptionChanged(what: Int) {}
 

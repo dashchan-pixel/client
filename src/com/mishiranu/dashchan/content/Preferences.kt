@@ -923,6 +923,48 @@ object Preferences {
                 .close()
         }
 
+    const val KEY_FLOATING_TOOLBAR_ORDER: String = "floating_toolbar_order"
+
+    /**
+     * The order the buttons of [com.mishiranu.dashchan.widget.FloatingToolbar] sit in, as the comma
+     * separated names of its slots, or `null` while the user has not dragged them out of the order they
+     * are declared in. Written by a drag, no settings entry.
+     *
+     * A name the app no longer knows is dropped and a slot the stored order does not name is appended,
+     * so the order survives a button being added to or taken out of the bar.
+     */
+    @JvmStatic
+    var floatingToolbarOrder: String?
+        get() =
+            prefs.getString(
+                KEY_FLOATING_TOOLBAR_ORDER,
+                null,
+            )
+        set(value) {
+            prefs
+                .edit()
+                .put(KEY_FLOATING_TOOLBAR_ORDER, value)
+                .close()
+        }
+
+    const val KEY_FLOATING_TOOLBAR_VERTICAL: String = "floating_toolbar_vertical"
+    const val DEFAULT_FLOATING_TOOLBAR_VERTICAL: Boolean = false
+
+    // Toggled by a two finger tap on the floating toolbar itself, no settings entry.
+    @JvmStatic
+    var isFloatingToolbarVertical: Boolean
+        get() =
+            prefs.getBoolean(
+                KEY_FLOATING_TOOLBAR_VERTICAL,
+                DEFAULT_FLOATING_TOOLBAR_VERTICAL,
+            )
+        set(value) {
+            prefs
+                .edit()
+                .put(KEY_FLOATING_TOOLBAR_VERTICAL, value)
+                .close()
+        }
+
     const val KEY_HIGHLIGHT_UNREAD: String = "highlight_unread_posts"
     val DEFAULT_HIGHLIGHT_UNREAD: HighlightUnreadMode = HighlightUnreadMode.AUTOMATICALLY
 

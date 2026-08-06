@@ -105,6 +105,7 @@ import com.mishiranu.dashchan.widget.ClickableToast.Companion.isShowing
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
 import com.mishiranu.dashchan.widget.DividerItemDecoration
 import com.mishiranu.dashchan.widget.DividerItemDecoration.SkipCallback
+import com.mishiranu.dashchan.widget.FloatingToolbar
 import com.mishiranu.dashchan.widget.ImportantPostsMarksFastScrollBarDecoration
 import com.mishiranu.dashchan.widget.ListPosition
 import com.mishiranu.dashchan.widget.ListPosition.Companion.obtain
@@ -927,6 +928,18 @@ class PostsPage :
         menu.add(0, R.id.menu_open_original_thread, 0, R.string.open_original)
         menu.add(0, R.id.menu_archive, 0, R.string.archive__verb)
     }
+
+    /**
+     * A thread's two floating buttons: the pencil that opens a reply to it, and the *Contents* dropdown
+     * that refreshes, reloads and clears what is on screen. Both keep their entries in the menu — the
+     * toolbar simply does not show them while the bar does.
+     */
+    override val floatingActions: List<FloatingAction>
+        get() =
+            listOf(
+                FloatingAction(FloatingToolbar.Slot.COMPOSE, R.id.menu_add_post, R.attr.iconActionAddPost),
+                FloatingAction(FloatingToolbar.Slot.CONTENTS, R.id.menu_contents, R.attr.iconActionSync),
+            )
 
     public override fun onPrepareOptionsMenu(menu: Menu) {
         val page = getPage()
