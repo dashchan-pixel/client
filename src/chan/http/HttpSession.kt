@@ -159,12 +159,18 @@ class HttpSession internal constructor(
             return null
         }
 
+    /**
+     * Keyed without regard to case, because the case a header arrives in is the protocol's choice,
+     * not the server's: HTTP/2 lowercases every name, so a server that sent `CF-RAY` over HTTP/1.1
+     * sends `cf-ray` here. Everything reading a header by its familiar spelling — the firewall
+     * resolvers, the extensions — would otherwise silently find nothing on exactly the hosts modern
+     * enough to negotiate HTTP/2.
+     */
     val headerFields: MutableMap<String?, MutableList<String>?>
         get() {
-            val response = this.responseForHeaders ?: return mutableMapOf()
+            val response = this.responseForHeaders ?: return sortedByHeaderName()
             val headers = response.headers
-            val map =
-                LinkedHashMap<String?, MutableList<String>?>()
+            val map = sortedByHeaderName()
             for (i in 0..<headers.size) {
                 val name = headers.name(i)
                 var values = map[name]
@@ -178,12 +184,7 @@ class HttpSession internal constructor(
         }
 
     fun getCookieValue(name: String?): String? {
-        val headers =
-            this.headerFields
-        var cookies = headers["Set-Cookie"]
-        if (cookies == null) {
-            cookies = headers["set-cookie"]
-        }
+        val cookies = this.headerFields["Set-Cookie"]
         if (cookies != null) {
             val start = name + "="
             for (cookie in cookies) {
@@ -216,4 +217,23 @@ class HttpSession internal constructor(
             }
             return -1
         }
+
+    companion object {
+        /**
+         * The map [headerFields] hands out. A null name never comes off the wire, but the map is
+         * `@Public` with a nullable key type, so the order tolerates one rather than throwing where
+         * the old [LinkedHashMap] would have returned null.
+         */
+        private val HEADER_NAME_ORDER =
+            Comparator<String?> { first, second ->
+                when {
+                    first == null && second == null -> 0
+                    first == null -> -1
+                    second == null -> 1
+                    else -> String.CASE_INSENSITIVE_ORDER.compare(first, second)
+                }
+            }
+
+        private fun sortedByHeaderName(): MutableMap<String?, MutableList<String>?> = java.util.TreeMap(HEADER_NAME_ORDER)
+    }
 }

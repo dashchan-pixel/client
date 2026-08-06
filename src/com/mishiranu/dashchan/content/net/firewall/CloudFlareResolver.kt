@@ -167,8 +167,10 @@ class CloudFlareResolver : FirewallResolver() {
         // non-interactive one. Cloudflare drops these once the challenge is passed.
         private const val COOKIE_CHALLENGE_PREFIX = "cf_chl_"
 
+        // "Verification Required" is what the interactive challenge titles itself with now; the
+        // older three still show up on the other challenge flavours.
         private val CHALLENGE_TITLES =
-            arrayOf("Attention Required! | Cloudflare", "Just a moment...", "Please wait…")
+            arrayOf("Attention Required! | Cloudflare", "Just a moment...", "Please wait…", "Verification Required")
 
         private fun isChallengeTitle(title: String?): Boolean = title != null && CHALLENGE_TITLES.contains(title)
     }
