@@ -8,26 +8,28 @@ import chan.http.HttpHolder
 import chan.http.HttpRequest
 
 /**
- * The address a forum sees this device at -- the one its bans are assigned to, and the one that
- * tells whether the proxy configured for the forum is actually carrying its traffic.
+ * The IP a forum sees this device at -- the one its bans are assigned to, and the one that tells
+ * whether the proxy configured for the forum is actually carrying its traffic. Called an IP rather
+ * than an address throughout, the user-facing name for it being "Visible IP" and an *address* being
+ * what this codebase calls a URL.
  *
- * It is read from Cloudflare's `/cdn-cgi/trace`, which reports back the address of whoever asked.
- * The forum's own endpoint is asked first, so the answer is literally what the forum sees. Not
- * every forum is behind Cloudflare -- for the rest the question goes to Cloudflare directly, still
+ * It is read from Cloudflare's `/cdn-cgi/trace`, which reports back the IP of whoever asked. The
+ * forum's own endpoint is asked first, so the answer is literally what the forum sees. Not every
+ * forum is behind Cloudflare -- for the rest the question goes to Cloudflare directly, still
  * through [HttpHolder]'s chan, so it takes the same proxy that forum's traffic takes and comes back
- * with the address of the same exit.
+ * with the IP of the same exit.
  */
-object VisibleAddress {
-    private const val TAG = "VisibleAddress"
+object VisibleIp {
+    private const val TAG = "VisibleIp"
 
     /** The response is a couple dozen `key=value` lines; anything longer isn't a trace. */
     private const val MAX_TRACE_LINES = 64
 
     private val FALLBACK_URI: Uri = Uri.parse("https://1.1.1.1/cdn-cgi/trace")
 
-    /** [location] is the two-letter country Cloudflare places the address in, when it can. */
+    /** [location] is the two-letter country Cloudflare places the IP in, when it can. */
     class Result(
-        val address: String,
+        val ip: String,
         val location: String?,
     )
 
@@ -35,7 +37,7 @@ object VisibleAddress {
         chan: Chan,
         holder: HttpHolder,
     ): Result? {
-        // The address worth knowing is the one the forum's posting traffic leaves from, so the
+        // The IP worth knowing is the one the forum's posting traffic leaves from, so the
         // trace takes the proxy even where it is set to carry posting only. The holder is left as
         // it was found, since the caller may go on to use it for something else.
         val proxyRequired = holder.proxyRequired
@@ -68,29 +70,29 @@ object VisibleAddress {
         if (text.isNullOrEmpty()) {
             return null
         }
-        var address: String? = null
+        var ip: String? = null
         var location: String? = null
         for (line in text.lineSequence().take(MAX_TRACE_LINES)) {
             val separator = line.indexOf('=')
             if (separator >= 0) {
                 when (line.substring(0, separator)) {
-                    "ip" -> address = line.substring(separator + 1).trim()
+                    "ip" -> ip = line.substring(separator + 1).trim()
                     "loc" -> location = line.substring(separator + 1).trim()
                 }
             }
         }
-        if (address.isNullOrEmpty()) {
+        if (ip.isNullOrEmpty()) {
             return null
         }
-        // Cloudflare answers "XX" when it can't place the address, common behind Tor exits.
-        return Result(address, if (location.isNullOrEmpty() || location == "XX") null else location)
+        // Cloudflare answers "XX" when it cannot place the IP, common behind Tor exits.
+        return Result(ip, if (location.isNullOrEmpty() || location == "XX") null else location)
     }
 
-    /** The address with its country appended, for a single line of UI. */
+    /** The IP with its country appended, for a single line of UI. */
     fun format(result: Result?): String =
         when {
             result == null -> ""
-            result.location == null -> result.address
-            else -> "${result.address} · ${result.location}"
+            result.location == null -> result.ip
+            else -> "${result.ip} · ${result.location}"
         }
 }

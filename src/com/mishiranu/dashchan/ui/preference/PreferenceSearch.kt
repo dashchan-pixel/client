@@ -7,7 +7,7 @@ import chan.content.ChanConfiguration
 import chan.content.ChanManager
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.database.ChanDatabase
-import com.mishiranu.dashchan.content.net.VisibleAddressCommand
+import com.mishiranu.dashchan.content.net.VisibleIpCommand
 import com.mishiranu.dashchan.ui.preference.core.PreferenceFragment
 import java.util.Locale
 
@@ -129,9 +129,9 @@ object PreferenceSearch {
 
         /**
          * Not an extension capability: the row exists only while the user has written the command that
-         * changes this forum's visible address.
+         * changes this forum's visible IP.
          */
-        val addressCommand: Boolean by lazy { VisibleAddressCommand.forChan(chan) != null }
+        val visibleIpCommand: Boolean by lazy { VisibleIpCommand.forChan(chan) != null }
 
         /** The rows the extension itself contributes, which no table here could know about. */
         val customPreferences: List<Row> by lazy {
@@ -326,7 +326,7 @@ object PreferenceSearch {
                 R.string.connection,
                 R.string.change_visible_ip,
                 R.string.change_visible_ip__summary,
-            ) { !it.localMode && it.addressCommand },
+            ) { !it.localMode && it.visibleIpCommand },
             ChanEntry(R.string.ai_settings, R.string.hide_ai_posts, 0) { it.aiPosting },
             ChanEntry(R.string.additional, R.string.ban_log, 0) { true },
             ChanEntry(R.string.additional, R.string.uninstall_extension, 0) { true },

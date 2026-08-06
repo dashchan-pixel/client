@@ -150,15 +150,15 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
     ): List<CommandItem> = commandItems.filter { it.useIn == useIn && it.matches(chanName, boardName) }
 
     /**
-     * The command the app runs when it needs another visible address for [chanName] (see
-     * [com.mishiranu.dashchan.content.net.VisibleAddressCommand]): the first [UseIn.APP] command flagged
+     * The command the app runs when it needs another visible IP for [chanName] (see
+     * [com.mishiranu.dashchan.content.net.VisibleIpCommand]): the first [UseIn.APP] command flagged
      * [CommandItem.autoRun] that this forum is in the scope of. List order decides between two of them,
      * which is an order the user drags into place.
      *
-     * A board scope is ignored, unlike everywhere else: an address belongs to the forum, and it is asked
+     * A board scope is ignored, unlike everywhere else: an IP belongs to the forum, and it is asked
      * for from screens where no board is in view.
      */
-    fun getAddressCommand(chanName: String?): CommandItem? = commandItems.firstOrNull { it.useIn == UseIn.APP && it.autoRun && it.matchesChan(chanName) }
+    fun getVisibleIpCommand(chanName: String?): CommandItem? = commandItems.firstOrNull { it.useIn == UseIn.APP && it.autoRun && it.matchesChan(chanName) }
 
     override fun onClone(): Snapshot {
         val commandItems = ArrayList<CommandItem>(this.commandItems.size)
@@ -530,10 +530,10 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * cookies, the proxy a forum goes through — and what it returns is shown as a message, which is
          * how a script says what it did or what it found.
          *
-         * With [CommandItem.autoRun] it is also what the app runs when it needs another visible address
-         * for a forum (see [com.mishiranu.dashchan.content.net.VisibleAddressCommand]). That is the one
+         * With [CommandItem.autoRun] it is also what the app runs when it needs another visible IP
+         * for a forum (see [com.mishiranu.dashchan.content.net.VisibleIpCommand]). That is the one
          * moment the app has to ask for something only a script knows how to do, every proxy service
-         * changing an address its own way.
+         * changing an IP its own way.
          */
         APP("app"),
         ;
@@ -549,9 +549,9 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
      * carries its own set; what it wasn't granted is still there to call, and says it wasn't granted.
      *
      * [PROXY] is the one entry that isn't an object of its own: it sits on `chan` beside the cookies,
-     * the address a forum sees being that forum's as much as its cookies are, but it is granted apart
-     * because it is the only thing here that reaches out of the device — asking the proxy provider,
-     * on the user's account, for another address.
+     * the IP a forum sees being that forum's as much as its cookies are, but it is granted apart
+     * because it is the only thing here that reaches out of the device — reading the IP a forum
+     * sees, and asking for another one on whatever account the user's own command spends.
      *
      * [ENVIRONMENT] is on for a new command and the others are not: reading values the user typed for
      * their commands is what the environment is *for*, while the settings and the cookies belong to
@@ -570,7 +570,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         /** `chan`, the forum's name and its cookies. */
         COOKIES("cookies"),
 
-        /** The address a forum sees and the proxy it goes through -- `chan.visibleAddress` and friends. */
+        /** The IP a forum sees and the proxy it goes through -- `chan.getVisibleIp` and friends. */
         PROXY("proxy"),
         ;
 
@@ -614,7 +614,7 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
          * When true the command runs automatically rather than on demand from a menu: a
          * [UseIn.COMMENT] command runs before sending, a [UseIn.THREAD] command runs when the thread
          * is opened, and a [UseIn.APP] command is the one the app runs when it needs another visible
-         * address for a forum this command is scoped to.
+         * IP for a forum this command is scoped to.
          */
         @JvmField var autoRun = false
 

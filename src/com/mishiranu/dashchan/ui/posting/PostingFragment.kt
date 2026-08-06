@@ -85,8 +85,8 @@ import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.model.FileHolder.Companion.obtain
-import com.mishiranu.dashchan.content.net.VisibleAddress
-import com.mishiranu.dashchan.content.net.VisibleAddressCommand
+import com.mishiranu.dashchan.content.net.VisibleIp
+import com.mishiranu.dashchan.content.net.VisibleIpCommand
 import com.mishiranu.dashchan.content.service.PostingService
 import com.mishiranu.dashchan.content.service.PostingService.FailResult
 import com.mishiranu.dashchan.content.storage.CommandsStorage
@@ -256,11 +256,11 @@ class PostingFragment :
 
     private var refreshCaptchaWhenLifetimeEnd = false
 
-    /** Shown while the proxy provider is being asked for a new visible address. */
-    private var rotateAddressDialog: ProgressDialog? = null
+    /** Shown while the command is being asked for another visible IP. */
+    private var visibleIpCommandDialog: ProgressDialog? = null
 
-    /** The run of the command that changes the address this forum sees, while one is in flight. */
-    private var addressCommandRun: CommandRunner.Run? = null
+    /** The run of the command that changes the IP this forum is seen at, while one is in flight. */
+    private var visibleIpCommandRun: CommandRunner.Run? = null
 
     private var postingBinder: PostingService.Binder? = null
     private val postingConnection: ServiceConnection =
@@ -916,11 +916,11 @@ class PostingFragment :
             ViewModelProvider(this).get(BanWarningViewModel::class.java)
         banWarningViewModel.observe(getViewLifecycleOwner()) { banned ->
             if (banned) {
-                // The way out of a ban on this address is another address. Where the user has written
+                // The way out of a ban on this IP is another IP. Where the user has written
                 // the command for it the button runs that right here; without one the fix is a proxy
                 // configured by hand, on the forum's settings screen, which the button opens instead.
                 // Either way the message has already said what is wrong, so the button stays a bare verb.
-                val hasCommand = VisibleAddressCommand.forChan(get(chanName)) != null
+                val hasCommand = VisibleIpCommand.forChan(get(chanName)) != null
                 show(
                     getString(R.string.visible_ip_banned),
                     null,
@@ -929,7 +929,7 @@ class PostingFragment :
                         false,
                         Runnable {
                             if (hasCommand) {
-                                changeVisibleAddress()
+                                changeVisibleIp()
                             } else {
                                 openForumProxySettings()
                             }
@@ -950,8 +950,8 @@ class PostingFragment :
 
         dismissSendPost()
         saveDraft()
-        rotateAddressDialog?.dismiss()
-        rotateAddressDialog = null
+        visibleIpCommandDialog?.dismiss()
+        visibleIpCommandDialog = null
         ViewUtils.removeFromParent(textFormatView!!)
 
         scrollView = null
@@ -1687,7 +1687,7 @@ class PostingFragment :
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
-            checkVisibleAddressBan(chan)
+            checkVisibleIpBan(chan)
             val captchaPass = if (forceCaptcha) null else getCaptchaPass(chan)
             val task =
                 ReadCaptchaTask(
@@ -1710,14 +1710,14 @@ class PostingFragment :
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
 
     /**
-     * Resolve the address the forum currently sees and warn, once per posting screen, when the ban
-     * log already holds an active ban against it -- a post from that address would only be refused
+     * Resolve the IP the forum currently sees and warn, once per posting screen, when the ban
+     * log already holds an active ban against it -- a post from that IP would only be refused
      * again, so it is worth changing before spending a captcha on it. Runs off the UI thread and
      * only reports a hit, so a miss (or no network) is silent.
      */
-    private fun checkVisibleAddressBan(chan: Chan) {
+    private fun checkVisibleIpBan(chan: Chan) {
         val viewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
-        // Resolving the address is a network round-trip: do it once per screen, not on every
+        // Resolving the IP is a network round-trip: do it once per screen, not on every
         // captcha reload. The flag lives on the view model, so it also survives a rotation.
         if (viewModel.checked) {
             return
@@ -1731,7 +1731,7 @@ class PostingFragment :
     /**
      * Open the forum's settings and reveal the Proxy row, the same scroll-and-pulse a search hit
      * gets: the [PreferenceFragment.EXTRA_REVEAL_TITLE] argument names the row by its title, so the
-     * screen flashes it once it has built. This is where the visible address gets changed.
+     * screen flashes it once it has built. This is where the visible IP gets changed.
      */
     private fun openForumProxySettings() {
         val fragment = ChanFragment(chanName)
@@ -1741,33 +1741,33 @@ class PostingFragment :
     }
 
     /**
-     * Run the command the user flagged to have this forum seen at another address (see
-     * [VisibleAddressCommand]), and let the ban check say its piece again afterwards: the ban that
-     * prompted this may well not apply to the new address.
+     * Run the command the user flagged to have this forum seen at another IP (see
+     * [VisibleIpCommand]), and let the ban check say its piece again afterwards: the ban that
+     * prompted this may well not apply to the new IP.
      *
      * Tracked with the draft commands, so leaving the screen drops it -- unlike the provider request
      * this replaced, which was held in a view model and survived a rotation. A command run belongs to
      * the screen that started it here as everywhere else, and the toast that offers this comes back on
      * the next check anyway.
      */
-    private fun changeVisibleAddress() {
-        if (addressCommandRun?.isFinished == false) {
+    private fun changeVisibleIp() {
+        if (visibleIpCommandRun?.isFinished == false) {
             return
         }
         val dialog = ProgressDialog(requireContext(), null)
-        rotateAddressDialog = dialog
+        visibleIpCommandDialog = dialog
         dialog.setMessage(getString(R.string.loading__ellipsis))
         dialog.setOnCancelListener {
-            rotateAddressDialog = null
-            addressCommandRun?.cancel()
-            addressCommandRun = null
+            visibleIpCommandDialog = null
+            visibleIpCommandRun?.cancel()
+            visibleIpCommandRun = null
         }
         dialog.show()
         val run =
-            VisibleAddressCommand.run(get(chanName)) { result ->
-                addressCommandRun = null
-                rotateAddressDialog?.dismiss()
-                rotateAddressDialog = null
+            VisibleIpCommand.run(get(chanName)) { result ->
+                visibleIpCommandRun = null
+                visibleIpCommandDialog?.dismiss()
+                visibleIpCommandDialog = null
                 // The result waits on the pooled connections being dropped, so the screen may have gone
                 // in between -- and a view model asked for by a fragment that far gone throws
                 if (commentView == null) {
@@ -1778,7 +1778,7 @@ class PostingFragment :
                         ClickableToast.show(result.message ?: getString(R.string.visible_ip_changed))
                         val banViewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
                         banViewModel.checked = false
-                        checkVisibleAddressBan(get(chanName))
+                        checkVisibleIpBan(get(chanName))
                     }
 
                     is CommandRunner.AppResult.Failure -> {
@@ -1786,11 +1786,11 @@ class PostingFragment :
                     }
                 }
             }
-        addressCommandRun = run
+        visibleIpCommandRun = run
         if (run == null) {
             // Deleted or unflagged since the toast offered this
             dialog.dismiss()
-            rotateAddressDialog = null
+            visibleIpCommandDialog = null
             openForumProxySettings()
         } else {
             trackCommandRun(run)
@@ -1808,8 +1808,8 @@ class PostingFragment :
     ) : HttpHolderTask<Unit, Boolean>(chan) {
         override fun run(holder: HttpHolder): Boolean {
             val chanName = chan.name ?: return false
-            val address = VisibleAddress.resolve(chan, holder)?.address ?: return false
-            return ChanDatabase.getInstance().hasActiveBanForAddress(chanName, boardName, address)
+            val ip = VisibleIp.resolve(chan, holder)?.ip ?: return false
+            return ChanDatabase.getInstance().hasActiveBanForAddress(chanName, boardName, ip)
         }
 
         override fun onComplete(result: Boolean) {

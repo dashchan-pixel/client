@@ -5,12 +5,12 @@ import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 
 /**
- * The command the app runs when a forum needs to be seen at another address, and the two things the app
+ * The command the app runs when a forum needs to be seen at another IP, and the two things the app
  * does around it.
  *
- * Changing that address is a proxy service's business and every service goes about it differently --
+ * Changing that IP is a proxy service's business and every service goes about it differently --
  * one buys a port, one rewrites a session token in the credentials it already gave out, one has an
- * endpoint that answers to a request and moves the address behind it. None of that is the app's to
+ * endpoint that answers to a request and moves the IP behind it. None of that is the app's to
  * know, so it is written as a [CommandsStorage.UseIn.APP] command flagged
  * [autoRun][CommandsStorage.CommandItem.autoRun], and the app's part is to find the one that belongs to
  * a forum and to run it at the moment it is wanted -- the button on the forum's own settings screen, or
@@ -20,27 +20,27 @@ import com.mishiranu.dashchan.content.storage.CommandsStorage
  * screens that run one name it, so which command the button will run is on the screen holding the
  * button rather than in a preference of its own.
  */
-object VisibleAddressCommand {
+object VisibleIpCommand {
     /**
-     * The command that changes the address [chan] is seen at, or `null` when the user has written none
+     * The command that changes the IP [chan] is seen at, or `null` when the user has written none
      * for it -- which is what a forum whose proxy is set by hand, or has none, looks like.
      */
-    fun forChan(chan: Chan): CommandsStorage.CommandItem? = CommandsStorage.getInstance().getAddressCommand(chan.name)
+    fun forChan(chan: Chan): CommandsStorage.CommandItem? = CommandsStorage.getInstance().getVisibleIpCommand(chan.name)
 
     /**
      * Runs [forChan]'s command for [chan], answering the run so the screen that started it can drop it,
      * or `null` when there is no command to run. Main thread, like every command run.
      *
-     * A success drops the pooled connections whatever the script did: a service that moves the address
+     * A success drops the pooled connections whatever the script did: a service that moves the IP
      * behind an endpoint that stays put leaves nothing here to change, and a connection kept alive
-     * through it would go on being seen at the old address -- which is the one thing the caller cannot
+     * through it would go on being seen at the old IP -- which is the one thing the caller cannot
      * be expected to know to do. A script that changed the proxy itself has had them dropped already
      * (see [ProxyConnection.set]); dropping them twice costs a pool that was empty anyway.
      *
      * The drop happens off this thread and [callback] waits for it (see
      * [ProxyConnection.dropPooledConnections]) -- a command's result is delivered on the main thread,
      * where closing a TLS connection is network I/O StrictMode kills the app for, and where the first
-     * thing a caller does with the result is ask for the address again.
+     * thing a caller does with the result is ask for the IP again.
      */
     fun run(
         chan: Chan,

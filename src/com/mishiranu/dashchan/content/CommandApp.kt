@@ -6,7 +6,7 @@ import chan.content.ChanManager
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.net.ProxyConnection
-import com.mishiranu.dashchan.content.net.VisibleAddress
+import com.mishiranu.dashchan.content.net.VisibleIp
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ForegroundManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
@@ -17,12 +17,12 @@ import org.json.JSONObject
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
  * the application's own **settings**; `chan`, the forum it is running in, that forum's **cookies**, the
- * **address** that forum sees this device at and the **proxy** it goes through; and `store`, a place of
+ * **IP** that forum sees this device at and the **proxy** it goes through; and `store`, a place of
  * its own to keep what it wants to remember between runs.
  *
  * They are kept apart because they are granted apart. `app` and `chan` reach what belongs to the user
  * — the same things the settings screens and "Manage cookies" edit by hand — and a command gets
- * neither until the user grants it (see [CommandsStorage.Grant]); the address is a grant of its own
+ * neither until the user grants it (see [CommandsStorage.Grant]); the IP is a grant of its own
  * even so, being the one thing here that spends anything of the user's outside the device; `env` is
  * granted by default and can be taken away; `store` needs no grant at all, holding only what the same
  * script put there. A grant
@@ -54,17 +54,23 @@ import org.json.JSONObject
  * chan.cookies.remove("cf_clearance")        // same as set(name, null)
  * chan.cookies.setState("cf_clearance", { blocked: false, deleteOnExit: true })
  *
- * chan.visibleAddress()                      // {address, location}, or null when it can't be read
- * chan.proxy()                               // "socks5://user:pw@host:1080", or null for no proxy
+ * chan.getVisibleIp()                        // {ip, location}, or null when it can't be read
+ * chan.getProxy()                            // "socks5://user:pw@host:1080", or null for no proxy
  * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
  * ```
+ *
+ * Everything that *does* something is a function named for what it does, and only a plain value is
+ * reached without parentheses — `chan.name`, which is decided before the script starts and is the one
+ * member here that costs nothing to read. The rest are `get`/`set` for that reason: reading
+ * the IP a forum sees is a request over the network, and reading its proxy is a call across the
+ * bridge, neither of which should look like a field a script may touch as often as it likes.
  *
  * A command without a grant still gets the object — every call to it throws saying it wasn't granted,
  * which is a message that points at the switch, where an undefined `app` would send the user looking
  * at their own script instead. `chan.name` is the one member a missing grant leaves readable as
  * `null`, since a script may reasonably ask which forum it is in before deciding it needs anything.
- * The cookies and the address are granted separately from each other, so a script that has one may
- * still be refused the other.
+ * The cookies and the IP are granted separately from each other, so a script that has one may still
+ * be refused the other.
  *
  * A grant is checked in [Bridge.dispatch] rather than in the JavaScript, because the bridge object is
  * bound to a global the script can reach directly: a wrapper that refused would be walked around by
@@ -89,16 +95,16 @@ import org.json.JSONObject
  * A cookie belongs to a forum: the one the command is running in, unless the call names another.
  * `get` answers with the value the app would actually send, so a cookie the user blocked reads as
  * `null`; `list` is the management view and shows every cookie with its flags, blocked ones included.
- * The address calls take the same optional forum name for the same reason.
+ * The IP calls take the same optional forum name for the same reason.
  *
- * The visible address is the one the *forum* sees, so it is read through that forum's proxy (see
- * [VisibleAddress]) — a `fetch` leaves the WebView on its own and would answer with the device's
- * address instead, which is the whole reason for asking here. It reaches the network, so it takes as
- * long as a request does where every other call here answers at once.
+ * The visible IP is the one the *forum* sees, so it is read through that forum's proxy (see
+ * [VisibleIp]) — a `fetch` leaves the WebView on its own and would answer with the device's IP
+ * instead, which is the whole reason for asking here. It reaches the network, so it takes as long as
+ * a request does where every other call here answers at once.
  *
  * The proxy a forum goes through is read and written as one connection string (see [ProxyConnection]),
  * which is the form a service hands its endpoint out on -- so a script that got a proxy from anywhere
- * can hand it straight over, and one that rotates an address by rewriting part of its own credentials
+ * can hand it straight over, and one that rotates an IP by rewriting part of its own credentials
  * can read what is there, change it and write it back. Writing also drops the pooled connections, or
  * a connection kept alive through the old proxy would carry the very request the change was made for.
  * A script may write the settings directly instead, both being the user's to edit, but nothing there
@@ -135,7 +141,7 @@ object CommandApp {
     private const val METHOD_COOKIES_GET = "cookies.get"
     private const val METHOD_COOKIES_SET = "cookies.set"
     private const val METHOD_COOKIES_STATE = "cookies.setState"
-    private const val METHOD_ADDRESS_GET = "address.get"
+    private const val METHOD_IP_GET = "ip.get"
     private const val METHOD_PROXY_GET = "proxy.get"
     private const val METHOD_PROXY_SET = "proxy.set"
 
@@ -150,7 +156,7 @@ object CommandApp {
     private const val KEY_CHAN = "chan"
     private const val KEY_BLOCKED = "blocked"
     private const val KEY_DELETE_ON_EXIT = "deleteOnExit"
-    private const val KEY_ADDRESS = "address"
+    private const val KEY_IP = "ip"
     private const val KEY_LOCATION = "location"
 
     /**
@@ -246,8 +252,8 @@ object CommandApp {
             "{name:name,blocked:__s.blocked,deleteOnExit:__s.deleteOnExit,chan:chan});" +
             "}" +
             "})," +
-            "visibleAddress:function(chan){return __call('$METHOD_ADDRESS_GET',{chan:chan});}," +
-            "proxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
+            "getVisibleIp:function(chan){return __call('$METHOD_IP_GET',{chan:chan});}," +
+            "getProxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
             "setProxy:function(value,chan){" +
             "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
             "}" +
@@ -392,7 +398,7 @@ object CommandApp {
             }
 
         /**
-         * The calls that are about a forum rather than about the app: its cookies and the address it
+         * The calls that are about a forum rather than about the app: its cookies and the IP it
          * sees, each behind its own grant. Split off because [dispatch] and this together are one
          * `when` too long for one function, and this is where the seam falls.
          */
@@ -421,9 +427,9 @@ object CommandApp {
                     setCookieState(args)
                 }
 
-                METHOD_ADDRESS_GET -> {
+                METHOD_IP_GET -> {
                     requireGrant(CommandsStorage.Grant.PROXY)
-                    visibleAddress(chan(args))
+                    visibleIp(chan(args))
                 }
 
                 METHOD_PROXY_GET -> {
@@ -459,7 +465,7 @@ object CommandApp {
         /**
          * The forum a call is about: the one it named, or the one the run belongs to. A name no
          * extension answers to is refused — a cookie written under it would be read by nobody, an
-         * address asked for under it belongs to no forum, and a typo is the only way to get there.
+         * IP asked for under it belongs to no forum, and a typo is the only way to get there.
          */
         private fun chan(args: JSONObject): String {
             val name =
@@ -517,16 +523,16 @@ object CommandApp {
     }
 
     /**
-     * The address [chanName] is seen at, as `{address, location}`, or `null` where it could not be read
-     * at all. It is asked through that forum's own holder, so what comes back is the address that
-     * forum's traffic is seen leaving from -- see [VisibleAddress].
+     * The IP [chanName] is seen at, as `{ip, location}`, or `null` where it could not be read at all.
+     * It is asked through that forum's own holder, so what comes back is the IP that forum's traffic
+     * is seen leaving from -- see [VisibleIp].
      */
-    private fun visibleAddress(chanName: String): Any? {
+    private fun visibleIp(chanName: String): Any? {
         val chan = Chan.get(chanName)
         val holder = HttpHolder(chan)
-        val result = holder.use().use { VisibleAddress.resolve(chan, holder) } ?: return null
+        val result = holder.use().use { VisibleIp.resolve(chan, holder) } ?: return null
         return JSONObject()
-            .put(KEY_ADDRESS, result.address)
+            .put(KEY_IP, result.ip)
             .put(KEY_LOCATION, result.location ?: JSONObject.NULL)
     }
 

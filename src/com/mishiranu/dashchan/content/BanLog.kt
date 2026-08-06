@@ -4,7 +4,7 @@ import chan.content.ApiException
 import chan.content.Chan
 import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
-import com.mishiranu.dashchan.content.net.VisibleAddress
+import com.mishiranu.dashchan.content.net.VisibleIp
 import com.mishiranu.dashchan.util.ConcurrentUtils
 
 /**
@@ -12,7 +12,7 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
  * failed response, this keeps them so their expiration can be tracked afterwards. Shown per forum
  * by [com.mishiranu.dashchan.ui.preference.BanLogFragment].
  *
- * Bans are assigned to an address, so the row also records the one the forum saw at the time --
+ * Bans are assigned to an IP, so the row also records the one the forum saw at the time --
  * resolved off the posting thread, since the post has already failed and nothing waits for it.
  */
 object BanLog {
@@ -35,19 +35,19 @@ object BanLog {
                 banExtra?.expireDate ?: 0L,
             )
         if (rowId >= 0) {
-            resolveAddress(chan, rowId)
+            resolveIp(chan, rowId)
         }
     }
 
-    private fun resolveAddress(
+    private fun resolveIp(
         chan: Chan,
         rowId: Long,
     ) {
         ConcurrentUtils.PARALLEL_EXECUTOR.execute {
             val holder = HttpHolder(chan)
-            val address = holder.use().use { VisibleAddress.resolve(chan, holder)?.address }
-            if (address != null) {
-                ChanDatabase.getInstance().setBanAddress(rowId, address)
+            val ip = holder.use().use { VisibleIp.resolve(chan, holder)?.ip }
+            if (ip != null) {
+                ChanDatabase.getInstance().setBanAddress(rowId, ip)
             }
         }
     }

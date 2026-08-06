@@ -52,8 +52,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  * `return await fetch(url).then(r => r.text())`).
  *
  * `store` is the command's own key→value store, `app` the application's settings and `chan` the forum
- * the run belongs to along with that forum's cookies and the address it sees this device at — so
- * `chan.cookies` and `chan.visibleAddress()` need no argument to work on the right one. `app` and `chan`
+ * the run belongs to along with that forum's cookies and the IP it sees this device at — so
+ * `chan.cookies` and `chan.getVisibleIp()` need no argument to work on the right one. `app` and `chan`
  * answer only to a command the user granted them to, and `store` to every command. See [CommandApp] for
  * the whole of it.
  *

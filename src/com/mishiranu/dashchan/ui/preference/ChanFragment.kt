@@ -25,8 +25,8 @@ import com.mishiranu.dashchan.content.async.TaskViewModel
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.net.UserAgentProvider
-import com.mishiranu.dashchan.content.net.VisibleAddress
-import com.mishiranu.dashchan.content.net.VisibleAddressCommand
+import com.mishiranu.dashchan.content.net.VisibleIp
+import com.mishiranu.dashchan.content.net.VisibleIpCommand
 import com.mishiranu.dashchan.ui.FragmentHandler
 import com.mishiranu.dashchan.ui.preference.core.MultipleEditPreference
 import com.mishiranu.dashchan.ui.preference.core.Preference
@@ -45,13 +45,13 @@ class ChanFragment :
     private var cookiePreference: Preference<*>? = null
     private var banLogPreference: Preference<*>? = null
     private var proxyPreference: Preference<Map<String, String>>? = null
-    private var visibleAddressPreference: Preference<*>? = null
-    private var visibleAddressViewModel: VisibleAddressViewModel? = null
+    private var visibleIpPreference: Preference<*>? = null
+    private var visibleIpViewModel: VisibleIpViewModel? = null
 
-    // The run of the command that changes the address this forum is seen at, tracked so leaving the
+    // The run of the command that changes the IP this forum is seen at, tracked so leaving the
     // screen drops it rather than leaving an engine reaching the network for nobody.
-    private var addressCommandRun: CommandRunner.Run? = null
-    private var addressCommandDialog: ProgressDialog? = null
+    private var visibleIpCommandRun: CommandRunner.Run? = null
+    private var visibleIpCommandDialog: ProgressDialog? = null
 
     private var anotherDomainMode = false
 
@@ -334,42 +334,42 @@ class ChanFragment :
                     proxyPreference.performClick()
                 }
                 postingOnlyPreference.setEnabled(hasProxy(Chan.get(chanName)))
-                checkVisibleAddress(force = true)
+                checkVisibleIp(force = true)
             }
         }
         if (!localMode) {
-            val visibleAddressPreference =
-                addButton(getString(R.string.visible_ip)) { visibleAddressSummary() }
-            this.visibleAddressPreference = visibleAddressPreference
-            visibleAddressPreference.setOnClickListener { checkVisibleAddress(force = true) }
-            // An address is worth having in hand -- a ban appeal asks for it, and it is the one thing on
-            // this screen that can't be typed back in. Long tap copies the bare address without the
+            val visibleIpPreference =
+                addButton(getString(R.string.visible_ip)) { visibleIpSummary() }
+            this.visibleIpPreference = visibleIpPreference
+            visibleIpPreference.setOnClickListener { checkVisibleIp(force = true) }
+            // An IP is worth having in hand -- a ban appeal asks for it, and it is the one thing on
+            // this screen that can't be typed back in. Long tap copies the bare IP without the
             // country the row appends to it. No toast: the system shows its own clipboard confirmation.
-            visibleAddressPreference.setOnLongClickListener {
-                val address = visibleAddressViewModel?.lookup?.result?.address
-                if (address.isNullOrEmpty()) {
+            visibleIpPreference.setOnLongClickListener {
+                val ip = visibleIpViewModel?.lookup?.result?.ip
+                if (ip.isNullOrEmpty()) {
                     false
                 } else {
-                    StringUtils.copyToClipboard(requireContext(), address)
+                    StringUtils.copyToClipboard(requireContext(), ip)
                     true
                 }
             }
-            val viewModel = ViewModelProvider(this).get(VisibleAddressViewModel::class.java)
-            this.visibleAddressViewModel = viewModel
+            val viewModel = ViewModelProvider(this).get(VisibleIpViewModel::class.java)
+            this.visibleIpViewModel = viewModel
             viewModel.observe(viewLifecycleOwner) { lookup ->
                 viewModel.lookup = lookup
-                visibleAddressPreference.invalidate()
+                visibleIpPreference.invalidate()
             }
-            checkVisibleAddress(force = false)
-            if (VisibleAddressCommand.forChan(chan) != null) {
+            checkVisibleIp(force = false)
+            if (VisibleIpCommand.forChan(chan) != null) {
                 // Named rather than described: which command the button runs is the thing worth knowing
                 // about it, and the user is who wired the two together
-                val addressCommandPreference =
-                    addButton(getString(R.string.change_visible_ip)) { addressCommandSummary() }
-                addressCommandPreference.setOnClickListener { runAddressCommand() }
+                val visibleIpCommandPreference =
+                    addButton(getString(R.string.change_visible_ip)) { visibleIpCommandSummary() }
+                visibleIpCommandPreference.setOnClickListener { runVisibleIpCommand() }
                 // Tap runs the command, long tap opens it -- the same pair the posting screen's ⌘ popup
                 // offers, and the way to reach a command whose name the row shows but whose text it doesn't.
-                addressCommandPreference.setOnLongClickListener { openAddressCommand() }
+                visibleIpCommandPreference.setOnLongClickListener { openVisibleIpCommand() }
             }
         }
 
@@ -409,13 +409,13 @@ class ChanFragment :
         captchaPassPreference = null
         userAuthorizationPreference = null
         proxyPreference = null
-        addressCommandDialog?.dismiss()
-        addressCommandDialog = null
-        cancelAddressCommand()
+        visibleIpCommandDialog?.dismiss()
+        visibleIpCommandDialog = null
+        cancelVisibleIpCommand()
         cookiePreference = null
         banLogPreference = null
-        visibleAddressPreference = null
-        visibleAddressViewModel = null
+        visibleIpPreference = null
+        visibleIpViewModel = null
     }
 
     override fun onResume() {
@@ -470,56 +470,56 @@ class ChanFragment :
     private fun hasProxy(chan: Chan): Boolean = HttpClient.getInstance().getProxyData(chan, proxyRequired = true) != null
 
     /**
-     * The address the forum sees, from its Cloudflare `/cdn-cgi/trace` endpoint: what matters here
-     * is whether it matches the device's own address, i.e. whether the proxy configured above (Tor
+     * The IP the forum sees, from its Cloudflare `/cdn-cgi/trace` endpoint: what matters here
+     * is whether it matches the device's own IP, i.e. whether the proxy configured above (Tor
      * and friends) is actually carrying this forum's traffic. The check goes through the proxy even
      * when it is set to carry posting only — its whole point is to show what the proxy looks like.
      */
-    private fun visibleAddressSummary(): CharSequence {
-        val viewModel = visibleAddressViewModel
-        val address = VisibleAddress.format(viewModel?.lookup?.result)
+    private fun visibleIpSummary(): CharSequence {
+        val viewModel = visibleIpViewModel
+        val ip = VisibleIp.format(viewModel?.lookup?.result)
         return when {
             viewModel == null || viewModel.getTask() != null -> getString(R.string.loading__ellipsis)
-            address.isEmpty() -> getString(R.string.unavailable)
-            else -> address
+            ip.isEmpty() -> getString(R.string.unavailable)
+            else -> ip
         }
     }
 
     /** The command the button would run, which is what the user has to see to know it is the right one. */
-    private fun addressCommandSummary(): CharSequence {
-        val item = VisibleAddressCommand.forChan(Chan.get(getChanName()))
+    private fun visibleIpCommandSummary(): CharSequence {
+        val item = VisibleIpCommand.forChan(Chan.get(getChanName()))
         val name = item?.name
         return if (name.isNullOrEmpty()) getString(R.string.command) else name
     }
 
     /**
-     * Ask the command the user flagged for it to have this forum seen at another address, and read the
-     * address again afterwards -- that row is where the change shows. What the script returned is shown
+     * Ask the command the user flagged for it to have this forum seen at another IP, and read the
+     * IP again afterwards -- that row is where the change shows. What the script returned is shown
      * in place of the bare "changed", a script being better placed to say what it did.
      */
-    private fun runAddressCommand() {
-        if (addressCommandRun?.isFinished == false) {
+    private fun runVisibleIpCommand() {
+        if (visibleIpCommandRun?.isFinished == false) {
             return
         }
         val dialog = ProgressDialog(requireContext(), null)
-        addressCommandDialog = dialog
+        visibleIpCommandDialog = dialog
         dialog.setMessage(getString(R.string.loading__ellipsis))
         dialog.setOnCancelListener {
-            addressCommandDialog = null
-            cancelAddressCommand()
+            visibleIpCommandDialog = null
+            cancelVisibleIpCommand()
         }
         dialog.show()
-        addressCommandRun =
-            VisibleAddressCommand.run(Chan.get(getChanName())) { result ->
-                addressCommandRun = null
-                addressCommandDialog?.dismiss()
-                addressCommandDialog = null
+        visibleIpCommandRun =
+            VisibleIpCommand.run(Chan.get(getChanName())) { result ->
+                visibleIpCommandRun = null
+                visibleIpCommandDialog?.dismiss()
+                visibleIpCommandDialog = null
                 when (result) {
                     is CommandRunner.AppResult.Success -> {
                         ClickableToast.show(result.message ?: getString(R.string.visible_ip_changed))
-                        // The proxy may be another one now, and the address another one either way
+                        // The proxy may be another one now, and the IP another one either way
                         proxyPreference?.invalidate()
-                        checkVisibleAddress(force = true)
+                        checkVisibleIp(force = true)
                     }
 
                     is CommandRunner.AppResult.Failure -> {
@@ -527,10 +527,10 @@ class ChanFragment :
                     }
                 }
             }
-        if (addressCommandRun == null) {
+        if (visibleIpCommandRun == null) {
             // Deleted or unflagged while this screen was open, so the row it built is stale
             dialog.dismiss()
-            addressCommandDialog = null
+            visibleIpCommandDialog = null
             ClickableToast.show(R.string.no_commands_defined)
         }
     }
@@ -538,30 +538,30 @@ class ChanFragment :
     /**
      * Open the command the button would run, on the commands screen with its edit dialog up -- where the
      * ⌘ popup's long tap lands too. `false` when there is no command to open, leaving the long press
-     * unhandled: the row is stale, the same way [runAddressCommand] finds it.
+     * unhandled: the row is stale, the same way [runVisibleIpCommand] finds it.
      */
-    private fun openAddressCommand(): Boolean {
-        val item = VisibleAddressCommand.forChan(Chan.get(getChanName())) ?: return false
+    private fun openVisibleIpCommand(): Boolean {
+        val item = VisibleIpCommand.forChan(Chan.get(getChanName())) ?: return false
         (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(item.id))
         return true
     }
 
-    private fun cancelAddressCommand() {
-        addressCommandRun?.cancel()
-        addressCommandRun = null
+    private fun cancelVisibleIpCommand() {
+        visibleIpCommandRun?.cancel()
+        visibleIpCommandRun = null
     }
 
-    /** [force] re-checks an address already resolved; otherwise a known one is kept. */
-    private fun checkVisibleAddress(force: Boolean) {
-        val viewModel = visibleAddressViewModel ?: return
+    /** [force] re-checks an IP already resolved; otherwise a known one is kept. */
+    private fun checkVisibleIp(force: Boolean) {
+        val viewModel = visibleIpViewModel ?: return
         if (viewModel.getTask() != null || (!force && viewModel.lookup != null)) {
             return
         }
-        val task = VisibleAddressTask(viewModel, Chan.get(getChanName()))
+        val task = VisibleIpTask(viewModel, Chan.get(getChanName()))
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         viewModel.attach(task)
         viewModel.lookup = null
-        visibleAddressPreference?.invalidate()
+        visibleIpPreference?.invalidate()
     }
 
     private fun addAnotherDomainPreference(primaryDomain: String): Preference<String> {
@@ -707,27 +707,27 @@ class ChanFragment :
     }
 
     /**
-     * A finished check of the visible address, holding what it found or `null` when it found nothing --
+     * A finished check of the visible IP, holding what it found or `null` when it found nothing --
      * which a bare `null` result could not say, the view model dropping those as "nothing delivered yet".
-     * The row shows the formatted address and copies the bare one, so what the check found is kept whole
+     * The row shows the formatted IP and copies the bare one, so what the check found is kept whole
      * rather than as the line it is displayed as.
      */
-    class VisibleAddressLookup(
-        val result: VisibleAddress.Result?,
+    class VisibleIpLookup(
+        val result: VisibleIp.Result?,
     )
 
-    class VisibleAddressViewModel : TaskViewModel<VisibleAddressTask, VisibleAddressLookup>() {
+    class VisibleIpViewModel : TaskViewModel<VisibleIpTask, VisibleIpLookup>() {
         /** Last check: `null` until the first one has finished. */
-        var lookup: VisibleAddressLookup? = null
+        var lookup: VisibleIpLookup? = null
     }
 
-    class VisibleAddressTask(
-        private val viewModel: VisibleAddressViewModel,
+    class VisibleIpTask(
+        private val viewModel: VisibleIpViewModel,
         private val chan: Chan,
-    ) : HttpHolderTask<Unit, VisibleAddressLookup>(chan) {
-        override fun run(holder: HttpHolder): VisibleAddressLookup = VisibleAddressLookup(VisibleAddress.resolve(chan, holder))
+    ) : HttpHolderTask<Unit, VisibleIpLookup>(chan) {
+        override fun run(holder: HttpHolder): VisibleIpLookup = VisibleIpLookup(VisibleIp.resolve(chan, holder))
 
-        override fun onComplete(result: VisibleAddressLookup) {
+        override fun onComplete(result: VisibleIpLookup) {
             viewModel.handleResult(result)
         }
     }
