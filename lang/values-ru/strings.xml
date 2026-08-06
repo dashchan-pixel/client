@@ -102,6 +102,7 @@
 	<string name="close_pages__summary">Закрывать страницы нажатием кнопки \"Назад\"</string>
 	<string name="closed">Закрыто</string>
 	<string name="code_number_address">Код, номер, адрес</string>
+	<string name="collapse">Свернуть</string>
 	<string name="colors">Цвета</string>
 	<string name="comment">Комментарий</string>
 	<string name="comment_is_too_short">Комментарий слишком короткий</string>

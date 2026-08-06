@@ -358,8 +358,22 @@ class PostingFragment :
     }
 
     /**
-     * The attach action, which is a toolbar item for a form that owns the toolbar and a button in the
-     * sheet's own header for one that does not.
+     * A button on one of this form's toasts, which does nothing once the form is no longer on screen.
+     * The toast is the activity's and outlives the fragment that put it up — a sheet swiped away while
+     * its toast is still standing is the short way to see that — and every one of these actions wants
+     * something the fragment only has while it is hosted: a manager to show a dialog with, an activity
+     * to push a screen onto. Tapping such a toast afterwards used to be a crash.
+     */
+    private fun whileOnScreen(action: () -> Unit): Runnable =
+        Runnable {
+            if (isResumed) {
+                action()
+            }
+        }
+
+    /**
+     * The attach action, which is a toolbar item for a form that owns the toolbar and a button at the
+     * end of the row of checkboxes for one that does not.
      */
     private fun invalidateAttach() {
         invalidateOptionsMenu()
@@ -370,15 +384,17 @@ class PostingFragment :
 
     /**
      * The attach button the sheet carries in place of the toolbar item, built to match the ⌘ button
-     * over the comment field — the same box, padding and secondary tint.
+     * over the comment field — the same box, padding and secondary tint. The icon is the paperclip
+     * lying down rather than the toolbar's upright one with a plus: this one sits at the end of a row
+     * of checkboxes, where a wide glyph reads as part of the line instead of towering over it.
      */
     private fun buildAttachButton(
-        header: FrameLayout,
+        row: LinearLayout,
         density: Float,
     ): ImageView {
-        val context = header.context
+        val context = row.context
         val button = ImageView(context)
-        button.setImageDrawable((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAttach))
+        button.setImageResource(R.drawable.ic_attachment)
         button.imageTintList = ColorStateList.valueOf(getColor(context, android.R.attr.textColorSecondary))
         button.setBackgroundResource(
             getResourceId(context, android.R.attr.selectableItemBackgroundBorderless, 0),
@@ -388,12 +404,7 @@ class PostingFragment :
         button.setPadding(padding, padding, padding, padding)
         val size = (40f * density).toInt()
         button.setOnClickListener { startAttachmentPick() }
-        header.addView(
-            button,
-            FrameLayout.LayoutParams(size, size, Gravity.CENTER_VERTICAL or Gravity.END).apply {
-                setMarginEnd((4f * density).toInt())
-            },
-        )
+        row.addView(button, LinearLayout.LayoutParams(size, size))
         return button
     }
 
@@ -431,7 +442,6 @@ class PostingFragment :
             // A sheet only hands the drag over to a nested scrolling child, and a plain ScrollView
             // does not opt into that on its own
             scrollView.setNestedScrollingEnabled(true)
-            attachButton = buildAttachButton(sheetLayout.header, density)
             // The sheet's top edge is where the toolbar ends, so a toolbar that hides itself as the
             // page behind is scrolled would leave the sheet floating below a gap
             (requireActivity() as FragmentHandler).setActionBarLocked(LOCKER_SHEET, true)
@@ -492,8 +502,14 @@ class PostingFragment :
         )
         postingLayout.setPadding((8f * density).toInt(), 0, (8f * density).toInt(), 0)
 
-        Companion.addHeader(personalDataBlock, 0, R.string.personal_data)
-        addHeader(postingLayout, postingLayout.indexOfChild(subjectView), R.string.message_data)
+        if (sheetLayout == null) {
+            // The two headers name the halves of a form that has the screen to itself. A sheet is a
+            // form laid over the thread it is replying to, where those two rows are 56dp each of the
+            // little height it has, spent above the subject field on saying what a form this small
+            // leaves in no doubt anyway.
+            Companion.addHeader(personalDataBlock, 0, R.string.personal_data)
+            addHeader(postingLayout, postingLayout.indexOfChild(subjectView), R.string.message_data)
+        }
         // The confirmation block has no header of its own, so the send button would otherwise stick
         // to the checkboxes above it
         footerContainer.setPadding(0, (16f * density).toInt(), 0, 0)
@@ -589,16 +605,37 @@ class PostingFragment :
         // Wrap the comment field so a ⌘ button can float over its bottom-right corner. The field
         // keeps growing via setMinHeight (resizeComment) and the wrapper grows with it.
         val commentWrapper = FrameLayout(commentView.context)
+        // In a sheet the wrapper is the row that takes the height the others do not want, and the field
+        // fills it; hosted plainly the field grows itself with setMinHeight (resizeComment) and wants to
+        // be no taller than its content until it does
         commentWrapper.addView(
             commentView,
             FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
+                if (sheetLayout != null) {
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                } else {
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                },
             ),
         )
         commandsButton = buildCommandsButton(commentWrapper, density)
         commandsProgressView = buildCommandsProgress(commentWrapper, density)
-        postingLayout.addView(commentWrapper, postingLayout.indexOfChild(commentParent))
+        postingLayout.addView(
+            commentWrapper,
+            postingLayout.indexOfChild(commentParent),
+            if (sheetLayout != null) {
+                // The scroll view fills its viewport, so the room a form shorter than the sheet is not
+                // using has to go to one of its rows or it is a gap. It goes here: a sheet dragged tall
+                // is a taller comment field, not the same short field with space under the checkboxes.
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
+            } else {
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                )
+            },
+        )
         postingLayout.removeView(commentParent)
         if (markupAtBottom) {
             postingLayout.addView(
@@ -609,6 +646,30 @@ class PostingFragment :
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                 ),
             )
+        }
+        if (sheetLayout != null) {
+            // A sheet has no toolbar to take the attach action from, so it goes at the end of the row
+            // of checkboxes, the one line of the form with width to spare. The checkboxes get all of
+            // that width, and the button keeps the end of the line even on a forum that offers no
+            // checkboxes at all and leaves the row itself hidden.
+            val optionsRow = LinearLayout(postingLayout.context)
+            optionsRow.orientation = LinearLayout.HORIZONTAL
+            optionsRow.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            val index = postingLayout.indexOfChild(checkBoxParent)
+            postingLayout.removeView(checkBoxParent)
+            optionsRow.addView(
+                checkBoxParent,
+                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            postingLayout.addView(
+                optionsRow,
+                index,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
+            )
+            attachButton = buildAttachButton(optionsRow, density)
         }
         ViewUtils.setNewMargin(checkBoxParent, 0, (4f * density).toInt(), 0, 0)
         updateCommandsButton()
@@ -734,6 +795,22 @@ class PostingFragment :
             )
         } else {
             (sendButton.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
+        }
+        if (sheetLayout != null) {
+            // The send button has to be there at whatever height the sheet has settled at, so the
+            // captcha and the button move out of the scrolling form into the sheet's pinned footer
+            // row. postingLayout's own horizontal padding does not follow them, hence the padding
+            // here, and the 16dp above the block is the form's spacing, which the row's edge is now.
+            postingLayout.removeView(footerContainer)
+            val padding = (8f * density).toInt()
+            footerContainer.setPadding(padding, padding, padding, 0)
+            sheetLayout.footer.addView(
+                footerContainer,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
+            )
         }
         attachmentColumnCount =
             if (screenWidthDp >= 960) {
@@ -1039,7 +1116,7 @@ class PostingFragment :
                     ClickableToast.Button(
                         R.string.change,
                         false,
-                        Runnable {
+                        whileOnScreen {
                             if (hasCommand) {
                                 changeVisibleIp()
                             } else {
@@ -1778,7 +1855,7 @@ class PostingFragment :
                     ClickableToast.Button(
                         R.string.details,
                         false,
-                        Runnable {
+                        whileOnScreen {
                             SendPostFailDetailsDialog(failResult.extra)
                                 .show(getChildFragmentManager(), null)
                         },
@@ -2633,6 +2710,12 @@ class PostingFragment :
         Runnable {
             val scrollView = scrollView ?: return@Runnable
             val commentView = commentView ?: return@Runnable
+            if (sheet) {
+                // Not this way round in a sheet: the field is the weighted row of the form there, so the
+                // room the sheet has and the form is not using is already its (see onViewCreated), and a
+                // second pass adding filler height on top of that would only fight the first
+                return@Runnable
+            }
             val postMain = scrollView.getChildAt(0)
             commentView.setMinLines(4)
             // Drop the filler height added by the previous pass. Without this the field can only

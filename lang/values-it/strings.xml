@@ -85,6 +85,7 @@
     <string name="close_pages__summary">Chiudi pagine toccando il pulsante "indietro"</string>
     <string name="closed">Chiuso</string>
     <string name="code_number_address">Board, numero pag. o indirizzo</string>
+    <string name="collapse">Comprimi</string>
     <string name="colors">Colori</string>
     <string name="comment">Commento</string>
     <string name="comment_is_too_short">Il commento è troppo corto</string>

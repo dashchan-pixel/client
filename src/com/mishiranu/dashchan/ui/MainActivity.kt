@@ -2034,7 +2034,18 @@ class MainActivity :
             } else if (!fragments.isEmpty()) {
                 val fragment =
                     fragments.removeAt(fragments.size - 1).create(null) as ContentFragment
-                navigateFragment(fragment, null, true)
+                // A form that was a sheet when it was stacked comes back as one. The page it was
+                // floating over is the page that got stacked when the sheet was navigated away from --
+                // see navigateFragment -- so it goes back first and the form floats over it again,
+                // rather than the one back press leaving the form filling the screen and the next one
+                // uncovering the thread it is replying to. With no page to restore, which means the one
+                // it was over has been closed since, the form is hosted plainly the way it always was.
+                if (fragment is PostingFragment && fragment.sheet && !stackPageItems.isEmpty()) {
+                    navigateSavedPage(stackPageItems.removeAt(stackPageItems.size - 1), true)
+                    navigatePostingSheet(fragment)
+                } else {
+                    navigateFragment(fragment, null, true)
+                }
                 handled = true
             } else if (!stackPageItems.isEmpty()) {
                 navigateSavedPage(stackPageItems.removeAt(stackPageItems.size - 1), true)

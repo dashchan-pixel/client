@@ -91,6 +91,7 @@
 				android:layout_height="wrap_content"
 				android:gravity="top"
 				android:hint="@string/comment"
+				android:minLines="3"
 				android:inputType="textLongMessage|textMultiLine|textCapSentences"
 				android:imeOptions="flagNoExtractUi" />
 

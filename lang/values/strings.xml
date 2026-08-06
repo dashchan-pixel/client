@@ -105,6 +105,7 @@
 	<string name="closed">Closed</string>
 	<string name="code_number_address">Code, number, address</string>
 	<string name="code_snippet">Snippet</string>
+	<string name="collapse">Collapse</string>
 	<string name="colors">Colors</string>
 	<string name="comment">Comment</string>
 	<string name="command">Command</string>

@@ -73,6 +73,7 @@
 	<string name="close_pages">Fechar páginas</string>
 	<string name="close_pages__summary">Feche as páginas ao apertar \"Voltar\"</string>
 	<string name="code_number_address">Código, número, endereço</string>
+	<string name="collapse">Recolher</string>
 	<string name="completed">Completo</string>
 	<string name="configuration">Configuração</string>
 	<string name="confirm_archivation__sentence">Confirme a arquivação.</string>
