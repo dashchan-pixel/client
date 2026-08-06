@@ -17,6 +17,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
@@ -71,6 +72,7 @@ import com.mishiranu.dashchan.util.ResourceUtils.obtainDensity
 import com.mishiranu.dashchan.util.ViewUtils.makeRoundedCorners
 import com.mishiranu.dashchan.util.ViewUtils.setSelectableItemBackground
 import com.mishiranu.dashchan.widget.ClickableToast.Companion.show
+import com.mishiranu.dashchan.widget.SafePasteEditText
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.Objects
@@ -705,6 +707,26 @@ class ForegroundManager private constructor() : Handler.Callback {
                 this.pendingDataOrDismiss
             }
             super.onStart()
+            applyChecked()
+        }
+
+        /**
+         * Ticks the rows that start ticked. Here rather than in [onCreateDialog], where the rest of
+         * the list is set up, because an AlertDialog only hands its adapter to the list when it is
+         * shown — which `super.onStart()` above is what does — and
+         * [ListView.setAdapter][android.widget.ListView.setAdapter] clears every choice made before
+         * it. A state applied any earlier is thrown away without ever being drawn, which is what a
+         * preselection used to do: nothing, until the user tapped a row themselves.
+         */
+        private fun applyChecked() {
+            val listView = (dialog as? AlertDialog)?.listView ?: return
+            var i = 0
+            var j = if (hasImage) 1 else 0
+            while (i < selected.size) {
+                listView.setItemChecked(j, selected[i])
+                i++
+                j++
+            }
         }
 
         override fun onSaveInstanceState(outState: Bundle) {
@@ -779,14 +801,9 @@ class ForegroundManager private constructor() : Handler.Callback {
                     .create()
             val listView = alertDialog.getListView()
             listView.setOnItemClickListener(this)
+            // The mode survives the adapter being installed; what is checked under it does not, so
+            // that part waits for the dialog to be shown (see applyChecked).
             listView.setChoiceMode(if (multiple) ListView.CHOICE_MODE_MULTIPLE else ListView.CHOICE_MODE_SINGLE)
-            var i = 0
-            var j = if (imageLayout == null) 0 else 1
-            while (i < this.selected.size) {
-                listView.setItemChecked(j, this.selected[i])
-                i++
-                j++
-            }
             hasImage = imageLayout != null
             return alertDialog
         }
@@ -839,6 +856,127 @@ class ForegroundManager private constructor() : Handler.Callback {
             private const val EXTRA_DESCRIPTION_TEXT = "descriptionText"
             private const val EXTRA_DESCRIPTION_IMAGE = "descriptionImage"
             private const val EXTRA_MULTIPLE = "multiple"
+        }
+    }
+
+    /**
+     * The plain dialog a command script puts up (see [com.mishiranu.dashchan.content.CommandDialogs]):
+     * a title, a message, an optional text field and one button or two. One fragment for the three
+     * shapes a script can ask for — something to acknowledge, something to answer yes or no,
+     * something to type — because they differ only in whether there is a field to fill in and
+     * whether there is anything to press but OK.
+     */
+    class InputDialog :
+        DialogFragment,
+        PendingDataDialog<InputPendingData>,
+        DialogInterface.OnClickListener {
+        private var editText: EditText? = null
+
+        constructor()
+
+        constructor(
+            pendingDataId: String?,
+            title: String?,
+            message: String?,
+            input: String?,
+            positive: String?,
+            negative: String?,
+        ) {
+            val args = Bundle()
+            fillArguments(args, pendingDataId)
+            args.putString(EXTRA_TITLE, title)
+            args.putString(EXTRA_MESSAGE, message)
+            args.putString(EXTRA_INPUT, input)
+            args.putString(EXTRA_POSITIVE, positive)
+            args.putString(EXTRA_NEGATIVE, negative)
+            setArguments(args)
+        }
+
+        // View-less DialogFragment: onViewStateRestored never runs, so check from onStart.
+        private var dialogInitialized = false
+
+        override fun onStart() {
+            if (!dialogInitialized) {
+                dialogInitialized = true
+                this.pendingDataOrDismiss
+            }
+            super.onStart()
+        }
+
+        override fun onSaveInstanceState(outState: Bundle) {
+            super.onSaveInstanceState(outState)
+            editText?.let { outState.putString(EXTRA_INPUT, it.text.toString()) }
+        }
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val arguments = requireArguments()
+            val builder =
+                AlertDialog
+                    .Builder(requireContext())
+                    .setTitle(arguments.getString(EXTRA_TITLE))
+                    .setMessage(arguments.getString(EXTRA_MESSAGE))
+                    .setPositiveButton(
+                        arguments.getString(EXTRA_POSITIVE) ?: getString(android.R.string.ok),
+                        this,
+                    )
+            // Absent means a dialog with nothing but OK, which is what a message to acknowledge is.
+            val negative = arguments.getString(EXTRA_NEGATIVE)
+            if (negative != null) {
+                builder.setNegativeButton(negative, this)
+            }
+            // What the user had typed when the screen went away, else what the script started it with.
+            val input = savedInstanceState?.getString(EXTRA_INPUT) ?: arguments.getString(EXTRA_INPUT)
+            if (input != null) {
+                val layout = LinearLayout(requireContext())
+                val padding = resources.getDimensionPixelOffset(R.dimen.dialog_padding_view)
+                layout.setPadding(padding, padding, padding, padding)
+                val editText = SafePasteEditText(layout.context)
+                editText.id = android.R.id.edit
+                editText.setText(input)
+                editText.setSelection(editText.text.length)
+                editText.requestFocus()
+                layout.addView(
+                    editText,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
+                this.editText = editText
+                builder.setView(layout)
+            }
+            val dialog = builder.create()
+            if (input != null) {
+                dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            }
+            return dialog
+        }
+
+        override fun onClick(
+            dialog: DialogInterface?,
+            which: Int,
+        ) {
+            publishResult(which == AlertDialog.BUTTON_POSITIVE)
+        }
+
+        override fun onCancel(dialog: DialogInterface) {
+            super.onCancel(dialog)
+            publishResult(false)
+        }
+
+        private fun publishResult(confirmed: Boolean) {
+            val text = editText?.text?.toString()
+            notifyResult(
+                StoreResultCallback { pendingData: InputPendingData ->
+                    pendingData.result = InputResult(confirmed, text)
+                },
+            )
+        }
+
+        companion object {
+            private const val EXTRA_TITLE = "title"
+            private const val EXTRA_MESSAGE = "message"
+            private const val EXTRA_INPUT = "input"
+            private const val EXTRA_POSITIVE = "positive"
+            private const val EXTRA_NEGATIVE = "negative"
         }
     }
 
@@ -1390,7 +1528,7 @@ class ForegroundManager private constructor() : Handler.Callback {
                 return true
             }
 
-            MESSAGE_REQUIRE_USER_CAPTCHA, MESSAGE_REQUIRE_USER_CHOICE, MESSAGE_REQUIRE_USER_SLIDER, MESSAGE_REQUIRE_USER_RECAPTCHA_V2, MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL -> {
+            MESSAGE_REQUIRE_USER_CAPTCHA, MESSAGE_REQUIRE_USER_CHOICE, MESSAGE_REQUIRE_USER_SLIDER, MESSAGE_REQUIRE_USER_RECAPTCHA_V2, MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL, MESSAGE_REQUIRE_USER_INPUT -> {
                 val handlerData: HandlerData = msg.obj as HandlerData
                 val activity = getActivity()
                 val pendingData = getPendingData(handlerData.pendingDataId)
@@ -1478,6 +1616,18 @@ class ForegroundManager private constructor() : Handler.Callback {
                                 firewallHandlerData.request as FirewallResolutionDialogRequest<Any?>,
                             ).show(activity)
                         }
+
+                        MESSAGE_REQUIRE_USER_INPUT -> {
+                            val inputHandlerData: InputHandlerData = handlerData as InputHandlerData
+                            InputDialog(
+                                handlerData.pendingDataId,
+                                inputHandlerData.title,
+                                inputHandlerData.message,
+                                inputHandlerData.input,
+                                inputHandlerData.positive,
+                                inputHandlerData.negative,
+                            ).show(activity)
+                        }
                     }
                 }
                 return true
@@ -1538,6 +1688,15 @@ class ForegroundManager private constructor() : Handler.Callback {
         internal val request: FirewallResolutionDialogRequest<T>,
     ) : HandlerData(pendingDataId)
 
+    private class InputHandlerData(
+        pendingDataId: String?,
+        val title: String?,
+        val message: String?,
+        val input: String?,
+        val positive: String?,
+        val negative: String?,
+    ) : HandlerData(pendingDataId)
+
     private abstract class PendingData {
         var ready: Boolean = false
 
@@ -1569,6 +1728,18 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private class ChoicePendingData : PendingData() {
         var result: BooleanArray? = null
+    }
+
+    /** What [requireUserInput] came back with: which button was pressed, and what was left in the field. */
+    class InputResult(
+        val confirmed: Boolean,
+        /** What the text field held, or `null` for a dialog that had none. */
+        val text: String?,
+    )
+
+    private class InputPendingData : PendingData() {
+        /** Stays `null` when nobody answered — the dialog was never shown for want of a screen. */
+        var result: InputResult? = null
     }
 
     private class SliderPendingData : PendingData() {
@@ -1898,6 +2069,37 @@ class ForegroundManager private constructor() : Handler.Callback {
         }
     }
 
+    /**
+     * Puts up a plain dialog and waits for the user to answer it, from whatever thread asked — the
+     * same wait a captcha is (see [requireUserCaptcha]).
+     *
+     * [input] makes it a question with a text field, starting out holding that string; `null` leaves
+     * it a message with nothing to fill in. [positive] and [negative] name the buttons, [positive]
+     * falling back to OK and [negative] being left off entirely when it is `null`.
+     *
+     * Answers with what the user pressed and what they left in the field, or `null` when there was no
+     * screen to show it on and so nobody to answer.
+     */
+    @Throws(InterruptedException::class)
+    fun requireUserInput(
+        title: String?,
+        message: String?,
+        input: String?,
+        positive: String?,
+        negative: String?,
+    ): InputResult? {
+        val pendingData = InputPendingData()
+        val pendingDataId = putPendingData(pendingData)
+        try {
+            val handlerData =
+                InputHandlerData(pendingDataId, title, message, input, positive, negative)
+            handler.obtainMessage(MESSAGE_REQUIRE_USER_INPUT, handlerData).sendToTarget()
+            return if (pendingData.await(handler, handlerData)) pendingData.result else null
+        } finally {
+            removePendingData(pendingDataId)
+        }
+    }
+
     fun register(activity: FragmentActivity) {
         Objects.requireNonNull<FragmentActivity?>(activity)
         if (this.activity != null) {
@@ -1933,6 +2135,7 @@ class ForegroundManager private constructor() : Handler.Callback {
         private const val MESSAGE_REQUIRE_USER_RESOLVE_FIREWALL = 5
         private const val MESSAGE_SHOW_CAPTCHA_INVALID = 6
         private const val MESSAGE_REQUIRE_USER_SLIDER = 7
+        private const val MESSAGE_REQUIRE_USER_INPUT = 8
 
         private fun appendDescriptionImageView(
             viewGroup: ViewGroup,

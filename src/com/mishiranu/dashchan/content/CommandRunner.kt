@@ -16,13 +16,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * JavaScript function whose arguments and expected return value depend on the command's target:
  *
  * - [CommandsStorage.UseIn.COMMENT] (see [run]): `comment`, `attachments`, `thread`, `board`, `env`,
- *   `store`, `app`, `chan`. It should `return` the replacement comment; returning `undefined`/`null`
+ *   `store`, `app`, `chan`, `dialog`. It should `return` the replacement comment; returning `undefined`/`null`
  *   leaves the draft untouched. To manage the attached files too it may instead return an object, whose `comment` and
  *   `attachments` are each applied only if present — so `return { attachments: [] }` detaches every
  *   file and leaves the text alone. See [CommandAttachments] for what an attachment looks like and
  *   for how a script adds one.
  * - [CommandsStorage.UseIn.THREAD] (see [runThread]): `posts`, `thread`, `board`, `env`, `store`,
- *   `app`, `chan`. `posts` is an array of `{number, name, email, icon, subject, comment, attachments}`, `comment` being the post's
+ *   `app`, `chan`, `dialog`. `posts` is an array of `{number, name, email, icon, subject, comment, attachments}`, `comment` being the post's
  *   HTML as the chan sent it and `attachments` its attached files (see [CommandPostAttachments]). It
  *   should `return` an object mapping a post's `number` to what to show in place of that post's own —
  *   either the replacement comment HTML (e.g. `{ "123": "<b>decrypted…</b>" }`) or an object whose
@@ -42,10 +42,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   post. Such a command may also be run over a single post, from that post's context menu — the same
  *   call with a `posts` of one.
  *
- * - [CommandsStorage.UseIn.APP] (see [runApp]): `thread`, `board`, `env`, `store`, `app`, `chan`, and no
- *   input of its own. What it returns is shown to the user as a message rather than applied to anything;
- *   what such a command *does* it does through the objects it was granted — writing a setting, storing a
- *   cookie, giving a forum another proxy.
+ * - [CommandsStorage.UseIn.APP] (see [runApp]): `thread`, `board`, `env`, `store`, `app`, `chan`,
+ *   `dialog`, and no input of its own. What it returns is shown to the user as a message rather than
+ *   applied to anything; what such a command *does* it does through the objects it was granted — writing
+ *   a setting, storing a cookie, giving a forum another proxy.
  *
  * `thread` is the thread number and `board` the board code — plain strings, either `null` when there
  * is no such context. Being async, a body may `await` (e.g.
@@ -53,9 +53,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * `store` is the command's own key→value store, `app` the application's settings and `chan` the forum
  * the run belongs to along with that forum's cookies and the IP it sees this device at — so
- * `chan.cookies` and `chan.getVisibleIp()` need no argument to work on the right one. `app` and `chan`
- * answer only to a command the user granted them to, and `store` to every command. See [CommandApp] for
- * the whole of it.
+ * `chan.cookies` and `chan.getVisibleIp()` need no argument to work on the right one. `dialog` puts a
+ * question to the user and hands back their answer, the run standing still until it has one. `app` and
+ * `chan` answer only to a command the user granted them to; `store` and `dialog` answer to every
+ * command. See [CommandApp] and [CommandDialogs] for the whole of it. The runtime's own `alert`,
+ * `confirm` and `prompt` are bound to `dialog` here as well, along with `choose` and `chooseMany`, so
+ * the names a script reaches for first do what they say rather than being cancelled unanswered.
  *
  * Because it runs on the [HeadlessJsEngine] the code may use `fetch`/`XMLHttpRequest` to reach the
  * network (CORS is disabled there) and the WebCrypto API (`crypto.subtle`, the origin is a secure
@@ -146,9 +149,53 @@ object CommandRunner {
 
         @Volatile private var timeout: Runnable? = null
 
+        @Volatile private var timeoutMs: Long = TIMEOUT_MS
+
+        /** The thread waiting on the user, while one is (see [awaitUser]). */
+        @Volatile private var waiting: Thread? = null
+
         /** Whether the outcome has been decided, so there is nothing left to cancel. */
         val isFinished: Boolean
             get() = settled.get()
+
+        /**
+         * Waits on the user for [action] — a dialog the script put up (see [CommandDialogs]) — with the
+         * deadline widened to [USER_TIMEOUT_MS] for as long as it takes, and the run's own deadline
+         * armed again in full once the answer is in. The deadline is there for a script that never
+         * settles, and one the user hasn't got round to answering is not that; it is widened rather
+         * than lifted so a dialog nobody ever answers still ends the run, and with it the engine.
+         *
+         * The waiting thread is remembered so [release] can interrupt it: a run given up on while a
+         * dialog is up would otherwise leave the dialog standing there with nothing behind it, and the
+         * thread waiting on an answer that is now nobody's. The interrupt is what
+         * [ForegroundManager][com.mishiranu.dashchan.ui.ForegroundManager] takes the dialog down on.
+         *
+         * A run that is already over puts nothing up at all — the thread is registered before that is
+         * checked, so a [release] on the other side of the check interrupts this one instead of being
+         * missed by it, and either way no dialog outlives the run that asked for it.
+         *
+         * Called from the JS bridge thread, which is where a bridge call arrives.
+         */
+        internal fun <T> awaitUser(action: () -> T): T {
+            waiting = Thread.currentThread()
+            try {
+                check(!isFinished) { "The command is no longer running" }
+                arm(USER_TIMEOUT_MS)
+                return action()
+            } finally {
+                waiting = null
+                arm(timeoutMs)
+            }
+        }
+
+        /** Moves the deadline [delay] out from now, unless the run has already settled. */
+        private fun arm(delay: Long) {
+            val timeout = this.timeout ?: return
+            ConcurrentUtils.HANDLER.removeCallbacks(timeout)
+            if (!isFinished) {
+                ConcurrentUtils.HANDLER.postDelayed(timeout, delay)
+            }
+        }
 
         /**
          * Gives up on the run: the engine is destroyed now and the callback is never invoked. A run
@@ -165,22 +212,28 @@ object CommandRunner {
         internal fun start(
             engine: HeadlessJsEngine,
             timeout: Runnable,
+            timeoutMs: Long,
         ) {
             this.engine = engine
             this.timeout = timeout
+            this.timeoutMs = timeoutMs
         }
 
         /** Claims the single outcome this run is allowed; true for the caller that got it. */
         internal fun settle(): Boolean = settled.compareAndSet(false, true)
 
         /**
-         * Drops the deadline and the engine. Callable from either thread —
+         * Drops the deadline, the dialog and the engine. Callable from either thread —
          * [HeadlessJsEngine.destroy] marshals itself onto the main one, and
          * [Handler.removeCallbacks][android.os.Handler.removeCallbacks] is safe from any.
          */
         internal fun release() {
             timeout?.let { ConcurrentUtils.HANDLER.removeCallbacks(it) }
             timeout = null
+            // A script waiting on a dialog is waiting for a run that is over: the interrupt is what
+            // takes the dialog off the screen and gives the thread back (see awaitUser).
+            waiting?.interrupt()
+            waiting = null
             engine?.destroy()
             engine = null
         }
@@ -423,7 +476,8 @@ object CommandRunner {
      *
      * [chanName] is the forum the run belongs to; it is what the script's `chan` works on by default
      * (see [CommandApp]), and `null` where the command was started outside a forum. [grants] is what
-     * the command may reach through the bridge.
+     * the command may reach through the bridge, which also gets [handle] itself — a dialog the script
+     * puts up holds the run it belongs to (see [CommandDialogs]).
      */
     private fun <R> execute(
         handle: Run,
@@ -435,7 +489,7 @@ object CommandRunner {
         callback: (R) -> Unit,
         timeoutMs: Long = TIMEOUT_MS,
     ) {
-        val appBridge = CommandApp.bridge(chanName, grants)
+        val appBridge = CommandApp.bridge(chanName, grants, handle)
         val deliver: (R) -> Unit = { result ->
             if (handle.settle()) {
                 ConcurrentUtils.HANDLER.post {
@@ -462,7 +516,7 @@ object CommandRunner {
                     CommandApp.BRIDGE_NAME to appBridge,
                 ),
             )
-        handle.start(engine, timeout)
+        handle.start(engine, timeout, timeoutMs)
         ConcurrentUtils.HANDLER.postDelayed(timeout, timeoutMs)
         engine.evaluate(script)
     }
@@ -505,18 +559,30 @@ object CommandRunner {
             append("var __store=__bridged.store;")
             append("var __app=__bridged.app;")
             append("var __chan=__bridged.chan;")
+            append("var __dialog=__bridged.dialog;")
+            // The three the runtime already has, made to mean what they say. Unimplemented they are
+            // worse than absent -- a WebView with nothing handling them cancels every one, so confirm()
+            // answers "no" without having asked -- and they are what a script reaches for first. alert
+            // is wrapped to answer undefined the way the real one does, and prompt because its second
+            // argument is the starting value rather than an options object; the pickers have no
+            // standard names to keep, so they carry the ones dialog gives them.
+            append("window.alert=function(message){__dialog.show(message);};")
+            append("window.confirm=__dialog.confirm;")
+            append("window.prompt=function(message,value){return __dialog.prompt(message,{value:value});};")
+            append("window.choose=__dialog.choose;")
+            append("window.chooseMany=__dialog.chooseMany;")
             // What is compiled is a factory that runs the libraries and returns the command, rather
             // than the command itself: the libraries then run once (even for a per-post body, which is
             // called n times) and their declarations are simply in scope for it.
             append("var __factory=new __AsyncFunction(")
-            append("\"thread\",\"board\",\"env\",\"store\",\"app\",\"chan\",")
+            append("\"thread\",\"board\",\"env\",\"store\",\"app\",\"chan\",\"dialog\",")
             append(JSONObject.quote(factorySource))
             append(");")
-            append("Promise.resolve(__factory(__thread,__board,__env,__store,__app,__chan))")
+            append("Promise.resolve(__factory(__thread,__board,__env,__store,__app,__chan,__dialog))")
             append(".then(function(__command){")
             append("return __command(")
             leadingArg()
-            append("__thread,__board,__env,__store,__app,__chan);")
+            append("__thread,__board,__env,__store,__app,__chan,__dialog);")
             append("}).then(function(__result){")
             append("__deliver({ok:true,result:").append(resultExpr).append("});")
             append("}).catch(function(__err){")
@@ -601,12 +667,19 @@ object CommandRunner {
 
     /**
      * The tail every body is compiled against, whatever it takes first: the context of the run, then
-     * the three objects [CommandApp] provides.
+     * the objects [CommandApp] provides.
      */
-    private const val BODY_PARAMS = "thread,board,env,store,app,chan"
+    private const val BODY_PARAMS = "thread,board,env,store,app,chan,dialog"
 
     private const val BRIDGE_NAME = "__commandBridge"
     private const val TIMEOUT_MS = 30000L
+
+    /**
+     * The deadline a run keeps while a dialog of its own is on the screen (see [Run.awaitUser]) —
+     * long enough that a question is answered by the user rather than by the clock, short enough that
+     * a dialog left standing still ends the run instead of holding an engine for good.
+     */
+    private const val USER_TIMEOUT_MS = 300000L
 
     /** Extra deadline a per-post run gets for each post it has to walk. See [runThread]. */
     private const val PER_POST_TIMEOUT_MS = 2000L

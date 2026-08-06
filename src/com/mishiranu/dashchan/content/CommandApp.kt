@@ -21,15 +21,17 @@ import java.util.concurrent.TimeUnit
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
  * the application's own **settings**; `chan`, the forum it is running in, that forum's **cookies**, the
- * **IP** that forum sees this device at and the **proxy** it goes through; and `store`, a place of
- * its own to keep what it wants to remember between runs.
+ * **IP** that forum sees this device at and the **proxy** it goes through; `store`, a place of
+ * its own to keep what it wants to remember between runs; and `dialog`, which puts a question to the
+ * user and waits for their answer (that one is [CommandDialogs]).
  *
  * They are kept apart because they are granted apart. `app` and `chan` reach what belongs to the user
  * — the same things the settings screens and "Manage cookies" edit by hand — and a command gets
  * neither until the user grants it (see [CommandsStorage.Grant]); the IP is a grant of its own
  * even so, being the one thing here that spends anything of the user's outside the device; `env` is
  * granted by default and can be taken away; `store` needs no grant at all, holding only what the same
- * script put there. A grant
+ * script put there, and neither does `dialog`, which asks the user rather than reaching anything of
+ * theirs — what it hands back is what they chose to answer with. A grant
  * belongs to one command, is given in that command's editor, and is never carried in by an imported
  * document.
  *
@@ -62,6 +64,12 @@ import java.util.concurrent.TimeUnit
  * chan.changeVisibleIp()                     // runs the command flagged for this forum; its message
  * chan.getProxy()                            // "socks5://user:pw@host:1080", or null for no proxy
  * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
+ *
+ * dialog.show("Nothing to rotate today.")    // see CommandDialogs
+ * dialog.confirm("Buy another port?")        // true / false
+ * dialog.prompt("Code from the SMS")         // the text, or null if cancelled
+ * dialog.choose(["Germany", "Poland"])       // the index, or null if cancelled
+ * dialog.chooseMany(["Germany", "Poland"])   // the indices ticked, or null if cancelled
  * ```
  *
  * Everything that *does* something is a function named for what it does, and only a plain value is
@@ -83,7 +91,8 @@ import java.util.concurrent.TimeUnit
  *
  * Every call is synchronous, and every one that cannot be carried out throws — a missing grant, an
  * unknown forum, a missing argument, a setting written with the wrong kind of value — so a script may
- * `try`/`catch` around one, and a failure it doesn't catch fails the run with that message.
+ * `try`/`catch` around one, and a failure it doesn't catch fails the run with that message. Synchronous
+ * includes a dialog: the call comes back once the user has answered it, which is the whole point of one.
  *
  * A setting is named by the key the app stores it under (`cache_size`, `active_scrollbar`, …; the
  * per-forum ones are `<forum>_<key>`, e.g. `4chan_captcha`) and holds the kind of value the app reads
@@ -134,7 +143,7 @@ import java.util.concurrent.TimeUnit
  * than allowed to bloat the file the commands themselves are kept in. The user can see what is in it,
  * and empty it, from the Commands screen — unlike a setting a script squats in.
  *
- * All three go through a single [Bridge.call], since a `@JavascriptInterface` can only carry strings
+ * All of them go through a single [Bridge.call], since a `@JavascriptInterface` can only carry strings
  * across; the shapes above are [SOURCE], the JavaScript wrapper built around it.
  *
  * They are in scope for a command's [libraries][CommandLibraries] as much as for its own body, and a
@@ -207,9 +216,9 @@ object CommandApp {
     const val MAX_STORE_KEYS: Int = 512
 
     /**
-     * The three objects, as one JavaScript expression evaluated per run in the scope the command and
-     * its libraries are built in. It answers `{store, app, chan}`, which [CommandRunner] hands to the
-     * body as three arguments.
+     * The objects, as one JavaScript expression evaluated per run in the scope the command and its
+     * libraries are built in. It answers `{store, app, chan, dialog}`, which [CommandRunner] hands to
+     * the body as four arguments.
      *
      * Everything the script calls funnels into `__call`, which is where the JSON encoding lives and
      * where a refused call — including one refused for want of a grant — becomes a thrown `Error`.
@@ -277,7 +286,8 @@ object CommandApp {
             "setProxy:function(value,chan){" +
             "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
             "}" +
-            "})" +
+            "})," +
+            "dialog:" + CommandDialogs.SOURCE +
             "});" +
             "})(window.$BRIDGE_NAME)"
 
@@ -285,11 +295,15 @@ object CommandApp {
      * Builds the bridge for a run belonging to [chanName] (`null` where there is no forum) with the
      * [grants] the command carries. They are taken once, at the start of the run, so a body and the
      * libraries around it all work against the same answer.
+     *
+     * [run] is the run itself, which a dialog holds up for as long as the user takes over it (see
+     * [CommandDialogs]).
      */
     fun bridge(
         chanName: String?,
         grants: Set<CommandsStorage.Grant>,
-    ): Bridge = Bridge(chanName, grants)
+        run: CommandRunner.Run,
+    ): Bridge = Bridge(chanName, grants, run)
 
     /**
      * What [SOURCE] talks to. One entry point rather than a method each: a `@JavascriptInterface` can
@@ -305,6 +319,8 @@ object CommandApp {
         private val chanName: String?,
         /** What the command running was granted, as of this run's start. */
         private val grants: Set<CommandsStorage.Grant>,
+        /** The run a dialog holds up while it is on the screen. */
+        private val run: CommandRunner.Run,
     ) {
         @JavascriptInterface
         fun call(
@@ -410,6 +426,10 @@ object CommandApp {
                                 .toList()
                         }.orEmpty(),
                     )
+                }
+
+                in CommandDialogs.METHODS -> {
+                    CommandDialogs.dispatch(run, method, args)
                 }
 
                 else -> {
