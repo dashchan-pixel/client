@@ -411,8 +411,8 @@
 	<string name="subject">Assunto</string>
 	<string name="subjects_are_disabled">Assuntos estão desabilitados</string>
 	<string name="submission_form">Formulário de envio</string>
-	<string name="submission_form_sheet">Formulário de envio como painel</string>
-	<string name="submission_form_sheet__summary">Abrir o formulário de envio como um painel inferior, que pode ser arrastado entre altura total e metade e descartado ao deslizar</string>
+	<string name="submission_form_classic">Estilo clássico</string>
+	<string name="submission_form_classic__summary">Abrir o formulário de envio em tela cheia em vez de um painel inferior sobre o fio</string>
 	<string name="success_number_not_loaded_number__format">Sucesso: %1$d, falhou: %2$d</string>
 	<string name="summary">Sumário</string>
 	<string name="text_scale">Escala do texto</string>

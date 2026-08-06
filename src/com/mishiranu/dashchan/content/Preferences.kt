@@ -947,19 +947,20 @@ object Preferences {
                 DEFAULT_MARKUP_BUTTONS_AT_BOTTOM,
             )
 
-    const val KEY_POSTING_SHEET: String = "posting_sheet"
-    const val DEFAULT_POSTING_SHEET: Boolean = false
+    const val KEY_POSTING_CLASSIC: String = "posting_classic"
+    const val DEFAULT_POSTING_CLASSIC: Boolean = false
 
     /**
      * Whether the submission form is shown as a draggable bottom sheet
-     * ([com.mishiranu.dashchan.widget.PostingSheetLayout]) instead of filling the screen.
+     * ([com.mishiranu.dashchan.widget.PostingSheetLayout]) instead of filling the screen. It is, unless
+     * *Classic style* has been turned on, which is the one thing [KEY_POSTING_CLASSIC] says.
      */
     @JvmStatic
     val isPostingSheet: Boolean
         get() =
-            prefs.getBoolean(
-                KEY_POSTING_SHEET,
-                DEFAULT_POSTING_SHEET,
+            !prefs.getBoolean(
+                KEY_POSTING_CLASSIC,
+                DEFAULT_POSTING_CLASSIC,
             )
 
     const val KEY_HUGE_CAPTCHA: String = "huge_captcha"

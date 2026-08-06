@@ -214,10 +214,10 @@ class InterfaceFragment : PreferenceFragment() {
         addHeader(R.string.submission_form)
         addCheck(
             true,
-            Preferences.KEY_POSTING_SHEET,
-            Preferences.DEFAULT_POSTING_SHEET,
-            R.string.submission_form_sheet,
-            R.string.submission_form_sheet__summary,
+            Preferences.KEY_POSTING_CLASSIC,
+            Preferences.DEFAULT_POSTING_CLASSIC,
+            R.string.submission_form_classic,
+            R.string.submission_form_classic__summary,
         )
         addCheck(
             true,
@@ -240,6 +240,10 @@ class InterfaceFragment : PreferenceFragment() {
             R.string.markup_buttons_at_bottom,
             R.string.markup_buttons_at_bottom__summary,
         )
+        // A sheet has no toolbar of its own to keep the markup bar under -- the one on screen belongs to
+        // the page the sheet floats over -- so in a sheet the bar is inline below the comment field
+        // whichever way this is set, and the row goes grey to say that it has nothing to decide.
+        addDependency(Preferences.KEY_MARKUP_BUTTONS_AT_BOTTOM, Preferences.KEY_POSTING_CLASSIC, true)
         addCheck(
             true,
             Preferences.KEY_HUGE_CAPTCHA,

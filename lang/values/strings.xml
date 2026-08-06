@@ -585,8 +585,8 @@
 	<string name="subject_is_too_short">Subject is too short</string>
 	<string name="subjects_are_disabled">Subjects are disabled</string>
 	<string name="submission_form">Submission form</string>
-	<string name="submission_form_sheet">Submission form as sheet</string>
-	<string name="submission_form_sheet__summary">Open the submission form as a bottom sheet, which can be dragged between full and half height and swiped away</string>
+	<string name="submission_form_classic">Classic style</string>
+	<string name="submission_form_classic__summary">Fill the screen with the submission form instead of floating it over the thread as a bottom sheet</string>
 	<string name="success_number_not_loaded_number__format">Success: %1$d, not loaded: %2$d</string>
 	<string name="summary">Summary</string>
 	<string name="test_string">Test string</string>
