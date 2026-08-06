@@ -1,6 +1,7 @@
 package com.mishiranu.dashchan.widget
 
 import android.content.Context
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -12,30 +13,41 @@ import com.mishiranu.dashchan.util.ResourceUtils.getResourceId
 import kotlin.math.max
 
 /**
- * The dropdown behind the posting screen's ⌘ button, listing the
- * [commands][CommandsStorage.CommandItem] available there and letting the user run one. Auto-run
- * commands are shown greyed-out (they fire automatically and can't be run by hand), a tap runs a manual
- * command, and a long tap opens any command — greyed-out or not — for editing.
+ * The dropdown behind the ⌘ buttons — the posting screen's and the floating toolbar's — listing the
+ * [commands][CommandsStorage.CommandItem] available there and letting the user run one. A command that
+ * is not the user's to run ([CommandsStorage.CommandItem.runsByHand]) is shown greyed-out, a tap runs
+ * the rest, and a long tap opens any command — greyed-out or not — for editing.
  *
  * It is a [ListPopupWindow] with a background we control directly
  * ([ThemeEngine.roundedPopupBackground]), because a framework PopupMenu draws its own square
- * background over the rounded window.
+ * background over the rounded window. It floats on `Widget.AppListPopupWindow`, which is where the
+ * elevation comes from; see the style for why the popup has to be built with one.
+ *
+ * [menuContext] themes the rows and is not necessarily the anchor's own context, for the same reason
+ * as in [DropdownPopup]: the floating toolbar's ⌘ is built in the *toolbar's* context, whose text
+ * colour is the one that reads on the toolbar rather than the one that reads on this popup's card.
  */
 object CommandsPopup {
     /**
-     * Shows the popup for [commands] anchored to [anchor]. [onRun] is invoked when a non-auto-run
-     * command is tapped; [onEdit] when any command is long-tapped. No-op if [commands] is empty.
+     * Shows the popup for [commands] anchored to [anchor]. [onRun] is invoked when a command the user
+     * may run is tapped; [onEdit] when any command is long-tapped. No-op if [commands] is empty.
+     *
+     * [alignEnd] hangs the popup from the anchor's end edge instead of its start edge, which is what an
+     * anchor in the end corner of the screen wants: the popup then keeps whatever margin the anchor has
+     * rather than being pushed flush against the screen edge to fit.
      */
     fun show(
         anchor: View,
         commands: List<CommandsStorage.CommandItem>,
+        menuContext: Context = anchor.context,
+        alignEnd: Boolean = false,
         onRun: (CommandsStorage.CommandItem) -> Unit,
         onEdit: (CommandsStorage.CommandItem) -> Unit,
     ) {
         if (commands.isEmpty()) {
             return
         }
-        val context = anchor.context
+        val context = menuContext
         val density = ResourceUtils.obtainDensity(context)
         val titles: List<CharSequence> =
             commands.map { command ->
@@ -66,13 +78,16 @@ object CommandsPopup {
                     // Run-on-send/open commands can't be run manually (greyed out) but can still be
                     // opened for edit via long tap, so the row stays enabled; only the tap action is
                     // guarded.
-                    view.alpha = if (commands[position].autoRun) 0.5f else 1f
+                    view.alpha = if (commands[position].runsByHand) 1f else 0.5f
                     return view
                 }
             }
-        val popup = ListPopupWindow(context)
+        val popup = ListPopupWindow(context, null, 0, R.style.Widget_AppListPopupWindow)
         popup.anchorView = anchor
         popup.isModal = true
+        if (alignEnd) {
+            popup.setDropDownGravity(Gravity.END)
+        }
         // Don't disturb the soft keyboard's open/closed state when the dropdown shows or dismisses.
         popup.inputMethodMode = ListPopupWindow.INPUT_METHOD_NOT_NEEDED
         popup.setAdapter(adapter)
@@ -81,17 +96,9 @@ object CommandsPopup {
         popup.setListSelector(context.getDrawable(getResourceId(context, android.R.attr.selectableItemBackground, 0)))
         popup.width = measureWidth(adapter, context)
         popup.setBackgroundDrawable(ThemeEngine.roundedPopupBackground(context))
-        try {
-            val popupField = androidx.appcompat.widget.ListPopupWindow::class.java.getDeclaredField("mPopup")
-            popupField.isAccessible = true
-            val popupWindow = popupField.get(popup) as android.widget.PopupWindow
-            popupWindow.elevation = context.resources.getDimension(R.dimen.popup_elevation)
-        } catch (e: Exception) {
-            android.util.Log.w("CommandsPopup", "Failed to set popup elevation", e)
-        }
         popup.setOnItemClickListener { _, _, position, _ ->
             popup.dismiss()
-            if (!commands[position].autoRun) {
+            if (commands[position].runsByHand) {
                 onRun(commands[position])
             }
         }

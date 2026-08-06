@@ -1,12 +1,14 @@
 package com.mishiranu.dashchan.widget
 
 import android.content.Context
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Checkable
 import android.widget.FrameLayout
 import androidx.appcompat.widget.ListPopupWindow
+import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.util.ResourceUtils
 import kotlin.math.max
 
@@ -17,9 +19,10 @@ import kotlin.math.max
  *
  * A [ListPopupWindow] rather than a framework `PopupMenu`, for the same reason as [CommandsPopup]:
  * a PopupMenu draws the square background of its own popup style, which no amount of theming rounds
- * off. Here the background is ours ([ThemeEngine.roundedPopupBackground]). A popup window also
- * attaches to its anchor's window, so it works from a token-less base context — the gallery's, for
- * one — where an [android.app.AlertDialog] would throw a BadTokenException.
+ * off. Here the background is ours ([ThemeEngine.roundedPopupBackground]) and the elevation is
+ * `Widget.AppListPopupWindow`'s; see the style for why the popup has to be built with one. A popup
+ * window also attaches to its anchor's window, so it works from a token-less base context — the
+ * gallery's, for one — where an [android.app.AlertDialog] would throw a BadTokenException.
  *
  * [menuContext] themes the rows, and is not necessarily the anchor's own context: overlay controls
  * are themed for drawing over media (white text), which the app-themed popup background behind the
@@ -34,12 +37,18 @@ object DropdownPopup {
     private const val MIN_WIDTH_DP = 112f
     private const val TAP_WIDTH_DP = 48f
 
+    /**
+     * [alignEnd] hangs the popup from the anchor's end edge instead of its start edge, which is what an
+     * anchor in the end corner of the screen wants: the popup then keeps whatever margin the anchor has
+     * rather than being pushed flush against the screen edge to fit.
+     */
     fun show(
         anchor: View,
         menuContext: Context,
         labels: List<CharSequence>,
         checkedIndex: Int,
         showRadio: Boolean = true,
+        alignEnd: Boolean = false,
         onSelect: (Int) -> Unit,
     ) {
         val density = ResourceUtils.obtainDensity(menuContext)
@@ -70,9 +79,12 @@ object DropdownPopup {
                     return view
                 }
             }
-        val popup = ListPopupWindow(menuContext)
+        val popup = ListPopupWindow(menuContext, null, 0, R.style.Widget_AppListPopupWindow)
         popup.anchorView = anchor
         popup.isModal = true
+        if (alignEnd) {
+            popup.setDropDownGravity(Gravity.END)
+        }
         popup.setAdapter(adapter)
         // Tap feedback in a ListView comes from the list selector, not item backgrounds.
         popup.setListSelector(

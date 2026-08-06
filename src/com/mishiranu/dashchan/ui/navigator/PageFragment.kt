@@ -18,6 +18,7 @@ import com.mishiranu.dashchan.content.CommandRunner
 import com.mishiranu.dashchan.content.Preferences.isActiveScrollbar
 import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.PostNumber
+import com.mishiranu.dashchan.content.net.VisibleIpCommand
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ContentFragment
 import com.mishiranu.dashchan.ui.FragmentHandler
@@ -549,7 +550,19 @@ class PageFragment :
                         FloatingToolbar.Slot.COMMANDS,
                         commandsIcon(),
                         getString(R.string.commands),
-                    ) { anchor -> CommandsPopup.show(anchor, commands, ::runAppCommand, ::editCommand) },
+                    ) { anchor ->
+                        CommandsPopup.show(
+                            anchor,
+                            commands,
+                            // The bar and its buttons are the toolbar's context, whose text colour is
+                            // the one that reads on the toolbar; the popup's card is app-themed, so its
+                            // rows are read from the app's context or they come out white on white.
+                            menuContext = requireContext(),
+                            alignEnd = true,
+                            onRun = ::runAppCommand,
+                            onEdit = ::editCommand,
+                        )
+                    },
                 )
             }
         }
@@ -578,10 +591,13 @@ class PageFragment :
         }
         DropdownPopup.show(
             anchor,
-            this.toolbarContext,
+            // App-themed rather than the bar's toolbar context: the rows sit on the popup's card, not
+            // on the toolbar, and the toolbar's text colour is white against it in a light theme.
+            requireContext(),
             subItems.map { it.getTitle() ?: "" },
             -1,
-            false,
+            showRadio = false,
+            alignEnd = true,
         ) { index -> onMenuItemSelected(subItems[index]) }
     }
 
@@ -607,6 +623,11 @@ class PageFragment :
      * Runs an App command from the page the bar is on, which is a forum and a board — so unlike the run
      * the Commands screen offers, this one hands the script the forum it is looking at. Whatever the
      * command returns is shown as a message, that being all an App command hands back.
+     *
+     * An [autoRun][CommandsStorage.CommandItem.autoRun] one is the forum's visible-IP command, and a run
+     * by hand of it is a force run of exactly what the app runs when it needs another IP — so it goes
+     * through [VisibleIpCommand], which drops the pooled connections afterwards. Running it bare would
+     * change the IP and leave the app talking over connections still open at the old one.
      */
     private fun runAppCommand(command: CommandsStorage.CommandItem) {
         if (appCommandRun?.isFinished == false) {
@@ -621,25 +642,37 @@ class PageFragment :
             appCommandRun = null
         }
         dialog.show()
-        appCommandRun =
-            CommandRunner.runApp(
-                command,
-                this.page.chanName,
-                this.page.threadNumber,
-                this.page.boardName,
-            ) { result ->
-                appCommandRun = null
-                appCommandDialog?.dismiss()
-                appCommandDialog = null
-                when (result) {
-                    is CommandRunner.AppResult.Success -> {
-                        ClickableToast.show(result.message ?: getString(R.string.completed))
-                    }
-
-                    is CommandRunner.AppResult.Failure -> {
-                        ClickableToast.show(getString(R.string.command_failed__format, result.message))
-                    }
+        val deliver: (CommandRunner.AppResult) -> Unit = { result ->
+            appCommandRun = null
+            appCommandDialog?.dismiss()
+            appCommandDialog = null
+            when (result) {
+                is CommandRunner.AppResult.Success -> {
+                    ClickableToast.show(result.message ?: getString(R.string.completed))
                 }
+
+                is CommandRunner.AppResult.Failure -> {
+                    ClickableToast.show(getString(R.string.command_failed__format, result.message))
+                }
+            }
+        }
+        appCommandRun =
+            if (command.autoRun) {
+                VisibleIpCommand.run(
+                    command,
+                    this.page.chanName,
+                    this.page.threadNumber,
+                    this.page.boardName,
+                    deliver,
+                )
+            } else {
+                CommandRunner.runApp(
+                    command,
+                    this.page.chanName,
+                    this.page.threadNumber,
+                    this.page.boardName,
+                    deliver,
+                )
             }
     }
 

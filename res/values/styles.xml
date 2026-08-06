@@ -465,6 +465,22 @@
 
 	</style>
 	<!--
+		The style behind the dropdowns the app builds by hand out of a ListPopupWindow (CommandsPopup,
+		DropdownPopup), and the only way to give one of those a shadow: a PopupWindow reads
+		android:popupElevation from the style it is constructed with, and appcompat's ListPopupWindow
+		hands its defStyleRes straight through to the PopupWindow it makes. Its no-argument constructor
+		instead resolves appcompat's own listPopupWindowStyle, which a framework-themed app like this one
+		does not define, so a popup built that way floats flat on the page.
+
+		Nothing but the elevation is inherited: the background is set on the popup afterwards, from
+		ThemeEngine.roundedPopupBackground, which is also where the room for the shadow comes from.
+	-->
+	<style name="Widget.AppListPopupWindow" parent="">
+
+		<item name="android:popupElevation">@dimen/popup_elevation</item>
+
+	</style>
+	<!--
 		Applied over the Material3 overlay when building chips (see MaterialContext.wrapChips).
 		A Material3 chip paints a ?colorSurface layer underneath its chip background and composites
 		the two into its fill, so an unchecked chip — which ThemeEngine leaves with a transparent

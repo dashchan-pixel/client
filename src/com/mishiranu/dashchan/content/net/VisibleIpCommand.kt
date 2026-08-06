@@ -49,12 +49,27 @@ object VisibleIpCommand {
         callback: (CommandRunner.AppResult) -> Unit,
     ): CommandRunner.Run? {
         val item = forChan(chan) ?: return null
-        return CommandRunner.runApp(item, chan.name) { result ->
+        return run(item, chan.name, callback = callback)
+    }
+
+    /**
+     * Runs [item] -- a command the caller has already picked out, rather than the one [forChan] finds --
+     * with the same drop of the pooled connections after it. That is what a run by hand from a page's ⌘
+     * menu is: the user asking for the IP change the app would otherwise have asked for itself, which is
+     * only half done if the connections that were open at the old IP stay open.
+     */
+    fun run(
+        item: CommandsStorage.CommandItem,
+        chanName: String?,
+        threadNumber: String? = null,
+        boardName: String? = null,
+        callback: (CommandRunner.AppResult) -> Unit,
+    ): CommandRunner.Run =
+        CommandRunner.runApp(item, chanName, threadNumber, boardName) { result ->
             if (result is CommandRunner.AppResult.Success) {
                 ProxyConnection.dropPooledConnections { callback(result) }
             } else {
                 callback(result)
             }
         }
-    }
 }

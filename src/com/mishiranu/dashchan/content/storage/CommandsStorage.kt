@@ -619,6 +619,19 @@ class CommandsStorage private constructor() : StorageManager.JsonOrgStorage<Comm
         @JvmField var autoRun = false
 
         /**
+         * Whether a menu may offer this command to be run. An [autoRun] command has had its turn by
+         * the time a menu could show it — a [UseIn.COMMENT] one runs on send, a [UseIn.THREAD] one
+         * when the thread was opened — so those are listed but not runnable.
+         *
+         * [UseIn.APP] is the exception: there [autoRun] does not mean the command runs on its own, it
+         * names the command the app runs *when it needs another visible IP* for the forum (see
+         * [com.mishiranu.dashchan.content.net.VisibleIpCommand]). Asking for another IP is the whole
+         * point of the flag, so running it by hand is a force run rather than a repeat.
+         */
+        val runsByHand: Boolean
+            get() = !autoRun || useIn == UseIn.APP
+
+        /**
          * [UseIn.THREAD] only: run the body once per post rather than once per thread. The body is then
          * the `process` of a fold over the thread's posts — it takes a single `post` and returns just
          * that post's replacement — which trades n+1 engine calls for not having to build the result

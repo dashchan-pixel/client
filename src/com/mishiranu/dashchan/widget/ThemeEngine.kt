@@ -827,6 +827,14 @@ class ThemeEngine {
          * Dropdowns need this set explicitly. A framework `PopupMenu` draws the square background of
          * its own popup style over the window, so the [applyRoundedWindowBackground] hook that rounds
          * dialogs and context menus cannot reach it — the fix is to own the popup and its background.
+         *
+         * The bottom inset is deeper than the top one for the same reason
+         * `@drawable/popup_background_menu` carries one: a popup reserves shadow room by growing its
+         * surface a fixed `ceil(2 * z)` on every side, but the spot light sits at the top of the
+         * display, so a popup opened low on the screen — which is where the floating toolbar's are —
+         * throws its shadow further down than that and has it cut off along a hard line. The inset is
+         * empty space rather than padding the user sees: the popup lays its content out inside the
+         * background's padding, so the rounded rectangle still ends exactly where the last row does.
          */
         @JvmStatic
         fun roundedPopupBackground(context: Context): Drawable {
@@ -839,8 +847,7 @@ class ThemeEngine {
                         .build(),
                 )
             shape.fillColor = ColorStateList.valueOf(getTheme(context).card)
-            val verticalInset = (4f * density).toInt()
-            return InsetDrawable(shape, 0, verticalInset, 0, verticalInset)
+            return InsetDrawable(shape, 0, (4f * density).toInt(), 0, (12f * density).toInt())
         }
 
         /**

@@ -69,7 +69,14 @@ class FloatingToolbar(
         COMMANDS,
     }
 
-    /** One button of the bar: which [slot] it occupies, what it looks like and what a tap does. */
+    /**
+     * One button of the bar: which [slot] it occupies, what it looks like and what a tap does.
+     *
+     * [onClick] is handed the *bar* rather than the button that was tapped, because the only thing a
+     * page does with the view is anchor a popup to it: a dropdown then hangs from the bar's own edge,
+     * keeping the margin the bar keeps, instead of from whichever button the user happened to have
+     * dragged the ⌘ next to.
+     */
     class Action(
         val slot: Slot,
         val icon: Drawable?,
@@ -152,7 +159,7 @@ class FloatingToolbar(
         button.setImageDrawable(action.icon)
         button.scaleType = ImageView.ScaleType.CENTER
         button.contentDescription = action.title
-        button.setOnClickListener { action.onClick(it) }
+        button.setOnClickListener { action.onClick(bar) }
         button.setOnLongClickListener { view -> bar.beginDrag(view) }
         return button
     }

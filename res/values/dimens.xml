@@ -22,7 +22,11 @@
 	<item name="clickable_toast_horizontal_padding" type="dimen">24dp</item>
 	<item name="clickable_toast_elevation" type="dimen">2dp</item>
 
-	<!-- How high every popup window in the app floats: Widget.OverlapPopupMenu and CommandsPopup. -->
+	<!--
+		How high every popup window in the app floats: Widget.OverlapPopupMenu, for the framework
+		PopupMenu the drawer opens, and Widget.AppListPopupWindow, for the dropdowns the app builds
+		itself out of a ListPopupWindow.
+	-->
 	<item name="popup_elevation" type="dimen">8dp</item>
 
 	<item name="captcha_lifetime_timer_text_size" type="dimen">16sp</item>
