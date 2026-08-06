@@ -7,12 +7,16 @@ import chan.http.HttpHolder
 import com.mishiranu.dashchan.content.database.ChanDatabase
 import com.mishiranu.dashchan.content.net.ProxyConnection
 import com.mishiranu.dashchan.content.net.VisibleIp
+import com.mishiranu.dashchan.content.net.VisibleIpCommand
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.ForegroundManager
 import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
@@ -55,13 +59,14 @@ import org.json.JSONObject
  * chan.cookies.setState("cf_clearance", { blocked: false, deleteOnExit: true })
  *
  * chan.getVisibleIp()                        // {ip, location}, or null when it can't be read
+ * chan.changeVisibleIp()                     // runs the command flagged for this forum; its message
  * chan.getProxy()                            // "socks5://user:pw@host:1080", or null for no proxy
  * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
  * ```
  *
  * Everything that *does* something is a function named for what it does, and only a plain value is
  * reached without parentheses — `chan.name`, which is decided before the script starts and is the one
- * member here that costs nothing to read. The rest are `get`/`set` for that reason: reading
+ * member here that costs nothing to read. The rest are `get`/`set`/`change` for that reason: reading
  * the IP a forum sees is a request over the network, and reading its proxy is a call across the
  * bridge, neither of which should look like a field a script may touch as often as it likes.
  *
@@ -101,6 +106,19 @@ import org.json.JSONObject
  * [VisibleIp]) — a `fetch` leaves the WebView on its own and would answer with the device's IP
  * instead, which is the whole reason for asking here. It reaches the network, so it takes as long as
  * a request does where every other call here answers at once.
+ *
+ * *Changing* that IP is the one call here the app carries out by running another command. Which
+ * service a forum's IP comes from is the user's to write, so there is nothing for the app to do but
+ * find the command they flagged for that forum and run it -- the same command, and the same dropped
+ * connections afterwards, as the button on the forum's own settings screen (see [VisibleIpCommand]).
+ * It answers with what that command returned, its message, and throws when the forum has none
+ * flagged or when the run failed. It waits for a whole command run: a script that asks for one is
+ * spending its own deadline on it.
+ *
+ * A forum already having its IP changed this way is refused, which is what bounds a command that
+ * asks for the command it is itself: it gets one copy of itself, and that copy is refused rather than
+ * starting a third. Two forums changing at once are two changes, not a recursion, so the refusal is
+ * per forum.
  *
  * The proxy a forum goes through is read and written as one connection string (see [ProxyConnection]),
  * which is the form a service hands its endpoint out on -- so a script that got a proxy from anywhere
@@ -142,6 +160,7 @@ object CommandApp {
     private const val METHOD_COOKIES_SET = "cookies.set"
     private const val METHOD_COOKIES_STATE = "cookies.setState"
     private const val METHOD_IP_GET = "ip.get"
+    private const val METHOD_IP_CHANGE = "ip.change"
     private const val METHOD_PROXY_GET = "proxy.get"
     private const val METHOD_PROXY_SET = "proxy.set"
 
@@ -253,6 +272,7 @@ object CommandApp {
             "}" +
             "})," +
             "getVisibleIp:function(chan){return __call('$METHOD_IP_GET',{chan:chan});}," +
+            "changeVisibleIp:function(chan){return __call('$METHOD_IP_CHANGE',{chan:chan});}," +
             "getProxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
             "setProxy:function(value,chan){" +
             "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
@@ -432,6 +452,11 @@ object CommandApp {
                     visibleIp(chan(args))
                 }
 
+                METHOD_IP_CHANGE -> {
+                    requireGrant(CommandsStorage.Grant.PROXY)
+                    changeVisibleIp(chan(args))
+                }
+
                 METHOD_PROXY_GET -> {
                     requireGrant(CommandsStorage.Grant.PROXY)
                     ProxyConnection.get(Chan.get(chan(args)))
@@ -534,6 +559,66 @@ object CommandApp {
         return JSONObject()
             .put(KEY_IP, result.ip)
             .put(KEY_LOCATION, result.location ?: JSONObject.NULL)
+    }
+
+    /**
+     * The forums a script is changing the IP of right now, so that a command asking for the command
+     * it is itself stops at one copy (see [changeVisibleIp]). Kept per forum because the flagged command
+     * is found per forum: one command scoped to two of them may legitimately be running for both at
+     * once, and neither of those runs is the other's recursion.
+     *
+     * Held only for as long as a bridge call waits, so nothing here outlives the run that took it.
+     */
+    private val changingIp = ConcurrentHashMap.newKeySet<String>()
+
+    /**
+     * How long a bridge call waits for the command it started before giving up on it. Longer than the
+     * runner's own deadline on purpose: the run answers by then or fails by then, and this is here only
+     * so a run that somehow does neither cannot hold this thread — and the entry in [changingIp] — for
+     * good. The calling command's deadline is the shorter one in practice, and is what a script asking
+     * for this actually spends.
+     */
+    private const val IP_COMMAND_TIMEOUT_MS = 60000L
+
+    /**
+     * Runs the command the user flagged to change the IP [chanName] is seen at, and answers what it
+     * returned — the message it meant for the user, or `null` when it returned nothing. A forum with no
+     * command flagged, a run that failed, and a run that never settled are each a throw naming which of
+     * those happened.
+     *
+     * Started on the main thread and waited for here, which is the same run the forum's settings screen
+     * starts, dropped connections and all (see [VisibleIpCommand]). Waiting is what makes this usable at
+     * all — a script asks for another IP in order to do something at it — and it costs nothing that
+     * matters: bridge calls arrive on the engine's own thread, so what is blocked is the script that
+     * asked.
+     */
+    private fun changeVisibleIp(chanName: String): Any? {
+        require(changingIp.add(chanName)) {
+            "The visible IP of \"$chanName\" is already being changed: a command cannot ask for the command it is itself"
+        }
+        try {
+            // One slot, offered from the callback and taken here: the run settles exactly once, so
+            // there is never a second result to drop.
+            val results = ArrayBlockingQueue<CommandRunner.AppResult>(1)
+            val started =
+                ConcurrentUtils.mainGet {
+                    VisibleIpCommand.run(Chan.get(chanName)) { results.offer(it) } != null
+                } == true
+            require(started) {
+                "No command is flagged to change the visible IP of \"$chanName\": tick \"Run to change " +
+                    "visible IP\" on the command that does it, and scope it to this forum"
+            }
+            val result =
+                checkNotNull(results.poll(IP_COMMAND_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                    "The command changing the visible IP of \"$chanName\" did not finish"
+                }
+            return when (result) {
+                is CommandRunner.AppResult.Success -> result.message
+                is CommandRunner.AppResult.Failure -> error(result.message)
+            }
+        } finally {
+            changingIp.remove(chanName)
+        }
     }
 
     /**

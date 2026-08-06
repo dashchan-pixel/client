@@ -24,8 +24,9 @@ service in question asks for (see `content/net/VisibleIpCommand.kt`).
 3. Put the credentials in **Settings → Commands → ⋮ → Environment**, one `NAME=value` per line. They
    live there rather than in the script so that a command can be exported and shared without them.
 4. Scope the command to the forums it should serve, and leave **Run to change visible IP** ticked.
-   That flag is what the forum's settings row and the toast on a banned post look for; with several
-   flagged for one forum, the first in the list wins, and the list is drag-ordered.
+   That flag is what the forum's settings row, the toast on a banned post and another command's
+   `chan.changeVisibleIp()` all look for; with several flagged for one forum, the first in the
+   list wins, and the list is drag-ordered.
 
 The forum's settings screen then shows a **Change visible IP** row naming the command, and running it
 either writes a proxy for a forum that has none yet or changes the IP behind the one it has.

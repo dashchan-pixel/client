@@ -13,8 +13,10 @@ import com.mishiranu.dashchan.content.storage.CommandsStorage
  * endpoint that answers to a request and moves the IP behind it. None of that is the app's to
  * know, so it is written as a [CommandsStorage.UseIn.APP] command flagged
  * [autoRun][CommandsStorage.CommandItem.autoRun], and the app's part is to find the one that belongs to
- * a forum and to run it at the moment it is wanted -- the button on the forum's own settings screen, or
- * the one offered when a post comes back banned.
+ * a forum and to run it at the moment it is wanted -- the button on the forum's own settings screen, the
+ * one offered when a post comes back banned, or another command asking for it through
+ * `chan.changeVisibleIp()` (see [com.mishiranu.dashchan.content.CommandApp]), which is the same run
+ * waited for rather than watched.
  *
  * The user is who wires the two together, by scoping the command to their forums and flagging it. The
  * screens that run one name it, so which command the button will run is on the screen holding the
