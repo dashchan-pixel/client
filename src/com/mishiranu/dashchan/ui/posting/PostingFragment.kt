@@ -920,7 +920,19 @@ class PostingFragment :
 
                 when (captchaValidity) {
                     ChanConfiguration.Captcha.Validity.SHORT_LIFETIME -> {
-                        canLoadState = captchaFromDraftHasLifetime && captchaFromDraft.alive()
+                        // A captcha that declares a lifetime is trusted for exactly that long; one that
+                        // declares none is trusted for DraftsStorage's reuse window, which
+                        // getCaptchaDraft has already applied to this draft — so all that is left to
+                        // ask here is that the draft still carry a captcha to date it by.
+                        //
+                        // Upstream demanded a *declared* lifetime instead, which no captcha that lands
+                        // in this branch has: SHORT_LIFETIME is what the app gives reCAPTCHA and
+                        // hCaptcha, neither of which sets a TTL, and what it falls back to when a forum
+                        // names no validity at all. So the branch could never restore anything and the
+                        // form solved a captcha again on every open — including reopening it seconds
+                        // later, where a solved reCAPTCHA's token is still perfectly good and the draft
+                        // holding it was kept for exactly this.
+                        canLoadState = captchaFromDraft != null && captchaFromDraft.alive()
                     }
 
                     ChanConfiguration.Captcha.Validity.IN_THREAD -> {
@@ -961,13 +973,18 @@ class PostingFragment :
                     } else if (captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.SKIP ||
                         captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.PASS
                     ) {
+                        // The captcha goes back in even though a SKIP or a PASS draws none: it is what
+                        // says when the state was read, and the form saves it again on the way out.
+                        // Dropping it here made a draft ageless from its first restore on — a solved
+                        // reCAPTCHA's token, which is a SKIP carrying the response, would then be
+                        // handed back long after it went stale, and the send refused with it.
                         showCaptcha(
                             captchaDraft.captchaState,
                             captchaDraft.captchaData,
                             null,
                             null,
                             captchaDraft.loadedValidity,
-                            null,
+                            captchaFromDraft,
                             false,
                             false,
                         )

@@ -198,17 +198,19 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
         this.captchaDraft = captchaDraft
     }
 
+    /**
+     * The captcha the user last had in front of them on [chanName], while it is still worth handing
+     * back — see [CAPTCHA_REUSE_WINDOW_MILLIS] for how long that is when the captcha itself does not
+     * say. A captcha that declares its own lifetime is left to it; this window is the app's answer for
+     * the ones that declare none.
+     */
     fun getCaptchaDraft(chanName: String?): CaptchaDraft? {
         val captchaDraft = captchaDraft
         if (captchaDraft != null && captchaChanName == chanName) {
             val captcha = captchaDraft.captcha
             if (captcha != null && !captcha.hasLifetime()) {
                 val now = SystemClock.elapsedRealtime()
-                val minutesSinceCaptchaCreation =
-                    TimeUnit.MILLISECONDS
-                        .toMinutes(now - captcha.creationTimeMillis)
-                val maximumCaptchaDraftLifetimeMinutes = 5L
-                if (minutesSinceCaptchaCreation > maximumCaptchaDraftLifetimeMinutes) {
+                if (now - captcha.creationTimeMillis > CAPTCHA_REUSE_WINDOW_MILLIS) {
                     return null
                 }
             }
@@ -846,6 +848,19 @@ class DraftsStorage private constructor() : StorageManager.Storage<DraftsStorage
         private const val KEY_POST_DRAFTS = "postDrafts"
         private const val KEY_FUTURE_ATTACHMENT_DRAFTS = "futureAttachmentDrafts"
         private const val KEY_FUTURE_COMMENT = "futureComment"
+
+        /**
+         * How long a captcha that declares no lifetime of its own is still worth handing back to the
+         * posting form — the whole of the app's answer to "is this one still good?" for such a captcha,
+         * since nothing else knows.
+         *
+         * Two minutes because that is what the captchas this matters for actually last: a reCAPTCHA
+         * response token is valid for two minutes, fixed by Google and not configurable, and hCaptcha's
+         * is the same. A token handed back later than that is refused at send with nothing to show for
+         * the round trip. Upstream's number here was five minutes, an outer bound for the image
+         * captchas the setting predates rather than anything a captcha's own validity implies.
+         */
+        private val CAPTCHA_REUSE_WINDOW_MILLIS = TimeUnit.MINUTES.toMillis(2)
 
         private val INSTANCE = DraftsStorage()
 
