@@ -342,18 +342,34 @@ class ChanFragment :
                 addButton(getString(R.string.visible_ip)) { visibleAddressSummary() }
             this.visibleAddressPreference = visibleAddressPreference
             visibleAddressPreference.setOnClickListener { checkVisibleAddress(force = true) }
+            // An address is worth having in hand -- a ban appeal asks for it, and it is the one thing on
+            // this screen that can't be typed back in. Long tap copies the bare address without the
+            // country the row appends to it. No toast: the system shows its own clipboard confirmation.
+            visibleAddressPreference.setOnLongClickListener {
+                val address = visibleAddressViewModel?.lookup?.result?.address
+                if (address.isNullOrEmpty()) {
+                    false
+                } else {
+                    StringUtils.copyToClipboard(requireContext(), address)
+                    true
+                }
+            }
             val viewModel = ViewModelProvider(this).get(VisibleAddressViewModel::class.java)
             this.visibleAddressViewModel = viewModel
-            viewModel.observe(viewLifecycleOwner) { address ->
-                viewModel.address = address
+            viewModel.observe(viewLifecycleOwner) { lookup ->
+                viewModel.lookup = lookup
                 visibleAddressPreference.invalidate()
             }
             checkVisibleAddress(force = false)
             if (VisibleAddressCommand.forChan(chan) != null) {
                 // Named rather than described: which command the button runs is the thing worth knowing
                 // about it, and the user is who wired the two together
-                addButton(getString(R.string.change_visible_ip)) { addressCommandSummary() }
-                    .setOnClickListener { runAddressCommand() }
+                val addressCommandPreference =
+                    addButton(getString(R.string.change_visible_ip)) { addressCommandSummary() }
+                addressCommandPreference.setOnClickListener { runAddressCommand() }
+                // Tap runs the command, long tap opens it -- the same pair the posting screen's ⌘ popup
+                // offers, and the way to reach a command whose name the row shows but whose text it doesn't.
+                addressCommandPreference.setOnLongClickListener { openAddressCommand() }
             }
         }
 
@@ -461,10 +477,10 @@ class ChanFragment :
      */
     private fun visibleAddressSummary(): CharSequence {
         val viewModel = visibleAddressViewModel
-        val address = viewModel?.address
+        val address = VisibleAddress.format(viewModel?.lookup?.result)
         return when {
             viewModel == null || viewModel.getTask() != null -> getString(R.string.loading__ellipsis)
-            address.isNullOrEmpty() -> getString(R.string.unavailable)
+            address.isEmpty() -> getString(R.string.unavailable)
             else -> address
         }
     }
@@ -519,6 +535,17 @@ class ChanFragment :
         }
     }
 
+    /**
+     * Open the command the button would run, on the commands screen with its edit dialog up -- where the
+     * ⌘ popup's long tap lands too. `false` when there is no command to open, leaving the long press
+     * unhandled: the row is stale, the same way [runAddressCommand] finds it.
+     */
+    private fun openAddressCommand(): Boolean {
+        val item = VisibleAddressCommand.forChan(Chan.get(getChanName())) ?: return false
+        (requireActivity() as FragmentHandler).pushFragment(CommandsFragment(item.id))
+        return true
+    }
+
     private fun cancelAddressCommand() {
         addressCommandRun?.cancel()
         addressCommandRun = null
@@ -527,13 +554,13 @@ class ChanFragment :
     /** [force] re-checks an address already resolved; otherwise a known one is kept. */
     private fun checkVisibleAddress(force: Boolean) {
         val viewModel = visibleAddressViewModel ?: return
-        if (viewModel.getTask() != null || (!force && viewModel.address != null)) {
+        if (viewModel.getTask() != null || (!force && viewModel.lookup != null)) {
             return
         }
         val task = VisibleAddressTask(viewModel, Chan.get(getChanName()))
         task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
         viewModel.attach(task)
-        viewModel.address = null
+        viewModel.lookup = null
         visibleAddressPreference?.invalidate()
     }
 
@@ -679,18 +706,28 @@ class ChanFragment :
         }
     }
 
-    class VisibleAddressViewModel : TaskViewModel<VisibleAddressTask, String>() {
-        /** Last result: `null` until the first check, empty when it failed. */
-        var address: String? = null
+    /**
+     * A finished check of the visible address, holding what it found or `null` when it found nothing --
+     * which a bare `null` result could not say, the view model dropping those as "nothing delivered yet".
+     * The row shows the formatted address and copies the bare one, so what the check found is kept whole
+     * rather than as the line it is displayed as.
+     */
+    class VisibleAddressLookup(
+        val result: VisibleAddress.Result?,
+    )
+
+    class VisibleAddressViewModel : TaskViewModel<VisibleAddressTask, VisibleAddressLookup>() {
+        /** Last check: `null` until the first one has finished. */
+        var lookup: VisibleAddressLookup? = null
     }
 
     class VisibleAddressTask(
         private val viewModel: VisibleAddressViewModel,
         private val chan: Chan,
-    ) : HttpHolderTask<Unit, String>(chan) {
-        override fun run(holder: HttpHolder): String = VisibleAddress.format(VisibleAddress.resolve(chan, holder))
+    ) : HttpHolderTask<Unit, VisibleAddressLookup>(chan) {
+        override fun run(holder: HttpHolder): VisibleAddressLookup = VisibleAddressLookup(VisibleAddress.resolve(chan, holder))
 
-        override fun onComplete(result: String) {
+        override fun onComplete(result: VisibleAddressLookup) {
             viewModel.handleResult(result)
         }
     }

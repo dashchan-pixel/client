@@ -39,6 +39,14 @@ abstract class Preference<T>(
         fun onClick(preference: Preference<T>)
     }
 
+    /**
+     * Answers whether the long press was taken. Every row is bound for long clicks, so a row that
+     * has nothing to offer -- which is nearly all of them -- says so and leaves the gesture alone.
+     */
+    fun interface OnLongClickListener<T> {
+        fun onLongClick(preference: Preference<T>): Boolean
+    }
+
     internal fun interface OnChangeListener {
         fun onChange(newValue: Boolean)
     }
@@ -81,6 +89,7 @@ abstract class Preference<T>(
     private var enabled = true
     private var selectable = true
     private var onClickListener: OnClickListener<T>? = null
+    private var onLongClickListener: OnLongClickListener<T>? = null
     private var onChangeListener: OnChangeListener? = null
     private var onBeforeChangeListener: OnBeforeChangeListener<T>? = null
     private var onAfterChangeListener: OnAfterChangeListener<T>? = null
@@ -111,6 +120,8 @@ abstract class Preference<T>(
         onClickListener?.onClick(this)
     }
 
+    fun performLongClick(): Boolean = onLongClickListener?.onLongClick(this) == true
+
     internal abstract fun extract(preferences: SharedPreferences)
 
     internal abstract fun persist(preferences: SharedPreferences)
@@ -125,6 +136,10 @@ abstract class Preference<T>(
 
     fun setOnClickListener(listener: OnClickListener<T>?) {
         this.onClickListener = listener
+    }
+
+    fun setOnLongClickListener(listener: OnLongClickListener<T>?) {
+        this.onLongClickListener = listener
     }
 
     internal fun setOnChangeListener(listener: OnChangeListener?) {

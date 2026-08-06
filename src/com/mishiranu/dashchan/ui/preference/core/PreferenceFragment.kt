@@ -691,7 +691,9 @@ abstract class PreferenceFragment : ContentFragment() {
         ) : RecyclerView.ViewHolder(itemView),
             ClickCallback<Unit, ViewHolder> {
             init {
-                ListViewUtils.bind(this, false, null, this)
+                // Bound for long clicks throughout: a row that has no long press of its own answers
+                // false and the gesture goes unhandled, so no row grows a highlight it does nothing with.
+                ListViewUtils.bind(this, true, null, this)
                 if (itemView.getBackground() == null) {
                     // Rounded to Preferences.uiCornerRadius so a row's press-state highlight reads
                     // as a Material 3 list item rather than the stock edge-to-edge ripple.
@@ -704,10 +706,13 @@ abstract class PreferenceFragment : ContentFragment() {
                 position: Int,
                 item: Unit?,
                 longClick: Boolean,
-            ): Boolean {
-                preferences[position].performClick()
-                return true
-            }
+            ): Boolean =
+                if (longClick) {
+                    preferences[position].performLongClick()
+                } else {
+                    preferences[position].performClick()
+                    true
+                }
         }
 
         private val viewProviders = HashMap<Preference.ViewType?, Preference<*>?>()
