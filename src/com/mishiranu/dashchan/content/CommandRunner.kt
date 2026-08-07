@@ -8,6 +8,7 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Runs a user-defined [CommandsStorage.CommandItem] through the [HeadlessJsEngine].
@@ -154,6 +155,9 @@ object CommandRunner {
         /** The thread waiting on the user, while one is (see [awaitUser]). */
         @Volatile private var waiting: Thread? = null
 
+        /** Runs this one asked the app to start and has not been answered yet (see [beginNested]). */
+        private val nested = AtomicInteger(0)
+
         /** Whether the outcome has been decided, so there is nothing left to cancel. */
         val isFinished: Boolean
             get() = settled.get()
@@ -175,6 +179,13 @@ object CommandRunner {
          * missed by it, and either way no dialog outlives the run that asked for it.
          *
          * Called from the JS bridge thread, which is where a bridge call arrives.
+         *
+         * **A dialog is the only thing a bridge call may block on.** WebView dispatches every
+         * `@JavascriptInterface` call in the process on one shared `JavaBridge` thread, so a bridge
+         * call that blocks stops *every* engine's bridge, not just this run's — a dialog is answered by
+         * the main thread and comes back, but anything that needs a bridge call to finish would wait on
+         * the thread it is being waited on from. That is why a script asking for another command holds
+         * nothing (see [beginNested]).
          */
         internal fun <T> awaitUser(action: () -> T): T {
             waiting = Thread.currentThread()
@@ -186,6 +197,41 @@ object CommandRunner {
                 waiting = null
                 arm(timeoutMs)
             }
+        }
+
+        /**
+         * Holds this run's deadline open while a run it asked the app to start on its behalf is in
+         * flight (see [CommandApp]'s `chan.changeVisibleIp()`). Not a wait: the bridge call that starts
+         * the other run returns at once and the script waits on a promise, so what is held is only the
+         * clock. Balanced by [endNested], which the other run's outcome brings.
+         *
+         * The widening is [USER_TIMEOUT_MS] because that is the longest a run may last at all, and this
+         * one is waiting on a whole run rather than on a script of its own. Counted rather than set, so
+         * two runs asked for at once are both covered and the deadline comes back only with the last of
+         * them — armed again in full, as after a dialog.
+         *
+         * Called from the JS bridge thread; [endNested] arrives on the main one.
+         */
+        internal fun beginNested() {
+            check(!isFinished) { "The command is no longer running" }
+            nested.incrementAndGet()
+            arm(USER_TIMEOUT_MS)
+        }
+
+        /** Gives back what [beginNested] held, once the run it was waiting on has settled. */
+        internal fun endNested() {
+            if (nested.decrementAndGet() <= 0) {
+                arm(timeoutMs)
+            }
+        }
+
+        /**
+         * Evaluates [script] in this run's engine, or does nothing once the run is over — which is how
+         * an answer to a script that is no longer there is dropped. Any thread (see
+         * [HeadlessJsEngine.evaluate]).
+         */
+        internal fun evaluate(script: String) {
+            engine?.evaluate(script)
         }
 
         /** Moves the deadline [delay] out from now, unless the run has already settled. */
@@ -675,9 +721,11 @@ object CommandRunner {
     private const val TIMEOUT_MS = 30000L
 
     /**
-     * The deadline a run keeps while a dialog of its own is on the screen (see [Run.awaitUser]) —
-     * long enough that a question is answered by the user rather than by the clock, short enough that
-     * a dialog left standing still ends the run instead of holding an engine for good.
+     * The deadline a run keeps while a dialog of its own is on the screen (see [Run.awaitUser]), and
+     * while a run it asked for is in flight (see [Run.beginNested]) — long enough that a question is
+     * answered by the user rather than by the clock, short enough that a dialog left standing still
+     * ends the run instead of holding an engine for good. Being the longest a run may last at all, it
+     * is also the longest one run may be held open by another.
      */
     private const val USER_TIMEOUT_MS = 300000L
 

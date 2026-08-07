@@ -14,9 +14,8 @@ import com.mishiranu.dashchan.util.ConcurrentUtils
 import com.mishiranu.dashchan.util.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * The objects a command script is handed besides its own input and `env` (see [CommandRunner]): `app`,
@@ -61,7 +60,8 @@ import java.util.concurrent.TimeUnit
  * chan.cookies.setState("cf_clearance", { blocked: false, deleteOnExit: true })
  *
  * chan.getVisibleIp()                        // {ip, location}, or null when it can't be read
- * chan.changeVisibleIp()                     // runs the command flagged for this forum; its message
+ * chan.changeVisibleIp()                     // a promise: runs the command flagged for this forum,
+ *                                            // and awaits it for the message it left
  * chan.getProxy()                            // "socks5://user:pw@host:1080", or null for no proxy
  * chan.setProxy("http://user:pw@host:8080")  // the proxy this forum goes through; null removes it
  *
@@ -89,10 +89,14 @@ import java.util.concurrent.TimeUnit
  * bound to a global the script can reach directly: a wrapper that refused would be walked around by
  * anything that called `window.__commandAppBridge` itself.
  *
- * Every call is synchronous, and every one that cannot be carried out throws — a missing grant, an
- * unknown forum, a missing argument, a setting written with the wrong kind of value — so a script may
+ * Every call is synchronous but one, and every one that cannot be carried out throws — a missing grant,
+ * an unknown forum, a missing argument, a setting written with the wrong kind of value — so a script may
  * `try`/`catch` around one, and a failure it doesn't catch fails the run with that message. Synchronous
  * includes a dialog: the call comes back once the user has answered it, which is the whole point of one.
+ * The exception is `chan.changeVisibleIp()`, which answers a promise to `await` (and to `catch` the
+ * same way, since a run that failed rejects it): it waits on a whole command of its own rather than on
+ * the app, and what a blocking call would cost there is why (see [SOURCE]). A script that leaves off the
+ * `await` gets the promise rather than the message.
  *
  * A setting is named by the key the app stores it under (`cache_size`, `active_scrollbar`, …; the
  * per-forum ones are `<forum>_<key>`, e.g. `4chan_captcha`) and holds the kind of value the app reads
@@ -156,6 +160,13 @@ object CommandApp {
     /** The global [Bridge] is bound to in the engine. Only [SOURCE] should reach for it. */
     const val BRIDGE_NAME: String = "__commandAppBridge"
 
+    /**
+     * The global [SOURCE] declares for the app to settle a promise through — the other way across, and
+     * an evaluation rather than a bridge call, since only the app knows when the run a script is
+     * waiting on is over. See [settle].
+     */
+    private const val SETTLE_NAME = "__commandAppSettle"
+
     private const val METHOD_CHAN = "chan"
     private const val METHOD_SETTINGS_GET = "settings.get"
     private const val METHOD_SETTINGS_HAS = "settings.has"
@@ -186,6 +197,7 @@ object CommandApp {
     private const val KEY_DELETE_ON_EXIT = "deleteOnExit"
     private const val KEY_IP = "ip"
     private const val KEY_LOCATION = "location"
+    private const val KEY_ID = "id"
 
     /**
      * The settings the app reads only while an activity is being built, so a write to one shows
@@ -229,6 +241,16 @@ object CommandApp {
      * text and neither side has to describe the shape. A value `JSON.stringify` cannot carry (a
      * function, say) comes back `undefined` from it, and is refused here rather than quietly filed as
      * a removal.
+     *
+     * `chan.changeVisibleIp()` is the one call here that answers a **promise** rather than a value,
+     * and `__await` is what builds it: the bridge call returns a ticket at once and the app settles
+     * the promise that ticket stands for through [SETTLE_NAME] when the run it started is over. It
+     * cannot be the plain blocking call the rest are — WebView dispatches every
+     * `@JavascriptInterface` call *in the process* on one shared `JavaBridge` thread, so a bridge call
+     * that waits for another run stops that run's own bridge calls, down to the one every run delivers
+     * its result through. The wait would end in the caller's deadline every time, with the run it was
+     * waiting for finishing the moment the thread was given back. A dialog blocks safely because the
+     * main thread answers it; a run does not.
      */
     val SOURCE: String =
         "(function(__b){" +
@@ -236,6 +258,24 @@ object CommandApp {
             "var __r=JSON.parse(__b.call(__m,JSON.stringify(__a)));" +
             "if(!__r.ok){throw new Error(__r.error);}" +
             "return __r.result;" +
+            "}" +
+            // The ticket a promise is waiting on, until the app settles it. Registered while the JS
+            // that made the call is still running, so the settle -- a separate evaluation, which can
+            // only run once this one has finished -- always finds it.
+            "var __waits={};" +
+            "window.$SETTLE_NAME=function(__json){" +
+            "var __s=JSON.parse(__json);" +
+            "var __w=__waits[__s.id];" +
+            "if(!__w){return;}" +
+            "delete __waits[__s.id];" +
+            "if(__s.ok){__w.resolve(__s.result);}else{__w.reject(new Error(__s.error));}" +
+            "};" +
+            "function __await(__m,__a){" +
+            "return new Promise(function(__resolve,__reject){" +
+            // Inside the executor so a call refused outright -- no grant, nothing to run -- rejects
+            // the promise instead of throwing past a caller that is only ever going to await it.
+            "__waits[__call(__m,__a)]={resolve:__resolve,reject:__reject};" +
+            "});" +
             "}" +
             "function __opt(__o){return __o||{};}" +
             "return Object.freeze({" +
@@ -281,7 +321,7 @@ object CommandApp {
             "}" +
             "})," +
             "getVisibleIp:function(chan){return __call('$METHOD_IP_GET',{chan:chan});}," +
-            "changeVisibleIp:function(chan){return __call('$METHOD_IP_CHANGE',{chan:chan});}," +
+            "changeVisibleIp:function(chan){return __await('$METHOD_IP_CHANGE',{chan:chan});}," +
             "getProxy:function(chan){return __call('$METHOD_PROXY_GET',{chan:chan});}," +
             "setProxy:function(value,chan){" +
             "return __call('$METHOD_PROXY_SET',{value:value===undefined?null:value,chan:chan});" +
@@ -297,7 +337,8 @@ object CommandApp {
      * libraries around it all work against the same answer.
      *
      * [run] is the run itself, which a dialog holds up for as long as the user takes over it (see
-     * [CommandDialogs]).
+     * [CommandDialogs]) and which a command asked for through `chan.changeVisibleIp()` both holds open
+     * and is answered through (see [changeVisibleIp]).
      */
     fun bridge(
         chanName: String?,
@@ -319,7 +360,7 @@ object CommandApp {
         private val chanName: String?,
         /** What the command running was granted, as of this run's start. */
         private val grants: Set<CommandsStorage.Grant>,
-        /** The run a dialog holds up while it is on the screen. */
+        /** The run a dialog holds up while it is on the screen, and another run is answered through. */
         private val run: CommandRunner.Run,
     ) {
         @JavascriptInterface
@@ -474,7 +515,7 @@ object CommandApp {
 
                 METHOD_IP_CHANGE -> {
                     requireGrant(CommandsStorage.Grant.PROXY)
-                    changeVisibleIp(chan(args))
+                    changeVisibleIp(run, chan(args))
                 }
 
                 METHOD_PROXY_GET -> {
@@ -587,58 +628,94 @@ object CommandApp {
      * is found per forum: one command scoped to two of them may legitimately be running for both at
      * once, and neither of those runs is the other's recursion.
      *
-     * Held only for as long as a bridge call waits, so nothing here outlives the run that took it.
+     * An entry is held from the moment the run is started to the moment it answers, and a run always
+     * answers — through its result, its failure or its own deadline — so nothing here outlives the run
+     * that put it there.
      */
     private val changingIp = ConcurrentHashMap.newKeySet<String>()
 
-    /**
-     * How long a bridge call waits for the command it started before giving up on it. Longer than the
-     * runner's own deadline on purpose: the run answers by then or fails by then, and this is here only
-     * so a run that somehow does neither cannot hold this thread — and the entry in [changingIp] — for
-     * good. The calling command's deadline is the shorter one in practice, and is what a script asking
-     * for this actually spends.
-     */
-    private const val IP_COMMAND_TIMEOUT_MS = 60000L
+    /** Hands out the ticket a waiting promise is known by (see [SOURCE]). Unique within a process. */
+    private val ipTickets = AtomicLong()
 
     /**
-     * Runs the command the user flagged to change the IP [chanName] is seen at, and answers what it
-     * returned — the message it meant for the user, or `null` when it returned nothing. A forum with no
-     * command flagged, a run that failed, and a run that never settled are each a throw naming which of
-     * those happened.
+     * Starts the command the user flagged to change the IP [chanName] is seen at and answers the ticket
+     * of the promise its outcome will settle (see [SOURCE]) — with what the command returned, the
+     * message it meant for the user, or with the reason it failed. A forum with no command flagged is
+     * refused here and now, so `await` on it throws that instead.
      *
-     * Started on the main thread and waited for here, which is the same run the forum's settings screen
-     * starts, dropped connections and all (see [VisibleIpCommand]). Waiting is what makes this usable at
-     * all — a script asks for another IP in order to do something at it — and it costs nothing that
-     * matters: bridge calls arrive on the engine's own thread, so what is blocked is the script that
-     * asked.
+     * The run is the same one the forum's settings screen starts, dropped connections and all (see
+     * [VisibleIpCommand]), and is started on the main thread like every other.
+     *
+     * **This call does not wait for it, and must not.** Every `@JavascriptInterface` call in the
+     * process is dispatched on one shared `JavaBridge` thread, and a run delivers its own result
+     * through such a call: a bridge call that blocked here would be holding the thread the run it is
+     * waiting for needs to answer on, so the wait could only ever end in [run]'s deadline — with the
+     * command it started finishing correctly the moment the thread was given back. What is waited on
+     * instead is a promise in the script, and what the app holds meanwhile is only [run]'s clock (see
+     * [CommandRunner.Run.beginNested]).
      */
-    private fun changeVisibleIp(chanName: String): Any? {
+    private fun changeVisibleIp(
+        run: CommandRunner.Run,
+        chanName: String,
+    ): Any {
         require(changingIp.add(chanName)) {
             "The visible IP of \"$chanName\" is already being changed: a command cannot ask for the command it is itself"
         }
+        val ticket = ipTickets.incrementAndGet().toString()
+        var started = false
         try {
-            // One slot, offered from the callback and taken here: the run settles exactly once, so
-            // there is never a second result to drop.
-            val results = ArrayBlockingQueue<CommandRunner.AppResult>(1)
-            val started =
+            run.beginNested()
+            started =
                 ConcurrentUtils.mainGet {
-                    VisibleIpCommand.run(Chan.get(chanName)) { results.offer(it) } != null
+                    VisibleIpCommand.run(Chan.get(chanName)) { result ->
+                        changingIp.remove(chanName)
+                        run.endNested()
+                        settle(run, ticket, result)
+                    } != null
                 } == true
             require(started) {
                 "No command is flagged to change the visible IP of \"$chanName\": tick \"Run to change " +
                     "visible IP\" on the command that does it, and scope it to this forum"
             }
-            val result =
-                checkNotNull(results.poll(IP_COMMAND_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                    "The command changing the visible IP of \"$chanName\" did not finish"
-                }
-            return when (result) {
-                is CommandRunner.AppResult.Success -> result.message
-                is CommandRunner.AppResult.Failure -> error(result.message)
-            }
+            return ticket
         } finally {
-            changingIp.remove(chanName)
+            if (!started) {
+                changingIp.remove(chanName)
+                run.endNested()
+            }
         }
+    }
+
+    /**
+     * Settles the promise [ticket] stands for in [run]'s engine with what the run it was waiting on
+     * came to. Evaluated rather than returned, because by now the bridge call that took the ticket is
+     * long over; a run that has since ended evaluates nothing (see [CommandRunner.Run.evaluate]), which
+     * is a promise nobody is waiting on any more.
+     *
+     * The whole answer crosses as one JSON string rather than as arguments, for the same reason the
+     * bridge encodes its own: one place that quotes, and nothing of a command's message able to end up
+     * read as JavaScript.
+     */
+    private fun settle(
+        run: CommandRunner.Run,
+        ticket: String,
+        result: CommandRunner.AppResult,
+    ) {
+        val json =
+            JSONObject().put(KEY_ID, ticket).apply {
+                when (result) {
+                    is CommandRunner.AppResult.Success -> {
+                        put(KEY_OK, true)
+                        put(KEY_RESULT, result.message ?: JSONObject.NULL)
+                    }
+
+                    is CommandRunner.AppResult.Failure -> {
+                        put(KEY_OK, false)
+                        put(KEY_ERROR, result.message)
+                    }
+                }
+            }
+        run.evaluate("window.$SETTLE_NAME(${JSONObject.quote(json.toString())});")
     }
 
     /**
