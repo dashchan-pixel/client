@@ -119,10 +119,14 @@ class PageFragment :
      * Spins the ⌘ in the floating toolbar while a command it started is running, but only once the run
      * has been going long enough to be worth saying so (see [DelayedProgress]) — most commands finish
      * before the user could see anything, and a spinner flashing on every one of them is noise.
+     *
+     * The spinner is also the way out of a run that is going nowhere, on a double tap of it: the
+     * progress dialog this replaced could be dismissed, and a run started by hand has to stay
+     * stoppable by hand.
      */
     private val appCommandProgress =
         DelayedProgress(
-            { floatingToolbar?.setBusy(FloatingToolbar.Slot.COMMANDS, true) },
+            { floatingToolbar?.setBusy(FloatingToolbar.Slot.COMMANDS, true) { cancelAppCommand() } },
             { floatingToolbar?.setBusy(FloatingToolbar.Slot.COMMANDS, false) },
         )
 
@@ -256,9 +260,7 @@ class PageFragment :
         fragmentHandler.setActionBarLocked(actionBarLockerPull, false)
         fragmentHandler.setActionBarLocked(actionBarLockerSearch, false)
 
-        appCommandProgress.cancel()
-        appCommandRun?.cancel()
-        appCommandRun = null
+        cancelAppCommand()
 
         listPage?.destroy()
         listPage = null
@@ -688,6 +690,17 @@ class PageFragment :
                     deliver,
                 )
             }
+    }
+
+    /**
+     * Drops a running App command, whether the user asked for it — a double tap on the spinning ⌘ —
+     * or the page it was started from went away, which leaves nobody for the result to be shown to.
+     * The spinner goes with the run rather than waiting for a callback that will not be delivered.
+     */
+    private fun cancelAppCommand() {
+        appCommandRun?.cancel()
+        appCommandRun = null
+        appCommandProgress.cancel()
     }
 
     public override fun onMenuItemSelected(item: MenuItem): Boolean {

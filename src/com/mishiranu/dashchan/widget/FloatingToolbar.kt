@@ -20,6 +20,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
+import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.Preferences
 import com.mishiranu.dashchan.util.ResourceUtils
 import kotlin.math.abs
@@ -54,6 +55,10 @@ import kotlin.math.roundToInt
  * Both the order and the direction are the user's, so both are kept in [Preferences] rather than in the
  * page: the bar looks the same on every page it appears on, and a button a page does not offer is
  * simply absent from an order that still holds its place.
+ *
+ * A third gesture is a button's rather than the bar's: **a double tap on a busy slot's spinner calls
+ * off the work it stands for** (see [setBusy]), which is the cancel button of the progress dialog such
+ * a run used to put up, kept where the run itself now is.
  */
 @SuppressLint("ViewConstructor")
 class FloatingToolbar(
@@ -92,8 +97,11 @@ class FloatingToolbar(
     private val bar = Bar(toolbarContext)
     private var actions: List<Action> = emptyList()
 
-    /** The slots standing as spinners rather than as their icon; see [setBusy]. */
-    private val busySlots = HashSet<Slot>()
+    /**
+     * The slots standing as spinners rather than as their icon, each against the way to call off the
+     * work it is spinning for, or null for work that cannot be called off; see [setBusy].
+     */
+    private val busySlots = HashMap<Slot, (() -> Unit)?>()
 
     /**
      * Told the room the bar takes at the bottom of the page whenever that changes, so the list behind
@@ -168,14 +176,26 @@ class FloatingToolbar(
      * button started that the user is waiting on: the ⌘ spins while the command it ran is running,
      * which is where the modal progress dialog such a run used to put itself.
      *
+     * [onAbort] is the way out of a run that is taking too long, called on a **double tap** of the
+     * spinner. A single tap is not it: the spinner sits where a button the user taps all the time was,
+     * and the first tap of a wait is far more likely to be an impatient one at the command than a
+     * decision to give up on it — so a lone tap only says how to stop instead, the dialog's cancel
+     * button having been the thing that said it before. Passing null leaves the spinner inert.
+     *
      * A busy slot the bar does not currently hold is remembered rather than dropped, so a bar rebuilt
      * while the work is still going comes back with the spinner still in it.
      */
     fun setBusy(
         slot: Slot,
         busy: Boolean,
+        onAbort: (() -> Unit)? = null,
     ) {
-        val changed = if (busy) busySlots.add(slot) else busySlots.remove(slot)
+        val changed = busy != busySlots.containsKey(slot)
+        if (busy) {
+            busySlots[slot] = onAbort
+        } else {
+            busySlots.remove(slot)
+        }
         if (changed && actions.any { it.slot == slot }) {
             rebuild()
         }
@@ -279,8 +299,12 @@ class FloatingToolbar(
      * rather than as the bar having changed. Padded down to an icon's size, because a ProgressBar
      * scales its drawable into whatever the padding leaves and its own is smaller than a button.
      *
-     * It carries no click and no long press: there is nothing to run while a run is going, and a slot
-     * that is not a button for the moment is not one to drag either.
+     * It carries no long press: a slot that is not a button for the moment is not one to drag either.
+     * What it does carry is the way out of the work, on a double tap ([setBusy]) — a single tap is
+     * answered with the toast that says so, posted a double tap's grace late and dropped if the second
+     * tap arrives, so that the tap which turns out to be half of a double tap says nothing on its own.
+     * The hint is also dropped when the work has ended in the meantime, there being nothing left to
+     * stop by the time it would speak.
      */
     private fun createProgress(action: Action): View {
         val progress = ProgressBar(toolbarContext, null, android.R.attr.progressBarStyleSmall)
@@ -289,6 +313,28 @@ class FloatingToolbar(
         val padding = ((BUTTON_SIZE_DP - PROGRESS_SIZE_DP) / 2f * density).toInt()
         progress.setPadding(padding, padding, padding, padding)
         progress.contentDescription = action.title
+        if (busySlots[action.slot] != null) {
+            val hint =
+                Runnable {
+                    if (action.slot in busySlots) {
+                        ClickableToast.show(context.getString(R.string.double_tap_to_stop))
+                    }
+                }
+            var lastTap = 0L
+            progress.setOnClickListener { view ->
+                val abort = busySlots[action.slot]
+                val now = SystemClock.uptimeMillis()
+                view.removeCallbacks(hint)
+                if (abort != null && now - lastTap <= ViewConfiguration.getDoubleTapTimeout()) {
+                    lastTap = 0L
+                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    abort()
+                } else {
+                    lastTap = now
+                    view.postDelayed(hint, ViewConfiguration.getDoubleTapTimeout().toLong())
+                }
+            }
+        }
         return progress
     }
 
