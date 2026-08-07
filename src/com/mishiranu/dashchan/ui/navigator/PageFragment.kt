@@ -221,6 +221,7 @@ class PageFragment :
         allowShowScale = true
         val floatingToolbar = FloatingToolbar(layout.context, this.toolbarContext)
         this.floatingToolbar = floatingToolbar
+        floatingToolbar.onContentInsetChanged = layout::setExtraBottom
         layout.addView(
             floatingToolbar,
             ViewGroup.LayoutParams.MATCH_PARENT,

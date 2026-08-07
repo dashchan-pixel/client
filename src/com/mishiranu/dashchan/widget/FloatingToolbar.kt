@@ -91,6 +91,32 @@ class FloatingToolbar(
     private val bar = Bar(toolbarContext)
     private var actions: List<Action> = emptyList()
 
+    /**
+     * Told the room the bar takes at the bottom of the page whenever that changes, so the list behind
+     * can keep its last item out from under it. Called with 0 for a bar that is off screen.
+     */
+    var onContentInsetChanged: ((Int) -> Unit)? = null
+        set(value) {
+            field = value
+            value?.invoke(contentInset())
+        }
+
+    /**
+     * How far up from the bottom of the page the bar reaches: its own thickness — a button plus the
+     * bar's padding, times the buttons in a column when it stands vertical — and the margin below it,
+     * and the same margin again above it so the last item of a list clears the bar rather than ending
+     * against it. Worked out from what the bar is made of rather than measured, because the list is
+     * padded while the bar is still being laid out.
+     */
+    private fun contentInset(): Int {
+        val actions = this.actions
+        if (actions.isEmpty()) {
+            return 0
+        }
+        val across = if (Preferences.isFloatingToolbarVertical) actions.size else 1
+        return ((across * BUTTON_SIZE_DP + 2 * BAR_PADDING_DP + 2 * MARGIN_DP) * density).toInt()
+    }
+
     /** The toolbar's own ripple colour, the one the borderless button style would have used. */
     private val rippleHighlight =
         ResourceUtils.getColorStateList(toolbarContext, android.R.attr.colorControlHighlight)
@@ -136,6 +162,7 @@ class FloatingToolbar(
     private fun rebuild() {
         bar.removeAllViews()
         val actions = this.actions
+        onContentInsetChanged?.invoke(contentInset())
         if (actions.isEmpty()) {
             visibility = GONE
             return

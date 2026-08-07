@@ -16,6 +16,7 @@ class ExpandedLayout(
     private var bottom = 0
     private var useGesture29 = false
     private var extraTop = 0
+    private var extraBottom = 0
     private var recyclerViewField: RecyclerView? = null
 
     fun setRecyclerView(recyclerView: RecyclerView?) {
@@ -44,6 +45,20 @@ class ExpandedLayout(
         }
     }
 
+    /**
+     * Room kept below the end of the [recycler view][setRecyclerView]'s content, for whatever floats
+     * over it — today the [FloatingToolbar], which would otherwise cover the last item of a list
+     * scrolled to its bottom. It is the list's padding rather than the layout's because the point is
+     * that content still *scrolls* through that strip; and it is the list's alone, since a view that
+     * floats must not be pushed up by the room it is being given.
+     */
+    fun setExtraBottom(extraBottom: Int) {
+        if (this.extraBottom != extraBottom) {
+            this.extraBottom = extraBottom
+            applyPadding()
+        }
+    }
+
     private fun applyPadding() {
         val childTop: Int
         val childBottom: Int
@@ -59,7 +74,9 @@ class ExpandedLayout(
         }
         ViewUtils.setNewPadding(this, null, top + extraTop - childTop, null, bottom - childBottom)
         for (i in 0 until childCount) {
-            ViewUtils.setNewPadding(getChildAt(i), null, childTop, null, childBottom)
+            val child = getChildAt(i)
+            val extra = if (child === recyclerViewField) extraBottom else 0
+            ViewUtils.setNewPadding(child, null, childTop, null, childBottom + extra)
         }
     }
 }
