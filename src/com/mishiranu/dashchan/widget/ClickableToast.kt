@@ -146,12 +146,12 @@ class ClickableToast private constructor(
     private fun showInternal(
         message: CharSequence?,
         updateId: String?,
-        button: Button?,
+        buttons: List<Button>,
     ): String? {
         val updated = if (updateId != null) items.firstOrNull { it.id == updateId } else null
         if (updated != null) {
             ConcurrentUtils.HANDLER.removeCallbacks(updated.cancelRunnable)
-            bind(updated, message, button)
+            bind(updated, message, buttons)
             applyLayout(updated)
             ConcurrentUtils.HANDLER.postDelayed(updated.cancelRunnable, TIMEOUT.toLong())
             return updateId
@@ -162,7 +162,7 @@ class ClickableToast private constructor(
             cancelItem(items[0])
         }
         val item = Item()
-        bind(item, message, button)
+        bind(item, message, buttons)
         item.stackHeight = measureStackHeight(item)
         if (!addItemToWindowManager(item, stackTopOffset())) {
             return null
@@ -177,17 +177,17 @@ class ClickableToast private constructor(
     private fun bind(
         item: Item,
         message: CharSequence?,
-        button: Button?,
+        buttons: List<Button>,
     ) {
-        item.clickable = button != null
+        val boundButtons = buttons.take(MAX_BUTTONS)
+        item.clickable = boundButtons.isNotEmpty()
         item.message.setText(message)
-        if (button != null) {
-            item.button.setText(button.titleResId)
-        }
-        item.onClickListener = if (button != null) button.callback else null
-        item.partialClickDrawable.clicked = false
+        boundButtons.forEachIndexed { index, button -> item.buttonViews[index].setText(button.titleResId) }
+        item.buttons = boundButtons
+        // A toast is held back to the front window only when every action it offers asks for it
+        item.clickableOnlyWhenRoot = boundButtons.isEmpty() || boundButtons.all { it.clickableOnlyWhenRoot }
+        item.partialClickDrawable.clickedIndex = -1
         item.partialClickDrawable.invalidateSelf()
-        item.clickableOnlyWhenRoot = button == null || button.clickableOnlyWhenRoot
         updateLayout(item)
     }
 
@@ -337,13 +337,16 @@ class ClickableToast private constructor(
     private fun updateLayout(item: Item) {
         val focused = activity.getWindow().getDecorView().hasWindowFocus()
         item.realClickable = item.clickable && (focused || !item.clickableOnlyWhenRoot) && resumed
-        item.button.setVisibility(if (item.realClickable) View.VISIBLE else View.GONE)
-        item.message.setPadding(
-            if (item.realClickable) item.button.getPaddingRight() else 0,
-            0,
-            if (item.realClickable) item.button.getPaddingLeft() else 0,
-            0,
-        )
+        item.buttonViews.forEachIndexed { index, view ->
+            val visible = item.realClickable && index < item.buttons.size
+            view.setVisibility(if (visible) View.VISIBLE else View.GONE)
+            // A button with another one after it leaves the same gap on its far side that the
+            // message leaves before it: the divider between the two stands in the middle of it,
+            // rather than against the end of the first button's text
+            val gapAfter = if (visible && index < item.buttons.size - 1) innerPadding else 0
+            view.setPaddingRelative(innerPadding, 0, gapAfter, 0)
+        }
+        item.message.setPaddingRelative(0, 0, if (item.realClickable) innerPadding else 0, 0)
     }
 
     private fun applyLayout(item: Item) {
@@ -370,7 +373,7 @@ class ClickableToast private constructor(
         if (!items.remove(item)) {
             return
         }
-        item.onClickListener = null
+        item.buttons = emptyList()
         item.id = null
         item.clickable = false
         item.realClickable = false
@@ -532,15 +535,23 @@ class ClickableToast private constructor(
         return view
     }
 
-    /** One toast: its views, its window, and the state that decides whether its button works. */
+    /** One toast: its views, its window, and the state that decides whether its buttons work. */
     private inner class Item {
         val container: View
         val message: TextView
-        val button: TextView
+
+        /**
+         * The button slots, in the order they stand in: as many views as a toast may ever carry,
+         * with the ones past [buttons] hidden. Built once with the toast, since a rebind only
+         * changes their text.
+         */
+        val buttonViews: List<TextView>
         val partialClickDrawable: PartialClickDrawable
 
         var windowContainer: FrameLayout? = null
-        var onClickListener: Runnable? = null
+
+        /** The actions currently offered, one per leading slot of [buttonViews]. */
+        var buttons: List<Button> = emptyList()
         var id: String? = null
         var clickable = false
         var realClickable = false
@@ -551,9 +562,32 @@ class ClickableToast private constructor(
 
         val cancelRunnable = Runnable { cancelItem(this) }
 
+        /**
+         * The slot the point is over, or -1: a press outside every button is not a press. The
+         * outermost button owns the padding beside it out to the edge of the toast, which is the
+         * same area a press lights up -- stopping at the view's own edge left a dead strip down the
+         * side of the toast that looked pressable and was not.
+         */
+        fun buttonIndexAt(x: Float): Int {
+            for (index in buttons.indices.reversed()) {
+                val view = buttonViews[index]
+                if (view.getVisibility() != View.VISIBLE) {
+                    continue
+                }
+                val outermost = index == buttons.size - 1
+                val rtl = view.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
+                val left = if (outermost && rtl) 0 else view.getLeft()
+                val right = if (outermost && !rtl) container.getWidth() else view.getRight()
+                if (x >= left && x <= right) {
+                    return index
+                }
+            }
+            return -1
+        }
+
         init {
             val messageView = inflateToastTextView()
-            val buttonView = inflateToastTextView()
+            val buttonViews = List(MAX_BUTTONS) { inflateToastTextView() }
             val linearLayout = LinearLayout(activity)
             linearLayout.setOrientation(LinearLayout.HORIZONTAL)
             linearLayout.setDividerDrawable(ToastDividerDrawable(dividerColor, dividerWidth))
@@ -565,14 +599,17 @@ class ClickableToast private constructor(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             )
-            linearLayout.addView(
-                buttonView,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
+            for (buttonView in buttonViews) {
+                linearLayout.addView(
+                    buttonView,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
+                (buttonView.getLayoutParams() as LinearLayout.LayoutParams).gravity =
+                    Gravity.CENTER_VERTICAL
+                buttonView.setSingleLine(true)
+            }
             (messageView.getLayoutParams() as LinearLayout.LayoutParams).weight = 1f
-            (buttonView.getLayoutParams() as LinearLayout.LayoutParams).gravity =
-                Gravity.CENTER_VERTICAL
             linearLayout.setPadding(
                 horizontalContentPadding,
                 contentPadding.top,
@@ -597,12 +634,10 @@ class ClickableToast private constructor(
             linearLayout.setBackground(partialClickDrawable)
             linearLayout.setOnTouchListener(partialClickDrawable)
             messageView.setPadding(0, 0, 0, 0)
-            buttonView.setPaddingRelative(innerPadding, 0, 0, 0)
             messageView.setMaxLines(3)
-            buttonView.setSingleLine(true)
             container = linearLayout
             message = messageView
-            button = buttonView
+            this.buttonViews = buttonViews
         }
     }
 
@@ -613,7 +648,9 @@ class ClickableToast private constructor(
         OnTouchListener,
         Drawable.Callback {
         private val buttonBounds = Rect()
-        internal var clicked = false
+
+        /** The slot being pressed, or -1. */
+        internal var clickedIndex = -1
 
         init {
             drawable.setCallback(this)
@@ -630,10 +667,10 @@ class ClickableToast private constructor(
             if (!item.realClickable) {
                 return false
             }
-            val button = item.button
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                if (event.getX() >= button.getLeft()) {
-                    clicked = true
+                val index = item.buttonIndexAt(event.getX())
+                if (index >= 0) {
+                    clickedIndex = index
                     val view = this.view
                     if (view != null) {
                         view.invalidate()
@@ -641,26 +678,26 @@ class ClickableToast private constructor(
                 }
             }
             if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-                if (clicked) {
-                    clicked = false
+                if (clickedIndex >= 0) {
+                    val index = clickedIndex
+                    clickedIndex = -1
                     val view = this.view
                     if (view != null) {
                         view.invalidate()
                         if (event.getAction() == MotionEvent.ACTION_UP) {
-                            val x = event.getX()
                             val y = event.getY()
-                            if (x >= button.getLeft() && x <= view.getWidth() && y >= 0 && y <= view.getHeight()) {
-                                val onClickListener = item.onClickListener
+                            if (item.buttonIndexAt(event.getX()) == index && y >= 0 && y <= view.getHeight()) {
+                                val callback = item.buttons.getOrNull(index)?.callback
                                 ConcurrentUtils.HANDLER.removeCallbacks(item.cancelRunnable)
                                 ConcurrentUtils.HANDLER.post(item.cancelRunnable)
-                                onClickListener?.run()
+                                callback?.run()
                             }
                         }
                     }
                     return true
                 }
             }
-            return clicked
+            return clickedIndex >= 0
         }
 
         override fun setBounds(
@@ -677,26 +714,20 @@ class ClickableToast private constructor(
 
         public override fun draw(canvas: Canvas) {
             drawable.draw(canvas)
-            if (clicked) {
-                val button = item.button
+            val index = clickedIndex
+            if (index >= 0) {
+                val button = item.buttonViews[index]
                 val toastBounds = getBounds()
-                if (button.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL) {
-                    val shift = button.getRight()
-                    buttonBounds.set(
-                        toastBounds.left + shift,
-                        toastBounds.top,
-                        toastBounds.left + shift,
-                        toastBounds.bottom,
-                    )
-                } else {
-                    val shift = button.getLeft()
-                    buttonBounds.set(
-                        toastBounds.left + shift,
-                        toastBounds.top,
-                        toastBounds.right,
-                        toastBounds.bottom,
-                    )
-                }
+                // The outermost button is painted out to the edge of the toast, so a press does not
+                // leave the padding beside it -- and its rounded corner -- unlit
+                val outermost = index == item.buttons.size - 1
+                val rtl = button.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
+                buttonBounds.set(
+                    if (outermost && rtl) toastBounds.left else toastBounds.left + button.getLeft(),
+                    toastBounds.top,
+                    if (outermost && !rtl) toastBounds.right else toastBounds.left + button.getRight(),
+                    toastBounds.bottom,
+                )
                 canvas.drawRect(buttonBounds, clickedButtonBackgroundPaint)
             }
         }
@@ -745,6 +776,9 @@ class ClickableToast private constructor(
 
         private const val TIMEOUT = 3500
         private const val MAX_STACK_SIZE = 3
+
+        /** How many actions a toast can carry beside its message. */
+        private const val MAX_BUTTONS = 2
 
         init {
             val resources = Resources.getSystem()
@@ -806,16 +840,30 @@ class ClickableToast private constructor(
             message: CharSequence?,
             updateId: String? = null,
             button: Button? = null,
+        ): String? = show(message, updateId, if (button != null) listOf(button) else emptyList())
+
+        /**
+         * A toast carrying more than one action: the buttons stand in the order given, after the
+         * message. At most [MAX_BUTTONS] of them -- a toast is one line of text plus what fits
+         * beside it.
+         */
+        @JvmStatic
+        fun show(
+            message: CharSequence?,
+            updateId: String?,
+            buttons: List<Button>,
         ): String? {
             if (isMain()) {
                 val toast: ClickableToast? = currentToast
                 if (toast != null) {
-                    return toast.showInternal(message, updateId, button)
+                    return toast.showInternal(message, updateId, buttons)
                 } else {
                     return null
                 }
             } else {
-                return mainGet<String?>(Callable { show(message, updateId, null) })
+                // A button's action belongs to the screen that offered it, which a background
+                // thread cannot vouch for, so an off-thread toast is message only
+                return mainGet<String?>(Callable { show(message, updateId, emptyList()) })
             }
         }
 

@@ -286,7 +286,7 @@ class ApiException : Exception {
                 }
 
                 SEND_ERROR_BANNED -> {
-                    resId = R.string.you_are_banned
+                    resId = R.string.your_ip_banned
                 }
 
                 SEND_ERROR_CLOSED -> {

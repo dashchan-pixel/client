@@ -657,11 +657,11 @@
 	<string name="wifi_only">Только через Wi-Fi</string>
 	<string name="with_name_name__format">С именем %s</string>
 	<string name="yesterday">Вчера</string>
-	<string name="you_are_banned">Вы заблокированы</string>
 	<string name="you_cant_delete_too_new_posts">Нельзя удалять новые сообщения</string>
 	<string name="you_cant_delete_too_old_posts">Нельзя удалять старые сообщения</string>
 	<string name="you_cant_send_too_often">Нельзя отправлять так часто</string>
 	<string name="you_need_to_attach_a_file">Необходимо прикрепить файл</string>
+	<string name="your_ip_banned">Ваш IP заблокирован</string>
 	<string name="swipe_to_hide_thread">Скрывать треды свайпом</string>
 	<string name="vote_like">Двачую</string>
 	<string name="vote_dislike">RRRAGE!!!</string>
@@ -717,6 +717,5 @@
 	<string name="delete_all_error_reports__sentence">Удалить все отчёты об ошибках?</string>
 	<string name="application_crashed">В приложении произошёл сбой</string>
 	<string name="visible_ip">Видимый IP</string>
-	<string name="visible_ip_banned">Видимый IP забанен</string>
 	<string name="visible_ip_changed">Видимый IP сменён</string>
 </resources>

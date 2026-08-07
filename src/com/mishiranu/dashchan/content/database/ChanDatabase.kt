@@ -1265,22 +1265,23 @@ class ChanDatabase private constructor() {
     }
 
     /**
-     * Whether the board has an active ban on record against [address] -- asked with the address the
-     * forum currently sees, before a post is attempted from it. Bans are per-board (the board is
+     * The active ban the board has on record against [address], or null -- asked with the address
+     * the forum currently sees, before a post is attempted from it. Bans are per-board (the board is
      * part of a ban's identity, see [addBan]), so a ban on another board of the same forum does not
      * count here. Active follows [getBanCounts]. An empty address never matches: a ban whose address
-     * was never resolved is no evidence about one.
+     * was never resolved is no evidence about one. The most recently seen one is returned, since
+     * that is the one worth showing when several stand.
      */
-    fun hasActiveBanForAddress(
+    fun getActiveBanForAddress(
         chanName: String,
         boardName: String?,
         address: String,
-    ): Boolean {
+    ): BanItem? {
         if (isEmpty(address)) {
-            return false
+            return null
         }
         val time = System.currentTimeMillis()
-        val projection = arrayOf<String?>(Bans.Columns.Companion.EXPIRE_DATE)
+        val projection = arrayOf<String?>("rowid", "*")
         val filter =
             Expression
                 .filter()
@@ -1288,24 +1289,26 @@ class ChanDatabase private constructor() {
                 .equals(Bans.Columns.Companion.BOARD_NAME, emptyIfNull(boardName))
                 .equals(Bans.Columns.Companion.ADDRESS, address)
                 .build()
-        database
-            .query(
+        BanCursor(
+            database.query(
                 Bans.Companion.TABLE_NAME,
                 projection,
                 filter.value,
                 filter.args,
                 null,
                 null,
-                null,
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val expireDate = cursor.getLong(0)
-                    if (expireDate <= 0 || expireDate > time) {
-                        return true
-                    }
+                Bans.Columns.Companion.UPDATED + " DESC",
+            ),
+        ).use { cursor ->
+            val banItem = BanItem()
+            while (cursor.moveToNext()) {
+                banItem.update(cursor)
+                if (banItem.expireDate <= 0 || banItem.expireDate > time) {
+                    return banItem
                 }
             }
-        return false
+        }
+        return null
     }
 
     fun deleteBan(rowId: Long) {

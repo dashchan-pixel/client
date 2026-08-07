@@ -584,11 +584,11 @@
     <string name="wifi_only">Solo Wi-Fi</string>
     <string name="with_name_name__format">Con nome %s</string>
     <string name="yesterday">Ieri</string>
-    <string name="you_are_banned">Sei bannato</string>
     <string name="you_cant_delete_too_new_posts">Non puoi eliminare post troppo nuovi</string>
     <string name="you_cant_delete_too_old_posts">Non puoi eliminare post troppo vecchi</string>
     <string name="you_cant_send_too_often">Non puoi inviare così spesso</string>
     <string name="you_need_to_attach_a_file">Devi allegare un file</string>
+    <string name="your_ip_banned">Il tuo IP è bannato</string>
 
     <string name="command">Comando</string>
     <string name="command_failed__format">Comando non riuscito: %s</string>
@@ -622,6 +622,5 @@
     <string name="delete_all_error_reports__sentence">Eliminare tutti i rapporti di errore?</string>
     <string name="application_crashed">L\'applicazione si è bloccata</string>
     <string name="visible_ip">IP visibile</string>
-    <string name="visible_ip_banned">L\'IP visibile è bannato</string>
     <string name="visible_ip_changed">IP visibile cambiato</string>
 </resources>

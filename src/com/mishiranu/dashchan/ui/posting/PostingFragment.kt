@@ -44,6 +44,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.os.BundleCompat
 import androidx.core.widget.TextViewCompat
 import androidx.lifecycle.ViewModelProvider
+import chan.content.ApiException
 import chan.content.Chan
 import chan.content.Chan.Companion.get
 import chan.content.ChanConfiguration
@@ -1153,28 +1154,9 @@ class PostingFragment :
 
         val banWarningViewModel =
             ViewModelProvider(this).get(BanWarningViewModel::class.java)
-        banWarningViewModel.observe(getViewLifecycleOwner()) { banned ->
-            if (banned) {
-                // The way out of a ban on this IP is another IP. Where the user has written
-                // the command for it the button runs that right here; without one the fix is a proxy
-                // configured by hand, on the forum's settings screen, which the button opens instead.
-                // Either way the message has already said what is wrong, so the button stays a bare verb.
-                val hasCommand = VisibleIpCommand.forChan(get(chanName)) != null
-                show(
-                    getString(R.string.visible_ip_banned),
-                    null,
-                    ClickableToast.Button(
-                        R.string.change,
-                        false,
-                        whileOnScreen {
-                            if (hasCommand) {
-                                changeVisibleIp()
-                            } else {
-                                openForumProxySettings()
-                            }
-                        },
-                    ),
-                )
+        banWarningViewModel.observe(getViewLifecycleOwner()) { banItem ->
+            if (banItem != null) {
+                showBanToast(banItem.toBanExtra())
             }
         }
     }
@@ -1898,7 +1880,11 @@ class PostingFragment :
 
     fun handleFailResult(failResult: FailResult) {
         if (isResumed()) {
-            if (failResult.extra != null) {
+            val extra = failResult.extra
+            if (extra is ApiException.BanExtra) {
+                // A refused post and the warning a form opens with are the same ban: one toast for both
+                showBanToast(extra)
+            } else if (extra != null) {
                 show(
                     failResult.errorItem.toString(),
                     null,
@@ -1906,7 +1892,7 @@ class PostingFragment :
                         R.string.details,
                         false,
                         whileOnScreen {
-                            SendPostFailDetailsDialog(failResult.extra)
+                            SendPostFailDetailsDialog(extra)
                                 .show(getChildFragmentManager(), null)
                         },
                     ),
@@ -1960,6 +1946,75 @@ class PostingFragment :
     }
 
     class CaptchaViewModel : TaskViewModel.Proxy<ReadCaptchaTask, ReadCaptchaTask.Callback>()
+
+    /**
+     * A ban read back out of the log, in the shape the forum originally handed it over in, so the
+     * same details dialog serves a remembered ban and a fresh refusal. Null when the row carries
+     * nothing the dialog would print: a ban the forum gave no word about has no details to show.
+     */
+    private fun ChanDatabase.BanItem.toBanExtra(): ApiException.BanExtra? {
+        if (banId.isNullOrEmpty() && message.isNullOrEmpty() && startDate <= 0L && expireDate <= 0L) {
+            return null
+        }
+        return ApiException
+            .BanExtra()
+            .setId(banId)
+            .setMessage(message)
+            .setStartDate(startDate)
+            .setExpireDate(expireDate)
+    }
+
+    /**
+     * The one toast a ban puts up, wherever the ban was noticed: the warning a form opens with and
+     * the refusal a send comes back with are about the same ban and say the same thing, so they are
+     * the same toast, down to the message. The ban is against the address the forum sees, so
+     * changing that comes first; what the forum said about the ban itself is behind Details.
+     *
+     * The way out of a ban on this IP is another IP. Where the user has written the command for it
+     * the button runs that right here; without one the fix is a proxy configured by hand, on the
+     * forum's settings screen, which the button opens instead. Either way the message has already
+     * said what is wrong, so the button stays a bare verb. Which of the two it does is decided when
+     * it is pressed rather than when it is offered, since a command can be deleted or unflagged
+     * while the toast stands.
+     *
+     * Both words can land on one screen -- a send refused for a ban records that ban against this
+     * IP, which is exactly what the check then finds -- so the second one updates the toast the
+     * first put up instead of stacking a copy of it on top. The details of whichever word brought
+     * some are kept through the update: a refusal that follows a bare warning fills its Details in,
+     * and a warning that follows a refusal does not empty them.
+     */
+    private fun showBanToast(extra: ApiException.Extra?) {
+        val updateId = banToastId?.takeIf { ClickableToast.isShowing(it) }
+        val banExtra = extra ?: if (updateId != null) banToastExtra else null
+        val buttons = ArrayList<ClickableToast.Button>()
+        buttons.add(
+            ClickableToast.Button(
+                R.string.change,
+                false,
+                whileOnScreen {
+                    if (VisibleIpCommand.forChan(get(chanName)) != null) {
+                        changeVisibleIp()
+                    } else {
+                        openForumProxySettings()
+                    }
+                },
+            ),
+        )
+        if (banExtra != null) {
+            buttons.add(
+                ClickableToast.Button(
+                    R.string.details,
+                    false,
+                    whileOnScreen {
+                        SendPostFailDetailsDialog(banExtra)
+                            .show(getChildFragmentManager(), null)
+                    },
+                ),
+            )
+        }
+        banToastExtra = banExtra
+        banToastId = show(getString(R.string.your_ip_banned), updateId, buttons)
+    }
 
     /**
      * Resolve the IP the forum currently sees and warn, once per posting screen, when the ban
@@ -2049,7 +2104,7 @@ class PostingFragment :
         }
     }
 
-    class BanWarningViewModel : TaskViewModel<BanWarningTask, Boolean>() {
+    class BanWarningViewModel : TaskViewModel<BanWarningTask, ChanDatabase.BanItem?>() {
         var checked = false
     }
 
@@ -2057,14 +2112,14 @@ class PostingFragment :
         private val viewModel: BanWarningViewModel,
         private val chan: Chan,
         private val boardName: String?,
-    ) : HttpHolderTask<Unit, Boolean>(chan) {
-        override fun run(holder: HttpHolder): Boolean {
-            val chanName = chan.name ?: return false
-            val ip = VisibleIp.resolve(chan, holder)?.ip ?: return false
-            return ChanDatabase.getInstance().hasActiveBanForAddress(chanName, boardName, ip)
+    ) : HttpHolderTask<Unit, ChanDatabase.BanItem?>(chan) {
+        override fun run(holder: HttpHolder): ChanDatabase.BanItem? {
+            val chanName = chan.name ?: return null
+            val ip = VisibleIp.resolve(chan, holder)?.ip ?: return null
+            return ChanDatabase.getInstance().getActiveBanForAddress(chanName, boardName, ip)
         }
 
-        override fun onComplete(result: Boolean) {
+        override fun onComplete(result: ChanDatabase.BanItem?) {
             viewModel.handleResult(result)
         }
     }
@@ -3181,6 +3236,17 @@ class PostingFragment :
 
         /** Keeps the toolbar from hiding itself out from under a sheet's top edge. */
         private const val LOCKER_SHEET = "postingSheet"
+
+        /**
+         * The ban toast standing on screen, so a second word about the same ban updates it rather
+         * than stacking a copy on top. Kept beside the fragment rather than in it because the toast
+         * is: a form reopened by a refusal is a new fragment, and the toast the warning put up is
+         * still the one on screen.
+         */
+        private var banToastId: String? = null
+
+        /** What the standing ban toast offers behind Details, kept so an update doesn't drop it. */
+        private var banToastExtra: ApiException.Extra? = null
 
         /**
          * Fills the attachment down to the top of the controls strip. An attachment with no preview is

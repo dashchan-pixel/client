@@ -675,11 +675,11 @@
 	<string name="wifi_only">Wi-Fi only</string>
 	<string name="with_name_name__format">With name %s</string>
 	<string name="yesterday">Yesterday</string>
-	<string name="you_are_banned">You are banned</string>
 	<string name="you_cant_delete_too_new_posts">You can\'t delete too new posts</string>
 	<string name="you_cant_delete_too_old_posts">You can\'t delete too old posts</string>
 	<string name="you_cant_send_too_often">You can\'t send too often</string>
 	<string name="you_need_to_attach_a_file">You need to attach a file</string>
+	<string name="your_ip_banned">Your IP is banned</string>
 	<string name="swipe_to_hide_thread">Swipe to hide thread</string>
 	<string name="vote_like">Like</string>
 	<string name="vote_dislike">RRRAGE!!!</string>
@@ -704,6 +704,5 @@
 	<string name="standard_action_when_loading_media">Standard action when loading media</string>
 	<string name="manually">Manually</string>
 	<string name="visible_ip">Visible IP</string>
-	<string name="visible_ip_banned">Visible IP is banned</string>
 	<string name="visible_ip_changed">Visible IP changed</string>
 </resources>
