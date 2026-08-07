@@ -33,6 +33,21 @@
 	<item name="captcha_lifetime_timer_text_padding" type="dimen">2dp</item>
 
 	<!--
+		The thin indeterminate line that stands in for the captcha image while it loads is drawn to
+		match the underline of the text fields above it in the posting form: inset by the 4dp
+		edit_text_inset_horizontal_material that keeps that underline short of the field's edges,
+		and as thick as the activated part of the framework's textfield nine-patch, 2dp.
+
+		That thickness is not the view's height. vector_drawable_progress_indeterminate_horizontal
+		is 10dp tall and paints its bar across the middle 2 of its 10 viewport units, so the view
+		has to be five times the line we want or the whole vector is scaled down with it — clamped
+		to 2dp it drew a 0.4dp hairline. Hence 10dp here, applied as min/max height as well,
+		because the drawable would otherwise keep the platform's much taller minimum.
+	-->
+	<item name="captcha_loading_line_height" type="dimen">10dp</item>
+	<item name="captcha_loading_line_inset_horizontal" type="dimen">4dp</item>
+
+	<!--
 		The size of a post's comment text, before Preferences.textScale is applied to it. Named
 		rather than inlined because DecoratorUnit hands it to ChanPostDecorator.PostTheme, and a
 		decorator's own text has to come out the size of the comment it sits under.
