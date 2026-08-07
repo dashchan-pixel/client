@@ -1823,15 +1823,35 @@ class ViewUnit
                     if (expandVisible && !openThreadVisible) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
                 bottomBar.setVisibility(if (needBar) View.VISIBLE else View.GONE)
                 val hasText = commentTextView.getVisibility() == View.VISIBLE
+                val hasVoting = voting.getVisibility() == View.VISIBLE
+                // A post is inset 16dp from its visible edge on the other three sides, so this
+                // filler tops up whatever the last row's own bottom padding leaves. What ends the
+                // post decides how much that is: a row of text ends at its line box, which carries
+                // the font's descent below the glyphs, and 12dp of padding under it already looks
+                // like 16dp -- but a thumbnail ends at its pixels, so a post with an attachment and
+                // no comment needs the full 16dp or its image sits closer to the bottom edge than
+                // to the sides.
+                val endsWithImage =
+                    !hasText &&
+                        !hasVoting &&
+                        (
+                            attachments.getVisibility() == View.VISIBLE ||
+                                thumbnail.getVisibility() == View.VISIBLE
+                        )
                 val density = obtainDensity(textBarPadding)
                 textBarPadding.getLayoutParams().height =
                     (
                         (
                             if (needBar) {
                                 0f
+                            } else if (endsWithImage) {
+                                // 4dp from the header row / attachments block below the thumbnail.
+                                12f
                             } else if (hasText) {
+                                // 2dp from the comment.
                                 10f
                             } else {
+                                // 2dp from the head plus 4dp from the header row.
                                 6f
                             }
                         ) * density
