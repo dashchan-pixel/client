@@ -29,6 +29,16 @@ import kotlin.math.max
  */
 object CommandsPopup {
     /**
+     * The popup hugs its widest command name between these two. The floor is the Material menu
+     * minimum — the same one [DropdownPopup] holds a radio list to — rather than a width chosen to
+     * make the popup read as a list on its own: a bar of short command names stood the popup half a
+     * screen wide with nothing in most of it. The ceiling keeps a command someone gave a sentence for
+     * a name from pushing the popup across the screen.
+     */
+    private const val MIN_WIDTH_DP = 112f
+    private const val MAX_WIDTH_DP = 280f
+
+    /**
      * Shows the popup for [commands] anchored to [anchor]. [onRun] is invoked when a command the user
      * may run is tapped; [onEdit] when any command is long-tapped. No-op if [commands] is empty.
      *
@@ -124,6 +134,6 @@ object CommandsPopup {
             itemView.measure(measureSpec, measureSpec)
             contentWidth = max(contentWidth, itemView.measuredWidth)
         }
-        return contentWidth.coerceIn((200f * density).toInt(), (280f * density).toInt())
+        return contentWidth.coerceIn((MIN_WIDTH_DP * density).toInt(), (MAX_WIDTH_DP * density).toInt())
     }
 }
