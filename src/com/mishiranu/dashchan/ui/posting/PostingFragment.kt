@@ -989,6 +989,36 @@ class PostingFragment :
                             false,
                         )
                         captchaRestoreSuccess = true
+                    } else if ((
+                            captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.NEED_LOAD ||
+                                captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD ||
+                                captchaDraft.captchaState == ReadCaptchaTask.CaptchaState.MAY_LOAD_SOLVING
+                        ) &&
+                        captchaFromDraft != null &&
+                        captchaFromDraft.alive()
+                    ) {
+                        // A load button is a state the forum answered with, as much as a SKIP is, and
+                        // reading it again produces the very same button at the cost of the round trip
+                        // that asks -- two of them on 2ch, whose emoji captcha is what the app opens
+                        // with there: the captcha settings, then an id that is thrown away unread
+                        // because a button may be shown instead. Nothing of the answer is spent by
+                        // restoring it, since pressing the button reads a captcha of its own anyway.
+                        //
+                        // Only while the draft's captcha is alive, which is the app's only measure of
+                        // how long "a captcha is needed here" stays true: a captcha that declares a
+                        // lifetime is trusted for it (90 seconds on 2ch), one that declares none for
+                        // DraftsStorage's reuse window, which getCaptchaDraft has already applied.
+                        showCaptcha(
+                            captchaDraft.captchaState,
+                            captchaDraft.captchaData,
+                            null,
+                            null,
+                            captchaDraft.loadedValidity,
+                            captchaFromDraft,
+                            false,
+                            false,
+                        )
+                        captchaRestoreSuccess = true
                     }
                 }
             }
@@ -1091,6 +1121,9 @@ class PostingFragment :
         if (!captchaRestoreSuccess) {
             refreshCaptcha(false, true, false)
         }
+        // Opening the form is what the warning is about, not reading a captcha: a form that restored
+        // one reads none, and the IP it would post from is worth the same word either way.
+        checkVisibleIpBan(chan)
 
         if (!sheet) {
             // A sheet says what it is by covering the thread it replies to, and the toolbar behind it
@@ -1907,7 +1940,6 @@ class PostingFragment :
         val viewModel = ViewModelProvider(this).get<CaptchaViewModel>(CaptchaViewModel::class.java)
         if (restart || !viewModel.hasTaskOrValue()) {
             val chan = get(this.chanName)
-            checkVisibleIpBan(chan)
             val captchaPass = if (forceCaptcha) null else getCaptchaPass(chan)
             val task =
                 ReadCaptchaTask(
@@ -1938,7 +1970,7 @@ class PostingFragment :
     private fun checkVisibleIpBan(chan: Chan) {
         val viewModel = ViewModelProvider(this).get(BanWarningViewModel::class.java)
         // Resolving the IP is a network round-trip: do it once per screen, not on every
-        // captcha reload. The flag lives on the view model, so it also survives a rotation.
+        // open of the form. The flag lives on the view model, so it also survives a rotation.
         if (viewModel.checked) {
             return
         }
