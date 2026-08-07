@@ -28,6 +28,7 @@ import com.mishiranu.dashchan.ui.navigator.page.ListPage.InitRequest
 import com.mishiranu.dashchan.ui.navigator.page.ListPage.InitSearch
 import com.mishiranu.dashchan.ui.navigator.page.ListPage.Retainable
 import com.mishiranu.dashchan.ui.preference.CommandsFragment
+import com.mishiranu.dashchan.util.DelayedProgress
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.util.ResourceUtils.getActionBarIcon
 import com.mishiranu.dashchan.widget.ClickableToast
@@ -40,7 +41,6 @@ import com.mishiranu.dashchan.widget.FloatingToolbar
 import com.mishiranu.dashchan.widget.ListPosition
 import com.mishiranu.dashchan.widget.MenuExpandListener
 import com.mishiranu.dashchan.widget.PaddedRecyclerView
-import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.PullableWrapper
 import com.mishiranu.dashchan.widget.PullableWrapper.PullStateListener
 import com.mishiranu.dashchan.widget.ViewFactory.ErrorHolder
@@ -114,7 +114,17 @@ class PageFragment :
     private var floatingToolbar: FloatingToolbar? = null
     private var primaryMenu: Menu? = null
     private var appCommandRun: CommandRunner.Run? = null
-    private var appCommandDialog: ProgressDialog? = null
+
+    /**
+     * Spins the ⌘ in the floating toolbar while a command it started is running, but only once the run
+     * has been going long enough to be worth saying so (see [DelayedProgress]) — most commands finish
+     * before the user could see anything, and a spinner flashing on every one of them is noise.
+     */
+    private val appCommandProgress =
+        DelayedProgress(
+            { floatingToolbar?.setBusy(FloatingToolbar.Slot.COMMANDS, true) },
+            { floatingToolbar?.setBusy(FloatingToolbar.Slot.COMMANDS, false) },
+        )
 
     private lateinit var actionBarLockerPull: String
     private lateinit var actionBarLockerSearch: String
@@ -246,8 +256,7 @@ class PageFragment :
         fragmentHandler.setActionBarLocked(actionBarLockerPull, false)
         fragmentHandler.setActionBarLocked(actionBarLockerSearch, false)
 
-        appCommandDialog?.dismiss()
-        appCommandDialog = null
+        appCommandProgress.cancel()
         appCommandRun?.cancel()
         appCommandRun = null
 
@@ -647,19 +656,10 @@ class PageFragment :
         if (appCommandRun?.isFinished == false) {
             return
         }
-        val dialog = ProgressDialog(requireContext(), null)
-        appCommandDialog = dialog
-        dialog.setMessage(getString(R.string.loading__ellipsis))
-        dialog.setOnCancelListener {
-            appCommandDialog = null
-            appCommandRun?.cancel()
-            appCommandRun = null
-        }
-        dialog.show()
+        appCommandProgress.start()
         val deliver: (CommandRunner.AppResult) -> Unit = { result ->
             appCommandRun = null
-            appCommandDialog?.dismiss()
-            appCommandDialog = null
+            appCommandProgress.finish()
             when (result) {
                 is CommandRunner.AppResult.Success -> {
                     ClickableToast.show(result.message ?: getString(R.string.completed))

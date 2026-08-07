@@ -17,6 +17,7 @@ import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.mishiranu.dashchan.content.Preferences
@@ -91,6 +92,9 @@ class FloatingToolbar(
     private val bar = Bar(toolbarContext)
     private var actions: List<Action> = emptyList()
 
+    /** The slots standing as spinners rather than as their icon; see [setBusy]. */
+    private val busySlots = HashSet<Slot>()
+
     /**
      * Told the room the bar takes at the bottom of the page whenever that changes, so the list behind
      * can keep its last item out from under it. Called with 0 for a bar that is off screen.
@@ -159,6 +163,24 @@ class FloatingToolbar(
         current.size == next.size &&
             current.indices.all { current[it].slot == next[it].slot && current[it].title == next[it].title }
 
+    /**
+     * Turns a slot into a spinner in its own place in the bar, and back into its button. For work a
+     * button started that the user is waiting on: the ⌘ spins while the command it ran is running,
+     * which is where the modal progress dialog such a run used to put itself.
+     *
+     * A busy slot the bar does not currently hold is remembered rather than dropped, so a bar rebuilt
+     * while the work is still going comes back with the spinner still in it.
+     */
+    fun setBusy(
+        slot: Slot,
+        busy: Boolean,
+    ) {
+        val changed = if (busy) busySlots.add(slot) else busySlots.remove(slot)
+        if (changed && actions.any { it.slot == slot }) {
+            rebuild()
+        }
+    }
+
     private fun rebuild() {
         bar.removeAllViews()
         val actions = this.actions
@@ -172,7 +194,8 @@ class FloatingToolbar(
         val size = (BUTTON_SIZE_DP * density).toInt()
         bar.orientation = if (Preferences.isFloatingToolbarVertical) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
         for (action in actions.sortedBy { order.indexOf(it.slot) }) {
-            bar.addView(createButton(action), LinearLayout.LayoutParams(size, size))
+            val view = if (action.slot in busySlots) createProgress(action) else createButton(action)
+            bar.addView(view, LinearLayout.LayoutParams(size, size))
         }
         val padding = (BAR_PADDING_DP * density).toInt()
         bar.setPadding(padding, padding, padding, padding)
@@ -248,6 +271,25 @@ class FloatingToolbar(
         button.setOnClickListener { action.onClick(bar) }
         button.setOnLongClickListener { view -> bar.beginDrag(view) }
         return button
+    }
+
+    /**
+     * The spinner that stands in for a busy slot's button: the same box in the same place in the bar,
+     * painted the toolbar's own colour like every icon here, so it reads as that button being busy
+     * rather than as the bar having changed. Padded down to an icon's size, because a ProgressBar
+     * scales its drawable into whatever the padding leaves and its own is smaller than a button.
+     *
+     * It carries no click and no long press: there is nothing to run while a run is going, and a slot
+     * that is not a button for the moment is not one to drag either.
+     */
+    private fun createProgress(action: Action): View {
+        val progress = ProgressBar(toolbarContext, null, android.R.attr.progressBarStyleSmall)
+        progress.indeterminateTintList =
+            ColorStateList.valueOf(ResourceUtils.getColor(toolbarContext, android.R.attr.textColorPrimary))
+        val padding = ((BUTTON_SIZE_DP - PROGRESS_SIZE_DP) / 2f * density).toInt()
+        progress.setPadding(padding, padding, padding, padding)
+        progress.contentDescription = action.title
+        return progress
     }
 
     /**
@@ -478,6 +520,9 @@ class FloatingToolbar(
 
     companion object {
         private const val BUTTON_SIZE_DP = 44f
+
+        /** The box the busy spinner is drawn into, an action bar icon's own size. */
+        private const val PROGRESS_SIZE_DP = 24f
         private const val BAR_PADDING_DP = 2f
         private const val MARGIN_DP = 16f
         private const val ELEVATION_DP = 6f
