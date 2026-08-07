@@ -451,6 +451,19 @@ class PageFragment :
         listPage!!.handleScrollToPost(postNumber)
     }
 
+    /**
+     * Takes the page's post cards off screen while a posting sheet floats over it, and puts them back
+     * when it goes — see [ListPage.putDialogsAway]. A page whose view is not there yet has no cards to
+     * put away, so both are silently nothing.
+     */
+    fun putPostDialogsAway() {
+        listPage?.putDialogsAway()
+    }
+
+    fun bringPostDialogsBack() {
+        listPage?.bringDialogsBack()
+    }
+
     override val isValidOptionsMenuState: Boolean
         get() = listPage?.isRunning == true
 

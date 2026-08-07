@@ -99,6 +99,9 @@ class ThreadsPage :
 
     private fun getAdapter(): ThreadsAdapter = getRecyclerView().adapter as ThreadsAdapter
 
+    override val dialogsConfigurationSet: UiManager.ConfigurationSet?
+        get() = (getRecyclerView().adapter as? ThreadsAdapter)?.configurationSet
+
     override fun onCreate() {
         val context = context
         val recyclerView = getRecyclerView()

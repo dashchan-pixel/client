@@ -417,6 +417,9 @@ class PostsPage :
     private val adapter: PostsAdapter
         get() = getRecyclerView().getAdapter() as PostsAdapter
 
+    override val dialogsConfigurationSet: UiManager.ConfigurationSet?
+        get() = (getRecyclerView().getAdapter() as? PostsAdapter)?.configurationSet
+
     override fun onCreate() {
         val context: Context = context
         val recyclerView = getRecyclerView()

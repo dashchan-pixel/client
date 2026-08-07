@@ -77,6 +77,9 @@ class SearchPage :
 
     private fun getAdapter(): SearchAdapter = getRecyclerView().adapter as SearchAdapter
 
+    override val dialogsConfigurationSet: UiManager.ConfigurationSet?
+        get() = (getRecyclerView().adapter as? SearchAdapter)?.configurationSet
+
     override fun onCreate() {
         val recyclerView = getRecyclerView()
         recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)

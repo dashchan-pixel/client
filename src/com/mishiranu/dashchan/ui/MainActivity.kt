@@ -903,6 +903,12 @@ class MainActivity :
      */
     private fun navigatePostingSheet(fragment: PostingFragment) {
         closeOverlaysForNavigation()
+        // The post cards a page opens are a window of their own and therefore above anything the
+        // activity draws, the sheet included: a reply started from a card would come up beneath the
+        // stack of cards it was started from. They stand down while the form is up and come back with
+        // it -- which is what a form that replaces the page has always done, the cards going with the
+        // page it took the screen from.
+        (screenFragment as? PageFragment)?.putPostDialogsAway()
         val sheetFragment = this.sheetFragment
         if (sheetFragment != null) {
             // One form at a time: the draft of the one being replaced is stored as its view goes away,
@@ -919,8 +925,14 @@ class MainActivity :
 
     /** Takes the sheet off the page it was floating over, which is all there is to leaving the form. */
     private fun removePostingSheet(fragment: PostingFragment) {
+        // Read before the sheet goes: with it still up, the page is screenFragment rather than the
+        // topmost one.
+        val pageFragment = screenFragment as? PageFragment
         fragment.onTerminate()
         getSupportFragmentManager().beginTransaction().remove(fragment).commit()
+        // The cards the form covered are the page's again. On the way out through navigateFragment the
+        // page is about to be stacked, and they are collected with it, so they come back with the page.
+        pageFragment?.bringPostDialogsBack()
         updateBackHandling()
     }
 

@@ -22,6 +22,7 @@ import com.mishiranu.dashchan.content.model.ErrorItem
 import com.mishiranu.dashchan.content.model.PostNumber
 import com.mishiranu.dashchan.ui.InstanceDialog
 import com.mishiranu.dashchan.ui.navigator.Page
+import com.mishiranu.dashchan.ui.navigator.manager.DialogUnit
 import com.mishiranu.dashchan.ui.navigator.manager.UiManager
 import com.mishiranu.dashchan.util.ResourceUtils.getActionBarIcon
 import com.mishiranu.dashchan.widget.FloatingToolbar
@@ -267,6 +268,50 @@ abstract class ListPage :
 
     protected open fun onRequestStoreExtra(saveToStack: Boolean) {}
 
+    /**
+     * What the page's post cards are shown against, or null for a page that shows none. It is what
+     * [putDialogsAway] and [bringDialogsBack] work on, and a page that has one already keeps it for the
+     * cards it opens itself.
+     */
+    protected open val dialogsConfigurationSet: UiManager.ConfigurationSet?
+        get() = null
+
+    /** The cards taken off screen by [putDialogsAway], waiting for [bringDialogsBack]. */
+    private var awayDialogsState: DialogUnit.StackInstance.State? = null
+
+    /**
+     * Takes the page's post cards off screen and keeps what they were, for [bringDialogsBack] to put
+     * back exactly as they stood.
+     *
+     * The cards are a dialog, which is a window of its own and therefore *above* everything the
+     * activity draws — including the posting sheet, which is only a second fragment over the page. So a
+     * reply started from a card came up underneath the stack of cards it was started from, and there is
+     * no z order to fix: the form can only be on top by the cards standing down while it is up. A form
+     * that replaces the page has always had this for free, the page's cards going with the page.
+     *
+     * A second call while cards are already away changes nothing — one form replacing another must not
+     * overwrite what the first one put aside.
+     */
+    fun putDialogsAway() {
+        if (!isRunning || awayDialogsState != null) {
+            return
+        }
+        val stackInstance = this.dialogsConfigurationSet?.stackInstance ?: return
+        val state = stackInstance.collectState()
+        uiManager.dialog().closeDialogs(stackInstance)
+        awayDialogsState = state
+    }
+
+    /** Puts back what [putDialogsAway] took off screen, if the page is still there to put it back on. */
+    fun bringDialogsBack() {
+        val state = awayDialogsState ?: return
+        awayDialogsState = null
+        if (isRunning) {
+            this.dialogsConfigurationSet?.let { uiManager.dialog().restoreState(it, state) }
+        }
+        state.dropState()
+    }
+
     open fun obtainTitle(): String? = null
 
     open fun obtainTitleSubtitle(): Pair<String?, String?>? = Pair<String?, String?>(obtainTitle(), null)
@@ -354,6 +399,10 @@ abstract class ListPage :
             lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
             onDestroy()
         }
+        // Cards that were waiting for a form to go away outlive the page they belong to otherwise:
+        // the state holds the factories open and nothing is left to put them back.
+        awayDialogsState?.dropState()
+        awayDialogsState = null
     }
 
     fun handleNewPostDataListNow() {
