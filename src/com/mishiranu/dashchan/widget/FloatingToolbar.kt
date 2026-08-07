@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.RippleDrawable
+import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.shapes.RoundRectShape
 import android.os.SystemClock
 import android.view.Gravity
 import android.view.HapticFeedbackConstants
@@ -88,6 +91,11 @@ class FloatingToolbar(
     private val bar = Bar(toolbarContext)
     private var actions: List<Action> = emptyList()
 
+    /** The toolbar's own ripple colour, the one the borderless button style would have used. */
+    private val rippleHighlight =
+        ResourceUtils.getColorStateList(toolbarContext, android.R.attr.colorControlHighlight)
+            ?: ColorStateList.valueOf(Color.TRANSPARENT)
+
     init {
         val margin = (MARGIN_DP * density).toInt()
         addView(
@@ -151,7 +159,58 @@ class FloatingToolbar(
             )
         shape.fillColor = ColorStateList.valueOf(ThemeEngine.getTheme(toolbarContext).primary or Color.BLACK)
         bar.background = shape
+        bar.clipToOutline = true
         bar.elevation = ELEVATION_DP * density
+        // The corner is rounded off the ripple here rather than left to the bar to clip, because a
+        // borderless button's ripple is *unbounded* and an unbounded ripple projects: it is not drawn
+        // into the button's own layer at all but into the nearest ancestor that receives projections,
+        // which is how it escapes the bar's clipToOutline and squares the corner off for as long as
+        // the button is held. Giving each button a mask makes its ripple bounded — nothing to project,
+        // nothing to clip — and the mask carries the bar's own corner, pulled in by the bar's padding
+        // so the two curves are the same curve.
+        for (index in 0 until bar.childCount) {
+            bar.getChildAt(index).background =
+                RippleDrawable(
+                    rippleHighlight,
+                    null,
+                    ShapeDrawable(
+                        RoundRectShape(cornerRadii(index, bar.childCount, (radius - padding).coerceAtLeast(0f)), null, null),
+                    ).apply { paint.color = Color.WHITE },
+                )
+        }
+    }
+
+    /**
+     * The eight radii of the button at [index] of [count]: the bar's [radius] on the corners that are
+     * the bar's own corners, and square everywhere the button meets another button.
+     */
+    private fun cornerRadii(
+        index: Int,
+        count: Int,
+        radius: Float,
+    ): FloatArray {
+        val vertical = Preferences.isFloatingToolbarVertical
+        // A horizontal bar's first button is at its *right* when the layout runs right to left, so
+        // which corners are the bar's follow the direction the buttons were laid out in, not the index.
+        val rtl = resources.configuration.layoutDirection == LAYOUT_DIRECTION_RTL
+        val atStart = index == 0
+        val atEnd = index == count - 1
+        val left = if (rtl) atEnd else atStart
+        val right = if (rtl) atStart else atEnd
+        val topLeft = if (vertical) atStart else left
+        val topRight = if (vertical) atStart else right
+        val bottomLeft = if (vertical) atEnd else left
+        val bottomRight = if (vertical) atEnd else right
+        return floatArrayOf(
+            if (topLeft) radius else 0f,
+            if (topLeft) radius else 0f,
+            if (topRight) radius else 0f,
+            if (topRight) radius else 0f,
+            if (bottomRight) radius else 0f,
+            if (bottomRight) radius else 0f,
+            if (bottomLeft) radius else 0f,
+            if (bottomLeft) radius else 0f,
+        )
     }
 
     private fun createButton(action: Action): ImageView {
