@@ -901,6 +901,23 @@ class ForegroundManager private constructor() : Handler.Callback {
                 this.pendingDataOrDismiss
             }
             super.onStart()
+            makeMessageSelectable()
+        }
+
+        /**
+         * Lets the message be selected and copied out. What a script says here is as often something
+         * to take away — a code, an address, an error to paste somewhere — as something to read and
+         * dismiss, and an AlertDialog's message is not selectable on its own.
+         *
+         * Here rather than in [onCreateDialog] because the message view exists only once the dialog
+         * has been shown, which `super.onStart()` above is what does. Selectable text is focusable,
+         * so a dialog with a field takes the focus back afterwards: the field is what the user is
+         * there to type into.
+         */
+        private fun makeMessageSelectable() {
+            val textView = dialog?.findViewById<TextView>(android.R.id.message) ?: return
+            textView.setTextIsSelectable(true)
+            editText?.requestFocus()
         }
 
         override fun onSaveInstanceState(outState: Bundle) {
