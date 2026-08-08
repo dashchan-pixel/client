@@ -33,10 +33,11 @@ class ReadCaptchaTask(
     private val fallbackHolder = HttpHolder(Chan.getFallback())
 
     /**
-     * Whether this captcha is loaded to be submitted with a post, in which case it travels the same
-     * route as the post itself: one solved around a posting-only proxy would be rejected.
+     * Whether this captcha is loaded for something the user is sending -- a post, a report, a vote
+     * -- in which case it travels the same route as what it is solved for: one solved around a
+     * sending-only proxy would be rejected.
      */
-    var forPosting: Boolean
+    var forSending: Boolean
         get() = chanHolder.proxyRequired
         set(value) {
             chanHolder.proxyRequired = value

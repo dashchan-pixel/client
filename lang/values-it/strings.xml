@@ -403,7 +403,7 @@
     <string name="processing_data__ellipsis">Elaborazione dati…</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_for_posting_only">Proxy solo per l\'invio</string>
-    <string name="proxy_for_posting_only__summary">Post e segnalazioni passano dal proxy, tutto il resto si carica direttamente</string>
+    <string name="proxy_for_posting_only__summary">Passa dal proxy solo ciò che invii: la navigazione si carica direttamente, più in fretta e senza consumare traffico del proxy</string>
     <string name="quality">Qualità</string>
     <string name="quote__verb">Quota</string>
     <string name="rating">Votazione</string>

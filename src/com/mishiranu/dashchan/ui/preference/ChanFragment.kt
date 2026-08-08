@@ -466,14 +466,14 @@ class ChanFragment :
         }
     }
 
-    /** Whether a usable proxy is configured at all — the posting-only switch means nothing without one. */
+    /** Whether a usable proxy is configured at all — the sending-only switch means nothing without one. */
     private fun hasProxy(chan: Chan): Boolean = HttpClient.getInstance().getProxyData(chan, proxyRequired = true) != null
 
     /**
      * The IP the forum sees, from its Cloudflare `/cdn-cgi/trace` endpoint: what matters here
      * is whether it matches the device's own IP, i.e. whether the proxy configured above (Tor
      * and friends) is actually carrying this forum's traffic. The check goes through the proxy even
-     * when it is set to carry posting only — its whole point is to show what the proxy looks like.
+     * when it is set to carry sending only — its whole point is to show what the proxy looks like.
      */
     private fun visibleIpSummary(): CharSequence {
         val viewModel = visibleIpViewModel
@@ -665,6 +665,10 @@ class ChanFragment :
         private val authorizationData: List<String>?,
     ) : HttpHolderTask<Unit, ErrorItem>(chan) {
         override fun run(holder: HttpHolder): ErrorItem {
+            // Handing the forum a passcode or a login is the user identifying themselves to it, not
+            // browsing it, so it goes out the way their posts do -- a credential checked from the
+            // device's own address ties that address to the account the posts are made under.
+            holder.proxyRequired = true
             try {
                 val type =
                     when (authorizationType) {

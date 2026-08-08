@@ -22,8 +22,9 @@ class HttpHolder(
 
     /**
      * Whether the requests of this holder must go through the proxy even when the forum is set to
-     * proxy posting only: set for the traffic the user sends -- posts and reports -- and for the
-     * checks that exist to tell whether the proxy works.
+     * proxy sending only: set for everything the user sends -- posts, reports, deletions, votes,
+     * archive submissions, authorization checks and the captchas any of them are asked for -- and
+     * for the checks that exist to tell whether the proxy works.
      */
     var proxyRequired: Boolean = false
 

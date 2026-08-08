@@ -334,7 +334,7 @@
 	<string name="processing_data__ellipsis">Enviando…</string>
 	<string name="proxy">Proxy</string>
 	<string name="proxy_for_posting_only">Proxy somente para envio</string>
-	<string name="proxy_for_posting_only__summary">Posts e denúncias passam pelo proxy, todo o resto carrega diretamente</string>
+	<string name="proxy_for_posting_only__summary">Só o que você envia passa pelo proxy: a navegação carrega diretamente, mais rápido e sem gastar tráfego do proxy</string>
 	<string name="quote__verb">Quotar</string>
 	<string name="rating">Classificação</string>
 	<string name="read_only">Somente leitura</string>

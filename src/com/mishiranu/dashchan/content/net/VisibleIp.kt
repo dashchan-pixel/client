@@ -37,8 +37,8 @@ object VisibleIp {
         chan: Chan,
         holder: HttpHolder,
     ): Result? {
-        // The IP worth knowing is the one the forum's posting traffic leaves from, so the
-        // trace takes the proxy even where it is set to carry posting only. The holder is left as
+        // The IP worth knowing is the one the traffic the user sends leaves from, so the
+        // trace takes the proxy even where it is set to carry sending only. The holder is left as
         // it was found, since the caller may go on to use it for something else.
         val proxyRequired = holder.proxyRequired
         holder.proxyRequired = true

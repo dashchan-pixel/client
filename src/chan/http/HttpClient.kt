@@ -122,8 +122,8 @@ class HttpClient private constructor() {
     }
 
     /**
-     * The proxy configured for [chan], unless it is set to carry posting only and this traffic is
-     * not posting: [proxyRequired] is what the caller's [HttpHolder] declares.
+     * The proxy configured for [chan], unless it is set to carry sending only and this traffic is
+     * read-only browsing: [proxyRequired] is what the caller's [HttpHolder] declares.
      */
     fun getProxyData(
         chan: Chan,

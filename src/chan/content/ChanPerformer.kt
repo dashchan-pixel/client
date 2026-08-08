@@ -1054,18 +1054,33 @@ open class ChanPerformer internal constructor(
             override fun initialValue(): Boolean = false
         }
 
+    /**
+     * Whether the performer call running on this thread is one the user sends -- a post, a
+     * deletion, a report, a vote, an archive submission, an authorization check -- rather than a
+     * read. A captcha the extension asks for from inside such a call belongs to it, and is read
+     * through the proxy where the forum is set to carry sending only.
+     */
+    private val sendingCallState: ThreadLocal<Boolean?> =
+        object : ThreadLocal<Boolean?>() {
+            override fun initialValue(): Boolean = false
+        }
+
     private class PerformerContext(
         val requireCallState: Boolean,
+        val sendingCallState: Boolean,
     )
 
-    private fun enterContext(): PerformerContext {
+    private fun enterContext(sending: Boolean = false): PerformerContext {
         val requireCallState = this.requireCallState.get()!!
+        val sendingCallState = this.sendingCallState.get()!!
         this.requireCallState.set(true)
-        return PerformerContext(requireCallState)
+        this.sendingCallState.set(sending || sendingCallState)
+        return PerformerContext(requireCallState, sendingCallState)
     }
 
     private fun exitContext(context: PerformerContext) {
         requireCallState.set(context.requireCallState)
+        sendingCallState.set(context.sendingCallState)
     }
 
     private fun checkPerformerRequireCall() {
@@ -1088,6 +1103,7 @@ open class ChanPerformer internal constructor(
                 boardName,
                 threadNumber,
                 retry,
+                sendingCallState.get() == true,
             )
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -1354,7 +1370,7 @@ open class ChanPerformer internal constructor(
 
         @Throws(ExtensionException::class, HttpException::class, InvalidResponseException::class)
         fun onCheckAuthorization(data: CheckAuthorizationData?): CheckAuthorizationResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onCheckAuthorization(data)
             } catch (e: LinkageError) {
@@ -1387,7 +1403,7 @@ open class ChanPerformer internal constructor(
             InvalidResponseException::class,
         )
         fun onSendPost(data: SendPostData?): SendPostResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onSendPost(data)
             } catch (e: LinkageError) {
@@ -1406,7 +1422,7 @@ open class ChanPerformer internal constructor(
             InvalidResponseException::class,
         )
         fun onSendDeletePosts(data: SendDeletePostsData?): SendDeletePostsResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onSendDeletePosts(data)
             } catch (e: LinkageError) {
@@ -1425,7 +1441,7 @@ open class ChanPerformer internal constructor(
             InvalidResponseException::class,
         )
         fun onSendReportPosts(data: SendReportPostsData?): SendReportPostsResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onSendReportPosts(data)
             } catch (e: LinkageError) {
@@ -1444,7 +1460,7 @@ open class ChanPerformer internal constructor(
             InvalidResponseException::class,
         )
         fun onSendVotePost(data: SendVotePostData?): SendVotePostResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onSendVotePost(data)
             } catch (e: LinkageError) {
@@ -1463,7 +1479,7 @@ open class ChanPerformer internal constructor(
             InvalidResponseException::class,
         )
         fun onSendAddToArchive(data: SendAddToArchiveData?): SendAddToArchiveResult? {
-            val context = performer.enterContext()
+            val context = performer.enterContext(sending = true)
             try {
                 return performer.onSendAddToArchive(data)
             } catch (e: LinkageError) {

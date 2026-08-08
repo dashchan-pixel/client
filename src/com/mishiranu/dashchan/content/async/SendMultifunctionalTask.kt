@@ -66,11 +66,14 @@ class SendMultifunctionalTask(
 
     override fun run(holder: HttpHolder): Boolean {
         var chan = this.chan
-        // A report is sent as the user, the way a post is, so it takes the proxy even where the
-        // forum is set to carry posting only -- and so does the captcha a forum may ask for it,
-        // which the extension reads through this same holder. A report leaving from the device's own
-        // address next to posts leaving from the proxy's is what the setting exists to avoid.
-        holder.proxyRequired = state.operation == Operation.REPORT
+        // Everything this task carries is the user acting on the forum rather than reading it --
+        // a deletion, a report, a vote (which is also how an extension offers a poll or a
+        // reaction), a thread handed to an archive -- so it takes the proxy even where the forum is
+        // set to carry sending only. Any of them leaving from the device's own address next to
+        // posts leaving from the proxy's is the linkage the setting exists to prevent. The one
+        // exception is the archive that only accepts queries: asking it whether it holds a thread
+        // is browsing, and it is answered like any other read.
+        holder.proxyRequired = !(state.operation == Operation.ARCHIVE && state.archiveQueryOnly)
         try {
             when (state.operation) {
                 Operation.DELETE -> {

@@ -458,7 +458,7 @@
 	<string name="processing_data__ellipsis">Обработка данных…</string>
 	<string name="proxy">Прокси</string>
 	<string name="proxy_for_posting_only">Прокси только для отправки</string>
-	<string name="proxy_for_posting_only__summary">Сообщения и жалобы отправляются через прокси, всё остальное загружается напрямую</string>
+	<string name="proxy_for_posting_only__summary">Через прокси идёт только то, что вы отправляете, — просмотр загружается напрямую, быстрее и без расхода трафика прокси</string>
 	<string name="quality">Качество</string>
 	<string name="quote__verb">Цитировать</string>
 	<string name="rating">Рейтинг</string>

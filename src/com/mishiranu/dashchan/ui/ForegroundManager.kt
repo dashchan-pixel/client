@@ -421,7 +421,7 @@ class ForegroundManager private constructor() : Handler.Callback {
                         chan,
                         args.getString(EXTRA_BOARD_NAME),
                         args.getString(EXTRA_THREAD_NUMBER),
-                    )
+                    ).apply { forSending = pendingData.forSending }
                 task.execute(ConcurrentUtils.PARALLEL_EXECUTOR)
                 viewModel.attach(task)
             }
@@ -1738,6 +1738,12 @@ class ForegroundManager private constructor() : Handler.Callback {
 
     private class CaptchaPendingData(
         val captchaReader: CaptchaReader?,
+        /**
+         * Whether this captcha is being asked for in the middle of something the user is sending,
+         * which is what decides whether reading it takes the forum's proxy: see
+         * [ReadCaptchaTask.forSending].
+         */
+        val forSending: Boolean,
     ) : PendingData() {
         var captchaData: CaptchaData? = null
         var loadedCaptchaType: String? = null
@@ -1793,17 +1799,23 @@ class ForegroundManager private constructor() : Handler.Callback {
         boardName: String?,
         threadNumber: String?,
         retry: Boolean,
+        forSending: Boolean,
     ): CaptchaData? =
         requireUserCaptcha(
-            null,
+            CaptchaPendingData(null, forSending),
             chan.configuration.captchaType,
-            requirement,
-            chan.name,
-            boardName,
-            threadNumber,
-            null,
             retry,
-        )
+        ) { pendingDataId ->
+            CaptchaHandlerData(
+                pendingDataId,
+                chan.name,
+                chan.configuration.captchaType,
+                requirement,
+                boardName,
+                threadNumber,
+                null,
+            )
+        }
 
     @Throws(InterruptedException::class)
     fun requireUserCaptcha(
@@ -1815,20 +1827,33 @@ class ForegroundManager private constructor() : Handler.Callback {
         threadNumber: String?,
         description: String?,
         retry: Boolean,
+    ): CaptchaData? =
+        requireUserCaptcha(
+            CaptchaPendingData(captchaReader, false),
+            captchaType,
+            retry,
+        ) { pendingDataId ->
+            CaptchaHandlerData(
+                pendingDataId,
+                chanName,
+                captchaType,
+                requirement,
+                boardName,
+                threadNumber,
+                description,
+            )
+        }
+
+    @Throws(InterruptedException::class)
+    private fun requireUserCaptcha(
+        pendingData: CaptchaPendingData,
+        captchaType: String?,
+        retry: Boolean,
+        createHandlerData: (pendingDataId: String?) -> CaptchaHandlerData,
     ): CaptchaData? {
-        val pendingData = CaptchaPendingData(captchaReader)
         val pendingDataId = putPendingData(pendingData)
         try {
-            val handlerData =
-                CaptchaHandlerData(
-                    pendingDataId,
-                    chanName,
-                    captchaType,
-                    requirement,
-                    boardName,
-                    threadNumber,
-                    description,
-                )
+            val handlerData = createHandlerData(pendingDataId)
             handler.obtainMessage(MESSAGE_REQUIRE_USER_CAPTCHA, handlerData).sendToTarget()
             if (retry) {
                 handler.sendEmptyMessage(MESSAGE_SHOW_CAPTCHA_INVALID)
