@@ -25,6 +25,7 @@
 	<string name="address">Address</string>
 	<string name="advanced_search">Advanced search</string>
 	<string name="advanced_search__summary">Search by words or quoted phrases</string>
+	<string name="all">All</string>
 	<string name="all_attachments">All attachments</string>
 	<string name="all_attachments__summary">Display thumbnails for all attachments</string>
 	<string name="all_boards">All boards</string>

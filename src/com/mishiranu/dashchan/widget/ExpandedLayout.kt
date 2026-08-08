@@ -2,6 +2,7 @@ package com.mishiranu.dashchan.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.view.View
 import android.widget.FrameLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.mishiranu.dashchan.util.ViewUtils
@@ -18,12 +19,27 @@ class ExpandedLayout(
     private var extraTop = 0
     private var extraBottom = 0
     private var recyclerViewField: RecyclerView? = null
+    private var insetsTarget: View? = null
 
     fun setRecyclerView(recyclerView: RecyclerView?) {
         this.recyclerViewField = recyclerView
     }
 
     override fun getRecyclerView(): RecyclerView? = recyclerViewField
+
+    /**
+     * The view a direct child's vertical insets are handed down to, when the child is a container
+     * rather than the content itself — a list under a bar pinned above it. The insets belong to what
+     * scrolls: taken by the container they would only shorten it, so the last item would stop above
+     * the gesture bar instead of scrolling through it, and the bar above the list would grow by a
+     * navigation bar it is nowhere near.
+     */
+    fun setInsetsTarget(insetsTarget: View?) {
+        if (this.insetsTarget !== insetsTarget) {
+            this.insetsTarget = insetsTarget
+            applyPadding()
+        }
+    }
 
     override fun setVerticalInsets(
         top: Int,
@@ -73,10 +89,15 @@ class ExpandedLayout(
             childBottom = 0
         }
         ViewUtils.setNewPadding(this, null, top + extraTop - childTop, null, bottom - childBottom)
+        val insetsTarget = this.insetsTarget
         for (i in 0 until childCount) {
             val child = getChildAt(i)
-            val extra = if (child === recyclerViewField) extraBottom else 0
-            ViewUtils.setNewPadding(child, null, childTop, null, childBottom + extra)
+            if (insetsTarget != null && insetsTarget.parent === child) {
+                ViewUtils.setNewPadding(insetsTarget, null, childTop, null, childBottom)
+            } else {
+                val extra = if (child === recyclerViewField) extraBottom else 0
+                ViewUtils.setNewPadding(child, null, childTop, null, childBottom + extra)
+            }
         }
     }
 }

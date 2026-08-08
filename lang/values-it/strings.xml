@@ -16,6 +16,7 @@
     <string name="address">Indirizzo</string>
     <string name="advanced_search">Ricerca avanzata</string>
     <string name="advanced_search__summary">Cerca per parole o frasi</string>
+    <string name="all">Tutti</string>
     <string name="all_attachments">Tutti gli allegati</string>
     <string name="all_attachments__summary">Mostra anteprime per tutti gli allegati</string>
     <string name="all_boards">Tutte le board</string>

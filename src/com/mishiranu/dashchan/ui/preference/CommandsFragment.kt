@@ -41,6 +41,7 @@ import androidx.recyclerview.widget.RecyclerView
 import chan.content.Chan
 import chan.content.ChanManager
 import chan.util.StringUtils
+import com.google.android.material.tabs.TabLayout
 import com.mishiranu.dashchan.R
 import com.mishiranu.dashchan.content.CommandApp
 import com.mishiranu.dashchan.content.CommandRunner
@@ -48,12 +49,16 @@ import com.mishiranu.dashchan.content.model.FileHolder
 import com.mishiranu.dashchan.content.storage.CommandsStorage
 import com.mishiranu.dashchan.ui.DialogMenu
 import com.mishiranu.dashchan.ui.FragmentHandler
+import com.mishiranu.dashchan.util.GraphicsUtils
 import com.mishiranu.dashchan.util.IOUtils
 import com.mishiranu.dashchan.util.ListViewUtils
 import com.mishiranu.dashchan.util.ResourceUtils
 import com.mishiranu.dashchan.widget.ClickableToast
 import com.mishiranu.dashchan.widget.CodeEditText
+import com.mishiranu.dashchan.widget.CustomSearchView
 import com.mishiranu.dashchan.widget.DropdownView
+import com.mishiranu.dashchan.widget.MaterialContext
+import com.mishiranu.dashchan.widget.MenuExpandListener
 import com.mishiranu.dashchan.widget.ProgressDialog
 import com.mishiranu.dashchan.widget.SortableHelper
 import com.mishiranu.dashchan.widget.ThemeEngine
@@ -62,6 +67,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -69,6 +75,18 @@ class CommandsFragment :
     BaseListFragment,
     SortableHelper.Callback<CommandsFragment.CommandViewHolder> {
     private val items = ArrayList<CommandsStorage.CommandItem>()
+
+    // Tabs by target, shown only once the commands span more than one of them (see updateTabs), and a
+    // filter over whatever tab is on -- both of them views over the one list, which is what keeps the
+    // reordering below working on `items` rather than on what happens to be on screen.
+    private var tabsView: TabLayout? = null
+    private var selectedUseIn: CommandsStorage.UseIn? = null
+
+    private var searchView: CustomSearchView? = null
+    private var searchMenuItem: MenuItem? = null
+
+    private var searchQuery: String? = null
+    private var searchFocused = false
 
     // Two-finger tap-and-drag reorder, mirroring the drawer's favourites/forums sorting: the gesture
     // arms on a long press held with a second finger down, then ItemTouchHelper drives the drag.
@@ -87,11 +105,66 @@ class CommandsFragment :
         arguments = Bundle().apply { putLong(EXTRA_EDIT_ID, editCommandId) }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        searchQuery = savedInstanceState?.getString(EXTRA_SEARCH_QUERY)
+        searchFocused = savedInstanceState != null && savedInstanceState.getBoolean(EXTRA_SEARCH_FOCUSED)
+        selectedUseIn =
+            savedInstanceState?.getString(EXTRA_SELECTED_USE_IN)?.let { key ->
+                CommandsStorage.UseIn.entries.firstOrNull { it.key == key }
+            }
+    }
+
+    /**
+     * The tab strip, built empty because the commands aren't loaded yet, and hidden until [updateTabs]
+     * finds more than one target among them — a single row of tabs that every command is under
+     * separates nothing.
+     */
+    override fun createHeaderView(context: Context): View {
+        val tabsView = TabLayout(MaterialContext.wrap(context))
+        this.tabsView = tabsView
+        val theme = ThemeEngine.getTheme(context)
+        tabsView.setBackgroundColor(theme.window)
+        tabsView.setSelectedTabIndicatorColor(theme.accent)
+        tabsView.setTabTextColors(ResourceUtils.getColor(context, android.R.attr.textColorSecondary), theme.accent)
+        // The M3 overlay's own colorPrimary otherwise paints the press, which is the baseline purple
+        // rather than anything the user picked -- the same faded accent a chip ripples with.
+        tabsView.tabRippleColor = ColorStateList.valueOf(GraphicsUtils.applyAlpha(theme.accent, 0.30f))
+        tabsView.tabMode = TabLayout.MODE_SCROLLABLE
+        tabsView.visibility = View.GONE
+        tabsView.addOnTabSelectedListener(
+            object : TabLayout.OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab) {
+                    selectedUseIn = tab.tag as? CommandsStorage.UseIn
+                    (getRecyclerView()?.adapter as? Adapter)?.invalidate()
+                }
+
+                override fun onTabUnselected(tab: TabLayout.Tab) {
+                }
+
+                override fun onTabReselected(tab: TabLayout.Tab) {
+                }
+            },
+        )
+        return tabsView
+    }
+
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+
+        val searchView = obtainSearchView()
+        this.searchView = searchView
+        searchView?.setHint(getString(R.string.filter))
+        searchView?.setOnChangeListener { query ->
+            (getRecyclerView()!!.adapter as Adapter).setSearchQuery(query)
+            if (searchQuery != null) {
+                searchQuery = query
+            }
+        }
 
         (requireActivity() as FragmentHandler).setTitleSubtitle(getString(R.string.commands), null)
         items.addAll(CommandsStorage.getInstance().getItems())
@@ -101,6 +174,7 @@ class CommandsFragment :
         val recyclerView = getRecyclerView()!!
         recyclerView.adapter = Adapter()
         sortableHelper = SortableHelper(recyclerView, this)
+        updateTabs()
 
         if (savedInstanceState == null) {
             val editId = arguments?.getLong(EXTRA_EDIT_ID, 0) ?: 0
@@ -113,6 +187,75 @@ class CommandsFragment :
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        appCommandDialog?.dismiss()
+        appCommandDialog = null
+        cancelAppCommand()
+        tabsView = null
+        searchView = null
+        searchMenuItem = null
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        searchView?.let { searchFocused = it.isSearchFocused() }
+        outState.putString(EXTRA_SEARCH_QUERY, searchQuery)
+        outState.putBoolean(EXTRA_SEARCH_FOCUSED, searchFocused)
+        outState.putString(EXTRA_SELECTED_USE_IN, selectedUseIn?.key)
+    }
+
+    override fun onBackPressed(): Boolean {
+        val searchMenuItem = this.searchMenuItem
+        if (searchMenuItem != null && searchMenuItem.isActionViewExpanded) {
+            searchMenuItem.collapseActionView()
+            return true
+        }
+        return false
+    }
+
+    override val isBackHandled: Boolean get() {
+        // searchQuery mirrors the action view expansion and, unlike isActionViewExpanded,
+        // is already updated when the expand listener notifies about the change.
+        return searchQuery != null
+    }
+
+    /**
+     * Rebuilds the strip for the targets the commands are actually written for, and hides it unless
+     * they span more than one — with everything under a single tab there is nothing to separate. The
+     * first tab is every command, so the list as a whole is still a click away, and the selection is
+     * kept across a rebuild whenever the target it names still has a command left.
+     */
+    private fun updateTabs() {
+        val tabsView = this.tabsView ?: return
+        val present = USE_IN_ORDER.filter { useIn -> items.any { it.useIn == useIn } }
+        if (present.size <= 1) {
+            tabsView.visibility = View.GONE
+            if (selectedUseIn != null) {
+                selectedUseIn = null
+                (getRecyclerView()?.adapter as? Adapter)?.invalidate()
+            }
+            tabsView.removeAllTabs()
+            return
+        }
+        val selectedUseIn = this.selectedUseIn?.takeIf { it in present }
+        this.selectedUseIn = selectedUseIn
+        tabsView.visibility = View.VISIBLE
+        tabsView.removeAllTabs()
+        // The listener fires while the tabs are being added, which would only set back what is being
+        // restored here, so the selection is applied by the tab that carries it.
+        for (useIn in listOf(null) + present) {
+            val tab =
+                tabsView.newTab().apply {
+                    tag = useIn
+                    setText(if (useIn != null) useIn.titleRes else R.string.all)
+                }
+            tabsView.addTab(tab, useIn == selectedUseIn)
+        }
+    }
+
     override fun onCreateOptionsMenu(
         menu: Menu,
         primary: Boolean,
@@ -121,16 +264,46 @@ class CommandsFragment :
             .add(0, R.id.menu_new_command, 0, R.string.new_command)
             .setIcon((requireActivity() as FragmentHandler).getActionBarIcon(R.attr.iconActionAddRule))
             .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        val searchMenuItem =
+            menu
+                .add(0, R.id.menu_search, 0, R.string.filter)
+                .setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW)
         menu.add(0, R.id.menu_add_command, 0, R.string.add_command)
         menu.add(0, R.id.menu_environment, 0, R.string.environment)
         menu.add(0, R.id.menu_storage, 0, R.string.storage)
         menu.add(0, R.id.menu_libraries, 0, R.string.libraries)
+        if (primary) {
+            this.searchMenuItem = searchMenuItem
+            searchMenuItem.actionView = searchView
+            searchMenuItem.setOnActionExpandListener(
+                MenuExpandListener { _, expand ->
+                    if (expand) {
+                        searchView?.setFocusOnExpand(searchFocused)
+                        if (searchQuery != null) {
+                            searchView?.setQuery(searchQuery)
+                        } else {
+                            searchQuery = ""
+                        }
+                    } else {
+                        searchQuery = null
+                    }
+                    (getRecyclerView()!!.adapter as Adapter).setSearchQuery(searchQuery)
+                    onPrepareMenu(menu)
+                    notifyBackHandledChanged()
+                    true
+                },
+            )
+            if (searchQuery != null) {
+                searchMenuItem.expandActionView()
+            }
+        }
     }
 
     override fun onPrepareOptionsMenu(
         menu: Menu,
         primary: Boolean,
     ) {
+        menu.findItem(R.id.menu_new_command)?.isVisible = searchQuery == null
         // Nothing has stored anything yet: a row that opens an empty dialog is one more thing between
         // the user and the commands.
         menu.findItem(R.id.menu_storage)?.isVisible = CommandsStorage.getInstance().getStoreSize() > 0
@@ -141,6 +314,20 @@ class CommandsFragment :
             R.id.menu_new_command -> {
                 editCommand(null, -1)
                 return true
+            }
+
+            R.id.menu_search -> {
+                val searchMenuItem = this.searchMenuItem
+                return if (item === searchMenuItem) {
+                    searchFocused = true
+                    false
+                } else if (searchMenuItem != null) {
+                    searchFocused = true
+                    searchMenuItem.expandActionView()
+                    true
+                } else {
+                    true
+                }
             }
 
             R.id.menu_add_command -> {
@@ -228,10 +415,16 @@ class CommandsFragment :
         }
         if (import.commands.isNotEmpty()) {
             setErrorText(null)
-            getRecyclerView()!!.adapter!!.notifyDataSetChanged()
+            invalidateList()
         } else {
             ClickableToast.show(R.string.completed)
         }
+    }
+
+    /** Rebuilds what the list shows and which tabs it is shown under, after `items` has changed. */
+    private fun invalidateList() {
+        (getRecyclerView()?.adapter as? Adapter)?.invalidate()
+        updateTabs()
     }
 
     // Command awaiting a destination Uri from the create-document picker (Save from the context menu).
@@ -318,14 +511,6 @@ class CommandsFragment :
         appCommandRun = null
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-
-        appCommandDialog?.dismiss()
-        appCommandDialog = null
-        cancelAppCommand()
-    }
-
     /**
      * Duplicates a command: the copy gets its own identity and a name of its own, and opens in the
      * edit dialog as a new command (index -1), so it's stored only once the user confirms it.
@@ -382,7 +567,6 @@ class CommandsFragment :
         commandItem: CommandsStorage.CommandItem,
         index: Int,
     ) {
-        val adapter = getRecyclerView()!!.adapter as Adapter
         if (index == -1) {
             CommandsStorage.getInstance().add(commandItem)
             items.add(commandItem)
@@ -391,13 +575,13 @@ class CommandsFragment :
             CommandsStorage.getInstance().update(index, commandItem)
             items[index] = commandItem
         }
-        adapter.notifyDataSetChanged()
+        invalidateList()
     }
 
     internal fun onDelete(index: Int) {
         CommandsStorage.getInstance().delete(index)
         items.removeAt(index)
-        getRecyclerView()!!.adapter!!.notifyDataSetChanged()
+        invalidateList()
         if (items.isEmpty()) {
             setErrorText(getString(R.string.no_commands_defined))
         }
@@ -424,17 +608,29 @@ class CommandsFragment :
         toHolder: CommandViewHolder,
     ): Boolean = true
 
+    /**
+     * The drop is read off the list on screen and applied to the stored one: with a tab on, the rows
+     * between two of them are not shown, so the moved command takes the place of the command it was
+     * dropped on rather than that row's index — which, in the full list, is the only place that reads
+     * the way the tab did.
+     */
     override fun onDragMove(
         fromHolder: CommandViewHolder,
         toHolder: CommandViewHolder,
     ): Boolean {
+        val adapter = getRecyclerView()?.adapter as? Adapter ?: return false
         val from = fromHolder.bindingAdapterPosition
         val to = toHolder.bindingAdapterPosition
         if (from < 0 || to < 0) {
             return false
         }
-        items.add(to, items.removeAt(from))
-        getRecyclerView()!!.adapter!!.notifyItemMoved(from, to)
+        val fromIndex = items.indexOf(adapter.getItem(from))
+        val toIndex = items.indexOf(adapter.getItem(to))
+        if (fromIndex < 0 || toIndex < 0) {
+            return false
+        }
+        items.add(toIndex, items.removeAt(fromIndex))
+        adapter.move(from, to)
         dragState.set(from, to)
         return true
     }
@@ -442,7 +638,56 @@ class CommandsFragment :
     private inner class Adapter :
         RecyclerView.Adapter<CommandViewHolder>(),
         ListViewUtils.ClickCallback<Unit, CommandViewHolder> {
-        override fun getItemCount(): Int = items.size
+        // What the tab and the filter leave of `items`, in the order `items` holds them.
+        private val visibleItems = ArrayList<CommandsStorage.CommandItem>()
+        private var searchQuery: String? = null
+
+        init {
+            invalidate()
+        }
+
+        fun setSearchQuery(searchQuery: String?) {
+            this.searchQuery = searchQuery
+            invalidate()
+        }
+
+        /** Whether the list on screen is the stored one, which is what a reorder may be read off. */
+        val isSortable: Boolean get() = searchQuery.isNullOrEmpty()
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun invalidate() {
+            val locale = Locale.getDefault()
+            val query = searchQuery?.takeIf { it.isNotEmpty() }?.lowercase(locale)
+            val useIn = selectedUseIn
+            visibleItems.clear()
+            for (item in items) {
+                if ((useIn == null || item.useIn == useIn) && (query == null || matches(item, query, locale))) {
+                    visibleItems.add(item)
+                }
+            }
+            notifyDataSetChanged()
+        }
+
+        /** The name the row shows and the code behind it — all a command is written out of. */
+        private fun matches(
+            item: CommandsStorage.CommandItem,
+            query: String,
+            locale: Locale,
+        ): Boolean =
+            item.name?.lowercase(locale)?.contains(query) == true ||
+                item.code?.lowercase(locale)?.contains(query) == true
+
+        fun move(
+            from: Int,
+            to: Int,
+        ) {
+            visibleItems.add(to, visibleItems.removeAt(from))
+            notifyItemMoved(from, to)
+        }
+
+        fun getItem(position: Int): CommandsStorage.CommandItem = visibleItems[position]
+
+        override fun getItemCount(): Int = visibleItems.size
 
         override fun onItemClick(
             holder: CommandViewHolder,
@@ -450,14 +695,15 @@ class CommandsFragment :
             item: Unit?,
             longClick: Boolean,
         ): Boolean {
+            val commandItem = getItem(position)
             if (longClick) {
-                if (holder.isMultipleFingers) {
+                if (holder.isMultipleFingers && isSortable) {
                     sortableHelper?.start(holder)
                 } else {
-                    showCommandContextMenu(items[position])
+                    showCommandContextMenu(commandItem)
                 }
             } else {
-                editCommand(items[position], position)
+                editCommand(commandItem, items.indexOf(commandItem))
             }
             return true
         }
@@ -477,7 +723,7 @@ class CommandsFragment :
             holder: CommandViewHolder,
             position: Int,
         ) {
-            val commandItem = items[position]
+            val commandItem = getItem(position)
             holder.twoLines.text1.text =
                 if (StringUtils.isEmpty(commandItem.name)) getString(R.string.command) else commandItem.name
             holder.twoLines.text2.text = describeScope(commandItem)
@@ -603,6 +849,22 @@ class CommandsFragment :
 
     companion object {
         private const val EXTRA_EDIT_ID = "editId"
+        private const val EXTRA_SEARCH_QUERY = "searchQuery"
+        private const val EXTRA_SEARCH_FOCUSED = "searchFocused"
+        private const val EXTRA_SELECTED_USE_IN = "selectedUseIn"
+
+        // The order the targets are offered in, both as the edit dialog's dropdown (whose selected
+        // index maps back to a UseIn on save) and as the tabs above the list.
+        private val USE_IN_ORDER =
+            listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD, CommandsStorage.UseIn.APP)
+
+        private val CommandsStorage.UseIn.titleRes: Int
+            get() =
+                when (this) {
+                    CommandsStorage.UseIn.COMMENT -> R.string.draft
+                    CommandsStorage.UseIn.THREAD -> R.string.thread
+                    CommandsStorage.UseIn.APP -> R.string.app
+                }
     }
 
     class CommandDialog :
@@ -877,10 +1139,6 @@ class CommandsFragment :
             private const val EXTRA_ITEM = "item"
             private const val EXTRA_INDEX = "index"
 
-            // The dropdown's fixed order; the selected index maps back to a UseIn on save.
-            private val USE_IN_ORDER =
-                listOf(CommandsStorage.UseIn.COMMENT, CommandsStorage.UseIn.THREAD, CommandsStorage.UseIn.APP)
-
             // Placeholders for the code field: the do-nothing command for each target, i.e. the least
             // code that returns the input unchanged. Not translated — it's JavaScript.
             private const val SAMPLE_DRAFT = "return { comment, attachments };"
@@ -899,14 +1157,6 @@ class CommandsFragment :
             private const val SAMPLE_APP =
                 "chan.setProxy(env.PROXY_URL);\n" +
                     "return \"changed\";"
-
-            private val CommandsStorage.UseIn.titleRes: Int
-                get() =
-                    when (this) {
-                        CommandsStorage.UseIn.COMMENT -> R.string.draft
-                        CommandsStorage.UseIn.THREAD -> R.string.thread
-                        CommandsStorage.UseIn.APP -> R.string.app
-                    }
 
             private val CommandsStorage.UseIn.autoRunRes: Int
                 get() =

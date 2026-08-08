@@ -1,9 +1,11 @@
 package com.mishiranu.dashchan.ui.preference
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import chan.util.StringUtils
@@ -31,11 +33,36 @@ abstract class BaseListFragment : ContentFragment() {
         recyclerView.clipToPadding = false
         recyclerView.layoutManager = LinearLayoutManager(recyclerView.context)
         recyclerView.addItemDecoration(DividerItemDecoration(recyclerView.context, this::configureDivider))
-        layout.addView(
-            recyclerView,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        )
+        val header = createHeaderView(layout.context)
+        if (header != null) {
+            // The bar sits above the list rather than over it, so the two share a column and the list
+            // takes whatever the bar leaves. The insets stay the list's (see setInsetsTarget).
+            val column = LinearLayout(layout.context)
+            column.orientation = LinearLayout.VERTICAL
+            column.addView(
+                header,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
+            )
+            column.addView(
+                recyclerView,
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f),
+            )
+            layout.addView(
+                column,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+            layout.setInsetsTarget(recyclerView)
+        } else {
+            layout.addView(
+                recyclerView,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+        }
         val errorHolder = ViewFactory.createErrorLayout(layout)
         this.errorHolder = errorHolder
         errorHolder.layout.visibility = View.GONE
@@ -61,6 +88,13 @@ abstract class BaseListFragment : ContentFragment() {
 
     protected open fun setListPadding(recyclerView: RecyclerView) {
     }
+
+    /**
+     * A bar pinned above the list, or `null` for a plain list. Called while the view is being built,
+     * i.e. before the list has anything in it — a header whose content depends on the items builds
+     * itself empty here and fills in from `onViewCreated`.
+     */
+    protected open fun createHeaderView(context: Context): View? = null
 
     protected open fun configureDivider(
         configuration: DividerItemDecoration.Configuration,

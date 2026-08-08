@@ -23,6 +23,7 @@
 	<string name="address">Адрес</string>
 	<string name="advanced_search">Расширенный поиск</string>
 	<string name="advanced_search__summary">Искать по словам и фразам в кавычках</string>
+	<string name="all">Все</string>
 	<string name="all_attachments">Все вложения</string>
 	<string name="all_attachments__summary">Показывать миниатюры всех вложений</string>
 	<string name="all_boards">Все разделы</string>
