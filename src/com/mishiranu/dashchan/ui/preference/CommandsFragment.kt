@@ -68,6 +68,7 @@ import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -87,6 +88,8 @@ class CommandsFragment :
 
     private var searchQuery: String? = null
     private var searchFocused = false
+
+    private var navigationAreaLocked = false
 
     // Two-finger tap-and-drag reorder, mirroring the drawer's favourites/forums sorting: the gesture
     // arms on a long press held with a second finger down, then ItemTouchHelper drives the drag.
@@ -136,8 +139,23 @@ class CommandsFragment :
         tabsView.addOnTabSelectedListener(
             object : TabLayout.OnTabSelectedListener {
                 override fun onTabSelected(tab: TabLayout.Tab) {
+                    val changed = selectedUseIn != tab.tag
                     selectedUseIn = tab.tag as? CommandsStorage.UseIn
                     (getRecyclerView()?.adapter as? Adapter)?.invalidate()
+                    if (changed) {
+                        // The list under the tabs is a different list, so it arrives rather than
+                        // appears to have been there -- and it arrives at its top, not at the offset
+                        // the tab before it was scrolled to.
+                        getRecyclerView()?.let {
+                            it.scrollToPosition(0)
+                            it.alpha = 0f
+                            it
+                                .animate()
+                                .alpha(1f)
+                                .setDuration(TAB_FADE_DURATION)
+                                .start()
+                        }
+                    }
                 }
 
                 override fun onTabUnselected(tab: TabLayout.Tab) {
@@ -174,6 +192,7 @@ class CommandsFragment :
         val recyclerView = getRecyclerView()!!
         recyclerView.adapter = Adapter()
         sortableHelper = SortableHelper(recyclerView, this)
+        recyclerView.addOnItemTouchListener(TabSwipeListener())
         updateTabs()
 
         if (savedInstanceState == null) {
@@ -193,6 +212,7 @@ class CommandsFragment :
         appCommandDialog?.dismiss()
         appCommandDialog = null
         cancelAppCommand()
+        setNavigationAreaLocked(false)
         tabsView = null
         searchView = null
         searchMenuItem = null
@@ -233,6 +253,7 @@ class CommandsFragment :
         val present = USE_IN_ORDER.filter { useIn -> items.any { it.useIn == useIn } }
         if (present.size <= 1) {
             tabsView.visibility = View.GONE
+            setNavigationAreaLocked(false)
             if (selectedUseIn != null) {
                 selectedUseIn = null
                 (getRecyclerView()?.adapter as? Adapter)?.invalidate()
@@ -240,6 +261,7 @@ class CommandsFragment :
             tabsView.removeAllTabs()
             return
         }
+        setNavigationAreaLocked(true)
         val selectedUseIn = this.selectedUseIn?.takeIf { it in present }
         this.selectedUseIn = selectedUseIn
         tabsView.visibility = View.VISIBLE
@@ -253,6 +275,96 @@ class CommandsFragment :
                     setText(if (useIn != null) useIn.titleRes else R.string.all)
                 }
             tabsView.addTab(tab, useIn == selectedUseIn)
+        }
+    }
+
+    /**
+     * Keeps the drawer off the middle of the screen while the tabs are up, so a swipe between them is
+     * not read as a pull on the drawer -- the two are the same gesture over the same area. The drawer
+     * is still opened by a drag from the edge of the screen, which is where it is anyway when the
+     * setting that widens that area to the whole of it is off.
+     */
+    private fun setNavigationAreaLocked(locked: Boolean) {
+        if (navigationAreaLocked != locked) {
+            navigationAreaLocked = locked
+            (activity as? FragmentHandler)?.setNavigationAreaLocked(LOCKER_TABS, locked)
+        }
+    }
+
+    /**
+     * Moves one tab along, or does nothing at either end of the strip -- the tabs are a row rather
+     * than a ring, and a swipe that wrapped from the last back to the first would land the user
+     * somewhere they were not heading.
+     */
+    private fun selectAdjacentTab(direction: Int) {
+        val tabsView = this.tabsView ?: return
+        if (tabsView.visibility != View.VISIBLE) {
+            return
+        }
+        val position = tabsView.selectedTabPosition + direction
+        if (position in 0 until tabsView.tabCount) {
+            tabsView.selectTab(tabsView.getTabAt(position))
+        }
+    }
+
+    /**
+     * A horizontal swipe over the list moves between the tabs. It watches the list's touches without
+     * ever taking them (`onInterceptTouchEvent` always answers `false`), so the vertical scroll and
+     * the reorder drag are untouched: the swipe is recognised on the way past and acted on at once,
+     * a fling rather than a page dragged along under the finger.
+     *
+     * A drag is a swipe only while it stays horizontal -- a vertical movement past the slop is the
+     * list being scrolled and gives up on the gesture for good, so a diagonal scroll never changes
+     * the tab under the user. The horizontal threshold is the larger of the two for the same reason.
+     */
+    private inner class TabSwipeListener : RecyclerView.OnItemTouchListener {
+        private var startX = 0f
+        private var startY = 0f
+        private var tracking = false
+
+        override fun onInterceptTouchEvent(
+            rv: RecyclerView,
+            e: MotionEvent,
+        ): Boolean {
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = e.x
+                    startY = e.y
+                    tracking = tabsView?.visibility == View.VISIBLE
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (tracking) {
+                        val slop = ViewConfiguration.get(rv.context).scaledTouchSlop
+                        val dx = e.x - startX
+                        val dy = e.y - startY
+                        if (abs(dy) > slop) {
+                            tracking = false
+                        } else if (abs(dx) > SWIPE_SLOP_FACTOR * slop) {
+                            tracking = false
+                            val forward = if (rv.layoutDirection == View.LAYOUT_DIRECTION_RTL) dx > 0 else dx < 0
+                            selectAdjacentTab(if (forward) 1 else -1)
+                        }
+                    }
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    tracking = false
+                }
+            }
+            return false
+        }
+
+        override fun onTouchEvent(
+            rv: RecyclerView,
+            e: MotionEvent,
+        ) {
+        }
+
+        override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+            if (disallowIntercept) {
+                tracking = false
+            }
         }
     }
 
@@ -852,6 +964,15 @@ class CommandsFragment :
         private const val EXTRA_SEARCH_QUERY = "searchQuery"
         private const val EXTRA_SEARCH_FOCUSED = "searchFocused"
         private const val EXTRA_SELECTED_USE_IN = "selectedUseIn"
+
+        private const val LOCKER_TABS = "commandTabs"
+
+        // Long enough to be seen as an arrival and short enough not to be waited through.
+        private const val TAB_FADE_DURATION = 150L
+
+        // A swipe has to be this many touch slops wide before it counts as one, the list's own scroll
+        // being a single slop away in the other direction.
+        private const val SWIPE_SLOP_FACTOR = 2
 
         // The order the targets are offered in, both as the edit dialog's dropdown (whose selected
         // index maps back to a UseIn on save) and as the tabs above the list.
