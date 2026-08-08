@@ -1,0 +1,6 @@
+* Commands: the list gets tabs by target and a search over them — swipe between the tabs, reorder within one — an App command run from the ⌘ spins in the button instead of a dialog over the page, with a double tap to call the run off, a dialog's text can be selected and copied, and chan.changeVisibleIp() no longer times out while the command it asked for quietly succeeds.
+* Bans: one toast for a ban, carrying both Change it and Details, instead of two saying different things about it.
+* "Proxy for sending only" covers votes, deletions, archiving and logins too, along with the captcha each needs. Only browsing goes direct.
+* Captcha: a loading line across the block instead of a spinner squeezed into the middle of it.
+* The floating bar no longer stands over the last item of a list.
+* An attachment-only post gets the same space below it as beside it.
